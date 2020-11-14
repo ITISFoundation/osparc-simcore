@@ -2,11 +2,19 @@
 
 """
 
-import uuid
+import logging
 from typing import Optional
 
 from aiohttp import web
 from pydantic import BaseModel, HttpUrl, ValidationError
+from yarl import URL
+
+from ..statics import INDEX_RESOURCE_NAME
+from ._core import MatchNotFoundError, find_compatible_viewer, ViewerInfo, compose_uuid_from
+from ._projects import create_viewer_project_model
+from ._users import acquire_user, ensure_authentication, UserInfo
+
+log = logging.getLogger(__name__)
 
 
 class ValidationMixin:
@@ -20,7 +28,7 @@ class ValidationMixin:
             return obj
 
 
-# TODO: create dinamically pydantic class
+# TODO: create dinamically with pydantic class
 class RequestParams(BaseModel, ValidationMixin):
     file_name: Optional[str] = None
     file_size: int
@@ -28,42 +36,76 @@ class RequestParams(BaseModel, ValidationMixin):
     download_link: HttpUrl
 
 
+def create_redirect_response(app: web.Application, page: str, **parameters):
+    page = page.strip(" /")
+    # TODO: test that fragment queries are understood by front-end
+    # TODO: front end should create an error page and a view page
+    assert page in ("view", "error") # nosec
 
-async def get_redirection_to_viewer_with_specs(request: web.Request):
-    params = RequestParams.create_from(request)
+    in_fragment = str(URL.build(path=f"/{page}").with_query(**parameters))
+    redirect_url = app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(in_fragment)
+    return web.HTTPFound(location=redirect_url)
 
-    return await get_redirection_to_viewer_impl(request.app, **params.dict())
 
+# HANDLERS --------------------------------
 
 
 async def get_redirection_to_viewer(request: web.Request):
-    file_name, file_size = request.query["key"]
-    download_link = request.query["src"]
+    p = RequestParams.create_from(request)  # validated parameters
 
-    raise NotImplementedError()
+    try:
+        viewer: ViewerInfo = find_compatible_viewer(p.file_size, p.file_type)
+
+        # retrieve user or create a temporary guest
+        user: UserInfo = await acquire_user(request)
+
+        # Generate one project per user + download_link + viewer
+        project_id = compose_uuid_from(user.email, viewer.footprint, p.download_link)
 
 
-def get_redirection_to_viewer_impl(
-    app: web.Application, *, file_name: str, file_size: int, download_link: HttpUrl
-):
+        # already exists?
+            # yes. user has access??
+                # yes
+                    # redirect
+                # no
+                    # assign access
+                    # save
+                    # redirect
+            # no.
+                # create new
+                # save
+                # redirect
 
-    # how to gurantee that the metadata is the same??
 
-    # create guest user (if not authorized) -> studies_access
 
-    # create project with file-picker (download_link) and viewer
+        # create project with file-picker (download_link) and viewer
+        project = create_viewer_project_model(
+            project_id, user, p.download_link, viewer
+        )
 
-    # spawn task to open project -> studies_access
 
-    # get node-uuid from viewer
-    viewer_uuid = uuid.uuid4()
+        response = create_redirect_response(
+            request.app,
+            page="view",
+            project_id=project_id,
+            file_name=p.file_name,
+            file_size=p.file_size,
+        )
+        await ensure_authentication(user, request, response)
 
-    # info for the front-end
-    body = {
-        "iframe_path": f"/x/{viewer_uuid}",
-        "file_name": file_name,  # to display while waiting
-        "file_size": file_size,  # to display estimated load time
-    }
+    except ValidationError as err:
+        log.exception(err)
+        raise create_redirect_response(
+            request.app,
+            page="error",
+            message="Ups something went wrong while processing your request",
+        )
 
-    viewer_page_url = app.router["main"].url_for().with_fragment()
-    raise web.HTTPFound(location=viewer_page_url)
+    except MatchNotFoundError as err:
+        raise create_redirect_response(
+            request.app,
+            page="error",
+            message="Sorry, we cannot render this file: {err.reason}",
+        )
+
+    return response
