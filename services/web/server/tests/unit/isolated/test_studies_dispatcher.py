@@ -16,7 +16,7 @@ from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
 from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.utils import now_str
 
-# from simcore_service_webserver.viewers_distpacher import *
+# from simcore_service_webserver.studies_dispatcher import *
 
 
 @pytest.fixture
