@@ -42,6 +42,7 @@ class RequestParams(BaseModel, ValidationMixin):
     download_link: HttpUrl
 
 
+
 async def get_redirection_to_viewer(request: web.Request):
     try:
         p = RequestParams.create_from(request)  # validated parameters
@@ -62,7 +63,7 @@ async def get_redirection_to_viewer(request: web.Request):
         #          redirect
         #       no:
         #          give user access to project
-        #          save projct
+        #          save project
         #          redirect
         #   no:
         #       create new
