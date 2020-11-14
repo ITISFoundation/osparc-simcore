@@ -6,7 +6,8 @@ See tests/test_rest_routing.py for example of usage
 
 import inspect
 import logging
-from typing import Callable, Dict, Generator, List, Mapping
+from collections import namedtuple
+from typing import Callable, Dict, Iterator, List, Mapping
 
 from aiohttp import web
 
@@ -24,9 +25,7 @@ def has_handler_signature(fun) -> bool:
 
 
 def get_handlers_from_namespace(handlers_nsp) -> Dict:
-    """ Gets all handlers in a namespace define by a class or a module
-
-    """
+    """Gets all handlers in a namespace define by a class or a module"""
     # TODO: Should search for function that are marked as "handlers". Similar to @pytest.fixtures??
     if inspect.ismodule(handlers_nsp):
         predicate = lambda obj: inspect.isfunction(obj) and has_handler_signature(obj)
@@ -41,8 +40,11 @@ def get_handlers_from_namespace(handlers_nsp) -> Dict:
     return name_to_handler_map
 
 
-def iter_path_operations(specs: OpenApiSpec) -> Generator:
-    """Iterates paths in api specs returning tuple (method, path, operation_id)
+PathOperation = namedtuple("PathOperation", "method path operation_id tags")
+
+
+def iter_path_operations(specs: OpenApiSpec) -> Iterator[PathOperation]:
+    """Iterates paths in api specs returning tuple (method, path, operation_id, tags)
 
     NOTE: prepend API version as basepath to path url, e.g. /v0/my/path for path=/my/path
     """
@@ -50,21 +52,23 @@ def iter_path_operations(specs: OpenApiSpec) -> Generator:
 
     for url, path in specs.paths.items():
         for method, operation in path.operations.items():
-            yield method.upper(), base_path + url, operation.operation_id, operation.tags
+            yield PathOperation(
+                method.upper(), base_path + url, operation.operation_id, operation.tags
+            )
 
 
 def map_handlers_with_operations(
     handlers_map: Mapping[str, Callable],
-    operations_it: Generator,
+    operations_it: Iterator[PathOperation],
     *,
     strict: bool = True
 ) -> List[web.RouteDef]:
-    """ Matches operation ids with handler names and returns a list of routes
+    """Matches operation ids with handler names and returns a list of routes
 
     :param handlers_map: .See get_handlers_from_namespace
     :type handlers_map: Mapping[str, Callable]
     :param operations_it: iterates over specs operations. See iter_path_operations
-    :type operations_it: Generator
+    :type operations_it: Iterator[PathOperation]
     :param strict: it raises an error if either a handler or an operator was not mapped, defaults to True
     :param strict: bool, optional
     :raises ValueError: if not operations mapped
@@ -94,7 +98,7 @@ def map_handlers_with_operations(
 def create_routes_from_namespace(
     specs: OpenApiSpec, handlers_nsp, *, strict: bool = True
 ) -> List[web.RouteDef]:
-    """ Gets *all* available handlers and maps one-to-one to *all* specs routes
+    """Gets *all* available handlers and maps one-to-one to *all* specs routes
 
     :param specs: openapi spec object
     :type specs: OpenApiSpec
