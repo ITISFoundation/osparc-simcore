@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    "simcore_service_webserver.viewers_dispatcher", ModuleCategory.ADDON, logger=logger
+    "simcore_service_webserver.studies_dispatcher", ModuleCategory.ADDON, logger=logger
 )
-def setup_viewers_dispatcher(app: web.Application) -> bool:
+def setup_studies_dispatcher(app: web.Application) -> bool:
     cfg = app[APP_CONFIG_KEY]["main"]
 
     # Redirects routes
