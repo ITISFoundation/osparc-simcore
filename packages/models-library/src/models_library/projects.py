@@ -1,15 +1,9 @@
 import sys
-from pathlib import Path
-#
-#
-#
-# NOTE: "examples" = [ ...] keyword and NOT "example". See https://json-schema.org/understanding-json-schema/reference/generic.html#annotations
-#
+from copy import deepcopy
 from enum import Enum
-
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 from uuid import UUID
-from enum import Enum
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr
 
@@ -18,11 +12,19 @@ from .project_nodes import Node, NodeID
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
 
+#
+#
+#
+# NOTE: "examples" = [ ...] keyword and NOT "example". See https://json-schema.org/understanding-json-schema/reference/generic.html#annotations
+#
+
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
 
 GroupID = constr(regex=r"^\S+$")
 ProjectID = UUID
+
+GroupID = constr(regex=r"^\d+$")
 NodeID = constr(regex=UUID_RE)
 ClassifierID = str
 
@@ -110,3 +112,14 @@ class Project(BaseModel):
         description = "Description of a simcore project"
         title = "simcore project"
         extra = Extra.forbid
+
+        # pylint: disable=no-self-argument
+        def schema_extra(schema: Dict, _model: "Project"):
+            # pylint: disable=unsubscriptable-object
+
+            # Patch to allow 'state' to be nullable
+            #  See https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+            state_pydantic_schema = deepcopy(schema["properties"]["state"])
+            schema["properties"]["state"].update(
+                {"anyOf": [{"type": "null"}, state_pydantic_schema]}
+            )
