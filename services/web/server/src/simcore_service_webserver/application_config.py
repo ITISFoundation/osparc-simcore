@@ -87,13 +87,14 @@ def create_schema() -> T.Dict:
             addon_section("diagnostics", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),
             addon_section("groups", optional=True): minimal_addon_schema(),
-            addon_section("studies_access", optional=True): minimal_addon_schema(),
             addon_section("tags", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("catalog", optional=True): catalog_config.schema,
             addon_section("products", optional=True): minimal_addon_schema(),
             addon_section("computation", optional=True): minimal_addon_schema(),
             addon_section("director-v2", optional=True): minimal_addon_schema(),
+            addon_section("studies_access", optional=True): minimal_addon_schema(),
+            addon_section("viewers_dispatcher", optional=True): minimal_addon_schema(),
         }
     )
 
