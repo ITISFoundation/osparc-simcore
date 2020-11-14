@@ -1,3 +1,9 @@
+"""
+    This should be the interface other modules should use to get
+    information from user module
+
+"""
+
 import logging
 from collections import deque
 from typing import Any, Dict, List, Tuple
@@ -18,6 +24,9 @@ from .users_exceptions import UserNotFoundError
 from .users_utils import convert_user_db_to_schema
 
 logger = logging.getLogger(__name__)
+
+
+# USERS  API ----------------------------------------------------------------------------
 
 
 async def get_user_profile(app: web.Application, user_id: int) -> Dict[str, Any]:
@@ -144,7 +153,37 @@ async def delete_user(app: web.Application, user_id: int) -> None:
     clean_auth_policy_cache(app)
 
 
-# TOKEN -------------------------------------------
+async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        user_name = await conn.scalar(
+            sa.select([users.c.name]).where(users.c.id == user_id)
+        )
+        parts = user_name.split(".") + [""]
+        return dict(first_name=parts[0], last_name=parts[1])
+
+
+async def get_user(app: web.Application, user_id: int) -> Dict:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        result = await conn.execute(sa.select([users]).where(users.c.id == user_id))
+        row: RowProxy = await result.fetchone()
+        if not row:
+            raise UserNotFoundError(uid=user_id)
+        return dict(row)
+
+
+async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> int:
+    engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        return await conn.scalar(
+            sa.select([users.c.id]).where(users.c.primary_gid == primary_gid)
+        )
+
+
+# TOKEN  API ----------------------------------------------------------------------------
+
+
 async def create_token(
     app: web.Application, user_id: int, token_data: Dict[str, str]
 ) -> Dict[str, str]:
@@ -223,32 +262,4 @@ async def delete_token(app: web.Application, user_id: int, service_id: str) -> N
             tokens.delete().where(
                 and_(tokens.c.user_id == user_id, tokens.c.token_service == service_id)
             )
-        )
-
-
-async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
-    engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        user_name = await conn.scalar(
-            sa.select([users.c.name]).where(users.c.id == user_id)
-        )
-        parts = user_name.split(".") + [""]
-        return dict(first_name=parts[0], last_name=parts[1])
-
-
-async def get_user(app: web.Application, user_id: int) -> Dict:
-    engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        result = await conn.execute(sa.select([users]).where(users.c.id == user_id))
-        row: RowProxy = await result.fetchone()
-        if not row:
-            raise UserNotFoundError(uid=user_id)
-        return dict(row)
-
-
-async def get_user_id_from_gid(app: web.Application, primary_gid: int) -> int:
-    engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        return await conn.scalar(
-            sa.select([users.c.id]).where(users.c.primary_gid == primary_gid)
         )
