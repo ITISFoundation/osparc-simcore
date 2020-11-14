@@ -1,14 +1,44 @@
-# TODO: move here studies_access.py
-
 import logging
 
 from aiohttp import web
+
 from servicelib.application_setup import ModuleCategory, app_module_setup
+from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+
+from ..constants import APP_CONFIG_KEY
+from ..login.decorators import login_required
+from ..rest_config import APP_OPENAPI_SPECS_KEY
+from .handlers_redirects import get_redirection_to_viewer
+from .handlers_rest import get_viewers_handler
 
 logger = logging.getLogger(__name__)
 
+
 @app_module_setup(
-    "simcore_service_webserver.viewers_dispatcher", ModuleCategory.SYSTEM, logger=logger
+    "simcore_service_webserver.viewers_dispatcher", ModuleCategory.ADDON, logger=logger
 )
 def setup_viewers_dispatcher(app: web.Application) -> bool:
-    raise NotImplementedError()
+    cfg = app[APP_CONFIG_KEY]["main"]
+
+    # Redirects routes
+    redirect_handler = get_redirection_to_viewer
+    if not cfg["studies_access_enabled"]:
+        redirect_handler = login_required(get_redirection_to_viewer)
+        logger.warning(
+            "'%s' config explicitly disables anonymous users from this feature",
+            __name__,
+        )
+    app.router.add_routes(
+        [web.get("/view", redirect_handler, name="get_redirection_to_viewer")]
+    )
+
+    # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
+    specs = app[APP_OPENAPI_SPECS_KEY]
+    rest_routes = map_handlers_with_operations(
+        [
+            get_viewers_handler,
+        ],
+        filter(lambda op: "viewer" in op.tags, iter_path_operations(specs)),
+        strict=True,
+    )
+    app.router.add_routes(rest_routes)
