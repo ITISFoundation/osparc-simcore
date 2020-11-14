@@ -418,6 +418,8 @@ async def notify_project_node_update(
         await post_group_messages(app, room, messages)
 
 
+# PROJECT STATE -------------------------------------------------------------------
+
 async def _get_project_lock_state(
     user_id: int, project_uuid: str, app: web.Application
 ) -> ProjectLocked:
