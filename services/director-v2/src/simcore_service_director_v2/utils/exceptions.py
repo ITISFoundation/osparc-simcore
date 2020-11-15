@@ -1,14 +1,13 @@
 from typing import Optional
 
+from models_library.projects import ProjectID
+
 
 class DirectorException(Exception):
     """Basic exception for errors raised with director"""
 
     def __init__(self, msg: Optional[str] = None):
         super().__init__(msg or "Unexpected error occurred in director subpackage")
-
-
-from models_library.projects import ProjectID
 
 
 class ProjectNotFoundError(DirectorException):
