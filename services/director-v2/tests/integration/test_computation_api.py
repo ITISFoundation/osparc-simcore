@@ -7,16 +7,15 @@
 import json
 from pathlib import Path
 from random import randint
-from time import sleep, time
 from typing import Callable, Dict, List
 from uuid import UUID, uuid4
-from pydantic.networks import AnyHttpUrl
 
 import pytest
 import sqlalchemy as sa
 from models_library.projects import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
+from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
@@ -25,6 +24,7 @@ from simcore_service_director_v2.models.domains.projects import ProjectAtDB
 from sqlalchemy import literal_column
 from starlette import status
 from starlette.testclient import TestClient
+from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 
 core_services = ["director", "redis", "rabbit", "sidecar", "storage", "postgres"]
@@ -178,9 +178,14 @@ def _assert_pipeline_status(
         ]
 
     MAX_TIMEOUT_S = 60
-    start_time = time()
-    task_out: ComputationTaskOut = None
-    while (time() - start_time) < MAX_TIMEOUT_S:
+
+    @retry(
+        stop=stop_after_delay(MAX_TIMEOUT_S),
+        wait=wait_random(0, 2),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    )
+    def check_pipeline_state() -> ComputationTaskOut:
         response = client.get(status_url, params={"user_id": user_id})
         assert (
             response.status_code == status.HTTP_202_ACCEPTED
@@ -189,14 +194,10 @@ def _assert_pipeline_status(
         assert task_out.id == project_uuid
         assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
         print("Pipeline is in ", task_out.state)
-        if task_out.state in wait_for_states:
-            break
-        print("waiting...")
-        sleep(1)
+        assert task_out.state in wait_for_states
+        return task_out
 
-    assert (
-        task_out.state in wait_for_states
-    ), f"pipeline status polling timedout! last task state was {task_out.state}, waiting for one of [{wait_for_states}]"
+    task_out = check_pipeline_state()
 
     return task_out
 
@@ -278,3 +279,49 @@ def test_abort_computation(
         wait_for_states=[RunningState.ABORTED],
     )
     assert task_out.state == RunningState.ABORTED
+
+
+def test_delete_computation(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+    sleepers_workbench: Dict,
+):
+    # send a valid project with sleepers
+    sleepers_project = project(workbench=sleepers_workbench)
+    response = client.post(
+        COMPUTATION_URL,
+        json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    task_out = ComputationTaskOut.parse_obj(response.json())
+
+    assert task_out.id == sleepers_project.uuid
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+
+    # wait until the pipeline is started
+    task_out = _assert_pipeline_status(
+        client,
+        task_out.url,
+        user_id,
+        sleepers_project.uuid,
+        wait_for_states=[RunningState.STARTED],
+    )
+    assert (
+        task_out.state == RunningState.STARTED
+    ), f"pipeline is not in the expected starting state but in {task_out.state}"
+
+    # now try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
+    response = client.delete(task_out.url, json={"user_id": user_id})
+    assert (
+        response.status_code == status.HTTP_403_FORBIDDEN
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    # try again with force=True
+    response = client.delete(task_out.url, json={"user_id": user_id, "force": True})
+    assert (
+        response.status_code == status.HTTP_204_NO_CONTENT
+    ), f"response code is {response.status_code}, error: {response.text}"
