@@ -1173,8 +1173,6 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
-    # FIXME: skip the job until make it faster and more reliable
-    # https://github.com/ITISFoundation/osparc-simcore/issues/1594
     name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}

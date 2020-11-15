@@ -71,7 +71,15 @@ async def get_pipeline_state(
     ).update_query(user_id=user_id)
 
     # request to director-v2
-    computation_task_out, _ = await _request_director_v2(app, "GET", backend_url)
+    try:
+        computation_task_out, _ = await _request_director_v2(app, "GET", backend_url)
+    except ForwardedException:
+        log.warning(
+            "getting pipeline state for project %s failed. state is then %s",
+            project_id,
+            RunningState.UNKNOWN,
+        )
+        return RunningState.UNKNOWN
 
     return RunningState(computation_task_out["state"])
 

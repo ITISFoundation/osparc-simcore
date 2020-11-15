@@ -14,6 +14,7 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
+from models_library.nodes import RunningState
 
 from models_library.projects import (
     Owner,
@@ -440,7 +441,7 @@ async def _get_project_lock_state(
 async def _get_project_running_state(
     user_id: PositiveInt, project_uuid: str, app: web.Application
 ) -> ProjectRunningState:
-    pipeline_state = await get_pipeline_state(app, user_id, project_uuid)
+    pipeline_state: RunningState = await get_pipeline_state(app, user_id, project_uuid)
     return ProjectRunningState(value=pipeline_state)
 
 
