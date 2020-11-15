@@ -8,6 +8,7 @@ from ..api.entrypoints import api_router
 from ..api.errors.http_error import http_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
 from ..modules import celery, db, director_v0, docker_registry, remote_debug
+from ..utils.logging_utils import set_logging_handler
 from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
 
@@ -21,6 +22,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     logging.basicConfig(level=settings.loglevel)
     logging.root.setLevel(settings.loglevel)
     logger.debug(settings.json(indent=2))
+    set_logging_handler(logging.root)
 
     app = FastAPI(
         debug=settings.debug,

@@ -62,7 +62,7 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
                 and to_node_class(predecessor_node.key) == NodeClass.COMPUTATIONAL
             ):
                 dag_graph.add_edge(input_node_id, node_id)
-    log.debug("created DAG graph: %s", dag_graph.adj)
+    log.debug("created DAG graph: %s", nx.to_dict_of_lists(dag_graph.adj))
 
     return dag_graph
 

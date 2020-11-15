@@ -4,6 +4,8 @@ from typing import Dict
 
 import networkx as nx
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert
+
 from models_library.nodes import Node, NodeID
 from models_library.projects import ProjectID, RunningState
 from models_library.services import (
@@ -12,13 +14,13 @@ from models_library.services import (
     ServiceKeyVersion,
     ServiceType,
 )
-from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_pipelines import CompPipelineAtDB
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.domains.projects import ProjectAtDB
 from ....models.schemas.services import NodeRequirement, ServiceExtras
 from ....utils.computations import to_node_class
+from ....utils.logging_utils import log_decorator
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_pipeline, comp_tasks
 from ._base import BaseRepository
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompPipelinesRepository(BaseRepository):
+    @log_decorator(logger=logger)
     async def publish_pipeline(
         self, project_id: ProjectID, dag_graph: nx.DiGraph
     ) -> None:
@@ -44,6 +47,7 @@ class CompPipelinesRepository(BaseRepository):
         await self.connection.execute(on_update_stmt)
 
 
+@log_decorator(logger=logger)
 def _get_fake_service_details(service: ServiceKeyVersion) -> ServiceDockerData:
     if "file-picker" in service.key:
         file_picker_outputs = {
@@ -71,6 +75,7 @@ def _get_fake_service_details(service: ServiceKeyVersion) -> ServiceDockerData:
 
 
 class CompTasksRepository(BaseRepository):
+    @log_decorator(logger=logger)
     async def get_comp_tasks(
         self,
         project_id: ProjectID,
@@ -87,6 +92,7 @@ class CompTasksRepository(BaseRepository):
 
         return tasks
 
+    @log_decorator(logger=logger)
     async def publish_tasks_from_project(
         self,
         project: ProjectAtDB,
@@ -154,6 +160,7 @@ class CompTasksRepository(BaseRepository):
                 )
             )
 
+    @log_decorator(logger=logger)
     async def abort_tasks_from_project(self, project: ProjectAtDB) -> None:
         # block all pending tasks, so the sidecars stop taking them
         await self.connection.execute(
