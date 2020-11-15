@@ -2,11 +2,9 @@ import logging
 from typing import Dict, List
 
 import networkx as nx
-from celery.canvas import Signature
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.nodes import NodeID
-from models_library.projects import ProjectID, RunningState, Workbench
-from simcore_postgres_database.models.comp_tasks import NodeClass
+from models_library.projects import ProjectID
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -29,8 +27,12 @@ from ...models.schemas.constants import UserID
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
-from ...modules.db.tables import NodeClass
-from ...utils.computations import get_pipeline_state_from_task_states, to_node_class
+from ...utils.computations import (
+    get_pipeline_state_from_task_states,
+    is_pipeline_running,
+    is_pipeline_stopped,
+)
+from ...utils.dags import create_dag_graph, find_entrypoints
 from ...utils.exceptions import ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
 from ..dependencies.database import get_repository
@@ -41,60 +43,27 @@ log = logging.getLogger(__file__)
 
 
 def celery_on_message(body):
+    # FIXME: this might become handy when we stop starting tasks recursively
     log.warning(body)
 
 
 def background_on_message(task):
+    # FIXME: this might become handy when we stop starting tasks recursively
     log.warning(task.get(on_message=celery_on_message, propagate=False))
 
 
-def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
-    entrypoints = [n for n in graph.nodes if not list(graph.predecessors(n))]
-    log.debug("the entrypoints of the graph are %s", entrypoints)
-    return entrypoints
-
-
-def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
-    dag_graph = nx.DiGraph()
-    for node_id, node in workbench.items():
-        if to_node_class(node.key) == NodeClass.COMPUTATIONAL:
-            dag_graph.add_node(
-                node_id, name=node.label, key=node.key, version=node.version
-            )
-            for input_node_id in node.inputNodes:
-                predecessor_node = workbench.get(str(input_node_id))
-                if (
-                    predecessor_node
-                    and to_node_class(predecessor_node.key) == NodeClass.COMPUTATIONAL
-                ):
-                    dag_graph.add_edge(input_node_id, node_id)
-    log.debug("created DAG graph: %s", nx.to_dict_of_lists(dag_graph))
-
-    return dag_graph
-
-
-def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Signature]:
-    # copy the graph
-    graph_copy = dag_graph.copy()
-    res = []
-    while graph_copy:
-        zero_indegree = [v for v, d in graph_copy.in_degree() if d == 0]
-        res.append(zero_indegree)
-        graph_copy.remove_nodes_from(zero_indegree)
-    return res
-
-
-def _is_pipeline_running(pipeline_state: RunningState) -> bool:
-    return pipeline_state in [
-        RunningState.PUBLISHED,
-        RunningState.PENDING,
-        RunningState.STARTED,
-        RunningState.RETRY,
-    ]
-
-
-def _is_pipeline_stopped(pipeline_state: RunningState) -> bool:
-    return not _is_pipeline_running(pipeline_state)
+async def _abort_pipeline_tasks(
+    project: ProjectAtDB,
+    tasks: List[CompTaskAtDB],
+    computation_tasks: CompTasksRepository,
+    celery_client: CeleryClient,
+):
+    await computation_tasks.abort_tasks_from_project(project)
+    celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
+    log.debug(
+        "Computational task stopped for project %s",
+        project.uuid,
+    )
 
 
 @router.post(
@@ -128,13 +97,13 @@ async def create_computation(
         project: ProjectAtDB = await project_repo.get_project(job.project_id)
 
         # check if current state allow to start the computation
-        comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+        comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             job.project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            list(comp_tasks.values()), celery_client.settings.publication_timeout
+            comp_tasks, celery_client.settings.publication_timeout
         )
-        if _is_pipeline_running(pipeline_state):
+        if is_pipeline_running(pipeline_state):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Projet {job.project_id} already started, current state is {pipeline_state}",
@@ -199,11 +168,11 @@ async def get_computation(
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # get the project task states
-        comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+        comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            list(comp_tasks.values()), celery_client.settings.publication_timeout
+            comp_tasks, celery_client.settings.publication_timeout
         )
 
         log.debug(
@@ -223,6 +192,7 @@ async def get_computation(
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
+    # NOTE: this will be re-used for the prep2go API stuff... don't worry...
     # task = AsyncResult(str(computation_id))
     # if task.state == RunningState.SUCCESS:
     #     return ComputationTask(id=task.id, state=task.state, result=task.result)
@@ -233,20 +203,6 @@ async def get_computation(
     #         result=task.backend.get(task.backend.get_key_for_task(task.id)),
     #     )
     # return ComputationTask(id=task.id, state=task.state, result=task.info)
-
-
-async def _abort_pipeline(
-    project: ProjectAtDB,
-    tasks: List[CompTaskAtDB],
-    computation_tasks: CompTasksRepository,
-    celery_client: CeleryClient,
-):
-    await computation_tasks.abort_tasks_from_project(project)
-    celery_client.abort_computation_tasks([str(c.job_id) for c in tasks.values()])
-    log.debug(
-        "Computational task stopped for project %s",
-        project.uuid,
-    )
 
 
 @router.post(
@@ -273,18 +229,20 @@ async def stop_computation_project(
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # check if current state allow to stop the computation
-        comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+        comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            list(comp_tasks.values()), celery_client.settings.publication_timeout
+            comp_tasks, celery_client.settings.publication_timeout
         )
-        if _is_pipeline_stopped(pipeline_state):
+        if is_pipeline_stopped(pipeline_state):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Projet {project_id} already completed, current state is {pipeline_state}",
             )
-        await _abort_pipeline(project, comp_tasks, computation_tasks, celery_client)
+        await _abort_pipeline_tasks(
+            project, comp_tasks, computation_tasks, celery_client
+        )
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -312,20 +270,22 @@ async def delete_pipeline(
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
         # check if current state allow to stop the computation
-        comp_tasks: Dict[NodeID, CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+        comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
         pipeline_state = get_pipeline_state_from_task_states(
-            list(comp_tasks.values()), celery_client.settings.publication_timeout
+            comp_tasks, celery_client.settings.publication_timeout
         )
-        if _is_pipeline_running(pipeline_state):
+        if is_pipeline_running(pipeline_state):
             if not comp_task_stop.force:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=f"Projet {project_id} is currently running and cannot be deleted, current state is {pipeline_state}",
                 )
             # abort the pipeline first
-            await _abort_pipeline(project, comp_tasks, computation_tasks, celery_client)
+            await _abort_pipeline_tasks(
+                project, comp_tasks, computation_tasks, celery_client
+            )
 
             MAX_ABORT_WAITING_TIME = 10
 
@@ -337,14 +297,14 @@ async def delete_pipeline(
                 before_sleep=before_sleep_log(log, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
-                comp_tasks: Dict[
-                    NodeID, CompTaskAtDB
-                ] = await computation_tasks.get_comp_tasks(project_id)
+                comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
+                    project_id
+                )
                 pipeline_state = get_pipeline_state_from_task_states(
-                    list(comp_tasks.values()),
+                    comp_tasks,
                     celery_client.settings.publication_timeout,
                 )
-                return _is_pipeline_stopped(pipeline_state)
+                return is_pipeline_stopped(pipeline_state)
 
             # wait for the pipeline to be stopped
             check_pipeline_stopped()

@@ -1,11 +1,9 @@
 import logging
 from datetime import datetime
-from typing import Dict
+from typing import List
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert
-
-from models_library.nodes import Node, NodeID
+from models_library.nodes import Node
 from models_library.projects import ProjectID, RunningState
 from models_library.services import (
     Author,
@@ -13,6 +11,7 @@ from models_library.services import (
     ServiceKeyVersion,
     ServiceType,
 )
+from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.domains.projects import ProjectAtDB
@@ -58,8 +57,8 @@ class CompTasksRepository(BaseRepository):
     async def get_comp_tasks(
         self,
         project_id: ProjectID,
-    ) -> Dict[NodeID, CompTaskAtDB]:
-        tasks: Dict[NodeID, CompTaskAtDB] = {}
+    ) -> List[CompTaskAtDB]:
+        tasks: List[CompTaskAtDB] = []
         async for row in self.connection.execute(
             sa.select([comp_tasks]).where(
                 (comp_tasks.c.project_id == str(project_id))
@@ -67,7 +66,7 @@ class CompTasksRepository(BaseRepository):
             )
         ):
             task_db = CompTaskAtDB.from_orm(row)
-            tasks[task_db.node_id] = task_db
+            tasks.append(task_db)
 
         return tasks
 

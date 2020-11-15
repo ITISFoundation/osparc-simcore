@@ -60,3 +60,16 @@ def to_node_class(service_key: str) -> NodeClass:
     if match:
         return _STR_TO_NODECLASS.get(match.group(3))
     raise ValueError
+
+
+def is_pipeline_running(pipeline_state: RunningState) -> bool:
+    return pipeline_state in [
+        RunningState.PUBLISHED,
+        RunningState.PENDING,
+        RunningState.STARTED,
+        RunningState.RETRY,
+    ]
+
+
+def is_pipeline_stopped(pipeline_state: RunningState) -> bool:
+    return not is_pipeline_running(pipeline_state)
