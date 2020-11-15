@@ -21,7 +21,6 @@ from uuid import uuid4
 import aioredis
 import pytest
 import redis
-from simcore_service_webserver import director_v2
 import socketio
 import sqlalchemy as sa
 import trafaret_config
@@ -36,7 +35,6 @@ from yarl import URL
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-from models_library.nodes import RunningState
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
