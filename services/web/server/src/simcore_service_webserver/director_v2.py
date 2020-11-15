@@ -47,10 +47,10 @@ async def _request_director_v2(
     session = get_client_session(app)
     try:
         async with session.request(method, url, headers=headers, json=data) as resp:
-            if resp.status >= 400:
-                raise ForwardedException(resp.status, await resp.text())
             try:
                 payload: Dict = await resp.json()
+                if resp.status >= 400:
+                    raise ForwardedException(resp.status, payload)
                 return (payload, resp.status)
             except ContentTypeError:
                 payload = await resp.text()
@@ -112,7 +112,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
     except ForwardedException as exc:
         return web.json_response(
-            data=wrap_as_envelope(data=exc.reason), status=exc.status
+            data=wrap_as_envelope(error=exc.reason), status=exc.status
         )
 
 
@@ -139,7 +139,7 @@ async def stop_pipeline(request: web.Request) -> web.Response:
         return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
     except ForwardedException as exc:
         return web.json_response(
-            data=wrap_as_envelope(data=exc.reason), status=exc.status
+            data=wrap_as_envelope(error=exc.reason), status=exc.status
         )
 
 
