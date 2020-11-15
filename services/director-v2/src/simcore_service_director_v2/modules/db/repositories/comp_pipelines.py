@@ -35,5 +35,7 @@ class CompPipelinesRepository(BaseRepository):
     @log_decorator(logger=logger)
     async def delete_pipeline(self, project_id: ProjectID) -> None:
         await self.connection.execute(
-            sa.delete(comp_pipeline).where(comp_pipeline.c.project_id == project_id)
+            sa.delete(comp_pipeline).where(
+                comp_pipeline.c.project_id == str(project_id)
+            )
         )
