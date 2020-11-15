@@ -7,7 +7,7 @@ from typing import Optional, Union
 from aiodebug import log_slow_callbacks
 from aiohttp.log import access_logger
 
-from servicelib.logging_utils import set_logging_handler
+from servicelib.logging_utils import config_all_logger
 
 LOG_LEVEL_STEP = logging.CRITICAL - logging.ERROR
 
@@ -18,7 +18,7 @@ def setup_logging(*, level: Union[str, int], slow_duration: Optional[float] = No
 
     # root
     logging.root.setLevel(level)
-    set_logging_handler(logging.root)
+    config_all_logger()
 
     # aiohttp access log-levels
     access_logger.setLevel(level)
