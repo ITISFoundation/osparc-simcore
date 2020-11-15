@@ -13,10 +13,11 @@ from ._core import (
     MatchNotFoundError,
     ValidationMixin,
     ViewerInfo,
-    compose_uuid_from,
     find_compatible_viewer,
 )
-from ._projects import create_viewer_project_model
+from ._projects import (
+    acquire_project_with_viewer,
+)
 from ._users import UserInfo, acquire_user, ensure_authentication
 
 log = logging.getLogger(__name__)
@@ -42,37 +43,21 @@ class RequestParams(BaseModel, ValidationMixin):
     download_link: HttpUrl
 
 
-
 async def get_redirection_to_viewer(request: web.Request):
     try:
         p = RequestParams.create_from(request)  # validated parameters
 
         viewer: ViewerInfo = find_compatible_viewer(p.file_size, p.file_type)
 
-        # retrieve user or create a temporary guest
+        # Retrieve user or create a temporary guest
         user: UserInfo = await acquire_user(request)
 
         # Generate one project per user + download_link + viewer
-        project_id = compose_uuid_from(user.email, viewer.footprint, p.download_link)
+        project_id: str = await acquire_project_with_viewer(
+            request.app, user, viewer, p.download_link
+        )
 
-        # TODO:
-        #
-        # already exists?
-        #   yes. user has access??
-        #       yes:
-        #          redirect
-        #       no:
-        #          give user access to project
-        #          save project
-        #          redirect
-        #   no:
-        #       create new
-        #       save
-        #       redirect
-
-        # create project with file-picker (download_link) and viewer
-        project = create_viewer_project_model(project_id, user, p.download_link, viewer)
-
+        # Redirection and creation of cookies (for guests)
         response = create_redirect_response(
             request.app,
             page="view",
