@@ -18,6 +18,7 @@ pytest-runner
 pytest-docker
 pytest-celery
 pytest-xdist
+pytest-icdiff
 
 # fixtures
 Faker
