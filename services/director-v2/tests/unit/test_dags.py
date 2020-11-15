@@ -7,7 +7,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 import networkx as nx
 import pytest
