@@ -18,6 +18,7 @@ from typing import Dict
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses
 
 from models_library.projects import (
     Owner,
@@ -163,6 +164,11 @@ async def unpublished_project(client, fake_project):
         project_data, client.app, user_id=None, clear_all=True
     ) as template_project:
         yield template_project
+
+
+@pytest.fixture(autouse=True)
+async def director_v2_mock(director_v2_subsystem_mock) -> aioresponses:
+    yield director_v2_subsystem_mock
 
 
 async def _get_user_projects(client):
