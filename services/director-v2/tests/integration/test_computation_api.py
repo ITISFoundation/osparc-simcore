@@ -4,8 +4,6 @@
 # pylint:disable=protected-access
 # pylint:disable=no-value-for-parameter
 
-import json
-from pathlib import Path
 from random import randint
 from typing import Callable, Dict, List
 from uuid import UUID, uuid4
@@ -49,18 +47,6 @@ def minimal_configuration(
 @pytest.fixture
 def user_id() -> PositiveInt:
     return randint(0, 10000)
-
-
-@pytest.fixture(scope="session")
-def sleepers_workbench_file(mocks_dir: Path) -> Path:
-    file_path = mocks_dir / "4sleepers_workbench.json"
-    assert file_path.exists()
-    return file_path
-
-
-@pytest.fixture(scope="session")
-def sleepers_workbench(sleepers_workbench_file: Path) -> Dict:
-    return json.loads(sleepers_workbench_file.read_text())
 
 
 @pytest.fixture

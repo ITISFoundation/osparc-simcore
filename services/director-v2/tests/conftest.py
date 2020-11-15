@@ -1,3 +1,5 @@
+import json
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -87,3 +89,15 @@ def mocks_dir(tests_dir: Path) -> Path:
     mocksdir = tests_dir / "mocks"
     assert mocksdir.exists()
     return mocksdir
+
+
+@pytest.fixture(scope="session")
+def sleepers_workbench_file(mocks_dir: Path) -> Path:
+    file_path = mocks_dir / "4sleepers_workbench.json"
+    assert file_path.exists()
+    return file_path
+
+
+@pytest.fixture(scope="session")
+def sleepers_workbench(sleepers_workbench_file: Path) -> Dict:
+    return json.loads(sleepers_workbench_file.read_text())
