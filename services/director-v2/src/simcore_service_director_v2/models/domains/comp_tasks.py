@@ -24,6 +24,13 @@ class ComputationTaskStop(BaseModel):
     user_id: UserID
 
 
+class ComputationTaskDelete(ComputationTaskStop):
+    force: Optional[bool] = Field(
+        False,
+        description="if True then the pipeline will be removed even if it is running",
+    )
+
+
 class ComputationTask(BaseModel):
     id: TaskID = Field(..., description="the id of the computation task")
     state: RunningState = Field(..., description="the state of the computational task")
