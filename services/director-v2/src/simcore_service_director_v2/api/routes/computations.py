@@ -1,9 +1,8 @@
 import logging
-from typing import Dict, List
+from typing import List
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from models_library.nodes import NodeID
 from models_library.projects import ProjectID
 from starlette import status
 from starlette.requests import Request

@@ -14,6 +14,8 @@ from models_library.projects import RunningState
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.utils.computations import (
     get_pipeline_state_from_task_states,
+    is_pipeline_running,
+    is_pipeline_stopped,
 )
 
 fake = faker.Faker()
@@ -175,3 +177,24 @@ def test_get_pipeline_state_from_task_states(
     assert (
         pipeline_state == exp_pipeline_state
     ), f"task states are: {task_states}, got {pipeline_state} instead of {exp_pipeline_state}"
+
+
+@pytest.mark.parametrize(
+    "state,exp",
+    [
+        (RunningState.UNKNOWN, False),
+        (RunningState.PUBLISHED, True),
+        (RunningState.NOT_STARTED, False),
+        (RunningState.PENDING, True),
+        (RunningState.STARTED, True),
+        (RunningState.RETRY, True),
+        (RunningState.SUCCESS, False),
+        (RunningState.FAILED, False),
+        (RunningState.ABORTED, False),
+    ],
+)
+def test_is_pipeline_running(state, exp: bool):
+    assert (
+        is_pipeline_running(state) is exp
+    ), f"pipeline in {state}, i.e. running state should be {exp}"
+    assert is_pipeline_stopped is not exp
