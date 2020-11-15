@@ -8,7 +8,7 @@ from simcore_service_webserver.security_roles import UserRole
 
 ExpectedResponse = namedtuple(
     "ExpectedResponse",
-    ["ok", "created", "no_content", "not_found", "forbidden", "locked"],
+    ["ok", "created", "no_content", "not_found", "forbidden", "locked", "accepted"],
 )
 
 
@@ -19,6 +19,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             (
                 UserRole.ANONYMOUS,
                 ExpectedResponse(
+                    web.HTTPUnauthorized,
                     web.HTTPUnauthorized,
                     web.HTTPUnauthorized,
                     web.HTTPUnauthorized,
@@ -36,6 +37,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
                     web.HTTPForbidden,
                     web.HTTPForbidden,
                     web.HTTPForbidden,
+                    web.HTTPForbidden,
                 ),
             ),
             (
@@ -47,6 +49,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
                     web.HTTPNotFound,
                     web.HTTPForbidden,
                     HTTPLocked,
+                    web.HTTPAccepted,
                 ),
             ),
             (
@@ -58,6 +61,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
                     web.HTTPNotFound,
                     web.HTTPForbidden,
                     HTTPLocked,
+                    web.HTTPAccepted,
                 ),
             ),
         ],

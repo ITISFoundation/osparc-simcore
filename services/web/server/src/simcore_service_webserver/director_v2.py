@@ -26,6 +26,7 @@ from .security_decorators import permission_required
 
 log = logging.getLogger(__file__)
 
+
 class ForwardedException(Exception):
     """Basic exception for errors raised with director"""
 
@@ -33,6 +34,7 @@ class ForwardedException(Exception):
         self.status = status
         self.reason = reason
         super().__init__(f"forwarded call failed with status {status}, reason {reason}")
+
 
 @log_decorator(logger=log)
 async def _request_director_v2(
@@ -74,6 +76,18 @@ async def get_pipeline_state(
     return RunningState(computation_task_out["state"])
 
 
+@log_decorator(logger=log)
+async def delete_pipeline(
+    app: web.Application, user_id: PositiveInt, project_id: UUID
+) -> None:
+    director2_settings: Directorv2Settings = get_settings(app)
+
+    backend_url = URL(f"{director2_settings.endpoint}/computations/{project_id}")
+
+    # request to director-v2
+    await _request_director_v2(app, "DELETE", backend_url)
+
+
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
@@ -97,7 +111,9 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
         return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
     except ForwardedException as exc:
-        return web.json_response(data=wrap_as_envelope(data=exc.reason), status=exc.status)
+        return web.json_response(
+            data=wrap_as_envelope(data=exc.reason), status=exc.status
+        )
 
 
 @login_required
@@ -122,7 +138,9 @@ async def stop_pipeline(request: web.Request) -> web.Response:
         data = {}
         return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
     except ForwardedException as exc:
-        return web.json_response(data=wrap_as_envelope(data=exc.reason), status=exc.status)
+        return web.json_response(
+            data=wrap_as_envelope(data=exc.reason), status=exc.status
+        )
 
 
 @app_module_setup(
@@ -145,7 +163,10 @@ def setup_director_v2(app: web.Application):
     specs = app[APP_OPENAPI_SPECS_KEY]
     # bind routes with handlers
     routes = map_handlers_with_operations(
-        {"start_pipeline": start_pipeline, "stop_pipeline": stop_pipeline,},
+        {
+            "start_pipeline": start_pipeline,
+            "stop_pipeline": stop_pipeline,
+        },
         filter(lambda o: "computation" in o[1], iter_path_operations(specs)),
         strict=True,
     )
