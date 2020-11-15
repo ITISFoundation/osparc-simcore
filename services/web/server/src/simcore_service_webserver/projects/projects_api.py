@@ -28,8 +28,7 @@ from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from ..director_v2 import get_pipeline_state
-from ..computation_api import delete_pipeline_db
+from ..director_v2 import get_pipeline_state, delete_pipeline
 from ..director import director_api
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
@@ -211,7 +210,7 @@ async def delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     db = app[APP_PROJECT_DBAPI]
-    await delete_pipeline_db(app, project_uuid)
+    await delete_pipeline(app, user_id, project_uuid)
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)

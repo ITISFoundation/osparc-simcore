@@ -52,9 +52,9 @@ async def _request_director_v2(
                 if resp.status >= 400:
                     raise ForwardedException(resp.status, payload)
                 return (payload, resp.status)
-            except ContentTypeError:
+            except ContentTypeError as e:
                 payload = await resp.text()
-                raise web.HTTPServerError(reason=f"malformed data: {payload}")
+                raise web.HTTPServerError(reason=f"malformed data: {payload}") from e
 
     except (CancelledError, TimeoutError) as err:
         raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
@@ -91,9 +91,10 @@ async def delete_pipeline(
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(f"{director2_settings.endpoint}/computations/{project_id}")
+    body = {"user_id": user_id, "force": True}
 
     # request to director-v2
-    await _request_director_v2(app, "DELETE", backend_url)
+    await _request_director_v2(app, "DELETE", backend_url, data=body)
 
 
 @login_required
