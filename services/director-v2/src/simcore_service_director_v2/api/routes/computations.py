@@ -55,14 +55,14 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
             dag_graph.add_node(
                 node_id, name=node.label, key=node.key, version=node.version
             )
-        for input_node_id in node.inputNodes:
-            predecessor_node = workbench.get(input_node_id)
-            if (
-                predecessor_node
-                and to_node_class(predecessor_node.key) == NodeClass.COMPUTATIONAL
-            ):
-                dag_graph.add_edge(input_node_id, node_id)
-    log.debug("created DAG graph: %s", nx.to_dict_of_lists(dag_graph.adj))
+            for input_node_id in node.inputNodes:
+                predecessor_node = workbench.get(str(input_node_id))
+                if (
+                    predecessor_node
+                    and to_node_class(predecessor_node.key) == NodeClass.COMPUTATIONAL
+                ):
+                    dag_graph.add_edge(input_node_id, node_id)
+    log.debug("created DAG graph: %s", nx.to_dict_of_lists(dag_graph))
 
     return dag_graph
 
