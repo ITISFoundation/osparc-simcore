@@ -181,6 +181,9 @@ async def delete_project(request: web.Request, project_uuid: str, user_id: int) 
     fire_and_forget_task(remove_services_and_data())
 
 
+## PROJECT NODES -----------------------------------------------------
+
+
 @observe(event="SIGNAL_PROJECT_CLOSE")
 async def remove_project_interactive_services(
     user_id: Optional[int], project_uuid: Optional[str], app: web.Application
