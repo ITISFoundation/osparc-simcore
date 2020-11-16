@@ -1,5 +1,43 @@
 version: "3.7"
 services:
+  postgres:
+    image: postgres:10
+    init: true
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-test}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-test}
+      - POSTGRES_DB=${POSTGRES_PASSWORD:-test}
+      - POSTGRES_HOST=${POSTGRES_HOST:-localhost}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+    ports:
+      - "5432:5432"
+    # https://www.postgresql.org/docs/10/runtime-config-logging.html#GUC-LOG-STATEMENT
+    command:
+      [
+        "postgres",
+        "-c",
+        "log_connections=true",
+        "-c",
+        "log_disconnections=true",
+        "-c",
+        "log_duration=true",
+        "-c",
+        "log_line_prefix=[%p] [%a] [%c] [%x] ",
+      ]
+  rabbit:
+    image: itisfoundation/rabbitmq:3.8.0-management
+    init: true
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBIT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_PASSWORD}
+
+  adminer:
+    image: adminer
+    init: true
+    ports:
+      - 18080:8080
+    depends_on:
+      - postgres
   registry:
     image: registry:2
     init: true

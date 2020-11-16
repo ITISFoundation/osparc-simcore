@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
@@ -9,10 +10,11 @@ import aioredis
 import pytest
 import tenacity
 from models_library.settings.redis import RedisConfig
-from servicelib.redis_utils import RedisRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
@@ -54,7 +56,12 @@ async def redis_client(loop, redis_config: RedisConfig) -> aioredis.Redis:
 
 
 # HELPERS --
-@tenacity.retry(**RedisRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(60),
+    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    reraise=True,
+)
 async def wait_till_redis_responsive(redis_url: URL) -> None:
     client = await aioredis.create_redis_pool(str(redis_url), encoding="utf-8")
     client.close()

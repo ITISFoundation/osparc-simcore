@@ -66,7 +66,7 @@ def registry_services() -> List[ServiceDockerData]:
         ServiceDockerData(
             key="simcore/services/comp/my_comp_service",
             version=f"{v}.{randint(0,20)}.{randint(0,20)}",
-            type=ServiceType.computational,
+            type=ServiceType.COMPUTATIONAL,
             name=f"my service {v}",
             description="a sleeping service version {v}",
             authors=[{"name": "me", "email": "me@myself.com"}],

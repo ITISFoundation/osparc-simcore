@@ -93,6 +93,7 @@ def create_schema() -> T.Dict:
             addon_section("catalog", optional=True): catalog_config.schema,
             addon_section("products", optional=True): minimal_addon_schema(),
             addon_section("computation", optional=True): minimal_addon_schema(),
+            addon_section("director-v2", optional=True): minimal_addon_schema(),
         }
     )
 

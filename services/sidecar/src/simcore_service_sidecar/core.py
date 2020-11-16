@@ -178,7 +178,7 @@ async def inspect(
     project_id: str,
     node_id: Optional[str],
 ) -> Optional[List[str]]:
-    run_result = StateType.FAILED
+
     try:
         log.debug(
             "ENTERING inspect with user %s pipeline:node %s: %s",
@@ -204,7 +204,14 @@ async def inspect(
         if not task:
             log.debug("no task at hand, let's rest...")
             return
+    except asyncio.CancelledError:
+        log.warning("Task has been cancelled")
+        if node_id:
+            await _set_task_status(db_engine, project_id, node_id, StateType.ABORTED)
+        raise
 
+    run_result = StateType.FAILED
+    try:
         await rabbit_mq.post_log_message(
             user_id,
             project_id,

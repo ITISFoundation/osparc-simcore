@@ -21,8 +21,8 @@ class ProjectType(enum.Enum):
     standard: standard project
     """
 
-    TEMPLATE = "template"
-    STANDARD = "standard"
+    TEMPLATE = "TEMPLATE"
+    STANDARD = "STANDARD"
 
 
 projects = sa.Table(

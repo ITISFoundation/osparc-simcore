@@ -39,7 +39,7 @@ def get_service_published_port(
     # NOTE: retries since services can take some time to start
     client = docker.from_env()
 
-    services = [x for x in client.services.list() if service_name in x.name]
+    services = [x for x in client.services.list() if str(x.name).endswith(service_name)]
     if not services:
         raise RuntimeError(
             f"Cannot find published port for service '{service_name}'."

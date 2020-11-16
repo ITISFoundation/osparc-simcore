@@ -7,7 +7,8 @@ from starlette.exceptions import HTTPException
 from ..api.entrypoints import api_router
 from ..api.errors.http_error import http_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
-from ..modules import director_v0, docker_registry, remote_debug
+from ..modules import celery, db, director_v0, docker_registry, remote_debug
+from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
 
@@ -40,6 +41,12 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.director_v0.enabled:
         director_v0.setup(app, settings.director_v0)
 
+    if settings.postgres.enabled:
+        db.setup(app, settings.postgres)
+
+    if settings.celery.enabled:
+        celery.setup(app, settings.celery)
+
     if settings.registry.enabled:
         docker_registry.setup(app, settings.registry)
 
@@ -49,5 +56,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.add_exception_handler(HTTPException, http_error_handler)
 
     app.include_router(api_router)
+
+    config_all_loggers()
 
     return app

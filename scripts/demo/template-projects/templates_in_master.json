@@ -21,7 +21,6 @@
           }
         },
         "progress": 100,
-        "thumbnail": "",
         "position": {
           "x": 100,
           "y": 100
@@ -40,7 +39,6 @@
           }
         },
         "progress": 100,
-        "thumbnail": "",
         "position": {
           "x": 100,
           "y": 250
@@ -66,7 +64,6 @@
         ],
         "outputs": {},
         "progress": 85,
-        "thumbnail": "",
         "position": {
           "x": 400,
           "y": 175
@@ -94,7 +91,6 @@
         "inputNodes": [],
         "outputs": {},
         "progress": 0,
-        "thumbnail": "",
         "position": {
           "x": 587,
           "y": 279
@@ -115,7 +111,6 @@
         ],
         "outputs": {},
         "progress": 100,
-        "thumbnail": "",
         "position": {
           "x": 933,
           "y": 228
@@ -145,7 +140,6 @@
           }
         },
         "progress": 100,
-        "thumbnail": "",
         "position": {
           "x": 100,
           "y": 100
@@ -166,7 +160,6 @@
         ],
         "outputs": {},
         "progress": 90,
-        "thumbnail": "",
         "position": {
           "x": 400,
           "y": 100
@@ -196,7 +189,6 @@
           }
         },
         "progress": 100,
-        "thumbnail": "",
         "position": {
           "x": 50,
           "y": 150
@@ -231,7 +223,6 @@
         ],
         "outputs": {},
         "progress": 0,
-        "thumbnail": "",
         "position": {
           "x": 300,
           "y": 150
@@ -256,7 +247,6 @@
         ],
         "outputs": {},
         "progress": 20,
-        "thumbnail": "",
         "position": {
           "x": 550,
           "y": 150
@@ -281,7 +271,6 @@
         "inputNodes": [],
         "outputs": {},
         "progress": 55,
-        "thumbnail": "",
         "position": {
           "x": 100,
           "y": 100
