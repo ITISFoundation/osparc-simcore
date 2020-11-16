@@ -36,10 +36,11 @@ class AccessEnum(str, Enum):
 
 
 class PortLink(BaseModel):
-    nodeUuid: NodeID = Field(
+    node_uuid: NodeID = Field(
         ...,
         description="The node to get the port output from",
         example=["da5068e0-8a8d-4fb9-9516-56e5ddaef15b"],
+        alias="nodeUuid",
     )
     output: str = Field(
         ...,
@@ -53,7 +54,7 @@ class PortLink(BaseModel):
 
 
 class DownloadLink(BaseModel):
-    download_link: AnyUrl = Field(...)
+    download_link: AnyUrl = Field(..., alias="downloadLink")
     label: Optional[str]
 
     class Config:
@@ -144,23 +145,25 @@ class Node(BaseModel):
     inputs: Optional[Inputs] = Field(
         default_factory=dict, description="values of input properties"
     )
-    inputAccess: Optional[Dict[InputID, AccessEnum]] = Field(
-        None, description="map with key - access level pairs"
+    input_access: Optional[Dict[InputID, AccessEnum]] = Field(
+        None, description="map with key - access level pairs", alias="inputAccess"
     )
-    inputNodes: Optional[List[NodeID]] = Field(
+    input_nodes: Optional[List[NodeID]] = Field(
         default_factory=list,
         description="node IDs of where the node is connected to",
         example=["nodeUuid1", "nodeUuid2"],
+        alias="inputNodes",
     )
 
     outputs: Optional[Outputs] = Field(
         default_factory=dict, description="values of output properties"
     )
-    outputNode: Optional[bool] = Field(None, deprecated=True)
-    outputNodes: Optional[List[NodeID]] = Field(
+    output_node: Optional[bool] = Field(None, deprecated=True, alias="outputNode")
+    output_nodes: Optional[List[NodeID]] = Field(
         None,
         description="Used in group-nodes. Node IDs of those connected to the output",
         example=["nodeUuid1", "nodeUuid2"],
+        alias="outputNodes",
     )
 
     parent: Optional[NodeID] = Field(

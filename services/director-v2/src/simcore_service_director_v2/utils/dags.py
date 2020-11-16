@@ -23,7 +23,7 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
             dag_graph.add_node(
                 node_id, name=node.label, key=node.key, version=node.version
             )
-            for input_node_id in node.inputNodes:
+            for input_node_id in node.input_nodes:
                 predecessor_node = workbench.get(str(input_node_id))
                 if (
                     predecessor_node
