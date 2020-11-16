@@ -51,7 +51,7 @@ pytest_plugins = [
     "pytest_simcore.redis_service",
     "pytest_simcore.websocket_client",
     "pytest_simcore.simcore_services",
-    "pytest_simcore.aiohttp_mockups",
+    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
 ]
 
 log = logging.getLogger(__name__)

@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.environment_configs",
-    "pytest_simcore.aiohttp_mockups",
+    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
 ]
 
 
