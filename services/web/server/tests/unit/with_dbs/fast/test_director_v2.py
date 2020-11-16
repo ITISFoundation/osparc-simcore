@@ -5,7 +5,7 @@
 
 from typing import Dict
 from uuid import UUID, uuid4
-from models_library.nodes import RunningState
+from models_library.project_nodes import RunningState
 from pydantic.types import PositiveInt
 
 import pytest

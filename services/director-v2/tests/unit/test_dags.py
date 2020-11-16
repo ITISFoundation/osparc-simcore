@@ -11,7 +11,7 @@ from typing import Dict
 
 import networkx as nx
 import pytest
-from models_library.nodes import Node
+from models_library.project_nodes import Node
 from models_library.projects import Workbench
 from simcore_service_director_v2.utils.dags import create_dag_graph
 

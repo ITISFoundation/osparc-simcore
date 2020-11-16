@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, PositiveInt, constr
 
-from .nodes import Node, NodeID, Position, RunningState
+from .project_nodes import Node, NodeID, Position, RunningState
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 

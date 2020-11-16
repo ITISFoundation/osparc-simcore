@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 import networkx as nx
-from models_library.nodes import NodeID
+from models_library.project_nodes import NodeID
 from models_library.projects import Workbench
 
 from .computations import to_node_class, NodeClass

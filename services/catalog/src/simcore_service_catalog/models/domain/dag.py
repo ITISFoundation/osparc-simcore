@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from models_library.nodes import KEY_RE, VERSION_RE, Node
+from models_library.project_nodes import KEY_RE, VERSION_RE, Node
 from pydantic import BaseModel, EmailStr, Field, Json
 
 

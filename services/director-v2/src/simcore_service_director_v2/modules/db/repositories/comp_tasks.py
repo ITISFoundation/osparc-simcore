@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 
 import sqlalchemy as sa
-from models_library.nodes import Node
+from models_library.project_nodes import Node
 from models_library.projects import ProjectID, RunningState
 from models_library.services import (
     Author,

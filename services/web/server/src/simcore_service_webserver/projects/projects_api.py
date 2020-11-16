@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
-from models_library.nodes import RunningState
+from models_library.project_nodes import RunningState
 
 from models_library.projects import (
     Owner,
