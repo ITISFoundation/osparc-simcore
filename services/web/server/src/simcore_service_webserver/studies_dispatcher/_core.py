@@ -33,7 +33,7 @@ class ViewerInfo:
     @property
     def title(self) -> str:
         """ human readable title """
-        return f"{self.label.capitalize} v{self.version}"
+        return f"{self.label.capitalize()} v{self.version}"
 
 
 #
@@ -59,14 +59,16 @@ def iter_supported_filetypes() -> Iterator[Tuple[str, ViewerInfo]]:
 def find_compatible_viewer(
     file_type: str, file_size: Optional[int] = None
 ) -> ViewerInfo:
-    # Assumes size of the file in bytes
-    if file_size is not None and file_size > 50 * MEGABYTES:
-        raise MatchNotFoundError("File limit surpassed")
-
     try:
         viewer = _FILETYPE_TO_VIEWER[file_type]
     except KeyError:
-        raise MatchNotFoundError("No")
+        raise MatchNotFoundError(f"No viewer available for file type '{file_type}''")
+
+    # Assumes size of the file in bytes TODO: configurable?
+    if file_size is not None and file_size > 50 * MEGABYTES:
+        raise MatchNotFoundError(
+            f"File size {file_size*1E-6} MB is over allowed limit"
+        )
 
     return viewer
 
@@ -86,7 +88,7 @@ class ValidationMixin:
     @classmethod
     def create_from(cls, request: web.Request):
         try:
-            obj = cls(**request.query.keys())
+            obj = cls(**dict(request.query))
         except ValidationError as err:
             raise web.HTTPBadRequest(
                 content_type="application/json",
