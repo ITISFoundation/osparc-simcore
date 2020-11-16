@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if (osparc.component.export.StudyPermissions.canGroupWrite(study.getAccessRights(), myGrpId)) {
             this.__startAutoSaveTimer();
           } else {
-            const msg = this.tr("You do not have writing permissions. Changes will not be saved");
+            const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
           }
           switch (this.getPageContext()) {

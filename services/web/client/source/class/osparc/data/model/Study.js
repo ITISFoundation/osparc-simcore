@@ -209,10 +209,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
-      if (myGid in aceessRights) {
-        return aceessRights[myGid]["delete"];
-      }
-      return false;
+      return osparc.component.export.StudyPermissions.canGroupExecute(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
