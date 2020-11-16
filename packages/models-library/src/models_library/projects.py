@@ -15,12 +15,12 @@ GroupID = constr(regex=r"^\S+$")
 
 # Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
 # this is a regex for having uuids of type: 8-4-4-4-12 digits
-_NodeID_For_Dict = constr(
+_NodeIDForDict = constr(
     regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
 )
 ProjectID = UUID
 ClassifierID = str
-Workbench = Dict[_NodeID_For_Dict, Node]
+Workbench = Dict[_NodeIDForDict, Node]
 
 
 class WorkbenchUI(BaseModel):
@@ -38,8 +38,8 @@ class Slideshow(BaseModel):
 
 
 class StudyUI(BaseModel):
-    workbench: Optional[Dict[_NodeID_For_Dict, WorkbenchUI]] = Field(None)
-    slideshow: Optional[Dict[_NodeID_For_Dict, Slideshow]] = Field(None)
+    workbench: Optional[Dict[_NodeIDForDict, WorkbenchUI]] = Field(None)
+    slideshow: Optional[Dict[_NodeIDForDict, Slideshow]] = Field(None)
     current_node_id: Optional[NodeID] = Field(alias="currentNodeId")
 
     class Config:
