@@ -6,6 +6,7 @@ from typing import Optional
 
 import aiohttp
 from aiohttp import web
+from aiohttp.client_exceptions import ClientError
 from pydantic import BaseModel, HttpUrl, ValidationError
 from pydantic.types import PositiveInt
 from yarl import URL
@@ -17,9 +18,7 @@ from ._core import (
     ViewerInfo,
     find_compatible_viewer,
 )
-from ._projects import (
-    acquire_project_with_viewer,
-)
+from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
 log = logging.getLogger(__name__)
@@ -50,7 +49,6 @@ def create_redirect_response(
 
 
 # HANDLERS --------------------------------
-from aiohttp.client_exceptions import ClientError
 
 
 class QueryParams(BaseModel, ValidationMixin):
@@ -63,7 +61,8 @@ class QueryParams(BaseModel, ValidationMixin):
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's hea"""
         #
-        # NOTE: Amazon download links has HEAD operation forbidden!
+        # WARNING: Do not use this check with Amazon download links
+        #          since HEAD operation is forbidden!
         try:
             async with aiohttp.request("HEAD", self.download_link) as response:
                 response.raise_for_status()

@@ -94,7 +94,7 @@ async def create_viewer_project_model(
     file_picker_output_id = "outFile"
     file_picker = Node(
         key="simcore/services/frontend/file-picker",
-        version="1.0.0",
+        version="1.0.0", # TODO: check with odeimaiz about version here
         label="File Picker",
         inputs={},
         inputNodes=[],
@@ -112,7 +112,7 @@ async def create_viewer_project_model(
         version=viewer_info.version,
         label=viewer_info.label,
         inputs={
-            "input_1": PortLink(nodeUuid=file_picker_id, output=file_picker_output_id)
+            viewer_info.input_port_key: PortLink(nodeUuid=file_picker_id, output=file_picker_output_id)
         },
         inputNodes=[
             file_picker_id,
@@ -122,12 +122,12 @@ async def create_viewer_project_model(
     # Access rights policy
     access_rights = AccessRights(read=True, write=True, delete=True)  # will keep a copy
     if owner.is_guest:
-        # TODO: check implications with SAN??
         access_rights.write = access_rights.delete = False
 
+    # Assambles project instance
     project = Project(
         uuid=project_id,
-        name="Draft Viewer",
+        name=f"Viewer {viewer_info.title}",
         description="Temporary study to visualize downloaded file",
         thumbnail="https://placeimg.com/171/96/tech/grayscale/?0.jpg",
         prjOwner=owner.email,
@@ -138,7 +138,7 @@ async def create_viewer_project_model(
         ui=StudyUI(
             workbench={
                 file_picker_id: {"position": {"x": 305, "y": 229}},
-                viewer_id: {"position": {"x": 633, "y": 318}},
+                viewer_id: {"position": {"x": 633, "y": 229}},
             }
         ),
     )
