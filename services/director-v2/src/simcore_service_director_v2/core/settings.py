@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from models_library.basic_types import BootModeEnum
+from models_library.basic_types import BootModeEnum, PortInt
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.postgres import PostgresSettings
 from pydantic import (
@@ -31,9 +31,6 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
     "org.label-schema.vcs-ref": "vcs_ref",
     "org.label-schema.vcs-url": "vcs_url",
 }
-
-
-PortInt = conint(gt=0, lt=65535)
 
 
 class CommonConfig:
