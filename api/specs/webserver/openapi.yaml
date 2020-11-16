@@ -47,6 +47,7 @@ tags:
     description: |
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
+  - name: viewer
 
 paths:
   # DIAGNOSTICS ---------------------------------------------------------
@@ -206,6 +207,13 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services"
   /catalog/services/{service_key}/{service_version}:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services~1{service_key}~1{service_version}"
+
+  # VIEWER -------------------------------------------------------------------------
+  /viewers:
+    $ref: "./openapi-viewer.yaml#/paths/~1viewers"
+
+  /viewers/filetypes:
+    $ref: "./openapi-viewer.yaml#/paths/~1viewers~1filetypes"
 
 components:
   responses:
