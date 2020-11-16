@@ -14,8 +14,8 @@ from pydantic import HttpUrl
 
 from models_library.projects import AccessRights, Node, PortLink, Project, StudyUI
 
-from ..projects_api import get_project_for_user
-from ..projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from ..projects.projects_api import get_project_for_user
+from ..projects.projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from ..utils import now_str
 from ._core import ViewerInfo, compose_uuid_from
 from ._users import UserInfo
@@ -150,7 +150,7 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
     # TODO: move this to projects_api
     # TODO: this piece was taking fromt the end of projects.projects_handlers.create_projects
 
-    from ..projects_db import APP_PROJECT_DBAPI
+    from ..projects.projects_db import APP_PROJECT_DBAPI
     from ..computation_api import update_pipeline_db
 
     db = app[APP_PROJECT_DBAPI]
