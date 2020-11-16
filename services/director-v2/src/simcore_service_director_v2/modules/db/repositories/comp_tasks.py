@@ -139,7 +139,7 @@ class CompTasksRepository(BaseRepository):
             )
 
     @log_decorator(logger=logger)
-    async def abort_tasks_from_project(self, project: ProjectAtDB) -> None:
+    async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:
         # block all pending tasks, so the sidecars stop taking them
         await self.connection.execute(
             sa.update(comp_tasks)
