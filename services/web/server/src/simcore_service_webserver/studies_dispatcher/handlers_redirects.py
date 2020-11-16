@@ -82,7 +82,7 @@ async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
         p = QueryParams.create_from(request)
-        # TMP removed await p.check_download_link()
+        # TODO: removed await p.check_download_link()
 
         viewer: ViewerInfo = find_compatible_viewer(p.file_size, p.file_type)
 

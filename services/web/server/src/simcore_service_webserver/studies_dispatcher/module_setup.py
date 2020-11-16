@@ -9,7 +9,7 @@ from ..constants import APP_CONFIG_KEY
 from ..login.decorators import login_required
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from .handlers_redirects import get_redirection_to_viewer
-from .handlers_rest import get_viewers_handler
+from .handlers_rest import rest_handler_functions
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,7 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
     # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
     specs = app[APP_OPENAPI_SPECS_KEY]
     rest_routes = map_handlers_with_operations(
-        [
-            get_viewers_handler,
-        ],
+        rest_handler_functions,
         filter(lambda op: "viewer" in op.tags, iter_path_operations(specs)),
         strict=True,
     )
