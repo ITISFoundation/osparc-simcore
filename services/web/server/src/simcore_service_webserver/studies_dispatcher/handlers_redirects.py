@@ -84,7 +84,9 @@ async def get_redirection_to_viewer(request: web.Request):
         p = QueryParams.create_from(request)
         # TODO: removed await p.check_download_link()
 
-        viewer: ViewerInfo = find_compatible_viewer(p.file_size, p.file_type)
+        viewer: ViewerInfo = find_compatible_viewer(
+            file_type=p.file_type, file_size=p.file_size
+        )
 
         # Retrieve user or create a temporary guest
         user: UserInfo = await acquire_user(request)
@@ -112,7 +114,9 @@ async def get_redirection_to_viewer(request: web.Request):
             message=f"Sorry, we cannot render this file: {err.reason}",
         )
     except (ValidationError, web.HTTPServerError):
-        log.exception("Validation failure while processing view request: %s", p)
+        log.exception(
+            "Validation failure while processing view request: %s", request.query
+        )
         raise create_redirect_response(
             request.app,
             page="error",
