@@ -240,7 +240,7 @@ jobs:
           ./ci/github/helpers/setup_docker_buildx.bash
           echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
