@@ -5,6 +5,7 @@
 
 import json
 import urllib.parse
+from collections import namedtuple
 from pathlib import Path
 from typing import Callable, List, Tuple
 
@@ -42,49 +43,54 @@ def mocked_director_v0_service_api(minimal_app, entrypoint, exp_data, resp_alias
         yield respx_mock
 
 
-def _get_list_services_calls() -> List[Tuple]:
+ForwardToDirectorParams = namedtuple(
+    "ForwardToDirectorParams", "entrypoint,exp_status,exp_data,resp_alias"
+)
+
+
+def _get_list_services_calls() -> List[ForwardToDirectorParams]:
     return [
-        (
-            "/v0/services",
-            status.HTTP_200_OK,
-            {"data": ["service1", "service2"]},
-            "list_all_services",
+        ForwardToDirectorParams(
+            entrypoint="/v0/services",
+            exp_status=status.HTTP_200_OK,
+            exp_data={"data": ["service1", "service2"]},
+            resp_alias="list_all_services",
         ),
-        (
-            "/v0/services?service_type=computational",
-            status.HTTP_200_OK,
-            {"data": ["service1", "service2"]},
-            "list_computational_services",
+        ForwardToDirectorParams(
+            entrypoint="/v0/services?service_type=computational",
+            exp_status=status.HTTP_200_OK,
+            exp_data={"data": ["service1", "service2"]},
+            resp_alias="list_computational_services",
         ),
-        (
-            "/v0/services?service_type=dynamic",
-            status.HTTP_200_OK,
-            {"data": ["service1", "service2"]},
-            "list_dynamic_services",
+        ForwardToDirectorParams(
+            entrypoint="/v0/services?service_type=dynamic",
+            exp_status=status.HTTP_200_OK,
+            exp_data={"data": ["service1", "service2"]},
+            resp_alias="list_dynamic_services",
         ),
     ]
 
 
-def _get_service_version_calls() -> List[Tuple]:
+def _get_service_version_calls() -> List[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
     return [
-        (
-            "/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
-            status.HTTP_200_OK,
-            {"data": ["stuff about my service"]},
-            "get_service_version",
+        ForwardToDirectorParams(
+            entrypoint="/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
+            exp_status=status.HTTP_200_OK,
+            exp_data={"data": ["stuff about my service"]},
+            resp_alias="get_service_version",
         )
     ]
 
 
-def _get_service_version_extras_calls() -> List[Tuple]:
+def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
     # TODO: here we see the return value is currently not validated
     return [
-        (
-            "/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4/extras",
-            status.HTTP_200_OK,
-            {"data": "extra stuff about my service"},
-            "get_service_extras",
+        ForwardToDirectorParams(
+            entrypoint="/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4/extras",
+            exp_status=status.HTTP_200_OK,
+            exp_data={"data": "extra stuff about my service"},
+            resp_alias="get_service_extras",
         )
     ]
 
