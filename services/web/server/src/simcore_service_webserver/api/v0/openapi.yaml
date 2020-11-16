@@ -13145,48 +13145,54 @@ paths:
       operationId: get_viewer_for_file
       parameters:
         - in: query
-          name: file_name
-          required: true
-          schema:
-            title: File Name
-            type: string
-        - in: query
-          name: file_size
-          required: true
-          schema:
-            title: File Size in Bytes
-            type: integer
-        - in: query
           name: file_type
           required: true
           schema:
             title: File Type
             type: string
+        - in: query
+          name: file_name
+          required: false
+          schema:
+            title: File Name
+            type: string
+        - in: query
+          name: file_size
+          required: false
+          schema:
+            title: File Size in Bytes
+            type: integer
       responses:
         '200':
           content:
             application/json:
               schema:
                 properties:
-                  file_type:
-                    title: File Type
-                    type: string
-                  redirection_url:
-                    description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
-                    format: uri
-                    maxLength: 2083
-                    minLength: 1
-                    title: Redirection Url
-                    type: string
-                  viewer_title:
-                    description: Short formatted label with name and version of the viewer
-                    title: Viewer Title
-                    type: string
+                  data:
+                    properties:
+                      file_type:
+                        title: File Type
+                        type: string
+                      redirection_url:
+                        description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
+                        format: uri
+                        maxLength: 2083
+                        minLength: 1
+                        title: Redirection Url
+                        type: string
+                      viewer_title:
+                        description: Short formatted label with name and version of the viewer
+                        title: Viewer Title
+                        type: string
+                    required:
+                      - file_type
+                      - viewer_title
+                      - redirection_url
+                    title: FileType2Viewer
+                    type: object
                 required:
-                  - file_type
-                  - viewer_title
-                  - redirection_url
-                title: FileType2Viewer
+                  - data
+                title: FielType2ViewerEnveloped
                 type: object
           description: Successful Response
       summary: Get Viewer For File
@@ -13200,30 +13206,35 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  properties:
-                    file_type:
-                      title: File Type
-                      type: string
-                    redirection_url:
-                      description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
-                      format: uri
-                      maxLength: 2083
-                      minLength: 1
-                      title: Redirection Url
-                      type: string
-                    viewer_title:
-                      description: Short formatted label with name and version of the viewer
-                      title: Viewer Title
-                      type: string
-                  required:
-                    - file_type
-                    - viewer_title
-                    - redirection_url
-                  title: FileType2Viewer
-                  type: object
-                title: Response List Supported Filetypes
-                type: array
+                properties:
+                  data:
+                    items:
+                      properties:
+                        file_type:
+                          title: File Type
+                          type: string
+                        redirection_url:
+                          description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
+                          format: uri
+                          maxLength: 2083
+                          minLength: 1
+                          title: Redirection Url
+                          type: string
+                        viewer_title:
+                          description: Short formatted label with name and version of the viewer
+                          title: Viewer Title
+                          type: string
+                      required:
+                        - file_type
+                        - viewer_title
+                        - redirection_url
+                      title: FileType2Viewer
+                      type: object
+                    type: array
+                required:
+                  - data
+                title: FieldType2ViewerListEnveloped
+                type: object
           description: Successful Response
       summary: List Supported Filetypes
       tags:
