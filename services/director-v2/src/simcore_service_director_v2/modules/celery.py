@@ -14,7 +14,7 @@ from ..utils.client_decorators import handle_retry
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI, settings: CeleryConfig):
+def setup(app: FastAPI, settings: CeleryConfig) -> None:
     if not settings:
         settings = CeleryConfig.create_from_env()
 
@@ -42,12 +42,12 @@ class CeleryClient:
     settings: CeleryConfig
 
     @classmethod
-    def create(cls, app: FastAPI, *args, **kwargs):
+    def create(cls, app: FastAPI, *args, **kwargs) -> "CeleryClient":
         app.state.celery_client = cls(*args, **kwargs)
         return cls.instance(app)
 
     @classmethod
-    def instance(cls, app: FastAPI):
+    def instance(cls, app: FastAPI) -> "CeleryClient":
         return app.state.celery_client
 
     @handle_retry(logger)
