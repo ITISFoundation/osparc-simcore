@@ -69,7 +69,7 @@ class CustomFormatter(logging.Formatter):
 DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)] %(message)s"
 
 
-def config_all_logger():
+def config_all_loggers():
     loggers = [logging.getLogger()] + [
         logging.getLogger(name) for name in logging.root.manager.loggerDict
     ]
