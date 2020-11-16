@@ -22,6 +22,23 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 log = logging.getLogger(__name__)
 
+# imports the fixtures in the top level conftest.py
+pytest_plugins = [
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.environment_configs",
+    "pytest_simcore.schemas",
+    "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker_registry",
+    "pytest_simcore.rabbit_service",
+    "pytest_simcore.celery_service",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.redis_service",
+    "pytest_simcore.websocket_client",
+    "pytest_simcore.simcore_services",
+    "pytest_simcore.aiohttp_mockups",
+]
+
 # mute noisy loggers
 logging.getLogger("openapi_spec_validator").setLevel(logging.WARNING)
 logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
