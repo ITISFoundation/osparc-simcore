@@ -679,6 +679,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     updateStudyDocument: function(run = false) {
+      const myGrpId = osparc.auth.Data.getInstance().getGroupId();
+      if (!osparc.component.export.StudyPermissions.canGroupWrite(this.getStudy().getAccessRights(), myGrpId)) {
+        return new Promise(resolve => {
+          resolve();
+        });
+      }
+
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();
