@@ -6,9 +6,11 @@
 
 """
 import json
+import logging
 from typing import Dict, Tuple
 
 from aiohttp import web
+from pydantic import HttpUrl
 
 from models_library.projects import AccessRights, Node, PortLink, Project, StudyUI
 
@@ -18,21 +20,21 @@ from ..utils import now_str
 from ._core import ViewerInfo, compose_uuid_from
 from ._users import UserInfo
 
-from pydantic import HttpUrl
-
-import logging
-
 log = logging.getLogger(__name__)
 
 
 async def acquire_project_with_viewer(
     app: web.Application, user: UserInfo, viewer: ViewerInfo, download_link: HttpUrl
-):
+) -> Tuple[str, str]:
+    #
     # Generate one project per user + download_link + viewer
     #   - if user requests several times, the same project is reused
     #   - if user is not a guest, the project will be saved in it's account (desired?)
     #
     project_id = compose_uuid_from(user.id, viewer.footprint, download_link)
+
+    # Ids are linked to produce a footprint (see viewer_project_exists)
+    file_picker_id, viewer_id = generate_nodeids(project_id)
 
     try:
         project_db: Dict = await get_project_for_user(
@@ -40,7 +42,7 @@ async def acquire_project_with_viewer(
         )
 
         # check if viewer already created by this app module
-        valid_viewer = set(generate_nodeids(project_id)) == set(
+        valid_viewer = {file_picker_id, viewer_id} == set(
             project_db.get("workbench", {}).keys()
         )
         if valid_viewer:
@@ -62,11 +64,11 @@ async def acquire_project_with_viewer(
 
     if not viewer_exists:
         project = await create_viewer_project_model(
-            project_id, user, download_link, viewer
+            project_id, file_picker_id, viewer_id, user, download_link, viewer
         )
         await add_new_project(app, project, user)
 
-    return project_id
+    return project_id, viewer_id
 
 
 # UTILITIES -------------------------------------------------
@@ -82,13 +84,12 @@ def generate_nodeids(project_id: str) -> Tuple[str, str]:
 
 async def create_viewer_project_model(
     project_id: str,
+    file_picker_id: str,
+    viewer_id: str,
     owner: UserInfo,
     download_link: str,
     viewer_info: ViewerInfo,
 ) -> Project:
-
-    # Ids are linked to produce a footprint (see viewer_project_exists)
-    file_picker_id, viewer_id = generate_nodeids(project_id)
 
     file_picker_output_id = "outFile"
     file_picker = Node(
