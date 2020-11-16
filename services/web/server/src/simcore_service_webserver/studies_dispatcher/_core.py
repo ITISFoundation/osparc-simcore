@@ -22,7 +22,7 @@ class ViewerInfo:
     key: str
     version: str
     label: str
-    input_port_key: str = "input_1" # name of the connection port
+    input_port_key: str = "input_1"  # name of the connection port, since it is service-dependent
 
     @property
     def footprint(self) -> str:
@@ -37,8 +37,16 @@ class ViewerInfo:
 #
 # NOTE: For the moment, viewers-filetype association is hard-coded
 #
-_SIM4LIFE_VIEWER = ViewerInfo(key="simcore/services/dynamic/sim4life", version="1.0.16", label="sim4life")
-_FILETYPE_TO_VIEWER = {"DICOM": _SIM4LIFE_VIEWER}
+_SIM4LIFE_VIEWER = ViewerInfo(
+    key="simcore/services/dynamic/sim4life", version="1.0.16", label="sim4life"
+)
+_RAWGRAPHS_VIEWER = ViewerInfo(
+    key="simcore/services/dynamic/raw-graphs",
+    version="2.10.6",
+    label="2D plot - RAWGraphs",
+)
+
+_FILETYPE_TO_VIEWER = {"DICOM": _SIM4LIFE_VIEWER, "CSV": _RAWGRAPHS_VIEWER}
 
 
 def iter_supported_filetypes() -> Iterator[Tuple[str, ViewerInfo]]:
