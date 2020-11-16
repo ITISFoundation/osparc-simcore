@@ -7,7 +7,7 @@ import json
 import urllib.parse
 from collections import namedtuple
 from pathlib import Path
-from typing import Callable, List, Tuple
+from typing import Callable, List
 
 import pytest
 import respx
