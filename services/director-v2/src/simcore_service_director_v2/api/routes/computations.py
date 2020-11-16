@@ -40,6 +40,8 @@ from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
 router = APIRouter()
 log = logging.getLogger(__file__)
 
+PIPELINE_ABORT_TIMEOUT_S = 10
+
 
 def celery_on_message(body):
     # FIXME: this might become handy when we stop starting tasks recursively
@@ -283,10 +285,8 @@ async def delete_pipeline(
                 project, comp_tasks, computation_tasks, celery_client
             )
 
-            MAX_ABORT_WAITING_TIME = 10
-
             @retry(
-                stop=stop_after_delay(MAX_ABORT_WAITING_TIME),
+                stop=stop_after_delay(PIPELINE_ABORT_TIMEOUT_S),
                 wait=wait_random(0, 2),
                 retry=retry_if_result(lambda result: result is False),
                 reraise=True,
@@ -303,7 +303,12 @@ async def delete_pipeline(
                 return is_pipeline_stopped(pipeline_state)
 
             # wait for the pipeline to be stopped
-            check_pipeline_stopped()
+            if not check_pipeline_stopped():
+                log.error(
+                    "pipeline %s could not be stopped properly after %ss",
+                    project_id,
+                    PIPELINE_ABORT_TIMEOUT_S,
+                )
 
         # delete the pipeline now
         await computation_tasks.delete_tasks_from_project(project)
