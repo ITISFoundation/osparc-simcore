@@ -118,13 +118,13 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         });
       this.add(moreCtrls);
 
-      const simCtrls = new qx.ui.toolbar.Part();
+      const pipelineCtrls = new qx.ui.toolbar.Part();
       const stopButton = this.__createStopButton();
       stopButton.setEnabled(false);
-      simCtrls.add(stopButton);
+      pipelineCtrls.add(stopButton);
       const startButton = this.__createStartButton();
-      simCtrls.add(startButton);
-      this.add(simCtrls);
+      pipelineCtrls.add(startButton);
+      this.add(pipelineCtrls);
 
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
