@@ -425,7 +425,9 @@ async def _get_project_lock_state(
         # checks who is using it
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
         usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
-        assert len(usernames) <= 1  # currently not possible to have more than 1
+        assert (
+            len(usernames) <= 1
+        )  # nosec  # currently not possible to have more than 1
 
         # based on usage, sets an state
         is_locked: bool = len(usernames) > 0
