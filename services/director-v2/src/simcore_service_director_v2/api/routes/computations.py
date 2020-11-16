@@ -165,7 +165,7 @@ async def get_computation(
     log.debug("User %s getting computation status for project %s", user_id, project_id)
     try:
         # get the project
-        project: ProjectAtDB = await project_repo.get_project(project_id)
+        await project_repo.get_project(project_id)
         # get the project task states
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
@@ -182,7 +182,7 @@ async def get_computation(
         )
 
         task_out = ComputationTaskOut(
-            id=project.uuid,
+            id=project_id,
             state=pipeline_state,
             url=f"{request.url.remove_query_params('user_id')}",
         )
