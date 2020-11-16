@@ -367,7 +367,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
-        const image = this.getChildControl("shared");
+        const sharedIcon = this.getChildControl("shared");
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
@@ -384,7 +384,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             }
             const orgs = values.length === 3 ? values[2] : [];
             const groups = [orgMembs, orgs, [all]];
-            this.__setSharedIcon(image, value, groups);
+            this.__setSharedIcon(sharedIcon, value, groups);
           });
       }
     },
