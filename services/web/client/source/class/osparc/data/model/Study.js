@@ -229,6 +229,12 @@ qx.Class.define("osparc.data.model.Study", {
       this.getWorkbench().buildWorkbench();
     },
 
+    canIWrite: function() {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const aceessRights = this.getAccessRights();
+      return osparc.component.export.StudyPermissions.canGroupWrite(aceessRights, myGid);
+    },
+
     openStudy: function() {
       const params = {
         url: {
