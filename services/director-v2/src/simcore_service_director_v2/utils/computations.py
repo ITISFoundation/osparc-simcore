@@ -30,7 +30,7 @@ def get_pipeline_state_from_task_states(
                     return RunningState.NOT_STARTED
             return the_state
 
-        if all(s in [RunningState.SUCCESS, RunningState.PENDING] for s in set_states):
+        if set_states.issubset({RunningState.SUCCESS, RunningState.PENDING}):
             # this is a started pipeline
             return RunningState.STARTED
 
