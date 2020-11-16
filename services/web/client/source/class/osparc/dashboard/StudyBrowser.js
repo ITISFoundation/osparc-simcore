@@ -434,6 +434,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(saveAsTemplateButton);
       }
 
+      if (osparc.data.model.Study.hasSlideshow(studyData)) {
+        const startAsSlideshowButton = this.__getStartAsSlideshowButton(studyData);
+        menu.add(startAsSlideshowButton);
+      }
+
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
       if (deleteButton) {
         menu.addSeparator();
@@ -522,6 +527,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
       }, this);
       return saveAsTemplateButton;
+    },
+
+    __getStartAsSlideshowButton: function(studyData) {
+      const startAsSlideshowButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
+      startAsSlideshowButton.addListener("execute", () => {
+        this.__startStudy(studyData["uuid"], "slideshow");
+      }, this);
+      return startAsSlideshowButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
