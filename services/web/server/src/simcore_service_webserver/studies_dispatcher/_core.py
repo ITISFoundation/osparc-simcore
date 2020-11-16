@@ -2,10 +2,10 @@ import uuid
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import Iterator, Optional, Tuple
 
 from aiohttp import web
 from pydantic import ValidationError
-from typing import Iterator, Tuple
 
 MEGABYTES = 1e6
 
@@ -22,7 +22,9 @@ class ViewerInfo:
     key: str
     version: str
     label: str
-    input_port_key: str = "input_1"  # name of the connection port, since it is service-dependent
+    input_port_key: str = (
+        "input_1"  # name of the connection port, since it is service-dependent
+    )
 
     @property
     def footprint(self) -> str:
@@ -54,9 +56,11 @@ def iter_supported_filetypes() -> Iterator[Tuple[str, ViewerInfo]]:
         yield file_type, deepcopy(view_info)
 
 
-def find_compatible_viewer(file_size: int, file_type: str) -> ViewerInfo:
+def find_compatible_viewer(
+    file_type: str, file_size: Optional[int] = None
+) -> ViewerInfo:
     # Assumes size of the file in bytes
-    if file_size > 50 * MEGABYTES:
+    if file_size is not None and file_size > 50 * MEGABYTES:
         raise MatchNotFoundError("File limit surpassed")
 
     try:
