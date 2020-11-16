@@ -27,7 +27,7 @@ def get_pipeline_state_from_task_states(
             if the_state == RunningState.PUBLISHED:
                 # FIXME: this should be done automatically after the timeout!!
                 if (now - last_update).seconds > publication_timeout:
-                    return RunningState.NOT_STARTED
+                    the_state = RunningState.NOT_STARTED
             return the_state
 
         if set_states.issubset({RunningState.SUCCESS, RunningState.PENDING}):
