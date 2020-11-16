@@ -52,6 +52,7 @@ class CeleryClient:
 
     @handle_retry(logger)
     def send_task(self, task_name: str, *args, **kwargs) -> Task:
+        # TODO: check what can happen when exceptions are thrown (see [https://docs.celeryproject.org/en/2.4-archived/reference/celery.exceptions.html?highlight=exceptions#module-celery.exceptions])
         return self.client.send_task(task_name, *args, **kwargs)
 
     def send_computation_task(self, user_id: UserID, project_id: ProjectID) -> Task:
