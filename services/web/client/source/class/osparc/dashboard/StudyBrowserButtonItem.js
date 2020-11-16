@@ -367,7 +367,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 
-        this._applyPermissions(value);
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          this._applyStudyPermissions(value);
+        }
       }
     },
 
@@ -440,12 +442,19 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyPermissions: function(value) {
-      const myUserId = osparc.auth.Data.getInstance().getUserId();
-      console.log("_applyPermissions", value, myUserId);
+    _applyStudyPermissions: function(accessRights) {
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      console.log("_applyStudyPermissions", accessRights, myGroupId);
 
+      const studyPerm = osparc.component.export.StudyPermissions;
       const image = this.getChildControl("permission-icon");
-      image.setSource(this.self().PERM_READ);
+      if (studyPerm.canGroupExecute(accessRights, myGroupId)) {
+        image.setSource(this.self().PERM_DELETE);
+      } else if (studyPerm.canGroupWrite(accessRights, myGroupId)) {
+        image.setSource(this.self().PERM_WRITE);
+      } else {
+        image.setSource(this.self().PERM_READ);
+      }
 
       this.addListener("mouseover", () => image.show(), this);
       this.addListener("mouseout", () => image.exclude(), this);

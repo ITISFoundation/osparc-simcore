@@ -41,6 +41,33 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
   },
 
   statics: {
+    canGroupRead: function(accessRights, GID) {
+      if (GID in accessRights) {
+        return accessRights[GID]["read"];
+      }
+      return false;
+    },
+    canGroupWrite: function(accessRights, GID) {
+      if (GID in accessRights) {
+        return accessRights[GID]["write"];
+      }
+      return false;
+    },
+    canGroupExecute: function(accessRights, GID) {
+      if (GID in accessRights) {
+        return accessRights[GID]["delete"];
+      }
+      return false;
+    },
+
+    getViewerAccessRight: function() {
+      return {
+        "read": true,
+        "write": false,
+        "delete": false
+      };
+    },
+
     getCollaboratorAccessRight: function() {
       return {
         "read": true,
