@@ -79,7 +79,7 @@ async def get_redirection_to_viewer(request: web.Request):
         user: UserInfo = await acquire_user(request)
 
         # Generate one project per user + download_link + viewer
-        project_id: str = await acquire_project_with_viewer(
+        project_id, viewer_id = await acquire_project_with_viewer(
             request.app, user, viewer, p.download_link
         )
 
@@ -88,6 +88,7 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             page="view",
             project_id=project_id,
+            viewer_node_id=viewer_id,
             file_name=p.file_name,
             file_size=p.file_size,
         )
