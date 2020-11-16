@@ -143,7 +143,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
     TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/14"
+    SERVICE_ICON: "@FontAwesome5Solid/paw/14",
+    PERM_READ: "@FontAwesome5Solid/eye/16",
+    PERM_WRITE: "@FontAwesome5Solid/edit/16",
+    PERM_DELETE: "@FontAwesome5Solid/crown/16"
   },
 
   members: {
@@ -190,14 +193,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             left: 0
           });
           break;
-        case "slideshow-icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/caret-square-right/24").set({
-            toolTipText: this.tr("Start Guided mode")
-          });
-          control.addListener("tap", e => {
-            this.fireEvent("startSlideshow");
-            e.stopPropagation();
-          }, this);
+        case "permission-icon": {
+          control = new qx.ui.basic.Image();
+          control.exclude();
           this._add(control, {
             bottom: 2,
             right: 2
@@ -207,24 +205,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
 
       return control || this.base(arguments, id);
-    },
-
-    // overriden
-    _onPointerOver: function() {
-      this.base(arguments);
-
-      if (!this.getMultiSelectionMode() && osparc.data.model.Study.hasSlideshow(this.getResourceData())) {
-        const slideshowIcon = this.getChildControl("slideshow-icon");
-        slideshowIcon.show();
-      }
-    },
-
-    // overridden
-    _onPointerOut : function() {
-      this.base(arguments);
-
-      const slideshowIcon = this.getChildControl("slideshow-icon");
-      slideshowIcon.exclude();
     },
 
     isResourceType: function(resourceType) {
@@ -386,6 +366,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             const groups = [orgMembs, orgs, [all]];
             this.__setSharedIcon(sharedIcon, value, groups);
           });
+
+        this._applyPermissions(value);
       }
     },
 
@@ -456,6 +438,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           tagsContainer.add(tagUI);
         });
       }
+    },
+
+    _applyPermissions: function(value) {
+      const myUserId = osparc.auth.Data.getInstance().getUserId();
+      console.log("_applyPermissions", value, myUserId);
+
+      const image = this.getChildControl("permission-icon");
+      image.setSource(this.self().PERM_READ);
+
+      this.addListener("mouseover", () => image.show(), this);
+      this.addListener("mouseout", () => image.exclude(), this);
     },
 
     _applyState: function(state) {
