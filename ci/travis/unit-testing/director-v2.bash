@@ -32,7 +32,7 @@ before_script() {
 script() {
     if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}";
     then
-        pytest --cov=simcore_service_director-v2 --durations=10 --cov-append \
+        pytest --numprocesses=auto --cov=simcore_service_director-v2 --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" services/director-v2/tests
     else
