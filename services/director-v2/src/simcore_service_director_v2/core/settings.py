@@ -1,9 +1,9 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 import logging
-from enum import Enum
 from typing import Optional
 
+from models_library.basic_types import BootModeEnum
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.postgres import PostgresSettings
 from pydantic import (
@@ -34,13 +34,6 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
 
 
 PortInt = conint(gt=0, lt=65535)
-
-
-class BootModeEnum(str, Enum):
-    DEFAULT = "default"
-    DEBUG = "debug-ptvsd"
-    PRODUCTION = "production"
-    DEVELOPMENT = "development"
 
 
 class CommonConfig:
