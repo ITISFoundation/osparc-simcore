@@ -266,6 +266,12 @@ def test_abort_computation(
     )
     assert task_out.state == RunningState.ABORTED
 
+    # try again, just for fun, it should not throw
+    response = client.post(f"{task_out.url}:stop", json={"user_id": user_id})
+    assert (
+        response.status_code == status.HTTP_204_NO_CONTENT
+    ), f"response code is {response.status_code}, error: {response.text}"
+
 
 def test_delete_computation(
     client: TestClient,

@@ -234,14 +234,11 @@ async def stop_computation_project(
         pipeline_state = get_pipeline_state_from_task_states(
             comp_tasks, celery_client.settings.publication_timeout
         )
-        if is_pipeline_stopped(pipeline_state):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Projet {project_id} already completed, current state is {pipeline_state}",
+
+        if is_pipeline_running(pipeline_state):
+            await _abort_pipeline_tasks(
+                project, comp_tasks, computation_tasks, celery_client
             )
-        await _abort_pipeline_tasks(
-            project, comp_tasks, computation_tasks, celery_client
-        )
 
     except ProjectNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
