@@ -323,6 +323,28 @@ def test_update_and_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
+    assert (
+        task_out.start_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    )
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+
+    # update the pipeline
+    response = client.patch(
+        COMPUTATION_URL,
+        json={"user_id": user_id},
+    )
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    task_out = ComputationTaskOut.parse_obj(response.json())
+
+    assert task_out.id == sleepers_project.uuid
+    assert (
+        task_out.start_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:start"
+    )
     assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
     assert not task_out.stop_url
 
@@ -361,6 +383,16 @@ def test_update_and_delete_computation(
         task_out.stop_url
         == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
+
+    # start it now
+    response = client.post(
+        task_out.start_url,
+        json={"user_id": user_id},
+    )
+    assert (
+        response.status_code == status.HTTP_202_ACCEPTED
+    ), f"response code is {response.status_code}, error: {response.text}"
+    task_out = ComputationTaskOut.parse_obj(response.json())
 
     # wait until the pipeline is started
     task_out = _assert_pipeline_status(
