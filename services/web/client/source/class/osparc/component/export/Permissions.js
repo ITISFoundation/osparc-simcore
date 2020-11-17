@@ -237,9 +237,7 @@ qx.Class.define("osparc.component.export.Permissions", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          if (this._isUserOwner()) {
-            collaborator["showOptions"] = true;
-          }
+          collaborator["showOptions"] = this._isUserOwner();
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
           if (parseInt(gid) === osparc.auth.Data.getInstance().getGroupId()) {
             this.__collaboratorsModel.insertAt(0, collaboratorModel);
