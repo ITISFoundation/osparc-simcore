@@ -104,6 +104,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __editSlidesButton: null,
     __exportButton: null,
     __openButton: null,
+    __renameButton: null,
     __deleteButton: null,
     __currentNodeId: null,
     __toolbarInitMinWidth: null,
@@ -174,7 +175,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       osparc.utils.Utils.setIdToWidget(openButton, "openServiceBtn");
       toolbar.add(openButton);
 
-      const renameButton = new qx.ui.toolbar.Button(this.tr("Rename"), "@FontAwesome5Solid/i-cursor/"+iconSize);
+      const renameButton = this.__renameButton = new qx.ui.toolbar.Button(this.tr("Rename"), "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
         this.__openItemRenamer();
       }, this);
@@ -378,14 +379,21 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __updateButtons: function(nodeId, item) {
       const studyId = this.getStudy().getUuid();
+      const readOnly = this.getStudy().isReadOnly();
+      if (this.__editSlidesButton) {
+        this.__editSlidesButton.setEnabled(!readOnly);
+      }
       if (this.__exportButton) {
         this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
       }
-      if (this.__deleteButton) {
-        this.__deleteButton.setEnabled(studyId !== nodeId && this.__currentNodeId !== nodeId);
-      }
       if (this.__openButton) {
         this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
+      }
+      if (this.__renameButton) {
+        this.__renameButton.setEnabled(!readOnly);
+      }
+      if (this.__deleteButton) {
+        this.__deleteButton.setEnabled(!readOnly && studyId !== nodeId && this.__currentNodeId !== nodeId);
       }
     },
 
