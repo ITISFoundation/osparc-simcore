@@ -950,7 +950,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         dragging = false;
       }
 
-      if (!this.isPropertyInitialized("study")) {
+      if (!this.isPropertyInitialized("study") || this.getStudy().isReadOnly()) {
         return;
       }
       const nodeWidth = osparc.component.workbench.NodeUI.NodeWidth;
