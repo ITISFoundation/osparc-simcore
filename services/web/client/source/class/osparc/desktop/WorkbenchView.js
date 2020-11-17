@@ -424,6 +424,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
+      const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
+      workbenchUI.setStudy(study);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
