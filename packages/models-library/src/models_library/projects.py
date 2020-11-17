@@ -1,47 +1,21 @@
-import sys
+"""
+    Models a study's project document
+"""
 from copy import deepcopy
-from enum import Enum
-from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl
 
-from .basic_regex import DATE_RE, UUID_RE
-from .project_nodes import Node, NodeID
+from .basic_regex import DATE_RE
+from .projects_access import AccessRights, GroupID
+from .projects_nodes import Node
+from .projects_nodes_io import NodeID_AsDictKey
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
 
-#
-#
-#
-# NOTE: "examples" = [ ...] keyword and NOT "example". See https://json-schema.org/understanding-json-schema/reference/generic.html#annotations
-#
-
-current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
-
-
-GroupID = constr(regex=r"^\S+$")
 ProjectID = UUID
-
-GroupID = constr(regex=r"^\d+$")
-NodeID = constr(regex=UUID_RE)
 ClassifierID = str
-
-
-class AccessEnum(str, Enum):
-    ReadAndWrite = "ReadAndWrite"
-    Invisible = "Invisible"
-    ReadOnly = "ReadOnly"
-
-
-class AccessRights(BaseModel):
-    read: bool = Field(..., description="gives read access")
-    write: bool = Field(..., description="gives write access")
-    delete: bool = Field(..., description="gives deletion rights")
-
-    class Config:
-        extra = Extra.forbid
 
 
 class Project(BaseModel):
@@ -69,14 +43,14 @@ class Project(BaseModel):
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
-    # Ownership and access
+    # Ownership and Access  (SEE projects_access.py)
     prjOwner: EmailStr = Field(..., description="user email")
     accessRights: Dict[GroupID, AccessRights] = Field(
         ...,
         description="object containing the GroupID as key and read/write/execution permissions as value",
     )
 
-    # Timestamps
+    # Timestamps   TODO: should we use datetime??
     creationDate: str = Field(
         ...,
         regex=DATE_RE,
@@ -98,28 +72,35 @@ class Project(BaseModel):
         examples=["some:id:to:a:classifier"],
     )
 
-    # Pipeline
-    workbench: Dict[NodeID, Node] = ...
+    # Pipeline of nodes ( SEE projects_nodes.py)
+    workbench: Dict[NodeID_AsDictKey, Node] = ...
 
-    # Front-end specific
-    ui: Union[StudyUI, None] = None
-    dev: Dict = Field({}, description="object used for development purpoqses only")
-
-    # State
+    # Project state (SEE projects_state.py)
     state: Optional[ProjectState] = None
 
+    # UI front-end setup (SEE projects_ui.py)
+    ui: Optional[StudyUI] = None
+
+    # Dev only
+    dev: Dict = Field({}, description="object used for development purposes only")
+
     class Config:
-        description = "Description of a simcore project"
-        title = "simcore project"
+        description = "Document that stores metadata, pipeline and UI setup of a study"
+        title = "osparc-simcore project"
         extra = Extra.forbid
 
         # pylint: disable=no-self-argument
         def schema_extra(schema: Dict, _model: "Project"):
             # pylint: disable=unsubscriptable-object
 
-            # Patch to allow 'state' to be nullable
-            #  See https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
+            # Patch to allow jsonschema nullable
+            # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
             state_pydantic_schema = deepcopy(schema["properties"]["state"])
             schema["properties"]["state"].update(
                 {"anyOf": [{"type": "null"}, state_pydantic_schema]}
+            )
+
+            ui_pydantic_schema = deepcopy(schema["properties"]["ui"])
+            schema["properties"]["ui"].update(
+                {"anyOf": [{"type": "null"}, ui_pydantic_schema]}
             )
