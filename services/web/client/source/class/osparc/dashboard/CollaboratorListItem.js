@@ -45,7 +45,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
   },
 
   events: {
-    "promoteCollaborator": "qx.event.type.Data",
+    "makeOwner": "qx.event.type.Data",
     "removeCollaborator": "qx.event.type.Data"
   },
 
@@ -130,7 +130,7 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       if (!osparc.component.export.Permissions.canDelete(accessRights) && this.getCollabType() === 2) {
         const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
         makeOwnerButton.addListener("execute", () => {
-          this.fireDataEvent("promoteCollaborator", {
+          this.fireDataEvent("makeOwner", {
             gid: this.getKey(),
             name: this.getTitle()
           });

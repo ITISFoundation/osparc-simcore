@@ -112,28 +112,6 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         });
     },
 
-    _promoteCollaborator: function(collaborator) {
-      this.__serviceData["access_rights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this.__serviceData["key"],
-          this.__serviceData["version"]
-        ),
-        data: this.__serviceData
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.fireDataEvent("updateService", serviceData);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Owner"), "ERROR");
-          console.error(err);
-        });
-    },
-
     _deleteCollaborator: function(collaborator) {
       const success = this.self().removeCollaborator(this.__serviceData, collaborator["gid"]);
       if (!success) {
@@ -156,6 +134,28 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
+          console.error(err);
+        });
+    },
+
+    _makeOwner: function(collaborator) {
+      this.__serviceData["access_rights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(
+          this.__serviceData["key"],
+          this.__serviceData["version"]
+        ),
+        data: this.__serviceData
+      };
+      osparc.data.Resources.fetch("services", "patch", params)
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
+          this.__reloadOrganizationsAndMembers();
+          this.__reloadCollaboratorsList();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Owner"), "ERROR");
           console.error(err);
         });
     }
