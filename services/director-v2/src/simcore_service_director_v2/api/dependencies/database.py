@@ -20,16 +20,18 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
     ) -> AsyncGenerator[BaseRepository, None]:
 
         logger.debug(
-            "Acquiring pg connection from pool: current=%d, free=%d, reserved=[%d, %d]",
+            "Acquiring pg connection from pool: pool size=%d, acquired=%d, free=%d, reserved=[%d, %d]",
             engine.size,
+            engine.size - engine.freesize,
             engine.freesize,
             engine.minsize,
             engine.maxsize,
         )
         if engine.freesize <= 1:
             logger.warning(
-                "Last or no pg connection in pool: current=%d, free=%d, reserved=[%d, %d]",
+                "Last or no pg connection in pool: pool size=%d, acquired=%d, free=%d, reserved=[%d, %d]",
                 engine.size,
+                engine.size - engine.freesize,
                 engine.freesize,
                 engine.minsize,
                 engine.maxsize,
@@ -39,8 +41,9 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
             yield repo_type(conn)
 
         logger.debug(
-            "Released pg connection: current=%d, free=%d, reserved=[%d, %d]",
+            "Released pg connection: pool size=%d, acquired=%d, free=%d, reserved=[%d, %d]",
             engine.size,
+            engine.size - engine.freesize,
             engine.freesize,
             engine.minsize,
             engine.maxsize,
