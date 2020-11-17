@@ -22,6 +22,7 @@ from ..resource_manager.config import (
     GUEST_USER_RC_LOCK_FORMAT,
 )
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
+from ..users_api import get_user
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +56,12 @@ async def acquire_user(request: web.Request) -> UserInfo:
         is_anonymous_user = True
 
     return UserInfo(
-        needs_login=is_anonymous_user, is_guest=user.get("role") == GUEST, **user
+        id=user["id"],
+        name=user["name"],
+        email=user["email"],
+        primary_gid=user["primary_gid"],
+        needs_login=is_anonymous_user,
+        is_guest=user.get("role") == GUEST,
     )
 
 
@@ -69,10 +75,9 @@ async def ensure_authentication(
 
 
 async def _get_authorized_user(request: web.Request) -> Dict:
-
     db = get_storage(request.app)
     userid = await authorized_userid(request)
-    user = await db.get_user({"id": userid})
+    user = await get_user(request.app, userid)
     return user
 
 
@@ -114,7 +119,8 @@ async def _create_temporary_user(request: web.Request):
         GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
         lock_timeout=MAX_DELAY_TO_CREATE_USER,
     ):
-        user = await db.create_user(
+        # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
+        usr = await db.create_user(
             {
                 "name": random_uname,
                 "email": email,
@@ -124,6 +130,7 @@ async def _create_temporary_user(request: web.Request):
                 "created_ip": get_client_ip(request),
             }
         )
+        user: Dict = await get_user(request.app, usr["id"])
 
         # (2) read details above
         await lock_manager.lock(
