@@ -394,9 +394,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__itemClicked(item, e.getNativeEvent().shiftKey);
         }
       }, this);
-      item.addListener("startSlideshow", () => {
-        this.__startStudy(studyData["uuid"], "slideshow");
-      }, this);
 
       return item;
     },

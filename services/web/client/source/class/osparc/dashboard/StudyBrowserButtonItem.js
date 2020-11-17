@@ -132,10 +132,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     }
   },
 
-  events: {
-    "startSlideshow": "qx.event.type.Event"
-  },
-
   statics: {
     MENU_BTN_WIDTH: 25,
     SHARED_USER: "@FontAwesome5Solid/user/14",
