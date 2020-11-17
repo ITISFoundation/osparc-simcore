@@ -2,4 +2,16 @@
 # Specifies third-party dependencies for 'models-library'
 #
 
-pydantic[email]
+# tools
+pyyaml
+docker
+jsonschema
+
+
+# tests
+pytest
+pytest-cookies
+pytest-cov
+pytest-instafail
+pytest-mock
+pytest-sugar
