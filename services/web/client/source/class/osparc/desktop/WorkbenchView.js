@@ -423,7 +423,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         loggerPanel.setCollapsed(true);
       }
 
-      const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI();
       workbenchUI.setStudy(study);
       workbenchUI.addListener("removeEdge", e => {
@@ -443,6 +442,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __removeNode: function(nodeId) {
       if (nodeId === this.__currentNodeId) {
+        return false;
+      }
+
+      if (this.getStudy().isReadOnly()) {
         return false;
       }
 
