@@ -372,16 +372,20 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         this.__tree.openNodeAndParents(item);
         this.__tree.setSelection(new qx.data.Array([item]));
 
-        const studyId = this.getStudy().getUuid();
-        if (this.__exportButton) {
-          this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
-        }
-        if (this.__deleteButton) {
-          this.__deleteButton.setEnabled(studyId !== nodeId && this.__currentNodeId !== nodeId);
-        }
-        if (this.__openButton) {
-          this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
-        }
+        this.__updateButtons(nodeId, item);
+      }
+    },
+
+    __updateButtons: function(nodeId, item) {
+      const studyId = this.getStudy().getUuid();
+      if (this.__exportButton) {
+        this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
+      }
+      if (this.__deleteButton) {
+        this.__deleteButton.setEnabled(studyId !== nodeId && this.__currentNodeId !== nodeId);
+      }
+      if (this.__openButton) {
+        this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
       }
     },
 
