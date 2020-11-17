@@ -202,7 +202,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         case "read-only-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
             visibility: "excluded",
-            tooltipText: "Read Only"
+            toolTipText: "Read Only"
           });
           this._add(control);
           break;
