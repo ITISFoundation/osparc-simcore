@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 
 class CompPipelinesRepository(BaseRepository):
     @log_decorator(logger=logger)
-    async def publish_pipeline(
-        self, project_id: ProjectID, dag_graph: nx.DiGraph
+    async def upsert_pipeline(
+        self, project_id: ProjectID, dag_graph: nx.DiGraph, publish: bool
     ) -> None:
 
         pipeline_at_db = CompPipelineAtDB(
             project_id=project_id,
             dag_adjacency_list=nx.to_dict_of_lists(dag_graph),
-            state=RunningState.PUBLISHED,
+            state=RunningState.PUBLISHED if publish else RunningState.NOT_STARTED,
         )
         insert_stmt = insert(comp_pipeline).values(**pipeline_at_db.dict(by_alias=True))
         on_update_stmt = insert_stmt.on_conflict_do_update(

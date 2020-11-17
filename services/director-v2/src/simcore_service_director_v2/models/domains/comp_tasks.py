@@ -18,6 +18,9 @@ TaskID = UUID
 class ComputationTaskCreate(BaseModel):
     user_id: UserID
     project_id: ProjectID
+    start_pipeline: Optional[bool] = Field(
+        False, description="if True the computation pipeline will start right away"
+    )
 
 
 class ComputationTaskStop(BaseModel):
@@ -42,6 +45,9 @@ class ComputationTask(BaseModel):
 class ComputationTaskOut(ComputationTask):
     url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
+    )
+    stop_url: Optional[AnyHttpUrl] = Field(
+        None, description="the link where to stop the task"
     )
 
 

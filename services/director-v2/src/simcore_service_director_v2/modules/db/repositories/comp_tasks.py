@@ -71,10 +71,8 @@ class CompTasksRepository(BaseRepository):
         return tasks
 
     @log_decorator(logger=logger)
-    async def publish_tasks_from_project(
-        self,
-        project: ProjectAtDB,
-        director_client: DirectorV0Client,
+    async def upsert_tasks_from_project(
+        self, project: ProjectAtDB, director_client: DirectorV0Client, publish: bool
     ) -> None:
         # start by removing the old tasks if they exist
         await self.connection.execute(
@@ -114,6 +112,7 @@ class CompTasksRepository(BaseRepository):
                 requires_mpi=requires_mpi,
             )
 
+            comp_state = RunningState.PUBLISHED if publish else RunningState.NOT_STARTED
             task_db = CompTaskAtDB(
                 project_id=project.uuid,
                 node_id=node_id,
@@ -124,7 +123,7 @@ class CompTasksRepository(BaseRepository):
                 outputs=node.outputs,
                 image=image,
                 submit=datetime.utcnow(),
-                state=RunningState.PUBLISHED
+                state=comp_state
                 if node_class == NodeClass.COMPUTATIONAL
                 else RunningState.NOT_STARTED,
                 internal_id=internal_id,
