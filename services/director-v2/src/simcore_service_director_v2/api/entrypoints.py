@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from ..meta import api_vtag
-from .routes import health, meta, running_interactive, services
+from .routes import computations, health, meta, running_interactive, services
 
 # Info
 meta_router = APIRouter()
@@ -20,7 +20,9 @@ v0_router.include_router(
 # Latest API
 v2_router = APIRouter()
 v2_router.include_router(meta.router, tags=["demo"], prefix="/demo")
-
+v2_router.include_router(
+    computations.router, tags=["computations"], prefix="/computations"
+)
 
 # root
 api_router = APIRouter()

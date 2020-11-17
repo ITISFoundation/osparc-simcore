@@ -60,5 +60,5 @@ def test_orm_to_api_out(fake_data_dag_in):
     dag_db = DAGAtDB.from_orm(dag_orm)
     assert type(dag_db.workbench) == dict
 
-    dag_out = DAGOut(**dag_db.dict())
+    dag_out = DAGOut(**dag_db.dict(by_alias=True))
     assert dag_out.id == 1  # pylint: disable=no-member

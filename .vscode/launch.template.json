@@ -19,6 +19,19 @@
       ]
     },
     {
+      "name": "Python: Remote Attach director-v2",
+      "type": "python",
+      "request": "attach",
+      "port": 3009,
+      "host": "127.0.0.1",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
       "name": "Python: Remote Attach webserver",
       "type": "python",
       "request": "attach",

@@ -14,6 +14,7 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
+from models_library.project_nodes import RunningState
 
 from models_library.projects import (
     Owner,
@@ -21,12 +22,13 @@ from models_library.projects import (
     ProjectRunningState,
     ProjectState,
 )
+from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from ..computation_api import delete_pipeline_db, get_pipeline_state
+from ..director_v2 import get_pipeline_state, delete_pipeline
 from ..director import director_api
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
@@ -208,7 +210,7 @@ async def delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     db = app[APP_PROJECT_DBAPI]
-    await delete_pipeline_db(app, project_uuid)
+    await delete_pipeline(app, user_id, project_uuid)
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
@@ -423,7 +425,9 @@ async def _get_project_lock_state(
         # checks who is using it
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
         usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
-        assert len(usernames) <= 1  # currently not possible to have more than 1
+        assert (
+            len(usernames) <= 1
+        )  # nosec  # currently not possible to have more than 1
 
         # based on usage, sets an state
         is_locked: bool = len(usernames) > 0
@@ -436,9 +440,9 @@ async def _get_project_lock_state(
 
 
 async def _get_project_running_state(
-    project_uuid: str, app: web.Application
+    user_id: PositiveInt, project_uuid: str, app: web.Application
 ) -> ProjectRunningState:
-    pipeline_state = await get_pipeline_state(app, project_uuid)
+    pipeline_state: RunningState = await get_pipeline_state(app, user_id, project_uuid)
     return ProjectRunningState(value=pipeline_state)
 
 
@@ -454,7 +458,7 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
         might require a mock for this function to work properly
     """
     lock_state = await _get_project_lock_state(user_id, project_uuid, app)
-    running_state = await _get_project_running_state(project_uuid, app)
+    running_state = await _get_project_running_state(user_id, project_uuid, app)
     return ProjectState(
         locked=lock_state,
         state=running_state,

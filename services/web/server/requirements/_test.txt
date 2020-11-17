@@ -10,10 +10,11 @@ aiohttp-jinja2==1.2.0     # via -r requirements/_base.txt
 aiohttp-security==0.4.0   # via -r requirements/_base.txt
 aiohttp-session[secure]==2.9.0  # via -r requirements/_base.txt
 aiohttp-swagger[performance]==1.0.15  # via -r requirements/_base.txt
-aiohttp==3.6.3            # via -r requirements/_base.txt, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin, pytest-aiohttp
+aiohttp==3.6.3            # via -r requirements/_base.txt, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aioresponses, aiozipkin, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 aioredis==1.3.1           # via -r requirements/_base.txt, aioredlock
 aioredlock==0.5.2         # via -r requirements/_base.txt
+aioresponses==0.7.1       # via -r requirements/_test.in
 aiormq==3.2.3             # via -r requirements/_base.txt, aio-pika
 aiosmtplib==1.1.3         # via -r requirements/_base.txt
 aiozipkin==0.7.1          # via -r requirements/_base.txt

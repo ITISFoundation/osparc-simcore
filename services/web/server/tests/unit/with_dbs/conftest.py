@@ -27,14 +27,14 @@ import trafaret_config
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.utils_mock import future_with_result
 from yarl import URL
 
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser
-from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
@@ -155,16 +155,6 @@ def client(loop, aiohttp_client, web_server, mock_orphaned_services) -> TestClie
 #
 # Mocks entirely or part of the calls to the web-server subsystems
 #
-
-
-@pytest.fixture
-def computational_system_mock(mocker):
-    mock_fun = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        return_value=Future(),
-    )
-    mock_fun.return_value.set_result("")
-    return mock_fun
 
 
 @pytest.fixture
