@@ -187,5 +187,12 @@ class Node(BaseModel):
             return None
         return v
 
+    @validator("state", pre=True)
+    @classmethod
+    def convert_old_enum_name(v):
+        if v == "FAILURE":
+            return RunningState.FAILED
+        return v
+
     class Config:
         extra = Extra.forbid
