@@ -50,7 +50,8 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
     async def _get_repo(
         db_connection: SAConnection = Depends(_acquire_connection),
     ) -> AsyncGenerator[BaseRepository, None]:
-
+        # NOTE: Since _acquire_connection is a dependency, it is a cached by FastApi and is only called once per request
+        # Be very careful if you change this!!! or we will end up in the problem described in https://github.com/ITISFoundation/osparc-simcore/pull/1966
         yield repo_type(db_connection)
 
     return _get_repo
