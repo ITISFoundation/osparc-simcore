@@ -95,6 +95,14 @@ async def test_stop_pipeline(
     )
 
 
+async def test_create_pipeline(client, user_id: PositiveInt, project_id: UUID):
+    task_out = await director_v2.create_or_update_pipeline(
+        client.app, user_id, project_id
+    )
+    assert "state" in task_out
+    assert task_out["state"] == RunningState.NOT_STARTED
+
+
 async def test_get_pipeline_state(
     client,
     user_id: PositiveInt,

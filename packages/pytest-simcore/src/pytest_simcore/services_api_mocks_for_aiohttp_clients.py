@@ -11,8 +11,15 @@ def creation_cb(url, **kwargs):
     body = kwargs["json"]
     for param in ["user_id", "project_id"]:
         assert param in body, f"{param} is missing from body: {body}"
+    state = (
+        RunningState.PUBLISHED
+        if "start_pipeline" in body and body["start_pipeline"]
+        else RunningState.NOT_STARTED
+    )
 
-    return CallbackResult(status=201, payload={"id": kwargs["json"]["project_id"]})
+    return CallbackResult(
+        status=201, payload={"id": kwargs["json"]["project_id"], "state": state}
+    )
 
 
 @pytest.fixture
