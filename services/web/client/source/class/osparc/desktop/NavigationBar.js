@@ -543,8 +543,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
-        study.bind("accessRights", this.__readOnlyIcon, "visibility", {
-          converter: () => study.canIWrite() ? "excluded" : "visible"
+        study.bind("readOnly", this.__readOnlyIcon, "visibility", {
+          converter: value => value ? "visible" : "excluded"
         });
 
         study.getUi().addListener("changeSlideshow", () => {

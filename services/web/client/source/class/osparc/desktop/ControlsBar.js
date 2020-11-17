@@ -136,11 +136,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       if (study) {
         const startButton = this.__startButton;
         const stopButton = this.__stopButton;
-        if (!study.canIWrite()) {
-          startButton.setEnabled(false);
-          stopButton.setEnabled(false);
-          return;
-        }
         if (study.getState() && study.getState().state) {
           const pipelineState = study.getState().state;
           switch (pipelineState.value) {
@@ -158,6 +153,10 @@ qx.Class.define("osparc.desktop.ControlsBar", {
               stopButton.setEnabled(false);
               break;
           }
+        }
+        if (study.isReadOnly()) {
+          startButton.setEnabled(false);
+          stopButton.setEnabled(false);
         }
       }
     },

@@ -102,7 +102,15 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Object",
       nullable: false,
       event: "changeAccessRights",
-      init: {}
+      apply: "__applyAccessRights",
+      init: true
+    },
+
+    readOnly: {
+      check: "Boolean",
+      nullable: false,
+      event: "changeReadOnly",
+      init: true
     },
 
     creationDate: {
@@ -229,10 +237,14 @@ qx.Class.define("osparc.data.model.Study", {
       this.getWorkbench().buildWorkbench();
     },
 
-    canIWrite: function() {
+    __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = this.getAccessRights();
-      return osparc.component.export.StudyPermissions.canGroupWrite(aceessRights, myGid);
+      if (myGid) {
+        const canIWrite = osparc.component.export.StudyPermissions.canGroupWrite(value, myGid);
+        this.setReadOnly(!canIWrite);
+      } else {
+        this.setReadOnly(true);
+      }
     },
 
     openStudy: function() {
