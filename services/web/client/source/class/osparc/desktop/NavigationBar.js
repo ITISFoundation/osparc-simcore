@@ -113,6 +113,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   members: {
     __dashboardBtn: null,
     __dashboardLabel: null,
+    __readOnlyIcon: null,
     __startSlidesBtn: null,
     __stopSlidesBtn: null,
     __studyTitle: null,
@@ -137,6 +138,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       });
 
       this._add(new qx.ui.core.Spacer(20));
+
+      this.__readOnlyIcon = this.getChildControl("read-only-icon");
 
       const studyTitle = this.__studyTitle = this.getChildControl("study-title");
       studyTitle.addListener("editValue", evt => {
@@ -193,6 +196,13 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             font: "text-16"
+          });
+          this._add(control);
+          break;
+        case "read-only-icon":
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
+            visibility: "excluded",
+            tooltipText: "Read Only"
           });
           this._add(control);
           break;
@@ -295,6 +305,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         case "dashboard":
           this.__dashboardLabel.show();
           this.__dashboardBtn.exclude();
+          this.__readOnlyIcon.exclude();
           this.__resetSlideCtrlBtnsVis(false);
           this.__studyTitle.exclude();
           this.__navNodesLayout.exclude();
@@ -532,6 +543,10 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     _applyStudy: function(study) {
       if (study) {
         study.bind("name", this.__studyTitle, "value");
+        study.bind("accessRights", this.__readOnlyIcon, "visibility", {
+          converter: () => study.canIWrite() ? "excluded" : "visible"
+        });
+
         study.getUi().addListener("changeSlideshow", () => {
           this.__resetSlideCtrlBtnsVis();
         });
