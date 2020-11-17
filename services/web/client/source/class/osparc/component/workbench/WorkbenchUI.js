@@ -382,6 +382,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createDragDropMechanism: function(nodeUI) {
+      if (this.getStudy().isReadOnly()) {
+        return;
+      }
+
       const evType = "pointermove";
       nodeUI.addListener("edgeDragStart", e => {
         let data = e.getData();
