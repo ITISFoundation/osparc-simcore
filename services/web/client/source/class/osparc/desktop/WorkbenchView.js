@@ -400,6 +400,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__editSlides();
       }, this);
       nodesTree.addListener("removeNode", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
@@ -442,10 +446,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __removeNode: function(nodeId) {
       if (nodeId === this.__currentNodeId) {
-        return false;
-      }
-
-      if (this.getStudy().isReadOnly()) {
         return false;
       }
 
