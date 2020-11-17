@@ -878,6 +878,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       this.addListener("dbltap", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+
         const [x, y] = this.__getPointEventPosition(e);
         const pos = {
           x,
