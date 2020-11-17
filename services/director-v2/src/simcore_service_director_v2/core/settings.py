@@ -156,13 +156,21 @@ class AppSettings(BaseSettings):
     storage_endpoint: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     # caching registry and TTL (time-to-live)
-    registry_caching: bool = True
-    registry_caching_ttl: int = 15 * MINS
+    # TODO: fix these variables once the director-v2 is able to start dynamic services
+    registry_caching: bool = Field(True, env="DIRECTOR_V2_REGISTRY_CACHING")
+    registry_caching_ttl: int = Field(15 * MINS, env="DIRECTOR_V2_REGISTRY_CACHING_TTL")
 
     # for passing self-signed certificate to spawned services
-    self_signed_ssl_secret_id: str = ""
-    self_signed_ssl_secret_name: str = ""
-    self_signed_ssl_filename: str = ""
+    # TODO: fix these variables once the director-v2 is able to start dynamic services
+    self_signed_ssl_secret_id: str = Field(
+        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID"
+    )
+    self_signed_ssl_secret_name: str = Field(
+        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME"
+    )
+    self_signed_ssl_filename: str = Field(
+        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME"
+    )
 
     # extras
     extra_hosts_suffix: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
@@ -204,4 +212,4 @@ class AppSettings(BaseSettings):
     remote_debug_port: PortInt = 3000
 
     class Config(CommonConfig):
-        env_prefix = "DIRECTOR_V2_"
+        env_prefix = ""
