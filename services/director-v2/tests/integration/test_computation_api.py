@@ -151,7 +151,7 @@ def test_empty_computation(
 
 def _assert_pipeline_status(
     client: TestClient,
-    status_url: AnyHttpUrl,
+    url: AnyHttpUrl,
     user_id: PositiveInt,
     project_uuid: UUID,
     wait_for_states: List[RunningState] = None,
@@ -172,7 +172,7 @@ def _assert_pipeline_status(
         reraise=True,
     )
     def check_pipeline_state() -> ComputationTaskOut:
-        response = client.get(status_url, params={"user_id": user_id})
+        response = client.get(url, params={"user_id": user_id})
         assert (
             response.status_code == status.HTTP_202_ACCEPTED
         ), f"response code is {response.status_code}, error: {response.text}"
@@ -207,14 +207,43 @@ def test_run_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
+    assert (
+        task_out.start_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:start"
+    )
     assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert not task_out.stop_url
+
+    # start it now
+    response = client.post(
+        task_out.start_url,
+        json={"user_id": user_id},
+    )
+    assert (
+        response.status_code == status.HTTP_202_ACCEPTED
+    ), f"response code is {response.status_code}, error: {response.text}"
+    task_out = ComputationTaskOut.parse_obj(response.json())
+    assert task_out.start_url == None
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert (
+        task_out.stop_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    )
 
     # now wait for the computation to finish
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
+    assert (
+        task_out.start_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:start"
+    )
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert task_out.stop_url == None
 
-    assert task_out.state == RunningState.SUCCESS
+    assert (
+        task_out.state == RunningState.SUCCESS
+    ), f"the pipeline complete with state {task_out.state}"
 
 
 def test_abort_computation(
@@ -236,7 +265,15 @@ def test_abort_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    # start it now
+    response = client.post(
+        task_out.start_url,
+        json={"user_id": user_id},
+    )
+    assert (
+        response.status_code == status.HTTP_202_ACCEPTED
+    ), f"response code is {response.status_code}, error: {response.text}"
+    task_out = ComputationTaskOut.parse_obj(response.json())
 
     # wait until the pipeline is started
     task_out = _assert_pipeline_status(
@@ -249,12 +286,22 @@ def test_abort_computation(
     assert (
         task_out.state == RunningState.STARTED
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
+    assert task_out.start_url == None
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert (
+        task_out.stop_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    )
 
     # now abort the pipeline
-    response = client.post(f"{task_out.url}:stop", json={"user_id": user_id})
+    response = client.post(f"{task_out.stop_url}", json={"user_id": user_id})
     assert (
-        response.status_code == status.HTTP_204_NO_CONTENT
+        response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
+    task_out = ComputationTaskOut.parse_obj(response.json())
+    assert task_out.start_url == None
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
     task_out = _assert_pipeline_status(
@@ -266,14 +313,8 @@ def test_abort_computation(
     )
     assert task_out.state == RunningState.ABORTED
 
-    # try again, just for fun, it should not throw
-    response = client.post(f"{task_out.url}:stop", json={"user_id": user_id})
-    assert (
-        response.status_code == status.HTTP_204_NO_CONTENT
-    ), f"response code is {response.status_code}, error: {response.text}"
 
-
-def test_delete_computation(
+def test_update_and_delete_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
@@ -292,7 +333,39 @@ def test_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
+    assert (
+        task_out.start_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    )
     assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+
+    # update the pipeline
+    response = client.patch(
+        COMPUTATION_URL,
+        json={"user_id": user_id},
+    )
+    assert (
+        response.status_code == status.HTTP_200_OK
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    task_out = ComputationTaskOut.parse_obj(response.json())
+
+    assert task_out.id == sleepers_project.uuid
+    assert (
+        task_out.start_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:start"
+    )
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+
+    # start it now
+    response = client.post(
+        task_out.start_url,
+        json={"user_id": user_id},
+    )
+    assert (
+        response.status_code == status.HTTP_202_ACCEPTED
+    ), f"response code is {response.status_code}, error: {response.text}"
+    task_out = ComputationTaskOut.parse_obj(response.json())
 
     # wait until the pipeline is started
     task_out = _assert_pipeline_status(
@@ -305,6 +378,15 @@ def test_delete_computation(
     assert (
         task_out.state == RunningState.STARTED
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
+
+    # now try to update the pipeline, is expected to be forbidden
+    response = client.patch(
+        COMPUTATION_URL,
+        json={"user_id": user_id},
+    )
+    assert (
+        response.status_code == status.HTTP_403_FORBIDDEN
+    ), f"response code is {response.status_code}, error: {response.text}"
 
     # now try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
     response = client.delete(task_out.url, json={"user_id": user_id})
