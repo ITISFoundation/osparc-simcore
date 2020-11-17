@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   members: {
     __toolBar: null,
     __tree: null,
-    __editSlidesBtn: null,
+    __editSlidesButton: null,
     __exportButton: null,
     __openButton: null,
     __deleteButton: null,
@@ -144,7 +144,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
-      const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Edit Guided mode"), "@FontAwesome5Solid/caret-square-right/"+iconSize).set({
+      const editBtn = this.__editSlidesButton = new qx.ui.toolbar.Button(this.tr("Edit Guided mode"), "@FontAwesome5Solid/caret-square-right/"+iconSize).set({
         visibility: "excluded"
       });
       editBtn.addListener("execute", () => {
@@ -235,7 +235,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         .then(areSlidesEnabled => {
           const study = this.getStudy();
           const isOwner = osparc.data.model.Study.isOwner(study);
-          this.__editSlidesBtn.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
+          this.__editSlidesButton.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
         });
     },
 
