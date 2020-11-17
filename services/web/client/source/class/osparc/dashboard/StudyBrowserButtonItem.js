@@ -146,7 +146,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     SERVICE_ICON: "@FontAwesome5Solid/paw/14",
     PERM_READ: "@FontAwesome5Solid/eye/16",
     PERM_WRITE: "@FontAwesome5Solid/edit/16",
-    PERM_DELETE: "@FontAwesome5Solid/crown/16"
+    PERM_EXECUTE: "@FontAwesome5Solid/crown/16"
   },
 
   members: {
@@ -447,7 +447,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       const studyPerm = osparc.component.export.StudyPermissions;
       const image = this.getChildControl("permission-icon");
       if (studyPerm.canGroupExecute(accessRights, myGroupId)) {
-        image.setSource(this.self().PERM_DELETE);
+        image.setSource(this.self().PERM_EXECUTE);
       } else if (studyPerm.canGroupWrite(accessRights, myGroupId)) {
         image.setSource(this.self().PERM_WRITE);
       } else {
