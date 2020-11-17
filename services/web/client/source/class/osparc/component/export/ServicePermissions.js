@@ -158,6 +158,14 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Owner"), "ERROR");
           console.error(err);
         });
+    },
+
+    _makeCollaborator: function(collaborator) {
+      return;
+    },
+
+    _makeViewer: function(collaborator) {
+      return;
     }
   }
 });
