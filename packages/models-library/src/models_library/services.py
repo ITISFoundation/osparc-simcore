@@ -9,23 +9,20 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 
-# from .constants import VERSION_RE
 from .basic_regex import VERSION_RE
 
-KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"  # TODO: deprecate this global constant by SERVICE_KEY_RE
-SERVICE_KEY_RE = KEY_RE
+
+SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"
+KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$" # TODO: should be a UUID_RE instead??
 
 FILENAME_RE = r".+"
 
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 GroupId = PositiveInt
-
-
-# Service base schema (used for docker labels on docker images)
 
 
 class ServiceType(str, Enum):
@@ -203,7 +200,9 @@ class ServiceCommonData(BaseModel):
     thumbnail: Optional[HttpUrl] = Field(
         None,
         description="url to the thumbnail",
-        examples=["https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"],
+        examples=[
+            "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+        ],
     )
     description: str = Field(
         ...,
@@ -226,6 +225,10 @@ ServiceOutputs = Dict[PropertyName, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
+    """
+    Service base schema (used for docker labels on docker images)
+    """
+
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
         alias="integration-version",
@@ -262,8 +265,6 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
 
 
 # Service access rights models
-
-
 class ServiceGroupAccessRights(BaseModel):
     execute_access: bool = Field(
         False,

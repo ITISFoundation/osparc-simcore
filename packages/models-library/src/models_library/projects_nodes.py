@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
 
+from .basic_regex import VERSION_RE
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -16,7 +17,7 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import KEY_RE, PROPERTY_KEY_RE, VERSION_RE
+from .services import SERVICE_KEY_RE, PROPERTY_KEY_RE
 
 InputTypes = Union[
     int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink, DownloadLink
@@ -25,8 +26,7 @@ OutputTypes = Union[
     int, bool, str, float, SimCoreFileLink, DatCoreFileLink, DownloadLink
 ]
 
-InputID = constr(regex=PROPERTY_KEY_RE)
-OutputID = InputID
+InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
 Inputs = Dict[InputID, InputTypes]
 Outputs = Dict[OutputID, OutputTypes]
 
@@ -35,7 +35,7 @@ class Node(BaseModel):
     key: str = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
-        regex=KEY_RE,
+        regex=SERVICE_KEY_RE,
         example=[
             "simcore/services/comp/sleeper",
             "simcore/services/dynamic/3dviewer",
