@@ -150,6 +150,14 @@ qx.Class.define("osparc.component.export.Permissions", {
             const orgMember = e.getData();
             this._makeOwner(orgMember);
           });
+          item.addListener("makeCollaborator", e => {
+            const orgMember = e.getData();
+            this._makeCollaborator(orgMember);
+          });
+          item.addListener("makeViewer", e => {
+            const orgMember = e.getData();
+            this._makeViewer(orgMember);
+          });
           item.addListener("removeCollaborator", e => {
             const orgMember = e.getData();
             this._deleteCollaborator(orgMember);
@@ -259,6 +267,14 @@ qx.Class.define("osparc.component.export.Permissions", {
     },
 
     _makeOwner: function(collaborator) {
+      throw new Error("Abstract method called!");
+    },
+
+    _makeCollaborator: function(collaborator) {
+      throw new Error("Abstract method called!");
+    },
+
+    _makeViewer: function(collaborator) {
       throw new Error("Abstract method called!");
     }
   }
