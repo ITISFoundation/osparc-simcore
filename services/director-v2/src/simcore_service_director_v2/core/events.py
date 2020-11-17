@@ -17,9 +17,9 @@ ______ _               _
 
 
 def on_startup() -> None:
-    print(WELCOME_MSG)
+    print(WELCOME_MSG, flush=True)
 
 
 def on_shutdown() -> None:
     msg = project_name + f" v{__version__} SHUT DOWN"
-    print(f"{msg:=^100}")
+    print(f"{msg:=^100}", flush=True)
