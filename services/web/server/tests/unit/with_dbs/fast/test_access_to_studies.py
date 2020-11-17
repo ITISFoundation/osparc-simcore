@@ -9,9 +9,7 @@
 import asyncio
 import logging
 import re
-import textwrap
 from copy import deepcopy
-from pathlib import Path
 from pprint import pprint
 from typing import Dict
 
@@ -35,39 +33,9 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.statics import STATIC_DIRNAMES
 from simcore_service_webserver.users_api import delete_user, is_user_guest
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
-
-
-@pytest.fixture
-def qx_client_outdir(tmpdir):
-    """  Emulates qx output at service/web/client after compiling """
-
-    basedir = tmpdir.mkdir("source-output")
-    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
-
-    HTML = textwrap.dedent(
-        """\
-        <!DOCTYPE html>
-        <html>
-        <body>
-            <h1>{0}-SIMCORE</h1>
-            <p> This is a result of qx_client_outdir fixture for product {0}</p>
-        </body>
-        </html>
-        """
-    )
-
-    index_file = Path(basedir.join("index.html"))
-    index_file.write_text(HTML.format("OSPARC"))
-
-    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
-        index_file = Path(folder.join("index.html"))
-        index_file.write_text(HTML.format(frontend_app.upper()))
-
-    return Path(basedir)
 
 
 @pytest.fixture
