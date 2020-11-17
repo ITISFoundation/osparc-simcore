@@ -281,7 +281,7 @@ qx.Class.define("osparc.data.model.Study", {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        if (key === "state") {
+        if (["state", "readOnly"].includes(key)) {
           return;
         }
         if (key === "workbench") {
