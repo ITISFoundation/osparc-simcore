@@ -213,7 +213,7 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
                     int
                 ] = await rt.find_users_of_resource(res_key, res_value)
                 assert list_user_ids[: (list_user_ids.index(user_id) + 1)] == sorted(
-                    list_of_same_resource_users
+                    set(list_of_same_resource_users)
                 )
 
     # remove sockets
