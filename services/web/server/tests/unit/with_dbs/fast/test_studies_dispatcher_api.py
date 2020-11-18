@@ -9,6 +9,7 @@ from typing import Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
+from yarl import URL
 
 from models_library.projects_state import (
     Owner,
@@ -83,11 +84,16 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
 #
 
 
+def _get_base_url(client) -> str:
+    s = client.server
+    return str(URL.build(scheme=s.scheme, host=s.host, port=s.port))
+
+
 async def test_api_get_viewer_for_file(client):
     resp = await client.get("/v0/viewers?file_type=DICOM&file_name=foo&file_size=10000")
-    assert resp.status_code == 422
+    data, error = await assert_status(resp, web.HTTPOk)
 
-    base_url = str(client.app.base_url)
+    base_url = _get_base_url(client)
     assert await resp.json() == {
         "data": {
             "file_type": "DICOM",
@@ -100,7 +106,7 @@ async def test_api_get_viewer_for_file(client):
 
 async def test_api_get_viewer_for_unsupported_type(client):
     resp = await client.get("/v0/viewers?file_type=UNSUPPORTED_TYPE")
-    assert resp.status_code == 422
+    data, error = await assert_status(resp, web.HTTPUnprocessableEntity)
 
     assert await resp.json() == {
         "data": None,
@@ -127,8 +133,9 @@ async def test_api_get_viewer_for_unsupported_type(client):
 
 async def test_api_list_supported_filetypes(client):
     resp = await client.get("/v0/viewers/filetypes")
+    data, error = await assert_status(resp, web.HTTPOk)
 
-    base_url = str(client.app.base_url)
+    base_url = _get_base_url(client)
     assert await resp.json() == {
         "data": [
             {
