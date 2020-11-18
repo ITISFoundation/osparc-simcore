@@ -136,6 +136,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       if (study) {
         const startButton = this.__startButton;
         const stopButton = this.__stopButton;
+        startButton.setEnabled(true);
         if (study.getState() && study.getState().state) {
           const pipelineState = study.getState().state;
           switch (pipelineState.value) {
