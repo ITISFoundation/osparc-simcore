@@ -75,7 +75,6 @@ async def ensure_authentication(
 
 
 async def _get_authorized_user(request: web.Request) -> Dict:
-    db = get_storage(request.app)
     userid = await authorized_userid(request)
     user = await get_user(request.app, userid)
     return user
