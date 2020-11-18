@@ -44,3 +44,6 @@ class ProjectRunningState(BaseModel):
 class ProjectState(BaseModel):
     locked: ProjectLocked = Field(..., description="The project lock state")
     state: ProjectRunningState = Field(..., description="The project running state")
+
+    class Config:
+        extra = Extra.forbid

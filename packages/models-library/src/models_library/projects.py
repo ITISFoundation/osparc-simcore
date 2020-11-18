@@ -82,7 +82,7 @@ class Project(BaseModel):
     ui: Optional[StudyUI] = None
 
     # Dev only
-    dev: Dict = Field({}, description="object used for development purposes only")
+    dev: Optional[Dict] = Field(None, description="object used for development purposes only")
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
@@ -96,11 +96,4 @@ class Project(BaseModel):
             # Patch to allow jsonschema nullable
             # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
             state_pydantic_schema = deepcopy(schema["properties"]["state"])
-            schema["properties"]["state"].update(
-                {"anyOf": [{"type": "null"}, state_pydantic_schema]}
-            )
-
-            ui_pydantic_schema = deepcopy(schema["properties"]["ui"])
-            schema["properties"]["ui"].update(
-                {"anyOf": [{"type": "null"}, ui_pydantic_schema]}
-            )
+            schema["properties"]["state"] = {"anyOf": [{"type": "null"}, state_pydantic_schema]}
