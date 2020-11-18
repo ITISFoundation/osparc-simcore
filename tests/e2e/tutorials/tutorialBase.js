@@ -306,6 +306,8 @@ class TutorialBase {
   async removeStudy() {
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
+      // wait for projects to be loaded
+      await utils.sleep(2000);
       await auto.deleteFirstStudy(this.__page, this.__templateName);
     }
     catch(err) {
