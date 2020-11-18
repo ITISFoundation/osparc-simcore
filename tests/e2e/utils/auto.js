@@ -244,7 +244,11 @@ async function deleteFirstStudy(page, studyName) {
     console.log("Deleting first Study: no study found");
     return;
   }
-  const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+  let studyCardId = children[0];
+  if (studyCardId === "newStudyBtn") {
+    studyCardId = children[1];
+  }
+  const firstChildId = '[osparc-test-id="' + studyCardId + '"]';
   await utils.waitAndClick(page, firstChildId + ' > [osparc-test-id="studyItemMenuButton"]');
   await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]');
   await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]');
