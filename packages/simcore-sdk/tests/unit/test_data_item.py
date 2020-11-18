@@ -28,6 +28,12 @@ from simcore_sdk.node_ports._data_item import DataItem
                 "label": "FELIR.job",
             }
         ),
+        (
+            {
+                "downloadLink": "https://github.com/ITISFoundation/osparc-simcore/blob/master/README.md",
+                "label": "mylink",
+            }
+        ),
         (None),
     ],
 )
