@@ -18,6 +18,10 @@ ProjectID = UUID
 ClassifierID = str
 
 
+class Workbench(BaseModel):
+    __root__ = Dict[NodeID_AsDictKey, Node]
+
+
 class Project(BaseModel):
     uuid: ProjectID = Field(
         ...,
@@ -73,7 +77,7 @@ class Project(BaseModel):
     )
 
     # Pipeline of nodes ( SEE projects_nodes.py)
-    workbench: Dict[NodeID_AsDictKey, Node] = ...
+    workbench: Workbench = ...
 
     # Project state (SEE projects_state.py)
     state: Optional[ProjectState] = None
@@ -82,7 +86,9 @@ class Project(BaseModel):
     ui: Optional[StudyUI] = None
 
     # Dev only
-    dev: Optional[Dict] = Field(None, description="object used for development purposes only")
+    dev: Optional[Dict] = Field(
+        None, description="object used for development purposes only"
+    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
@@ -96,4 +102,6 @@ class Project(BaseModel):
             # Patch to allow jsonschema nullable
             # SEE https://github.com/samuelcolvin/pydantic/issues/990#issuecomment-645961530
             state_pydantic_schema = deepcopy(schema["properties"]["state"])
-            schema["properties"]["state"] = {"anyOf": [{"type": "null"}, state_pydantic_schema]}
+            schema["properties"]["state"] = {
+                "anyOf": [{"type": "null"}, state_pydantic_schema]
+            }

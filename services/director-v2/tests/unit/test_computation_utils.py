@@ -10,7 +10,7 @@ from typing import List
 
 import faker
 import pytest
-from models_library.projects import RunningState
+from models_library.projects_state import RunningState
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.utils.computations import (
     get_pipeline_state_from_task_states,

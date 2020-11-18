@@ -2,11 +2,12 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from models_library.constants import VERSION_RE
-from models_library.projects import ProjectID, RunningState
-from models_library.project_nodes import NodeID, Inputs, Outputs
+from models_library.basic_regex import VERSION_RE
+from models_library.projects import ProjectID
+from models_library.projects_nodes import Inputs, NodeID, Outputs
+from models_library.projects_state import RunningState
 from models_library.services import KEY_RE, ServiceInputs, ServiceOutputs
-from pydantic import BaseModel, Extra, Field, AnyHttpUrl, constr, validator
+from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 

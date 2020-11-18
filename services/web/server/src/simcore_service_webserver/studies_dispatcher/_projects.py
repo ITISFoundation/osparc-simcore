@@ -12,7 +12,8 @@ from typing import Dict, Tuple
 from aiohttp import web
 from pydantic import HttpUrl
 
-from models_library.projects import AccessRights, Node, PortLink, Project, StudyUI
+from models_library.projects import AccessRights, Node, Project, StudyUI
+from models_library.projects_nodes_io import PortLink
 
 from ..projects.projects_api import get_project_for_user
 from ..projects.projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError

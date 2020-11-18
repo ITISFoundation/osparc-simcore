@@ -12,7 +12,8 @@ from urllib.parse import parse_qs
 
 import pytest
 
-from models_library.projects import AccessRights, Node, PortLink, Project, StudyUI
+from models_library.projects import AccessRights, Node, Project, StudyUI
+from models_library.projects_nodes_io import PortLink
 from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
 from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.studies_dispatcher.handlers_redirects import QueryParams

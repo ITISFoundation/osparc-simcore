@@ -16,7 +16,7 @@ from typing import Dict, List, Optional, Union
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-from models_library.projects import ProjectState
+from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects

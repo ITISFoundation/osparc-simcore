@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 
 import pytest
 import sqlalchemy as sa
-from models_library.projects import RunningState
+from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.networks import AnyHttpUrl
