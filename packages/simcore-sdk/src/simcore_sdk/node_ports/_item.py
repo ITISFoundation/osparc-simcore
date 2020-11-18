@@ -11,6 +11,9 @@ log = logging.getLogger(__name__)
 
 
 def _check_type(item_type, value):
+    if item_type not in config.TYPE_TO_PYTHON_TYPE_MAP and not data_items_utils.is_file_type(item_type):
+        raise exceptions.InvalidItemTypeError(item_type, value)
+
     if not value:
         return
     if data_items_utils.is_value_link(value):

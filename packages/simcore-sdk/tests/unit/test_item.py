@@ -63,22 +63,18 @@ async def test_item(loop):
     assert await item.get() == item_value
 
 
-async def test_valid_type():
-    for item_type in config.TYPE_TO_PYTHON_TYPE_MAP:
-        item = create_item(item_type, None)
-        assert await item.get() is None
-
-
-async def test_invalid_type():
-    item = create_item("some wrong type", None)
-    with pytest.raises(exceptions.InvalidProtocolError) as excinfo:
-        await item.get()
-    assert "Invalid protocol used" in str(excinfo.value)
+@pytest.mark.parametrize(
+    "item_type", list(config.TYPE_TO_PYTHON_TYPE_MAP.keys()) + [config.FILE_TYPE_PREFIX]
+)
+async def test_valid_type_empty_value(item_type):
+    item = create_item(item_type, None)
+    assert await item.get() is None
 
 
 @pytest.mark.parametrize(
     "item_type, item_value",
     [
+        ("some wrong type", "some string but not an integer"),
         ("integer", "some string but not an integer"),
         ("integer", 2.34),
         ("number", "some string but not a number"),
@@ -90,11 +86,11 @@ async def test_invalid_type():
         ("string", True),
     ],
 )
-async def test_invalid_value_type(item_type, item_value):
+async def test_invalid_type(item_type, item_value):
     # pylint: disable=W0612
     with pytest.raises(
         exceptions.InvalidItemTypeError, match=rf"Invalid item type, .*[{item_type}]"
-    ) as excinfo:
+    ):
         create_item(item_type, item_value)
 
 

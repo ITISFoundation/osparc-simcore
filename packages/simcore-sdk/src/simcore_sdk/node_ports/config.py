@@ -1,7 +1,7 @@
 """Takes care of the configurations.
 """
 import os
-
+from typing import Dict, Type
 
 # required configurations
 PROJECT_ID = os.environ.get("SIMCORE_PROJECT_ID", default="undefined")
@@ -40,10 +40,10 @@ SCHEMA_ITEM_KEYS = {
     "widget": False,
 }
 # allowed types
-TYPE_TO_PYTHON_TYPE_MAP = {
+TYPE_TO_PYTHON_TYPE_MAP: Dict[str, Dict[str, Type]] = {
     "integer": {"type": int, "converter": int},
     "number": {"type": float, "converter": float},
     "boolean": {"type": bool, "converter": bool},
     "string": {"type": str, "converter": str},
 }
-FILE_TYPE_PREFIX = "data:"
+FILE_TYPE_PREFIX: str = "data:"
