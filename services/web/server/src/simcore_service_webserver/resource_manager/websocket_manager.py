@@ -40,6 +40,7 @@ class WebsocketRegistry:
     A session can allocate multiple resources
 
     """
+
     # TODO: find a more descriptive name ... too many registries!
     #
 
@@ -159,7 +160,7 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         registry_keys = await registry.find_keys((key, value))
-        users = list({int(x["user_id"]) for x in registry_keys})
+        users = [int(x["user_id"]) for x in registry_keys]
         return users
 
     async def get_registry_lock(self) -> aioredlock.Lock:
