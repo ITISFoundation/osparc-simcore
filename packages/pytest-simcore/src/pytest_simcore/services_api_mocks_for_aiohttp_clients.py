@@ -3,7 +3,7 @@ import re
 import pytest
 from aioresponses import aioresponses
 from aioresponses.core import CallbackResult
-from models_library.project_nodes import RunningState
+from models_library.projects_state import RunningState
 
 
 def creation_cb(url, **kwargs):
