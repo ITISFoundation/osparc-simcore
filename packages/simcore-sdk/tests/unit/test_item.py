@@ -155,17 +155,52 @@ async def test_valid_type(
         ("integer", "some string but not an integer"),
         ("integer", 2.34),
         ("integer", {"store": 0, "path": "/myfile/path"}),
+        (
+            "integer",
+            {
+                "downloadLink": "https://github.com/ITISFoundation/osparc-simcore/blob/master/README.md",
+                "label": "some label",
+            },
+        ),
         ("number", "some string but not a number"),
         ("number", {"store": 0, "path": "/myfile/path"}),
+        (
+            "number",
+            {
+                "downloadLink": "https://github.com/ITISFoundation/osparc-simcore/blob/master/README.md",
+                "label": "some label",
+            },
+        ),
         ("boolean", "some string but not a boolean"),
         ("boolean", 432),
         ("boolean", 1),
         ("boolean", -1),
         ("boolean", {"store": 0, "path": "/myfile/path"}),
+        (
+            "boolean",
+            {
+                "downloadLink": "https://github.com/ITISFoundation/osparc-simcore/blob/master/README.md",
+                "label": "some label",
+            },
+        ),
         ("string", 123),
         ("string", True),
         ("string", {"store": 0, "path": "/myfile/path"}),
+        (
+            "string",
+            {
+                "downloadLink": "https://github.com/ITISFoundation/osparc-simcore/blob/master/README.md",
+                "label": "some label",
+            },
+        ),
         ("data:*/*", {"invalid stuff": 0, "path": "/myfile/path"}),
+        (
+            "data:*/*",
+            {
+                "sp, bad stiff": "/somebadlink/somebadlink/somebadlink/README.md",
+                "label": "some label",
+            },
+        ),
     ],
 )
 async def test_invalid_type(item_type, item_value):
