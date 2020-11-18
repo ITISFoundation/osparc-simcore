@@ -70,7 +70,7 @@ async def list_services(
                 version=version,
                 name="nodetails",
                 description="nodetails",
-                type=ServiceType.computational,
+                type=ServiceType.COMPUTATIONAL,
                 authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
                 contact="nodetails@nodetails.com",
                 inputs={},

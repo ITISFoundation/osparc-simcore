@@ -16,6 +16,7 @@ from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
 from .director import setup_director
+from .director_v2 import setup_director_v2
 from .email import setup_email
 from .groups import setup_groups
 from .login import setup_login
@@ -65,6 +66,7 @@ def create_application(config: Dict) -> web.Application:
     setup_socketio(app)
     setup_login(app)
     setup_director(app)
+    setup_director_v2(app)
     setup_storage(app)
     setup_users(app)
     setup_groups(app)

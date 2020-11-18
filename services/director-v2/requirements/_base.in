@@ -13,8 +13,21 @@ fastapi[all]
 # data models
 pydantic[dotenv]
 
+# database
+aiopg[sa]
+
 # docker daemon
 aiodocker
 
+# DAGs
+networkx
+
+# celery
+celery[redis]
+
 # other
 tenacity
+orjson
+
+# httpx [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
+httpx<0.15.0
