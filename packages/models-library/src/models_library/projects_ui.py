@@ -26,7 +26,7 @@ class Slideshow(BaseModel):
 
 class StudyUI(BaseModel):
     workbench: Optional[Dict[NodeID_AsDictKey, WorkbenchUI]] = Field(None)
-    slideshow: Optional[Dict[NodeID_AsDictKey, Slideshow]] = Field(None)
+    slideshow: Optional[Dict[NodeID_AsDictKey, Slideshow]]
     current_node_id: Optional[NodeID] = Field(alias="currentNodeId")
 
     class Config:

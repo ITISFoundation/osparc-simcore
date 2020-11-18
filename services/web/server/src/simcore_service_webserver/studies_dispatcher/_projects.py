@@ -64,7 +64,7 @@ async def acquire_project_with_viewer(
         viewer_exists = False
 
     if not viewer_exists:
-        project = await create_viewer_project_model(
+        project = create_viewer_project_model(
             project_id, file_picker_id, viewer_id, user, download_link, viewer
         )
         await add_new_project(app, project, user)
@@ -83,7 +83,7 @@ def generate_nodeids(project_id: str) -> Tuple[str, str]:
     return file_picker_id, viewer_id
 
 
-async def create_viewer_project_model(
+def create_viewer_project_model(
     project_id: str,
     file_picker_id: str,
     viewer_id: str,
