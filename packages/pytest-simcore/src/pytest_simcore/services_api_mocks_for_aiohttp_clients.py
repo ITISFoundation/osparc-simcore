@@ -3,10 +3,11 @@ from aioresponses.core import CallbackResult
 
 import pytest
 from aioresponses import aioresponses
-from models_library.project_nodes import RunningState
 
 
 def creation_cb(url, **kwargs):
+    from models_library.project_nodes import RunningState
+
     assert "json" in kwargs, f"missing body in call to {url}"
     body = kwargs["json"]
     for param in ["user_id", "project_id"]:
@@ -24,6 +25,8 @@ def creation_cb(url, **kwargs):
 
 @pytest.fixture
 async def director_v2_subsystem_mock() -> aioresponses:
+    from models_library.project_nodes import RunningState
+
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
@@ -59,5 +62,20 @@ async def director_v2_subsystem_mock() -> aioresponses:
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
+
+        yield mock
+
+
+@pytest.fixture
+async def storage_v0_subsystem_mock() -> aioresponses:
+    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
+    get_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/.*$")
+    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
+        mock.get(
+            get_pattern,
+            status=200,
+            payload={"state": "test"},
+            repeat=True,
+        )
 
         yield mock
