@@ -53,68 +53,15 @@
             "description": "The service type:\n   - computational - a computational service\n   - interactive - an interactive service\n",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/ServiceType"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ServiceType"
+                }
+              ],
+              "description": "The service type:\n   - computational - a computational service\n   - interactive - an interactive service\n"
             },
             "name": "service_type",
             "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ServicesArrayEnveloped"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/services/{service_key}/{service_version}": {
-      "get": {
-        "tags": [
-          "services"
-        ],
-        "summary": "Get Service Versioned",
-        "description": "Returns details of the selected service if available in the platform",
-        "operationId": "get_service_versioned_v0_services__service_key___service_version__get",
-        "parameters": [
-          {
-            "description": "Distinctive name for the node based on the docker registry path",
-            "required": true,
-            "schema": {
-              "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
-              "type": "string",
-              "description": "Distinctive name for the node based on the docker registry path"
-            },
-            "name": "service_key",
-            "in": "path"
-          },
-          {
-            "description": "The tag/version of the service",
-            "required": true,
-            "schema": {
-              "title": "Service Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string",
-              "description": "The tag/version of the service"
-            },
-            "name": "service_version",
-            "in": "path"
           }
         ],
         "responses": {
@@ -155,7 +102,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
               "type": "string",
               "description": "Distinctive name for the node based on the docker registry path"
             },
@@ -182,6 +129,64 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ServiceExtrasEnveloped"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/services/{service_key}/{service_version}": {
+      "get": {
+        "tags": [
+          "services"
+        ],
+        "summary": "Get Service Versioned",
+        "description": "Returns details of the selected service if available in the platform",
+        "operationId": "get_service_versioned_v0_services__service_key___service_version__get",
+        "parameters": [
+          {
+            "description": "Distinctive name for the node based on the docker registry path",
+            "required": true,
+            "schema": {
+              "title": "Service Key",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+              "type": "string",
+              "description": "Distinctive name for the node based on the docker registry path"
+            },
+            "name": "service_key",
+            "in": "path"
+          },
+          {
+            "description": "The tag/version of the service",
+            "required": true,
+            "schema": {
+              "title": "Service Version",
+              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+              "type": "string",
+              "description": "The tag/version of the service"
+            },
+            "name": "service_version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicesArrayEnveloped"
                 }
               }
             }
@@ -289,7 +294,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
               "type": "string",
               "description": "distinctive name for the node based on the docker registry path",
               "example": [
@@ -380,6 +385,195 @@
           }
         }
       }
+    },
+    "/v2/computations": {
+      "post": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Create and optionaly Start a new computation",
+        "operationId": "create_computation_v2_computations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputationTaskCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComputationTaskOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/computations/{project_id}": {
+      "get": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Returns a computation pipeline state",
+        "operationId": "get_computation_v2_computations__project_id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_id",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "exclusiveMinimum": 0.0,
+              "type": "integer"
+            },
+            "name": "user_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComputationTaskOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Deletes a computation pipeline",
+        "operationId": "delete_pipeline_v2_computations__project_id__delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputationTaskDelete"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/computations/{project_id}:stop": {
+      "post": {
+        "tags": [
+          "computations"
+        ],
+        "summary": "Stops a computation pipeline",
+        "operationId": "stop_computation_project_v2_computations__project_id__stop_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Project Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "project_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComputationTaskStop"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -396,25 +590,29 @@
             "title": "Name",
             "type": "string",
             "description": "Name of the author",
-            "example": [
-              "Sun Bak",
-              "Delenn"
-            ]
+            "example": "Jim Knopf"
           },
           "email": {
             "title": "Email",
             "type": "string",
             "description": "Email address",
             "format": "email",
-            "example": "sun@sense.eight"
+            "example": [
+              "sun@sense.eight",
+              "deleen@minbar.bab"
+            ]
           },
           "affiliation": {
             "title": "Affiliation",
             "type": "string",
             "description": "Affiliation of the author",
-            "example": "Sense8"
+            "example": [
+              "Sense8",
+              "Babylon 5"
+            ]
           }
-        }
+        },
+        "additionalProperties": false
       },
       "Badge": {
         "title": "Badge",
@@ -437,8 +635,11 @@
           },
           "image": {
             "title": "Image",
+            "maxLength": 2083,
+            "minLength": 1,
             "type": "string",
-            "description": "Url to the shield",
+            "description": "Url to the badge",
+            "format": "uri",
             "example": [
               "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
               "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
@@ -447,13 +648,123 @@
           },
           "url": {
             "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
             "type": "string",
-            "description": "Link to status",
+            "description": "Link to the status",
+            "format": "uri",
             "example": [
               "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
               "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
               "https://itisfoundation.github.io/"
             ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ComputationTaskCreate": {
+        "title": "ComputationTaskCreate",
+        "required": [
+          "user_id",
+          "project_id"
+        ],
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
+          },
+          "project_id": {
+            "title": "Project Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "start_pipeline": {
+            "title": "Start Pipeline",
+            "type": "boolean",
+            "description": "if True the computation pipeline will start right away",
+            "default": false
+          }
+        }
+      },
+      "ComputationTaskDelete": {
+        "title": "ComputationTaskDelete",
+        "required": [
+          "user_id"
+        ],
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
+          },
+          "force": {
+            "title": "Force",
+            "type": "boolean",
+            "description": "if True then the pipeline will be removed even if it is running",
+            "default": false
+          }
+        }
+      },
+      "ComputationTaskOut": {
+        "title": "ComputationTaskOut",
+        "required": [
+          "id",
+          "state",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string",
+            "description": "the id of the computation task",
+            "format": "uuid"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunningState"
+              }
+            ],
+            "description": "the state of the computational task"
+          },
+          "result": {
+            "title": "Result",
+            "type": "string",
+            "description": "the result of the computational task"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "description": "the link where to get the status of the task",
+            "format": "uri"
+          },
+          "stop_url": {
+            "title": "Stop Url",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "description": "the link where to stop the task",
+            "format": "uri"
+          }
+        }
+      },
+      "ComputationTaskStop": {
+        "title": "ComputationTaskStop",
+        "required": [
+          "user_id"
+        ],
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "title": "User Id",
+            "exclusiveMinimum": 0.0,
+            "type": "integer"
           }
         }
       },
@@ -467,95 +778,6 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             }
-          }
-        }
-      },
-      "ImageMetaData": {
-        "title": "ImageMetaData",
-        "required": [
-          "key",
-          "version",
-          "name",
-          "description",
-          "authors",
-          "contact",
-          "inputs",
-          "outputs"
-        ],
-        "type": "object",
-        "properties": {
-          "key": {
-            "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
-            "type": "string",
-            "description": "distinctive name for the node based on the docker registry path",
-            "example": [
-              "simcore/services/comp/itis/sleeper",
-              "simcore/services/dynamic/3dviewer"
-            ]
-          },
-          "integration-version": {
-            "title": "Integration-Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "integration version number",
-            "example": "1.0.0"
-          },
-          "version": {
-            "title": "Version",
-            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-            "type": "string",
-            "description": "service version number",
-            "example": "0.0.1"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "short, human readable name for the node",
-            "example": "Fast Counter"
-          },
-          "thumbnail": {
-            "title": "Thumbnail",
-            "type": "string",
-            "description": "url to the thumbnail",
-            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
-          },
-          "badges": {
-            "title": "Badges",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Badge"
-            }
-          },
-          "description": {
-            "title": "Description",
-            "type": "string",
-            "description": "human readable description of the purpose of the node",
-            "example": "The mother of all nodes, makes your numbers shine!"
-          },
-          "authors": {
-            "title": "Authors",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Author"
-            }
-          },
-          "contact": {
-            "title": "Contact",
-            "type": "string",
-            "description": "email to correspond to the authors about the node",
-            "format": "email",
-            "example": "lab@net.flix"
-          },
-          "inputs": {
-            "title": "Inputs",
-            "type": "object",
-            "description": "definition of the inputs of this node"
-          },
-          "outputs": {
-            "title": "Outputs",
-            "type": "object",
-            "description": "definition of the outputs of this node"
           }
         }
       },
@@ -599,7 +821,8 @@
         "title": "NodeRequirement",
         "enum": [
           "CPU",
-          "GPU"
+          "GPU",
+          "MPI"
         ],
         "type": "string",
         "description": "An enumeration."
@@ -619,7 +842,7 @@
         "properties": {
           "published_port": {
             "title": "Published Port",
-            "minimum": 1.0,
+            "exclusiveMinimum": 0.0,
             "type": "integer",
             "description": "The ports where the service provides its interface"
           },
@@ -631,19 +854,28 @@
           "service_uuid": {
             "title": "Service Uuid",
             "type": "string",
-            "description": "The UUID attached to this service"
+            "description": "The UUID attached to this service",
+            "format": "uuid4"
           },
           "service_key": {
             "title": "Service Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
             "type": "string",
-            "description": "distinctive name for the node based on the docker registry path"
+            "description": "distinctive name for the node based on the docker registry path",
+            "example": [
+              "simcore/services/comp/itis/sleeper",
+              "simcore/services/dynamic/3dviewer"
+            ]
           },
           "service_version": {
             "title": "Service Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "semantic version number"
+            "description": "service version number",
+            "example": [
+              "1.0.0",
+              "0.0.1"
+            ]
           },
           "service_host": {
             "title": "Service Host",
@@ -652,7 +884,7 @@
           },
           "service_port": {
             "title": "Service Port",
-            "minimum": 1.0,
+            "exclusiveMinimum": 0.0,
             "type": "integer",
             "description": "port to access the service within the network"
           },
@@ -663,7 +895,12 @@
             "default": ""
           },
           "service_state": {
-            "$ref": "#/components/schemas/ServiceState"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceState"
+              }
+            ],
+            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start\n"
           },
           "service_message": {
             "title": "Service Message",
@@ -691,8 +928,47 @@
           }
         }
       },
+      "RunningState": {
+        "title": "RunningState",
+        "enum": [
+          "UNKNOWN",
+          "PUBLISHED",
+          "NOT_STARTED",
+          "PENDING",
+          "STARTED",
+          "RETRY",
+          "SUCCESS",
+          "FAILED",
+          "ABORTED"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "SelectBox": {
+        "title": "SelectBox",
+        "required": [
+          "structure"
+        ],
+        "type": "object",
+        "properties": {
+          "structure": {
+            "title": "Structure",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Structure"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "ServiceBuildDetails": {
         "title": "ServiceBuildDetails",
+        "required": [
+          "build_date",
+          "vcs_ref",
+          "vcs_url"
+        ],
         "type": "object",
         "properties": {
           "build_date": {
@@ -709,6 +985,117 @@
           }
         }
       },
+      "ServiceDockerData": {
+        "title": "simcore node",
+        "required": [
+          "name",
+          "description",
+          "key",
+          "version",
+          "type",
+          "authors",
+          "contact",
+          "inputs",
+          "outputs"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "description": "short, human readable name for the node",
+            "example": "Fast Counter"
+          },
+          "thumbnail": {
+            "title": "Thumbnail",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "url to the thumbnail",
+            "format": "uri",
+            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "human readable description of the purpose of the node",
+            "example": [
+              "Our best node type",
+              "The mother of all nodes, makes your numbers shine!"
+            ]
+          },
+          "key": {
+            "title": "Key",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+            "type": "string",
+            "description": "distinctive name for the node based on the docker registry path",
+            "example": [
+              "simcore/services/comp/itis/sleeper",
+              "simcore/services/dynamic/3dviewer"
+            ]
+          },
+          "version": {
+            "title": "Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "service version number",
+            "example": [
+              "1.0.0",
+              "0.0.1"
+            ]
+          },
+          "integration-version": {
+            "title": "Integration-Version",
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "integration version number",
+            "example": "1.0.0"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceType"
+              }
+            ],
+            "description": "service type"
+          },
+          "badges": {
+            "title": "Badges",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Badge"
+            }
+          },
+          "authors": {
+            "title": "Authors",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Author"
+            }
+          },
+          "contact": {
+            "title": "Contact",
+            "type": "string",
+            "description": "email to correspond to the authors about the node",
+            "format": "email",
+            "example": [
+              "lab@net.flix"
+            ]
+          },
+          "inputs": {
+            "title": "Inputs",
+            "type": "object",
+            "description": "definition of the inputs of this node"
+          },
+          "outputs": {
+            "title": "Outputs",
+            "type": "object",
+            "description": "definition of the outputs of this node"
+          }
+        },
+        "additionalProperties": false
+      },
       "ServiceExtras": {
         "title": "ServiceExtras",
         "required": [
@@ -717,7 +1104,6 @@
         "type": "object",
         "properties": {
           "node_requirements": {
-            "title": "Node Requirements",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/NodeRequirement"
@@ -740,6 +1126,189 @@
           }
         }
       },
+      "ServiceInput": {
+        "title": "ServiceInput",
+        "required": [
+          "displayOrder",
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "number",
+            "description": "use this to numerically sort the properties for display",
+            "example": [
+              1,
+              -0.2
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "example": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ]
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "type": "object",
+            "description": "Place the data associated with the named keys in files",
+            "example": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "title": "Defaultvalue",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "example": [
+              "Dog",
+              true
+            ]
+          },
+          "widget": {
+            "title": "Widget",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "description": "custom widget to use instead of the default one determined from the data-type"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceOutput": {
+        "title": "ServiceOutput",
+        "required": [
+          "displayOrder",
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "number",
+            "description": "use this to numerically sort the properties for display",
+            "example": [
+              1,
+              -0.2
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed",
+            "example": [
+              "number",
+              "boolean",
+              "data:*/*",
+              "data:text/*",
+              "data:[image/jpeg,image/png]",
+              "data:application/json",
+              "data:application/json;schema=https://my-schema/not/really/schema.json",
+              "data:application/vnd.ms-excel",
+              "data:text/plain",
+              "data:application/hdf5",
+              "data:application/edu.ucdavis@ceclancy.xyz"
+            ]
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "type": "object",
+            "description": "Place the data associated with the named keys in files",
+            "example": [
+              {
+                "dir/input1.txt": "key_1",
+                "dir33/input2.txt": "key2"
+              }
+            ]
+          },
+          "defaultValue": {
+            "title": "Defaultvalue",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "example": [
+              "Dog",
+              true
+            ]
+          },
+          "widget": {
+            "title": "Widget",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "deprecated": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ServiceState": {
         "title": "ServiceState",
         "enum": [
@@ -757,7 +1326,8 @@
         "title": "ServiceType",
         "enum": [
           "computational",
-          "interactive"
+          "dynamic",
+          "frontend"
         ],
         "type": "string",
         "description": "An enumeration."
@@ -773,10 +1343,55 @@
             "title": "Data",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ImageMetaData"
+              "$ref": "#/components/schemas/ServiceDockerData"
             }
           }
         }
+      },
+      "Structure": {
+        "title": "Structure",
+        "required": [
+          "key",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TextArea": {
+        "title": "TextArea",
+        "required": [
+          "minHeight"
+        ],
+        "type": "object",
+        "properties": {
+          "minHeight": {
+            "title": "Minheight",
+            "exclusiveMinimum": 0.0,
+            "type": "integer",
+            "description": "minimum Height of the textarea"
+          }
+        },
+        "additionalProperties": false
       },
       "ValidationError": {
         "title": "ValidationError",
@@ -803,6 +1418,45 @@
             "type": "string"
           }
         }
+      },
+      "Widget": {
+        "title": "Widget",
+        "required": [
+          "type",
+          "details"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WidgetType"
+              }
+            ],
+            "description": "type of the property"
+          },
+          "details": {
+            "title": "Details",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextArea"
+              },
+              {
+                "$ref": "#/components/schemas/SelectBox"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "WidgetType": {
+        "title": "WidgetType",
+        "enum": [
+          "TextArea",
+          "SelectBox"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       }
     }
   }

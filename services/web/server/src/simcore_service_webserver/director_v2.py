@@ -61,6 +61,25 @@ async def _request_director_v2(
 
 
 @log_decorator(logger=log)
+async def create_or_update_pipeline(
+    app: web.Application, user_id: PositiveInt, project_id: UUID
+) -> Dict:
+    director2_settings: Directorv2Settings = get_settings(app)
+
+    backend_url = URL(f"{director2_settings.endpoint}/computations")
+    body = {"user_id": user_id, "project_id": str(project_id)}
+    # request to director-v2
+    try:
+        computation_task_out, _ = await _request_director_v2(
+            app, "POST", backend_url, data=body
+        )
+        return computation_task_out
+
+    except ForwardedException:
+        log.error("could not create pipeline from project %s", project_id)
+
+
+@log_decorator(logger=log)
 async def get_pipeline_state(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> RunningState:
@@ -109,7 +128,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
     log.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
-    body = {"user_id": user_id, "project_id": project_id}
+    body = {"user_id": user_id, "project_id": project_id, "start_pipeline": True}
 
     # request to director-v2
     try:
@@ -145,7 +164,14 @@ async def stop_pipeline(request: web.Request) -> web.Response:
             request.app, "POST", backend_url, data=body
         )
         data = {}
-        return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
+        # director responds with a 202
+        if resp_status != web.HTTPAccepted.status_code:
+            raise ForwardedException(
+                resp_status, "Unexpected response from director-v2"
+            )
+        return web.json_response(
+            data=wrap_as_envelope(data=data), status=web.HTTPNoContent.status_code
+        )
     except ForwardedException as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
