@@ -2,7 +2,7 @@
 
  Keeps functionality that couples with the following app modules
     - projects
-    - TMP: add_new_project includes to projects and computations app modules!
+    - TMP: add_new_project includes to projects and director_v2 app modules!
 
 """
 import json
@@ -152,7 +152,7 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
     # TODO: this piece was taking fromt the end of projects.projects_handlers.create_projects
 
     from ..projects.projects_db import APP_PROJECT_DBAPI
-    from ..computation_api import update_pipeline_db
+    from ..director_v2 import create_or_update_pipeline
 
     db = app[APP_PROJECT_DBAPI]
 
@@ -160,9 +160,11 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
     project_in: Dict = json.loads(project.json())
 
     # update metadata (uuid, timestamps, ownership) and save
-    project_db: Dict = await db.add_project(
+    _project_db: Dict = await db.add_project(
         project_in, user.id, force_as_template=False
     )
 
     # This is a new project and every new graph needs to be reflected in the pipeline db
-    await update_pipeline_db(app, project_db["uuid"], project_db["workbench"])
+    await create_or_update_pipeline(
+        app, user.id, project["uuid"]
+    )
