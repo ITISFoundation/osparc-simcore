@@ -474,20 +474,20 @@ class ProjectDBAPI:
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
         async with self.engine.acquire() as conn:
-            row = await self._get_project(
+            current_project: Dict = await self._get_project(
                 user_id,
                 project_uuid,
                 exclude_foreign=["tags"],
                 include_templates=include_templates,
             )
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
-            _check_project_permissions(row, user_id, user_groups, "write")
+            _check_project_permissions(current_project, user_id, user_groups, "write")
             # uuid can ONLY be set upon creation
-            if row[projects.c.uuid.key] != project_data["uuid"]:
+            if current_project["uuid"] != project_data["uuid"]:
                 raise ProjectInvalidRightsError(user_id, project_data["uuid"])
             # ensure the prj owner is always in the access rights
             owner_primary_gid = await self._get_user_primary_group_gid(
-                conn, row[projects.c.prj_owner.key]
+                conn, current_project[projects.c.prj_owner.key]
             )
             project_data["accessRights"].update(
                 _create_project_access_rights(
@@ -495,14 +495,33 @@ class ProjectDBAPI:
                 )
             )
 
+            # update the workbench
+            def _update_workbench(old_project: Dict, new_project: Dict):
+                # any non set entry in the new workbench is taken from the old one if available
+                old_workbench = old_project["workbench"]
+                new_workbench = new_project["workbench"]
+                for node_key, node in new_workbench.items():
+                    old_node = old_workbench.get(node_key)
+                    if not old_node:
+                        continue
+                    for prop in old_node:
+                        # check if the key is missing in the new node
+                        if prop not in node:
+                            # use the old value
+                            node[prop] = old_node[prop]
+                return new_workbench
+
+            _update_workbench(current_project, project_data)
+
             # update timestamps
             project_data["lastChangeDate"] = now_str()
+
             # now update it
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
                 .values(**_convert_to_db_names(project_data))
-                .where(projects.c.id == row[projects.c.id.key])
+                .where(projects.c.id == current_project[projects.c.id.key])
                 .returning(literal_column("*"))
             )
             project: RowProxy = await result.fetchone()
