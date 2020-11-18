@@ -14,13 +14,12 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
-from models_library.project_nodes import RunningState
-
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    RunningState,
 )
 from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
@@ -28,12 +27,12 @@ from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from ..director_v2 import get_pipeline_state, delete_pipeline
 from ..director import director_api
+from ..director_v2 import delete_pipeline, get_pipeline_state
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
-    SOCKET_IO_PROJECT_UPDATED_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
+    SOCKET_IO_PROJECT_UPDATED_EVENT,
     post_group_messages,
 )
 from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
