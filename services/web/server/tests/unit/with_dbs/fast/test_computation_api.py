@@ -6,7 +6,7 @@
 import faker
 import pytest
 
-from models_library.projects import RunningState
+from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_service_webserver.computation_api import (
     convert_state_from_db,

@@ -1,6 +1,7 @@
 from typing import Dict, List
 
-from models_library.projects import ProjectID, RunningState
+from models_library.projects import ProjectID
+from models_library.projects_state import RunningState
 from pydantic import BaseModel, validator
 
 
