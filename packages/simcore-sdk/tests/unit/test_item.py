@@ -14,7 +14,12 @@ from simcore_sdk.node_ports._schema_item import SchemaItem
 from utils_futures import future_with_result
 
 
-def create_item(item_type, item_value):
+@pytest.fixture
+def node_ports_config():
+    config.STORAGE_ENDPOINT = "storage:8080"
+
+
+def create_item(item_type: str, item_value):
     key = "some key"
     return Item(
         SchemaItem(
@@ -66,9 +71,38 @@ async def test_item(loop):
 @pytest.mark.parametrize(
     "item_type", list(config.TYPE_TO_PYTHON_TYPE_MAP.keys()) + [config.FILE_TYPE_PREFIX]
 )
-async def test_valid_type_empty_value(item_type):
+async def test_valid_type_empty_value(item_type: str):
     item = create_item(item_type, None)
     assert await item.get() is None
+
+
+@pytest.mark.parametrize(
+    "item_type, item_value",
+    [
+        ("integer", None),
+        ("integer", -12343),
+        ("integer", 1243),
+        ("integer", 0),
+        ("number", None),
+        ("number", -12343),
+        ("number", 0.000),
+        ("number", 3.5434534500),
+        ("boolean", None),
+        ("boolean", False),
+        ("boolean", 0),
+        ("boolean", True),
+        ("string", None),
+        ("string", "123"),
+        ("string", "True"),
+        ("data:*/*", None),
+        ("data:*/*", {"store": 0, "path": "/myfile/path"}),
+    ],
+)
+async def test_valid_type(
+    node_ports_config, storage_v0_subsystem_mock, item_type: str, item_value
+):
+    item = create_item(item_type, item_value)
+    assert await item.get() == item_value
 
 
 @pytest.mark.parametrize(

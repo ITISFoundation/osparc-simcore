@@ -5,8 +5,9 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 aiofiles==0.5.0           # via -r requirements/_base.txt
-aiohttp==3.6.3            # via -r requirements/_base.txt, pytest-aiohttp
+aiohttp==3.6.3            # via -r requirements/_base.txt, aioresponses, pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
+aioresponses==0.7.1       # via -r requirements/_test.in
 apipkg==1.5               # via execnet
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -r requirements/_base.txt, aiohttp
