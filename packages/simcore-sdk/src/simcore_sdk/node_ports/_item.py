@@ -17,7 +17,7 @@ def _check_type(item_type, value):
         return
 
     if isinstance(value, (int, float)):
-        if item_type in ("number", "integer"):
+        if item_type in ("number"):
             return
 
     possible_types = [

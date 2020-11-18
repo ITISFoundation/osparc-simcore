@@ -76,10 +76,26 @@ async def test_invalid_type():
     assert "Invalid protocol used" in str(excinfo.value)
 
 
-async def test_invalid_value_type():
+@pytest.mark.parametrize(
+    "item_type, item_value",
+    [
+        ("integer", "some string but not an integer"),
+        ("integer", 2.34),
+        ("number", "some string but not a number"),
+        ("boolean", "some string but not a boolean"),
+        ("boolean", 432),
+        ("boolean", 1),
+        ("boolean", -1),
+        ("string", 123),
+        ("string", True),
+    ],
+)
+async def test_invalid_value_type(item_type, item_value):
     # pylint: disable=W0612
-    with pytest.raises(exceptions.InvalidItemTypeError) as excinfo:
-        create_item("integer", "not an integer")
+    with pytest.raises(
+        exceptions.InvalidItemTypeError, match=rf"Invalid item type, .*[{item_type}]"
+    ) as excinfo:
+        create_item(item_type, item_value)
 
 
 @pytest.mark.parametrize(
