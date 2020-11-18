@@ -70,7 +70,7 @@ async def _abort_pipeline_tasks(
 
 @router.post(
     "",
-    summary="Create and optionaly Start a new computation",
+    summary="Create and optionally start a new computation",
     response_model=ComputationTaskOut,
     status_code=status.HTTP_201_CREATED,
 )
