@@ -7,10 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from simcore_sdk.node_ports import config, exceptions
+from simcore_sdk.node_ports import config, exceptions, filemanager
+from simcore_sdk.node_ports import data_items_utils
 from simcore_sdk.node_ports._data_item import DataItem
 from simcore_sdk.node_ports._item import Item
 from simcore_sdk.node_ports._schema_item import SchemaItem
+
 from utils_futures import future_with_result
 
 
@@ -76,6 +78,17 @@ async def test_valid_type_empty_value(item_type: str):
     assert await item.get() is None
 
 
+from pathlib import Path
+
+
+@pytest.fixture
+async def file_manager_mock(monkeypatch):
+    async def fake_download_file(*args, **kwargs) -> Path:
+        return "/some/file/path"
+
+    monkeypatch.setattr(filemanager, "download_file", fake_download_file)
+
+
 @pytest.mark.parametrize(
     "item_type, item_value",
     [
@@ -98,11 +111,10 @@ async def test_valid_type_empty_value(item_type: str):
         ("data:*/*", {"store": 0, "path": "/myfile/path"}),
     ],
 )
-async def test_valid_type(
-    node_ports_config, storage_v0_subsystem_mock, item_type: str, item_value
-):
+async def test_valid_type(item_type: str, item_value):
     item = create_item(item_type, item_value)
-    assert await item.get() == item_value
+    if not data_items_utils.is_file_type(item_type):
+        assert await item.get() == item_value
 
 
 @pytest.mark.parametrize(
