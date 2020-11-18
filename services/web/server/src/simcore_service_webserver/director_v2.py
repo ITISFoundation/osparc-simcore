@@ -164,7 +164,14 @@ async def stop_pipeline(request: web.Request) -> web.Response:
             request.app, "POST", backend_url, data=body
         )
         data = {}
-        return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
+        # director responds with a 202
+        if resp_status != web.HTTPAccepted.status_code:
+            raise ForwardedException(
+                resp_status, "Unexpected response from director-v2"
+            )
+        return web.json_response(
+            data=wrap_as_envelope(data=data), status=web.HTTPNoContent.status_code
+        )
     except ForwardedException as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
