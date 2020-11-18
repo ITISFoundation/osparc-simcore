@@ -96,24 +96,32 @@ async def file_manager_mock(monkeypatch):
         ("integer", -12343),
         ("integer", 1243),
         ("integer", 0),
+        ("integer", {"nodeUuid": "some node uuid", "output": "some output"}),
         ("number", None),
         ("number", -12343),
         ("number", 0.000),
         ("number", 3.5434534500),
+        ("number", {"nodeUuid": "some node uuid", "output": "some output"}),
         ("boolean", None),
         ("boolean", False),
         ("boolean", 0),
         ("boolean", True),
+        ("boolean", {"nodeUuid": "some node uuid", "output": "some output"}),
         ("string", None),
         ("string", "123"),
         ("string", "True"),
+        ("string", {"nodeUuid": "some node uuid", "output": "some output"}),
         ("data:*/*", None),
         ("data:*/*", {"store": 0, "path": "/myfile/path"}),
+        ("data:*/*", {"store": 0, "path": "/myfile/path"}),
+        ("data:*/*", {"nodeUuid": "some node uuid", "output": "some output"}),
     ],
 )
 async def test_valid_type(item_type: str, item_value):
     item = create_item(item_type, item_value)
-    if not data_items_utils.is_file_type(item_type):
+    if not data_items_utils.is_file_type(
+        item_type
+    ) and not data_items_utils.is_value_link(item_value):
         assert await item.get() == item_value
 
 
@@ -123,13 +131,17 @@ async def test_valid_type(item_type: str, item_value):
         ("some wrong type", "some string but not an integer"),
         ("integer", "some string but not an integer"),
         ("integer", 2.34),
+        ("integer", {"store": 0, "path": "/myfile/path"}),
         ("number", "some string but not a number"),
+        ("number", {"store": 0, "path": "/myfile/path"}),
         ("boolean", "some string but not a boolean"),
         ("boolean", 432),
         ("boolean", 1),
         ("boolean", -1),
+        ("boolean", {"store": 0, "path": "/myfile/path"}),
         ("string", 123),
         ("string", True),
+        ("string", {"store": 0, "path": "/myfile/path"}),
     ],
 )
 async def test_invalid_type(item_type, item_value):
