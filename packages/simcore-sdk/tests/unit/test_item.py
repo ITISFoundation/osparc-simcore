@@ -6,13 +6,10 @@
 from pathlib import Path
 
 import pytest
-
-from simcore_sdk.node_ports import config, exceptions, filemanager
-from simcore_sdk.node_ports import data_items_utils
+from simcore_sdk.node_ports import config, data_items_utils, exceptions, filemanager
 from simcore_sdk.node_ports._data_item import DataItem
 from simcore_sdk.node_ports._item import Item
 from simcore_sdk.node_ports._schema_item import SchemaItem
-
 from utils_futures import future_with_result
 
 
@@ -76,9 +73,6 @@ async def test_item(loop):
 async def test_valid_type_empty_value(item_type: str):
     item = create_item(item_type, None)
     assert await item.get() is None
-
-
-from pathlib import Path
 
 
 @pytest.fixture
