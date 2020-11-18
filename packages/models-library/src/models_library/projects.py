@@ -87,7 +87,7 @@ class Project(BaseModel):
 
     # Dev only
     dev: Optional[Dict] = Field(
-        None, description="object used for development purposes only"
+        description="object used for development purposes only"
     )
 
     class Config:
