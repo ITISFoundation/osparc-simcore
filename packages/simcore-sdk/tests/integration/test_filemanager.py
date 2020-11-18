@@ -53,7 +53,7 @@ async def test_invalid_file_path(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidPathError):
+    with pytest.raises(exceptions.InvalidDownloadLinkError):
         await filemanager.download_file_from_s3(
             store_id=store, s3_object=file_id, local_folder=download_folder
         )
@@ -81,7 +81,7 @@ async def test_invalid_fileid(
         await filemanager.download_file_from_s3(
             store_id=store, s3_object="", local_folder=download_folder
         )
-    with pytest.raises(exceptions.S3InvalidPathError):
+    with pytest.raises(exceptions.InvalidDownloadLinkError):
         await filemanager.download_file_from_s3(
             store_id=store, s3_object="file_id", local_folder=download_folder
         )
