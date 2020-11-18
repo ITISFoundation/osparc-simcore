@@ -57,7 +57,7 @@ class Item:
 
         _check_type(self.type, self.value)
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
 
         # schema attributes first
         if hasattr(self._schema, name):
@@ -72,7 +72,7 @@ class Item:
 
         raise AttributeError
 
-    async def get(self):
+    async def get(self) -> Union[int, float, bool, str, Path]:
         """ gets data converted to the underlying type
 
         :raises exceptions.InvalidProtocolError: if the underlying type is unknown
@@ -119,7 +119,7 @@ class Item:
             config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
         )
 
-    async def set(self, value):
+    async def set(self, value: Union[int, float, bool, str, Path]):
         """ sets the data to the underlying port
 
         :param value: must be convertible to a string, or an exception will be thrown.
