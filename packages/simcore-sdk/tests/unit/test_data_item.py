@@ -7,16 +7,30 @@ from simcore_sdk.node_ports import exceptions
 from simcore_sdk.node_ports._data_item import DataItem
 
 
-@pytest.mark.parametrize("item_value", [
-    (26),
-    (-746.4748),
-    ("some text"),
-    (False),
-    (True),
-    ({"nodeUuid":"asdf-efefsda-efdeda", "output":"out_1"}),
-    ({"store":"z43", "path":"/simcore/asdlkjf/dsfskr.tmt"}),
-    (None)
-])
+@pytest.mark.parametrize(
+    "item_value",
+    [
+        (26),
+        (-746.4748),
+        ("some text"),
+        (False),
+        (True),
+        ({"nodeUuid": "asdf-efefsda-efdeda", "output": "out_1"}),
+        ({"store": "0", "path": "/simcore/asdlkjf/dsfskr.tmt"}),
+        ({"store": 0, "path": "/simcore/asdlkjf/dsfskr.tmt"}),
+        ({"store": 1, "path": "/simcore/asdlkjf/dsfskr.tmt"}),
+        ({"store": "1", "path": "/simcore/asdlkjf/dsfskr.tmt"}),
+        (
+            {
+                "store": 1,
+                "dataset": "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041",
+                "path": "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
+                "label": "FELIR.job",
+            }
+        ),
+        (None),
+    ],
+)
 def test_default_item(item_value):
     with pytest.raises(exceptions.InvalidProtocolError):
         DataItem()
