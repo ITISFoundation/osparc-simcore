@@ -93,6 +93,22 @@ class S3InvalidStore(NodeportsException):
         self.store = s3_store
 
 
+class InvalidDownloadLinkError(NodeportsException):
+    """Download link is invalid"""
+
+    def __init__(self, link):
+        super().__init__(f"Invalid link [{link}]")
+        self.link = link
+
+
+class TransferError(NodeportsException):
+    """Download/Upload transfer error"""
+
+    def __init__(self, link):
+        super().__init__(f"Error while transferring to/from [{link}]")
+        self.link = link
+
+
 class StorageConnectionError(NodeportsException):
     """S3 transfer error"""
 

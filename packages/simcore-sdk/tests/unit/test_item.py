@@ -4,6 +4,7 @@
 # pylint:disable=no-member
 
 from pathlib import Path
+from typing import Callable, Dict, Union
 
 import pytest
 from simcore_sdk.node_ports import config, data_items_utils, exceptions, filemanager
@@ -76,11 +77,16 @@ async def test_valid_type_empty_value(item_type: str):
 
 
 @pytest.fixture
-async def file_manager_mock(monkeypatch):
+async def file_link_mock(
+    monkeypatch, item_type: str, item_value: Union[int, float, bool, str, Dict]
+) -> Callable:
     async def fake_download_file(*args, **kwargs) -> Path:
-        return "/some/file/path"
+        return_value = "mydefault"
+        if item_value and data_items_utils.is_file_type(item_type):
+            return_value = item_value["path"]
+        return return_value
 
-    monkeypatch.setattr(filemanager, "download_file", fake_download_file)
+    monkeypatch.setattr(filemanager, "download_file_from_s3", fake_download_file)
 
 
 @pytest.mark.parametrize(
@@ -109,15 +115,37 @@ async def file_manager_mock(monkeypatch):
         ("data:*/*", {"store": 0, "path": "/myfile/path"}),
         ("data:*/*", {"store": 0, "path": "/myfile/path"}),
         ("data:*/*", {"nodeUuid": "some node uuid", "output": "some output"}),
-        ("data:*/*", {"downloadLink": "some download link", "label": "some label"}),
+        (
+            "data:*/*",
+            {
+                "downloadLink": "https://github.com/ITISFoundation/osparc-simcore/blob/master/README.md",
+                "label": "some label",
+            },
+        ),
     ],
 )
-async def test_valid_type(item_type: str, item_value):
+async def test_valid_type(
+    loop,
+    file_link_mock: Callable,
+    item_type: str,
+    item_value: Union[int, float, bool, str, Dict],
+):
     item = create_item(item_type, item_value)
-    if not data_items_utils.is_file_type(
-        item_type
-    ) and not data_items_utils.is_value_link(item_value):
-        assert await item.get() == item_value
+    if not data_items_utils.is_value_link(item_value):
+        if item_value and data_items_utils.is_file_type(item_type):
+            if data_items_utils.is_value_on_store(item_value):
+                assert await item.get() == item_value["path"]
+            elif data_items_utils.is_value_a_download_link(item_value):
+                # this really downloads...
+                file = await item.get()
+                assert file.exists(), f"{file} is not downloaded"
+                assert file.name in item_value["downloadLink"]
+
+            else:
+                assert False, f"invalid type/value combination {item_type}/{item_value}"
+        else:
+            # I don't know how to monkeypatch that one
+            assert await item.get() == item_value
 
 
 @pytest.mark.parametrize(

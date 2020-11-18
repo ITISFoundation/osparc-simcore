@@ -3,6 +3,8 @@ import shutil
 from pathlib import Path
 from typing import Dict, Union
 
+from yarl import URL
+
 from . import config, data_items_utils, exceptions, filemanager
 from ._data_item import DataItem
 from ._schema_item import SchemaItem
@@ -85,15 +87,15 @@ class Item:
         ):
             raise exceptions.InvalidProtocolError(self.type)
         if self.value is None:
-            log.debug("Got empty data item")
+            log.debug("Got empty [%s] item", self.type)
             return None
-        log.debug("Got data item with value %s", self.value)
+        log.debug("Getting [%s] item with value %s", self.type, self.value)
 
         if data_items_utils.is_value_link(self.value):
+            # follow the link
             value = await self.__get_value_from_link(self.value)
-            if value is None:
-                return value
-            if data_items_utils.is_file_type(self.type):
+
+            if value and data_items_utils.is_file_type(self.type):
                 # move the file to the right location
                 file_name = Path(value).name
 
@@ -114,6 +116,9 @@ class Item:
 
         if data_items_utils.is_value_on_store(self.value):
             return await self.__get_value_from_store(self.value)
+
+        if data_items_utils.is_value_a_download_link(self.value):
+            return await self._get_value_from_download_link(self.value)
         # the value is not a link, let's directly convert it to the right type
         return config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["type"](
             config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
@@ -167,7 +172,7 @@ class Item:
 
     async def __get_value_from_link(
         self, value: Dict[str, str]
-    ):  # pylint: disable=R1710
+    ) -> Union[int, float, bool, str, Path]:  # pylint: disable=R1710
         log.debug("Getting value %s", value)
         node_uuid, port_key = data_items_utils.decode_link(value)
         if not self.get_node_from_uuid_cb:
@@ -187,7 +192,7 @@ class Item:
         store_id, s3_path = data_items_utils.decode_store(value)
         # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
         local_path = data_items_utils.create_folder_path(self.key)
-        downloaded_file = await filemanager.download_file(
+        downloaded_file = await filemanager.download_file_from_s3(
             store_id=store_id, s3_object=s3_path, local_folder=local_path
         )
         # if a file alias is present use it to rename the file accordingly
@@ -198,5 +203,14 @@ class Item:
                     renamed_file.unlink()
                 shutil.move(downloaded_file, renamed_file)
                 downloaded_file = renamed_file
+
+        return downloaded_file
+
+    async def _get_value_from_download_link(self, value: Dict[str,str]) -> Path:
+        log.debug("Getting value from download link [%s] with label %s", value["downloadLink"], value.get("label", "undef"))
+
+        download_link = URL(value["downloadLink"])
+        local_path = data_items_utils.create_folder_path(self.key)
+        downloaded_file = await filemanager.download_file_from_link(download_link, local_path, file_name=next(iter(self._schema.fileToKeyMap)) if self._schema.fileToKeyMap else None)
 
         return downloaded_file
