@@ -23,6 +23,7 @@ from models_library.projects_state import (
     ProjectRunningState,
     ProjectState,
     RunningState,
+    ProjectLocked
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
