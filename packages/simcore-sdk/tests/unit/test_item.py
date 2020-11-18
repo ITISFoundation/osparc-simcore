@@ -115,6 +115,7 @@ async def file_manager_mock(monkeypatch):
         ("data:*/*", {"store": 0, "path": "/myfile/path"}),
         ("data:*/*", {"store": 0, "path": "/myfile/path"}),
         ("data:*/*", {"nodeUuid": "some node uuid", "output": "some output"}),
+        ("data:*/*", {"downloadLink": "some download link", "label": "some label"}),
     ],
 )
 async def test_valid_type(item_type: str, item_value):
@@ -142,6 +143,7 @@ async def test_valid_type(item_type: str, item_value):
         ("string", 123),
         ("string", True),
         ("string", {"store": 0, "path": "/myfile/path"}),
+        ("data:*/*", {"invalid stuff": 0, "path": "/myfile/path"}),
     ],
 )
 async def test_invalid_type(item_type, item_value):

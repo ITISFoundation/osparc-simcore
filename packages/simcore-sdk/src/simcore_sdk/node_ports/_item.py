@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
 from . import config, data_items_utils, exceptions, filemanager
 from ._data_item import DataItem
@@ -10,7 +10,7 @@ from ._schema_item import SchemaItem
 log = logging.getLogger(__name__)
 
 
-def _check_type(item_type, value):
+def _check_type(item_type: str, value: Union[int, float, bool, str, Dict]):
     if item_type not in config.TYPE_TO_PYTHON_TYPE_MAP and not data_items_utils.is_file_type(item_type):
         raise exceptions.InvalidItemTypeError(item_type, value)
 
@@ -19,21 +19,22 @@ def _check_type(item_type, value):
     if data_items_utils.is_value_link(value):
         return
 
-    if isinstance(value, (int, float)):
-        if item_type in ("number"):
-            return
+    if isinstance(value, (int, float)) and item_type == "number":
+        return
 
     possible_types = [
         key
         for key, key_type in config.TYPE_TO_PYTHON_TYPE_MAP.items()
         if isinstance(value, key_type["type"])
     ]
-    if not item_type in possible_types:
-        if data_items_utils.is_file_type(
-            item_type
-        ) and data_items_utils.is_value_on_store(value):
+    if item_type in possible_types:
+        return
+    if data_items_utils.is_file_type(
+        item_type
+    ):
+        if data_items_utils.is_value_on_store(value) or data_items_utils.is_value_a_download_link(value):
             return
-        raise exceptions.InvalidItemTypeError(item_type, value)
+    raise exceptions.InvalidItemTypeError(item_type, value)
 
 
 class Item:
