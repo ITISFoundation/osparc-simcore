@@ -107,7 +107,7 @@ async def _get_link(store_id: int, file_id: str, apifct) -> URL:
 
 
 async def _get_download_link(store_id: int, file_id: str, api: UsersApi) -> URL:
-    return await _get_link(store_id, file_id, api.download_file_from_s3)
+    return await _get_link(store_id, file_id, api.download_file)
 
 
 async def _get_upload_link(store_id: int, file_id: str, api: UsersApi) -> URL:
