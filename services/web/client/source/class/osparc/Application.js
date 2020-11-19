@@ -117,7 +117,8 @@ qx.Class.define("osparc.Application", {
     },
 
     __rerouteNav: function(urlFragment) {
-      switch (urlFragment.nav[0]) {
+      const page = urlFragment.nav[0];
+      switch (page) {
         case "study": {
           // Route: /#/study/{id}
           if (urlFragment.nav.length > 1) {
@@ -133,10 +134,12 @@ qx.Class.define("osparc.Application", {
           break;
         }
         case "view": {
-          // Route: /#/view?project_id={studyId}&viewer_node_id={viewerNodeId}
-          if (urlFragment.params && urlFragment.params.dataset) {
+          // Route: /#/view/?project_id={studyId}&viewer_node_id={viewerNodeId}
+          if (urlFragment.params && urlFragment.params.project_id && urlFragment.params.viewer_node_id) {
             osparc.utils.Utils.cookie.deleteCookie("user");
-            this.__loadNodeViewerPage();
+            const studyId = urlFragment.params.project_id;
+            const viewerNodeId = urlFragment.params.viewer_node_id;
+            this.__loadNodeViewerPage(studyId, viewerNodeId);
           }
           break;
         }
@@ -157,7 +160,7 @@ qx.Class.define("osparc.Application", {
           break;
         }
         case "error": {
-          // Route: /#/error?message={errorMessage}&status_code={statusCode}
+          // Route: /#/error/?message={errorMessage}&status_code={statusCode}
           if (urlFragment.params && urlFragment.params.message) {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__restart();
@@ -240,9 +243,9 @@ qx.Class.define("osparc.Application", {
       });
     },
 
-    __loadNodeViewerPage: function(nodeId) {
+    __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
-      this.__loadView(new osparc.viewer.MainPage(nodeId), {
+      this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId), {
         top: 0,
         bottom: 0,
         left: 0,

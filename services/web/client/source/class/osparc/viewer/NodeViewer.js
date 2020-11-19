@@ -18,7 +18,7 @@
 qx.Class.define("osparc.viewer.NodeViewer", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(nodeId) {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -29,8 +29,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     this.__iFrameChanged();
 
     setTimeout(() => {
-      // const src = window.location.href + "/x/" + nodeId;
-      const src = "http://localhost:9000/#/stacks/master-simcore?type=1&external=true";
+      const src = window.location.href + "x/" + nodeId;
       this.getIFrame().setSource(src);
       this.__iFrameChanged();
     }, 10000);
