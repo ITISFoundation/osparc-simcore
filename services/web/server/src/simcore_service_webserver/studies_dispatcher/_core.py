@@ -1,3 +1,4 @@
+import os
 import uuid
 from copy import deepcopy
 from dataclasses import dataclass
@@ -7,7 +8,7 @@ from typing import Iterator, Optional, Tuple
 from aiohttp import web
 from pydantic import ValidationError
 
-MEGABYTES = 1e6
+MEGABYTES = 1024*2014
 
 
 # VIEWERS MAP -----------------------------------------------------------------------------
@@ -37,14 +38,17 @@ class ViewerInfo:
 
 
 #
-# NOTE: For the moment, viewers-filetype association is hard-coded
+# TODO: For the moment, viewers-filetype association is hard-coded
+# TODO: The environs are tmp to give more flexibility with updates
 #
 _SIM4LIFE_VIEWER = ViewerInfo(
-    key="simcore/services/dynamic/sim4life", version="1.0.16", label="sim4life"
+    key="simcore/services/dynamic/sim4life",
+    version=os.environ.get("WEBSERVER_VIEWER_SIM4LIFE_VERSION", "1.0.16"),
+    label="Sim4Life",
 )
 _RAWGRAPHS_VIEWER = ViewerInfo(
     key="simcore/services/dynamic/raw-graphs",
-    version="2.10.6",
+    version=os.environ.get("WEBSERVER_VIEWER_RAWGRAPH_VERSION", "2.10.6"),
     label="2D plot - RAWGraphs",
 )
 
@@ -66,9 +70,7 @@ def find_compatible_viewer(
 
     # Assumes size of the file in bytes TODO: configurable?
     if file_size is not None and file_size > 50 * MEGABYTES:
-        raise MatchNotFoundError(
-            f"File size {file_size*1E-6} MB is over allowed limit"
-        )
+        raise MatchNotFoundError(f"File size {file_size*1E-6} MB is over allowed limit")
 
     return viewer
 
