@@ -173,7 +173,10 @@ qx.Class.define("osparc.Application", {
           if (urlFragment.params && urlFragment.params.message) {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__restart();
-            const msg = urlFragment.params.message;
+            let msg = urlFragment.params.message;
+            // Relpace plus sign in URL query string by spaces
+            msg = msg.replace(/\+/g, "%20");
+            msg = decodeURIComponent(msg);
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           }
           break;
