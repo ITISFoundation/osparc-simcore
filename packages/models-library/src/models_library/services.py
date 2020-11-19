@@ -1,28 +1,28 @@
-import sys
+"""
+
+NOTE: to dump json-schema from CLI use
+    python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
+"""
 from enum import Enum
-from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 
-from .constants import VERSION_RE
-
-current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
+from .basic_regex import VERSION_RE
 
 
-KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"
+SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"
+KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
+
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$" # TODO: should be a UUID_RE instead??
 
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
 FILENAME_RE = r".+"
 
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 GroupId = PositiveInt
-
-
-# Service base schema (used for docker labels on docker images)
 
 
 class ServiceType(str, Enum):
@@ -35,12 +35,12 @@ class Badge(BaseModel):
     name: str = Field(
         ...,
         description="Name of the subject",
-        example=["travis-ci", "coverals.io", "github.io"],
+        examples=["travis-ci", "coverals.io", "github.io"],
     )
     image: HttpUrl = Field(
         ...,
         description="Url to the badge",
-        example=[
+        examples=[
             "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
             "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
             "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation",
@@ -49,7 +49,7 @@ class Badge(BaseModel):
     url: HttpUrl = Field(
         ...,
         description="Link to the status",
-        example=[
+        examples=[
             "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
             "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
             "https://itisfoundation.github.io/",
@@ -64,11 +64,11 @@ class Author(BaseModel):
     name: str = Field(..., description="Name of the author", example="Jim Knopf")
     email: EmailStr = Field(
         ...,
-        example=["sun@sense.eight", "deleen@minbar.bab"],
+        examples=["sun@sense.eight", "deleen@minbar.bab"],
         description="Email address",
     )
     affiliation: Optional[str] = Field(
-        None, example=["Sense8", "Babylon 5"], description="Affiliation of the author"
+        None, examples=["Sense8", "Babylon 5"], description="Affiliation of the author"
     )
 
     class Config:
@@ -119,7 +119,7 @@ class ServiceProperty(BaseModel):
         ...,
         alias="displayOrder",
         description="use this to numerically sort the properties for display",
-        example=[1, -0.2],
+        examples=[1, -0.2],
     )
     label: str = Field(..., description="short name for the property", example="Age")
     description: str = Field(
@@ -131,7 +131,7 @@ class ServiceProperty(BaseModel):
         ...,
         alias="type",
         description="data type expected on this input glob matching for data type is allowed",
-        example=[
+        examples=[
             "number",
             "boolean",
             "data:*/*",
@@ -149,10 +149,10 @@ class ServiceProperty(BaseModel):
         None,
         alias="fileToKeyMap",
         description="Place the data associated with the named keys in files",
-        example=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
+        examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
     default_value: Optional[Union[str, float, bool, int]] = Field(
-        None, alias="defaultValue", example=["Dog", True]
+        None, alias="defaultValue", examples=["Dog", True]
     )
 
     class Config:
@@ -179,7 +179,7 @@ class ServiceKeyVersion(BaseModel):
         ...,
         title="",
         description="distinctive name for the node based on the docker registry path",
-        example=[
+        examples=[
             "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
         ],
@@ -187,7 +187,7 @@ class ServiceKeyVersion(BaseModel):
     version: constr(regex=VERSION_RE) = Field(
         ...,
         description="service version number",
-        example=["1.0.0", "0.0.1"],
+        examples=["1.0.0", "0.0.1"],
     )
 
 
@@ -200,12 +200,14 @@ class ServiceCommonData(BaseModel):
     thumbnail: Optional[HttpUrl] = Field(
         None,
         description="url to the thumbnail",
-        example="https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png",
+        examples=[
+            "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+        ],
     )
     description: str = Field(
         ...,
         description="human readable description of the purpose of the node",
-        example=[
+        examples=[
             "Our best node type",
             "The mother of all nodes, makes your numbers shine!",
         ],
@@ -223,18 +225,22 @@ ServiceOutputs = Dict[PropertyName, ServiceOutput]
 
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
+    """
+    Service base schema (used for docker labels on docker images)
+    """
+
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
         alias="integration-version",
         description="integration version number",
         # regex=VERSION_RE,
-        example="1.0.0",
+        examples=["1.0.0"],
     )
     service_type: ServiceType = Field(
         ...,
         alias="type",
         description="service type",
-        example="computational",
+        examples=["computational"],
     )
 
     badges: Optional[List[Badge]] = Field(None)
@@ -243,7 +249,7 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     contact: EmailStr = Field(
         ...,
         description="email to correspond to the authors about the node",
-        example=["lab@net.flix"],
+        examples=["lab@net.flix"],
     )
     inputs: Optional[ServiceInputs] = Field(
         ..., description="definition of the inputs of this node"
@@ -259,8 +265,6 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
 
 
 # Service access rights models
-
-
 class ServiceGroupAccessRights(BaseModel):
     execute_access: bool = Field(
         False,
@@ -303,9 +307,3 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
 
     class Config:
         orm_mode = True
-
-
-if __name__ == "__main__":
-
-    with open(current_file.with_suffix(".json"), "wt") as fh:
-        print(ServiceDockerData.schema_json(indent=2), file=fh)

@@ -3,7 +3,8 @@ import re
 from datetime import datetime
 from typing import List, Set
 
-from models_library.project_nodes import KEY_RE, RunningState
+from models_library.services import SERVICE_KEY_RE
+from models_library.projects_state import RunningState
 
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
@@ -47,7 +48,7 @@ def get_pipeline_state_from_task_states(
     return RunningState.NOT_STARTED
 
 
-_node_key_re = re.compile(KEY_RE)
+_node_key_re = re.compile(SERVICE_KEY_RE)
 _STR_TO_NODECLASS = {
     "comp": NodeClass.COMPUTATIONAL,
     "dynamic": NodeClass.INTERACTIVE,

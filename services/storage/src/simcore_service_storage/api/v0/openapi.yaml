@@ -2079,7 +2079,8 @@ paths:
                     state:
                       title: State
                       description: Project state
-                      allOf:
+                      anyOf:
+                        - nullable: true
                         - title: ProjectState
                           type: object
                           additionalProperties: false
@@ -2505,7 +2506,8 @@ paths:
                     state:
                       title: State
                       description: Project state
-                      allOf:
+                      anyOf:
+                        - nullable: true
                         - title: ProjectState
                           type: object
                           additionalProperties: false
@@ -2941,7 +2943,8 @@ paths:
                   state:
                     title: State
                     description: Project state
-                    allOf:
+                    anyOf:
+                      - nullable: true
                       - title: ProjectState
                         type: object
                         additionalProperties: false
@@ -3477,7 +3480,8 @@ components:
         state:
           title: State
           description: Project state
-          allOf:
+          anyOf:
+            - nullable: true
             - title: ProjectState
               type: object
               additionalProperties: false

@@ -4,7 +4,8 @@ import networkx as nx
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert
 
-from models_library.projects import ProjectID, RunningState
+from models_library.projects import ProjectID
+from models_library.projects_state import RunningState
 
 from ....models.domains.comp_pipelines import CompPipelineAtDB
 from ....utils.logging_utils import log_decorator

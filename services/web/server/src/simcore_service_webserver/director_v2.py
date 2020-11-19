@@ -7,7 +7,7 @@ from aiohttp import ContentTypeError, web
 from pydantic.types import PositiveInt
 from yarl import URL
 
-from models_library.projects import RunningState
+from models_library.projects_state import RunningState
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
 from servicelib.rest_responses import wrap_as_envelope

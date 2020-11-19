@@ -12,7 +12,7 @@ import aiopg
 import aioredis
 import pytest
 from aioresponses import aioresponses
-from models_library.project_nodes import RunningState
+from models_library.projects_state import RunningState
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data

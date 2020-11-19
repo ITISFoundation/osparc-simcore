@@ -190,7 +190,7 @@ async def copy_study_to_account(
 
 
 # HANDLERS --------------------------------------------------------
-async def access_study(request: web.Request) -> web.Response:
+async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     """
     Handles requests to get and open a public study
 
@@ -269,9 +269,9 @@ def setup(app: web.Application):
 
     cfg = app[APP_CONFIG_KEY]["main"]
     # TODO: temporarily used to toggle to logged users
-    study_handler = access_study
+    study_handler = get_redirection_to_study_page
     if not cfg["studies_access_enabled"]:
-        study_handler = login_required(access_study)
+        study_handler = login_required(get_redirection_to_study_page)
         log.warning(
             "'%s' config explicitly disables anonymous users from this feature",
             __name__,
