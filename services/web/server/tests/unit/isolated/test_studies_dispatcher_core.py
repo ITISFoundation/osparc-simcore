@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# from simcore_postgres_database.models.projects import projects as projects_table
 
 import json
 from pathlib import Path
@@ -8,7 +9,9 @@ from typing import Dict
 from urllib.parse import parse_qs
 
 import pytest
+from yarl import URL
 
+from models_library.projects import Project
 from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
 from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.studies_dispatcher._core import _FILETYPE_TO_VIEWER
@@ -27,22 +30,22 @@ def project_jsonschema(project_schema_file: Path) -> Dict:
 
 async def test_download_link_validators():
 
-    p = QueryParams(
+    params = QueryParams(
         file_name="dataset_description.slsx",
         file_size=24770,  # BYTES
         file_type="MSExcel",
         download_link="https://blackfynn-discover-use1.s3.amazonaws.com/23/2/files/dataset_description.xlsx?AWSAccessKeyId=AKIAQNJEWKCFAOLGQTY6&Signature=K229A0CE5Z5OU2PRi2cfrfgLLEw%3D&x-amz-request-payer=requester&Expires=1605545606",
     )
-    assert p.download_link.host.endswith("s3.amazonaws.com")
-    assert p.download_link.host_type == "domain"
-
-    query = parse_qs(p.download_link.query)
-    assert {"AWSAccessKeyId", "Signature", "Expires", "x-amz-request-payer"} == set(
-        query.keys()
-    )
+    assert params.download_link.host.endswith("s3.amazonaws.com")
+    assert params.download_link.host_type == "domain"
 
     # TODO: cannot validate amazon download links with HEAD because only operation allowed is GET
     ## await p.check_download_link()
+
+    query = parse_qs(params.download_link.query)
+    assert {"AWSAccessKeyId", "Signature", "Expires", "x-amz-request-payer"} == set(
+        query.keys()
+    )
 
 
 @pytest.mark.parametrize(
@@ -62,24 +65,41 @@ def test_create_project_with_viewer(
         viewer_info=viewer,
     )
 
-    print(project.json(indent=2))
+    assert isinstance(project, Project)
+
+    assert list(project.workbench.keys())
+
+    # converts into equivalent Dict
+    project_in: Dict = json.loads(project.json(exclude_none=True, by_alias=True))
+    print(json.dumps(project_in, indent=2))
 
     # This operation is done exactly before adding to the database in projects_handlers.create_projects
     projects_api.validate_project(
         app={APP_JSONSCHEMA_SPECS_KEY: {"projects": project_jsonschema}},
-        project=json.loads(project.json()),
+        project=project_in,
     )
 
-    # can convert to db?
 
+def test_redirection_urls():
+    url_in = URL(
+        r"http://localhost:9081/view?file_type=CSV&download_link=https%253A%252F%252Fraw.githubusercontent.com%252Frawgraphs%252Fraw%252Fmaster%252Fdata%252Forchestra.csv&file_name=orchestra.json&file_size=4"
+    )
 
-def test_map_file_types_to_viewers():
-    pass
+    # TODO: why this fails?
+    # assert (
+    #    url_in.query["download_link"]
+    #    == "https%253A%252F%252Fraw.githubusercontent.com%252Frawgraphs%252Fraw%252Fmaster%252Fdata%252Forchestra.csv"
+    # )
 
+    assert hasattr(url_in, "query")
+    params = QueryParams.from_request(url_in)
 
-def test_create_guest_user():
-    pass
+    assert (
+        params.download_link
+        == "https://raw.githubusercontent.com/rawgraphs/raw/master/data/orchestra.csv"
+    )
 
-
-def test_portal_workflow():
-    pass
+    redirected_url = URL(
+        r"http://localhost:9081/#/error?message=Invalid+parameters+%5B%0A+%7B%0A++%22loc%22:+%5B%0A+++%22download_link%22%0A++%5D,%0A++%22msg%22:+%22invalid+or+missing+URL+scheme%22,%0A++%22type%22:+%22value_error.url.scheme%22%0A+%7D%0A%5D&status_code=400"
+    )
+    print(redirected_url.fragment)
