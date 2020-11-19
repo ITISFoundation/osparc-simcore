@@ -22,7 +22,7 @@ test_requirements = read_reqs(here / "requirements" / "_test.txt") + [
 
 setup(
     name="simcore-sdk",
-    version="0.1.0",
+    version="0.2.0",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     python_requires=">=3.6",
