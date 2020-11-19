@@ -12,6 +12,7 @@
 import json
 import os
 import sys
+import textwrap
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
@@ -45,6 +46,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+from simcore_service_webserver.statics import STATIC_DIRNAMES
 
 # current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -155,6 +157,46 @@ def client(loop, aiohttp_client, web_server, mock_orphaned_services) -> TestClie
 #
 # Mocks entirely or part of the calls to the web-server subsystems
 #
+
+
+@pytest.fixture
+def qx_client_outdir(tmpdir):
+    """  Emulates qx output at service/web/client after compiling
+    """
+
+    basedir = tmpdir.mkdir("source-output")
+    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
+
+    HTML = textwrap.dedent(
+        """\
+        <!DOCTYPE html>
+        <html>
+        <body>
+            <h1>{0}-SIMCORE</h1>
+            <p> This is a result of qx_client_outdir fixture for product {0}</p>
+        </body>
+        </html>
+        """
+    )
+
+    index_file = Path(basedir.join("index.html"))
+    index_file.write_text(HTML.format("OSPARC"))
+
+    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
+        index_file = Path(folder.join("index.html"))
+        index_file.write_text(HTML.format(frontend_app.upper()))
+
+    return Path(basedir)
+
+
+@pytest.fixture
+def computational_system_mock(mocker):
+    mock_fun = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
+        return_value=Future(),
+    )
+    mock_fun.return_value.set_result("")
+    return mock_fun
 
 
 @pytest.fixture

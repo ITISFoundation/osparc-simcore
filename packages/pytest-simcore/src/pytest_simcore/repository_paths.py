@@ -16,6 +16,7 @@ def osparc_simcore_root_dir(request) -> Path:
 
     test_dir = Path(request.session.fspath)  # expected test dir in simcore
 
+    root_dir = current_dir
     for start_dir in (current_dir, test_dir):
         root_dir = start_dir
         while not any(root_dir.glob(WILDCARD)) and root_dir != ROOT:

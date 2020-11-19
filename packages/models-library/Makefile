@@ -19,3 +19,12 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 tests: ## runs unit tests
 	# running unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
+
+
+.PHONY: project-jsonschema.ignore.json
+project-jsonschema.ignore.json: ## creates project-v0.0.1.json for DEV purposes
+	python3 -c "from models_library.projects import Project; print(Project.schema_json(indent=2))" > $@
+
+.PHONY: service-jsonschema.ignore.json
+node-meta-jsonschema.ignore.json: ## creates node-meta-v0.0.1.json for DEV purposes
+	python3 -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > $@

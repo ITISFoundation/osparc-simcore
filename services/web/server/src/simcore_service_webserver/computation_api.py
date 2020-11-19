@@ -7,7 +7,7 @@ import logging
 from aiohttp import web
 from celery import Celery
 
-from models_library.projects import RunningState
+from models_library.projects_state import RunningState
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.comp_pipeline import StateType
 

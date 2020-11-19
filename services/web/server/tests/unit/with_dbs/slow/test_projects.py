@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 import asyncio
 import json
-import re
 import time
 import uuid as uuidlib
 from asyncio import Future, sleep
@@ -16,20 +15,20 @@ import socketio
 from aiohttp import web
 from aioresponses import aioresponses
 from mock import call
+from socketio.exceptions import ConnectionError as SocketConnectionError
+
+from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
+from models_library.projects_access import Owner
+from models_library.projects_state import (
+    ProjectRunningState,
+    ProjectState,
+    RunningState,
+    ProjectLocked
+)
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from socketio.exceptions import ConnectionError as SocketConnectionError
-
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
-from models_library.projects import (
-    Owner,
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    RunningState,
-)
 from servicelib.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db

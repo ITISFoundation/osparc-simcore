@@ -1,6 +1,6 @@
 import logging
 from typing import List
-from models_library.project_nodes import RunningState
+from models_library.projects_state import RunningState
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
