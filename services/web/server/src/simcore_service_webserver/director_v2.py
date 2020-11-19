@@ -27,8 +27,8 @@ from .security_decorators import permission_required
 log = logging.getLogger(__file__)
 
 
-class ForwardedException(Exception):
-    """Basic exception for errors raised with director"""
+class _DirectorServiceError(Exception):
+    """Basic exception for errors raised by director"""
 
     def __init__(self, status: int, reason: str):
         self.status = status
@@ -47,17 +47,13 @@ async def _request_director_v2(
     session = get_client_session(app)
     try:
         async with session.request(method, url, headers=headers, json=data) as resp:
-            try:
-                payload: Dict = await resp.json()
-                if resp.status >= 400:
-                    raise ForwardedException(resp.status, payload)
-                return (payload, resp.status)
-            except ContentTypeError as e:
-                payload = await resp.text()
-                raise web.HTTPServerError(reason=f"malformed data: {payload}") from e
+            payload: Dict = await resp.json()
+            if resp.status >= 400:
+                raise _DirectorServiceError(resp.status, payload)
+            return (payload, resp.status)
 
     except (CancelledError, TimeoutError) as err:
-        raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
+        raise web.HTTPServiceUnavailable(reason="director service is currently unavailable") from err
 
 
 @log_decorator(logger=log)
@@ -75,7 +71,7 @@ async def create_or_update_pipeline(
         )
         return computation_task_out
 
-    except ForwardedException:
+    except _DirectorServiceError:
         log.error("could not create pipeline from project %s", project_id)
 
 
@@ -92,7 +88,7 @@ async def get_pipeline_state(
     # request to director-v2
     try:
         computation_task_out, _ = await _request_director_v2(app, "GET", backend_url)
-    except ForwardedException:
+    except _DirectorServiceError:
         log.warning(
             "getting pipeline state for project %s failed. state is then %s",
             project_id,
@@ -138,7 +134,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         data = {"pipeline_id": computation_task_out["id"]}
 
         return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
-    except ForwardedException as exc:
+    except _DirectorServiceError as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
         )
@@ -166,13 +162,13 @@ async def stop_pipeline(request: web.Request) -> web.Response:
         data = {}
         # director responds with a 202
         if resp_status != web.HTTPAccepted.status_code:
-            raise ForwardedException(
+            raise _DirectorServiceError(
                 resp_status, "Unexpected response from director-v2"
             )
         return web.json_response(
             data=wrap_as_envelope(data=data), status=web.HTTPNoContent.status_code
         )
-    except ForwardedException as exc:
+    except _DirectorServiceError as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
         )
