@@ -139,7 +139,16 @@ qx.Class.define("osparc.Application", {
             osparc.utils.Utils.cookie.deleteCookie("user");
             const studyId = urlFragment.params.project_id;
             const viewerNodeId = urlFragment.params.viewer_node_id;
-            this.__loadNodeViewerPage(studyId, viewerNodeId);
+
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(data => {
+                if (["anonymous", "guest"].includes(data.role.toLowerCase())) {
+                  this.__loadNodeViewerPage(studyId, viewerNodeId);
+                } else {
+                  osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+                  this.__loadMainPage();
+                }
+              });
           }
           break;
         }
