@@ -182,8 +182,10 @@ async def get_computation(
 ):
     log.debug("User %s getting computation status for project %s", user_id, project_id)
     try:
-        # get the project
+        # check that project actually exists
+        # TODO: get a copy of the project and process it here instead!
         await project_repo.get_project(project_id)
+
         # get the project task states
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
