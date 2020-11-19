@@ -13,10 +13,13 @@ from aiohttp import web
 from pydantic import HttpUrl
 
 from models_library.projects import AccessRights, Node, Project, StudyUI
-from models_library.projects_nodes_io import PortLink
+from models_library.projects_nodes_io import PortLink, DownloadLink
 
 from ..projects.projects_api import get_project_for_user
-from ..projects.projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from ..projects.projects_exceptions import (
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from ..utils import now_str
 from ._core import ViewerInfo, compose_uuid_from
 from ._users import UserInfo
@@ -65,7 +68,7 @@ async def acquire_project_with_viewer(
 
     if not viewer_exists:
         project = create_viewer_project_model(
-            project_id, file_picker_id, viewer_id, user, download_link, viewer
+            project_id, file_picker_id, viewer_id, user, str(download_link), viewer
         )
         await add_new_project(app, project, user)
 
@@ -95,17 +98,14 @@ def create_viewer_project_model(
     file_picker_output_id = "outFile"
     file_picker = Node(
         key="simcore/services/frontend/file-picker",
-        version="1.0.0", # TODO: check with odeimaiz about version here
+        version="1.0.0",  # TODO: check with odeimaiz about version here
         label="File Picker",
         inputs={},
         inputNodes=[],
         outputs={
-            file_picker_output_id: {
-                "downloadLink": download_link,
-                "label": None,
-            }
+            file_picker_output_id: DownloadLink(downloadLink=str(download_link), label=None)
         },
-        progress=100,
+        progress=0,
     )
 
     viewer_service = Node(
@@ -113,7 +113,9 @@ def create_viewer_project_model(
         version=viewer_info.version,
         label=viewer_info.label,
         inputs={
-            viewer_info.input_port_key: PortLink(nodeUuid=file_picker_id, output=file_picker_output_id)
+            viewer_info.input_port_key: PortLink(
+                nodeUuid=file_picker_id, output=file_picker_output_id
+            )
         },
         inputNodes=[
             file_picker_id,
@@ -157,14 +159,14 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
     db = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: Dict = json.loads(project.json())
+    project_in: Dict = json.loads(project.json(exclude_none=True, by_alias=True))
+    # FIXME: transform into PRojectDB
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: Dict = await db.add_project(
         project_in, user.id, force_as_template=False
     )
+    assert _project_db["uuid"] == str(project.uuid) # nosec
 
     # This is a new project and every new graph needs to be reflected in the pipeline db
-    await create_or_update_pipeline(
-        app, user.id, project["uuid"]
-    )
+    await create_or_update_pipeline(app, user.id, project.uuid)
