@@ -132,8 +132,8 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
-        case "viewer": {
-          // Route: /#/viewer/?dataset={downloadLink}
+        case "view": {
+          // Route: /#/view?project_id={studyId}&viewer_node_id={viewerNodeId}
           if (urlFragment.params && urlFragment.params.dataset) {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__loadNodeViewerPage();
@@ -154,6 +154,17 @@ qx.Class.define("osparc.Application", {
             osparc.utils.Utils.cookie.deleteCookie("user");
             this.__restart();
           }
+          break;
+        }
+        case "error": {
+          // Route: /#/error?message={errorMessage}&status_code={statusCode}
+          if (urlFragment.params && urlFragment.params.message) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__restart();
+            const msg = urlFragment.params.message;
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          }
+          break;
         }
       }
     },
