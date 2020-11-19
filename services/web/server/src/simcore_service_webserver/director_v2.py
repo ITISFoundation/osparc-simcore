@@ -3,7 +3,7 @@ from asyncio import CancelledError
 from typing import Dict, Optional, Tuple
 from uuid import UUID
 
-from aiohttp import ContentTypeError, web
+from aiohttp import web
 from pydantic.types import PositiveInt
 from yarl import URL
 
@@ -53,7 +53,9 @@ async def _request_director_v2(
             return (payload, resp.status)
 
     except (CancelledError, TimeoutError) as err:
-        raise web.HTTPServiceUnavailable(reason="director service is currently unavailable") from err
+        raise web.HTTPServiceUnavailable(
+            reason="director service is currently unavailable"
+        ) from err
 
 
 @log_decorator(logger=log)
