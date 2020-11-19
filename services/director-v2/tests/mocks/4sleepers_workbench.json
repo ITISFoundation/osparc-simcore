@@ -1,0 +1,76 @@
+{
+  "8902d36c-bc65-5b0d-848f-88aed72d7849": {
+    "key": "simcore/services/comp/itis/sleeper",
+    "version": "1.0.0",
+    "label": "sleeper 0",
+    "inputs": {
+      "in_2": 2
+    }
+  },
+  "3a710d8b-565c-5f46-870b-b45ebe195fc7": {
+    "key": "simcore/services/comp/itis/sleeper",
+    "version": "1.0.0",
+    "label": "sleeper 1",
+    "inputs": {
+      "in_1": {
+        "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
+        "output": "out_1"
+      },
+      "in_2": 2
+    },
+    "inputNodes": [
+      "8902d36c-bc65-5b0d-848f-88aed72d7849"
+    ]
+  },
+  "415fefd1-d08b-53c1-adb0-16bed3a687ef": {
+    "key": "simcore/services/comp/itis/sleeper",
+    "version": "1.0.0",
+    "label": "sleeper 2",
+    "inputs": {
+      "in_1": {
+        "nodeUuid": "3a710d8b-565c-5f46-870b-b45ebe195fc7",
+        "output": "out_1"
+      },
+      "in_2": {
+        "nodeUuid": "3a710d8b-565c-5f46-870b-b45ebe195fc7",
+        "output": "out_2"
+      }
+    },
+    "inputNodes": [
+      "3a710d8b-565c-5f46-870b-b45ebe195fc7"
+    ]
+  },
+  "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": {
+    "key": "simcore/services/comp/itis/sleeper",
+    "version": "1.0.0",
+    "label": "sleeper 3",
+    "inputs": {
+      "in_2": {
+        "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
+        "output": "out_2"
+      }
+    },
+    "inputNodes": [
+      "8902d36c-bc65-5b0d-848f-88aed72d7849"
+    ]
+  },
+  "6ede1209-b459-5735-91fc-761aa584808d": {
+    "key": "simcore/services/comp/itis/sleeper",
+    "version": "1.0.0",
+    "label": "sleeper 4",
+    "inputs": {
+      "in_1": {
+        "nodeUuid": "415fefd1-d08b-53c1-adb0-16bed3a687ef",
+        "output": "out_1"
+      },
+      "in_2": {
+        "nodeUuid": "e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
+        "output": "out_2"
+      }
+    },
+    "inputNodes": [
+      "415fefd1-d08b-53c1-adb0-16bed3a687ef",
+      "e1e2ea96-ce8f-5abc-8712-b8ed312a782c"
+    ]
+  }
+}

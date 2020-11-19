@@ -12,9 +12,7 @@
           "path": "885f2bb2-5c6a-439a-b55d-b1c422bbf998/e92dcf7c-af2a-4a56-b62e-b72ab86e2444/allresult_1Hz.txt"
         }
       },
-      "parent": null,
       "progress": 0,
-      "thumbnail": "",
       "position": {
         "x": 0,
         "y": 0
@@ -25,16 +23,13 @@
       "version": "1.0.0",
       "label": "sleeper",
       "inputs": {
-        "in_1": null,
         "in_2": 20
       },
       "inputNodes": [
         "f6f67f96-ad56-47ac-a658-1a8b93dde1f0"
       ],
       "outputs": {},
-      "parent": null,
       "progress": 0,
-      "thumbnail": "",
       "position": {
         "x": 0,
         "y": 0
@@ -45,14 +40,11 @@
       "version": "1.0.0",
       "label": "sleeper",
       "inputs": {
-        "in_1": null,
         "in_2": 2
       },
       "inputNodes": [],
       "outputs": {},
-      "parent": null,
       "progress": 0,
-      "thumbnail": "",
       "position": {
         "x": 0,
         "y": 0
@@ -76,9 +68,7 @@
         "884fa617-615f-407b-ad41-88c899561cda"
       ],
       "outputs": {},
-      "parent": null,
       "progress": 0,
-      "thumbnail": "",
       "position": {
         "x": 0,
         "y": 0
@@ -103,9 +93,7 @@
         "d5012020-7a5d-4b04-a017-9560fa1ede7e"
       ],
       "outputs": {},
-      "parent": null,
       "progress": 0,
-      "thumbnail": "",
       "position": {
         "x": 0,
         "y": 0

@@ -66,6 +66,14 @@ class CustomFormatter(logging.Formatter):
 DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(funcName)s(%(lineno)d)] %(message)s"
 
 
+def config_all_loggers():
+    loggers = [logging.getLogger()] + [
+        logging.getLogger(name) for name in logging.root.manager.loggerDict
+    ]
+    for logger in loggers:
+        set_logging_handler(logger)
+
+
 def set_logging_handler(
     logger: logging.Logger,
     formatter_base: Optional[Logging] = None,
@@ -115,9 +123,7 @@ def _log_arguments(
 
 def log_decorator(logger=None):
     # Build logger object
-    logger_obj = logger
-    if not logger:
-        logger_obj = log
+    logger_obj = logger or log
 
     def log_decorator_info(func):
         if iscoroutinefunction(func):

@@ -6,10 +6,12 @@ from typing import Dict, List, Optional, Union
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 from pydantic.types import PositiveInt
 
+from .constants import VERSION_RE
+
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
+
 KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"
-VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
@@ -24,9 +26,9 @@ GroupId = PositiveInt
 
 
 class ServiceType(str, Enum):
-    frontend = "frontend"
-    computational = "computational"
-    dynamic = "dynamic"
+    COMPUTATIONAL = "computational"
+    DYNAMIC = "dynamic"
+    FRONTEND = "frontend"
 
 
 class Badge(BaseModel):
@@ -165,7 +167,11 @@ class ServiceInput(ServiceProperty):
 
 
 class ServiceOutput(ServiceProperty):
-    pass
+    widget: Optional[Widget] = Field(
+        None,
+        description="custom widget to use instead of the default one determined from the data-type",
+        deprecated=True,
+    )
 
 
 class ServiceKeyVersion(BaseModel):
@@ -212,6 +218,10 @@ class ServiceCommonData(BaseModel):
         return value
 
 
+ServiceInputs = Dict[PropertyName, ServiceInput]
+ServiceOutputs = Dict[PropertyName, ServiceOutput]
+
+
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
         None,
@@ -235,10 +245,10 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         description="email to correspond to the authors about the node",
         example=["lab@net.flix"],
     )
-    inputs: Optional[Dict[PropertyName, ServiceInput]] = Field(
+    inputs: Optional[ServiceInputs] = Field(
         ..., description="definition of the inputs of this node"
     )
-    outputs: Optional[Dict[PropertyName, ServiceOutput]] = Field(
+    outputs: Optional[ServiceOutputs] = Field(
         ..., description="definition of the outputs of this node"
     )
 

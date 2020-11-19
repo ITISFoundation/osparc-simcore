@@ -23,6 +23,7 @@ pytest-sugar
 websockets
 
 # fixtures
+aioresponses
 alembic
 click
 Faker

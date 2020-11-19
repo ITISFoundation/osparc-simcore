@@ -8,7 +8,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/ProjectId"
       responses:
-        "200":
+        "201":
           description: Succesffully started the pipeline
           content:
             application/json:

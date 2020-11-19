@@ -1,0 +1,65 @@
+{
+  "project_id": "65c188e3-229a-fe8f-3826-0f9af00da087",
+  "node_id": "2582e519-c1bd-263c-835b-c56d5c20d258",
+  "schema": {
+    "inputs": {
+      "_GSrl": {
+        "displayOrder": -26047170.313015535,
+        "label": "eiusmod nostrud ut ipsum",
+        "description": "nisi qui mollit dolor",
+        "type": "boolean",
+        "defaultValue": -13642983.633789465,
+        "widget": {
+          "type": "TextArea",
+          "details": {
+            "structure": [
+              {
+                "key": false,
+                "label": "Excepteur ut dolore laboris"
+              },
+              {
+                "key": "ut deserunt proident",
+                "label": "cupidatat sint consequat id ad"
+              },
+              {
+                "key": "reprehenderit",
+                "label": "ipsum aliqua cupidatat"
+              },
+              {
+                "key": -32949586.231582597,
+                "label": "nostrud Duis velit Excepteur quis"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "outputs": {
+      "QgMw": {
+        "displayOrder": 12125782.735056356,
+        "label": "in non ea eu commodo",
+        "description": "eu et ex",
+        "type": "boolean",
+        "fileToKeyMap": {
+          "9f~\\|": "BdrosoP3mj"
+        },
+        "defaultValue": 97221400
+      }
+    }
+  },
+  "inputs": {},
+  "image": {
+    "name": "simcore/services/dynamic/u]=HS,C[vOK/_9%;j%&7#/3iY,hff5qL/--<R)M+YM\"/z+:DP5VS/7\\'1_V]\";/B/hB#?]w>V/up#`/N5/YHv",
+    "tag": "0.5824.51",
+    "requires_gpu": false,
+    "requires_mpi": true
+  },
+  "submit": "1994-11-10T19:23:02.115Z",
+  "state": "PUBLISHED",
+  "internal_id": 21107840,
+  "node_class": "COMPUTATIONAL",
+  "job_id": "voluptate amet non consectetur Lorem",
+  "outputs": {},
+  "start": "1961-07-06T11:24:30.877Z",
+  "end": "2008-03-24T07:02:09.279Z"
+}
