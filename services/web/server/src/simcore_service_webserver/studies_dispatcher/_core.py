@@ -8,7 +8,7 @@ from typing import Iterator, Optional, Tuple
 from aiohttp import web
 from pydantic import ValidationError
 
-MEGABYTES = 1024*2014
+MEGABYTES = 1024 * 2014
 
 
 # VIEWERS MAP -----------------------------------------------------------------------------
@@ -23,9 +23,8 @@ class ViewerInfo:
     key: str
     version: str
     label: str
-    input_port_key: str = (
-        "input_1"  # name of the connection port, since it is service-dependent
-    )
+    # name of the connection port, since it is service-dependent
+    input_port_key: str = "input_1"
 
     @property
     def footprint(self) -> str:
