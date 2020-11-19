@@ -63,6 +63,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __parametersButton: null,
     __startButton: null,
     __stopButton: null,
+    __pipelineCtrls: null,
 
     getStartButton: function() {
       return this.__startButton;
@@ -118,7 +119,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         });
       this.add(moreCtrls);
 
-      const pipelineCtrls = new qx.ui.toolbar.Part();
+      const pipelineCtrls = this.__pipelineCtrls = new qx.ui.toolbar.Part();
       const stopButton = this.__createStopButton();
       stopButton.setEnabled(false);
       pipelineCtrls.add(stopButton);
@@ -136,10 +137,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       if (study) {
         const startButton = this.__startButton;
         const stopButton = this.__stopButton;
-        // these are the init values
-        startButton.setEnabled(true);
-        stopButton.setEnabled(false);
-
         if (study.getState() && study.getState().state) {
           const pipelineState = study.getState().state;
           switch (pipelineState.value) {
@@ -158,10 +155,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
               break;
           }
         }
-        if (study.isReadOnly()) {
-          startButton.setEnabled(false);
-          stopButton.setEnabled(false);
-        }
+        this.__pipelineCtrls.setVisibility(study.isReadOnly() ? "excluded" : "visible");
       }
     },
 
