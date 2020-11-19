@@ -11,9 +11,9 @@ GroupID = constr(regex=r"^\S+$")
 
 
 class AccessEnum(str, Enum):
-    ReadAndWrite = "ReadAndWrite"
-    Invisible = "Invisible"
-    ReadOnly = "ReadOnly"
+    READANDWRITE = "ReadAndWrite"
+    INVISIBLE = "Invisible"
+    READONLY = "ReadOnly"
 
 
 class AccessRights(BaseModel):
