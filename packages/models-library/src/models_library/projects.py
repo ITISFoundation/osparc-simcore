@@ -17,9 +17,8 @@ from .projects_ui import StudyUI
 ProjectID = UUID
 ClassifierID = str
 
-
-class Workbench(BaseModel):
-    __root__ = Dict[NodeID_AsDictKey, Node]
+# TODO: for some reason class Workbench(BaseModel): __root__= does not work as I thought ... investigate!
+Workbench = Dict[NodeID_AsDictKey, Node]
 
 
 class Project(BaseModel):

@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-from models_library.projects import Project, Workbench
 from pydantic import Field
 from pydantic.class_validators import validator
 from pydantic.networks import HttpUrl
+
+from models_library.projects import Project, Workbench
 from simcore_postgres_database.models.projects import ProjectType
 
 
