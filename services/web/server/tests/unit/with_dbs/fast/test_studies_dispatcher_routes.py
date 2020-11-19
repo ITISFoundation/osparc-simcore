@@ -79,7 +79,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
     return cfg
 
 
-# REST-API -------------------------------------------------
+# REST-API -----------------------------------------------------------------------------------------------
 #  Samples taken from trials on http://127.0.0.1:9081/dev/doc#/viewer/get_viewer_for_file
 #
 
@@ -153,7 +153,7 @@ async def test_api_list_supported_filetypes(client):
     }
 
 
-# -----------------------------
+# REDIRECT ROUTES --------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -279,3 +279,16 @@ async def test_dispatch_viewer_anonymously(
 
     assert expected_prj_id == guest_project["uuid"]
     assert guest_project["prjOwner"] == data["login"]
+
+
+
+def test_map_file_types_to_viewers():
+    pass
+
+
+def test_create_guest_user():
+    pass
+
+
+def test_portal_workflow():
+    pass
