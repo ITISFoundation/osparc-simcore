@@ -50,6 +50,8 @@ def create_redirect_response(
 
 # HANDLERS --------------------------------
 
+import urllib.parse
+from pydantic import validator
 
 class QueryParams(BaseModel, ValidationMixin):
     # TODO: create dinamically with pydantic class
@@ -57,6 +59,12 @@ class QueryParams(BaseModel, ValidationMixin):
     file_size: PositiveInt
     file_type: str  # TODO: should we define some types?
     download_link: HttpUrl
+
+    @validator("download_link", pre=True)
+    @classmethod
+    def decode_downloadlink(cls, v):
+        return urllib.parse.unquote(v)
+
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's hea"""
@@ -97,6 +105,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Redirection and creation of cookies (for guests)
+        # Produces  /#/view?project_id= & viewer_node_id
         response = create_redirect_response(
             request.app,
             page="view",
