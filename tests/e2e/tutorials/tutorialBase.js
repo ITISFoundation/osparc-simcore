@@ -305,10 +305,10 @@ class TutorialBase {
 
   async removeStudy() {
     await this.takeScreenshot("deleteFirstStudy_before");
-    this.__responsesQueue.addResponseListener("projects/");
     try {
+      // wait for projects to be loaded
+      await utils.sleep(2000);
       await auto.deleteFirstStudy(this.__page, this.__templateName);
-      await this.__responsesQueue.waitUntilResponse("projects/");
     }
     catch(err) {
       console.error("Failed deleting study", err);
