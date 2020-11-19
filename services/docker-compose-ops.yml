@@ -33,7 +33,7 @@ services:
       - simcore_default
 
   portainer:
-    image: portainer/portainer
+    image: portainer/portainer-ce
     init: true
     ports:
       - "9000:9000"

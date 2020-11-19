@@ -3,17 +3,16 @@
 """
 import json
 import logging
-
 from typing import Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
+
 from models_library.projects import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from .. import catalog
-from ..computation_api import update_pipeline_db
+from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
@@ -95,9 +94,10 @@ async def create_projects(request: web.Request):
         project = await db.add_project(
             project, user_id, force_as_template=as_template is not None
         )
-
         # This is a new project and every new graph needs to be reflected in the pipeline db
-        await update_pipeline_db(request.app, project["uuid"], project["workbench"])
+        await director_v2.create_or_update_pipeline(
+            request.app, user_id, project["uuid"]
+        )
 
         # Appends state
         project["state"] = await projects_api.get_project_state_for_user(
@@ -204,6 +204,7 @@ async def get_project(request: web.Request):
 
 
 @login_required
+@permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def replace_project(request: web.Request):
     """Implements PUT /projects
@@ -222,10 +223,6 @@ async def replace_project(request: web.Request):
     """
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    replace_pipeline = request.query.get(
-        "run", False
-    )  # FIXME: Actually was never called. CHECK if logic still applies (issue #1176)
-
     new_project = await request.json()
 
     # Prune state field (just in case)
@@ -260,11 +257,7 @@ async def replace_project(request: web.Request):
         new_project = await db.update_user_project(
             new_project, user_id, project_uuid, include_templates=True
         )
-
-        await update_pipeline_db(
-            request.app, project_uuid, new_project["workbench"], replace_pipeline
-        )
-
+        await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)
         # Appends state
         new_project["state"] = await projects_api.get_project_state_for_user(
             user_id, project_uuid, request.app
@@ -297,22 +290,23 @@ async def delete_project(request: web.Request):
             user_id=user_id,
             include_templates=True,
         )
-        project_users: List[int] = []
+        project_users: Set[int] = {}
         with managed_resource(user_id, None, request.app) as rt:
-            project_users = await rt.find_users_of_resource("project_id", project_uuid)
+            project_users = set(
+                await rt.find_users_of_resource("project_id", project_uuid)
+            )
+        # that project is still in use
+        if user_id in project_users:
+            raise web.HTTPForbidden(
+                reason="Project is still open in another tab/browser. It cannot be deleted until it is closed."
+            )
         if project_users:
-            # that project is still in use
-            if user_id in project_users:
-                message = "Project is still open in another tab/browser. It cannot be deleted until it is closed."
-            else:
-                other_users = set(project_users)
-                other_user_names = {
-                    await get_user_name(request.app, x) for x in other_users
-                }
-                message = f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
-
-            # we cannot delete that project
-            raise web.HTTPForbidden(reason=message)
+            other_user_names = {
+                await get_user_name(request.app, x) for x in project_users
+            }
+            raise web.HTTPForbidden(
+                reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
+            )
 
         await projects_api.delete_project(request, project_uuid, user_id)
     except ProjectInvalidRightsError as err:
@@ -349,14 +343,11 @@ async def open_project(request: web.Request) -> web.Response:
             with managed_resource(user_id, client_session_id, request.app) as rt:
                 try:
                     async with await rt.get_registry_lock():
-                        other_users: Set[int] = {
-                            x
-                            for x in await rt.find_users_of_resource(
-                                "project_id", project_uuid
-                            )
-                            if x != user_id
-                        }
-
+                        other_users: Set[int] = set(
+                            await rt.find_users_of_resource("project_id", project_uuid)
+                        )
+                        if user_id in other_users:
+                            other_users.remove(user_id)
                         if other_users:
                             return other_users
                         await rt.add("project_id", project_uuid)
@@ -406,21 +397,25 @@ async def close_project(request: web.Request) -> web.Response:
             include_templates=True,
             include_state=False,
         )
-        project_opened_by_others: bool = False
-        with managed_resource(user_id, client_session_id, request.app) as rt:
-            await rt.remove("project_id")
-            project_opened_by_others = (
-                len(await rt.find_users_of_resource("project_id", project_uuid)) > 0
-            )
         # if we are the only user left we can safely remove the services
         async def _close_project_task() -> None:
             try:
+                project_opened_by_others: bool = False
+                with managed_resource(user_id, client_session_id, request.app) as rt:
+                    project_users: List[int] = await rt.find_users_of_resource(
+                        "project_id", project_uuid
+                    )
+                    project_opened_by_others = len(project_users) > 1
+
                 if not project_opened_by_others:
                     # only remove the services if no one else is using them now
                     await projects_api.remove_project_interactive_services(
                         user_id, project_uuid, request.app
                     )
             finally:
+                with managed_resource(user_id, client_session_id, request.app) as rt:
+                    # now we can remove the lock
+                    await rt.remove("project_id")
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
                 project["state"] = await projects_api.get_project_state_for_user(
                     user_id, project_uuid, request.app

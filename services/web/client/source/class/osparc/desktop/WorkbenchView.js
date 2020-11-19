@@ -296,7 +296,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["project_id"];
+      const pipelineId = resp.data["pipeline_id"];
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -642,7 +642,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         socket.on(slotName3, data => {
           const d = JSON.parse(data);
           const nodeId = d["Node"];
-          const nodeData = d["Data"];
+          const nodeData = d["data"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {

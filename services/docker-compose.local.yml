@@ -33,6 +33,14 @@ services:
     #stdin_open: true
     #tty: true
 
+  director-v2:
+    environment:
+      - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore_local}
+    ports:
+      - "8000"
+      - "3009:3000"
+
   storage:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
