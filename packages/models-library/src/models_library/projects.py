@@ -70,7 +70,7 @@ class Project(BaseModel):
     # Classification
     tags: Optional[List[int]] = []
     classifiers: Optional[List[ClassifierID]] = Field(
-        [],
+        default_factory=list,
         description="Contains the reference to the project classifiers",
         examples=["some:id:to:a:classifier"],
     )
