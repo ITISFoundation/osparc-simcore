@@ -88,7 +88,7 @@ def compose_uuid_from(*values) -> str:
 
 class ValidationMixin:
     @classmethod
-    def create_from(cls, request: web.Request):
+    def from_request(cls, request: web.Request):
         try:
             obj = cls(**dict(request.query))
         except ValidationError as err:

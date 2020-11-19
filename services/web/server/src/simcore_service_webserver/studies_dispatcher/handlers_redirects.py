@@ -53,6 +53,7 @@ def create_redirect_response(
 import urllib.parse
 from pydantic import validator
 
+
 class QueryParams(BaseModel, ValidationMixin):
     # TODO: create dinamically with pydantic class
     file_name: Optional[str] = None
@@ -64,7 +65,6 @@ class QueryParams(BaseModel, ValidationMixin):
     @classmethod
     def decode_downloadlink(cls, v):
         return urllib.parse.unquote(v)
-
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's hea"""
@@ -89,11 +89,11 @@ class QueryParams(BaseModel, ValidationMixin):
 async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
-        p = QueryParams.create_from(request)
-        # TODO: removed await p.check_download_link()
+        params = QueryParams.from_request(request)
+        # TODO: removed await params.check_download_link()
 
         viewer: ViewerInfo = find_compatible_viewer(
-            file_type=p.file_type, file_size=p.file_size
+            file_type=params.file_type, file_size=params.file_size
         )
 
         # Retrieve user or create a temporary guest
@@ -101,7 +101,7 @@ async def get_redirection_to_viewer(request: web.Request):
 
         # Generate one project per user + download_link + viewer
         project_id, viewer_id = await acquire_project_with_viewer(
-            request.app, user, viewer, p.download_link
+            request.app, user, viewer, params.download_link
         )
 
         # Redirection and creation of cookies (for guests)
@@ -111,8 +111,8 @@ async def get_redirection_to_viewer(request: web.Request):
             page="view",
             project_id=project_id,
             viewer_node_id=viewer_id,
-            file_name=p.file_name,
-            file_size=p.file_size,
+            file_name=params.file_name,
+            file_size=params.file_size,
         )
         await ensure_authentication(user, request, response)
 
@@ -127,9 +127,7 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app, page="error", message=err.reason, status_code=err.status_code
         )
     except (ValidationError, web.HTTPServerError, Exception):
-        log.exception(
-            "Fatal error while redirecting %s", request.query
-        )
+        log.exception("Fatal error while redirecting %s", request.query)
         raise create_redirect_response(
             request.app,
             page="error",
