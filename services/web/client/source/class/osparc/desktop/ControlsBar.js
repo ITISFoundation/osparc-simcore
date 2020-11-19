@@ -64,12 +64,14 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __startButton: null,
     __stopButton: null,
 
-    getStartButton: function() {
-      return this.__startButton;
-    },
+    setStartingPipeline: function(starting) {
+      this.__startButton.setFetching(starting);
 
-    getStopButton: function() {
-      return this.__stopButton;
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (study && study.isReadOnly()) {
+        this.__startButton.setEnabled(false);
+        this.__stopButton.setEnabled(false);
+      }
     },
 
     setWorkbenchVisibility: function(isWorkbenchContext) {

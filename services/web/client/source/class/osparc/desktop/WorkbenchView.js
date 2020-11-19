@@ -247,15 +247,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
-      const runButton = this.__mainPanel.getControls().getStartButton();
-      runButton.setFetching(true);
+      this.__mainPanel.getControls().setStartingPipeline(true);
       this.updateStudyDocument(true)
         .then(() => {
           this.__doStartPipeline();
         })
         .catch(() => {
           this.getLogger().error(null, "Couldn't run the pipeline: Pipeline failed to save.");
-          runButton.setFetching(false);
+          this.__mainPanel.getControls().setStartingPipeline(false);
         });
     },
 
@@ -274,11 +273,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __requestStartPipeline: function(studyId) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-      const runButton = this.__mainPanel.getControls().getStartButton();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error submitting pipeline");
-        runButton.setFetching(false);
+        this.__mainPanel.getControls().setStartingPipeline(false);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getResponse().error.status == "403") {
@@ -286,7 +284,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         } else {
           this.getLogger().error(null, "Failed submitting pipeline");
         }
-        runButton.setFetching(false);
+        this.__mainPanel.getControls().setStartingPipeline(false);
       }, this);
       req.send();
 
