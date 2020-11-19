@@ -39,7 +39,7 @@ class InvalidKeyError(NodeportsException):
     """Accessed key does not exist"""
 
     def __init__(self, item_key, msg=None):
-        super().__init__("No port bound with key {item_key}")
+        super().__init__(f"No port bound with key {item_key}")
         self.item_key = item_key
 
 
@@ -48,7 +48,7 @@ class InvalidItemTypeError(NodeportsException):
 
     def __init__(self, item_type, item_value):
         super().__init__(
-            "Invalid item type, {item_value} is set as being a {item_type} type"
+            f"Invalid item type, value [{item_value}] does not qualify as type [{item_type}]"
         )
         self.item_type = item_type
         self.item_value = item_value
@@ -91,6 +91,22 @@ class S3InvalidStore(NodeportsException):
     def __init__(self, s3_store):
         super().__init__(f"Invalid store used: {s3_store}")
         self.store = s3_store
+
+
+class InvalidDownloadLinkError(NodeportsException):
+    """Download link is invalid"""
+
+    def __init__(self, link):
+        super().__init__(f"Invalid link [{link}]")
+        self.link = link
+
+
+class TransferError(NodeportsException):
+    """Download/Upload transfer error"""
+
+    def __init__(self, link):
+        super().__init__(f"Error while transferring to/from [{link}]")
+        self.link = link
 
 
 class StorageConnectionError(NodeportsException):
