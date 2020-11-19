@@ -28,11 +28,10 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.__iFrameChanged();
 
-    setTimeout(() => {
+    qx.event.Timer.once(() => {
       const src = window.location.href + "x/" + nodeId;
-      this.getIFrame().setSource(src);
-      this.__iFrameChanged();
-    }, 10000);
+      this.__waitForServiceReady(src);
+    }, this, 2000);
   },
 
   properties: {
@@ -68,6 +67,20 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         showRestartButton: false
       });
       this.setIFrame(iframe);
+    },
+
+    __waitForServiceReady: function(srvUrl) {
+      // ping for some time until it is really ready
+      const pingRequest = new qx.io.request.Xhr(srvUrl);
+      pingRequest.addListenerOnce("success", () => {
+        this.getIFrame().setSource(srvUrl);
+        this.__iFrameChanged();
+      }, this);
+      pingRequest.addListenerOnce("fail", () => {
+        const interval = 2000;
+        qx.event.Timer.once(() => this.__waitForServiceReady(srvUrl), this, interval);
+      });
+      pingRequest.send();
     },
 
     __iFrameChanged: function() {

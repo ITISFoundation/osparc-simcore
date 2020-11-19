@@ -30,13 +30,6 @@ qx.Class.define("osparc.viewer.MainPage", {
     this._add(nodeViewer, {
       flex: 1
     });
-
-    const socket = osparc.wrapper.WebSocket.getInstance();
-    const slotName = "dataset-viewer";
-    socket.removeSlot(slotName);
-    socket.on(slotName, viewer => {
-      nodeViewer.setNode(viewer);
-    });
   },
 
   members: {
