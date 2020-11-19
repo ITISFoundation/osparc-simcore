@@ -122,18 +122,17 @@ async def get_redirection_to_viewer(request: web.Request):
             page="error",
             message=f"Sorry, we cannot render this file: {err.reason}",
         )
-    except (ValidationError, web.HTTPServerError):
-        log.exception(
-            "Validation failure while processing view request: %s", request.query
-        )
-        raise create_redirect_response(
-            request.app,
-            page="error",
-            message="Ups something went wrong while processing your request",
-        )
     except web.HTTPClientError as err:
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
         )
-
+    except (ValidationError, web.HTTPServerError, Exception):
+        log.exception(
+            "Fatal error while redirecting %s", request.query
+        )
+        raise create_redirect_response(
+            request.app,
+            page="error",
+            message="Ups something went wrong while processing your request.",
+        )
     return response

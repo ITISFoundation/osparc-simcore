@@ -69,7 +69,7 @@ async def ensure_authentication(
     user: UserInfo, request: web.Request, response: web.Response
 ):
     if user.needs_login:
-        log.debug("Auto login for anonymous user %s", user["name"])
+        log.debug("Auto login for anonymous user %s", user.name)
         identity = user.email
         await remember(request, response, identity)
 
