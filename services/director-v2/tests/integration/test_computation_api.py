@@ -341,6 +341,21 @@ def test_update_and_delete_computation(
     assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
     assert not task_out.stop_url
 
+    # update the pipeline
+    response = client.post(
+        COMPUTATION_URL,
+        json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    task_out = ComputationTaskOut.parse_obj(response.json())
+
+    assert task_out.id == sleepers_project.uuid
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert not task_out.stop_url
+
     # start it now
     response = client.post(
         COMPUTATION_URL,

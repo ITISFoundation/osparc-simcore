@@ -160,7 +160,6 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
 
     # validated project is transform in dict via json to use only primitive types
     project_in: Dict = json.loads(project.json(exclude_none=True, by_alias=True))
-    # FIXME: transform into PRojectDB
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: Dict = await db.add_project(
