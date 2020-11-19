@@ -9,7 +9,7 @@ import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 
-from models_library.projects import ProjectState
+from models_library.projects_state import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog, director_v2
