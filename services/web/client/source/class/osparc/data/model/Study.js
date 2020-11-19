@@ -102,7 +102,15 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Object",
       nullable: false,
       event: "changeAccessRights",
-      init: {}
+      apply: "__applyAccessRights",
+      init: true
+    },
+
+    readOnly: {
+      check: "Boolean",
+      nullable: false,
+      event: "changeReadOnly",
+      init: true
     },
 
     creationDate: {
@@ -209,10 +217,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
-      if (myGid in aceessRights) {
-        return aceessRights[myGid]["delete"];
-      }
-      return false;
+      return osparc.component.export.StudyPermissions.canGroupExecute(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
@@ -230,6 +235,16 @@ qx.Class.define("osparc.data.model.Study", {
 
     buildWorkbench: function() {
       this.getWorkbench().buildWorkbench();
+    },
+
+    __applyAccessRights: function(value) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (myGid) {
+        const canIWrite = osparc.component.export.StudyPermissions.canGroupWrite(value, myGid);
+        this.setReadOnly(!canIWrite);
+      } else {
+        this.setReadOnly(true);
+      }
     },
 
     openStudy: function() {
@@ -266,7 +281,7 @@ qx.Class.define("osparc.data.model.Study", {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        if (key === "state") {
+        if (["state", "readOnly"].includes(key)) {
           return;
         }
         if (key === "workbench") {

@@ -28,7 +28,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let workbenchUI = new osparc.component.workbench.WorkbenchUI(workbench);
+ *   let workbenchUI = new osparc.component.workbench.WorkbenchUI();
  *   this.getRoot().add(workbenchUI);
  * </pre>
  */
@@ -40,10 +40,7 @@ const NODE_INPUTS_WIDTH = 210;
 qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   extend: qx.ui.core.Widget,
 
-  /**
-    * @param workbench {osparc.data.model.Workbench} Workbench owning the widget
-    */
-  construct: function(workbench) {
+  construct: function() {
     this.base(arguments);
 
     this.__nodesUI = [];
@@ -52,8 +49,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     const hBox = new qx.ui.layout.HBox();
     this._setLayout(hBox);
-
-    this.setWorkbench(workbench);
 
     const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
@@ -132,8 +127,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   },
 
   properties: {
-    workbench: {
-      check: "osparc.data.model.Workbench",
+    study: {
+      check: "osparc.data.model.Study",
       nullable: false
     }
   },
@@ -157,6 +152,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __startHint: null,
     __dropHint: null,
 
+    __getWorkbench: function() {
+      return this.getStudy().getWorkbench();
+    },
 
     __getUnlinkButton: function() {
       const icon = "@FontAwesome5Solid/unlink/16";
@@ -222,7 +220,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__currentModel.isContainer()) {
         parent = this.__currentModel;
       }
-      const node = this.getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent);
+      const node = this.__getWorkbench().createNode(service.getKey(), service.getVersion(), null, parent);
       if (!node) {
         return null;
       }
@@ -323,7 +321,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createNodeUI: function(nodeId) {
-      let node = this.getWorkbench().getNode(nodeId);
+      let node = this.__getWorkbench().getNode(nodeId);
 
       let nodeUI = new osparc.component.workbench.NodeUI(node);
       nodeUI.populateNodeLayout();
@@ -333,7 +331,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createEdgeUI: function(node1Id, node2Id, edgeId) {
-      const edge = this.getWorkbench().createEdge(edgeId, node1Id, node2Id);
+      const edge = this.__getWorkbench().createEdge(edgeId, node1Id, node2Id);
       if (!edge) {
         return null;
       }
@@ -385,6 +383,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __createDragDropMechanism: function(nodeUI) {
+      if (this.getStudy().isReadOnly()) {
+        return;
+      }
+
       const evType = "pointermove";
       nodeUI.addListener("edgeDragStart", e => {
         let data = e.getData();
@@ -508,7 +510,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__clearNodeInputUIs();
       const inputNodeIds = model.getInputNodes();
       inputNodeIds.forEach(inputNodeId => {
-        const inputNode = this.getWorkbench().getNode(inputNodeId);
+        const inputNode = this.__getWorkbench().getNode(inputNodeId);
         const inputNodeUI = this.__createNodeInputUI(inputNode);
         this.__nodesUI.push(inputNodeUI);
       });
@@ -583,7 +585,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateEdges: function(nodeUI) {
-      let edgesInvolved = this.getWorkbench().getConnectedEdges(nodeUI.getNodeId());
+      let edgesInvolved = this.__getWorkbench().getConnectedEdges(nodeUI.getNodeId());
 
       edgesInvolved.forEach(edgeId => {
         let edgeUI = this.__getEdgeUI(edgeId);
@@ -881,6 +883,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       this.addListener("dbltap", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+
         const [x, y] = this.__getPointEventPosition(e);
         const pos = {
           x,
@@ -963,7 +969,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         dragging = false;
       }
 
-      if (!this.isPropertyInitialized("workbench")) {
+      if (!this.isPropertyInitialized("study") || this.getStudy().isReadOnly()) {
         return;
       }
       const nodeWidth = osparc.component.workbench.NodeUI.NodeWidth;
@@ -996,10 +1002,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateHint: function() {
-      if (!this.isPropertyInitialized("workbench")) {
+      if (!this.isPropertyInitialized("study")) {
         return;
       }
-      const isEmptyWorkspace = Object.keys(this.getWorkbench().getNodes()).length === 0;
+      const isEmptyWorkspace = Object.keys(this.__getWorkbench().getNodes()).length === 0;
       this.__startHint.setVisibility(isEmptyWorkspace ? "visible" : "excluded");
       if (isEmptyWorkspace) {
         const hintBounds = this.__startHint.getBounds() || this.__startHint.getSizeHint();

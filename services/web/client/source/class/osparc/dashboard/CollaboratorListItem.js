@@ -45,7 +45,9 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
   },
 
   events: {
-    "promoteCollaborator": "qx.event.type.Data",
+    "makeOwner": "qx.event.type.Data",
+    "makeCollaborator": "qx.event.type.Data",
+    "makeViewer": "qx.event.type.Data",
     "removeCollaborator": "qx.event.type.Data"
   },
 
@@ -127,25 +129,52 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
       });
 
       const accessRights = this.getAccessRights();
-      if (!osparc.component.export.Permissions.canDelete(accessRights) && this.getCollabType() === 2) {
-        const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
-        makeOwnerButton.addListener("execute", () => {
-          this.fireDataEvent("promoteCollaborator", {
-            gid: this.getKey(),
-            name: this.getTitle()
-          });
+
+      const makeOwnerButton = new qx.ui.menu.Button(this.tr("Make Owner"));
+      makeOwnerButton.addListener("execute", () => {
+        this.fireDataEvent("makeOwner", {
+          gid: this.getKey(),
+          name: this.getTitle()
         });
-        menu.add(makeOwnerButton);
-      }
+      });
+      const makeCollabButton = new qx.ui.menu.Button(this.tr("Make Collaborator"));
+      makeCollabButton.addListener("execute", () => {
+        this.fireDataEvent("makeCollaborator", {
+          gid: this.getKey(),
+          name: this.getTitle()
+        });
+      });
+      const makeViewerButton = new qx.ui.menu.Button(this.tr("Make Viewer"));
+      makeViewerButton.addListener("execute", () => {
+        this.fireDataEvent("makeViewer", {
+          gid: this.getKey(),
+          name: this.getTitle()
+        });
+      });
+
+      const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
+      removeButton.addListener("execute", () => {
+        this.fireDataEvent("removeCollaborator", {
+          gid: this.getKey(),
+          name: this.getTitle()
+        });
+      });
 
       if (!osparc.component.export.Permissions.canDelete(accessRights)) {
-        const removeButton = new qx.ui.menu.Button(this.tr("Remove Collaborator"));
-        removeButton.addListener("execute", () => {
-          this.fireDataEvent("removeCollaborator", {
-            gid: this.getKey(),
-            name: this.getTitle()
-          });
-        });
+        if (osparc.component.export.Permissions.canWrite(accessRights)) {
+          // collaborator
+          if (this.getCollabType() === 2) {
+            menu.add(makeOwnerButton);
+          }
+          menu.add(makeViewerButton);
+        } else {
+          // viewer
+          if (this.getCollabType() === 2) {
+            menu.add(makeOwnerButton);
+          }
+          menu.add(makeCollabButton);
+        }
+
         menu.add(removeButton);
       }
 

@@ -400,6 +400,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__editSlides();
       }, this);
       nodesTree.addListener("removeNode", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
@@ -424,6 +428,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
+      workbenchUI.setStudy(study);
       workbenchUI.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
@@ -688,6 +693,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     updateStudyDocument: function(run = false) {
+      const myGrpId = osparc.auth.Data.getInstance().getGroupId();
+      if (!osparc.component.export.StudyPermissions.canGroupWrite(this.getStudy().getAccessRights(), myGrpId)) {
+        return new Promise(resolve => {
+          resolve();
+        });
+      }
+
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();

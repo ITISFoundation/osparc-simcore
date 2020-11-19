@@ -41,6 +41,33 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
   },
 
   statics: {
+    canGroupRead: function(accessRights, GID) {
+      if (GID in accessRights) {
+        return accessRights[GID]["read"];
+      }
+      return false;
+    },
+    canGroupWrite: function(accessRights, GID) {
+      if (GID in accessRights) {
+        return accessRights[GID]["write"];
+      }
+      return false;
+    },
+    canGroupExecute: function(accessRights, GID) {
+      if (GID in accessRights) {
+        return accessRights[GID]["delete"];
+      }
+      return false;
+    },
+
+    getViewerAccessRight: function() {
+      return {
+        "read": true,
+        "write": false,
+        "delete": false
+      };
+    },
+
     getCollaboratorAccessRight: function() {
       return {
         "read": true,
@@ -97,27 +124,6 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
         });
     },
 
-    _promoteCollaborator: function(collaborator) {
-      this.__studyData["accessRights"][collaborator["gid"]] = this.self().getOwnerAccessRight();
-      const params = {
-        url: {
-          "projectId": this.__studyData["uuid"]
-        },
-        data: this.__studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully made Owner"));
-          this.__reloadOrganizationsAndMembers();
-          this.__reloadCollaboratorsList();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong making Collaborator Owner"), "ERROR");
-          console.error(err);
-        });
-    },
-
     _deleteCollaborator: function(collaborator) {
       const success = this.self().removeCollaborator(this.__studyData, collaborator["gid"]);
       if (!success) {
@@ -141,6 +147,54 @@ qx.Class.define("osparc.component.export.StudyPermissions", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong removing Collaborator"), "ERROR");
           console.error(err);
         });
+    },
+
+    __make: function(collboratorGId, newAccessRights, successMsg, failureMsg) {
+      this.__studyData["accessRights"][collboratorGId] = newAccessRights;
+      const params = {
+        url: {
+          "projectId": this.__studyData["uuid"]
+        },
+        data: this.__studyData
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(() => {
+          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
+          osparc.component.message.FlashMessenger.getInstance().logAs(successMsg);
+          this.__reloadOrganizationsAndMembers();
+          this.__reloadCollaboratorsList();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(failureMsg, "ERROR");
+          console.error(err);
+        });
+    },
+
+    _makeOwner: function(collaborator) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getOwnerAccessRight(),
+        this.tr("Collaborator successfully made Owner"),
+        this.tr("Something went wrong making Collaborator Owner")
+      );
+    },
+
+    _makeCollaborator: function(collaborator) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getCollaboratorAccessRight(),
+        this.tr("Viewer successfully made Collaborator"),
+        this.tr("Something went wrong making Viewer Collaborator")
+      );
+    },
+
+    _makeViewer: function(collaborator) {
+      this.__make(
+        collaborator["gid"],
+        this.self().getViewerAccessRight(),
+        this.tr("Collaborator successfully made Viewer"),
+        this.tr("Something went wrong making Collaborator Viewer")
+      );
     }
   }
 });
