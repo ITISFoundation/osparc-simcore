@@ -91,10 +91,11 @@ class ValidationMixin:
         try:
             obj = cls(**dict(request.query))
         except ValidationError as err:
+
             raise web.HTTPBadRequest(
                 content_type="application/json",
                 body=err.json(),
-                reason=f"Invalid parameters {err.json(indent=1)}",
+                reason=f"{len(err.errors())} invalid parameters in query",
             )
         else:
             return obj
