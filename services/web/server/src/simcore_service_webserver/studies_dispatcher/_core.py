@@ -63,11 +63,11 @@ def find_compatible_viewer(
     file_type: str, file_size: Optional[int] = None
 ) -> ViewerInfo:
     try:
-        viewer = _FILETYPE_TO_VIEWER[file_type]
-    except KeyError:
-        raise MatchNotFoundError(f"No viewer available for file type '{file_type}''")
+        viewer = _FILETYPE_TO_VIEWER[file_type.upper()]
+    except KeyError as err:
+        raise MatchNotFoundError(f"No viewer available for file type '{file_type}''") from err
 
-    # Assumes size of the file in bytes TODO: configurable?
+    # TODO: This is a temporary limitation just for demo purposes.
     if file_size is not None and file_size > 50 * MEGABYTES:
         raise MatchNotFoundError(f"File size {file_size*1E-6} MB is over allowed limit")
 

@@ -8,7 +8,7 @@
 
 """
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import web
 from aioredlock import Aioredlock
@@ -23,6 +23,7 @@ from ..resource_manager.config import (
 )
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user
+from ..users_exceptions import UserNotFoundError
 
 log = logging.getLogger(__name__)
 
@@ -39,15 +40,14 @@ class UserInfo(BaseModel):
 async def acquire_user(request: web.Request) -> UserInfo:
     """
     Identifies request's user and if anonymous, it creates
-    a temporary guest user that is autho
+    a temporary guest user that is authorized.
     """
-
-    # Get or create a valid user
     user = None
+
+    # anonymous = no identity in request
     is_anonymous_user = await is_anonymous(request)
     if not is_anonymous_user:
         # NOTE: covers valid cookie with unauthorized user (e.g. expired guest/banned)
-        # TODO: test if temp user overrides old cookie properly
         user = await _get_authorized_user(request)
 
     if not user:
@@ -74,10 +74,17 @@ async def ensure_authentication(
         await remember(request, response, identity)
 
 
-async def _get_authorized_user(request: web.Request) -> Dict:
-    userid = await authorized_userid(request)
-    user = await get_user(request.app, userid)
-    return user
+async def _get_authorized_user(request: web.Request) -> Optional[Dict]:
+    # Returns valid user if it is identified (cookie) and logged in (valid cookie)?
+    user_id = await authorized_userid(request)
+    if user_id is not None:
+        try:
+            user = await get_user(request.app, user_id)
+            return user
+        except UserNotFoundError:
+            return None
+
+    return None
 
 
 async def _create_temporary_user(request: web.Request):
@@ -85,8 +92,8 @@ async def _create_temporary_user(request: web.Request):
     lock_manager: Aioredlock = request.app[APP_CLIENT_REDIS_LOCK_KEY]
 
     # TODO: avatar is an icon of the hero!
-    random_uname = get_random_string(min_len=5)
-    email = random_uname + "@guest-at-osparc.io"
+    random_user_name = get_random_string(min_len=5)
+    email = random_user_name + "@guest-at-osparc.io"
     password = get_random_string(min_len=12)
 
     # GUEST_USER_RC_LOCK:
@@ -95,7 +102,7 @@ async def _create_temporary_user(request: web.Request):
     #
     #  1. During construction:
     #     - Prevents GC from deleting this GUEST user while it is being created
-    #     - Since the user still does not have an ID assigned, the lock is named with his random_uname
+    #     - Since the user still does not have an ID assigned, the lock is named with his random_user_name
     #
     MAX_DELAY_TO_CREATE_USER = 3  # secs
     #
@@ -115,13 +122,13 @@ async def _create_temporary_user(request: web.Request):
 
     # (1) read details above
     async with await lock_manager.lock(
-        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
+        GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
         lock_timeout=MAX_DELAY_TO_CREATE_USER,
     ):
         # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
         usr = await db.create_user(
             {
-                "name": random_uname,
+                "name": random_user_name,
                 "email": email,
                 "password_hash": encrypt_password(password),
                 "status": ACTIVE,
