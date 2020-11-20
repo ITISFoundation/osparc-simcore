@@ -8,7 +8,7 @@ from typing import Iterator, Optional, Tuple
 from aiohttp import web
 from pydantic import ValidationError
 
-MEGABYTES = 1024 * 2014
+MEGABYTES = 1024 * 1024
 
 
 # VIEWERS MAP -----------------------------------------------------------------------------
