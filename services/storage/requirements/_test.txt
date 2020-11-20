@@ -27,7 +27,7 @@ click==7.1.2              # via -r requirements/_base.txt
 codecov==2.1.10           # via -r requirements/_test.in
 configparser==5.0.1       # via -r requirements/_base.txt, blackfynn, minio
 coverage==5.3             # via -r requirements/_test.in, codecov, coveralls, pytest-cov
-coveralls==2.1.2          # via -r requirements/_test.in
+coveralls==2.2.0          # via -r requirements/_test.in
 cryptography==3.2.1       # via paramiko
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 deprecated==1.2.10        # via -r requirements/_base.txt, blackfynn

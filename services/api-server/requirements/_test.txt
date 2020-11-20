@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 aiofiles==0.5.0           # via -r requirements/_base.txt, fastapi
-aiohttp==3.7.2            # via pytest-aiohttp
+aiohttp==3.7.3            # via pytest-aiohttp
 aiopg[sa]==1.0.0          # via -r requirements/_base.txt
 alembic==1.4.3            # via -r requirements/_test.in
 aniso8601==7.0.0          # via -r requirements/_base.txt, graphene
@@ -25,7 +25,7 @@ click==7.1.2              # via -r requirements/_base.txt, uvicorn
 codecov==2.1.10           # via -r requirements/_test.in
 contextvars==2.4          # via -r requirements/_base.txt, sniffio
 coverage==5.3             # via codecov, coveralls, pytest-cov
-coveralls==2.1.2          # via -r requirements/_test.in
+coveralls==2.2.0          # via -r requirements/_test.in
 cryptography==3.2.1       # via -r requirements/_base.txt, paramiko
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 distro==1.5.0             # via docker-compose
@@ -35,7 +35,7 @@ docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 email-validator==1.1.1    # via -r requirements/_base.txt, fastapi
-faker==4.14.2             # via -r requirements/_test.in
+faker==4.17.1             # via -r requirements/_test.in
 fastapi[all]==0.61.1      # via -r requirements/_base.txt
 graphene==2.1.8           # via -r requirements/_base.txt, fastapi
 graphql-core==2.3.2       # via -r requirements/_base.txt, graphene, graphql-relay
