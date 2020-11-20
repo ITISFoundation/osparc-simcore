@@ -4,23 +4,23 @@
 """
 import json
 import logging
-from typing import Dict
+from typing import Any, Dict, Optional
 
 from aiohttp import web
-
 from servicelib.application import create_safe_application
 from servicelib.monitoring import setup_monitoring
 from servicelib.tracing import setup_tracing
 
 from .db import setup_db
 from .dsm import setup_dsm
+from .meta import WELCOME_MSG
 from .rest import setup_rest
 from .s3 import setup_s3
 
 log = logging.getLogger(__name__)
 
 
-def create(config: Dict) -> web.Application:
+def create(config: Dict[str, Any]) -> web.Application:
     log.debug(
         "Initializing app with config:\n%s",
         json.dumps(config, indent=2, sort_keys=True),
@@ -48,9 +48,14 @@ def create(config: Dict) -> web.Application:
     return app
 
 
-def run(config, app=None):
+def run(config: Dict[str, Any], app: Optional[web.Application] = None):
     log.debug("Serving application ")
     if not app:
         app = create(config)
+
+    async def welcome_banner(_app: web.Application):
+        print(WELCOME_MSG, flush=True)
+
+    app.on_startup.append(welcome_banner)
 
     web.run_app(app, host=config["host"], port=config["port"])
