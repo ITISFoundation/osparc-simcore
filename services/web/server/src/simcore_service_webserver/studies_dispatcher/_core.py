@@ -8,9 +8,7 @@ from typing import Iterator, Optional, Tuple
 from aiohttp import web
 from pydantic import ValidationError
 
-
 MEGABYTES = 1024*2014
-
 
 
 # VIEWERS MAP -----------------------------------------------------------------------------
@@ -40,7 +38,6 @@ class ViewerInfo:
 
 
 #
-
 # TODO: For the moment, viewers-filetype association is hard-coded
 # TODO: The environs are tmp to give more flexibility with updates
 #

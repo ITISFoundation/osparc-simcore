@@ -41,7 +41,6 @@ async def list_supported_filetypes(request: web.Request):
 
 # GET /v0/viewers -----
 # TODO: create dynamically with pydantic class: https://pydantic-docs.helpmanual.io/usage/models/#dynamic-model-creation
-
 class RequestParams(BaseModel, ValidationMixin):
     file_type: str  # TODO: mime-types??
     file_name: Optional[str] = None

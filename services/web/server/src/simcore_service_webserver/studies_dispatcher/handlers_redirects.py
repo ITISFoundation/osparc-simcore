@@ -89,7 +89,6 @@ class QueryParams(BaseModel, ValidationMixin):
 async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
-
         params = QueryParams.from_request(request)
         # TODO: removed await params.check_download_link()
 

@@ -2,7 +2,6 @@ import re
 
 import pytest
 from aioresponses import aioresponses
-
 from aioresponses.core import CallbackResult
 from models_library.projects_state import RunningState
 
