@@ -103,7 +103,8 @@ def create_viewer_project_model(
         inputs={},
         inputNodes=[],
         outputs={
-            file_picker_output_id: DownloadLink(downloadLink=str(download_link), label=None)
+            # TODO: check with odeimaiz what is the meaning and relevance of label
+            file_picker_output_id: DownloadLink(downloadLink=str(download_link), label="")
         },
         progress=0,
     )
