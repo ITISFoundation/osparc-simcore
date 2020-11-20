@@ -1,0 +1,8 @@
+-c _base.txt
+-c _test.txt
+
+# basic dev tools
+watchdog[watchmedo]
+
+# these are common dev tools used for compilation here
+-r ../../../../requirements.txt
