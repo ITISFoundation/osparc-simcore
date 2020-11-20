@@ -15,13 +15,14 @@ install_requirements = read_reqs(here / "requirements" / "_base.in")
 test_requirements = read_reqs(here / "requirements" / "_test.txt") + [
     "simcore-postgres-database[migration]",
     "simcore-service-library",
+    "simcore-models-library",
     "s3wrapper",
     "simcore-service-storage-sdk",
 ]
 
 setup(
     name="simcore-sdk",
-    version="0.1.0",
+    version="0.2.0",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     python_requires=">=3.6",

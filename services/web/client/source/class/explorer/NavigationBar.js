@@ -21,13 +21,12 @@ qx.Class.define("explorer.NavigationBar", {
   members: {
     buildLayout: function() {
       this.getChildControl("logo");
-      this.getChildControl("platform");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
-      this.getChildControl("user-manual");
+      this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
     }

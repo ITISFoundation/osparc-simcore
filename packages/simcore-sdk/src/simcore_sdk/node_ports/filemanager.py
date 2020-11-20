@@ -1,4 +1,4 @@
-#pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments
 import logging
 import warnings
 from contextlib import contextmanager
@@ -11,12 +11,13 @@ from yarl import URL
 import aiofiles
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
+from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, exceptions
 
 log = logging.getLogger(__name__)
 
-CHUNK_SIZE = 1*1024*1024
+CHUNK_SIZE = 1 * 1024 * 1024
 
 
 class ClientSessionContextManager:
@@ -35,8 +36,10 @@ class ClientSessionContextManager:
 
     async def __aexit__(self, exc_type, exc, tb):
         if self.is_owned:
-            warnings.warn("Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
-                category=DeprecationWarning)
+            warnings.warn(
+                "Optional session will be deprecated, pass instead controled session (e.g. from app[APP_CLIENT_SESSION_KEY])",
+                category=DeprecationWarning,
+            )
             await self.active_session.close()
 
 
@@ -53,7 +56,8 @@ def api_client():
     finally:
         del client.rest_client
 
-def _handle_api_exception(store_id:str, err: ApiException):
+
+def _handle_api_exception(store_id: str, err: ApiException):
     if err.status > 399 and err.status < 500:
         # something invalid
         raise exceptions.StorageInvalidCall(err)
@@ -62,7 +66,8 @@ def _handle_api_exception(store_id:str, err: ApiException):
         raise exceptions.StorageServerIssue(err)
     raise exceptions.StorageConnectionError(store_id, err)
 
-async def _get_location_id_from_location_name(store:str, api:UsersApi):
+
+async def _get_location_id_from_location_name(store: str, api: UsersApi):
     try:
         resp = await api.get_storage_locations(user_id=config.USER_ID)
         for location in resp.data:
@@ -75,13 +80,24 @@ async def _get_location_id_from_location_name(store:str, api:UsersApi):
     if resp.error:
         raise exceptions.StorageConnectionError(store, resp.error.to_str())
 
-async def _get_link(store_id:int, file_id:str, apifct) -> URL:
+
+async def _get_link(store_id: int, file_id: str, apifct) -> URL:
     log.debug("Getting link from store id %s for %s", store_id, file_id)
     try:
-        resp = await apifct(location_id=store_id, user_id=config.USER_ID, file_id=file_id)
+        # When uploading and downloading files from the storage service
+        # it is important to use a longer timeout, previously was 5 minutes
+        # changing to 1 hour. this will allow for larger payloads to be stored/download
+        resp = await apifct(
+            location_id=store_id,
+            user_id=config.USER_ID,
+            file_id=file_id,
+            _request_timeout=ServicesCommonSettings().storage_service_upload_download_timeout,
+        )
 
         if resp.error:
-            raise exceptions.S3TransferError("Error getting link: {}".format(resp.error.to_str()))
+            raise exceptions.S3TransferError(
+                "Error getting link: {}".format(resp.error.to_str())
+            )
         if not resp.data.link:
             raise exceptions.S3InvalidPathError(file_id)
         log.debug("Got link %s", resp.data.link)
@@ -89,21 +105,24 @@ async def _get_link(store_id:int, file_id:str, apifct) -> URL:
     except ApiException as err:
         _handle_api_exception(store_id, err)
 
-async def _get_download_link(store_id:int, file_id:str, api:UsersApi) -> URL:
+
+async def _get_download_link(store_id: int, file_id: str, api: UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.download_file)
 
-async def _get_upload_link(store_id:int, file_id:str, api:UsersApi) -> URL:
+
+async def _get_upload_link(store_id: int, file_id: str, api: UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.upload_file)
 
-async def _download_link_to_file(session:ClientSession, url:URL, file_path:Path, store: str, s3_object: str):
+
+async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
     log.debug("Downloading from %s to %s", url, file_path)
     async with session.get(url) as response:
         if response.status == 404:
-            raise exceptions.S3InvalidPathError(s3_object)
+            raise exceptions.InvalidDownloadLinkError(url)
         if response.status > 299:
-            raise exceptions.S3TransferError("Error when downloading {} from {} using {}".format(s3_object, store, url))
+            raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(file_path, 'wb') as file_pointer:
+        async with aiofiles.open(file_path, "wb") as file_pointer:
             # await file_pointer.write(await response.read())
             chunk = await response.content.read(CHUNK_SIZE)
             while chunk:
@@ -112,22 +131,34 @@ async def _download_link_to_file(session:ClientSession, url:URL, file_path:Path,
         log.debug("Download complete")
         return await response.release()
 
-async def _file_sender(file_path:Path):
-    async with aiofiles.open(file_path, 'rb') as file_pointer:
+
+async def _file_sender(file_path: Path):
+    async with aiofiles.open(file_path, "rb") as file_pointer:
         chunk = await file_pointer.read(CHUNK_SIZE)
         while chunk:
             yield chunk
             chunk = await file_pointer.read(CHUNK_SIZE)
 
+
 async def _upload_file_to_link(session: ClientSession, url: URL, file_path: Path):
     log.debug("Uploading from %s to %s", file_path, url)
-    async with session.put(url, data=file_path.open('rb')) as resp:
+    async with session.put(url, data=file_path.open("rb")) as resp:
         if resp.status > 299:
             response_text = await resp.text()
-            raise exceptions.S3TransferError("Could not upload file {}:{}".format(file_path, response_text))
+            raise exceptions.S3TransferError(
+                "Could not upload file {}:{}".format(file_path, response_text)
+            )
 
-async def download_file(*, store_name: str=None, store_id:str=None, s3_object:str, local_folder: Path, session: Optional[ClientSession]=None) -> Path:
-    """ Downloads a file to S3
+
+async def download_file_from_s3(
+    *,
+    store_name: str = None,
+    store_id: str = None,
+    s3_object: str,
+    local_folder: Path,
+    session: Optional[ClientSession] = None
+) -> Path:
+    """Downloads a file from S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
     :type session: ClientSession, optional
@@ -135,10 +166,17 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
     :raises exceptions.S3InvalidPathError
     :return: path to downloaded file
     """
-    log.debug("Downloading from store %s:id %s, s3 object %s, to %s", store_name, store_id, s3_object, local_folder)
+    log.debug(
+        "Downloading from store %s:id %s, s3 object %s, to %s",
+        store_name,
+        store_id,
+        s3_object,
+        local_folder,
+    )
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
+    # get the s3 link
     download_link = None
     with api_client() as client:
         api = UsersApi(client)
@@ -147,25 +185,41 @@ async def download_file(*, store_name: str=None, store_id:str=None, s3_object:st
             store_id = await _get_location_id_from_location_name(store_name, api)
         download_link = await _get_download_link(store_id, s3_object, api)
     # the link contains the file name
-    if download_link:
-        # a download link looks something like:
-        # http://172.16.9.89:9001/simcore-test/269dec55-6d18-4901-a767-b567db23d425/4ccf4e2e-a6cd-4f77-a255-4c36fa1b1c72/test.test?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=s3access/20190719/us-east-1/s3/aws4_request&X-Amz-Date=20190719T142431Z&X-Amz-Expires=259200&X-Amz-SignedHeaders=host&X-Amz-Signature=90268f3b580b38c1aad128475936c6f5fd335d11d01ec143cca1056d92a724b5
-        local_file_path = local_folder / Path(download_link.path).name
-        # remove an already existing file if present
-        if local_file_path.exists():
-            local_file_path.unlink()
+    if not download_link:
+        raise exceptions.S3InvalidPathError(s3_object)
 
-        async with ClientSessionContextManager(session) as active_session:
-            await _download_link_to_file(active_session, download_link, local_file_path, store_id, s3_object)
-
-        return local_file_path
-
-    raise exceptions.S3InvalidPathError(s3_object)
+    return await download_file_from_link(download_link, local_folder, session)
 
 
+async def download_file_from_link(
+    download_link: URL,
+    destination_folder: Path,
+    session: Optional[ClientSession] = None,
+    file_name: Optional[str] = None,
+) -> Path:
+    # a download link looks something like:
+    # http://172.16.9.89:9001/simcore-test/269dec55-6d18-4901-a767-b567db23d425/4ccf4e2e-a6cd-4f77-a255-4c36fa1b1c72/test.test?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=s3access/20190719/us-east-1/s3/aws4_request&X-Amz-Date=20190719T142431Z&X-Amz-Expires=259200&X-Amz-SignedHeaders=host&X-Amz-Signature=90268f3b580b38c1aad128475936c6f5fd335d11d01ec143cca1056d92a724b5
+    local_file_path = destination_folder / (file_name or Path(download_link.path).name)
 
-async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, local_file_path:Path, session: Optional[ClientSession]=None) -> str:
-    """ Uploads a file to S3
+    # remove an already existing file if present
+    if local_file_path.exists():
+        local_file_path.unlink()
+
+    async with ClientSessionContextManager(session) as active_session:
+        await _download_link_to_file(active_session, download_link, local_file_path)
+
+    return local_file_path
+
+
+async def upload_file(
+    *,
+    store_id: str = None,
+    store_name: str = None,
+    s3_object: str,
+    local_file_path: Path,
+    session: Optional[ClientSession] = None
+) -> str:
+    """Uploads a file to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
     :type session: ClientSession, optional
@@ -173,7 +227,13 @@ async def upload_file(*, store_id:str=None, store_name:str=None, s3_object:str, 
     :raises exceptions.S3InvalidPathError
     :return: stored id
     """
-    log.debug("Trying to upload file to S3: store name %s, store id %s, s3object %s, file path %s", store_name, store_id, s3_object, local_file_path)
+    log.debug(
+        "Trying to upload file to S3: store name %s, store id %s, s3object %s, file path %s",
+        store_name,
+        store_id,
+        s3_object,
+        local_file_path,
+    )
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
     with api_client() as client:

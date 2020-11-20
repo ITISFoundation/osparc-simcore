@@ -453,14 +453,6 @@ qx.Class.define("osparc.store.Store", {
               });
           });
       });
-    },
-
-    _applyStudy: function(study) {
-      if (study) {
-        this.setCurrentStudyId(study.getStudyId());
-      } else {
-        this.setCurrentStudyId(null);
-      }
     }
   }
 });

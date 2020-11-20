@@ -104,7 +104,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
-          study.getWorkbench().initWorkbench();
+          study.initStudy();
+          const myGrpId = osparc.auth.Data.getInstance().getGroupId();
+          if (osparc.component.export.StudyPermissions.canGroupWrite(study.getAccessRights(), myGrpId)) {
+            this.__startAutoSaveTimer();
+          } else {
+            const msg = this.tr("You do not have writing permissions.<br>Changes will not be saved");
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+          }
+          switch (this.getPageContext()) {
+            case "slideshow":
+              this.__slideshowView.startSlides();
+              break;
+            default:
+              this.__workbenchView.openFirstNode();
+              break;
+          }
         })
         .catch(err => {
           if ("status" in err && err["status"] == 423) { // Locked
@@ -117,14 +132,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
 
       this.__workbenchView.setStudy(study);
-      this.__workbenchView.initViews();
-
       this.__slideshowView.setStudy(study);
-      this.__slideshowView.initViews();
-
-      this.__startAutoSaveTimer();
-
-      this.__workbenchView.openOneNode();
     },
 
     // overridden
@@ -193,6 +201,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     updateStudyDocument: function(run = false) {
+      const myGrpId = osparc.auth.Data.getInstance().getGroupId();
+      if (!osparc.component.export.StudyPermissions.canGroupWrite(this.getStudy().getAccessRights(), myGrpId)) {
+        return new Promise(resolve => {
+          resolve();
+        });
+      }
+
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();

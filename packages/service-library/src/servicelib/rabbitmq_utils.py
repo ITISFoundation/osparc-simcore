@@ -7,11 +7,10 @@ log = logging.getLogger(__file__)
 
 
 class RabbitMQRetryPolicyUponInitialization:
-    """ Retry policy upon service initialization
-    """
+    """Retry policy upon service initialization"""
 
     WAIT_SECS = 2
-    ATTEMPTS_COUNT = 20
+    ATTEMPTS_COUNT = 60
 
     def __init__(self, logger: Optional[logging.Logger] = None):
         logger = logger or log

@@ -1,3 +1,4 @@
+import logging
 import os
 from copy import deepcopy
 
@@ -10,9 +11,10 @@ from typing import Dict
 import pytest
 import tenacity
 from s3wrapper.s3_client import S3Client
-from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 
 from .helpers.utils_docker import get_service_published_port
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
@@ -55,7 +57,12 @@ def minio_service(minio_config: Dict[str, str]) -> S3Client:
     assert client.remove_bucket(minio_config["bucket_name"], delete_contents=True)
 
 
-@tenacity.retry(**MinioRetryPolicyUponInitialization().kwargs)
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(60),
+    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    reraise=True,
+)
 def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
     """Check if something responds to ``url`` """
     client = S3Client(**minio_config["client"])

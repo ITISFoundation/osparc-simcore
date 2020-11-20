@@ -16,6 +16,11 @@
 ************************************************************************ */
 
 /**
+  * @asset(pacemaker.js)
+  * @ignore(Worker)
+  */
+
+/**
  * Singleton class that does some network connection checks.
  *
  * It has two levels:
@@ -33,27 +38,21 @@
 
 qx.Class.define("osparc.io.WatchDog", {
   extend: qx.core.Object,
-
-  type : "singleton",
+  type: "singleton",
 
   construct: function() {
-    this.__clientHeartbeatPinger = new qx.event.Timer(this.heartbeatInterval);
-    this.__clientHeartbeatPinger.addListener("interval", function() {
-      const socket = osparc.wrapper.WebSocket.getInstance();
-      try {
-        socket.emit("client_heartbeat");
-      } catch (error) {
-        // no need to handle the error, nor does it need to cause further issues
-        // it is ok to eat it up
-      }
-    }, this);
+    this.__clientHeartbeatWWPinger = new Worker("resource/osparc/pacemaker.js");
+    this.__clientHeartbeatWWPinger.onmessage = () => {
+      this.__pingServer();
+    };
 
     // register for socket.io event to change the default heartbeat interval
     const socket = osparc.wrapper.WebSocket.getInstance();
     const socketIoEventName = "set_heartbeat_emit_interval";
     socket.removeSlot(socketIoEventName);
-    socket.on(socketIoEventName, function(emitIntervalSeconds) {
-      this.setHeartbeatInterval(parseInt(emitIntervalSeconds) * 1000);
+    socket.on(socketIoEventName, emitIntervalSeconds => {
+      const newInterval = parseInt(emitIntervalSeconds) * 1000;
+      this.setHeartbeatInterval(newInterval);
     }, this);
   },
 
@@ -74,18 +73,33 @@ qx.Class.define("osparc.io.WatchDog", {
   },
 
   members: {
-    __clientHeartbeatPinger: null,
+    __clientHeartbeatWWPinger: null,
 
     _applyOnLine: function(value) {
       let logo = osparc.component.widget.LogoOnOff.getInstance();
       if (logo) {
         logo.setOnLine(value);
       }
-      value ? this.__clientHeartbeatPinger.start() : this.__clientHeartbeatPinger.stop();
+
+      if (value) {
+        this.__clientHeartbeatWWPinger.postMessage(["start", this.getHeartbeatInterval()]);
+      } else {
+        this.__clientHeartbeatWWPinger.postMessage(["stop"]);
+      }
     },
 
     _applyHeartbeatInterval: function(value) {
-      this.__clientHeartbeatPinger.setInterval(value);
+      this.__clientHeartbeatWWPinger.postMessage(["start", value]);
+    },
+
+    __pingServer: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      try {
+        socket.emit("client_heartbeat");
+      } catch (error) {
+        // no need to handle the error, nor does it need to cause further issues
+        // it is ok to eat it up
+      }
     }
-  } // members
+  }
 });

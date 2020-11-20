@@ -129,8 +129,8 @@ async function dashboardNewStudy(page) {
 
 async function toDashboard(page) {
   console.log("To Dashboard");
+
   await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
-  await page.waitFor(2000);
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
@@ -200,7 +200,7 @@ async function clickLoggerTitle(page) {
   await utils.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
 }
 
-async function runStudy(page, waitFor = 0) {
+async function runStudy(page) {
   console.log("Running study");
 
   const responsesQueue = new responses.ResponsesQueue(page);
@@ -227,12 +227,9 @@ async function runStudy(page, waitFor = 0) {
     console.error(err);
     throw (err);
   }
-
-  console.log("Running study and waiting for", waitFor / 1000, "seconds");
-  await page.waitFor(waitFor);
 }
 
-async function dashboardDeleteFirstStudy(page, studyName) {
+async function deleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
 
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
@@ -247,7 +244,11 @@ async function dashboardDeleteFirstStudy(page, studyName) {
     console.log("Deleting first Study: no study found");
     return;
   }
-  const firstChildId = '[osparc-test-id="' + children[0] + '"]';
+  let studyCardId = children[0];
+  if (studyCardId === "newStudyBtn") {
+    studyCardId = children[1];
+  }
+  const firstChildId = '[osparc-test-id="' + studyCardId + '"]';
   await utils.waitAndClick(page, firstChildId + ' > [osparc-test-id="studyItemMenuButton"]');
   await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]');
   await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]');
@@ -364,7 +365,7 @@ module.exports = {
   dashboardOpenFirstService,
   clickLoggerTitle,
   runStudy,
-  dashboardDeleteFirstStudy,
+  deleteFirstStudy,
   toDashboard,
   openNode,
   openLastNode,

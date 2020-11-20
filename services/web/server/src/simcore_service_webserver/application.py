@@ -16,6 +16,7 @@ from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
 from .director import setup_director
+from .director_v2 import setup_director_v2
 from .email import setup_email
 from .groups import setup_groups
 from .login import setup_login
@@ -34,6 +35,7 @@ from .studies_access import setup_studies_access
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
+from .studies_dispatcher.module_setup import setup_studies_dispatcher
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +67,7 @@ def create_application(config: Dict) -> web.Application:
     setup_socketio(app)
     setup_login(app)
     setup_director(app)
+    setup_director_v2(app)
     setup_storage(app)
     setup_users(app)
     setup_groups(app)
@@ -76,6 +79,7 @@ def create_application(config: Dict) -> web.Application:
     setup_publications(app)
     setup_products(app)
     setup_studies_access(app)
+    setup_studies_dispatcher(app)
 
     return app
 

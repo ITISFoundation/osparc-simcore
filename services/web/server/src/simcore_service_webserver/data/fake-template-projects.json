@@ -22,7 +22,6 @@
         },
         "inputNodes": [],
         "outputs": {},
-        "parent": null,
         "position": {
           "x": 50,
           "y": 300
@@ -43,7 +42,6 @@
           "template-uuid-4434-9504-d4a9bebeda37"
         ],
         "outputs": {},
-        "parent": null,
         "position": {
           "x": 300,
           "y": 200
@@ -67,7 +65,6 @@
           "template-uuid-45ac-b2cd-2052ffc64608"
         ],
         "outputs": {},
-        "parent": null,
         "position": {
           "x": 550,
           "y": 200
@@ -87,7 +84,6 @@
           "template-uuid-4434-9504-d4a9bebeda37"
         ],
         "outputs": {},
-        "parent": null,
         "position": {
           "x": 420,
           "y": 400
@@ -112,7 +108,6 @@
           "template-uuid-499e-86d6-9980c33dc8bb"
         ],
         "outputs": {},
-        "parent": null,
         "position": {
           "x": 800,
           "y": 300

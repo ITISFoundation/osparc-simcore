@@ -101,22 +101,7 @@ qx.Class.define("osparc.Application", {
     __initRouting: function() {
       const urlFragment = osparc.utils.Utils.parseURLFragment();
       if (urlFragment.nav && urlFragment.nav.length) {
-        if (urlFragment.nav[0] === "study" && urlFragment.nav.length > 1) {
-          // Route: /#/study/{id}
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          osparc.auth.Manager.getInstance().validateToken(() => {
-            osparc.store.Store.getInstance().setCurrentStudyId(urlFragment.nav[1]);
-            this.__loadMainPage();
-          }, this.__loadLoginPage, this);
-        } else if (urlFragment.nav[0] === "registration" && urlFragment.params && urlFragment.params.invitation) {
-          // Route: /#/registration/?invitation={token}
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          this.__restart();
-        } else if (urlFragment.nav[0] === "reset-password" && urlFragment.params && urlFragment.params.code) {
-          // Route: /#/reset-password/?code={resetCode}
-          osparc.utils.Utils.cookie.deleteCookie("user");
-          this.__restart();
-        }
+        this.__rerouteNav(urlFragment);
       } else if (urlFragment.params) {
         if (urlFragment.params.registered) {
           // Route: /#/?registered=true
@@ -128,6 +113,74 @@ qx.Class.define("osparc.Application", {
         }
       } else {
         this.__restart();
+      }
+    },
+
+    __rerouteNav: function(urlFragment) {
+      const page = urlFragment.nav[0];
+      switch (page) {
+        case "study": {
+          // Route: /#/study/{id}
+          if (urlFragment.nav.length > 1) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(() => {
+                const studyId = urlFragment.nav[1];
+                osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+                this.__loadMainPage();
+              })
+              .catch(() => this.__loadLoginPage());
+          }
+          break;
+        }
+        case "view": {
+          // Route: /#/view/?project_id={studyId}&viewer_node_id={viewerNodeId}
+          if (urlFragment.params && urlFragment.params.project_id && urlFragment.params.viewer_node_id) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            const studyId = urlFragment.params.project_id;
+            const viewerNodeId = urlFragment.params.viewer_node_id;
+
+            osparc.auth.Manager.getInstance().validateToken()
+              .then(data => {
+                if (["anonymous", "guest"].includes(data.role.toLowerCase())) {
+                  this.__loadNodeViewerPage(studyId, viewerNodeId);
+                } else {
+                  osparc.store.Store.getInstance().setCurrentStudyId(studyId);
+                  this.__loadMainPage();
+                }
+              });
+          }
+          break;
+        }
+        case "registration": {
+          // Route: /#/registration/?invitation={token}
+          if (urlFragment.params && urlFragment.params.invitation) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__restart();
+          }
+          break;
+        }
+        case "reset-password": {
+          // Route: /#/reset-password/?code={resetCode}
+          if (urlFragment.params && urlFragment.params.code) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__restart();
+          }
+          break;
+        }
+        case "error": {
+          // Route: /#/error/?message={errorMessage}&status_code={statusCode}
+          if (urlFragment.params && urlFragment.params.message) {
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            this.__restart();
+            let msg = urlFragment.params.message;
+            // Relpace plus sign in URL query string by spaces
+            msg = msg.replace(/\+/g, "%20");
+            msg = decodeURIComponent(msg);
+            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          }
+          break;
+        }
       }
     },
 
@@ -165,14 +218,16 @@ qx.Class.define("osparc.Application", {
         // Reset store (cache)
         osparc.store.Store.getInstance().invalidate();
 
-        osparc.auth.Manager.getInstance().validateToken(data => {
-          if (data.role.toLowerCase() === "guest") {
-            // Logout a guest trying to access the Dashboard
-            osparc.auth.Manager.getInstance().logout();
-          } else {
-            this.__loadMainPage();
-          }
-        }, this.__loadLoginPage, this);
+        osparc.auth.Manager.getInstance().validateToken()
+          .then(data => {
+            if (data.role.toLowerCase() === "guest") {
+              // Logout a guest trying to access the Dashboard
+              osparc.auth.Manager.getInstance().logout();
+            } else {
+              this.__loadMainPage();
+            }
+          })
+          .catch(() => this.__loadLoginPage());
       }
     },
 
@@ -193,6 +248,16 @@ qx.Class.define("osparc.Application", {
     __loadMainPage: function() {
       this.__connectWebSocket();
       this.__loadView(new osparc.desktop.MainPage(), {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      });
+    },
+
+    __loadNodeViewerPage: function(studyId, viewerNodeId) {
+      this.__connectWebSocket();
+      this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId), {
         top: 0,
         bottom: 0,
         left: 0,

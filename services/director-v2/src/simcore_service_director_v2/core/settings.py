@@ -1,16 +1,15 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 import logging
-from enum import Enum
 from typing import Optional
 
+from models_library.basic_types import BootModeEnum, PortInt
+from models_library.settings.celery import CeleryConfig
+from models_library.settings.postgres import PostgresSettings
 from pydantic import (
-    AnyHttpUrl,
     BaseSettings,
     Field,
-    PostgresDsn,
     SecretStr,
-    conint,
     constr,
     root_validator,
     validator,
@@ -33,14 +32,6 @@ ORG_LABELS_TO_SCHEMA_LABELS = {
 }
 
 
-PortInt = conint(gt=0, lt=65535)
-
-class BootModeEnum(str, Enum):
-    DEBUG = "debug-ptvsd"
-    PRODUCTION = "production"
-    DEVELOPMENT = "development"
-
-
 class CommonConfig:
     case_sensitive = False
     env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
@@ -52,7 +43,7 @@ class ApiServiceSettings(BaseSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
     host: str
-    port: PortInt= 8000
+    port: PortInt = 8000
     vtag: constr(regex=r"^v\d$") = "v0"
 
     def base_url(self, include_tag=False) -> str:
@@ -62,9 +53,23 @@ class ApiServiceSettings(BaseSettings):
         return url
 
 
+class CelerySettings(CeleryConfig):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    class Config(CommonConfig):
+        env_prefix = "CELERY_"
+
+
 class DirectorV0Settings(ApiServiceSettings):
     class Config(CommonConfig):
         env_prefix = "DIRECTOR_"
+
+
+class PGSettings(PostgresSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    class Config(CommonConfig):
+        env_prefix = "POSTGRES_"
 
 
 class RegistrySettings(BaseSettings):
@@ -74,7 +79,7 @@ class RegistrySettings(BaseSettings):
 
     # entrypoint
     ssl: bool = True
-    url: AnyHttpUrl
+    url: str = Field(..., description="URL to the docker registry", env="REGISTRY_URL")
 
     # auth
     auth: bool = True
@@ -106,49 +111,6 @@ class RegistrySettings(BaseSettings):
         env_prefix = "REGISTRY_"
 
 
-class PostgresSettings(BaseSettings):
-    enabled: bool = True
-
-    # entrypoint
-    host: str
-    port: PortInt= 5432
-
-    # auth
-    user: str
-    password: SecretStr
-
-    # database
-    db: str
-
-    # pool connection limits
-    minsize: int = 10
-    maxsize: int = 10
-
-    dsn: Optional[PostgresDsn] = None
-
-    @validator("maxsize")
-    def check_size(cls, v, values):
-        if not (values["minsize"] <= v):
-            raise ValueError(f"assert minsize={values['minsize']} <= maxsize={v}")
-        return v
-
-    @validator("dsn", pre=True)
-    def autofill_dsn(cls, v, values):
-        if v is None:
-            return PostgresDsn.build(
-                scheme="postgresql",
-                user=values["user"],
-                password=values["password"].get_secret_value(),
-                host=values["host"],
-                port=f"{values['port']}",
-                path=f"/{values['db']}",
-            )
-        return v
-
-    class Config(CommonConfig):
-        env_prefix = "POSTGRES_"
-
-
 class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls, **settings_kwargs) -> "AppSettings":
@@ -156,6 +118,7 @@ class AppSettings(BaseSettings):
             postgres=PostgresSettings(),
             director_v0=DirectorV0Settings(),
             registry=RegistrySettings(),
+            celery=CelerySettings.create_from_env(),
             **settings_kwargs,
         )
 
@@ -177,6 +140,9 @@ class AppSettings(BaseSettings):
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
 
+    # CELERY submodule
+    celery: CelerySettings
+
     # DIRECTOR submodule
     director_v0: DirectorV0Settings
 
@@ -184,19 +150,27 @@ class AppSettings(BaseSettings):
     registry: RegistrySettings
 
     # POSTGRES
-    postgres: PostgresSettings
+    postgres: PGSettings
 
     # STORAGE
-    storage_endpoint: AnyHttpUrl = Field("http://storage:8080", env="STORAGE_ENDPOINT")
+    storage_endpoint: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     # caching registry and TTL (time-to-live)
-    registry_caching: bool = True
-    registry_caching_ttl: int = 15 * MINS
+    # TODO: fix these variables once the director-v2 is able to start dynamic services
+    registry_caching: bool = Field(True, env="DIRECTOR_V2_REGISTRY_CACHING")
+    registry_caching_ttl: int = Field(15 * MINS, env="DIRECTOR_V2_REGISTRY_CACHING_TTL")
 
     # for passing self-signed certificate to spawned services
-    self_signed_ssl_secret_id: str = ""
-    self_signed_ssl_secret_name: str = ""
-    self_signed_ssl_filename: str = ""
+    # TODO: fix these variables once the director-v2 is able to start dynamic services
+    self_signed_ssl_secret_id: str = Field(
+        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID"
+    )
+    self_signed_ssl_secret_name: str = Field(
+        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME"
+    )
+    self_signed_ssl_filename: str = Field(
+        "", env="DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME"
+    )
 
     # extras
     extra_hosts_suffix: str = Field("undefined", env="EXTRA_HOSTS_SUFFIX")
@@ -238,4 +212,4 @@ class AppSettings(BaseSettings):
     remote_debug_port: PortInt = 3000
 
     class Config(CommonConfig):
-        env_prefix = "DIRECTOR2_"
+        env_prefix = ""

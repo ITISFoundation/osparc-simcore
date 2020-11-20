@@ -6,18 +6,19 @@
 # pylint:disable=redefined-outer-name
 
 
+import asyncio
 import logging
 import re
-import textwrap
 from copy import deepcopy
-from pathlib import Path
 from pprint import pprint
 from typing import Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
+from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses
 
-from models_library.projects import (
+from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
@@ -32,40 +33,9 @@ from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.resource_manager.garbage_collector import collect_garbage
-from simcore_service_webserver.statics import STATIC_DIRNAMES
 from simcore_service_webserver.users_api import delete_user, is_user_guest
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
-
-
-@pytest.fixture
-def qx_client_outdir(tmpdir):
-    """  Emulates qx output at service/web/client after compiling """
-
-    basedir = tmpdir.mkdir("source-output")
-    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
-
-    HTML = textwrap.dedent(
-        """\
-        <!DOCTYPE html>
-        <html>
-        <body>
-            <h1>{0}-SIMCORE</h1>
-            <p> This is a result of qx_client_outdir fixture for product {0}</p>
-        </body>
-        </html>
-        """
-    )
-
-    index_file = Path(basedir.join("index.html"))
-    index_file.write_text(HTML.format("OSPARC"))
-
-    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
-        index_file = Path(folder.join("index.html"))
-        index_file.write_text(HTML.format(frontend_app.upper()))
-
-    return Path(basedir)
 
 
 @pytest.fixture
@@ -164,9 +134,15 @@ async def unpublished_project(client, fake_project):
         yield template_project
 
 
+@pytest.fixture(autouse=True)
+async def director_v2_mock(director_v2_subsystem_mock) -> aioresponses:
+    yield director_v2_subsystem_mock
+
+
 async def _get_user_projects(client):
     url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(start=0, count=3, type="user"))
+    resp = await client.get(url.with_query(type="user"))
+
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -241,7 +217,8 @@ def mocks_on_projects_api(mocker) -> Dict:
     """
     state = ProjectState(
         locked=ProjectLocked(
-            value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
+            value=False,
+            owner=Owner(user_id=2, first_name="Speedy", last_name="Gonzalez"),
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     ).dict(by_alias=True, exclude_unset=True)
@@ -354,7 +331,7 @@ async def test_access_cookie_of_expired_user(
     data, _ = await assert_status(resp, web.HTTPOk)
     assert await is_user_guest(app, data["id"])
 
-    async def garbage_collect_guest(uid):
+    async def enforce_garbage_collect_guest(uid):
         # Emulates garbage collector:
         #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
@@ -368,7 +345,7 @@ async def test_access_cookie_of_expired_user(
         await delete_user(app, uid)
         return uid
 
-    user_id = await garbage_collect_guest(uid=data["id"])
+    user_id = await enforce_garbage_collect_guest(uid=data["id"])
     user_email = data["login"]
 
     # Now this should be non -authorized
@@ -389,41 +366,56 @@ async def test_access_cookie_of_expired_user(
     assert data["login"] != user_email
 
 
+@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 16, 32, 64])
 async def test_guest_user_is_not_garbage_collected(
-    client,
+    number_of_simultaneous_requests,
+    web_server,
+    aiohttp_client,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
     mocks_on_projects_api,
 ):
     ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
-    #
 
-    study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+    async def _test_guest_user_workflow(request_index):
+        print("request #", request_index, "-" * 10)
 
-    # clicks link to study
-    await collect_garbage(client.app)  # <<--
-    resp = await client.get(study_url)
+        # TODO: heartbeat is missing here!
+        # TODO: reduce GC activation period to 0.1 secs
 
-    expected_prj_id = await assert_redirected_to_study(resp, client.session)
+        # every guest uses different client to preserve it's own authorization/authentication cookies
+        client: TestClient = await aiohttp_client(web_server)
+        study_url = client.app.router["study"].url_for(id=published_project["uuid"])
 
-    # has auto logged in as guest?
-    await collect_garbage(client.app)  # <<--
-    me_url = client.app.router["get_my_profile"].url_for()
-    resp = await client.get(me_url)
+        # clicks link to study
+        resp = await client.get(study_url)
+        expected_prj_id = await assert_redirected_to_study(resp, client.session)
 
-    data, _ = await assert_status(resp, web.HTTPOk)
-    assert data["login"].endswith("guest-at-osparc.io")
-    assert data["gravatar_id"]
-    assert data["role"].upper() == UserRole.GUEST.name
+        # has auto logged in as guest?
+        me_url = client.app.router["get_my_profile"].url_for()
+        resp = await client.get(me_url)
 
-    # guest user only a copy of the template project
-    await collect_garbage(client.app)  # <<--
-    projects = await _get_user_projects(client)
-    assert len(projects) == 1
-    guest_project = projects[0]
+        data, _ = await assert_status(resp, web.HTTPOk)
+        assert data["login"].endswith("guest-at-osparc.io")
+        assert data["gravatar_id"]
+        assert data["role"].upper() == UserRole.GUEST.name
 
-    assert expected_prj_id == guest_project["uuid"]
-    _assert_same_projects(guest_project, published_project)
+        # guest user only a copy of the template project
+        projects = await _get_user_projects(client)
+        assert len(projects) == 1
+        guest_project = projects[0]
 
-    assert guest_project["prjOwner"] == data["login"]
+        assert expected_prj_id == guest_project["uuid"]
+        _assert_same_projects(guest_project, published_project)
+
+        assert guest_project["prjOwner"] == data["login"]
+        print("request #", request_index, "DONE", "-" * 10)
+
+    # N concurrent requests
+    request_tasks = [
+        asyncio.ensure_future(_test_guest_user_workflow(n))
+        for n in range(number_of_simultaneous_requests)
+    ]
+
+    await asyncio.gather(*request_tasks)

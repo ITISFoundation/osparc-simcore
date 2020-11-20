@@ -103,7 +103,7 @@ def to_datetime(datetime_str: str) -> datetime:
     #  - The T separates the date portion from the time-of-day portion
     #  - The Z on the end means UTC, that is, an offset-from-UTC
     # The 099 before the Z is not clear, therefore we will truncate the last part
-    N = len("2020-10-09T12:28:14.771034")
+    N = len("2020-10-09T12:28:14.7710")
     if len(datetime_str) > N:
         datetime_str = datetime_str[:N]
     return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")

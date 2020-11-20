@@ -11,10 +11,13 @@ requirements reqs: ## (or reqs) compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-.PHONY: openapi-specs
+.PHONY: openapi.json
 openapi-specs: openapi.json
-openapi.json:
-	# generating openapi specs file
+openapi.json: .env
+	# generating openapi specs file (need to have the environment set for this)
+	@set -o allexport; \
+	source .env; \
+	set +o allexport; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 

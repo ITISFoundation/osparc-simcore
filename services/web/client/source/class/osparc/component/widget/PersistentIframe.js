@@ -47,6 +47,24 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       check: "boolean",
       init: false,
       apply: "_applyShowMaximize"
+    },
+
+    /**
+     * Show Restore/Maximize
+     */
+    showActionButton: {
+      check: "Boolean",
+      init: true,
+      apply: "__applyShowActionButton"
+    },
+
+    /**
+     * Show Restart
+     */
+    showRestartButton: {
+      check: "Boolean",
+      init: true,
+      apply: "__applyShowRestartButton"
     }
   },
 
@@ -64,6 +82,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     __syncScheduled: null,
     __restartButton: null,
     __actionButton: null,
+
     // override
     _createContentElement : function() {
       let iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
@@ -156,6 +175,14 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       actionButton.setIcon(this.self().getIcon(maximize));
       osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
+    },
+
+    __applyShowActionButton: function(show) {
+      show ? this.__actionButton.show() : this.__actionButton.exclude();
+    },
+
+    __applyShowRestartButton: function(show) {
+      show ? this.__restartButton.show() : this.__restartButton.exclude();
     },
 
     __syncIframePos: function() {

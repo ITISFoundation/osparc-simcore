@@ -53,26 +53,24 @@ qx.Class.define("osparc.auth.Manager", {
       return auth !== null && auth instanceof osparc.io.request.authentication.Token;
     },
 
-    /**
-     * Function that checks if there is a token and validates it aginst the server. It executes a callback depending on the result.
-     *
-     * @param {Function} successCb Callback function to be called if the token validation succeeds.
-     * @param {Function} errorCb Callback function to be called if the token validation fails or some other error occurs.
-     * @param {Object} ctx Context that will be used inside the callback functions (this).
+    /*
+     * Function that checks if there is a token and validates it aginst the server.
      */
-    validateToken: function(successCb, errorCb, ctx) {
-      if (osparc.auth.Data.getInstance().isLogout()) {
-        errorCb.call(ctx);
-      } else {
-        osparc.data.Resources.getOne("profile", {}, null, false)
-          .then(profile => {
-            this.__loginUser(profile);
-            successCb.call(ctx, profile);
-          })
-          .catch(err => {
-            errorCb.call(ctx, err);
-          });
-      }
+    validateToken: function() {
+      return new Promise((resolve, reject) => {
+        if (osparc.auth.Data.getInstance().isLogout()) {
+          reject("User not logged in");
+        } else {
+          osparc.data.Resources.getOne("profile", {}, null, false)
+            .then(profile => {
+              this.__loginUser(profile);
+              resolve(profile);
+            })
+            .catch(err => {
+              reject(err);
+            });
+        }
+      });
     },
 
     login: function(email, password, successCbk, failCbk, context) {

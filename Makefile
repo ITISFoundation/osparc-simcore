@@ -32,6 +32,7 @@ SERVICES_LIST := \
 	api-server \
 	catalog \
 	director \
+	director-v2 \
 	migration \
 	sidecar \
 	storage \

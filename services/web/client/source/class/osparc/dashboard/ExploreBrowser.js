@@ -407,35 +407,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
-    __createStudyItem: function(study) {
-      const tags = study.tags ? osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) : [];
+    __createStudyItem: function(studyData) {
+      const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
 
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
-        resourceType: study.resourceType,
-        studyTitle: study.name,
-        studyDescription: study.description,
-        lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
-        classifiers: study.classifiers && study.classifiers ? study.classifiers : [],
+        resourceData: studyData,
         tags
       });
-      if (this.self().isTemplate(study)) {
-        item.set({
-          uuid: study.uuid,
-          owner: study.prjOwner ? study.prjOwner : "",
-          accessRights: study.accessRights ? study.accessRights : {},
-          icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/copy/50"
-        });
-      } else if (this.self().isService(study)) {
-        item.set({
-          uuid: study.key,
-          owner: study.owner ? study.owner : "",
-          accessRights: study.access_rights ? study.access_rights : {},
-          icon: study.thumbnail ? study.thumbnail : "@FontAwesome5Solid/paw/50"
-        });
-      }
 
-
-      const menu = this.__getStudyItemMenu(item, study);
+      const menu = this.__getStudyItemMenu(item, studyData);
       item.setMenu(menu);
       item.subscribeToFilterGroup("sideSearchFilter");
       item.addListener("execute", () => {
@@ -757,7 +737,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
               osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
               addServiceWindow.close();
             } else {
-              osparc.component.message.FlashMessenger.logAs("A problem occured while processing your data", "ERROR");
+              osparc.component.message.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
             }
           })
           .finally(() => form.setFetching(false));

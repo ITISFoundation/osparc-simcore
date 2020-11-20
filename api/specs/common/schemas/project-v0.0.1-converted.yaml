@@ -15,6 +15,7 @@ required:
 properties:
   uuid:
     type: string
+    format: uuid
     description: project unique identifier
     example: 07640335-a91f-468c-ab69-a374fa82078d
   name:
@@ -27,16 +28,15 @@ properties:
     example: Dabbling in temporal transitions ...
   prjOwner:
     type: string
-    format: idn-email
+    format: email
     description: user email
   accessRights:
     type: object
     description: >-
       object containing the GroupID as key and read/write/execution permissions
       as value
-    additionalProperties: false
     x-patternProperties:
-      ^\d+$:
+      ^\S+$:
         type: object
         description: the group id
         additionalProperties: false
@@ -54,6 +54,7 @@ properties:
           delete:
             type: boolean
             description: gives deletion rights
+    additionalProperties: true
   creationDate:
     type: string
     description: project creation date
@@ -68,12 +69,15 @@ properties:
     example: '2018-07-01T11:13:43Z'
   thumbnail:
     type: string
+    minLength: 0
+    maxLength: 2083
+    format: uri
     description: url of the latest screenshot of the project
     example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
   workbench:
     type: object
     x-patternProperties:
-      ^\d+$:
+      '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
         type: object
         additionalProperties: false
         required:
@@ -84,8 +88,7 @@ properties:
           key:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: >-
-              ^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
             example:
               - simcore/services/comp/sleeper
               - simcore/services/dynamic/3dviewer
@@ -100,12 +103,18 @@ properties:
               - 0.0.1
           label:
             type: string
+            description: The short name of the node
+            example:
+              - JupyterLab
           progress:
             type: number
             maximum: 100
             minimum: 0
             description: the node progress value
           thumbnail:
+            minLength: 0
+            maxLength: 2083
+            format: uri
             type: string
             description: url of the latest screenshot of the node
             example:
@@ -130,8 +139,10 @@ properties:
                     properties:
                       nodeUuid:
                         type: string
+                        format: uuid
                       output:
                         type: string
+                        pattern: '^[-_a-zA-Z0-9]+$'
                   - type: object
                     additionalProperties: false
                     required:
@@ -146,6 +157,18 @@ properties:
                         type: string
                       path:
                         type: string
+                      label:
+                        type: string
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - downloadLink
+                    properties:
+                      downloadLink:
+                        minLength: 1
+                        maxLength: 65536
+                        type: string
+                        format: uri
                       label:
                         type: string
           inputAccess:
@@ -165,12 +188,13 @@ properties:
             type: array
             items:
               type: string
-              pattern: ^\S+$
+              format: uuid
             description: node IDs of where the node is connected to
             example:
               - nodeUuid1
               - nodeUuid2
           outputs:
+            default: {}
             type: object
             patternProperties:
               '^[-_a-zA-Z0-9]+$':
@@ -197,6 +221,18 @@ properties:
                         type: string
                       label:
                         type: string
+                  - type: object
+                    additionalProperties: false
+                    required:
+                      - downloadLink
+                    properties:
+                      downloadLink:
+                        minLength: 1
+                        maxLength: 65536
+                        type: string
+                        format: uri
+                      label:
+                        type: string
           outputNode:
             type: boolean
             deprecated: true
@@ -204,16 +240,14 @@ properties:
             type: array
             items:
               type: string
-              pattern: ^\S+$
+              format: uuid
             description: Used in group-nodes. Node IDs of those connected to the output
             example:
               - nodeUuid1
               - nodeUuid2
           parent:
-            type:
-              - string
-              - 'null'
-            pattern: ^\S+$
+            type: string
+            format: uuid
             description: Parent's (group-nodes') node ID s.
             example:
               - nodeUuid1
@@ -239,6 +273,7 @@ properties:
           state:
             title: RunningState
             description: the node's running state
+            default: NOT_STARTED
             enum:
               - UNKNOWN
               - NOT_STARTED
@@ -247,7 +282,7 @@ properties:
               - STARTED
               - RETRY
               - SUCCESS
-              - FAILURE
+              - FAILED
               - ABORTED
             type: string
     additionalProperties: true
@@ -258,7 +293,7 @@ properties:
       workbench:
         type: object
         x-patternProperties:
-          ^\S+$:
+          '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
             type: object
             additionalProperties: false
             required:
@@ -285,7 +320,7 @@ properties:
       slideshow:
         type: object
         x-patternProperties:
-          ^\S+$:
+          '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
             type: object
             additionalProperties: false
             required:
@@ -298,6 +333,9 @@ properties:
                   - 0
                   - 2
         additionalProperties: true
+      currentNodeId:
+        type: string
+        format: uuid
   tags:
     type: array
     items:
@@ -314,9 +352,11 @@ properties:
   state:
     title: State
     description: Project state
-    allOf:
+    anyOf:
+      - nullable: true
       - title: ProjectState
         type: object
+        additionalProperties: false
         properties:
           locked:
             title: Locked
@@ -324,6 +364,7 @@ properties:
             allOf:
               - title: ProjectLocked
                 type: object
+                additionalProperties: false
                 properties:
                   value:
                     title: Value
@@ -335,7 +376,16 @@ properties:
                     allOf:
                       - title: Owner
                         type: object
+                        additionalProperties: false
                         properties:
+                          user_id:
+                            title: User Id
+                            type: integer
+                            description: >-
+                              Owner's identifier when registered in the user's
+                              database table
+                            example:
+                              - 2
                           first_name:
                             title: First Name
                             description: Owner first name
@@ -349,6 +399,7 @@ properties:
                               - Smith
                             type: string
                         required:
+                          - user_id
                           - first_name
                           - last_name
                 required:
@@ -359,6 +410,7 @@ properties:
             allOf:
               - title: ProjectRunningState
                 type: object
+                additionalProperties: false
                 properties:
                   value:
                     title: RunningState
@@ -371,7 +423,7 @@ properties:
                       - STARTED
                       - RETRY
                       - SUCCESS
-                      - FAILURE
+                      - FAILED
                       - ABORTED
                     type: string
                 required:

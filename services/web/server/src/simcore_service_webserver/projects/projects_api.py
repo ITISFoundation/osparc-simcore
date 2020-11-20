@@ -14,24 +14,25 @@ from typing import Any, Dict, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
-
-from models_library.projects import (
+from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
     ProjectState,
+    RunningState,
 )
+from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
-from ..computation_api import delete_pipeline_db, get_pipeline_state
 from ..director import director_api
+from ..director_v2 import delete_pipeline, get_pipeline_state
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
-    SOCKET_IO_PROJECT_UPDATED_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
+    SOCKET_IO_PROJECT_UPDATED_EVENT,
     post_group_messages,
 )
 from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
@@ -179,6 +180,9 @@ async def delete_project(request: web.Request, project_uuid: str, user_id: int) 
     fire_and_forget_task(remove_services_and_data())
 
 
+## PROJECT NODES -----------------------------------------------------
+
+
 @observe(event="SIGNAL_PROJECT_CLOSE")
 async def remove_project_interactive_services(
     user_id: Optional[int], project_uuid: Optional[str], app: web.Application
@@ -208,7 +212,7 @@ async def delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     db = app[APP_PROJECT_DBAPI]
-    await delete_pipeline_db(app, project_uuid)
+    await delete_pipeline(app, user_id, project_uuid)
     await db.delete_user_project(user_id, project_uuid)
     # requests storage to delete all project's stored data
     await delete_data_folders_of_project(app, project_uuid, user_id)
@@ -416,6 +420,8 @@ async def notify_project_node_update(
         await post_group_messages(app, room, messages)
 
 
+# PROJECT STATE -------------------------------------------------------------------
+
 async def _get_project_lock_state(
     user_id: int, project_uuid: str, app: web.Application
 ) -> ProjectLocked:
@@ -423,22 +429,24 @@ async def _get_project_lock_state(
         # checks who is using it
         users_of_project = await rt.find_users_of_resource("project_id", project_uuid)
         usernames = [await get_user_name(app, uid) for uid in set(users_of_project)]
-        assert len(usernames) <= 1  # currently not possible to have more than 1
+        assert (
+            len(usernames) <= 1
+        )  # nosec  # currently not possible to have more than 1
 
         # based on usage, sets an state
         is_locked: bool = len(usernames) > 0
         if is_locked:
             return ProjectLocked(
                 value=is_locked,
-                owner=Owner(**usernames[0]),
+                owner=Owner(user_id=users_of_project[0], **usernames[0]),
             )
         return ProjectLocked(value=is_locked)
 
 
 async def _get_project_running_state(
-    project_uuid: str, app: web.Application
+    user_id: PositiveInt, project_uuid: str, app: web.Application
 ) -> ProjectRunningState:
-    pipeline_state = await get_pipeline_state(app, project_uuid)
+    pipeline_state: RunningState = await get_pipeline_state(app, user_id, project_uuid)
     return ProjectRunningState(value=pipeline_state)
 
 
@@ -454,7 +462,7 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
         might require a mock for this function to work properly
     """
     lock_state = await _get_project_lock_state(user_id, project_uuid, app)
-    running_state = await _get_project_running_state(project_uuid, app)
+    running_state = await _get_project_running_state(user_id, project_uuid, app)
     return ProjectState(
         locked=lock_state,
         state=running_state,

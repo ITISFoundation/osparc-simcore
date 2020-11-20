@@ -101,9 +101,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   members: {
     __toolBar: null,
     __tree: null,
-    __editSlidesBtn: null,
+    __editSlidesButton: null,
     __exportButton: null,
     __openButton: null,
+    __renameButton: null,
     __deleteButton: null,
     __currentNodeId: null,
     __toolbarInitMinWidth: null,
@@ -144,7 +145,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       const iconSize = 14;
       const toolbar = this.__toolBar = new qx.ui.toolbar.ToolBar();
 
-      const editBtn = this.__editSlidesBtn = new qx.ui.toolbar.Button(this.tr("Edit Guided mode"), "@FontAwesome5Solid/caret-square-right/"+iconSize).set({
+      const editBtn = this.__editSlidesButton = new qx.ui.toolbar.Button(this.tr("Edit Guided mode"), "@FontAwesome5Solid/caret-square-right/"+iconSize).set({
         visibility: "excluded"
       });
       editBtn.addListener("execute", () => {
@@ -165,17 +166,16 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
       const openButton = this.__openButton = new qx.ui.toolbar.Button(this.tr("Open"), "@FontAwesome5Solid/edit/"+iconSize);
       openButton.addListener("execute", e => {
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
         const selectedItem = this.__getSelection();
         if (selectedItem) {
-          const nodeId = selectedItem ? selectedItem.getNodeId() : study.getUuid();
+          const nodeId = selectedItem ? selectedItem.getNodeId() : this.getStudy().getUuid();
           this.__openItem(nodeId);
         }
       }, this);
       osparc.utils.Utils.setIdToWidget(openButton, "openServiceBtn");
       toolbar.add(openButton);
 
-      const renameButton = new qx.ui.toolbar.Button(this.tr("Rename"), "@FontAwesome5Solid/i-cursor/"+iconSize);
+      const renameButton = this.__renameButton = new qx.ui.toolbar.Button(this.tr("Rename"), "@FontAwesome5Solid/i-cursor/"+iconSize);
       renameButton.addListener("execute", e => {
         this.__openItemRenamer();
       }, this);
@@ -186,15 +186,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         enabled: false
       });
       deleteButton.addListener("execute", e => {
-        const msg = this.tr("Are you sure you want to delete node?");
-        const win = new osparc.ui.window.Confirmation(msg);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteNode();
-          }
-        });
+        this.__deleteNode();
       }, this);
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteServiceBtn");
       toolbar.add(deleteButton);
@@ -236,12 +228,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         .then(areSlidesEnabled => {
           const study = this.getStudy();
           const isOwner = osparc.data.model.Study.isOwner(study);
-          this.__editSlidesBtn.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
+          this.__editSlidesButton.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
         });
     },
 
     populateTree: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const study = this.getStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
       let data = {
         label: study.getName(),
@@ -334,7 +326,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             newLabel
           } = e.getData();
           const nodeId = selectedItem.getNodeId();
-          const study = osparc.store.Store.getInstance().getCurrentStudy();
+          const study = this.getStudy();
           if (nodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
             const params = {
               name: newLabel
@@ -373,17 +365,27 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         this.__tree.openNodeAndParents(item);
         this.__tree.setSelection(new qx.data.Array([item]));
 
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        const studyId = study.getUuid();
-        if (this.__exportButton) {
-          this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
-        }
-        if (this.__deleteButton) {
-          this.__deleteButton.setEnabled(studyId !== nodeId && this.__currentNodeId !== nodeId);
-        }
-        if (this.__openButton) {
-          this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
-        }
+        this.__updateButtons(nodeId, item);
+      }
+    },
+
+    __updateButtons: function(nodeId, item) {
+      const studyId = this.getStudy().getUuid();
+      const readOnly = this.getStudy().isReadOnly();
+      if (this.__editSlidesButton) {
+        this.__editSlidesButton.setEnabled(!readOnly);
+      }
+      if (this.__exportButton) {
+        this.__exportButton.setEnabled(studyId !== nodeId && item.getIsContainer());
+      }
+      if (this.__openButton) {
+        this.__openButton.setEnabled(this.__currentNodeId !== nodeId);
+      }
+      if (this.__renameButton) {
+        this.__renameButton.setEnabled(!readOnly);
+      }
+      if (this.__deleteButton) {
+        this.__deleteButton.setEnabled(!readOnly && studyId !== nodeId && this.__currentNodeId !== nodeId);
       }
     },
 

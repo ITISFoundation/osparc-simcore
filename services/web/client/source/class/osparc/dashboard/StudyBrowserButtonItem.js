@@ -42,6 +42,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   properties: {
+    resourceData: {
+      check: "Object",
+      nullable: false,
+      apply: "__applyResourceData"
+    },
+
     resourceType: {
       check: ["study", "template", "service"],
       nullable: false,
@@ -116,6 +122,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       check: "String",
       nullable: true,
       apply: "_applyLockedBy"
+    },
+
+    multiSelectionMode: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "_applyMultiSelectionMode"
     }
   },
 
@@ -123,53 +136,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     MENU_BTN_WIDTH: 25,
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
-    SHARED_ALL: "@FontAwesome5Solid/globe/14"
+    SHARED_ALL: "@FontAwesome5Solid/globe/14",
+    STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
+    TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/14",
+    PERM_READ: "@FontAwesome5Solid/eye/16",
+    PERM_WRITE: "@FontAwesome5Solid/edit/16",
+    PERM_EXECUTE: "@FontAwesome5Solid/crown/16"
   },
 
   members: {
     __dateFormat: null,
     __timeFormat: null,
-
-    isResourceType: function(resourceType) {
-      return this.getResourceType() === resourceType;
-    },
-
-    multiSelection: function(on) {
-      if (on) {
-        const menuButton = this.getChildControl("menu-button");
-        menuButton.setVisibility("excluded");
-        this.__itemSelected();
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __itemSelected: function() {
-      if (this.isResourceType("study")) {
-        const selected = this.getValue();
-
-        if (this.isLocked() && selected) {
-          this.setValue(false);
-        }
-
-        const tick = this.getChildControl("tick-selected");
-        tick.setVisibility(selected ? "visible" : "excluded");
-
-        const untick = this.getChildControl("tick-unselected");
-        untick.setVisibility(selected ? "excluded" : "visible");
-      } else {
-        this.__showMenuOnly();
-      }
-    },
-
-    __showMenuOnly: function() {
-      const menuButton = this.getChildControl("menu-button");
-      menuButton.setVisibility("visible");
-      const tick = this.getChildControl("tick-selected");
-      tick.setVisibility("excluded");
-      const untick = this.getChildControl("tick-unselected");
-      untick.setVisibility("excluded");
-    },
 
     // overridden
     _createChildControlImpl: function(id) {
@@ -211,9 +189,99 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             left: 0
           });
           break;
+        case "permission-icon": {
+          control = new qx.ui.basic.Image();
+          control.exclude();
+          this._add(control, {
+            bottom: 2,
+            right: 2
+          });
+          break;
+        }
       }
 
       return control || this.base(arguments, id);
+    },
+
+    isResourceType: function(resourceType) {
+      return this.getResourceType() === resourceType;
+    },
+
+    _applyMultiSelectionMode: function(value) {
+      if (value) {
+        const menuButton = this.getChildControl("menu-button");
+        menuButton.setVisibility("excluded");
+        this.__itemSelected();
+      } else {
+        this.__showMenuOnly();
+      }
+    },
+
+    __applyResourceData: function(studyData) {
+      let defaultThumbnail = "";
+      let uuid = null;
+      let owner = "";
+      let accessRights = {};
+      switch (studyData["resourceType"]) {
+        case "study":
+          uuid = studyData.uuid;
+          owner = studyData.prjOwner;
+          accessRights = studyData.accessRights;
+          defaultThumbnail = this.self().STUDY_ICON;
+          break;
+        case "template":
+          uuid = studyData.uuid;
+          owner = studyData.prjOwner;
+          accessRights = studyData.accessRights;
+          defaultThumbnail = this.self().TEMPLATE_ICON;
+          break;
+        case "service":
+          uuid = studyData.key;
+          owner = studyData.owner;
+          accessRights = studyData.access_rights;
+          defaultThumbnail = this.self().SERVICE_ICON;
+          break;
+      }
+
+      this.set({
+        resourceType: studyData.resourceType,
+        uuid,
+        studyTitle: studyData.name,
+        studyDescription: studyData.description,
+        owner,
+        accessRights,
+        lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
+        icon: studyData.thumbnail || defaultThumbnail,
+        state: studyData.state ? studyData.state : {},
+        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : []
+      });
+    },
+
+    __itemSelected: function() {
+      if (this.isResourceType("study")) {
+        const selected = this.getValue();
+
+        if (this.isLocked() && selected) {
+          this.setValue(false);
+        }
+
+        const tick = this.getChildControl("tick-selected");
+        tick.setVisibility(selected ? "visible" : "excluded");
+
+        const untick = this.getChildControl("tick-unselected");
+        untick.setVisibility(selected ? "excluded" : "visible");
+      } else {
+        this.__showMenuOnly();
+      }
+    },
+
+    __showMenuOnly: function() {
+      const menuButton = this.getChildControl("menu-button");
+      menuButton.setVisibility("visible");
+      const tick = this.getChildControl("tick-selected");
+      tick.setVisibility("excluded");
+      const untick = this.getChildControl("tick-unselected");
+      untick.setVisibility("excluded");
     },
 
     _applyMenu: function(value, old) {
@@ -275,7 +343,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
-        const image = this.getChildControl("shared");
+        const sharedIcon = this.getChildControl("shared");
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
@@ -292,8 +360,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             }
             const orgs = values.length === 3 ? values[2] : [];
             const groups = [orgMembs, orgs, [all]];
-            this.__setSharedIcon(image, value, groups);
+            this.__setSharedIcon(sharedIcon, value, groups);
           });
+
+        if (this.isResourceType("study") || this.isResourceType("template")) {
+          this._applyStudyPermissions(value);
+        }
       }
     },
 
@@ -364,6 +436,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           tagsContainer.add(tagUI);
         });
       }
+    },
+
+    _applyStudyPermissions: function(accessRights) {
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const studyPerm = osparc.component.export.StudyPermissions;
+      const image = this.getChildControl("permission-icon");
+      if (studyPerm.canGroupWrite(accessRights, myGroupId)) {
+        image.exclude();
+      } else {
+        image.setSource(this.self().PERM_READ);
+      }
+
+      this.addListener("mouseover", () => image.show(), this);
+      this.addListener("mouseout", () => image.exclude(), this);
     },
 
     _applyState: function(state) {

@@ -22,16 +22,6 @@ from simcore_sdk.node_ports import node_config
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# FIXTURES
-pytest_plugins = [
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.postgres_service",
-    "pytest_simcore.minio_service",
-    "pytest_simcore.simcore_storage_service",
-]
-
 
 @pytest.fixture
 def nodeports_config(

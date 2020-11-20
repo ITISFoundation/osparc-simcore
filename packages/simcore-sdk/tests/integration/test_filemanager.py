@@ -28,7 +28,7 @@ async def test_valid_upload_download(
     )
 
     download_folder = Path(tmpdir) / "downloads"
-    download_file_path = await filemanager.download_file(
+    download_file_path = await filemanager.download_file_from_s3(
         store_id=store, s3_object=file_id, local_folder=download_folder
     )
     assert download_file_path.exists()
@@ -53,8 +53,8 @@ async def test_invalid_file_path(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.S3InvalidPathError):
-        await filemanager.download_file(
+    with pytest.raises(exceptions.InvalidDownloadLinkError):
+        await filemanager.download_file_from_s3(
             store_id=store, s3_object=file_id, local_folder=download_folder
         )
 
@@ -78,11 +78,11 @@ async def test_invalid_fileid(
 
     download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.StorageInvalidCall):
-        await filemanager.download_file(
+        await filemanager.download_file_from_s3(
             store_id=store, s3_object="", local_folder=download_folder
         )
-    with pytest.raises(exceptions.S3InvalidPathError):
-        await filemanager.download_file(
+    with pytest.raises(exceptions.InvalidDownloadLinkError):
+        await filemanager.download_file_from_s3(
             store_id=store, s3_object="file_id", local_folder=download_folder
         )
 
@@ -103,6 +103,6 @@ async def test_invalid_store(
 
     download_folder = Path(tmpdir) / "downloads"
     with pytest.raises(exceptions.S3InvalidStore):
-        await filemanager.download_file(
+        await filemanager.download_file_from_s3(
             store_name=store, s3_object=file_id, local_folder=download_folder
         )
