@@ -1,6 +1,6 @@
 /* ************************************************************************
 
-   explorer - an entry point to oSparc
+   osparc - an entry point to oSparc
 
    https://osparc.io
 
@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("explorer.NavigationBar", {
+qx.Class.define("osparc.viewer.NavigationBar", {
   extend: osparc.desktop.NavigationBar,
 
   members: {

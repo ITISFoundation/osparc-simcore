@@ -111,8 +111,6 @@ qx.Class.define("osparc.file.FilePicker", {
           });
           control = new osparc.file.FileDownloadLink();
           groupBox.add(control);
-          // SAn: Remove the following line as soon as the node-ports support the download link
-          groupBox.exclude();
           this._add(groupBox);
           break;
         }
