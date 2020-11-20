@@ -186,15 +186,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         enabled: false
       });
       deleteButton.addListener("execute", e => {
-        const msg = this.tr("Are you sure you want to delete node?");
-        const win = new osparc.ui.window.Confirmation(msg);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteNode();
-          }
-        });
+        this.__deleteNode();
       }, this);
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteServiceBtn");
       toolbar.add(deleteButton);

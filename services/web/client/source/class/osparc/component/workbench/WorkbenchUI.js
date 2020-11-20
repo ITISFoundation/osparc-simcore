@@ -121,6 +121,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
   events: {
     "nodeSelected": "qx.event.type.Data",
+    "removeNode": "qx.event.type.Data",
     "removeEdge": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
   },
@@ -894,6 +895,20 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const srvCat = this.__createServiceCatalog(pos);
         srvCat.open();
       }, this);
+
+      const commandDel = new qx.ui.command.Command("Delete");
+      commandDel.addListener("execute", () => {
+        const selectedNodes = this.getSelectedNodes();
+        if (selectedNodes.length === 1) {
+          this.fireDataEvent("removeNode", selectedNodes[0].getNodeId());
+        }
+      });
+
+      const commandEsc = new qx.ui.command.Command("Esc");
+      commandEsc.addListener("execute", () => {
+        this.__selectedNodes.forEach(node => node.removeState("selected"));
+        this.resetSelectedNodes();
+      });
 
       this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
 
