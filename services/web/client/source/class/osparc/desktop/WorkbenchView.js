@@ -647,7 +647,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         socket.on(slotName3, data => {
           const d = JSON.parse(data);
           const nodeId = d["Node"];
-          const nodeData = d["data"];
+          const nodeData = d["Data"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
