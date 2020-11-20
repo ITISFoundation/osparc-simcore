@@ -4,12 +4,16 @@
 
 import logging
 import re
+import urllib.parse
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict
+from typing import Dict, Tuple
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import UserRole
+from pytest_simcore.helpers.utils_mock import future_with_result
 from yarl import URL
 
 from models_library.projects_state import (
@@ -19,9 +23,6 @@ from models_library.projects_state import (
     ProjectState,
     RunningState,
 )
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserRole
-from pytest_simcore.helpers.utils_mock import future_with_result
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 
@@ -158,11 +159,12 @@ async def test_api_list_supported_filetypes(client):
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch, published_project):
+async def catalog_subsystem_mock(monkeypatch):
+    from simcore_service_webserver.studies_dispatcher._core import _FILETYPE_TO_VIEWER
+
     services_in_project = [
-        {"key": s["key"], "version": s["version"]}
-        for _, s in published_project["workbench"].items()
-    ]
+        {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
+    ] + [{"key": s.key, "version": s.version} for _, s in _FILETYPE_TO_VIEWER.items()]
 
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
@@ -220,43 +222,50 @@ async def assert_redirected_to_study(
     # Expects auth cookie for current user
     assert "osparc.WEBAPI_SESSION" in [c.key for c in session.cookie_jar]
 
-    ### FIXME!!
-
     # Expects fragment to indicate client where to find newly created project
-    m = re.match(r"/view/([\d\w-]+)", resp.real_url.fragment)
-    assert m, f"Expected /study/uuid, got {resp.real_url.fragment}"
+    unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
+    match = re.match(r"/view\?(.+)", unquoted_fragment)
+    assert (
+        match
+    ), f"Expected fragment as /#/view?param1=value&param2=value, got {unquoted_fragment}"
+
+    query_s = match.group(1)
+    query_params = urllib.parse.parse_qs(
+        query_s
+    )  # returns {'param1': ['value'], 'param2': ['value']}
+
+    assert "project_id" in query_params.keys()
+    assert "viewer_node_id" in query_params.keys()
+
+    assert all(len(query_params[key]) == 1 for key in query_params)
 
     # returns newly created project
-    redirected_project_id = m.group(1)
+    redirected_project_id = query_params["project_id"][0]
     return redirected_project_id
 
 
-@pytest.mark.xfail()
-async def test_viewer_redirect_with_errors(client):
-    resp = await client.get(
-        r"/view?file_type=DICOM&file_size=1&file_name=foo&download_link=http%3A%2F%2Fhttpbin.org%2Fimage%2Fjpeg"
-    )
-
-    base_url = str(client.app.base_url)
-    expected_redirect_url = f"{base_url}/#/error?message=Ups+something+went+wrong+while+processing+your+request"
-
-
-@pytest.mark.xfail()
 async def test_dispatch_viewer_anonymously(
     client,
     storage_subsystem_mock,
     catalog_subsystem_mock,
     mocks_on_projects_api,
+    mocker,
 ):
+    mock_client_director_v2_func = mocker.patch(
+        "simcore_service_webserver.director_v2.create_or_update_pipeline",
+        return_value=future_with_result(result=None),
+    )
 
     redirect_url = (
         client.app.router["get_redirection_to_viewer"]
         .url_for()
         .with_query(
-            file_name="foo",
-            file_size=3,
+            file_name="users.csv",
+            file_size=3 * 1024,
             file_type="CSV",
-            download_link="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv",
+            download_link=urllib.parse.quote(
+                "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
+            ),
         )
     )
 
@@ -281,15 +290,65 @@ async def test_dispatch_viewer_anonymously(
     assert expected_prj_id == guest_project["uuid"]
     assert guest_project["prjOwner"] == data["login"]
 
+    assert mock_client_director_v2_func.called
 
 
-def test_map_file_types_to_viewers():
-    pass
+def assert_error_in_fragment(resp: ClientResponse) -> Tuple[str, int]:
+    # Expects fragment to indicate client where to find newly created project
+    unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
+    match = re.match(r"/error\?(.+)", unquoted_fragment)
+    assert match, f"Expected fragment as /#/view?message=..., got {unquoted_fragment}"
+
+    query_s = match.group(1)
+    # returns {'param1': ['value'], 'param2': ['value']}
+    query_params = urllib.parse.parse_qs(query_s)
+
+    assert {"message", "status_code"} == set(query_params.keys()), query_params
+    assert all(len(query_params[key]) == 1 for key in query_params)
+
+    message = query_params["message"][0]
+    status_code = int(query_params["status_code"][0])
+    return message, status_code
 
 
-def test_create_guest_user():
-    pass
+async def test_viewer_redirect_with_file_type_errors(client):
+    redirect_url = (
+        client.app.router["get_redirection_to_viewer"]
+        .url_for()
+        .with_query(
+            file_name="users.csv",
+            file_size=3 * 1024,
+            file_type="INVALID_TYPE",  # <<<<<---------
+            download_link=urllib.parse.quote(
+                "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
+            ),
+        )
+    )
+
+    resp = await client.get(redirect_url)
+    assert resp.status == 200
+
+    message, status_code = assert_error_in_fragment(resp)
+
+    assert status_code == web.HTTPUnprocessableEntity.status_code
+    assert "type" in message.lower()
 
 
-def test_portal_workflow():
-    pass
+async def test_viewer_redirect_with_client_errors(client):
+    redirect_url = (
+        client.app.router["get_redirection_to_viewer"]
+        .url_for()
+        .with_query(
+            file_name="users.csv",
+            file_size=-1,  # <<<<<---------
+            file_type="CSV",
+            download_link=urllib.parse.quote("httnot a link"),  # <<<<<---------
+        )
+    )
+
+    resp = await client.get(redirect_url)
+    assert resp.status == 200
+
+    message, status_code = assert_error_in_fragment(resp)
+    print(message)
+    assert status_code == web.HTTPBadRequest.status_code

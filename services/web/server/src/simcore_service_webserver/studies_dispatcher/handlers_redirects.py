@@ -2,12 +2,13 @@
 
 """
 import logging
+import urllib.parse
 from typing import Optional
 
 import aiohttp
 from aiohttp import web
 from aiohttp.client_exceptions import ClientError
-from pydantic import BaseModel, HttpUrl, ValidationError
+from pydantic import BaseModel, HttpUrl, ValidationError, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
@@ -42,16 +43,12 @@ def create_redirect_response(
     # TODO: test that fragment queries are understood by front-end
     # TODO: front end should create an error page and a view page
     assert page in ("view", "error")  # nosec
-
     in_fragment = str(URL.build(path=f"/{page}").with_query(**parameters))
     redirect_url = app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(in_fragment)
     return web.HTTPFound(location=redirect_url)
 
 
 # HANDLERS --------------------------------
-
-import urllib.parse
-from pydantic import validator
 
 
 class QueryParams(BaseModel, ValidationMixin):
@@ -121,6 +118,7 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             page="error",
             message=f"Sorry, we cannot render this file: {err.reason}",
+            status_code= web.HTTPUnprocessableEntity.status_code # 422
         )
     except web.HTTPClientError as err:
         raise create_redirect_response(
@@ -132,5 +130,6 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             page="error",
             message="Ups something went wrong while processing your request.",
+            status_code=web.HTTPServerError.status_code
         )
     return response

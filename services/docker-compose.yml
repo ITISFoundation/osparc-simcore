@@ -97,6 +97,8 @@ services:
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - POSTGRES_MAXSIZE=30
     env_file:
       - ../.env
     volumes:

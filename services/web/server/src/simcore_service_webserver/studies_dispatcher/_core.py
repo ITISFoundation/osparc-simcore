@@ -8,7 +8,7 @@ from typing import Iterator, Optional, Tuple
 from aiohttp import web
 from pydantic import ValidationError
 
-MEGABYTES = 1024*2014
+MEGABYTES = 1024 * 1024
 
 
 # VIEWERS MAP -----------------------------------------------------------------------------
@@ -23,9 +23,8 @@ class ViewerInfo:
     key: str
     version: str
     label: str
-    input_port_key: str = (
-        "input_1"  # name of the connection port, since it is service-dependent
-    )
+    # name of the connection port, since it is service-dependent
+    input_port_key: str = "input_1"
 
     @property
     def footprint(self) -> str:
@@ -92,10 +91,11 @@ class ValidationMixin:
         try:
             obj = cls(**dict(request.query))
         except ValidationError as err:
+
             raise web.HTTPBadRequest(
                 content_type="application/json",
                 body=err.json(),
-                reason=f"Invalid parameters {err.json(indent=1)}",
+                reason=f"{len(err.errors())} invalid parameters in query",
             )
         else:
             return obj
