@@ -7,7 +7,12 @@ from fastapi import FastAPI, Request
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
 from ..meta import api_version, api_vtag
-from .events import create_start_app_handler, create_stop_app_handler
+from .events import (
+    create_start_app_handler,
+    create_stop_app_handler,
+    on_shutdown,
+    on_startup,
+)
 from .settings import AppSettings, BootModeEnum
 
 # from fastapi.exceptions import RequestValidationError
