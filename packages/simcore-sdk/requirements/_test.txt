@@ -15,7 +15,7 @@ attrs==20.3.0             # via -r requirements/_base.txt, aiohttp, pytest
 certifi==2020.11.8        # via requests
 chardet==3.0.4            # via -r requirements/_base.txt, aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
-coveralls==2.1.2          # via -r requirements/_test.in
+coveralls==2.2.0          # via -r requirements/_test.in
 dataclasses==0.7          # via -r requirements/_base.txt, pydantic
 decorator==4.4.2          # via -r requirements/_base.txt, networkx
 docker==4.3.1             # via -r requirements/_test.in
