@@ -20,10 +20,6 @@
 # installs current package
 -e .
 
-## NOTE: Copied from ../../../requirements.txt to avoid mounting
-#        basedir in docker during devel-mode.
-#  TODO: Better solution needed!
 black
 pip-tools
 bump2version
-rope

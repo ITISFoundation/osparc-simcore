@@ -4,5 +4,12 @@
 # basic dev tools
 watchdog[watchmedo]
 
-# these are common dev tools used for compilation here
--r ../../../../requirements.txt
+# formatter
+black
+isort
+
+# dependency manager
+pip-tools
+
+# version manager
+bump2version
