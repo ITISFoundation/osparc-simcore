@@ -330,8 +330,11 @@ push-version: tag-version
 		setuptools
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$</bin/pip3 --quiet install -r requirements.txt
+	$</bin/pip3 --quiet install -r requirements/devenv.txt
+	# Installing pre-commit hooks in current .git repo
+	@$</bin/pre-commit install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
+
 
 devenv-all: devenv ## sets up extra development tools (everything else besides python)
 	# Upgrading client compiler
