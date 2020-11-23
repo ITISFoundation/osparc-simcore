@@ -18,7 +18,7 @@
 qx.Class.define("osparc.viewer.NodeViewer", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeId) {
+  construct: function(studyId, nodeId) {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -28,10 +28,14 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.__iFrameChanged();
 
-    qx.event.Timer.once(() => {
-      const src = window.location.href + "x/" + nodeId;
-      this.__waitForServiceReady(src);
-    }, this, 2000);
+    this.__openStudy(studyId)
+      .then(() => {
+        const src = window.location.href + "x/" + nodeId;
+        this.__waitForServiceReady(src);
+      })
+      .catch(err => {
+        console.error(err);
+      });
   },
 
   properties: {
@@ -67,6 +71,16 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         showRestartButton: false
       });
       this.setIFrame(iframe);
+    },
+
+    __openStudy: function(studyId) {
+      const params = {
+        url: {
+          projectId: studyId
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "open", params);
     },
 
     __waitForServiceReady: function(srvUrl) {
