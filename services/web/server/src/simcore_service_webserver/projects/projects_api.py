@@ -10,7 +10,7 @@
 
 import logging
 from pprint import pformat
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
@@ -420,7 +420,44 @@ async def notify_project_node_update(
         await post_group_messages(app, room, messages)
 
 
+from collections import defaultdict
+
+
+async def trigger_connected_service_retrieve(
+    app: web.Application, project: Dict, node_uuid: str, changed_keys: List[str]
+) -> None:
+    workbench = project["workbench"]
+    nodes_keys_to_update: Dict[str, List[str]] = defaultdict(list)
+    # find the nodes that need to retrieve data
+    for node in workbench:
+        # check this node is dynamic
+        if not _is_node_dynamic(node["key"]):
+            continue
+
+        node_inputs = node.get("inputs", {})
+        for input_port in node_inputs:
+            # we look for node port links
+            if not isinstance(input_port, dict):
+                continue
+
+            input_node_uuid = input_port.get("nodeUuid")
+            if input_node_uuid != node_uuid:
+                continue
+            # so this node is linked to the updated one, now check if the port was changed?
+            linked_input_port = input_port.get("output")
+            if linked_input_port in changed_keys:
+                nodes_keys_to_update[node].append(linked_input_port)
+
+    # call /retrieve on the nodes
+    update_tasks = [
+        director_api.call_service_retrieve(app, node, keys)
+        for node, keys in nodes_keys_to_update.items()
+    ]
+    await logged_gather(*update_tasks)
+
+
 # PROJECT STATE -------------------------------------------------------------------
+
 
 async def _get_project_lock_state(
     user_id: int, project_uuid: str, app: web.Application

@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from pprint import pformat
-from typing import Dict
+from typing import Dict, List
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -22,24 +22,29 @@ log = logging.getLogger(__name__)
 OUTPUT_KEYS_TO_COMPARE = ["path", "store"]
 
 
-def _is_output_changed(current_outputs: Dict, new_outputs: Dict) -> bool:
-    if new_outputs != current_outputs:
-        if not current_outputs:
-            return True
-        for port_key in new_outputs:
-            if port_key not in current_outputs:
-                return True
-            if isinstance(new_outputs[port_key], dict):
-                # file type output
-                if any(
-                    current_outputs[port_key][x] != new_outputs[port_key][x]
-                    for x in OUTPUT_KEYS_TO_COMPARE
-                ):
-                    return True
-            elif new_outputs[port_key] != current_outputs[port_key]:
-                # value output
-                return True
-    return False
+def _is_output_changed(current_outputs: Dict, new_outputs: Dict) -> List[str]:
+    changed_keys = []
+    if new_outputs == current_outputs:
+        return changed_keys
+    if not current_outputs:
+        # return all the keys
+        return list(new_outputs.keys())
+    # check what changed
+    for port_key in new_outputs:
+        if port_key not in current_outputs:
+            changed_keys.append(port_key)
+        elif isinstance(new_outputs[port_key], dict):
+            # file type output
+            if any(
+                current_outputs[port_key][x] != new_outputs[port_key][x]
+                for x in OUTPUT_KEYS_TO_COMPARE
+                if x in new_outputs[port_key]
+            ):
+                changed_keys.append(port_key)
+        elif new_outputs[port_key] != current_outputs[port_key]:
+            # value output
+            changed_keys.append(port_key)
+    return changed_keys
 
 
 def _is_state_changed(current_state: str, new_state: str) -> bool:
@@ -59,7 +64,10 @@ async def _update_project_node_and_notify_if_needed(
         raise projects_exceptions.NodeNotFoundError(project_uuid, node_uuid)
 
     current_outputs = project["workbench"][node_uuid].get("outputs")
-    if _is_output_changed(current_outputs, new_node_data["outputs"]):
+    changed_keys: List[str] = _is_output_changed(
+        current_outputs, new_node_data["outputs"]
+    )
+    if changed_keys:
         project = await projects_api.update_project_node_outputs(
             app,
             user_id,
@@ -73,6 +81,9 @@ async def _update_project_node_and_notify_if_needed(
             pformat(new_node_data["outputs"]),
         )
         await projects_api.notify_project_node_update(app, project, node_uuid)
+        await projects_api.trigger_connected_service_retrieve(
+            app, project, node_uuid, changed_keys
+        )
 
     current_state = project["workbench"][node_uuid].get("state")
     new_state = convert_state_from_db(new_node_data["state"]).value
