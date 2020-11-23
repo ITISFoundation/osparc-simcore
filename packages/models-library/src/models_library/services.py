@@ -16,7 +16,7 @@ SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$"
 KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$" # TODO: should be a UUID_RE instead??
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
 
 FILENAME_RE = r".+"
 
