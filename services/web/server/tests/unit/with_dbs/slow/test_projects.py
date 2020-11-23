@@ -12,15 +12,18 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import mock
 import pytest
 import socketio
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from aiohttp import web
+from aioresponses import aioresponses
 from mock import call
-from models_library.projects import (
-    Owner,
-    ProjectLocked,
+from socketio.exceptions import ConnectionError as SocketConnectionError
+
+from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
+from models_library.projects_access import Owner
+from models_library.projects_state import (
     ProjectRunningState,
     ProjectState,
     RunningState,
+    ProjectLocked
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
@@ -31,6 +34,7 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director import setup_director
+from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
@@ -41,11 +45,10 @@ from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
-from socketio.exceptions import ConnectionError as SocketConnectionError
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
@@ -86,8 +89,9 @@ def client(
     setup_rest(app)
     setup_login(app)  # needed for login_utils fixtures
     setup_resource_manager(app)
-    setup_sockets(app)
+    setup_socketio(app)
     setup_director(app)
+    setup_director_v2(app)
     setup_tags(app)
     assert setup_projects(app)
     setup_products(app)
@@ -127,7 +131,12 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
     nameparts = logged_user["name"].split(".") + [""]
     state = ProjectState(
         locked=ProjectLocked(
-            value=False, owner=Owner(first_name=nameparts[0], last_name=nameparts[1])
+            value=False,
+            owner=Owner(
+                user_id=logged_user["id"],
+                first_name=nameparts[0],
+                last_name=nameparts[1],
+            ),
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     ).dict(by_alias=True, exclude_unset=True)
@@ -200,35 +209,6 @@ async def project_db_cleaner(client):
     await delete_all_projects(client.app)
 
 
-def assert_replaced(current_project, update_data):
-    def _extract(dikt, keys):
-        return {k: dikt[k] for k in keys}
-
-    modified = [
-        "lastChangeDate",
-    ]
-    keep = [k for k in update_data.keys() if k not in modified]
-
-    assert _extract(current_project, keep) == _extract(update_data, keep)
-
-    k = "lastChangeDate"
-    assert to_datetime(update_data[k]) < to_datetime(current_project[k])
-
-
-async def _list_projects(
-    client, expected: web.Response, query_parameters: Optional[Dict] = None
-) -> List[Dict]:
-    # GET /v0/projects
-    url = client.app.router["list_projects"].url_for()
-    assert str(url) == API_PREFIX + "/projects"
-    if query_parameters:
-        url = url.with_query(**query_parameters)
-
-    resp = await client.get(url)
-    data, errors = await assert_status(resp, expected)
-    return data
-
-
 @pytest.fixture
 async def catalog_subsystem_mock(monkeypatch):
     services_in_project = []
@@ -252,60 +232,45 @@ async def catalog_subsystem_mock(monkeypatch):
     return creator
 
 
-# GET --------
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
-)
-async def test_list_projects(
+@pytest.fixture(autouse=True)
+async def director_v2_automock(
+    director_v2_subsystem_mock: aioresponses,
+) -> aioresponses:
+    yield director_v2_subsystem_mock
+
+
+# HELPERS -----------------------------------------------------------------------------------------
+
+
+def assert_replaced(current_project, update_data):
+    def _extract(dikt, keys):
+        return {k: dikt[k] for k in keys}
+
+    modified = [
+        "lastChangeDate",
+    ]
+    keep = [k for k in update_data.keys() if k not in modified]
+
+    assert _extract(current_project, keep) == _extract(update_data, keep)
+
+    k = "lastChangeDate"
+    assert to_datetime(update_data[k]) < to_datetime(current_project[k])
+
+
+async def _list_projects(
     client,
-    logged_user,
-    user_project,
-    template_project,
-    expected,
-    catalog_subsystem_mock,
-):
-    catalog_subsystem_mock([user_project, template_project])
-    data = await _list_projects(client, expected)
+    expected: web.Response,
+    query_parameters: Optional[Dict] = None,
+) -> List[Dict]:
+    # GET /v0/projects
+    url = client.app.router["list_projects"].url_for()
+    assert str(url) == API_PREFIX + "/projects"
+    if query_parameters:
+        url = url.with_query(**query_parameters)
 
-    if data:
-        assert len(data) == 2
-
-        project_state = data[0].pop("state")
-        assert data[0] == template_project
-        assert not ProjectState(
-            **project_state
-        ).locked.value, "Templates are not locked"
-
-        project_state = data[1].pop("state")
-        assert data[1] == user_project
-        assert ProjectState(**project_state)
-
-    # GET /v0/projects?type=user
-    data = await _list_projects(client, expected, {"type": "user"})
-    if data:
-        assert len(data) == 1
-        project_state = data[0].pop("state")
-        assert data[0] == user_project
-        assert not ProjectState(
-            **project_state
-        ).locked.value, "Single user does not lock"
-
-    # GET /v0/projects?type=template
-    # instead /v0/projects/templates ??
-    data = await _list_projects(client, expected, {"type": "template"})
-    if data:
-        assert len(data) == 1
-        project_state = data[0].pop("state")
-        assert data[0] == template_project
-        assert not ProjectState(
-            **project_state
-        ).locked.value, "Templates are not locked"
+    resp = await client.get(url)
+    data, errors = await assert_status(resp, expected)
+    return data
 
 
 async def _assert_get_same_project(
@@ -324,32 +289,6 @@ async def _assert_get_same_project(
         assert data == project
         assert ProjectState(**project_state)
     return data
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
-    ],
-)
-async def test_get_project(
-    client,
-    logged_user,
-    user_project,
-    template_project,
-    expected,
-    catalog_subsystem_mock,
-):
-    catalog_subsystem_mock([user_project, template_project])
-
-    # standard project
-    await _assert_get_same_project(client, user_project, expected)
-
-    # with a template
-    await _assert_get_same_project(client, template_project, expected)
 
 
 async def _new_project(
@@ -446,6 +385,213 @@ async def _new_project(
     return new_project
 
 
+async def _replace_project(
+    client, project_update: Dict, expected: web.Response
+) -> Dict:
+    # PUT /v0/projects/{project_id}
+    url = client.app.router["replace_project"].url_for(
+        project_id=project_update["uuid"]
+    )
+    assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
+    resp = await client.put(url, json=project_update)
+    data, error = await assert_status(resp, expected)
+    if not error:
+        assert_replaced(current_project=data, update_data=project_update)
+    return data
+
+
+async def _connect_websocket(
+    socketio_client: Callable,
+    check_connection: bool,
+    client,
+    client_id: str,
+    events: Optional[Dict[str, Callable]] = None,
+) -> socketio.AsyncClient:
+    try:
+        sio = await socketio_client(client_id, client)
+        assert sio.sid
+        if events:
+            for event, handler in events.items():
+                sio.on(event, handler=handler)
+        return sio
+    except SocketConnectionError:
+        if check_connection:
+            pytest.fail("socket io connection should not fail")
+
+
+async def _open_project(
+    client,
+    client_id: str,
+    project: Dict,
+    expected: Union[web.HTTPException, List[web.HTTPException]],
+) -> Optional[Tuple[Dict, Dict]]:
+    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(url, json=client_id)
+
+    if isinstance(expected, list):
+        for e in expected:
+            try:
+                data, error = await assert_status(resp, e)
+                return data, error
+            except AssertionError:
+                # re-raies if last item
+                if e == expected[-1]:
+                    raise
+                continue
+    else:
+        return await assert_status(resp, expected)
+
+
+async def _close_project(
+    client, client_id: str, project: Dict, expected: web.HTTPException
+):
+    url = client.app.router["close_project"].url_for(project_id=project["uuid"])
+    resp = await client.post(url, json=client_id)
+    await assert_status(resp, expected)
+
+
+async def _state_project(
+    client,
+    project: Dict,
+    expected: web.HTTPException,
+    expected_project_state: ProjectState,
+):
+    url = client.app.router["state_project"].url_for(project_id=project["uuid"])
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+    if not error:
+        # the project is locked
+        received_state = ProjectState(**data)
+        assert received_state == expected_project_state
+
+
+async def _assert_project_state_updated(
+    handler: mock.Mock,
+    shared_project: Dict,
+    expected_project_state: ProjectState,
+    num_calls: int,
+) -> None:
+    if num_calls == 0:
+        handler.assert_not_called()
+    else:
+        # wait for the calls
+        now = time.monotonic()
+        MAX_WAITING_TIME = 15
+        while time.monotonic() - now < MAX_WAITING_TIME:
+            await asyncio.sleep(1)
+            if handler.call_count == num_calls:
+                break
+        if time.monotonic() - now > MAX_WAITING_TIME:
+            pytest.fail(
+                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{num_calls} calls"
+            )
+
+        calls = [
+            call(
+                json.dumps(
+                    {
+                        "project_uuid": shared_project["uuid"],
+                        "data": expected_project_state.dict(
+                            by_alias=True, exclude_unset=True
+                        ),
+                    }
+                )
+            )
+        ] * num_calls
+        handler.assert_has_calls(calls)
+        handler.reset_mock()
+
+
+async def _delete_project(client, project: Dict, expected: web.Response) -> None:
+    url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
+    assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
+    resp = await client.delete(url)
+    await assert_status(resp, expected)
+
+
+# TESTS ----------------------------------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_list_projects(
+    client,
+    logged_user,
+    user_project,
+    template_project,
+    expected,
+    catalog_subsystem_mock,
+    director_v2_subsystem_mock,
+):
+    catalog_subsystem_mock([user_project, template_project])
+    data = await _list_projects(client, expected)
+
+    if data:
+        assert len(data) == 2
+
+        project_state = data[0].pop("state")
+        assert data[0] == template_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Templates are not locked"
+
+        project_state = data[1].pop("state")
+        assert data[1] == user_project
+        assert ProjectState(**project_state)
+
+    # GET /v0/projects?type=user
+    data = await _list_projects(client, expected, {"type": "user"})
+    if data:
+        assert len(data) == 1
+        project_state = data[0].pop("state")
+        assert data[0] == user_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Single user does not lock"
+
+    # GET /v0/projects?type=template
+    # instead /v0/projects/templates ??
+    data = await _list_projects(client, expected, {"type": "template"})
+    if data:
+        assert len(data) == 1
+        project_state = data[0].pop("state")
+        assert data[0] == template_project
+        assert not ProjectState(
+            **project_state
+        ).locked.value, "Templates are not locked"
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_get_project(
+    client,
+    logged_user,
+    user_project,
+    template_project,
+    expected,
+    catalog_subsystem_mock,
+):
+    catalog_subsystem_mock([user_project, template_project])
+
+    # standard project
+    await _assert_get_same_project(client, user_project, expected)
+
+    # with a template
+    await _assert_get_same_project(client, template_project, expected)
+
+
 # POST --------
 @pytest.mark.parametrize(*standard_role_response())
 async def test_new_project(
@@ -453,7 +599,6 @@ async def test_new_project(
     logged_user,
     primary_group,
     expected,
-    computational_system_mock,
     storage_subsystem_mock,
     project_db_cleaner,
 ):
@@ -469,7 +614,6 @@ async def test_new_project_from_template(
     primary_group: Dict[str, str],
     template_project,
     expected,
-    computational_system_mock,
     storage_subsystem_mock,
     project_db_cleaner,
 ):
@@ -498,7 +642,6 @@ async def test_new_project_from_template_with_body(
     standard_groups: List[Dict[str, str]],
     template_project,
     expected,
-    computational_system_mock,
     storage_subsystem_mock,
     project_db_cleaner,
 ):
@@ -562,7 +705,6 @@ async def test_new_template_from_project(
     all_group: Dict[str, str],
     user_project,
     expected,
-    computational_system_mock,
     storage_subsystem_mock,
     catalog_subsystem_mock,
     project_db_cleaner,
@@ -686,7 +828,6 @@ async def test_share_project(
     expected: ExpectedResponse,
     storage_subsystem_mock,
     mocked_director_subsystem,
-    computational_system_mock,
     catalog_subsystem_mock,
     share_rights: Dict,
     project_db_cleaner,
@@ -740,21 +881,6 @@ async def test_share_project(
         )
 
 
-async def _replace_project(
-    client, project_update: Dict, expected: web.Response
-) -> Dict:
-    # PUT /v0/projects/{project_id}
-    url = client.app.router["replace_project"].url_for(
-        project_id=project_update["uuid"]
-    )
-    assert str(url) == f"{API_PREFIX}/projects/{project_update['uuid']}"
-    resp = await client.put(url, json=project_update)
-    data, error = await assert_status(resp, expected)
-    if not error:
-        assert_replaced(current_project=data, update_data=project_update)
-    return data
-
-
 # PUT --------
 @pytest.mark.parametrize(
     "user_role,expected,expected_change_access",
@@ -771,7 +897,6 @@ async def test_replace_project(
     user_project,
     expected,
     expected_change_access,
-    computational_system_mock,
     all_group,
 ):
     project_update = deepcopy(user_project)
@@ -799,7 +924,6 @@ async def test_replace_project_updated_inputs(
     logged_user,
     user_project,
     expected,
-    computational_system_mock,
 ):
     project_update = deepcopy(user_project)
     #
@@ -831,7 +955,6 @@ async def test_replace_project_updated_readonly_inputs(
     logged_user,
     user_project,
     expected,
-    computational_system_mock,
 ):
     project_update = deepcopy(user_project)
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
@@ -844,13 +967,6 @@ async def test_replace_project_updated_readonly_inputs(
 
 
 # DELETE -------
-
-
-async def _delete_project(client, project: Dict, expected: web.Response) -> None:
-    url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
-    assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
-    resp = await client.delete(url)
-    await assert_status(resp, expected)
 
 
 @pytest.mark.parametrize(
@@ -1270,108 +1386,6 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
 
 
-async def _connect_websocket(
-    socketio_client: Callable,
-    check_connection: bool,
-    client,
-    client_id: str,
-    events: Optional[Dict[str, Callable]] = None,
-) -> socketio.AsyncClient:
-    try:
-        sio = await socketio_client(client_id, client)
-        assert sio.sid
-        if events:
-            for event, handler in events.items():
-                sio.on(event, handler=handler)
-        return sio
-    except SocketConnectionError:
-        if check_connection:
-            pytest.fail("socket io connection should not fail")
-
-
-async def _open_project(
-    client,
-    client_id: str,
-    project: Dict,
-    expected: Union[web.HTTPException, List[web.HTTPException]],
-) -> Optional[Tuple[Dict, Dict]]:
-    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(url, json=client_id)
-
-    if isinstance(expected, list):
-        for e in expected:
-            try:
-                data, error = await assert_status(resp, e)
-                return data, error
-            except AssertionError:
-                # re-raies if last item
-                if e == expected[-1]:
-                    raise
-                continue
-    else:
-        return await assert_status(resp, expected)
-
-
-async def _close_project(
-    client, client_id: str, project: Dict, expected: web.HTTPException
-):
-    url = client.app.router["close_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(url, json=client_id)
-    await assert_status(resp, expected)
-
-
-async def _state_project(
-    client,
-    project: Dict,
-    expected: web.HTTPException,
-    expected_project_state: ProjectState,
-):
-    url = client.app.router["state_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
-    if not error:
-        # the project is locked
-        received_state = ProjectState(**data)
-        assert received_state == expected_project_state
-
-
-async def _assert_project_state_updated(
-    handler: mock.Mock,
-    shared_project: Dict,
-    expected_project_state: ProjectState,
-    num_calls: int,
-) -> None:
-    if num_calls == 0:
-        handler.assert_not_called()
-    else:
-        # wait for the calls
-        now = time.monotonic()
-        MAX_WAITING_TIME = 15
-        while time.monotonic() - now < MAX_WAITING_TIME:
-            await asyncio.sleep(1)
-            if handler.call_count == num_calls:
-                break
-        if time.monotonic() - now > MAX_WAITING_TIME:
-            pytest.fail(
-                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{num_calls} calls"
-            )
-
-        calls = [
-            call(
-                json.dumps(
-                    {
-                        "project_uuid": shared_project["uuid"],
-                        "data": expected_project_state.dict(
-                            by_alias=True, exclude_unset=True
-                        ),
-                    }
-                )
-            )
-        ] * num_calls
-        handler.assert_has_calls(calls)
-        handler.reset_mock()
-
-
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_locked(
     client,
@@ -1420,6 +1434,7 @@ async def test_open_shared_project_2_users_locked(
     )
     expected_project_state.locked.value = True
     expected_project_state.locked.owner = Owner(
+        user_id=logged_user["id"],
         first_name=(logged_user["name"].split(".") + [""])[0],
         last_name=(logged_user["name"].split(".") + [""])[1],
     )
@@ -1498,6 +1513,7 @@ async def test_open_shared_project_2_users_locked(
     if not any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]):
         expected_project_state.locked.value = True
         expected_project_state.locked.owner = Owner(
+            user_id=user_2["id"],
             first_name=(user_2["name"].split(".") + [""])[0],
             last_name=(user_2["name"].split(".") + [""])[1],
         )

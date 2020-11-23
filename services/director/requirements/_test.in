@@ -5,6 +5,12 @@
 # frozen specs
 -r _base.txt
 
+# NOTE:
+# FROZEN  (see notes in _base.in)
+# DO NOT CHANGE ANYTHING HERE.
+# IT WON'T HAVE ANY EFFECT
+#
+
 # testing
 coverage==4.5.1 # TODO: Downgraded because of a bug https://github.com/nedbat/coveragepy/issues/716
 pytest

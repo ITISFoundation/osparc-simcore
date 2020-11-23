@@ -50,6 +50,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "_applyStudy",
       nullable: false
     }
   },
@@ -66,15 +67,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __loggerView: null,
     __currentNodeId: null,
 
-    initViews: function() {
-      this.__initViews();
-      this.__connectEvents();
-      this.__attachSocketEventHandlers();
+    _applyStudy: function(study) {
+      if (study) {
+        this.__initViews();
+        this.__connectEvents();
+        this.__attachSocketEventHandlers();
+      }
     },
 
     nodeSelected: function(nodeId) {
       if (!nodeId) {
-        this.__loggerView.setCurrentNodeId();
+        this.__loggerView.setCurrentNodeId("");
         return;
       }
       if (this.__nodesTree) {
@@ -293,8 +296,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["project_id"];
-      const runButton = this.__mainPanel.getControls().getStartButton();
+      const pipelineId = resp.data["pipeline_id"];
       this.getLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
@@ -304,20 +306,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
-          osparc.data.Resources.fetch("studies", "state", {
-            url: {
-              projectId: pipelineId
-            }
-          })
-            .then(({state}) => {
-              if (state && (
-                state.value === "NOT_STARTED" ||
-                state.value === "SUCCESS" ||
-                state.value === "FAILED"
-              )) {
-                runButton.setFetching(false);
-              }
-            });
+          osparc.store.Store.getInstance().getStudyState(pipelineId);
         }, 60000);
         const socket = osparc.wrapper.WebSocket.getInstance();
         socket.getSocket().once("projectStateUpdated", jsonStr => {
@@ -411,6 +400,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__editSlides();
       }, this);
       nodesTree.addListener("removeNode", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
@@ -435,6 +428,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
 
       const workbenchUI = this.__workbenchUI = new osparc.component.workbench.WorkbenchUI(study.getWorkbench());
+      workbenchUI.setStudy(study);
+      workbenchUI.addListener("removeNode", e => {
+        const nodeId = e.getData();
+        this.__removeNode(nodeId);
+      }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
@@ -452,21 +450,26 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __removeNode: function(nodeId) {
       if (nodeId === this.__currentNodeId) {
-        return false;
+        return;
       }
-
-      const workbench = this.getStudy().getWorkbench();
-      const connectedEdges = workbench.getConnectedEdges(nodeId);
-      if (workbench.removeNode(nodeId)) {
-        // remove first the connected edges
-        for (let i = 0; i < connectedEdges.length; i++) {
-          const edgeId = connectedEdges[i];
-          this.__workbenchUI.clearEdge(edgeId);
+      const msg = this.tr("Are you sure you want to delete node?");
+      const win = new osparc.ui.window.Confirmation(msg);
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          const workbench = this.getStudy().getWorkbench();
+          const connectedEdges = workbench.getConnectedEdges(nodeId);
+          if (workbench.removeNode(nodeId)) {
+            // remove first the connected edges
+            for (let i = 0; i < connectedEdges.length; i++) {
+              const edgeId = connectedEdges[i];
+              this.__workbenchUI.clearEdge(edgeId);
+            }
+            this.__workbenchUI.clearNode(nodeId);
+          }
         }
-        this.__workbenchUI.clearNode(nodeId);
-        return true;
-      }
-      return false;
+      }, this);
     },
 
     __removeEdge: function(edgeId) {
@@ -644,7 +647,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         socket.on(slotName3, data => {
           const d = JSON.parse(data);
           const nodeId = d["Node"];
-          const nodeData = d["Data"];
+          const nodeData = d["data"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
@@ -668,7 +671,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    openOneNode: function() {
+    openFirstNode: function() {
       const validNodeIds = [];
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       Object.values(allNodes).forEach(node => {
@@ -690,6 +693,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     updateStudyDocument: function(run = false) {
+      const myGrpId = osparc.auth.Data.getInstance().getGroupId();
+      if (!osparc.component.export.StudyPermissions.canGroupWrite(this.getStudy().getAccessRights(), myGrpId)) {
+        return new Promise(resolve => {
+          resolve();
+        });
+      }
+
       this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
       const prjUuid = this.getStudy().getUuid();

@@ -146,9 +146,17 @@ qx.Class.define("osparc.component.export.Permissions", {
             .setStyles({
               "border-radius": "16px"
             });
-          item.addListener("promoteCollaborator", e => {
+          item.addListener("makeOwner", e => {
             const orgMember = e.getData();
-            this._promoteCollaborator(orgMember);
+            this._makeOwner(orgMember);
+          });
+          item.addListener("makeCollaborator", e => {
+            const orgMember = e.getData();
+            this._makeCollaborator(orgMember);
+          });
+          item.addListener("makeViewer", e => {
+            const orgMember = e.getData();
+            this._makeViewer(orgMember);
           });
           item.addListener("removeCollaborator", e => {
             const orgMember = e.getData();
@@ -229,9 +237,7 @@ qx.Class.define("osparc.component.export.Permissions", {
             collaborator["name"] = osparc.utils.Utils.firstsUp(collaborator["first_name"], collaborator["last_name"]);
           }
           collaborator["accessRights"] = aceessRights[gid];
-          if (this._isUserOwner()) {
-            collaborator["showOptions"] = true;
-          }
+          collaborator["showOptions"] = this._isUserOwner();
           const collaboratorModel = qx.data.marshal.Json.createModel(collaborator);
           if (parseInt(gid) === osparc.auth.Data.getInstance().getGroupId()) {
             this.__collaboratorsModel.insertAt(0, collaboratorModel);
@@ -254,11 +260,19 @@ qx.Class.define("osparc.component.export.Permissions", {
       throw new Error("Abstract method called!");
     },
 
-    _promoteCollaborator: function(collaborator) {
+    _deleteCollaborator: function(collaborator) {
       throw new Error("Abstract method called!");
     },
 
-    _deleteCollaborator: function(collaborator) {
+    _makeOwner: function(collaborator) {
+      throw new Error("Abstract method called!");
+    },
+
+    _makeCollaborator: function(collaborator) {
+      throw new Error("Abstract method called!");
+    },
+
+    _makeViewer: function(collaborator) {
       throw new Error("Abstract method called!");
     }
   }

@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 )
 def setup(app: web.Application):
 
-    # routes
+    # routes related with users
     specs = app[APP_OPENAPI_SPECS_KEY]
     routes = map_handlers_with_operations(
         get_handlers_from_namespace(users_handlers),

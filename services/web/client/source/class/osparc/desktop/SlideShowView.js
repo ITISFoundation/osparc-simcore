@@ -31,7 +31,24 @@ qx.Class.define("osparc.desktop.SlideShowView", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
+      apply: "_applyStudy",
       nullable: false
+    }
+  },
+
+  statics: {
+    getSortedNodes: function(study) {
+      const slideShow = study.getUi().getSlideshow();
+      const nodes = [];
+      for (let nodeId in slideShow) {
+        const node = slideShow[nodeId];
+        nodes.push({
+          ...node,
+          nodeId
+        });
+      }
+      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+      return nodes;
     }
   },
 
@@ -40,31 +57,6 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __prvsBtn: null,
     __nextBtn: null,
     __currentNodeId: null,
-
-    initViews: function() {
-      this.__initViews();
-
-      this.__showFirstNode();
-    },
-
-    __showFirstNode: function() {
-      const study = this.getStudy();
-      if (study) {
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        if (nodes.length) {
-          nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-          this.nodeSelected(nodes[0].nodeId);
-        }
-      }
-    },
 
     nodeSelected: function(nodeId) {
       this.__currentNodeId = nodeId;
@@ -86,6 +78,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
           view.getInputsView().exclude();
           view.getOutputsView().exclude();
           this.__showInMainView(view);
+          this.__syncButtons();
         }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
@@ -99,13 +92,18 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       if (isValid && currentNodeId) {
         this.nodeSelected(currentNodeId);
       } else {
-        this.__showFirstNode();
+        this.__openFirstNode();
+      }
+    },
+
+    _applyStudy: function(study) {
+      if (study) {
+        this.__initViews();
       }
     },
 
     __initViews: function() {
       this._removeAll();
-
       this.__createControlsBar();
     },
 
@@ -150,20 +148,37 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       });
     },
 
+    __syncButtons: function() {
+      const study = this.getStudy();
+      if (study) {
+        const nodes = this.self().getSortedNodes(study);
+        if (nodes.length && nodes[0].nodeId === this.__currentNodeId) {
+          this.__prvsBtn.setEnabled(false);
+        } else {
+          this.__prvsBtn.setEnabled(true);
+        }
+        if (nodes.length && nodes[nodes.length-1].nodeId === this.__currentNodeId) {
+          this.__nextBtn.setEnabled(false);
+        } else {
+          this.__nextBtn.setEnabled(true);
+        }
+      }
+    },
+
+    __openFirstNode: function() {
+      const study = this.getStudy();
+      if (study) {
+        const nodes = this.self().getSortedNodes(study);
+        if (nodes.length) {
+          this.nodeSelected(nodes[0].nodeId);
+        }
+      }
+    },
+
     __next: function() {
       const study = this.getStudy();
       if (study) {
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-
+        const nodes = this.self().getSortedNodes(study);
         const idx = nodes.findIndex(node => node.nodeId === this.__currentNodeId);
         if (idx > -1 && idx+1 < nodes.length) {
           this.nodeSelected(nodes[idx+1].nodeId);
@@ -174,17 +189,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __previous: function() {
       const study = this.getStudy();
       if (study) {
-        const slideShow = study.getUi().getSlideshow();
-        const nodes = [];
-        for (let nodeId in slideShow) {
-          const node = slideShow[nodeId];
-          nodes.push({
-            ...node,
-            nodeId
-          });
-        }
-        nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-
+        const nodes = this.self().getSortedNodes(study);
         const idx = nodes.findIndex(node => node.nodeId === this.__currentNodeId);
         if (idx > -1 && idx-1 > -1) {
           this.nodeSelected(nodes[idx-1].nodeId);

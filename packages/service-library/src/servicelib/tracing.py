@@ -1,17 +1,14 @@
-"""
-
-    Adds aiohttp middleware for tracing using zipkin server instrumentation.
-
+""" Adds aiohttp middleware for tracing using zipkin server instrumentation.
 
 """
-
 import asyncio
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 import aiozipkin as az
 import trafaret as T
 from aiohttp import web
+from pydantic import AnyHttpUrl, BaseSettings
 
 log = logging.getLogger(__name__)
 
@@ -35,3 +32,8 @@ schema = T.Dict(
         T.Key("zipkin_endpoint", default="http://jaeger:9411"): T.String(),
     }
 )
+
+
+class TracingSettings(BaseSettings):
+    enabled: Optional[bool] = True
+    zipkin_endpoint: AnyHttpUrl = "http://jaeger:9411"

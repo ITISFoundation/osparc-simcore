@@ -205,6 +205,17 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    getStudyState: function(pipelineId) {
+      osparc.data.Resources.fetch("studies", "state", {
+        url: {
+          projectId: pipelineId
+        }
+      })
+        .then(({state}) => {
+          this.setStudyState(pipelineId, state);
+        });
+    },
+
     setStudyState: function(studyId, state) {
       const studiesWStateCache = this.getStudies();
       const idx = studiesWStateCache.findIndex(studyWStateCache => studyWStateCache["uuid"] === studyId);
@@ -442,14 +453,6 @@ qx.Class.define("osparc.store.Store", {
               });
           });
       });
-    },
-
-    _applyStudy: function(study) {
-      if (study) {
-        this.setCurrentStudyId(study.getStudyId());
-      } else {
-        this.setCurrentStudyId(null);
-      }
     }
   }
 });

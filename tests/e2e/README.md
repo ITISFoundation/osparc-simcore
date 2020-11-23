@@ -18,7 +18,7 @@ Run the test
 # or
 cd tests/e2e
 npm test
-npm run tutorials -- http://127.0.0.1:9081 --demo
+npm run tutorials http://127.0.0.1:9081 --demo
 
 ```
 

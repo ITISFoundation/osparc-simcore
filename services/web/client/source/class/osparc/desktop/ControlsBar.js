@@ -63,6 +63,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __parametersButton: null,
     __startButton: null,
     __stopButton: null,
+    __pipelineCtrls: null,
 
     getStartButton: function() {
       return this.__startButton;
@@ -118,30 +119,44 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         });
       this.add(moreCtrls);
 
-      const simCtrls = new qx.ui.toolbar.Part();
+      const pipelineCtrls = this.__pipelineCtrls = new qx.ui.toolbar.Part();
       const stopButton = this.__createStopButton();
       stopButton.setEnabled(false);
-      simCtrls.add(stopButton);
+      pipelineCtrls.add(stopButton);
       const startButton = this.__createStartButton();
-      simCtrls.add(startButton);
-      this.add(simCtrls);
+      pipelineCtrls.add(startButton);
+      this.add(pipelineCtrls);
 
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
-        if (study && study.getState() && study.getState().state) {
-          switch (study.getState().state.value) {
+        this.__updateRunButtons(study);
+      });
+    },
+
+    __updateRunButtons: function(study) {
+      if (study) {
+        const startButton = this.__startButton;
+        const stopButton = this.__stopButton;
+        if (study.getState() && study.getState().state) {
+          const pipelineState = study.getState().state;
+          switch (pipelineState.value) {
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":
               startButton.setFetching(true);
               stopButton.setEnabled(true);
               break;
+            case "NOT_STARTED":
+            case "SUCCESS":
+            case "FAILED":
             default:
               startButton.setFetching(false);
               stopButton.setEnabled(false);
+              break;
           }
         }
-      });
+        this.__pipelineCtrls.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+      }
     },
 
     __createShowSweeperButton: function() {
@@ -211,16 +226,8 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
     __updateGroupButtonsVisibility: function(msg) {
       const selectedNodes = msg.getData();
-      let groupBtnVisibility = "excluded";
-      let ungroupBtnVisibility = "excluded";
-      if (selectedNodes.length) {
-        groupBtnVisibility = "visible";
-      }
-      if (selectedNodes.length === 1 && selectedNodes[0].isContainer()) {
-        ungroupBtnVisibility = "visible";
-      }
-      this.__groupButton.setVisibility(groupBtnVisibility);
-      this.__ungroupButton.setVisibility(ungroupBtnVisibility);
+      this.__groupButton.setVisibility(selectedNodes.length ? "visible" : "excluded");
+      this.__ungroupButton.setVisibility((selectedNodes.length === 1 && selectedNodes[0].isContainer()) ? "visible" : "excluded");
     },
 
     __attachEventHandlers: function() {

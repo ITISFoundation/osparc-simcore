@@ -84,12 +84,43 @@ services:
       - default
       - interactive_services_subnet
 
+  director-v2:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/director-v2:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    environment:
+      - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
+      - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
+      - DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=${DIRECTOR_SELF_SIGNED_SSL_SECRET_ID}
+      - DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=${DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME}
+      - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
+      - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
+      - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
+      - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - POSTGRES_MAXSIZE=30
+    env_file:
+      - ../.env
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints:
+          - node.platform.os == linux
+          - node.role == manager
+    networks:
+      - default
+      - interactive_services_subnet
+      - computational_services_subnet
+
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     environment:
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
+      - DIRECTOR_V2_HOST=${DIRECTOR_V2_HOST:-director-v2}
+      - DIRECTOR_V2_PORT=${DIRECTOR_V2_PORT:-8000}
       - STORAGE_HOST=${STORAGE_HOST:-storage}
       - STORAGE_PORT=${STORAGE_PORT:-8080}
       - CATALOG_HOST=${CATALOG_HOST:-catalog}
@@ -206,6 +237,13 @@ services:
     networks:
       - default
       - computational_services_subnet
+    healthcheck:
+      # see https://www.rabbitmq.com/monitoring.html#individual-checks for info about health-checks available in rabbitmq
+      test: rabbitmq-diagnostics -q status
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 15s
 
   migration:
     image: ${DOCKER_REGISTRY:-itisfoundation}/migration:${DOCKER_IMAGE_TAG:-latest}

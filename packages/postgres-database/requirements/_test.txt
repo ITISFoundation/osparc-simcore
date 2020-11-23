@@ -9,7 +9,7 @@ aiopg[sa]==1.0.0          # via -r requirements/_test.in
 alembic==1.4.3            # via -r requirements/_migration.txt
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via aiohttp
-attrs==20.2.0             # via aiohttp, jsonschema, pytest, pytest-docker
+attrs==20.3.0             # via aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
 certifi==2020.6.20        # via -r requirements/_migration.txt, requests
@@ -24,7 +24,7 @@ docker-compose==1.27.4    # via pytest-docker
 docker[ssh]==4.3.1        # via -r requirements/_migration.txt, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
-faker==4.14.0             # via -r requirements/_test.in
+faker==4.14.2             # via -r requirements/_test.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via -r requirements/_migration.txt, idna-ssl, requests, yarl
 importlib-metadata==2.0.0  # via jsonschema, pluggy, pytest

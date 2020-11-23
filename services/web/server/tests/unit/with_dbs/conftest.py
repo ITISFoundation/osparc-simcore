@@ -12,6 +12,7 @@
 import json
 import os
 import sys
+import textwrap
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
@@ -25,15 +26,16 @@ import socketio
 import sqlalchemy as sa
 import trafaret_config
 from aiohttp import web
+from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.utils_mock import future_with_result
 from yarl import URL
 
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import NewUser
-from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
@@ -44,6 +46,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
+from simcore_service_webserver.statics import STATIC_DIRNAMES
 
 # current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -117,19 +120,25 @@ class _BaseSettingEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, BaseSettings):
             return o.json()
+        elif isinstance(o, Path):
+            return str(o)
+
         # Let the base class default method raise the TypeError
         return json.JSONEncoder.default(self, o)
 
 
 @pytest.fixture
-def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
+def web_server(
+    loop, aiohttp_server, app_cfg: Dict, monkeypatch, postgres_db
+) -> TestServer:
+    print(
+        "Inits webserver with app_cfg",
+        json.dumps(app_cfg, indent=2, cls=_BaseSettingEncoder),
+    )
     # original APP
     app = create_application(app_cfg)
 
-    print(
-        "Inits webserver with config",
-        json.dumps(app[APP_CONFIG_KEY], indent=2, cls=_BaseSettingEncoder),
-    )
+    assert app[APP_CONFIG_KEY] == app_cfg
 
     # with patched email
     _path_mail(monkeypatch)
@@ -139,15 +148,45 @@ def web_server(loop, aiohttp_server, app_cfg, monkeypatch, postgres_db):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, web_server, mock_orphaned_services):
-    client = loop.run_until_complete(aiohttp_client(web_server))
-    return client
+def client(loop, aiohttp_client, web_server, mock_orphaned_services) -> TestClient:
+    cli = loop.run_until_complete(aiohttp_client(web_server))
+    return cli
 
 
 # SUBSYSTEM MOCKS FIXTURES ------------------------------------------------
 #
 # Mocks entirely or part of the calls to the web-server subsystems
 #
+
+
+@pytest.fixture
+def qx_client_outdir(tmpdir):
+    """  Emulates qx output at service/web/client after compiling
+    """
+
+    basedir = tmpdir.mkdir("source-output")
+    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
+
+    HTML = textwrap.dedent(
+        """\
+        <!DOCTYPE html>
+        <html>
+        <body>
+            <h1>{0}-SIMCORE</h1>
+            <p> This is a result of qx_client_outdir fixture for product {0}</p>
+        </body>
+        </html>
+        """
+    )
+
+    index_file = Path(basedir.join("index.html"))
+    index_file.write_text(HTML.format("OSPARC"))
+
+    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
+        index_file = Path(folder.join("index.html"))
+        index_file.write_text(HTML.format(frontend_app.upper()))
+
+    return Path(basedir)
 
 
 @pytest.fixture
@@ -297,9 +336,7 @@ def postgres_service(docker_services, postgres_dsn):
 
 
 @pytest.fixture
-def postgres_db(
-    app_cfg: Dict, postgres_dsn: Dict, postgres_service: str
-) -> sa.engine.Engine:
+def postgres_db(postgres_dsn: Dict, postgres_service: str) -> sa.engine.Engine:
     url = postgres_service
 
     # Configures db and initializes tables
@@ -321,7 +358,7 @@ def postgres_db(
 
 
 @pytest.fixture(scope="session")
-def redis_service(docker_services, docker_ip):
+def redis_service(docker_services, docker_ip) -> URL:
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
@@ -355,7 +392,7 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 @pytest.fixture()
 def socketio_url(client) -> Callable:
-    def create_url(client_override: Optional = None) -> str:
+    def create_url(client_override: Optional[TestClient] = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
 
@@ -364,7 +401,7 @@ def socketio_url(client) -> Callable:
 
 @pytest.fixture()
 async def security_cookie_factory(client) -> Callable:
-    async def creator(client_override: Optional = None) -> str:
+    async def creator(client_override: Optional[TestClient] = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
         data, error = await assert_status(resp, web.HTTPOk)
@@ -388,7 +425,7 @@ async def socketio_client(
     clients = []
 
     async def connect(
-        client_session_id: str, client: Optional = None
+        client_session_id: str, client: Optional[TestClient] = None
     ) -> socketio.AsyncClient:
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification

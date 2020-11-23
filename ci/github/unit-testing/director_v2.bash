@@ -10,7 +10,7 @@ install() {
 }
 
 test() {
-    pytest --cov=simcore_service_director_v2 --durations=10 --cov-append \
+    pytest --numprocesses=auto --cov=simcore_service_director_v2 --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
           -v -m "not travis" services/director-v2/tests/unit
 }

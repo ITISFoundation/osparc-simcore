@@ -220,7 +220,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__newStudyBtn.setEnabled(!nSelected);
         this.__userStudyContainer.getChildren().forEach(userStudyItem => {
           if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
-            userStudyItem.multiSelection(nSelected);
+            userStudyItem.setMultiSelectionMode(Boolean(nSelected));
           }
         });
         this.__updateDeleteStudiesButton(studiesDeleteButton);
@@ -379,30 +379,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
     },
 
-    __createStudyItem: function(study) {
-      let defaultThumbnail = "";
-      switch (study["resourceType"]) {
-        case "study":
-          defaultThumbnail = "@FontAwesome5Solid/file-alt/50";
-          break;
-      }
-      const tags = study.tags ? osparc.store.Store.getInstance().getTags().filter(tag => study.tags.includes(tag.id)) : [];
-
+    __createStudyItem: function(studyData) {
+      const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
       const item = new osparc.dashboard.StudyBrowserButtonItem().set({
-        resourceType: study.resourceType,
-        uuid: study.uuid,
-        studyTitle: study.name,
-        studyDescription: study.description,
-        owner: study.prjOwner ? study.prjOwner : null,
-        accessRights: study.accessRights ? study.accessRights : null,
-        lastChangeDate: study.lastChangeDate ? new Date(study.lastChangeDate) : null,
-        icon: study.thumbnail || defaultThumbnail,
-        state: study.state ? study.state : {},
-        classifiers: study.classifiers && study.classifiers ? study.classifiers : [],
+        resourceData: studyData,
         tags
       });
 
-      const menu = this.__getStudyItemMenu(item, study);
+      const menu = this.__getStudyItemMenu(item, studyData);
       item.setMenu(menu);
       item.subscribeToFilterGroup("sideSearchFilter");
       item.addListener("tap", e => {
@@ -543,11 +527,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStartAsSlideshowButton: function(studyData) {
-      const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
-      saveAsTemplateButton.addListener("execute", () => {
+      const startAsSlideshowButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
+      startAsSlideshowButton.addListener("execute", () => {
         this.__startStudy(studyData["uuid"], "slideshow");
       }, this);
-      return saveAsTemplateButton;
+      return startAsSlideshowButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {

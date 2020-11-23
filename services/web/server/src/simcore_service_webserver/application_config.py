@@ -10,19 +10,17 @@
     The app configuration is created before the application instance exists.
 
 """
-# TODO: add more strict checks with re
-# TODO: add support for versioning.
-#    - check shema fits version
-#    - parse/format version in schema
-
 import logging
 from pathlib import Path
 from typing import Dict
 
 import trafaret as T
+from aiohttp.web import Application
+from pydantic import BaseSettings, Field
 from trafaret_config.simple import read_and_validate
 
-from servicelib import application_keys  # pylint:disable=unused-import
+from models_library.basic_types import LogLevel, PortInt
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
 
 from . import (
@@ -89,12 +87,14 @@ def create_schema() -> T.Dict:
             addon_section("diagnostics", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),
             addon_section("groups", optional=True): minimal_addon_schema(),
-            addon_section("studies_access", optional=True): minimal_addon_schema(),
             addon_section("tags", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("catalog", optional=True): catalog_config.schema,
             addon_section("products", optional=True): minimal_addon_schema(),
             addon_section("computation", optional=True): minimal_addon_schema(),
+            addon_section("director-v2", optional=True): minimal_addon_schema(),
+            addon_section("studies_access", optional=True): minimal_addon_schema(),
+            addon_section("studies_dispatcher", optional=True): minimal_addon_schema(),
         }
     )
 
@@ -113,3 +113,22 @@ def load_default_config(environs=None) -> Dict:
 
 
 app_schema = create_schema()
+
+
+class MainSettings(BaseSettings):
+    host: str = "0.0.0.0"  # nosec
+    port: PortInt = 8080
+    client_outdir: Path = Field(..., env="SIMCORE_WEB_OUTDIR")
+    log_level: LogLevel = Field(LogLevel.INFO, env="WEBSERVER_LOGLEVEL")
+    testing: bool = False
+    studies_access_enabled: bool = False
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_"
+
+
+def assert_valid_config(app: Application) -> Dict:
+    cfg = app[APP_CONFIG_KEY]["main"]
+    _settings = MainSettings(**cfg)
+    return cfg

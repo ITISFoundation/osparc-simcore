@@ -74,11 +74,10 @@ def safe_request(request_func: Coroutine):
             normalized_path = path.lstrip("/")
             resp = await request_func(zelf, path=normalized_path, *args, **kwargs)
         except Exception as err:
-            # pylint: disable=protected-access
             logger.exception(
                 "Failed request %s to %s%s",
                 request_func.__name__,
-                zelf._client.base_url,
+                zelf.client.base_url,
                 normalized_path,
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err

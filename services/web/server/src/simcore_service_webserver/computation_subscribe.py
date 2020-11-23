@@ -7,7 +7,6 @@ from typing import Callable, Coroutine, Dict
 
 import aio_pika
 from aiohttp import web
-from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -17,9 +16,9 @@ from servicelib.monitor_services import (
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from tenacity import retry
 
+from .computation_config import get_settings as get_computation_settings
 from .computation_config import (
     APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
-    CONFIG_SECTION_NAME,
     ComputationSettings,
 )
 from .projects import projects_api
@@ -99,7 +98,7 @@ async def subscribe(app: web.Application) -> None:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
 
-    comp_settings: ComputationSettings = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    comp_settings: ComputationSettings = get_computation_settings(app)
     rabbit_broker = comp_settings.broker_url
 
     log.info("Creating pika connection for %s", rabbit_broker)

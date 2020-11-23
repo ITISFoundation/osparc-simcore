@@ -17,7 +17,7 @@ from servicelib.aiopg_utils import (
 from servicelib.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
-from .db_config import CONFIG_SECTION_NAME
+from .db_config import CONFIG_SECTION_NAME, assert_valid_config
 
 THIS_MODULE_NAME = __name__.split(".")[-1]
 THIS_SERVICE_NAME = "postgres"
@@ -49,7 +49,6 @@ async def pg_engine(app: web.Application):
     assert engine  # nosec
     app[APP_DB_ENGINE_KEY] = engine
 
-
     yield  # -------------------
 
     if engine is not app.get(APP_DB_ENGINE_KEY):
@@ -70,9 +69,7 @@ def is_service_enabled(app: web.Application):
 
 
 async def is_service_responsive(app: web.Application):
-    """ Returns true if the app can connect to db service
-
-    """
+    """Returns true if the app can connect to db service"""
     if not is_service_enabled(app):
         return False
     is_responsive = await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
@@ -81,6 +78,12 @@ async def is_service_responsive(app: web.Application):
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup(app: web.Application):
+    # ----------------------------------------------
+    # TODO: temporary, just to check compatibility between
+    # trafaret and pydantic schemas
+    assert_valid_config(app)
+    # ---------------------------------------------
+
     # ensures keys exist
     app[APP_DB_ENGINE_KEY] = None
 

@@ -2,6 +2,7 @@
 
 import json
 import logging
+import subprocess
 from pathlib import Path
 from typing import Callable, Dict
 
@@ -42,3 +43,42 @@ def json_schema_dict(common_schemas_specs_dir: Path) -> Callable:
             return json.load(fp)
 
     yield schema_getter
+
+
+@pytest.fixture(scope="session")
+def json_faker_script(script_dir: Path) -> Path:
+    json_faker_file = script_dir / "json-schema-faker.bash"
+    assert json_faker_file.exists()
+    return json_faker_file
+
+
+@pytest.fixture(scope="session")
+def random_json_from_schema(
+    json_faker_script: Path, tmp_path_factory: Path
+) -> Callable:
+    def _generator(schema: Dict) -> Dict:
+        tmp_path = tmp_path_factory.mktemp(__name__)
+        schema_path = tmp_path / "schema.json"
+        schema_path.write_text(schema)
+        assert schema_path.exists()
+
+        generated_json_path = tmp_path / "random_example.json"
+        assert not generated_json_path.exists()
+
+        command = [json_faker_script, schema_path, generated_json_path]
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=False,
+            check=False,
+            cwd=tmp_path,
+        )
+        assert (
+            result.returncode == 0
+        ), f"Issue running {result.args}, gives following errors:\n{result.stdout}"
+
+        assert generated_json_path.exists()
+        return json.loads(generated_json_path.read_text())
+
+    yield _generator

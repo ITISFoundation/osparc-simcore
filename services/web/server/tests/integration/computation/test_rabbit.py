@@ -12,10 +12,11 @@ import aio_pika
 import pytest
 import sqlalchemy as sa
 from mock import call
-from models_library.rabbit import RabbitConfig
+from models_library.settings.rabbit import RabbitConfig
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
+from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.login import setup_login
@@ -25,7 +26,7 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_sockets
+from simcore_service_webserver.socketio import setup_socketio
 
 API_VERSION = "v0"
 
@@ -58,7 +59,8 @@ def client(
     setup_login(app)
     setup_projects(app)
     setup_computation(app)
-    setup_sockets(app)
+    setup_director_v2(app)
+    setup_socketio(app)
     setup_resource_manager(app)
 
     yield loop.run_until_complete(
@@ -186,7 +188,7 @@ async def _wait_until(pred: Callable, timeout: int):
     ],
 )
 async def test_rabbit_websocket_computation(
-    loop,
+    director_v2_subsystem_mock,
     mock_orphaned_services,
     logged_user,
     user_project,

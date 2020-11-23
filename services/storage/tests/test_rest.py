@@ -1,8 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
-# pylint:disable=no-name-in-module
 
 import json
 import os
@@ -13,7 +11,6 @@ from urllib.parse import quote
 
 import pytest
 from aiohttp import web
-
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import APP_DSM_KEY, setup_dsm
 from simcore_service_storage.rest import setup_rest
@@ -62,21 +59,19 @@ def client(
         "test_datcore": {"api_token": api_token, "api_secret": api_secret},
     }
     rest_cfg = {
-        "oas_repo": str(
-            osparc_api_specs_dir
-        ),  #'${OSPARC_SIMCORE_REPO_ROOTDIR}/api/specs',
-        # oas_repo: http://localhost:8043/api/specs
+        "oas_repo": str(osparc_api_specs_dir),
     }
     postgres_cfg = postgres_service
     s3_cfg = minio_service
 
     # fake config
-    app[APP_CONFIG_KEY] = {
-        "main": main_cfg,
+    app_cfg = {
         "postgres": postgres_cfg,
         "s3": s3_cfg,
         "rest": rest_cfg,
     }
+    app_cfg.update(main_cfg)
+    app[APP_CONFIG_KEY] = app_cfg
 
     setup_db(app)
     setup_rest(app)

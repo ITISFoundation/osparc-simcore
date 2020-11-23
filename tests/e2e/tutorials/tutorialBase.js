@@ -42,22 +42,6 @@ class TutorialBase {
     clearInterval(this.__interval);
   }
 
-  async start() {
-    try {
-      await this.beforeScript();
-      await this.goTo();
-
-      const needsRegister = await this.registerIfNeeded();
-      if (!needsRegister) {
-        await this.login();
-      }
-    }
-    catch(err) {
-      console.error("Error starting", err);
-      throw(err);
-    }
-  }
-
   async beforeScript() {
     this.__browser = await startPuppe.getBrowser(this.__demo);
     this.__page = await startPuppe.getPage(this.__browser);
@@ -65,7 +49,7 @@ class TutorialBase {
     return this.__page;
   }
 
-  async goTo() {
+  async __goTo() {
     console.log("Opening", this.__url);
     // Try to reach the website
     try {
@@ -79,12 +63,28 @@ class TutorialBase {
     await this.takeScreenshot("landingPage_" + domain);
   }
 
+  async start() {
+    try {
+      await this.beforeScript();
+      await this.__goTo();
+
+      const needsRegister = await this.registerIfNeeded();
+      if (!needsRegister) {
+        await this.login();
+      }
+    }
+    catch(err) {
+      console.error("Error starting", err);
+      throw(err);
+    }
+  }
+
   async openStudyLink(openStudyTimeout = 20000) {
     this.__responsesQueue.addResponseListener("open");
 
     let resp = null;
     try {
-      await this.goTo();
+      await this.__goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
     catch(err) {
@@ -192,26 +192,36 @@ class TutorialBase {
     if (nodeIds.length < 1) {
       return;
     }
-    const getHost = () => {
-      return window.location.protocol + "//" + window.location.hostname;
-    }
-    const host = await this.__page.evaluate(getHost);
 
     const start = new Date().getTime();
     while ((new Date().getTime())-start < timeout) {
       for (let i = nodeIds.length-1; i>=0; i--) {
         const nodeId = nodeIds[i];
-        if (await utils.isServiceReady(this.__page, host+"/v0", studyId, nodeId)) {
+        if (await utils.isServiceReady(this.__page, studyId, nodeId)) {
           nodeIds.splice(i, 1);
         }
       }
       await utils.sleep(2500);
       if (nodeIds.length === 0) {
         console.log("Services ready in", ((new Date().getTime())-start)/1000);
+        // after the service is responsive we need to wait a bit until the iframe is rendered
+        await utils.sleep(3000);
         return;
       }
     }
     console.log("Timeout reached waiting for services", ((new Date().getTime())-start)/1000);
+    return;
+  }
+
+  async waitForStudyRun(studyId, timeout = 60000) {
+    const start = new Date().getTime();
+    while ((new Date().getTime())-start < timeout) {
+      await utils.sleep(5000);
+      if (await utils.isStudyDone(this.__page, studyId)) {
+        return;
+      }
+    }
+    console.log("Timeout reached waiting for study run", ((new Date().getTime())-start)/1000);
     return;
   }
 
@@ -223,11 +233,12 @@ class TutorialBase {
     await auto.clickLoggerTitle(this.__page);
   }
 
-  async runPipeline(waitFor = 25000) {
+  async runPipeline(studyId, timeout = 60000) {
     await this.clickLoggerTitle();
 
     await this.takeScreenshot("runStudy_before");
-    await auto.runStudy(this.__page, waitFor);
+    await auto.runStudy(this.__page);
+    await this.waitForStudyRun(studyId, timeout);
     await this.takeScreenshot("runStudy_after");
   }
 
@@ -278,19 +289,32 @@ class TutorialBase {
     await this.takeScreenshot("checkResults_after");
   }
 
-  async removeStudy() {
-    await auto.toDashboard(this.__page);
-    await this.takeScreenshot("dashboardDeleteFirstStudy_before");
-    this.__responsesQueue.addResponseListener("projects/");
+  async closeStudy() {
+    await this.takeScreenshot("closeStudy_before");
+    this.__responsesQueue.addResponseListener(":close");
     try {
-      await auto.dashboardDeleteFirstStudy(this.__page, this.__templateName);
-      await this.__responsesQueue.waitUntilResponse("projects/");
+      await auto.toDashboard(this.__page);
+      await this.__responsesQueue.waitUntilResponse(":close");
+    }
+    catch(err) {
+      console.error("Failed closing study", err);
+      throw(err);
+    }
+    await this.takeScreenshot("closeStudy_after");
+  }
+
+  async removeStudy() {
+    await this.takeScreenshot("deleteFirstStudy_before");
+    try {
+      // wait for projects to be loaded
+      await utils.sleep(2000);
+      await auto.deleteFirstStudy(this.__page, this.__templateName);
     }
     catch(err) {
       console.error("Failed deleting study", err);
       throw(err);
     }
-    await this.takeScreenshot("dashboardDeleteFirstStudy_after");
+    await this.takeScreenshot("deleteFirstStudy_after");
   }
 
   async logOut() {

@@ -19,13 +19,13 @@ qx.Mixin.define("osparc.ui.mixin.FetchButton", {
   },
   members: {
     __icon: null,
-    _applyFetching: function(isFetching) {
+    _applyFetching: function(isFetching, old) {
       if (isFetching) {
         this.__icon = this.getIcon();
         this.setIcon("@FontAwesome5Solid/circle-notch/12");
         this.getChildControl("icon").getContentElement().addClass("rotate");
       } else {
-        if (this.__icon !== null) {
+        if (isFetching !== old) {
           this.setIcon(this.__icon);
         }
         this.getChildControl("icon").getContentElement().removeClass("rotate");

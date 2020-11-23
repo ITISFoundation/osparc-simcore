@@ -11,10 +11,12 @@ async def assert_status(
     response: web.Response, expected_cls: web.HTTPException, expected_msg: str = None
 ):
     """
-        Asserts for enveloped responses
+    Asserts for enveloped responses
     """
     data, error = unwrap_envelope(await response.json())
-    assert response.status == expected_cls.status_code, (data, error)
+    assert (
+        response.status == expected_cls.status_code
+    ), f"received: ({data},{error}), \nexpected ({expected_cls.status_code}, {expected_msg})"
 
     if issubclass(expected_cls, web.HTTPError):
         do_assert_error(data, error, expected_cls, expected_msg)

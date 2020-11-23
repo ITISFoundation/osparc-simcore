@@ -20,7 +20,7 @@ from simcore_service_webserver.diagnostics_core import (
     assert_healthy_app,
     kLATENCY_PROBE,
 )
-from simcore_service_webserver.diagnostics_plugin import (
+from simcore_service_webserver.diagnostics import (
     kMAX_AVG_RESP_LATENCY,
     setup_diagnostics,
 )

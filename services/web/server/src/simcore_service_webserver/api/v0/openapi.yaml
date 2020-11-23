@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: osparc-simcore RESTful API
-  version: 0.5.1
+  version: 0.6.0
   description: RESTful API designed for web clients
   contact:
     name: IT'IS Foundation
@@ -47,6 +47,7 @@ tags:
     description: |
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
+  - name: viewer
 paths:
   /:
     get:
@@ -5515,7 +5516,7 @@ paths:
             type: string
             example: 123e4567-e89b-12d3-a456-426655440000
       responses:
-        '200':
+        '201':
           description: Succesffully started the pipeline
           content:
             application/json:
@@ -5527,12 +5528,8 @@ paths:
                   data:
                     type: object
                     required:
-                      - pipeline_name
                       - pipeline_id
                     properties:
-                      pipeline_name:
-                        type: string
-                        example: a pipeline named pipeline
                       pipeline_id:
                         type: string
                         example: 123e4567-e89b-12d3-a456-426655440000
@@ -5790,6 +5787,7 @@ paths:
                           properties:
                             uuid:
                               type: string
+                              format: uuid
                               description: project unique identifier
                               example: 07640335-a91f-468c-ab69-a374fa82078d
                             name:
@@ -5802,14 +5800,13 @@ paths:
                               example: Dabbling in temporal transitions ...
                             prjOwner:
                               type: string
-                              format: idn-email
+                              format: email
                               description: user email
                             accessRights:
                               type: object
                               description: object containing the GroupID as key and read/write/execution permissions as value
-                              additionalProperties: false
                               x-patternProperties:
-                                ^\d+$:
+                                ^\S+$:
                                   type: object
                                   description: the group id
                                   additionalProperties: false
@@ -5827,6 +5824,7 @@ paths:
                                     delete:
                                       type: boolean
                                       description: gives deletion rights
+                              additionalProperties: true
                             creationDate:
                               type: string
                               description: project creation date
@@ -5839,12 +5837,15 @@ paths:
                               example: '2018-07-01T11:13:43Z'
                             thumbnail:
                               type: string
+                              minLength: 0
+                              maxLength: 2083
+                              format: uri
                               description: url of the latest screenshot of the project
                               example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                             workbench:
                               type: object
                               x-patternProperties:
-                                ^\d+$:
+                                '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                   type: object
                                   additionalProperties: false
                                   required:
@@ -5855,7 +5856,7 @@ paths:
                                     key:
                                       type: string
                                       description: distinctive name for the node based on the docker registry path
-                                      pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                      pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                       example:
                                         - simcore/services/comp/sleeper
                                         - simcore/services/dynamic/3dviewer
@@ -5869,12 +5870,18 @@ paths:
                                         - 0.0.1
                                     label:
                                       type: string
+                                      description: The short name of the node
+                                      example:
+                                        - JupyterLab
                                     progress:
                                       type: number
                                       maximum: 100
                                       minimum: 0
                                       description: the node progress value
                                     thumbnail:
+                                      minLength: 0
+                                      maxLength: 2083
+                                      format: uri
                                       type: string
                                       description: url of the latest screenshot of the node
                                       example:
@@ -5899,8 +5906,10 @@ paths:
                                               properties:
                                                 nodeUuid:
                                                   type: string
+                                                  format: uuid
                                                 output:
                                                   type: string
+                                                  pattern: '^[-_a-zA-Z0-9]+$'
                                             - type: object
                                               additionalProperties: false
                                               required:
@@ -5915,6 +5924,18 @@ paths:
                                                   type: string
                                                 path:
                                                   type: string
+                                                label:
+                                                  type: string
+                                            - type: object
+                                              additionalProperties: false
+                                              required:
+                                                - downloadLink
+                                              properties:
+                                                downloadLink:
+                                                  minLength: 1
+                                                  maxLength: 65536
+                                                  type: string
+                                                  format: uri
                                                 label:
                                                   type: string
                                     inputAccess:
@@ -5934,12 +5955,13 @@ paths:
                                       type: array
                                       items:
                                         type: string
-                                        pattern: ^\S+$
+                                        format: uuid
                                       description: node IDs of where the node is connected to
                                       example:
                                         - nodeUuid1
                                         - nodeUuid2
                                     outputs:
+                                      default: {}
                                       type: object
                                       patternProperties:
                                         '^[-_a-zA-Z0-9]+$':
@@ -5966,6 +5988,18 @@ paths:
                                                   type: string
                                                 label:
                                                   type: string
+                                            - type: object
+                                              additionalProperties: false
+                                              required:
+                                                - downloadLink
+                                              properties:
+                                                downloadLink:
+                                                  minLength: 1
+                                                  maxLength: 65536
+                                                  type: string
+                                                  format: uri
+                                                label:
+                                                  type: string
                                     outputNode:
                                       type: boolean
                                       deprecated: true
@@ -5973,16 +6007,14 @@ paths:
                                       type: array
                                       items:
                                         type: string
-                                        pattern: ^\S+$
+                                        format: uuid
                                       description: Used in group-nodes. Node IDs of those connected to the output
                                       example:
                                         - nodeUuid1
                                         - nodeUuid2
                                     parent:
-                                      type:
-                                        - string
-                                        - 'null'
-                                      pattern: ^\S+$
+                                      type: string
+                                      format: uuid
                                       description: Parent's (group-nodes') node ID s.
                                       example:
                                         - nodeUuid1
@@ -6008,6 +6040,7 @@ paths:
                                     state:
                                       title: RunningState
                                       description: the node's running state
+                                      default: NOT_STARTED
                                       enum:
                                         - UNKNOWN
                                         - NOT_STARTED
@@ -6016,7 +6049,7 @@ paths:
                                         - STARTED
                                         - RETRY
                                         - SUCCESS
-                                        - FAILURE
+                                        - FAILED
                                         - ABORTED
                                       type: string
                               additionalProperties: true
@@ -6027,7 +6060,7 @@ paths:
                                 workbench:
                                   type: object
                                   x-patternProperties:
-                                    ^\S+$:
+                                    '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                       type: object
                                       additionalProperties: false
                                       required:
@@ -6054,7 +6087,7 @@ paths:
                                 slideshow:
                                   type: object
                                   x-patternProperties:
-                                    ^\S+$:
+                                    '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                       type: object
                                       additionalProperties: false
                                       required:
@@ -6067,6 +6100,9 @@ paths:
                                             - 0
                                             - 2
                                   additionalProperties: true
+                                currentNodeId:
+                                  type: string
+                                  format: uuid
                             tags:
                               type: array
                               items:
@@ -6083,9 +6119,11 @@ paths:
                             state:
                               title: State
                               description: Project state
-                              allOf:
+                              anyOf:
+                                - nullable: true
                                 - title: ProjectState
                                   type: object
+                                  additionalProperties: false
                                   properties:
                                     locked:
                                       title: Locked
@@ -6093,6 +6131,7 @@ paths:
                                       allOf:
                                         - title: ProjectLocked
                                           type: object
+                                          additionalProperties: false
                                           properties:
                                             value:
                                               title: Value
@@ -6104,7 +6143,14 @@ paths:
                                               allOf:
                                                 - title: Owner
                                                   type: object
+                                                  additionalProperties: false
                                                   properties:
+                                                    user_id:
+                                                      title: User Id
+                                                      type: integer
+                                                      description: Owner's identifier when registered in the user's database table
+                                                      example:
+                                                        - 2
                                                     first_name:
                                                       title: First Name
                                                       description: Owner first name
@@ -6118,6 +6164,7 @@ paths:
                                                         - Smith
                                                       type: string
                                                   required:
+                                                    - user_id
                                                     - first_name
                                                     - last_name
                                           required:
@@ -6128,6 +6175,7 @@ paths:
                                       allOf:
                                         - title: ProjectRunningState
                                           type: object
+                                          additionalProperties: false
                                           properties:
                                             value:
                                               title: RunningState
@@ -6140,7 +6188,7 @@ paths:
                                                 - STARTED
                                                 - RETRY
                                                 - SUCCESS
-                                                - FAILURE
+                                                - FAILED
                                                 - ABORTED
                                               type: string
                                           required:
@@ -6297,6 +6345,7 @@ paths:
               properties:
                 uuid:
                   type: string
+                  format: uuid
                   description: project unique identifier
                   example: 07640335-a91f-468c-ab69-a374fa82078d
                 name:
@@ -6309,14 +6358,13 @@ paths:
                   example: Dabbling in temporal transitions ...
                 prjOwner:
                   type: string
-                  format: idn-email
+                  format: email
                   description: user email
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
-                  additionalProperties: false
                   x-patternProperties:
-                    ^\d+$:
+                    ^\S+$:
                       type: object
                       description: the group id
                       additionalProperties: false
@@ -6334,6 +6382,7 @@ paths:
                         delete:
                           type: boolean
                           description: gives deletion rights
+                  additionalProperties: true
                 creationDate:
                   type: string
                   description: project creation date
@@ -6346,12 +6395,15 @@ paths:
                   example: '2018-07-01T11:13:43Z'
                 thumbnail:
                   type: string
+                  minLength: 0
+                  maxLength: 2083
+                  format: uri
                   description: url of the latest screenshot of the project
                   example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                 workbench:
                   type: object
                   x-patternProperties:
-                    ^\d+$:
+                    '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                       type: object
                       additionalProperties: false
                       required:
@@ -6362,7 +6414,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -6376,12 +6428,18 @@ paths:
                             - 0.0.1
                         label:
                           type: string
+                          description: The short name of the node
+                          example:
+                            - JupyterLab
                         progress:
                           type: number
                           maximum: 100
                           minimum: 0
                           description: the node progress value
                         thumbnail:
+                          minLength: 0
+                          maxLength: 2083
+                          format: uri
                           type: string
                           description: url of the latest screenshot of the node
                           example:
@@ -6406,8 +6464,10 @@ paths:
                                   properties:
                                     nodeUuid:
                                       type: string
+                                      format: uuid
                                     output:
                                       type: string
+                                      pattern: '^[-_a-zA-Z0-9]+$'
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -6422,6 +6482,18 @@ paths:
                                       type: string
                                     path:
                                       type: string
+                                    label:
+                                      type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      minLength: 1
+                                      maxLength: 65536
+                                      type: string
+                                      format: uri
                                     label:
                                       type: string
                         inputAccess:
@@ -6441,12 +6513,13 @@ paths:
                           type: array
                           items:
                             type: string
-                            pattern: ^\S+$
+                            format: uuid
                           description: node IDs of where the node is connected to
                           example:
                             - nodeUuid1
                             - nodeUuid2
                         outputs:
+                          default: {}
                           type: object
                           patternProperties:
                             '^[-_a-zA-Z0-9]+$':
@@ -6473,6 +6546,18 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      minLength: 1
+                                      maxLength: 65536
+                                      type: string
+                                      format: uri
+                                    label:
+                                      type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -6480,16 +6565,14 @@ paths:
                           type: array
                           items:
                             type: string
-                            pattern: ^\S+$
+                            format: uuid
                           description: Used in group-nodes. Node IDs of those connected to the output
                           example:
                             - nodeUuid1
                             - nodeUuid2
                         parent:
-                          type:
-                            - string
-                            - 'null'
-                          pattern: ^\S+$
+                          type: string
+                          format: uuid
                           description: Parent's (group-nodes') node ID s.
                           example:
                             - nodeUuid1
@@ -6515,6 +6598,7 @@ paths:
                         state:
                           title: RunningState
                           description: the node's running state
+                          default: NOT_STARTED
                           enum:
                             - UNKNOWN
                             - NOT_STARTED
@@ -6523,7 +6607,7 @@ paths:
                             - STARTED
                             - RETRY
                             - SUCCESS
-                            - FAILURE
+                            - FAILED
                             - ABORTED
                           type: string
                   additionalProperties: true
@@ -6534,7 +6618,7 @@ paths:
                     workbench:
                       type: object
                       x-patternProperties:
-                        ^\S+$:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                           type: object
                           additionalProperties: false
                           required:
@@ -6561,7 +6645,7 @@ paths:
                     slideshow:
                       type: object
                       x-patternProperties:
-                        ^\S+$:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                           type: object
                           additionalProperties: false
                           required:
@@ -6574,6 +6658,9 @@ paths:
                                 - 0
                                 - 2
                       additionalProperties: true
+                    currentNodeId:
+                      type: string
+                      format: uuid
                 tags:
                   type: array
                   items:
@@ -6590,9 +6677,11 @@ paths:
                 state:
                   title: State
                   description: Project state
-                  allOf:
+                  anyOf:
+                    - nullable: true
                     - title: ProjectState
                       type: object
+                      additionalProperties: false
                       properties:
                         locked:
                           title: Locked
@@ -6600,6 +6689,7 @@ paths:
                           allOf:
                             - title: ProjectLocked
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: Value
@@ -6611,7 +6701,14 @@ paths:
                                   allOf:
                                     - title: Owner
                                       type: object
+                                      additionalProperties: false
                                       properties:
+                                        user_id:
+                                          title: User Id
+                                          type: integer
+                                          description: Owner's identifier when registered in the user's database table
+                                          example:
+                                            - 2
                                         first_name:
                                           title: First Name
                                           description: Owner first name
@@ -6625,6 +6722,7 @@ paths:
                                             - Smith
                                           type: string
                                       required:
+                                        - user_id
                                         - first_name
                                         - last_name
                               required:
@@ -6635,6 +6733,7 @@ paths:
                           allOf:
                             - title: ProjectRunningState
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: RunningState
@@ -6647,7 +6746,7 @@ paths:
                                     - STARTED
                                     - RETRY
                                     - SUCCESS
-                                    - FAILURE
+                                    - FAILED
                                     - ABORTED
                                   type: string
                               required:
@@ -6684,6 +6783,7 @@ paths:
                         properties:
                           uuid:
                             type: string
+                            format: uuid
                             description: project unique identifier
                             example: 07640335-a91f-468c-ab69-a374fa82078d
                           name:
@@ -6696,14 +6796,13 @@ paths:
                             example: Dabbling in temporal transitions ...
                           prjOwner:
                             type: string
-                            format: idn-email
+                            format: email
                             description: user email
                           accessRights:
                             type: object
                             description: object containing the GroupID as key and read/write/execution permissions as value
-                            additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -6721,6 +6820,7 @@ paths:
                                   delete:
                                     type: boolean
                                     description: gives deletion rights
+                            additionalProperties: true
                           creationDate:
                             type: string
                             description: project creation date
@@ -6733,12 +6833,15 @@ paths:
                             example: '2018-07-01T11:13:43Z'
                           thumbnail:
                             type: string
+                            minLength: 0
+                            maxLength: 2083
+                            format: uri
                             description: url of the latest screenshot of the project
                             example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -6749,7 +6852,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -6763,12 +6866,18 @@ paths:
                                       - 0.0.1
                                   label:
                                     type: string
+                                    description: The short name of the node
+                                    example:
+                                      - JupyterLab
                                   progress:
                                     type: number
                                     maximum: 100
                                     minimum: 0
                                     description: the node progress value
                                   thumbnail:
+                                    minLength: 0
+                                    maxLength: 2083
+                                    format: uri
                                     type: string
                                     description: url of the latest screenshot of the node
                                     example:
@@ -6793,8 +6902,10 @@ paths:
                                             properties:
                                               nodeUuid:
                                                 type: string
+                                                format: uuid
                                               output:
                                                 type: string
+                                                pattern: '^[-_a-zA-Z0-9]+$'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -6809,6 +6920,18 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -6828,12 +6951,13 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: node IDs of where the node is connected to
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   outputs:
+                                    default: {}
                                     type: object
                                     patternProperties:
                                       '^[-_a-zA-Z0-9]+$':
@@ -6860,6 +6984,18 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -6867,16 +7003,14 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: Used in group-nodes. Node IDs of those connected to the output
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   parent:
-                                    type:
-                                      - string
-                                      - 'null'
-                                    pattern: ^\S+$
+                                    type: string
+                                    format: uuid
                                     description: Parent's (group-nodes') node ID s.
                                     example:
                                       - nodeUuid1
@@ -6902,6 +7036,7 @@ paths:
                                   state:
                                     title: RunningState
                                     description: the node's running state
+                                    default: NOT_STARTED
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
@@ -6910,7 +7045,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -6921,7 +7056,7 @@ paths:
                               workbench:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -6948,7 +7083,7 @@ paths:
                               slideshow:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -6961,6 +7096,9 @@ paths:
                                           - 0
                                           - 2
                                 additionalProperties: true
+                              currentNodeId:
+                                type: string
+                                format: uuid
                           tags:
                             type: array
                             items:
@@ -6977,9 +7115,11 @@ paths:
                           state:
                             title: State
                             description: Project state
-                            allOf:
+                            anyOf:
+                              - nullable: true
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -6987,6 +7127,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -6998,7 +7139,14 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -7012,6 +7160,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -7022,6 +7171,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -7034,7 +7184,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -7189,6 +7339,7 @@ paths:
                         properties:
                           uuid:
                             type: string
+                            format: uuid
                             description: project unique identifier
                             example: 07640335-a91f-468c-ab69-a374fa82078d
                           name:
@@ -7201,14 +7352,13 @@ paths:
                             example: Dabbling in temporal transitions ...
                           prjOwner:
                             type: string
-                            format: idn-email
+                            format: email
                             description: user email
                           accessRights:
                             type: object
                             description: object containing the GroupID as key and read/write/execution permissions as value
-                            additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -7226,6 +7376,7 @@ paths:
                                   delete:
                                     type: boolean
                                     description: gives deletion rights
+                            additionalProperties: true
                           creationDate:
                             type: string
                             description: project creation date
@@ -7238,12 +7389,15 @@ paths:
                             example: '2018-07-01T11:13:43Z'
                           thumbnail:
                             type: string
+                            minLength: 0
+                            maxLength: 2083
+                            format: uri
                             description: url of the latest screenshot of the project
                             example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -7254,7 +7408,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7268,12 +7422,18 @@ paths:
                                       - 0.0.1
                                   label:
                                     type: string
+                                    description: The short name of the node
+                                    example:
+                                      - JupyterLab
                                   progress:
                                     type: number
                                     maximum: 100
                                     minimum: 0
                                     description: the node progress value
                                   thumbnail:
+                                    minLength: 0
+                                    maxLength: 2083
+                                    format: uri
                                     type: string
                                     description: url of the latest screenshot of the node
                                     example:
@@ -7298,8 +7458,10 @@ paths:
                                             properties:
                                               nodeUuid:
                                                 type: string
+                                                format: uuid
                                               output:
                                                 type: string
+                                                pattern: '^[-_a-zA-Z0-9]+$'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -7314,6 +7476,18 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -7333,12 +7507,13 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: node IDs of where the node is connected to
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   outputs:
+                                    default: {}
                                     type: object
                                     patternProperties:
                                       '^[-_a-zA-Z0-9]+$':
@@ -7365,6 +7540,18 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -7372,16 +7559,14 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: Used in group-nodes. Node IDs of those connected to the output
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   parent:
-                                    type:
-                                      - string
-                                      - 'null'
-                                    pattern: ^\S+$
+                                    type: string
+                                    format: uuid
                                     description: Parent's (group-nodes') node ID s.
                                     example:
                                       - nodeUuid1
@@ -7407,6 +7592,7 @@ paths:
                                   state:
                                     title: RunningState
                                     description: the node's running state
+                                    default: NOT_STARTED
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
@@ -7415,7 +7601,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -7426,7 +7612,7 @@ paths:
                               workbench:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -7453,7 +7639,7 @@ paths:
                               slideshow:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -7466,6 +7652,9 @@ paths:
                                           - 0
                                           - 2
                                 additionalProperties: true
+                              currentNodeId:
+                                type: string
+                                format: uuid
                           tags:
                             type: array
                             items:
@@ -7482,9 +7671,11 @@ paths:
                           state:
                             title: State
                             description: Project state
-                            allOf:
+                            anyOf:
+                              - nullable: true
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -7492,6 +7683,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -7503,7 +7695,14 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -7517,6 +7716,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -7527,6 +7727,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -7539,7 +7740,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -7700,6 +7901,7 @@ paths:
                         properties:
                           uuid:
                             type: string
+                            format: uuid
                             description: project unique identifier
                             example: 07640335-a91f-468c-ab69-a374fa82078d
                           name:
@@ -7712,14 +7914,13 @@ paths:
                             example: Dabbling in temporal transitions ...
                           prjOwner:
                             type: string
-                            format: idn-email
+                            format: email
                             description: user email
                           accessRights:
                             type: object
                             description: object containing the GroupID as key and read/write/execution permissions as value
-                            additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -7737,6 +7938,7 @@ paths:
                                   delete:
                                     type: boolean
                                     description: gives deletion rights
+                            additionalProperties: true
                           creationDate:
                             type: string
                             description: project creation date
@@ -7749,12 +7951,15 @@ paths:
                             example: '2018-07-01T11:13:43Z'
                           thumbnail:
                             type: string
+                            minLength: 0
+                            maxLength: 2083
+                            format: uri
                             description: url of the latest screenshot of the project
                             example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -7765,7 +7970,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7779,12 +7984,18 @@ paths:
                                       - 0.0.1
                                   label:
                                     type: string
+                                    description: The short name of the node
+                                    example:
+                                      - JupyterLab
                                   progress:
                                     type: number
                                     maximum: 100
                                     minimum: 0
                                     description: the node progress value
                                   thumbnail:
+                                    minLength: 0
+                                    maxLength: 2083
+                                    format: uri
                                     type: string
                                     description: url of the latest screenshot of the node
                                     example:
@@ -7809,8 +8020,10 @@ paths:
                                             properties:
                                               nodeUuid:
                                                 type: string
+                                                format: uuid
                                               output:
                                                 type: string
+                                                pattern: '^[-_a-zA-Z0-9]+$'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -7825,6 +8038,18 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -7844,12 +8069,13 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: node IDs of where the node is connected to
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   outputs:
+                                    default: {}
                                     type: object
                                     patternProperties:
                                       '^[-_a-zA-Z0-9]+$':
@@ -7876,6 +8102,18 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -7883,16 +8121,14 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: Used in group-nodes. Node IDs of those connected to the output
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   parent:
-                                    type:
-                                      - string
-                                      - 'null'
-                                    pattern: ^\S+$
+                                    type: string
+                                    format: uuid
                                     description: Parent's (group-nodes') node ID s.
                                     example:
                                       - nodeUuid1
@@ -7918,6 +8154,7 @@ paths:
                                   state:
                                     title: RunningState
                                     description: the node's running state
+                                    default: NOT_STARTED
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
@@ -7926,7 +8163,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -7937,7 +8174,7 @@ paths:
                               workbench:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -7964,7 +8201,7 @@ paths:
                               slideshow:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -7977,6 +8214,9 @@ paths:
                                           - 0
                                           - 2
                                 additionalProperties: true
+                              currentNodeId:
+                                type: string
+                                format: uuid
                           tags:
                             type: array
                             items:
@@ -7993,9 +8233,11 @@ paths:
                           state:
                             title: State
                             description: Project state
-                            allOf:
+                            anyOf:
+                              - nullable: true
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -8003,6 +8245,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -8014,7 +8257,14 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -8028,6 +8278,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -8038,6 +8289,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -8050,7 +8302,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -8202,6 +8454,7 @@ paths:
               properties:
                 uuid:
                   type: string
+                  format: uuid
                   description: project unique identifier
                   example: 07640335-a91f-468c-ab69-a374fa82078d
                 name:
@@ -8214,14 +8467,13 @@ paths:
                   example: Dabbling in temporal transitions ...
                 prjOwner:
                   type: string
-                  format: idn-email
+                  format: email
                   description: user email
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
-                  additionalProperties: false
                   x-patternProperties:
-                    ^\d+$:
+                    ^\S+$:
                       type: object
                       description: the group id
                       additionalProperties: false
@@ -8239,6 +8491,7 @@ paths:
                         delete:
                           type: boolean
                           description: gives deletion rights
+                  additionalProperties: true
                 creationDate:
                   type: string
                   description: project creation date
@@ -8251,12 +8504,15 @@ paths:
                   example: '2018-07-01T11:13:43Z'
                 thumbnail:
                   type: string
+                  minLength: 0
+                  maxLength: 2083
+                  format: uri
                   description: url of the latest screenshot of the project
                   example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                 workbench:
                   type: object
                   x-patternProperties:
-                    ^\d+$:
+                    '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                       type: object
                       additionalProperties: false
                       required:
@@ -8267,7 +8523,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -8281,12 +8537,18 @@ paths:
                             - 0.0.1
                         label:
                           type: string
+                          description: The short name of the node
+                          example:
+                            - JupyterLab
                         progress:
                           type: number
                           maximum: 100
                           minimum: 0
                           description: the node progress value
                         thumbnail:
+                          minLength: 0
+                          maxLength: 2083
+                          format: uri
                           type: string
                           description: url of the latest screenshot of the node
                           example:
@@ -8311,8 +8573,10 @@ paths:
                                   properties:
                                     nodeUuid:
                                       type: string
+                                      format: uuid
                                     output:
                                       type: string
+                                      pattern: '^[-_a-zA-Z0-9]+$'
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -8327,6 +8591,18 @@ paths:
                                       type: string
                                     path:
                                       type: string
+                                    label:
+                                      type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      minLength: 1
+                                      maxLength: 65536
+                                      type: string
+                                      format: uri
                                     label:
                                       type: string
                         inputAccess:
@@ -8346,12 +8622,13 @@ paths:
                           type: array
                           items:
                             type: string
-                            pattern: ^\S+$
+                            format: uuid
                           description: node IDs of where the node is connected to
                           example:
                             - nodeUuid1
                             - nodeUuid2
                         outputs:
+                          default: {}
                           type: object
                           patternProperties:
                             '^[-_a-zA-Z0-9]+$':
@@ -8378,6 +8655,18 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                - type: object
+                                  additionalProperties: false
+                                  required:
+                                    - downloadLink
+                                  properties:
+                                    downloadLink:
+                                      minLength: 1
+                                      maxLength: 65536
+                                      type: string
+                                      format: uri
+                                    label:
+                                      type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -8385,16 +8674,14 @@ paths:
                           type: array
                           items:
                             type: string
-                            pattern: ^\S+$
+                            format: uuid
                           description: Used in group-nodes. Node IDs of those connected to the output
                           example:
                             - nodeUuid1
                             - nodeUuid2
                         parent:
-                          type:
-                            - string
-                            - 'null'
-                          pattern: ^\S+$
+                          type: string
+                          format: uuid
                           description: Parent's (group-nodes') node ID s.
                           example:
                             - nodeUuid1
@@ -8420,6 +8707,7 @@ paths:
                         state:
                           title: RunningState
                           description: the node's running state
+                          default: NOT_STARTED
                           enum:
                             - UNKNOWN
                             - NOT_STARTED
@@ -8428,7 +8716,7 @@ paths:
                             - STARTED
                             - RETRY
                             - SUCCESS
-                            - FAILURE
+                            - FAILED
                             - ABORTED
                           type: string
                   additionalProperties: true
@@ -8439,7 +8727,7 @@ paths:
                     workbench:
                       type: object
                       x-patternProperties:
-                        ^\S+$:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                           type: object
                           additionalProperties: false
                           required:
@@ -8466,7 +8754,7 @@ paths:
                     slideshow:
                       type: object
                       x-patternProperties:
-                        ^\S+$:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                           type: object
                           additionalProperties: false
                           required:
@@ -8479,6 +8767,9 @@ paths:
                                 - 0
                                 - 2
                       additionalProperties: true
+                    currentNodeId:
+                      type: string
+                      format: uuid
                 tags:
                   type: array
                   items:
@@ -8495,9 +8786,11 @@ paths:
                 state:
                   title: State
                   description: Project state
-                  allOf:
+                  anyOf:
+                    - nullable: true
                     - title: ProjectState
                       type: object
+                      additionalProperties: false
                       properties:
                         locked:
                           title: Locked
@@ -8505,6 +8798,7 @@ paths:
                           allOf:
                             - title: ProjectLocked
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: Value
@@ -8516,7 +8810,14 @@ paths:
                                   allOf:
                                     - title: Owner
                                       type: object
+                                      additionalProperties: false
                                       properties:
+                                        user_id:
+                                          title: User Id
+                                          type: integer
+                                          description: Owner's identifier when registered in the user's database table
+                                          example:
+                                            - 2
                                         first_name:
                                           title: First Name
                                           description: Owner first name
@@ -8530,6 +8831,7 @@ paths:
                                             - Smith
                                           type: string
                                       required:
+                                        - user_id
                                         - first_name
                                         - last_name
                               required:
@@ -8540,6 +8842,7 @@ paths:
                           allOf:
                             - title: ProjectRunningState
                               type: object
+                              additionalProperties: false
                               properties:
                                 value:
                                   title: RunningState
@@ -8552,7 +8855,7 @@ paths:
                                     - STARTED
                                     - RETRY
                                     - SUCCESS
-                                    - FAILURE
+                                    - FAILED
                                     - ABORTED
                                   type: string
                               required:
@@ -8589,6 +8892,7 @@ paths:
                         properties:
                           uuid:
                             type: string
+                            format: uuid
                             description: project unique identifier
                             example: 07640335-a91f-468c-ab69-a374fa82078d
                           name:
@@ -8601,14 +8905,13 @@ paths:
                             example: Dabbling in temporal transitions ...
                           prjOwner:
                             type: string
-                            format: idn-email
+                            format: email
                             description: user email
                           accessRights:
                             type: object
                             description: object containing the GroupID as key and read/write/execution permissions as value
-                            additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -8626,6 +8929,7 @@ paths:
                                   delete:
                                     type: boolean
                                     description: gives deletion rights
+                            additionalProperties: true
                           creationDate:
                             type: string
                             description: project creation date
@@ -8638,12 +8942,15 @@ paths:
                             example: '2018-07-01T11:13:43Z'
                           thumbnail:
                             type: string
+                            minLength: 0
+                            maxLength: 2083
+                            format: uri
                             description: url of the latest screenshot of the project
                             example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -8654,7 +8961,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -8668,12 +8975,18 @@ paths:
                                       - 0.0.1
                                   label:
                                     type: string
+                                    description: The short name of the node
+                                    example:
+                                      - JupyterLab
                                   progress:
                                     type: number
                                     maximum: 100
                                     minimum: 0
                                     description: the node progress value
                                   thumbnail:
+                                    minLength: 0
+                                    maxLength: 2083
+                                    format: uri
                                     type: string
                                     description: url of the latest screenshot of the node
                                     example:
@@ -8698,8 +9011,10 @@ paths:
                                             properties:
                                               nodeUuid:
                                                 type: string
+                                                format: uuid
                                               output:
                                                 type: string
+                                                pattern: '^[-_a-zA-Z0-9]+$'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8714,6 +9029,18 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -8733,12 +9060,13 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: node IDs of where the node is connected to
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   outputs:
+                                    default: {}
                                     type: object
                                     patternProperties:
                                       '^[-_a-zA-Z0-9]+$':
@@ -8765,6 +9093,18 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -8772,16 +9112,14 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: Used in group-nodes. Node IDs of those connected to the output
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   parent:
-                                    type:
-                                      - string
-                                      - 'null'
-                                    pattern: ^\S+$
+                                    type: string
+                                    format: uuid
                                     description: Parent's (group-nodes') node ID s.
                                     example:
                                       - nodeUuid1
@@ -8807,6 +9145,7 @@ paths:
                                   state:
                                     title: RunningState
                                     description: the node's running state
+                                    default: NOT_STARTED
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
@@ -8815,7 +9154,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -8826,7 +9165,7 @@ paths:
                               workbench:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -8853,7 +9192,7 @@ paths:
                               slideshow:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -8866,6 +9205,9 @@ paths:
                                           - 0
                                           - 2
                                 additionalProperties: true
+                              currentNodeId:
+                                type: string
+                                format: uuid
                           tags:
                             type: array
                             items:
@@ -8882,9 +9224,11 @@ paths:
                           state:
                             title: State
                             description: Project state
-                            allOf:
+                            anyOf:
+                              - nullable: true
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -8892,6 +9236,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -8903,7 +9248,14 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -8917,6 +9269,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -8927,6 +9280,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -8939,7 +9293,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -9116,6 +9470,7 @@ paths:
                         properties:
                           uuid:
                             type: string
+                            format: uuid
                             description: project unique identifier
                             example: 07640335-a91f-468c-ab69-a374fa82078d
                           name:
@@ -9128,14 +9483,13 @@ paths:
                             example: Dabbling in temporal transitions ...
                           prjOwner:
                             type: string
-                            format: idn-email
+                            format: email
                             description: user email
                           accessRights:
                             type: object
                             description: object containing the GroupID as key and read/write/execution permissions as value
-                            additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -9153,6 +9507,7 @@ paths:
                                   delete:
                                     type: boolean
                                     description: gives deletion rights
+                            additionalProperties: true
                           creationDate:
                             type: string
                             description: project creation date
@@ -9165,12 +9520,15 @@ paths:
                             example: '2018-07-01T11:13:43Z'
                           thumbnail:
                             type: string
+                            minLength: 0
+                            maxLength: 2083
+                            format: uri
                             description: url of the latest screenshot of the project
                             example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -9181,7 +9539,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -9195,12 +9553,18 @@ paths:
                                       - 0.0.1
                                   label:
                                     type: string
+                                    description: The short name of the node
+                                    example:
+                                      - JupyterLab
                                   progress:
                                     type: number
                                     maximum: 100
                                     minimum: 0
                                     description: the node progress value
                                   thumbnail:
+                                    minLength: 0
+                                    maxLength: 2083
+                                    format: uri
                                     type: string
                                     description: url of the latest screenshot of the node
                                     example:
@@ -9225,8 +9589,10 @@ paths:
                                             properties:
                                               nodeUuid:
                                                 type: string
+                                                format: uuid
                                               output:
                                                 type: string
+                                                pattern: '^[-_a-zA-Z0-9]+$'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -9241,6 +9607,18 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -9260,12 +9638,13 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: node IDs of where the node is connected to
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   outputs:
+                                    default: {}
                                     type: object
                                     patternProperties:
                                       '^[-_a-zA-Z0-9]+$':
@@ -9292,6 +9671,18 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -9299,16 +9690,14 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: Used in group-nodes. Node IDs of those connected to the output
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   parent:
-                                    type:
-                                      - string
-                                      - 'null'
-                                    pattern: ^\S+$
+                                    type: string
+                                    format: uuid
                                     description: Parent's (group-nodes') node ID s.
                                     example:
                                       - nodeUuid1
@@ -9334,6 +9723,7 @@ paths:
                                   state:
                                     title: RunningState
                                     description: the node's running state
+                                    default: NOT_STARTED
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
@@ -9342,7 +9732,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -9353,7 +9743,7 @@ paths:
                               workbench:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -9380,7 +9770,7 @@ paths:
                               slideshow:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -9393,6 +9783,9 @@ paths:
                                           - 0
                                           - 2
                                 additionalProperties: true
+                              currentNodeId:
+                                type: string
+                                format: uuid
                           tags:
                             type: array
                             items:
@@ -9409,9 +9802,11 @@ paths:
                           state:
                             title: State
                             description: Project state
-                            allOf:
+                            anyOf:
+                              - nullable: true
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -9419,6 +9814,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -9430,7 +9826,14 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -9444,6 +9847,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -9454,6 +9858,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -9466,7 +9871,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -10455,6 +10860,7 @@ paths:
                         properties:
                           uuid:
                             type: string
+                            format: uuid
                             description: project unique identifier
                             example: 07640335-a91f-468c-ab69-a374fa82078d
                           name:
@@ -10467,14 +10873,13 @@ paths:
                             example: Dabbling in temporal transitions ...
                           prjOwner:
                             type: string
-                            format: idn-email
+                            format: email
                             description: user email
                           accessRights:
                             type: object
                             description: object containing the GroupID as key and read/write/execution permissions as value
-                            additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -10492,6 +10897,7 @@ paths:
                                   delete:
                                     type: boolean
                                     description: gives deletion rights
+                            additionalProperties: true
                           creationDate:
                             type: string
                             description: project creation date
@@ -10504,12 +10910,15 @@ paths:
                             example: '2018-07-01T11:13:43Z'
                           thumbnail:
                             type: string
+                            minLength: 0
+                            maxLength: 2083
+                            format: uri
                             description: url of the latest screenshot of the project
                             example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -10520,7 +10929,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -10534,12 +10943,18 @@ paths:
                                       - 0.0.1
                                   label:
                                     type: string
+                                    description: The short name of the node
+                                    example:
+                                      - JupyterLab
                                   progress:
                                     type: number
                                     maximum: 100
                                     minimum: 0
                                     description: the node progress value
                                   thumbnail:
+                                    minLength: 0
+                                    maxLength: 2083
+                                    format: uri
                                     type: string
                                     description: url of the latest screenshot of the node
                                     example:
@@ -10564,8 +10979,10 @@ paths:
                                             properties:
                                               nodeUuid:
                                                 type: string
+                                                format: uuid
                                               output:
                                                 type: string
+                                                pattern: '^[-_a-zA-Z0-9]+$'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -10580,6 +10997,18 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -10599,12 +11028,13 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: node IDs of where the node is connected to
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   outputs:
+                                    default: {}
                                     type: object
                                     patternProperties:
                                       '^[-_a-zA-Z0-9]+$':
@@ -10631,6 +11061,18 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -10638,16 +11080,14 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: Used in group-nodes. Node IDs of those connected to the output
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   parent:
-                                    type:
-                                      - string
-                                      - 'null'
-                                    pattern: ^\S+$
+                                    type: string
+                                    format: uuid
                                     description: Parent's (group-nodes') node ID s.
                                     example:
                                       - nodeUuid1
@@ -10673,6 +11113,7 @@ paths:
                                   state:
                                     title: RunningState
                                     description: the node's running state
+                                    default: NOT_STARTED
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
@@ -10681,7 +11122,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -10692,7 +11133,7 @@ paths:
                               workbench:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -10719,7 +11160,7 @@ paths:
                               slideshow:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -10732,6 +11173,9 @@ paths:
                                           - 0
                                           - 2
                                 additionalProperties: true
+                              currentNodeId:
+                                type: string
+                                format: uuid
                           tags:
                             type: array
                             items:
@@ -10748,9 +11192,11 @@ paths:
                           state:
                             title: State
                             description: Project state
-                            allOf:
+                            anyOf:
+                              - nullable: true
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -10758,6 +11204,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -10769,7 +11216,14 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -10783,6 +11237,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -10793,6 +11248,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -10805,7 +11261,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -10959,6 +11415,7 @@ paths:
                         properties:
                           uuid:
                             type: string
+                            format: uuid
                             description: project unique identifier
                             example: 07640335-a91f-468c-ab69-a374fa82078d
                           name:
@@ -10971,14 +11428,13 @@ paths:
                             example: Dabbling in temporal transitions ...
                           prjOwner:
                             type: string
-                            format: idn-email
+                            format: email
                             description: user email
                           accessRights:
                             type: object
                             description: object containing the GroupID as key and read/write/execution permissions as value
-                            additionalProperties: false
                             x-patternProperties:
-                              ^\d+$:
+                              ^\S+$:
                                 type: object
                                 description: the group id
                                 additionalProperties: false
@@ -10996,6 +11452,7 @@ paths:
                                   delete:
                                     type: boolean
                                     description: gives deletion rights
+                            additionalProperties: true
                           creationDate:
                             type: string
                             description: project creation date
@@ -11008,12 +11465,15 @@ paths:
                             example: '2018-07-01T11:13:43Z'
                           thumbnail:
                             type: string
+                            minLength: 0
+                            maxLength: 2083
+                            format: uri
                             description: url of the latest screenshot of the project
                             example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                           workbench:
                             type: object
                             x-patternProperties:
-                              ^\d+$:
+                              '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                 type: object
                                 additionalProperties: false
                                 required:
@@ -11024,7 +11484,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)(/demodec)?/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -11038,12 +11498,18 @@ paths:
                                       - 0.0.1
                                   label:
                                     type: string
+                                    description: The short name of the node
+                                    example:
+                                      - JupyterLab
                                   progress:
                                     type: number
                                     maximum: 100
                                     minimum: 0
                                     description: the node progress value
                                   thumbnail:
+                                    minLength: 0
+                                    maxLength: 2083
+                                    format: uri
                                     type: string
                                     description: url of the latest screenshot of the node
                                     example:
@@ -11068,8 +11534,10 @@ paths:
                                             properties:
                                               nodeUuid:
                                                 type: string
+                                                format: uuid
                                               output:
                                                 type: string
+                                                pattern: '^[-_a-zA-Z0-9]+$'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -11084,6 +11552,18 @@ paths:
                                                 type: string
                                               path:
                                                 type: string
+                                              label:
+                                                type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
                                               label:
                                                 type: string
                                   inputAccess:
@@ -11103,12 +11583,13 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: node IDs of where the node is connected to
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   outputs:
+                                    default: {}
                                     type: object
                                     patternProperties:
                                       '^[-_a-zA-Z0-9]+$':
@@ -11135,6 +11616,18 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                          - type: object
+                                            additionalProperties: false
+                                            required:
+                                              - downloadLink
+                                            properties:
+                                              downloadLink:
+                                                minLength: 1
+                                                maxLength: 65536
+                                                type: string
+                                                format: uri
+                                              label:
+                                                type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -11142,16 +11635,14 @@ paths:
                                     type: array
                                     items:
                                       type: string
-                                      pattern: ^\S+$
+                                      format: uuid
                                     description: Used in group-nodes. Node IDs of those connected to the output
                                     example:
                                       - nodeUuid1
                                       - nodeUuid2
                                   parent:
-                                    type:
-                                      - string
-                                      - 'null'
-                                    pattern: ^\S+$
+                                    type: string
+                                    format: uuid
                                     description: Parent's (group-nodes') node ID s.
                                     example:
                                       - nodeUuid1
@@ -11177,6 +11668,7 @@ paths:
                                   state:
                                     title: RunningState
                                     description: the node's running state
+                                    default: NOT_STARTED
                                     enum:
                                       - UNKNOWN
                                       - NOT_STARTED
@@ -11185,7 +11677,7 @@ paths:
                                       - STARTED
                                       - RETRY
                                       - SUCCESS
-                                      - FAILURE
+                                      - FAILED
                                       - ABORTED
                                     type: string
                             additionalProperties: true
@@ -11196,7 +11688,7 @@ paths:
                               workbench:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -11223,7 +11715,7 @@ paths:
                               slideshow:
                                 type: object
                                 x-patternProperties:
-                                  ^\S+$:
+                                  '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
                                     type: object
                                     additionalProperties: false
                                     required:
@@ -11236,6 +11728,9 @@ paths:
                                           - 0
                                           - 2
                                 additionalProperties: true
+                              currentNodeId:
+                                type: string
+                                format: uuid
                           tags:
                             type: array
                             items:
@@ -11252,9 +11747,11 @@ paths:
                           state:
                             title: State
                             description: Project state
-                            allOf:
+                            anyOf:
+                              - nullable: true
                               - title: ProjectState
                                 type: object
+                                additionalProperties: false
                                 properties:
                                   locked:
                                     title: Locked
@@ -11262,6 +11759,7 @@ paths:
                                     allOf:
                                       - title: ProjectLocked
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: Value
@@ -11273,7 +11771,14 @@ paths:
                                             allOf:
                                               - title: Owner
                                                 type: object
+                                                additionalProperties: false
                                                 properties:
+                                                  user_id:
+                                                    title: User Id
+                                                    type: integer
+                                                    description: Owner's identifier when registered in the user's database table
+                                                    example:
+                                                      - 2
                                                   first_name:
                                                     title: First Name
                                                     description: Owner first name
@@ -11287,6 +11792,7 @@ paths:
                                                       - Smith
                                                     type: string
                                                 required:
+                                                  - user_id
                                                   - first_name
                                                   - last_name
                                         required:
@@ -11297,6 +11803,7 @@ paths:
                                     allOf:
                                       - title: ProjectRunningState
                                         type: object
+                                        additionalProperties: false
                                         properties:
                                           value:
                                             title: RunningState
@@ -11309,7 +11816,7 @@ paths:
                                               - STARTED
                                               - RETRY
                                               - SUCCESS
-                                              - FAILURE
+                                              - FAILED
                                               - ABORTED
                                             type: string
                                         required:
@@ -12633,6 +13140,105 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
+  /viewers:
+    get:
+      operationId: get_viewer_for_file
+      parameters:
+        - in: query
+          name: file_type
+          required: true
+          schema:
+            title: File Type
+            type: string
+        - in: query
+          name: file_name
+          required: false
+          schema:
+            title: File Name
+            type: string
+        - in: query
+          name: file_size
+          required: false
+          schema:
+            title: File Size in Bytes
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      file_type:
+                        title: File Type
+                        type: string
+                      redirection_url:
+                        description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
+                        format: uri
+                        maxLength: 2083
+                        minLength: 1
+                        title: Redirection Url
+                        type: string
+                      viewer_title:
+                        description: Short formatted label with name and version of the viewer
+                        title: Viewer Title
+                        type: string
+                    required:
+                      - file_type
+                      - viewer_title
+                      - redirection_url
+                    title: FileType2Viewer
+                    type: object
+                required:
+                  - data
+                title: FielType2ViewerEnveloped
+                type: object
+          description: Successful Response
+      summary: Get Viewer For File
+      tags:
+        - viewer
+  /viewers/filetypes:
+    get:
+      operationId: list_supported_filetypes
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      properties:
+                        file_type:
+                          title: File Type
+                          type: string
+                        redirection_url:
+                          description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
+                          format: uri
+                          maxLength: 2083
+                          minLength: 1
+                          title: Redirection Url
+                          type: string
+                        viewer_title:
+                          description: Short formatted label with name and version of the viewer
+                          title: Viewer Title
+                          type: string
+                      required:
+                        - file_type
+                        - viewer_title
+                        - redirection_url
+                      title: FileType2Viewer
+                      type: object
+                    type: array
+                required:
+                  - data
+                title: FieldType2ViewerListEnveloped
+                type: object
+          description: Successful Response
+      summary: List Supported Filetypes
+      tags:
+        - viewer
 components:
   responses:
     DefaultErrorResponse:

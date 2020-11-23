@@ -4,16 +4,21 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
+
+import asyncio
+import logging
 import re
-import textwrap
 from copy import deepcopy
-from pathlib import Path
 from pprint import pprint
 from typing import Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
-from models_library.projects import (
+from aiohttp.test_utils import TestClient
+from aioresponses import aioresponses
+
+from models_library.projects_state import (
     Owner,
     ProjectLocked,
     ProjectRunningState,
@@ -24,104 +29,66 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.application import create_safe_application
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
-from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects import setup_projects
+from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project_from_db
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.settings import setup_settings
-from simcore_service_webserver.statics import STATIC_DIRNAMES, setup_statics
-from simcore_service_webserver.studies_access import setup_studies_access
-from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user, is_user_guest
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 
 @pytest.fixture
-def qx_client_outdir(tmpdir):
-    """  Emulates qx output at service/web/client after compiling """
+def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
+    """App's configuration used for every test in this module
 
-    basedir = tmpdir.mkdir("source-output")
-    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
-
-    HTML = textwrap.dedent(
-        """\
-        <!DOCTYPE html>
-        <html>
-        <body>
-            <h1>{0}-SIMCORE</h1>
-            <p> This is a result of qx_client_outdir fixture for product {0}</p>
-        </body>
-        </html>
-        """
-    )
-
-    index_file = Path(basedir.join("index.html"))
-    index_file.write_text(HTML.format("OSPARC"))
-
-    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
-        index_file = Path(folder.join("index.html"))
-        index_file.write_text(HTML.format(frontend_app.upper()))
-
-    return Path(basedir)
-
-
-@pytest.fixture
-def mocks_on_projects_api(mocker) -> Dict:
+    NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
     """
-    All projects in this module are UNLOCKED
-    """
-    state = ProjectState(
-        locked=ProjectLocked(
-            value=False, owner=Owner(first_name="Speedy", last_name="Gonzalez")
-        ),
-        state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    ).dict(by_alias=True, exclude_unset=True)
-    mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
-        return_value=future_with_result(state),
-    )
+    cfg = deepcopy(default_app_cfg)
 
+    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["client_outdir"] = str(qx_client_outdir)
+    cfg["main"]["studies_access_enabled"] = True
 
-@pytest.fixture
-def client(
-    loop, aiohttp_client, app_cfg, postgres_db, qx_client_outdir, mocks_on_projects_api
-):
-    cfg = deepcopy(app_cfg)
+    exclude = {
+        "tracing",
+        "director",
+        "smtp",
+        "storage",
+        "activity",
+        "diagnostics",
+        "groups",
+        "tags",
+        "publications",
+        "catalog",
+        "computation",
+    }
+    include = {
+        "db",
+        "rest",
+        "projects",
+        "login",
+        "socketio",
+        "resource_manager",
+        "users",
+        "studies_access",
+        "products",
+    }
 
-    cfg["projects"]["enabled"] = True
-    cfg["storage"]["enabled"] = False
-    cfg["computation"]["enabled"] = False
-    cfg["main"]["client_outdir"] = qx_client_outdir
+    assert include.intersection(exclude) == set()
 
-    app = create_safe_application(cfg)
+    for section in include:
+        cfg[section]["enabled"] = True
+    for section in exclude:
+        cfg[section]["enabled"] = False
 
-    setup_settings(app)
-    setup_statics(app)
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)  # TODO: why should we need this??
-    setup_login(app)
-    setup_users(app)
-    setup_products(app)
-    assert setup_projects(app), "Shall not skip this setup"
-    assert setup_studies_access(app), "Shall not skip this setup"
+    # NOTE: To see logs, use pytest -s --log-cli-level=DEBUG
+    setup_logging(level=logging.DEBUG)
 
-    # server and client
-    yield loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
-        )
-    )
+    # Enforces smallest GC in the background task
+    cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
+
+    return cfg
 
 
 @pytest.fixture
@@ -167,9 +134,15 @@ async def unpublished_project(client, fake_project):
         yield template_project
 
 
+@pytest.fixture(autouse=True)
+async def director_v2_mock(director_v2_subsystem_mock) -> aioresponses:
+    yield director_v2_subsystem_mock
+
+
 async def _get_user_projects(client):
     url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(start=0, count=3, type="user"))
+    resp = await client.get(url.with_query(type="user"))
+
     payload = await resp.json()
     assert resp.status == 200, payload
 
@@ -222,7 +195,42 @@ async def assert_redirected_to_study(
     return redirected_project_id
 
 
-# TESTS --------------------------------------
+@pytest.fixture
+async def catalog_subsystem_mock(monkeypatch, published_project):
+    services_in_project = [
+        {"key": s["key"], "version": s["version"]}
+        for _, s in published_project["workbench"].items()
+    ]
+
+    async def mocked_get_services_for_user(*args, **kwargs):
+        return services_in_project
+
+    monkeypatch.setattr(
+        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
+    )
+
+
+@pytest.fixture
+def mocks_on_projects_api(mocker) -> Dict:
+    """
+    All projects in this module are UNLOCKED
+    """
+    state = ProjectState(
+        locked=ProjectLocked(
+            value=False,
+            owner=Owner(user_id=2, first_name="Speedy", last_name="Gonzalez"),
+        ),
+        state=ProjectRunningState(value=RunningState.NOT_STARTED),
+    ).dict(by_alias=True, exclude_unset=True)
+    mocker.patch(
+        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        return_value=future_with_result(state),
+    )
+
+
+# TESTS ----------------------------------------------------------------------------------------------
+
+
 async def test_access_to_invalid_study(client, published_project):
     resp = await client.get("/study/SOME_INVALID_UUID")
     content = await resp.text()
@@ -243,27 +251,12 @@ async def test_access_to_forbidden_study(client, unpublished_project):
     ), f"STANDARD studies are NOT sharable: {content}"
 
 
-@pytest.fixture
-async def catalog_subsystem_mock(monkeypatch, published_project):
-    services_in_project = [
-        {"key": s["key"], "version": s["version"]}
-        for _, s in published_project["workbench"].items()
-    ]
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-
 async def test_access_study_anonymously(
     client,
-    qx_client_outdir,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    mocks_on_projects_api,
 ):
 
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
@@ -295,10 +288,10 @@ async def test_access_study_anonymously(
 async def test_access_study_by_logged_user(
     client,
     logged_user,
-    qx_client_outdir,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    mocks_on_projects_api,
 ):
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
@@ -318,10 +311,10 @@ async def test_access_study_by_logged_user(
 
 async def test_access_cookie_of_expired_user(
     client,
-    qx_client_outdir,
     published_project,
     storage_subsystem_mock,
     catalog_subsystem_mock,
+    mocks_on_projects_api,
 ):
     # emulates issue #1570
     app: web.Application = client.app
@@ -338,9 +331,9 @@ async def test_access_cookie_of_expired_user(
     data, _ = await assert_status(resp, web.HTTPOk)
     assert await is_user_guest(app, data["id"])
 
-    async def garbage_collect_guest(uid):
+    async def enforce_garbage_collect_guest(uid):
         # Emulates garbage collector:
-        #   - anonymous user expired, cleaning it up
+        #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
         #
         assert await is_user_guest(app, uid)
@@ -352,7 +345,7 @@ async def test_access_cookie_of_expired_user(
         await delete_user(app, uid)
         return uid
 
-    user_id = await garbage_collect_guest(uid=data["id"])
+    user_id = await enforce_garbage_collect_guest(uid=data["id"])
     user_email = data["login"]
 
     # Now this should be non -authorized
@@ -371,3 +364,58 @@ async def test_access_cookie_of_expired_user(
     # But I am another user
     assert data["id"] != user_id
     assert data["login"] != user_email
+
+
+@pytest.mark.parametrize("number_of_simultaneous_requests", [1, 2, 16, 32, 64])
+async def test_guest_user_is_not_garbage_collected(
+    number_of_simultaneous_requests,
+    web_server,
+    aiohttp_client,
+    published_project,
+    storage_subsystem_mock,
+    catalog_subsystem_mock,
+    mocks_on_projects_api,
+):
+    ## NOTE: use pytest -s --log-cli-level=DEBUG  to see GC logs
+
+    async def _test_guest_user_workflow(request_index):
+        print("request #", request_index, "-" * 10)
+
+        # TODO: heartbeat is missing here!
+        # TODO: reduce GC activation period to 0.1 secs
+
+        # every guest uses different client to preserve it's own authorization/authentication cookies
+        client: TestClient = await aiohttp_client(web_server)
+        study_url = client.app.router["study"].url_for(id=published_project["uuid"])
+
+        # clicks link to study
+        resp = await client.get(study_url)
+        expected_prj_id = await assert_redirected_to_study(resp, client.session)
+
+        # has auto logged in as guest?
+        me_url = client.app.router["get_my_profile"].url_for()
+        resp = await client.get(me_url)
+
+        data, _ = await assert_status(resp, web.HTTPOk)
+        assert data["login"].endswith("guest-at-osparc.io")
+        assert data["gravatar_id"]
+        assert data["role"].upper() == UserRole.GUEST.name
+
+        # guest user only a copy of the template project
+        projects = await _get_user_projects(client)
+        assert len(projects) == 1
+        guest_project = projects[0]
+
+        assert expected_prj_id == guest_project["uuid"]
+        _assert_same_projects(guest_project, published_project)
+
+        assert guest_project["prjOwner"] == data["login"]
+        print("request #", request_index, "DONE", "-" * 10)
+
+    # N concurrent requests
+    request_tasks = [
+        asyncio.ensure_future(_test_guest_user_workflow(n))
+        for n in range(number_of_simultaneous_requests)
+    ]
+
+    await asyncio.gather(*request_tasks)

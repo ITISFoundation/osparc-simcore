@@ -11,6 +11,7 @@ from yarl import URL
 import aiofiles
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
+from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, exceptions
 
@@ -85,8 +86,14 @@ async def _get_location_id_from_location_name(store: str, api: UsersApi):
 async def _get_link(store_id: int, file_id: str, apifct) -> URL:
     log.debug("Getting link from store id %s for %s", store_id, file_id)
     try:
+        # When uploading and downloading files from the storage service
+        # it is important to use a longer timeout, previously was 5 minutes
+        # changing to 1 hour. this will allow for larger payloads to be stored/download
         resp = await apifct(
-            location_id=store_id, user_id=config.USER_ID, file_id=file_id
+            location_id=store_id,
+            user_id=config.USER_ID,
+            file_id=file_id,
+            _request_timeout=ServicesCommonSettings().storage_service_upload_download_timeout,
         )
 
         if resp.error:
@@ -109,19 +116,13 @@ async def _get_upload_link(store_id: int, file_id: str, api: UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.upload_file)
 
 
-async def _download_link_to_file(
-    session: ClientSession, url: URL, file_path: Path, store: str, s3_object: str
-):
+async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
     log.debug("Downloading from %s to %s", url, file_path)
     async with session.get(url) as response:
         if response.status == 404:
-            raise exceptions.S3InvalidPathError(s3_object)
+            raise exceptions.InvalidDownloadLinkError(url)
         if response.status > 299:
-            raise exceptions.S3TransferError(
-                "Error when downloading {} from {} using {}".format(
-                    s3_object, store, url
-                )
-            )
+            raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(file_path, "wb") as file_pointer:
             # await file_pointer.write(await response.read())
@@ -151,7 +152,7 @@ async def _upload_file_to_link(session: ClientSession, url: URL, file_path: Path
             )
 
 
-async def download_file(
+async def download_file_from_s3(
     *,
     store_name: str = None,
     store_id: str = None,
@@ -159,7 +160,7 @@ async def download_file(
     local_folder: Path,
     session: Optional[ClientSession] = None
 ) -> Path:
-    """Downloads a file to S3
+    """Downloads a file from S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
     :type session: ClientSession, optional
@@ -177,6 +178,7 @@ async def download_file(
     if store_name is None and store_id is None:
         raise exceptions.NodeportsException(msg="both store name and store id are None")
 
+    # get the s3 link
     download_link = None
     with api_client() as client:
         api = UsersApi(client)
@@ -185,23 +187,30 @@ async def download_file(
             store_id = await _get_location_id_from_location_name(store_name, api)
         download_link = await _get_download_link(store_id, s3_object, api)
     # the link contains the file name
-    if download_link:
-        # a download link looks something like:
-        # http://172.16.9.89:9001/simcore-test/269dec55-6d18-4901-a767-b567db23d425/4ccf4e2e-a6cd-4f77-a255-4c36fa1b1c72/test.test?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=s3access/20190719/us-east-1/s3/aws4_request&X-Amz-Date=20190719T142431Z&X-Amz-Expires=259200&X-Amz-SignedHeaders=host&X-Amz-Signature=90268f3b580b38c1aad128475936c6f5fd335d11d01ec143cca1056d92a724b5
-        local_file_path = local_folder / Path(download_link.path).name
-        # remove an already existing file if present
-        if local_file_path.exists():
-            local_file_path.unlink()
+    if not download_link:
+        raise exceptions.S3InvalidPathError(s3_object)
 
-        async with ClientSessionContextManager(session) as active_session:
-            await _download_link_to_file(
-                active_session, download_link, local_file_path, store_id, s3_object
-            )
+    return await download_file_from_link(download_link, local_folder, session)
 
-        return local_file_path
 
-    raise exceptions.S3InvalidPathError(s3_object)
+async def download_file_from_link(
+    download_link: URL,
+    destination_folder: Path,
+    session: Optional[ClientSession] = None,
+    file_name: Optional[str] = None,
+) -> Path:
+    # a download link looks something like:
+    # http://172.16.9.89:9001/simcore-test/269dec55-6d18-4901-a767-b567db23d425/4ccf4e2e-a6cd-4f77-a255-4c36fa1b1c72/test.test?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=s3access/20190719/us-east-1/s3/aws4_request&X-Amz-Date=20190719T142431Z&X-Amz-Expires=259200&X-Amz-SignedHeaders=host&X-Amz-Signature=90268f3b580b38c1aad128475936c6f5fd335d11d01ec143cca1056d92a724b5
+    local_file_path = destination_folder / (file_name or Path(download_link.path).name)
 
+    # remove an already existing file if present
+    if local_file_path.exists():
+        local_file_path.unlink()
+
+    async with ClientSessionContextManager(session) as active_session:
+        await _download_link_to_file(active_session, download_link, local_file_path)
+
+    return local_file_path
 
 async def upload_file(
     *,
