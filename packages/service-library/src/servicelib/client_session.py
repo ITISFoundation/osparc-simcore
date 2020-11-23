@@ -19,7 +19,11 @@ def get_client_session(app: web.Application) -> ClientSession:
     """
     session = app.get(APP_CLIENT_SESSION_KEY)
     if session is None or session.closed:
-        timeout_settings = ClientTimeout(total=1, connect=1, sock_connect=1)
+        # it is important to have fast connection handshakes
+        # also requests should be as fast as possible
+        # some services are not that fast to  reply
+        # Setting the time of a request using this client session to 5 seconds total
+        timeout_settings = ClientTimeout(total=5, connect=1, sock_connect=1)
         app[APP_CLIENT_SESSION_KEY] = session = ClientSession(timeout=timeout_settings)
     return session
 
