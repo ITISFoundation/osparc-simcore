@@ -606,6 +606,11 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsForm().setAccessLevel(inputAccess);
         this.getPropsFormEditor().setAccessLevel(inputAccess);
       }
+
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (study && study.isReadOnly()) {
+        this.getPropsForm().setEnabled(false);
+      }
     },
 
     setOutputData: function(outputs) {
