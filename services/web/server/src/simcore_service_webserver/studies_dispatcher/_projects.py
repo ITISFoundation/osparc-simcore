@@ -169,4 +169,7 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
     assert _project_db["uuid"] == str(project.uuid) # nosec
 
     # This is a new project and every new graph needs to be reflected in the pipeline db
+    #
+    # TODO: Ensure this user has access to these services!
+    #
     await create_or_update_pipeline(app, user.id, project.uuid)

@@ -39,6 +39,9 @@ class ViewerInfo:
 #
 # TODO: For the moment, viewers-filetype association is hard-coded
 # TODO: The environs are tmp to give more flexibility with updates
+# TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
+#       with !?
+#
 #
 _SIM4LIFE_VIEWER = ViewerInfo(
     key="simcore/services/dynamic/sim4life",
