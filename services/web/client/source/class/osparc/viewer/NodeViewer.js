@@ -18,7 +18,7 @@
 qx.Class.define("osparc.viewer.NodeViewer", {
   extend: qx.ui.core.Widget,
 
-  construct: function(nodeId) {
+  construct: function(studyId, nodeId) {
     this.base();
 
     this._setLayout(new qx.ui.layout.VBox());
@@ -28,10 +28,14 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.__iFrameChanged();
 
-    qx.event.Timer.once(() => {
-      const src = window.location.href + "x/" + nodeId;
-      this.__waitForServiceReady(src);
-    }, this, 2000);
+    this.__openStudy(studyId)
+      .then(() => {
+        const srcUrl = window.location.href + "x/" + nodeId;
+        this.__waitForServiceReady(srcUrl);
+      })
+      .catch(err => {
+        console.error(err);
+      });
   },
 
   properties: {
@@ -69,12 +73,37 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       this.setIFrame(iframe);
     },
 
+    __openStudy: function(studyId) {
+      const params = {
+        url: {
+          projectId: studyId
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "open", params);
+    },
+
     __waitForServiceReady: function(srvUrl) {
       // ping for some time until it is really ready
       const pingRequest = new qx.io.request.Xhr(srvUrl);
       pingRequest.addListenerOnce("success", () => {
-        this.getIFrame().setSource(srvUrl);
-        this.__iFrameChanged();
+        // retrieveInputs
+        let urlUpdate = srvUrl + "/retrieve";
+        urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+        const updReq = new qx.io.request.Xhr();
+        const reqData = {
+          "port_keys": []
+        };
+        updReq.set({
+          url: urlUpdate,
+          method: "POST",
+          requestData: qx.util.Serializer.toJson(reqData)
+        });
+        updReq.addListener("success", e => {
+          this.getIFrame().setSource(srvUrl);
+          this.__iFrameChanged();
+        }, this);
+        updReq.send();
       }, this);
       pingRequest.addListenerOnce("fail", () => {
         const interval = 2000;
