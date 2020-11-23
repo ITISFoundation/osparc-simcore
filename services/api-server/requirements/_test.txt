@@ -47,7 +47,7 @@ httpx==0.14.3             # via -r requirements/_base.txt
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via -r requirements/_base.txt, email-validator, idna-ssl, requests, rfc3986, yarl
 immutables==0.14          # via -r requirements/_base.txt, contextvars
-importlib-metadata==2.0.0  # via jsonschema, pluggy, pytest
+importlib-metadata==3.0.0  # via jsonschema, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
 itsdangerous==1.1.0       # via -r requirements/_base.txt, fastapi

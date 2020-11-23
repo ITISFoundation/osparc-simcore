@@ -27,7 +27,7 @@ docopt==0.6.2             # via coveralls, docker-compose
 faker==4.17.1             # via -r requirements/_test.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via -r requirements/_migration.txt, idna-ssl, requests, yarl
-importlib-metadata==2.0.0  # via jsonschema, pluggy, pytest
+importlib-metadata==3.0.0  # via jsonschema, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
 jsonschema==3.2.0         # via docker-compose
