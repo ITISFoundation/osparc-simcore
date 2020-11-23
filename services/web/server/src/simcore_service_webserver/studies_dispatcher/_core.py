@@ -47,7 +47,7 @@ _SIM4LIFE_VIEWER = ViewerInfo(
 )
 _RAWGRAPHS_VIEWER = ViewerInfo(
     key="simcore/services/dynamic/raw-graphs",
-    version=os.environ.get("WEBSERVER_VIEWER_RAWGRAPH_VERSION", "2.10.6"),
+    version=os.environ.get("WEBSERVER_VIEWER_RAWGRAPH_VERSION", "2.11.1"),
     label="2D plot - RAWGraphs",
 )
 
