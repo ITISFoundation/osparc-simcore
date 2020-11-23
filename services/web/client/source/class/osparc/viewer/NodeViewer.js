@@ -30,8 +30,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.__openStudy(studyId)
       .then(() => {
-        const src = window.location.href + "x/" + nodeId;
-        this.__waitForServiceReady(src);
+        const srcUrl = window.location.href + "x/" + nodeId;
+        this.__waitForServiceReady(srcUrl);
       })
       .catch(err => {
         console.error(err);
@@ -103,6 +103,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           this.getIFrame().setSource(srvUrl);
           this.__iFrameChanged();
         }, this);
+        updReq.send();
       }, this);
       pingRequest.addListenerOnce("fail", () => {
         const interval = 2000;
