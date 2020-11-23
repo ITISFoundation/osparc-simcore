@@ -544,7 +544,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __getPublishOnPortalMenuButton: function() {
       const publishOnPortalButton = new qx.ui.menu.Button(this.tr("Publish on Portal"));
       publishOnPortalButton.addListener("execute", () => {
-        const msg = this.tr("To be implemented");
+        const msg = this.tr("Not yet implemented");
         osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
       }, this);
       return publishOnPortalButton;

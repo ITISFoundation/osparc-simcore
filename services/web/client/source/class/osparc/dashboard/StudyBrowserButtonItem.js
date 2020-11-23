@@ -363,8 +363,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 
-        if (this.isResourceType("study") || this.isResourceType("template")) {
-          this._applyStudyPermissions(value);
+        if (this.isResourceType("study")) {
+          this.__setStudyPermissions(value);
         }
       }
     },
@@ -438,7 +438,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyStudyPermissions: function(accessRights) {
+    __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const studyPerm = osparc.component.export.StudyPermissions;
       const image = this.getChildControl("permission-icon");
