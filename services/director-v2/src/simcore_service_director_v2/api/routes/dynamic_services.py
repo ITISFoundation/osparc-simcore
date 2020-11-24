@@ -6,7 +6,8 @@ from models_library.projects_nodes import PROPERTY_KEY_RE, NodeID
 from pydantic import BaseModel
 from starlette import status
 
-from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
+
+from ..dependencies.dynamic_services_v0 import ServicesV0Client, get_services_v0_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -25,8 +26,7 @@ class RetrieveDataIn(BaseModel):
 async def service_retrieve_data_on_ports(
     node_uuid: NodeID,
     retrieve_settings: RetrieveDataIn,
-    director_client: DirectorV0Client = Depends(get_director_v0_client),
-    services_client: ServicesClient = Depends(get_services_v0_client(node_uuid)),
+    services_client: ServicesV0Client = Depends(get_services_v0_client),
 ):
     node_details = await director_client.get_running_service_details(node_uuid)
     await services_client.call_retrieve(retrieve_settings.port_keys)

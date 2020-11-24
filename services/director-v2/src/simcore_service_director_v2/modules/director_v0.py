@@ -10,6 +10,7 @@ from typing import Dict
 import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
 from httpx import codes
+from models_library.projects_nodes import NodeID
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 
 # Module's business logic ---------------------------------------------
@@ -17,11 +18,10 @@ from starlette import status
 from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
-from ..models.schemas.services import ServiceExtras
+from ..models.schemas.services import RunningServiceType, ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
-
 
 # Module's setup logic ---------------------------------------------
 
@@ -131,4 +131,12 @@ class DirectorV0Client:
         )
         if resp.status_code == status.HTTP_200_OK:
             return ServiceExtras.parse_obj(_unenvelope_or_raise_error(resp))
+        raise HTTPException(status_code=resp.status_code, detail=resp.content)
+
+    async def get_running_service_details(
+        self, service_uuid: NodeID
+    ) -> RunningServiceType:
+        resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
+        if resp.status_code == status.HTTP_200_OK:
+            return RunningServiceType.parse_obj(_unenvelope_or_raise_error(resp)[0])
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

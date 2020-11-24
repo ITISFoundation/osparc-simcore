@@ -60,7 +60,7 @@ class RunningServiceType(BaseModel):
     )
     service_host: str = Field(..., description="service host name within the network")
     service_port: PositiveInt = Field(
-        ..., description="port to access the service within the network"
+        80, description="port to access the service within the network"
     )
     service_basepath: Optional[str] = Field(
         "",
@@ -79,6 +79,10 @@ class RunningServicesArray(BaseModel):
 
 class RunningServicesEnveloped(BaseModel):
     data: RunningServicesArray
+
+
+class RunningServiceEnveloped(BaseModel):
+    data: RunningServiceType
 
 
 class ServicesArrayEnveloped(BaseModel):

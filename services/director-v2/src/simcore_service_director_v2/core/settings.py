@@ -65,6 +65,11 @@ class DirectorV0Settings(ApiServiceSettings):
         env_prefix = "DIRECTOR_"
 
 
+class DynamicServicesV0Settings(ApiServiceSettings):
+    class Config(CommonConfig):
+        env_prefix = ""
+
+
 class PGSettings(PostgresSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
@@ -145,6 +150,9 @@ class AppSettings(BaseSettings):
 
     # DIRECTOR submodule
     director_v0: DirectorV0Settings
+
+    # Dynamic Services submodule
+    dynamic_services: DynamicServicesV0Settings
 
     # REGISTRY submodule
     registry: RegistrySettings
