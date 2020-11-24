@@ -59,7 +59,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
           return osparc.file.FileDownloadLink.extractLabelFromLink(outInfo.downloadLink);
         }
       }
-      return null;
+      return "";
     },
 
     extractLabelFromLink: function(downloadLink) {
@@ -70,7 +70,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
         const parts = found[1].split("/");
         return parts[parts.length - 1];
       }
-      return null;
+      return "";
     },
 
     checkFileExists: function(urlToFile) {

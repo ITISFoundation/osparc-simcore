@@ -228,7 +228,7 @@ qx.Class.define("osparc.file.FilePicker", {
         const outputs = this.__getOutputFile();
         outputs["value"] = {
           downloadLink,
-          label
+          label: label ? label : ""
         };
         this.getNode().getStatus().setProgress(100);
         this.getNode().repopulateOutputPortData();
