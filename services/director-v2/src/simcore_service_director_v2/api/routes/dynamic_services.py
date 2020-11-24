@@ -18,7 +18,7 @@ log = logging.getLogger(__file__)
 
 
 class RetrieveDataIn(BaseModel):
-    port_keys: List[PROPERTY_KEY_RE]
+    port_keys: List[str]
 
 
 class RetrieveDataOut(BaseModel):
