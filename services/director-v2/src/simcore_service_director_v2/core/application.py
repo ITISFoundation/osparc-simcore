@@ -6,6 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from starlette import status
 from starlette.exceptions import HTTPException
 
+from simcore_service_director_v2.modules import dynamic_services_v0
+
 from ..api.entrypoints import api_router
 from ..api.errors.http_error import (
     http_error_handler,
@@ -47,6 +49,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.director_v0.enabled:
         director_v0.setup(app, settings.director_v0)
 
+    if settings.dynamic_services.enabled:
+        dynamic_services_v0.setup(app, settings.dynamic_services)
+
     if settings.postgres.enabled:
         db.setup(app, settings.postgres)
 
@@ -65,11 +70,15 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
         NotImplementedError,
-        make_http_error_handler_for_exception(status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError),
+        make_http_error_handler_for_exception(
+            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError
+        ),
     )
     app.add_exception_handler(
         Exception,
-        make_http_error_handler_for_exception(status.HTTP_500_INTERNAL_SERVER_ERROR, Exception),
+        make_http_error_handler_for_exception(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
+        ),
     )
 
     app.include_router(api_router)
