@@ -77,19 +77,6 @@ async def start_service(
         return payload["data"]
 
 
-async def call_service_retrieve(
-    app: web.Application, service_uuid: str, port_keys: List[str]
-) -> None:
-    session, api_endpoint = _get_director_client(app)
-    url = api_endpoint / "running_interactive_services" / service_uuid / ":retrieve"
-    async with session.post(url, ssl=False, json={"port_keys": port_keys}) as resp:
-        if resp.status == 404:
-            raise director_exceptions.ServiceNotFoundError(service_uuid)
-        if resp.status != 204:
-            payload = await resp.json()
-            raise director_exceptions.DirectorException(payload)
-
-
 async def stop_service(app: web.Application, service_uuid: str) -> None:
     session, api_endpoint = _get_director_client(app)
     # stopping a service can take a lot of time

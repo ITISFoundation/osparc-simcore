@@ -28,7 +28,11 @@ from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..director import director_api
-from ..director_v2 import delete_pipeline, get_pipeline_state
+from ..director_v2 import (
+    delete_pipeline,
+    get_pipeline_state,
+    request_retrieve_dyn_service,
+)
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
@@ -450,7 +454,7 @@ async def trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        director_api.call_service_retrieve(app, node, keys)
+        request_retrieve_dyn_service(app, node, keys)
         for node, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks)
