@@ -147,7 +147,7 @@ async def test_api_list_supported_filetypes(client):
             },
             {
                 "file_type": "CSV",
-                "viewer_title": "2d plot - rawgraphs v2.10.6",
+                "viewer_title": "2d plot - rawgraphs v2.11.1",
                 "redirection_url": f"{base_url}/view?file_type=CSV",
             },
         ],
@@ -175,7 +175,7 @@ async def catalog_subsystem_mock(monkeypatch):
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker) -> Dict:
+def mocks_on_projects_api(mocker):
     """
     All projects in this module are UNLOCKED
     """
