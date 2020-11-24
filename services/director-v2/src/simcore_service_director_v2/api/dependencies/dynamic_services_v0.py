@@ -7,21 +7,24 @@ from ...modules.dynamic_services_v0 import ServicesV0Client
 from .director_v0 import DirectorV0Client, get_director_v0_client
 
 
-async def get_services_v0_client(
+async def get_service_base_url(
     node_uuid: NodeID,
-    request: Request,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-) -> ServicesV0Client:
-
+) -> URL:
     # get the service details
     service_details: RunningServiceType = (
         await director_v0_client.get_running_service_details(node_uuid)
     )
-
     # compute service url
     service_url = URL(
         f"{service_details.service_host}:{service_details.service_port}{service_details.service_basepath}"
     )
+    return service_url
+
+
+def get_services_v0_client(
+    request: Request,
+) -> ServicesV0Client:
 
     client = ServicesV0Client.instance(request.app)
     return client

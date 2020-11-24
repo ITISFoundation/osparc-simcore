@@ -65,7 +65,9 @@ class DirectorV0Settings(ApiServiceSettings):
         env_prefix = "DIRECTOR_"
 
 
-class DynamicServicesV0Settings(ApiServiceSettings):
+class DynamicServicesV0Settings(BaseSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
     class Config(CommonConfig):
         env_prefix = ""
 

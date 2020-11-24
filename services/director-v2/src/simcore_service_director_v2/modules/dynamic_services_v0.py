@@ -25,13 +25,13 @@ def setup(app: FastAPI, settings: DynamicServicesV0Settings):
     def on_startup() -> None:
         ServicesV0Client.create(
             app,
-            client=httpx.AsyncClient(base_url=settings.base_url(include_tag=True)),
+            client=httpx.AsyncClient(),
         )
 
     async def on_shutdown() -> None:
         client = ServicesV0Client.instance(app).client
         await client.aclose()
-        del app.state.dynamic_services_v0_client
+        del app.state.dynamic_services_client
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -43,12 +43,12 @@ class ServicesV0Client:
 
     @classmethod
     def create(cls, app: FastAPI, **kwargs):
-        app.state.dynamic_services_v0_client = cls(**kwargs)
+        app.state.dynamic_services_client = cls(**kwargs)
         return cls.instance(app)
 
     @classmethod
     def instance(cls, app: FastAPI):
-        return app.state.dynamic_services_v0_client
+        return app.state.dynamic_services_client
 
     @handle_errors("DynamicService", logger)
     @handle_retry(logger)
