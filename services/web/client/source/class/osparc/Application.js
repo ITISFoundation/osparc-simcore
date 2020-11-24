@@ -238,34 +238,28 @@ qx.Class.define("osparc.Application", {
         this.__restart();
       }, this);
       this.__loadView(view, {
-        top: "10%",
-        bottom: 0,
-        left: 0,
-        right: 0
+        top: "10%"
       });
     },
 
     __loadMainPage: function() {
       this.__connectWebSocket();
-      this.__loadView(new osparc.desktop.MainPage(), {
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0
-      });
+      this.__loadView(new osparc.desktop.MainPage());
     },
 
     __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
-      this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId), {
+      this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
+    },
+
+    __loadView: function(view, opts) {
+      const options = {
         top: 0,
         bottom: 0,
         left: 0,
-        right: 0
-      });
-    },
-
-    __loadView: function(view, options) {
+        right: 0,
+        ...opts
+      };
       this.assert(view!==null);
       // Update root document and currentness
       let doc = this.getRoot();
