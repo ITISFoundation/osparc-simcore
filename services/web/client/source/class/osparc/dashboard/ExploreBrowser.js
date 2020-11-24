@@ -450,8 +450,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(studyServicesButton);
       }
 
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
-      if (isCurrentUserOwner) {
+      if (this.self().isTemplate(studyData) && osparc.data.model.Study.isOwner(studyData)) {
         const publishOnPortalButton = this.__getPublishOnPortalMenuButton(studyData);
         menu.add(publishOnPortalButton);
       }
