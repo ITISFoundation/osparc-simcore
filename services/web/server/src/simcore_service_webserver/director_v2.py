@@ -1,6 +1,6 @@
 import logging
 from asyncio import CancelledError
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from uuid import UUID
 
 from aiohttp import web
@@ -61,7 +61,7 @@ async def _request_director_v2(
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> Dict:
+) -> Optional[Dict[str, Any]]:
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")

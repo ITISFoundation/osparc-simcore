@@ -39,6 +39,9 @@ class ViewerInfo:
 #
 # TODO: For the moment, viewers-filetype association is hard-coded
 # TODO: The environs are tmp to give more flexibility with updates
+# TODO: These services MUST be shared with EVERYBODY! Setup check on startup and fill
+#       with !?
+#
 #
 _SIM4LIFE_VIEWER = ViewerInfo(
     key="simcore/services/dynamic/sim4life",
@@ -47,7 +50,7 @@ _SIM4LIFE_VIEWER = ViewerInfo(
 )
 _RAWGRAPHS_VIEWER = ViewerInfo(
     key="simcore/services/dynamic/raw-graphs",
-    version=os.environ.get("WEBSERVER_VIEWER_RAWGRAPH_VERSION", "2.10.6"),
+    version=os.environ.get("WEBSERVER_VIEWER_RAWGRAPH_VERSION", "2.11.1"),
     label="2D plot - RAWGraphs",
 )
 
@@ -63,11 +66,11 @@ def find_compatible_viewer(
     file_type: str, file_size: Optional[int] = None
 ) -> ViewerInfo:
     try:
-        viewer = _FILETYPE_TO_VIEWER[file_type]
-    except KeyError:
-        raise MatchNotFoundError(f"No viewer available for file type '{file_type}''")
+        viewer = _FILETYPE_TO_VIEWER[file_type.upper()]
+    except KeyError as err:
+        raise MatchNotFoundError(f"No viewer available for file type '{file_type}''") from err
 
-    # Assumes size of the file in bytes TODO: configurable?
+    # TODO: This is a temporary limitation just for demo purposes.
     if file_size is not None and file_size > 50 * MEGABYTES:
         raise MatchNotFoundError(f"File size {file_size*1E-6} MB is over allowed limit")
 
