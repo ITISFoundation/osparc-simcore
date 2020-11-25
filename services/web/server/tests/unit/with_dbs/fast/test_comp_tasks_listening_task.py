@@ -60,18 +60,34 @@ async def test_listen_query(client):
         # the queue should still be empty because we only check on update
         assert notifications_queue.empty()
         # let's update that thing now
+        updated_output = {"some new stuff": "it is new"}
         await conn.execute(
             comp_tasks.update()
-            .values(outputs={"some new stuff": "it is new"})
+            .values(outputs=updated_output)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
-        await asyncio.sleep(5)
-        # await conn.execute(listen_query)
-        # notifications_queue: asyncio.Queue = conn.connection.notifies
         assert not notifications_queue.empty()
         msg = await notifications_queue.get()
         assert notifications_queue.empty()
         assert msg, "notification msg from postgres is empty!"
 
         task_data = json.loads(msg.payload)
-        assert task_data["data"]["outputs"] == {"some new stuff": "it is new"}
+        assert (
+            task_data["data"]["outputs"] == updated_output
+        ), f"the data received from the database is {task_data}, expected new output is {updated_output}"
+        # FIXME: so currently setting the exact same data again does not trigger again
+        updated_output = {"some new stuff": "it is newer"}
+        await conn.execute(
+            comp_tasks.update()
+            .values(outputs=updated_output)
+            .where(comp_tasks.c.task_id == task["task_id"])
+        )
+        assert not notifications_queue.empty()
+        msg = await notifications_queue.get()
+        assert notifications_queue.empty()
+        assert msg, "notification msg from postgres is empty!"
+
+        task_data = json.loads(msg.payload)
+        assert (
+            task_data["data"]["outputs"] == updated_output
+        ), f"the data received from the database is {task_data}, expected new output is {updated_output}"
