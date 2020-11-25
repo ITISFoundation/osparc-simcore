@@ -82,6 +82,7 @@ async def listen(app: web.Application):
         await conn.execute(listen_query)
 
         while True:
+            # this is a blocking call
             msg = await conn.connection.notifies.get()
 
             # Changes on comp_tasks.outputs of non-frontend task
