@@ -81,9 +81,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const inputs = this.__buildSideView(true);
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const toolbar = this.__buildToolbar();
+      const header = this.__buildHeader();
       const mainView = this.__buildMainView();
-      vBox.add(toolbar);
+      vBox.add(header);
       vBox.add(mainView, {
         flex: 1
       });
@@ -110,20 +110,20 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         collapsedWidth: collapsedWidth
       });
 
-      const titleBar = new qx.ui.toolbar.ToolBar();
+      const sideHeader = new qx.ui.toolbar.ToolBar();
       const titlePart = new qx.ui.toolbar.Part();
       const buttonPart = new qx.ui.toolbar.Part();
-      titleBar.add(titlePart);
-      titleBar.addSpacer();
-      titleBar.add(buttonPart);
-      this.add(titleBar, 0);
+      sideHeader.add(titlePart);
+      sideHeader.addSpacer();
+      sideHeader.add(buttonPart);
+      this.add(sideHeader, 0);
       titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
         alignY: "middle",
         font: "title-18"
       }));
       const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
       buttonPart.add(collapseBtn);
-      sidePanel.add(titleBar);
+      sidePanel.add(sideHeader);
 
       const scroll = new qx.ui.container.Scroll();
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -202,7 +202,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return mainView;
     },
 
-    __buildToolbar: function() {
+    __buildHeader: function() {
       const study = osparc.store.Store.getInstance().getCurrentStudy();
 
       const toolbar = this.__toolbar = new qx.ui.toolbar.ToolBar();
@@ -234,12 +234,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       infoPart.add(infoBtn);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update") && osparc.data.model.Study.isOwner(study)) {
-        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"), "@FontAwesome5Solid/edit/14");
+        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
         infoPart.add(editAccessLevel);
       }
 
-      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
+      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsPart.add(filesBtn);
