@@ -45,7 +45,7 @@ class ViewerInfo:
 #
 _SIM4LIFE_VIEWER = ViewerInfo(
     key="simcore/services/dynamic/sim4life",
-    version=os.environ.get("WEBSERVER_VIEWER_SIM4LIFE_VERSION", "1.0.16"),
+    version=os.environ.get("WEBSERVER_VIEWER_SIM4LIFE_VERSION", "1.0.29"),
     label="Sim4Life",
 )
 _RAWGRAPHS_VIEWER = ViewerInfo(
