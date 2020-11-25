@@ -50,6 +50,7 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
       if (!node.isFilePicker()) {
         console.error("Only file picker nodes are supported");
       }
+      this.base(arguments, node);
     },
 
     __buildMyLayout: function() {

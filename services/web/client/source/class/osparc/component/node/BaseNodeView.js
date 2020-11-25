@@ -55,6 +55,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   members: {
     __pane2: null,
     __title: null,
+    __serviceInfoLayout: null,
     __toolbar: null,
     _mainView: null,
     __inputsView: null,
@@ -235,7 +236,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         infoPart.add(editAccessLevel);
       }
 
-      const nameVersion = this.__getServiceInfo();
+      const nameVersion = this.__serviceInfoLayout = new qx.ui.toolbar.ToolBar();
       infoPart.add(nameVersion);
 
       const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
@@ -246,18 +247,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return toolbar;
     },
 
-    __getServiceInfo: function() {
-      const serviceInfo = new qx.ui.toolbar.ToolBar();
-
-
-      const servNameVersionLayout = this._servNameVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      serviceInfo.add(servNameVersionLayout);
-
-      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
+    __getInfoButton: function() {
+      const infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/14");
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
-      serviceInfo.add(infoBtn);
-
-      return serviceInfo;
+      return infoBtn;
     },
 
     _addToMainView: function(view, options = {}) {
@@ -437,11 +430,21 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     /**
-      * @abstract
       * @param node {osparc.data.model.Node} node
       */
     _applyNode: function(node) {
-      throw new Error("Abstract method called!");
+      this.__serviceInfoLayout.removeAll();
+      if (node && node.getMetaData()) {
+        const metadata = node.getMetaData();
+        const label = new qx.ui.basic.Label(metadata.name + " : " + metadata.version).set({
+          enabled: false,
+          alignY: "middle"
+        });
+        this.__serviceInfoLayout.add(label);
+
+        const infoButton = this.__getInfoButton();
+        this.__serviceInfoLayout.add(infoButton);
+      }
     }
   }
 });
