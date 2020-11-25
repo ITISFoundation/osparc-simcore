@@ -22,28 +22,12 @@ log = logging.getLogger(__name__)
 OUTPUT_KEYS_TO_COMPARE = ["path", "store"]
 
 
-def _is_output_changed(current_outputs: Dict, new_outputs: Dict) -> List[str]:
-    changed_keys = []
-    if new_outputs == current_outputs:
-        return changed_keys
-    if not current_outputs:
-        # return all the keys
-        return list(new_outputs.keys())
-    # check what changed
-    for port_key in new_outputs:
-        if port_key not in current_outputs:
-            changed_keys.append(port_key)
-        elif isinstance(new_outputs[port_key], dict):
-            # file type output
-            if any(
-                current_outputs[port_key][x] != new_outputs[port_key][x]
-                for x in OUTPUT_KEYS_TO_COMPARE
-                if x in new_outputs[port_key]
-            ):
-                changed_keys.append(port_key)
-        elif new_outputs[port_key] != current_outputs[port_key]:
-            # value output
-            changed_keys.append(port_key)
+def _get_changed_keys(current_outputs: Dict, new_outputs: Dict) -> List[str]:
+    """The postgres notifies on any change in the comp_tasks output part.
+    In particular if a file is replaced by a file with the same name there
+    is now way currently to find out whether the file changed or not."""
+    # default to all keys in the new outputs
+    changed_keys = list(new_outputs.keys())
     return changed_keys
 
 
@@ -64,7 +48,7 @@ async def _update_project_node_and_notify_if_needed(
         raise projects_exceptions.NodeNotFoundError(project_uuid, node_uuid)
 
     current_outputs = project["workbench"][node_uuid].get("outputs")
-    changed_keys: List[str] = _is_output_changed(
+    changed_keys: List[str] = _get_changed_keys(
         current_outputs, new_node_data["outputs"]
     )
     if changed_keys:
