@@ -22,15 +22,6 @@ log = logging.getLogger(__name__)
 OUTPUT_KEYS_TO_COMPARE = ["path", "store"]
 
 
-def _get_changed_keys(current_outputs: Dict, new_outputs: Dict) -> List[str]:
-    """The postgres notifies on any change in the comp_tasks output part.
-    In particular if a file is replaced by a file with the same name there
-    is now way currently to find out whether the file changed or not."""
-    # default to all keys in the new outputs
-    changed_keys = list(new_outputs.keys())
-    return changed_keys
-
-
 def _is_state_changed(current_state: str, new_state: str) -> bool:
     return current_state != new_state
 
@@ -48,9 +39,8 @@ async def _update_project_node_and_notify_if_needed(
         raise projects_exceptions.NodeNotFoundError(project_uuid, node_uuid)
 
     current_outputs = project["workbench"][node_uuid].get("outputs")
-    changed_keys: List[str] = _get_changed_keys(
-        current_outputs, new_node_data["outputs"]
-    )
+    new_outputs = new_node_data["outputs"]
+    changed_keys: List[str] = list(new_outputs.keys())
     if changed_keys:
         project = await projects_api.update_project_node_outputs(
             app,
