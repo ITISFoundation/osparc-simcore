@@ -28,10 +28,14 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.__iFrameChanged();
 
-    this.__openStudy(studyId)
+    this.set({
+      studyId,
+      nodeId
+    });
+
+    this.self().openStudy(studyId)
       .then(() => {
-        const srcUrl = window.location.href + "x/" + nodeId;
-        this.__waitForServiceReady(srcUrl);
+        this.__nodeState();
       })
       .catch(err => {
         console.error(err);
@@ -51,11 +55,26 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       nullable: true
     },
 
-    node: {
-      check: "Object",
-      apply: "__applyNode",
-      init: null,
-      nullable: true
+    studyId: {
+      check: "String",
+      nullable: false
+    },
+
+    nodeId: {
+      check: "String",
+      nullable: false
+    }
+  },
+
+  statics: {
+    openStudy: function(studyId) {
+      const params = {
+        url: {
+          projectId: studyId
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "open", params);
     }
   },
 
@@ -73,14 +92,65 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       this.setIFrame(iframe);
     },
 
-    __openStudy: function(studyId) {
+    __nodeState: function() {
       const params = {
         url: {
-          projectId: studyId
-        },
-        data: osparc.utils.Utils.getClientSessionID()
+          projectId: this.getStudyId(),
+          nodeId: this.getNodeId()
+        }
       };
-      return osparc.data.Resources.fetch("studies", "open", params);
+      osparc.data.Resources.fetch("studies", "getNode", params)
+        .then(data => this.__onNodeState(data))
+        .catch(() => osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error starting the viewer."), "ERROR"));
+    },
+
+    __onNodeState: function(data) {
+      const serviceState = data["service_state"];
+      if (serviceState) {
+        this.getLoadingPage().setHeader(serviceState + " viewer");
+      }
+      switch (serviceState) {
+        case "idle": {
+          const interval = 1000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "starting":
+        case "pulling": {
+          const interval = 5000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "pending": {
+          const interval = 10000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "running": {
+          const servicePath = data["service_basepath"];
+          const entryPointD = data["entry_point"];
+          const serviceUuid = data["service_uuid"];
+          if (serviceUuid !== this.getNodeId()) {
+            return;
+          }
+          if (servicePath) {
+            const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+            const srvUrl = servicePath + entryPoint;
+            this.__waitForServiceReady(srvUrl);
+          }
+          break;
+        }
+        case "complete":
+          break;
+        case "failed": {
+          const msg = this.tr("Service failed: ") + data["service_message"];
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          return;
+        }
+        default:
+          console.error(serviceState, "service state not supported");
+          break;
+      }
     },
 
     __waitForServiceReady: function(srvUrl) {
@@ -130,10 +200,6 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       this._add(widget, {
         flex: 1
       });
-    },
-
-    __applyNode: function(viewer) {
-      console.log(viewer);
     }
   }
 });
