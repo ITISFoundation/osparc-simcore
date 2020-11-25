@@ -142,7 +142,7 @@ async def test_api_list_supported_filetypes(client):
         "data": [
             {
                 "file_type": "DICOM",
-                "viewer_title": "Sim4life v1.0.16",
+                "viewer_title": "Sim4life v1.0.29",
                 "redirection_url": f"{base_url}/view?file_type=DICOM",
             },
             {
