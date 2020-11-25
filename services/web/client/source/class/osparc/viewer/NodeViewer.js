@@ -30,8 +30,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.__openStudy(studyId)
       .then(() => {
-        const srcUrl = window.location.href + "x/" + nodeId;
-        this.__waitForServiceReady(srcUrl);
+        this.__nodeState(studyId, nodeId);
       })
       .catch(err => {
         console.error(err);
@@ -81,6 +80,67 @@ qx.Class.define("osparc.viewer.NodeViewer", {
         data: osparc.utils.Utils.getClientSessionID()
       };
       return osparc.data.Resources.fetch("studies", "open", params);
+    },
+
+    __nodeState: function(studyId, nodeId) {
+      const params = {
+        url: {
+          projectId: studyId,
+          nodeId: nodeId
+        }
+      };
+      osparc.data.Resources.fetch("studies", "getNode", params)
+        .then(data => this.__onNodeState(data, nodeId))
+        .catch(() => osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error starting the viewer."), "ERROR"));
+    },
+
+    __onNodeState: function(data, nodeId) {
+      const serviceState = data["service_state"];
+      if (serviceState) {
+        this.getLoadingPage().setHeader(serviceState + " viewer");
+      }
+      switch (serviceState) {
+        case "idle": {
+          const interval = 1000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "starting":
+        case "pulling": {
+          const interval = 5000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "pending": {
+          const interval = 10000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
+        case "running": {
+          const servicePath = data["service_basepath"];
+          const entryPointD = data["entry_point"];
+          const serviceUuid = data["service_uuid"];
+          if (serviceUuid !== nodeId) {
+            return;
+          }
+          if (servicePath) {
+            const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+            const srvUrl = servicePath + entryPoint;
+            this.__waitForServiceReady(srvUrl);
+          }
+          break;
+        }
+        case "complete":
+          break;
+        case "failed": {
+          const msg = this.tr("Service failed: ") + data["service_message"];
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+          return;
+        }
+        default:
+          console.error(serviceState, "service state not supported");
+          break;
+      }
     },
 
     __waitForServiceReady: function(srvUrl) {
