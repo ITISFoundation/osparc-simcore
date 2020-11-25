@@ -4,10 +4,13 @@
 # pylint:disable=protected-access
 
 import json
+import re
 import urllib.parse
 from collections import namedtuple
 from pathlib import Path
+from random import randint
 from typing import Callable, List
+from uuid import uuid4
 
 import pytest
 import respx
@@ -130,9 +133,6 @@ def fake_service_extras(random_json_from_schema: Callable) -> ServiceExtras:
     return random_extras
 
 
-from random import randint
-
-
 @pytest.fixture
 def fake_running_service_details(
     random_json_from_schema: Callable,
@@ -146,10 +146,6 @@ def fake_running_service_details(
     random_details = RunningServiceDetails(**random_data)
 
     return random_details
-
-
-import re
-from models_library.projects_nodes_io import UUID_REGEX
 
 
 @pytest.fixture
@@ -215,9 +211,6 @@ async def test_get_service_extras(
     service_extras: ServiceExtras = await director_client.get_service_extras(service)
     assert mocked_director_service_fcts["get_service_extras"].called
     assert fake_service_extras == service_extras
-
-
-from uuid import uuid4
 
 
 async def test_get_running_service_details(
