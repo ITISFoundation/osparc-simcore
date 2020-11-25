@@ -56,7 +56,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __pane2: null,
     __title: null,
     __serviceInfoLayout: null,
-    __toolbar: null,
+    __header: null,
     _mainView: null,
     __inputsView: null,
     __outputsView: null,
@@ -204,15 +204,11 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildHeader: function() {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      const header = this.__header = new qx.ui.toolbar.ToolBar().set({
+        spacing: 20
+      });
 
-      const toolbar = this.__toolbar = new qx.ui.toolbar.ToolBar();
-      const titlePart = new qx.ui.toolbar.Part();
-      const infoPart = new qx.ui.toolbar.Part();
-      const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
-      toolbar.add(titlePart);
-      toolbar.add(infoPart);
-      toolbar.addSpacer();
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
 
       const title = this.__title = new osparc.ui.form.EditLabel().set({
         labelFont: "title-18",
@@ -228,23 +224,30 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serialize());
         }
       }, this);
-      titlePart.add(title);
+      header.add(title);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update") && osparc.data.model.Study.isOwner(study)) {
         const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
-        infoPart.add(editAccessLevel);
+        header.add(editAccessLevel);
       }
 
-      const nameVersion = this.__serviceInfoLayout = new qx.ui.toolbar.ToolBar();
-      infoPart.add(nameVersion);
+      header.addSpacer();
 
+      const nameVersion = this.__serviceInfoLayout = new qx.ui.toolbar.ToolBar().set({
+        spacing: 5
+      });
+      header.add(nameVersion);
+
+      header.addSpacer();
+
+      const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
       const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsPart.add(filesBtn);
 
-      return toolbar;
+      return header;
     },
 
     __getInfoButton: function() {
@@ -328,7 +331,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__buttonContainer.add(retrieveIFrameButton);
       }
       this.__buttonContainer.add(this.__filesButton);
-      this.__toolbar.add(this.__buttonContainer);
+      this.__header.add(this.__buttonContainer);
     },
 
     _maximizeIFrame: function(maximize) {
@@ -339,7 +342,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
       this._mapperLayout.setVisibility(othersStatus);
-      this.__toolbar.setVisibility(othersStatus);
+      this.__header.setVisibility(othersStatus);
     },
 
     __hasIFrame: function() {
