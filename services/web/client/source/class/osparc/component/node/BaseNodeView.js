@@ -120,7 +120,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.add(sideHeader, 0);
       titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
         alignY: "middle",
-        font: "title-18"
+        font: "text-16"
       }));
       const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
       buttonPart.add(collapseBtn);
@@ -213,8 +213,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const title = this.__title = new osparc.ui.form.EditLabel().set({
-        labelFont: "title-18",
-        inputFont: "text-18",
+        maxWidth: 180,
+        labelFont: "text-16",
+        inputFont: "text-16",
         editable: osparc.data.Permissions.getInstance().canDo("study.node.rename")
       });
       title.addListener("editValue", evt => {
