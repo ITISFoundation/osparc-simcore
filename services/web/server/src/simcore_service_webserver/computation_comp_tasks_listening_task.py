@@ -10,9 +10,13 @@ from typing import Dict, List
 
 from aiohttp import web
 from aiopg.sa import Engine
+from aiopg.sa.connection import SAConnection
+from pydantic.types import PositiveInt
+from sqlalchemy.sql import select
+
+from models_library.projects import ProjectID
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
-from sqlalchemy.sql import select
 
 from .computation_api import convert_state_from_db
 from .projects import projects_api, projects_exceptions
@@ -75,6 +79,17 @@ async def _update_project_node_and_notify_if_needed(
         await projects_api.notify_project_state_update(app, project)
 
 
+async def _get_project_owner(
+    conn: SAConnection, project_uuid: ProjectID
+) -> PositiveInt:
+    the_project_owner = await conn.scalar(
+        select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
+    )
+    if not the_project_owner:
+        raise projects_exceptions.ProjectOwnerNotFoundError(project_uuid)
+    return the_project_owner
+
+
 async def listen(app: web.Application):
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     db_engine: Engine = app[APP_DB_ENGINE_KEY]
@@ -103,30 +118,27 @@ async def listen(app: web.Application):
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
             # and comp_tasks/comp_pipeline get deprecated.
-
-            # find the user(s) linked to that project
-            the_project_owner = await conn.scalar(
-                select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
-            )
-            if not the_project_owner:
-                log.warning(
-                    "Project %s was not found and cannot be updated", project_uuid
-                )
-                continue
-
-            # update the project if necessary
-            project = await projects_api.get_project_for_user(
-                app, project_uuid, the_project_owner, include_state=True
-            )
-            # Update the project outputs
             try:
+                # find the user(s) linked to that project
+                the_project_owner = _get_project_owner(conn, project_uuid)
+
+                # update the project if necessary
+                project = await projects_api.get_project_for_user(
+                    app, project_uuid, the_project_owner, include_state=True
+                )
+                # Update the project outputs
                 await _update_project_node_and_notify_if_needed(
                     app, project, task_data, the_project_owner
                 )
-
             except projects_exceptions.ProjectNotFoundError as exc:
                 log.warning(
                     "Project %s was not found and cannot be updated", exc.project_uuid
+                )
+                continue
+            except projects_exceptions.ProjectOwnerNotFoundError as exc:
+                log.warning(
+                    "Project %s user owner was not found and cannot be updated",
+                    exc.project_uuid,
                 )
                 continue
             except projects_exceptions.NodeNotFoundError as exc:

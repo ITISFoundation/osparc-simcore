@@ -43,6 +43,7 @@ async def test_mock_project_api(mock_project_subsystem):
 
 
 async def test_listen_query(client):
+    """this tests how the postgres LISTEN query and in particular the aiopg implementation of it works"""
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
     async with db_engine.acquire() as conn:
@@ -128,3 +129,42 @@ async def test_listen_query(client):
         assert (
             task_data2["data"]["outputs"] == updated_output2
         ), f"the data received from the database is {task_data}, expected new output is {updated_output1}"
+
+
+from simcore_service_webserver.computation_comp_tasks_listening_task import (
+    comp_tasks_listening_task,
+)
+
+
+@pytest.fixture
+async def comp_task_listening_task(
+    loop, mock_project_subsystem, client
+) -> asyncio.Task:
+    listening_task = loop.create_task(comp_tasks_listening_task(client.app))
+    yield listening_task
+
+    listening_task.cancel()
+    await listening_task
+
+
+async def test_listen_comp_tasks_task(
+    mock_project_subsystem, comp_task_listening_task, client
+):
+    db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
+    async with db_engine.acquire() as conn:
+        # let's put some stuff in there now
+        result = await conn.execute(
+            comp_tasks.insert()
+            .values(outputs=json.dumps({}), node_class=NodeClass.COMPUTATIONAL)
+            .returning(literal_column("*"))
+        )
+        row: RowProxy = await result.fetchone()
+        task = dict(row)
+
+        # let's update that thing now
+        updated_output = {"some new stuff": "it is new"}
+        await conn.execute(
+            comp_tasks.update()
+            .values(outputs=updated_output)
+            .where(comp_tasks.c.task_id == task["task_id"])
+        )
