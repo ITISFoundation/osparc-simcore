@@ -208,8 +208,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         spacing: 20
       });
 
+      const nodeEditPart = new qx.ui.toolbar.Part().set({
+        spacing: 10
+      });
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-
       const title = this.__title = new osparc.ui.form.EditLabel().set({
         labelFont: "title-18",
         inputFont: "text-18",
@@ -224,20 +226,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serialize());
         }
       }, this);
-      header.add(title);
+      nodeEditPart.add(title);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update") && osparc.data.model.Study.isOwner(study)) {
         const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
-        header.add(editAccessLevel);
+        nodeEditPart.add(editAccessLevel);
       }
+      header.add(nodeEditPart);
 
       header.addSpacer();
 
-      const nameVersion = this.__serviceInfoLayout = new qx.ui.toolbar.ToolBar().set({
-        spacing: 5
-      });
-      header.add(nameVersion);
+      const nameVersionPart = this.__serviceInfoLayout = new qx.ui.toolbar.Part();
+      header.add(nameVersionPart);
 
       header.addSpacer();
 
