@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Optional
+from uuid import UUID
 
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, constr
@@ -37,14 +38,15 @@ class ServiceState(str, Enum):
 
 
 class RunningServiceType(BaseModel):
-    published_port: PositiveInt = Field(
-        ..., description="The ports where the service provides its interface"
+    published_port: Optional[PositiveInt] = Field(
+        ...,
+        description="The ports where the service provides its interface on the docker swarm",
     )
-    entry_point: Optional[str] = Field(
-        None,
-        description="The entry point where the service provides its interface if specified",
+    entry_point: str = Field(
+        ...,
+        description="The entry point where the service provides its interface",
     )
-    service_uuid: UUID4 = Field(..., description="The UUID attached to this service")
+    service_uuid: UUID = Field(..., description="The node UUID attached to the service")
     service_key: constr(regex=KEY_RE) = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
@@ -62,15 +64,15 @@ class RunningServiceType(BaseModel):
     service_port: PositiveInt = Field(
         80, description="port to access the service within the network"
     )
-    service_basepath: Optional[str] = Field(
-        "",
-        description="different base path where current service is mounted otherwise defaults to root",
+    service_basepath: str = Field(
+        ...,
+        description="the service base entrypoint where the service serves its contents",
     )
     service_state: ServiceState = Field(
         ...,
         description="the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start\n",
     )
-    service_message: Optional[str] = Field(None, description="the service message")
+    service_message: str = Field(..., description="the service message")
 
 
 class RunningServicesArray(BaseModel):
