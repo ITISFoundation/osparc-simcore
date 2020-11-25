@@ -28,8 +28,10 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this.__iFrameChanged();
 
-    this.__studyId = studyId;
-    this.__nodeId = nodeId;
+    this.set({
+      studyId,
+      nodeId
+    });
 
     this.self().openStudy(studyId)
       .then(() => {
@@ -51,6 +53,16 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       check: "osparc.component.widget.PersistentIframe",
       init: null,
       nullable: true
+    },
+
+    studyId: {
+      check: "String",
+      nullable: false
+    },
+
+    nodeId: {
+      check: "String",
+      nullable: false
     }
   },
 
@@ -83,8 +95,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     __nodeState: function() {
       const params = {
         url: {
-          projectId: this.__studyId,
-          nodeId: this.__nodeId
+          projectId: this.getStudyId(),
+          nodeId: this.getNodeId()
         }
       };
       osparc.data.Resources.fetch("studies", "getNode", params)
@@ -118,7 +130,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           const servicePath = data["service_basepath"];
           const entryPointD = data["entry_point"];
           const serviceUuid = data["service_uuid"];
-          if (serviceUuid !== this.__nodeId) {
+          if (serviceUuid !== this.getNodeId()) {
             return;
           }
           if (servicePath) {
