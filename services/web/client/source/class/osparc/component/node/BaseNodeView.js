@@ -229,9 +229,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }, this);
       titlePart.add(title);
 
-      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
-      infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
-      infoPart.add(infoBtn);
+      const nameVersion = this.__getServiceNameVersion();
+      infoPart.add(nameVersion);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update") && osparc.data.model.Study.isOwner(study)) {
         const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
@@ -245,6 +244,22 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       buttonsPart.add(filesBtn);
 
       return toolbar;
+    },
+
+    __getServiceNameVersion: function() {
+      const nameVersion = new qx.ui.toolbar.ToolBar();
+
+      const metadata = this.getNode().getMetaData();
+      const nameVersionLabel = new qx.ui.basic.Label(metadata.name + " : " + metadata.version).set({
+        enabled: false
+      });
+      nameVersion.add(nameVersionLabel);
+
+      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
+      infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
+      nameVersion.add(infoBtn);
+
+      return nameVersion;
     },
 
     _addToMainView: function(view, options = {}) {
