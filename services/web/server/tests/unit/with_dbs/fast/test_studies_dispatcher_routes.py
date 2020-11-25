@@ -99,7 +99,7 @@ async def test_api_get_viewer_for_file(client):
     assert await resp.json() == {
         "data": {
             "file_type": "DICOM",
-            "viewer_title": "Sim4life v1.0.16",
+            "viewer_title": "Sim4life v1.0.29",
             "redirection_url": f"{base_url}/view?file_type=DICOM&file_name=foo&file_size=10000",
         },
         "error": None,
