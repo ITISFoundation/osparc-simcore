@@ -4,7 +4,7 @@ from uuid import UUID
 
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, constr
-from pydantic.types import UUID4, PositiveInt
+from pydantic.types import PositiveInt
 
 
 class NodeRequirement(str, Enum):

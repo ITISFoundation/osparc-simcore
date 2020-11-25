@@ -1,9 +1,6 @@
 import logging
-from typing import List
 
-from fastapi import APIRouter, Depends, Response
-from models_library.services import PropertyName
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends
 from starlette import status
 from starlette.datastructures import URL
 

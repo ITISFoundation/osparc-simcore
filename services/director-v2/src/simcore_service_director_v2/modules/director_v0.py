@@ -5,7 +5,6 @@
 import logging
 import urllib
 from dataclasses import dataclass
-from typing import Dict
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
