@@ -6,8 +6,6 @@ from fastapi.exceptions import RequestValidationError
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from simcore_service_director_v2.modules import dynamic_services_v0
-
 from ..api.entrypoints import api_router
 from ..api.errors.http_error import (
     http_error_handler,
@@ -15,7 +13,14 @@ from ..api.errors.http_error import (
 )
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import api_version, api_vtag, project_name, summary
-from ..modules import celery, db, director_v0, docker_registry, remote_debug
+from ..modules import (
+    celery,
+    db,
+    director_v0,
+    docker_registry,
+    dynamic_services,
+    remote_debug,
+)
 from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
@@ -50,7 +55,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         director_v0.setup(app, settings.director_v0)
 
     if settings.dynamic_services.enabled:
-        dynamic_services_v0.setup(app, settings.dynamic_services)
+        dynamic_services.setup(app, settings.dynamic_services)
 
     if settings.postgres.enabled:
         db.setup(app, settings.postgres)

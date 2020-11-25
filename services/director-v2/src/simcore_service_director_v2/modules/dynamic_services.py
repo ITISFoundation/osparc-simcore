@@ -9,7 +9,7 @@ import httpx
 from fastapi import FastAPI, Response
 
 # Module's business logic ---------------------------------------------
-from ..core.settings import DynamicServicesV0Settings
+from ..core.settings import DynamicServicesSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
@@ -18,18 +18,18 @@ logger = logging.getLogger(__name__)
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: DynamicServicesV0Settings):
+def setup(app: FastAPI, settings: DynamicServicesSettings):
     if not settings:
-        settings = DynamicServicesV0Settings()
+        settings = DynamicServicesSettings()
 
     def on_startup() -> None:
-        ServicesV0Client.create(
+        ServicesClient.create(
             app,
             client=httpx.AsyncClient(),
         )
 
     async def on_shutdown() -> None:
-        client = ServicesV0Client.instance(app).client
+        client = ServicesClient.instance(app).client
         await client.aclose()
         del app.state.dynamic_services_client
 
@@ -38,7 +38,7 @@ def setup(app: FastAPI, settings: DynamicServicesV0Settings):
 
 
 @dataclass
-class ServicesV0Client:
+class ServicesClient:
     client: httpx.AsyncClient
 
     @classmethod

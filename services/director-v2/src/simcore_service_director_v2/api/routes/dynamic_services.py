@@ -1,47 +1,41 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends
-from models_library.projects_nodes import PROPERTY_KEY_RE
+from fastapi import APIRouter, Depends, Response
+from models_library.services import PropertyName
 from pydantic import BaseModel
 from starlette import status
 from starlette.datastructures import URL
 
-from ..dependencies.dynamic_services_v0 import (
-    ServicesV0Client,
+from ...models.domains.dynamic_services import RetrieveDataIn, RetrieveDataOutEnveloped
+from ...utils.logging_utils import log_decorator
+from ..dependencies.dynamic_services import (
+    ServicesClient,
     get_service_base_url,
-    get_services_v0_client,
+    get_services_client,
 )
 
 router = APIRouter()
-log = logging.getLogger(__file__)
-
-
-class RetrieveDataIn(BaseModel):
-    port_keys: List[str]
-
-
-class RetrieveDataOut(BaseModel):
-    size_bytes: int
-
-
-class RequestResponse(BaseModel):
-    data: RetrieveDataOut
+logger = logging.getLogger(__file__)
 
 
 @router.post(
     "/{node_uuid}:retrieve",
     summary="Calls the dynamic service's retrieve endpoint with optional port_keys",
-    response_model=RequestResponse,
+    response_model=RetrieveDataOutEnveloped,
     status_code=status.HTTP_200_OK,
 )
+@log_decorator(logger=logger)
 async def service_retrieve_data_on_ports(
     retrieve_settings: RetrieveDataIn,
     service_base_url: URL = Depends(get_service_base_url),
-    services_client: ServicesV0Client = Depends(get_services_v0_client),
+    services_client: ServicesClient = Depends(get_services_client),
 ):
-    return await services_client.request(
+    # the handling of client/server errors is already encapsulated in the call to request
+    resp = await services_client.request(
         "POST",
-        f"{service_base_url}/request",
+        f"{service_base_url}/retrieve",
         data=retrieve_settings.json(by_alias=True),
     )
+    # validate and return
+    return RetrieveDataOutEnveloped.parse_obj(resp.json())
