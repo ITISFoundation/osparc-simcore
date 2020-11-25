@@ -82,7 +82,15 @@ async def test_listen_query(client):
             .values(outputs=updated_output)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
+        await conn.execute(
+            comp_tasks.update()
+            .values(outputs=updated_output)
+            .where(comp_tasks.c.task_id == task["task_id"])
+        )
         assert not notifications_queue.empty()
+        assert (
+            notifications_queue.qsize() == 1
+        )  # the DB notifies only if the outputs are distinct!
         msg = await notifications_queue.get()
         assert notifications_queue.empty()
         assert msg, "notification msg from postgres is empty!"
@@ -91,3 +99,32 @@ async def test_listen_query(client):
         assert (
             task_data["data"]["outputs"] == updated_output
         ), f"the data received from the database is {task_data}, expected new output is {updated_output}"
+
+        # check if we update 2 times only the last time should come out
+        updated_output1 = {"some new stuff": "a first time"}
+        await conn.execute(
+            comp_tasks.update()
+            .values(outputs=updated_output1)
+            .where(comp_tasks.c.task_id == task["task_id"])
+        )
+        updated_output2 = {"some new stuff": "a second time"}
+        await conn.execute(
+            comp_tasks.update()
+            .values(outputs=updated_output2)
+            .where(comp_tasks.c.task_id == task["task_id"])
+        )
+        assert not notifications_queue.empty()
+        assert notifications_queue.qsize() == 2
+        msg1 = await notifications_queue.get()
+        assert not notifications_queue.empty()
+        msg2 = await notifications_queue.get()
+        assert notifications_queue.empty()
+
+        task_data1 = json.loads(msg1.payload)
+        assert (
+            task_data1["data"]["outputs"] == updated_output1
+        ), f"the data received from the database is {task_data}, expected new output is {updated_output1}"
+        task_data2 = json.loads(msg2.payload)
+        assert (
+            task_data2["data"]["outputs"] == updated_output2
+        ), f"the data received from the database is {task_data}, expected new output is {updated_output1}"
