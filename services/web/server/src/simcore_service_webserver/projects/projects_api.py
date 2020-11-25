@@ -9,6 +9,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
+from collections import defaultdict
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
@@ -424,33 +425,31 @@ async def notify_project_node_update(
         await post_group_messages(app, room, messages)
 
 
-from collections import defaultdict
-
-
 async def trigger_connected_service_retrieve(
-    app: web.Application, project: Dict, node_uuid: str, changed_keys: List[str]
+    app: web.Application, project: Dict, updated_node_uuid: str, changed_keys: List[str]
 ) -> None:
     workbench = project["workbench"]
     nodes_keys_to_update: Dict[str, List[str]] = defaultdict(list)
     # find the nodes that need to retrieve data
-    for node in workbench:
+    for node_uuid, node in workbench.items():
         # check this node is dynamic
         if not _is_node_dynamic(node["key"]):
             continue
 
+        # check whether this node has our updated node as linked inputs
         node_inputs = node.get("inputs", {})
-        for input_port in node_inputs:
-            # we look for node port links
-            if not isinstance(input_port, dict):
+        for port_key, port_value in node_inputs.items():
+            # we look for node port links, not values
+            if not isinstance(port_value, dict):
                 continue
 
-            input_node_uuid = input_port.get("nodeUuid")
-            if input_node_uuid != node_uuid:
+            input_node_uuid = port_value.get("nodeUuid")
+            if input_node_uuid != updated_node_uuid:
                 continue
             # so this node is linked to the updated one, now check if the port was changed?
-            linked_input_port = input_port.get("output")
+            linked_input_port = port_value.get("output")
             if linked_input_port in changed_keys:
-                nodes_keys_to_update[node].append(linked_input_port)
+                nodes_keys_to_update[node_uuid].append(port_key)
 
     # call /retrieve on the nodes
     update_tasks = [

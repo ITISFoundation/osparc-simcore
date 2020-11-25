@@ -181,7 +181,7 @@ async def request_retrieve_dyn_service(
 ) -> None:
     director2_settings: Directorv2Settings = get_settings(app)
     backend_url = URL(
-        f"{director2_settings.endpoint}/dynamic_services/{service_uuid}/:retrieve"
+        f"{director2_settings.endpoint}/dynamic_services/{service_uuid}:retrieve"
     )
     body = {"port_keys": port_keys}
 
