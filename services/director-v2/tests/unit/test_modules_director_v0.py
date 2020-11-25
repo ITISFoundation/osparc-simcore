@@ -13,7 +13,10 @@ import pytest
 import respx
 from fastapi import FastAPI, status
 from models_library.services import ServiceDockerData, ServiceKeyVersion
-from simcore_service_director_v2.models.schemas.services import ServiceExtras
+from simcore_service_director_v2.models.schemas.services import (
+    RunningServiceDetails,
+    ServiceExtras,
+)
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 
 
@@ -127,9 +130,34 @@ def fake_service_extras(random_json_from_schema: Callable) -> ServiceExtras:
     return random_extras
 
 
+from random import randint
+
+
+@pytest.fixture
+def fake_running_service_details(
+    random_json_from_schema: Callable,
+) -> RunningServiceDetails:
+    random_data = random_json_from_schema(RunningServiceDetails.schema_json(indent=2))
+    # fix port stuff, the randomiser does not understand positive ints
+    KEYS_TO_FIX = ["published_port", "service_port"]
+    for k in KEYS_TO_FIX:
+        if k in random_data:
+            random_data[k] = randint(1, 50000)
+    random_details = RunningServiceDetails(**random_data)
+
+    return random_details
+
+
+import re
+from models_library.projects_nodes_io import UUID_REGEX
+
+
 @pytest.fixture
 def mocked_director_service_fcts(
-    minimal_app: FastAPI, fake_service_details, fake_service_extras
+    minimal_app: FastAPI,
+    fake_service_details: ServiceDockerData,
+    fake_service_extras: ServiceExtras,
+    fake_running_service_details: RunningServiceDetails,
 ):
     with respx.mock(
         base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
@@ -146,6 +174,14 @@ def mocked_director_service_fcts(
             "/v0/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
             content={"data": fake_service_extras.dict(by_alias=True)},
             alias="get_service_extras",
+        )
+        pattern = re.compile(
+            r"v0/running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+        )
+        respx_mock.get(
+            pattern,
+            content={"data": fake_running_service_details.dict(by_alias=True)},
+            alias="get_running_service_details",
         )
 
         yield respx_mock
@@ -179,3 +215,21 @@ async def test_get_service_extras(
     service_extras: ServiceExtras = await director_client.get_service_extras(service)
     assert mocked_director_service_fcts["get_service_extras"].called
     assert fake_service_extras == service_extras
+
+
+from uuid import uuid4
+
+
+async def test_get_running_service_details(
+    minimal_app: FastAPI,
+    mocked_director_service_fcts,
+    fake_running_service_details: RunningServiceDetails,
+):
+
+    director_client: DirectorV0Client = minimal_app.state.director_v0_client
+
+    service_details: RunningServiceDetails = (
+        await director_client.get_running_service_details(str(uuid4()))
+    )
+    assert mocked_director_service_fcts["get_running_service_details"].called
+    assert fake_running_service_details == service_details

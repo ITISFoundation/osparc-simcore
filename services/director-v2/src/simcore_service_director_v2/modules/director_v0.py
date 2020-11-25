@@ -16,7 +16,7 @@ from starlette import status
 from starlette.datastructures import URL
 
 from ..core.settings import DirectorV0Settings
-from ..models.schemas.services import RunningServiceType, ServiceExtras
+from ..models.schemas.services import RunningServiceDetails, ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
 from ..utils.logging_utils import log_decorator
@@ -110,8 +110,8 @@ class DirectorV0Client:
     @log_decorator(logger=logger)
     async def get_running_service_details(
         self, service_uuid: NodeID
-    ) -> RunningServiceType:
+    ) -> RunningServiceDetails:
         resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
-            return RunningServiceType.parse_obj(unenvelope_or_raise_error(resp))
+            return RunningServiceDetails.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)

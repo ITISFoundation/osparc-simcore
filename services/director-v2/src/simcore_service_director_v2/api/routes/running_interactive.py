@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Query, Response, status
 from models_library.services import KEY_RE, VERSION_RE
 
-from ...models.schemas.services import RunningServicesEnveloped
+from ...models.schemas.services import RunningServicesDetailsArrayEnveloped
 from ..dependencies.director_v0 import forward_to_director_v0
 
 router = APIRouter()
@@ -20,7 +20,7 @@ ProjectIdQuery = Query(
 @router.get(
     "",
     description="Lists of running interactive services",
-    response_model=RunningServicesEnveloped,
+    response_model=RunningServicesDetailsArrayEnveloped,
 )
 async def list_running_interactive_services(
     user_id: str = UserIdQuery,

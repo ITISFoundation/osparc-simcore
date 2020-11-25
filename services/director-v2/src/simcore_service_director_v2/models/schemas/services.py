@@ -1,10 +1,10 @@
 from enum import Enum
 from typing import List, Optional
-from uuid import UUID
 
+from models_library.basic_types import PortInt
+from models_library.projects_nodes_io import UUID_REGEX
 from models_library.services import KEY_RE, VERSION_RE, ServiceDockerData
 from pydantic import BaseModel, Field, constr
-from pydantic.types import PositiveInt
 
 
 class NodeRequirement(str, Enum):
@@ -37,16 +37,19 @@ class ServiceState(str, Enum):
     FAILED = "failed"
 
 
-class RunningServiceType(BaseModel):
-    published_port: Optional[PositiveInt] = Field(
+class RunningServiceDetails(BaseModel):
+    published_port: Optional[PortInt] = Field(
         ...,
         description="The ports where the service provides its interface on the docker swarm",
+        deprecated=True,
     )
     entry_point: str = Field(
         ...,
         description="The entry point where the service provides its interface",
     )
-    service_uuid: UUID = Field(..., description="The node UUID attached to the service")
+    service_uuid: str = Field(
+        ..., regex=UUID_REGEX, description="The node UUID attached to the service"
+    )
     service_key: constr(regex=KEY_RE) = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
@@ -61,7 +64,7 @@ class RunningServiceType(BaseModel):
         example=["1.0.0", "0.0.1"],
     )
     service_host: str = Field(..., description="service host name within the network")
-    service_port: PositiveInt = Field(
+    service_port: PortInt = Field(
         80, description="port to access the service within the network"
     )
     service_basepath: str = Field(
@@ -75,16 +78,16 @@ class RunningServiceType(BaseModel):
     service_message: str = Field(..., description="the service message")
 
 
-class RunningServicesArray(BaseModel):
-    __root__: List[RunningServiceType]
+class RunningServicesDetailsArray(BaseModel):
+    __root__: List[RunningServiceDetails]
 
 
-class RunningServicesEnveloped(BaseModel):
-    data: RunningServicesArray
+class RunningServicesDetailsArrayEnveloped(BaseModel):
+    data: RunningServicesDetailsArray
 
 
-class RunningServiceEnveloped(BaseModel):
-    data: RunningServiceType
+class RunningServiceDetailsEnveloped(BaseModel):
+    data: RunningServiceDetails
 
 
 class ServicesArrayEnveloped(BaseModel):
