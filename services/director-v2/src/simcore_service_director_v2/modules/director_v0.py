@@ -9,7 +9,6 @@ from typing import Dict
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, Response
-from httpx import codes
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceDockerData, ServiceKeyVersion
 
@@ -20,6 +19,8 @@ from starlette.datastructures import URL
 from ..core.settings import DirectorV0Settings
 from ..models.schemas.services import RunningServiceType, ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
+from ..utils.clients import unenvelope_or_raise_error
+from ..utils.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -43,34 +44,6 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
-
-
-def _unenvelope_or_raise_error(resp: httpx.Response) -> Dict:
-    """
-    Director responses are enveloped
-    If successful response, we un-envelop it and return data as a dict
-    If error, it raise an HTTPException
-    """
-    body = resp.json()
-
-    assert "data" in body or "error" in body  # nosec
-    data = body.get("data")
-    error = body.get("error")
-
-    if codes.is_server_error(resp.status_code):
-        logger.error(
-            "director error %d [%s]: %s",
-            resp.status_code,
-            resp.reason_phrase,
-            error,
-        )
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
-
-    if codes.is_client_error(resp.status_code):
-        msg = error or resp.reason_phrase
-        raise HTTPException(resp.status_code, detail=msg)
-
-    return data or {}
 
 
 @dataclass
@@ -114,6 +87,7 @@ class DirectorV0Client:
         # NOTE: the response is NOT validated!
         return response
 
+    @log_decorator(logger=logger)
     async def get_service_details(
         self, service: ServiceKeyVersion
     ) -> ServiceDockerData:
@@ -121,22 +95,24 @@ class DirectorV0Client:
             "GET", f"services/{urllib.parse.quote_plus(service.key)}/{service.version}"
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceDockerData.parse_obj(_unenvelope_or_raise_error(resp)[0])
+            return ServiceDockerData.parse_obj(unenvelope_or_raise_error(resp)[0])
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
+    @log_decorator(logger=logger)
     async def get_service_extras(self, service: ServiceKeyVersion) -> ServiceExtras:
         resp = await self.request(
             "GET",
             f"service_extras/{urllib.parse.quote_plus(service.key)}/{service.version}",
         )
         if resp.status_code == status.HTTP_200_OK:
-            return ServiceExtras.parse_obj(_unenvelope_or_raise_error(resp))
+            return ServiceExtras.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
+    @log_decorator(logger=logger)
     async def get_running_service_details(
         self, service_uuid: NodeID
     ) -> RunningServiceType:
         resp = await self.request("GET", f"running_interactive_services/{service_uuid}")
         if resp.status_code == status.HTTP_200_OK:
-            return RunningServiceType.parse_obj(_unenvelope_or_raise_error(resp)[0])
+            return RunningServiceType.parse_obj(unenvelope_or_raise_error(resp))
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
