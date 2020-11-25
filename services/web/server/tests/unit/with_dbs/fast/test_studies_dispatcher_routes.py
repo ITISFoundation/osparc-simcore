@@ -7,7 +7,7 @@ import re
 import urllib.parse
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict, Tuple
+from typing import Tuple
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
