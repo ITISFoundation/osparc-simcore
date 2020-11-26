@@ -202,7 +202,7 @@ async function isStudyUnlocked(page, studyId) {
   console.log("-- Is study closed", endPoint);
   const resp = await makeRequest(page, endPoint);
 
-  const studyLocked = resp["state"]["locked"];
+  const studyLocked = resp["locked"]["value"];
   console.log("Study Lock Status:", studyId, studyLocked);
   return !studyLocked;
 }
