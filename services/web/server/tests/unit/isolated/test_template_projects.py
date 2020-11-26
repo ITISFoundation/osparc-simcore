@@ -4,9 +4,8 @@
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict, Iterator
 
-import aiohttp
 import pytest
 from jsonschema import SchemaError, ValidationError
 from servicelib.jsonschema_specs import create_jsonschema_specs
@@ -16,12 +15,11 @@ from simcore_service_webserver.projects.projects_utils import (
     substitute_parameterized_inputs,
     variable_pattern,
 )
-from simcore_service_webserver.resources import resources
 from yarl import URL
 
 
 @pytest.fixture
-async def project_specs(loop, project_schema_file: Path) -> Dict:
+async def project_specs(loop, project_schema_file: Path) -> Iterator[Dict[str, Any]]:
     # should not raise any exception
     try:
         specs = await create_jsonschema_specs(project_schema_file, session=None)
