@@ -2,8 +2,11 @@
 # Specifies dependencies required to run tests on 'simcore-postgres-database'
 #
 
-# frozen specs
--r _migration.txt
+# Adds base AS CONSTRAINT specs, not requirement.
+#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
+#
+-c _base.txt
+-c _migration.txt
 
 # fixtures
 pyyaml
