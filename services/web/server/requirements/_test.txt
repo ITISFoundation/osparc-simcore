@@ -68,7 +68,7 @@ pyyaml==5.3.1             # via -c requirements/_base.txt, docker-compose, opena
 redis==3.5.3              # via -c requirements/_base.txt, -r requirements/_test.in
 requests==2.25.0          # via codecov, coveralls, docker, docker-compose
 six==1.15.0               # via -c requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, jsonschema, openapi-spec-validator, packaging, pynacl, pyrsistent, python-dateutil, tenacity, websocket-client
-sqlalchemy[postgresql_psycopg2binary]==1.3.19  # via -c requirements/_base.txt, alembic
+sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -c requirements/_base.txt, alembic
 tenacity==6.2.0           # via -c requirements/_base.txt, -r requirements/_test.in
 termcolor==1.1.0          # via pytest-sugar
 text-unidecode==1.3       # via faker
