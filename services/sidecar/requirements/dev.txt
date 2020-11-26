@@ -6,8 +6,11 @@
 #   pip install -r requirements/dev.txt
 #
 
-# installs base + tests requirements
+# installs base + tests + tools requirements
+-r _base.txt
+-r _packages.txt
 -r _test.txt
+-r _tools.txt
 
 # installs this repo's packages
 -e ../../services/storage/client-sdk/python/
@@ -20,10 +23,3 @@
 
 # installs current package
 -e .
-
-# basic dev tools
-watchdog[watchmedo]
-
-black
-pip-tools
-bump2version
