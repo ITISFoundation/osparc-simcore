@@ -4,63 +4,63 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.2            # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, pytest-aiohttp
-astroid==2.4.2            # via -c requirements/_test-ignore.txt, pylint
-async-timeout==3.0.1      # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, aiohttp
-attrs==20.3.0             # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, aiohttp, jsonschema, pytest, pytest-docker
-bcrypt==3.2.0             # via -c requirements/_test-ignore.txt, paramiko
-cached-property==1.5.2    # via -c requirements/_test-ignore.txt, docker-compose
-certifi==2020.11.8        # via -c requirements/_test-ignore.txt, requests
-cffi==1.14.3              # via -c requirements/_test-ignore.txt, bcrypt, cryptography, pynacl
-chardet==3.0.4            # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, aiohttp, requests
-coverage==5.3             # via -c requirements/_test-ignore.txt, -r requirements/_test.in, coveralls, pytest-cov
-coveralls==2.2.0          # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-cryptography==3.2.1       # via -c requirements/_test-ignore.txt, paramiko
-distro==1.5.0             # via -c requirements/_test-ignore.txt, docker-compose
-docker-compose==1.27.4    # via -c requirements/_test-ignore.txt, pytest-docker
-docker[ssh]==4.3.1        # via -c requirements/_test-ignore.txt, docker-compose
-dockerpty==0.4.1          # via -c requirements/_test-ignore.txt, docker-compose
-docopt==0.6.2             # via -c requirements/_test-ignore.txt, coveralls, docker-compose
-idna-ssl==1.1.0           # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, aiohttp
-idna==2.10                # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, idna-ssl, requests, yarl
-importlib-metadata==3.0.0  # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, jsonschema, pluggy, pytest
-iniconfig==1.1.1          # via -c requirements/_test-ignore.txt, pytest
-isort==5.6.4              # via -c requirements/_test-ignore.txt, pylint
-jsonschema==3.2.0         # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, docker-compose
-lazy-object-proxy==1.4.3  # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, astroid
-mccabe==0.6.1             # via -c requirements/_test-ignore.txt, pylint
-multidict==4.7.6          # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, aiohttp, yarl
-packaging==20.4           # via -c requirements/_test-ignore.txt, pytest, pytest-sugar
-paramiko==2.7.2           # via -c requirements/_test-ignore.txt, docker
-pluggy==0.13.1            # via -c requirements/_test-ignore.txt, pytest
-py==1.9.0                 # via -c requirements/_test-ignore.txt, pytest
-pycparser==2.20           # via -c requirements/_test-ignore.txt, cffi
-pylint==2.6.0             # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pynacl==1.4.0             # via -c requirements/_test-ignore.txt, paramiko
-pyparsing==2.4.7          # via -c requirements/_test-ignore.txt, packaging
-pyrsistent==0.17.3        # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, jsonschema
-pytest-aiohttp==0.3.0     # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pytest-cov==2.10.1        # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pytest-docker==0.10.1     # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pytest-instafail==0.4.2   # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pytest-mock==3.3.1        # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pytest-runner==5.2        # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pytest-sugar==0.9.4       # via -c requirements/_test-ignore.txt, -r requirements/_test.in
-pytest==6.1.2             # via -c requirements/_test-ignore.txt, -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
-python-dotenv==0.15.0     # via -c requirements/_test-ignore.txt, docker-compose
-pyyaml==5.3.1             # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, docker-compose
-requests==2.25.0          # via -c requirements/_test-ignore.txt, coveralls, docker, docker-compose
-six==1.15.0               # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, astroid, bcrypt, cryptography, docker, dockerpty, jsonschema, packaging, pynacl, websocket-client
-termcolor==1.1.0          # via -c requirements/_test-ignore.txt, pytest-sugar
-texttable==1.6.3          # via -c requirements/_test-ignore.txt, docker-compose
-toml==0.10.2              # via -c requirements/_test-ignore.txt, pylint, pytest
-typed-ast==1.4.1          # via -c requirements/_test-ignore.txt, astroid
-typing-extensions==3.7.4.3  # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, aiohttp, yarl
-urllib3==1.26.2           # via -c requirements/_test-ignore.txt, requests
-websocket-client==0.57.0  # via -c requirements/_test-ignore.txt, docker, docker-compose
-wrapt==1.12.1             # via -c requirements/_test-ignore.txt, astroid
-yarl==1.5.1               # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, aiohttp
-zipp==3.4.0               # via -c requirements/_base.txt, -c requirements/_test-ignore.txt, importlib-metadata
+aiohttp==3.7.2            # via -c requirements/_base.txt, pytest-aiohttp
+astroid==2.4.2            # via pylint
+async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp
+attrs==20.3.0             # via -c requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
+bcrypt==3.2.0             # via paramiko
+cached-property==1.5.2    # via docker-compose
+certifi==2020.11.8        # via requests
+cffi==1.14.3              # via bcrypt, cryptography, pynacl
+chardet==3.0.4            # via -c requirements/_base.txt, aiohttp, requests
+coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
+coveralls==2.2.0          # via -r requirements/_test.in
+cryptography==3.2.1       # via paramiko
+distro==1.5.0             # via docker-compose
+docker-compose==1.27.4    # via pytest-docker
+docker[ssh]==4.3.1        # via docker-compose
+dockerpty==0.4.1          # via docker-compose
+docopt==0.6.2             # via coveralls, docker-compose
+idna-ssl==1.1.0           # via -c requirements/_base.txt, aiohttp
+idna==2.10                # via -c requirements/_base.txt, idna-ssl, requests, yarl
+importlib-metadata==3.0.0  # via -c requirements/_base.txt, jsonschema, pluggy, pytest
+iniconfig==1.1.1          # via pytest
+isort==5.6.4              # via pylint
+jsonschema==3.2.0         # via -c requirements/_base.txt, docker-compose
+lazy-object-proxy==1.4.3  # via -c requirements/_base.txt, astroid
+mccabe==0.6.1             # via pylint
+multidict==4.7.6          # via -c requirements/_base.txt, aiohttp, yarl
+packaging==20.4           # via pytest, pytest-sugar
+paramiko==2.7.2           # via docker
+pluggy==0.13.1            # via pytest
+py==1.9.0                 # via pytest
+pycparser==2.20           # via cffi
+pylint==2.6.0             # via -r requirements/_test.in
+pynacl==1.4.0             # via paramiko
+pyparsing==2.4.7          # via packaging
+pyrsistent==0.17.3        # via -c requirements/_base.txt, jsonschema
+pytest-aiohttp==0.3.0     # via -r requirements/_test.in
+pytest-cov==2.10.1        # via -r requirements/_test.in
+pytest-docker==0.10.1     # via -r requirements/_test.in
+pytest-instafail==0.4.2   # via -r requirements/_test.in
+pytest-mock==3.3.1        # via -r requirements/_test.in
+pytest-runner==5.2        # via -r requirements/_test.in
+pytest-sugar==0.9.4       # via -r requirements/_test.in
+pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
+python-dotenv==0.15.0     # via docker-compose
+pyyaml==5.3.1             # via -c requirements/_base.txt, docker-compose
+requests==2.25.0          # via coveralls, docker, docker-compose
+six==1.15.0               # via -c requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, jsonschema, packaging, pynacl, websocket-client
+termcolor==1.1.0          # via pytest-sugar
+texttable==1.6.3          # via docker-compose
+toml==0.10.2              # via pylint, pytest
+typed-ast==1.4.1          # via astroid
+typing-extensions==3.7.4.3  # via -c requirements/_base.txt, aiohttp, yarl
+urllib3==1.26.2           # via requests
+websocket-client==0.57.0  # via docker, docker-compose
+wrapt==1.12.1             # via astroid
+yarl==1.5.1               # via -c requirements/_base.txt, aiohttp
+zipp==3.4.0               # via -c requirements/_base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
