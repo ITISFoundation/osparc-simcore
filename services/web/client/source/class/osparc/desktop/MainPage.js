@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         if (this.__studyEditor) {
           const dashboardBtn = navBar.getDashboardButton();
           dashboardBtn.setFetching(true);
-          this.__studyEditor.updateStudyDocument(false)
+          this.__studyEditor.updateStudyDocument()
             .then(() => {
               this.__studyEditor.closeStudy()
                 .catch(err => console.error(err));
