@@ -8,6 +8,7 @@ from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple
+from pathlib import Path
 
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
@@ -715,6 +716,7 @@ async def _create_node(
     node_uuid: str,
     node_base_path: str,
 ) -> List[Dict]:  # pylint: disable=R0913, R0915
+    # TODO: attach here and spawn proxy and more stuff
     log.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
         len(list_of_services),
@@ -735,6 +737,7 @@ async def _create_node(
 
     containers_meta_data = list()
     for service in list_of_services:
+        log.debug("Service to start info %s", service)
         service_meta_data = await _start_docker_service(
             app,
             client,
@@ -747,6 +750,19 @@ async def _create_node(
             node_base_path,
             inter_docker_network_id,
         )
+        sidecar_service_meta_data = await start_dynamic_sidecar_with_service(
+            app,
+            client,
+            user_id,
+            project_id,
+            service["key"],
+            service["tag"],
+            list_of_services.index(service) == 0,
+            node_uuid,
+            node_base_path,
+            inter_docker_network_id,
+        )
+        log.debug("Result of service start %s", service_meta_data)
         containers_meta_data.append(service_meta_data)
 
     return containers_meta_data
@@ -1008,3 +1024,280 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                 "DYNAMIC",
                 "SUCCESS",
             )
+
+
+def random_sequence(size: int) -> str:
+    import random
+    import string
+
+    return "".join([random.choice(string.ascii_letters) for _ in range(size)])
+
+
+async def start_dynamic_sidecar_with_service(
+    app: web.Application,
+    client: aiodocker.docker.Docker,
+    user_id: str,
+    project_id: str,
+    service_key: str,
+    service_tag: str,
+    main_service: bool,
+    node_uuid: str,
+    node_base_path: str,
+    internal_network_id: Optional[str],
+) -> Dict:
+    debug_message = (
+        f"DY_SIDECAR: user_id={user_id}, project_id={project_id}, service_key={service_key}, "
+        f"service_tag={service_tag}, main_service={main_service}, node_uuid={node_uuid}, "
+        f"node_base_path={node_base_path}, internal_network_id={internal_network_id}"
+    )
+    # TODO: change the current interface , parameters will be ignored by this service
+    # - internal_network_id
+    # - node_base_path
+    # - main_service
+
+    # TODO: I want 2 services in the same network (one of them needs to start the final service which will be in the target image)
+    # - put a reverse proxy
+    # - start the "local/service-sidecar:development" <- needs to be passed via configuration parameter to the director
+
+    log.debug(debug_message)
+
+    # used to reduce collision possibility
+    small_random_drift = random_sequence(size=4)
+
+    # unique name for the traefik constraints
+    io_simcore_zone = f"service_sidecar_{node_uuid}_{small_random_drift}"
+
+    # the 'serv_side_' is used to be easily garabage collected if the
+    # network is not attached to any other containers
+    service_sidecar_network_name = f"serv_side_{node_uuid}_{small_random_drift}"  # based on the node_id and project_id
+    # these configuration should guarantee 245 address network
+    network_config = {
+        "Name": service_sidecar_network_name,
+        "Driver": "overlay",
+        "Labels": {
+            "com.simcore.description": f"interactive for node: {node_uuid}_{small_random_drift}"
+        },
+        "Attachable": True,
+        "Internal": False,
+    }
+    try:
+        service_sidecar_network_id = (await client.networks.create(network_config)).id
+    except aiodocker.exceptions.DockerError as err:
+        log.exception("Error while creating network %s", service_sidecar_network_name)
+        raise exceptions.GenericDockerError(
+            "Error while creating network", err
+        ) from err
+
+    sidecar_service_proxy_meta_data = await _dyn_proxy_entrypoint_assembly(
+        client=client,
+        node_uuid=node_uuid,
+        io_simcore_zone=io_simcore_zone,
+        service_sidecar_network_name=service_sidecar_network_name,
+        service_sidecar_network_id=service_sidecar_network_id,
+    )
+
+    log.debug("NEW_SERVICE_PROXY %s", sidecar_service_proxy_meta_data)
+
+    service_start_result = await client.services.create(
+        **sidecar_service_proxy_meta_data
+    )
+    if "ID" not in service_start_result:
+        raise exceptions.DirectorException(
+            "Error while starting service: {}".format(str(service_start_result))
+        )
+
+    # TODO: this service dose not need to be exposed as it is just internal, what needs to be exposed is the one from the container which itself spawns 
+    sidecar_service_meta_data = await _dyn_service_sidecar_assembly(
+        node_uuid=node_uuid,
+        io_simcore_zone=io_simcore_zone,
+        service_sidecar_network_name=service_sidecar_network_name,
+        service_sidecar_network_id=service_sidecar_network_id,
+    )
+
+    log.debug("NEW_SERVICE %s", sidecar_service_meta_data)
+
+    service_start_result = await client.services.create(**sidecar_service_meta_data)
+    if "ID" not in service_start_result:
+        raise exceptions.DirectorException(
+            "Error while starting service: {}".format(str(service_start_result))
+        )
+
+    return sidecar_service_proxy_meta_data
+
+
+async def _dyn_proxy_entrypoint_assembly(
+    client: aiodocker.docker.Docker,
+    node_uuid: str,
+    io_simcore_zone: str,
+    service_sidecar_network_name: str,
+    service_sidecar_network_id: str,
+):
+    """This is the entrypoint to the network and needs to be configured properly"""
+
+    mounts = [
+        # docker socket needed to use the docker api
+        {
+            "Source": "/var/run/docker.sock",
+            "Target": "/var/run/docker.sock",
+            "Type": "bind",
+        }
+    ]
+    service_key = "service-sidecar"
+    service_name = service_key + "_" + node_uuid + "_proxy"
+
+    # attach the service to the swarm network dedicated to services
+    try:
+        swarm_network = await _get_swarm_network(client)
+        swarm_network_id = swarm_network["Id"]
+        swarm_network_name = swarm_network["Name"]
+
+    except exceptions.DirectorException:
+        log.exception("Could not find swarm network")
+
+    return {
+        "endpoint_spec": {"Mode": "dnsrr"},
+        "labels": {
+            "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
+            "port": "80",
+            "swarm_stack_name": config.SWARM_STACK_NAME,
+            "traefik.docker.network": swarm_network_name,
+            "traefik.enable": "true",
+            f"traefik.http.routers.{service_name}.entrypoints": "http",
+            f"traefik.http.routers.{service_name}.middlewares": "master-simcore_gzip@docker",
+            f"traefik.http.routers.{service_name}.priority": "10",
+            f"traefik.http.routers.{service_name}.rule": "Host(`entrypoint.services.10.43.103.168.xip.io`)",  # TODO: change entrypoint -> node_uuid
+            f"traefik.http.services.{service_name}.loadbalancer.server.port": "80",
+            "type": "main",
+            "user_id": "1",
+            "uuid": node_uuid,
+        },
+        "name": service_name,
+        "networks": [swarm_network_id, service_sidecar_network_id],
+        "task_template": {
+            "ContainerSpec": {
+                "Env": {},
+                "Hosts": [],
+                "Image": "traefik:v2.2.1",
+                "Init": True,
+                "Labels": {},
+                "Command": [
+                    "traefik",
+                    "--log.level=DEBUG",
+                    "--accesslog=true",
+                    "--entryPoints.http.address=:80",
+                    "--entryPoints.http.forwardedHeaders.insecure",
+                    "--providers.docker.endpoint=unix:///var/run/docker.sock",
+                    f"--providers.docker.network={service_sidecar_network_name}",
+                    "--providers.docker.swarmMode=true",
+                    "--providers.docker.exposedByDefault=false",
+                    f"--providers.docker.constraints=Label(`io.simcore.zone`, `{io_simcore_zone}`)",
+                ],
+                "Mounts": mounts,
+            },
+            # TODO: maybe remove these constraints? ask SAN
+            "Placement": {"Constraints": ["node.platform.os == linux"]},
+            "Resources": {
+                "Limits": {"MemoryBytes": 1073741824, "NanoCPUs": 2000000000},
+                "Reservations": {"MemoryBytes": 524288000, "NanoCPUs": 100000000},
+            },
+            # TODO: need to think what to do in this situation...
+            "RestartPolicy": {
+                "Condition": "on-failure",
+                "Delay": 5000000,
+                "MaxAttempts": 2,
+            },
+        },
+    }
+
+
+async def _dyn_service_sidecar_assembly(
+    node_uuid: str,
+    io_simcore_zone: str,
+    service_sidecar_network_name: str,
+    service_sidecar_network_id: str,
+):
+    """This service contains the service-sidecar which will spawn the dynamic service itself """
+
+    # TODO: ask SAN how to check for dev mode to be 100% sure
+    is_development_mode = True
+    mounts = []
+    service_key = "service-sidecar"
+    service_name = service_key + "_" + node_uuid + "_sidecar"
+
+    if is_development_mode:
+        # TODO: place into configuration when this file is moved in final position
+        # fetch from the enviorn
+        import os
+
+        # for now this env var is attached to the director, TODO: move in the target service when in final positon
+        service_sidecar_path = Path(os.environ["DEV_SIMCORE_SERVICE_SIDECAR_PATH"])
+        # we need to get the sidecar-services's path relative to here
+
+        mounts.append(
+            {
+                "Source": str(service_sidecar_path),
+                "Target": "/devel/services/service-sidecar",
+                "Type": "bind",
+            }
+        )
+
+    return {
+        # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
+        "endpoint_spec": {"Mode": "dnsrr"},
+        "labels": {
+            "io.simcore.zone": io_simcore_zone,
+            "port": "8000",
+            "study_id": "4b46c1d2-2d92-11eb-8066-02420a0000fe",
+            "swarm_stack_name": "master-simcore",  # nope, needs to change to custom
+            "traefik.docker.network": service_sidecar_network_name,
+            "traefik.enable": "true",
+            f"traefik.http.routers.{service_name}.entrypoints": "http",
+            f"traefik.http.routers.{service_name}.priority": "10",
+            f"traefik.http.routers.{service_name}.rule": "PathPrefix(`/`)",
+            f"traefik.http.services.{service_name}.loadbalancer.server.port": "8000",
+            "type": "main",
+            "user_id": "1",
+            "uuid": "caa028b6-72a2-4f34-9b76-6b1fed4e01dc",
+        },
+        "name": service_name,
+        "networks": [service_sidecar_network_id],
+        # "registry": config.REGISTRY_URL,
+        "task_template": {
+            "ContainerSpec": {
+                "Env": {
+                    "POSTGRES_DB": "simcoredb",
+                    "POSTGRES_ENDPOINT": "postgres: 5432",
+                    "POSTGRES_PASSWORD": "adminadmin",
+                    "POSTGRES_USER": "scu",
+                    "SIMCORE_HOST_NAME": service_name,
+                    "SIMCORE_NODE_BASEPATH": "/x/caa028b6-72a2-4f34-9b76-6b1fed4e01dc",
+                    "SIMCORE_NODE_UUID": "caa028b6-72a2-4f34-9b76-6b1fed4e01dc",
+                    "SIMCORE_PROJECT_ID": "4b46c1d2-2d92-11eb-8066-02420a0000fe",
+                    "SIMCORE_USER_ID": "1",
+                    "STORAGE_ENDPOINT": "storage: 8080",
+                },
+                "Hosts": [],
+                "Image": f"local/{service_key}:development",  # TODO: replace with something else from env maybe
+                "Init": True,
+                "Labels": {
+                    "mem_limit": "1073741824",
+                    "nano_cpus_limit": "2000000000",
+                    "node_id": "caa028b6-72a2-4f34-9b76-6b1fed4e01dc",
+                    "study_id": "4b46c1d2-2d92-11eb-8066-02420a0000fe",
+                    "swarm_stack_name": "master-simcore",
+                    "user_id": "1",
+                },
+                "Mounts": mounts,
+            },
+            "Placement": {"Constraints": ["node.platform.os == linux"]},
+            "Resources": {
+                "Limits": {"MemoryBytes": 1073741824, "NanoCPUs": 2000000000},
+                "Reservations": {"MemoryBytes": 524288000, "NanoCPUs": 100000000},
+            },
+            "RestartPolicy": {
+                "Condition": "on-failure",
+                "Delay": 5000000,
+                "MaxAttempts": 2,
+            },
+        },
+    }
