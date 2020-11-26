@@ -7,7 +7,10 @@ from starlette import status
 from starlette.exceptions import HTTPException
 
 from .._meta import api_version, api_vtag
-from ..api.errors.http_error import make_http_error_handler_for_exception, http_error_handler
+from ..api.errors.http_error import (
+    http_error_handler,
+    make_http_error_handler_for_exception,
+)
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
@@ -64,9 +67,18 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
+    # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
         NotImplementedError,
-        make_http_error_handler_for_exception(status.HTTP_501_NOT_IMPLEMENTED),
+        make_http_error_handler_for_exception(
+            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError
+        ),
+    )
+    app.add_exception_handler(
+        Exception,
+        make_http_error_handler_for_exception(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
+        ),
     )
 
     # routing

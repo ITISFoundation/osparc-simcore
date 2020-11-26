@@ -6,7 +6,7 @@ from textwrap import dedent
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, File, UploadFile, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse
 
 from ..._meta import api_vtag
@@ -21,8 +21,8 @@ router = APIRouter()
 
 @router.get("")
 async def list_files(
-        storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-    ):
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+):
     """ Lists all user's files """
     # TODO: this is just a ping with retries
     await storage_client.get("/")
@@ -107,7 +107,7 @@ async def eval_sha256_hash(file: UploadFile):
 async def download_file(file_id: UUID):
     file_path: Path = current_file  # FIXME: tmp returns current file
     return FileResponse(
-        file_path,
+        str(file_path),
         media_type="application/octet-stream",
         filename=file_path.name,
         stat_result=file_path.stat(),

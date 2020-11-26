@@ -11,7 +11,7 @@
 
 import functools
 import logging
-from typing import Coroutine, Dict, List, Union
+from typing import Callable, Dict, List, Union
 
 import httpx
 from fastapi import HTTPException
@@ -54,7 +54,7 @@ def handle_errors(
     - ok -> json()
     """
 
-    def decorator_func(request_func: Coroutine):
+    def decorator_func(request_func: Callable):
         @functools.wraps(request_func)
         async def wrapper_func(*args, **kwargs) -> Union[JsonDataType, httpx.Response]:
             try:
