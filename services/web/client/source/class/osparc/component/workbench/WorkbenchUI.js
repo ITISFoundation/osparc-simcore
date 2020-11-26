@@ -130,6 +130,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     study: {
       check: "osparc.data.model.Study",
       nullable: false
+    },
+
+    scale: {
+      check: "Number",
+      init: 1,
+      apply: "__applyScale",
+      nullable: false
     }
   },
 
@@ -857,6 +864,36 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return Boolean(this.__getEdgeUI(this.__selectedItemId));
     },
 
+    __mouseWheel: function(e) {
+      const factor = 1.25;
+      let newScale;
+      if (e.getWheelDelta() < 0) {
+        newScale = this.getScale()*factor;
+      } else {
+        newScale = this.getScale()/factor;
+      }
+      if (newScale > 0.25 && newScale < 3.0) {
+        this.setScale(newScale);
+      }
+    },
+
+    __applyScale: function(value) {
+      this.__setZoom(this.__desktopCanvas.getContentElement().getDomElement(), value);
+    },
+
+    __setZoom: function(el, zoom) {
+      const transformOrigin = [0, 0];
+      const p = ["webkit", "moz", "ms", "o"];
+      const s = `scale(${zoom})`;
+      const oString = (transformOrigin[0] * 100) + "% " + (transformOrigin[1] * 100) + "%";
+      for (let i = 0; i < p.length; i++) {
+        el.style[p[i] + "Transform"] = s;
+        el.style[p[i] + "TransformOrigin"] = oString;
+      }
+      el.style["transform"] = s;
+      el.style["transformOrigin"] = oString;
+    },
+
     __addEventListeners: function() {
       this.addListener("appear", () => {
         // Reset filters and sidebars
@@ -874,6 +911,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         domEl.addEventListener("dragover", this.__dragOver.bind(this), false);
         domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
         domEl.addEventListener("drop", this.__drop.bind(this), false);
+
+        this.addListener("mousewheel", this.__mouseWheel, this);
       });
 
       this.addListener("disappear", () => {
