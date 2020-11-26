@@ -31,7 +31,7 @@ async function runTutorial() {
     // Wait for some time
     await tutorial.waitFor(12000);
 
-    await tutorial.closeStudy();
+    await tutorial.toDashboard();
 
     await tutorial.removeStudy(studyId);
   }

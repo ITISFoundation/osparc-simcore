@@ -301,6 +301,10 @@ class TutorialBase {
     await this.takeScreenshot("checkResults_after");
   }
 
+  async toDashboard() {
+    await auto.toDashboard(this.__page);
+  }
+
   async closeStudy() {
     await this.takeScreenshot("closeStudy_before");
     this.__responsesQueue.addResponseListener(":close");
