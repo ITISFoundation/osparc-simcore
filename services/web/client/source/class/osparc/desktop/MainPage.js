@@ -72,7 +72,8 @@ qx.Class.define("osparc.desktop.MainPage", {
           dashboardBtn.setFetching(true);
           this.__studyEditor.updateStudyDocument(false)
             .then(() => {
-              this.__studyEditor.closeStudy();
+              this.__studyEditor.closeStudy()
+                .catch(err => console.error(err));
               this.__showDashboard();
             })
             .finally(() => {
