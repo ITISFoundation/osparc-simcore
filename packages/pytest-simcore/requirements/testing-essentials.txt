@@ -1,0 +1,21 @@
+#
+# Essential testing libraries and some additional plugins
+#
+pytest
+
+# enhances tests logs
+pytest-icdiff
+pytest-instafail
+pytest-sugar
+
+# enhances test runs
+pytest-xdist
+pytest-runner # NOTE REQUIRED ANYMORE ???
+
+# adds functionality
+pytest-lazy-fixture
+
+
+# support testing features built on frameworks
+pytest-docker
+pytest-celery
