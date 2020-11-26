@@ -22,10 +22,10 @@ test_requirements = read_reqs(
 readme = Path(here / "README.md").read_text()
 
 setup(
-    name="simcore-integration-library",
+    name="simcore-service-integration",
     version="1.0.0",
     author="Pedro Crespo (pcrespov), Sylvain Anderegg (sanderegg), Katie Zhuang (KZzizzle)",
-    description="Tools for simcore-service integration",
+    description="Toolkit for service integration",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",

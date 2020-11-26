@@ -44,7 +44,9 @@ def stringify_metadata(metadata: Dict) -> Dict[str, str]:
 
 
 def update_compose_labels(compose_cfg: Dict, metadata: Dict[str, str]) -> bool:
-    compose_labels = compose_cfg["services"]["{{ cookiecutter.project_slug }}"]["build"]["labels"]
+    compose_labels = compose_cfg["services"]["{{ cookiecutter.project_slug }}"][
+        "build"
+    ]["labels"]
     changed = False
     for key, value in metadata.items():
         if key in compose_labels:
@@ -59,21 +61,34 @@ def main(args=None) -> int:
     try:
         parser = argparse.ArgumentParser(description=__doc__)
         parser.add_argument(
-            "--compose", help="The compose file where labels shall be updated", type=Path, required=True)
-        parser.add_argument("--metadata", help="The metadata yaml file",
-                            type=Path, required=False, default="metadata/metadata.yml")
+            "--compose",
+            help="The compose file where labels shall be updated",
+            type=Path,
+            required=True,
+        )
+        parser.add_argument(
+            "--metadata",
+            help="The metadata yaml file",
+            type=Path,
+            required=False,
+            default="metadata/metadata.yml",
+        )
         options = parser.parse_args(args)
-        log.info("Testing if %s needs updates using labels in %s",
-                 options.compose, options.metadata)
+        log.info(
+            "Testing if %s needs updates using labels in %s",
+            options.compose,
+            options.metadata,
+        )
         # get available jsons
         compose_cfg = get_compose_file(options.compose)
         metadata = get_metadata_file(options.metadata)
         json_metadata = stringify_metadata(metadata)
         if update_compose_labels(compose_cfg, json_metadata):
-            log.info("Updating %s using labels in %s",
-                     options.compose, options.metadata)
+            log.info(
+                "Updating %s using labels in %s", options.compose, options.metadata
+            )
             # write the file back
-            with options.compose.open('w') as fp:
+            with options.compose.open("w") as fp:
                 yaml.safe_dump(compose_cfg, fp, default_flow_style=False)
                 log.info("Update completed")
         else:

@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'models-library'
+# Shortcut to install all packages for the contigous integration (CI) of 'service-integration'
 #
 # - As ci.txt but w/ tests
 #
@@ -7,6 +7,7 @@
 #
 
 # installs base + tests requirements
+-r _base.txt
 -r _test.txt
 
 # installs this repo's packages

@@ -12,8 +12,8 @@ expected_files = (
     ".gitignore",
     ".pylintrc",
     "metadata:metadata.yml",
-    "docker/{{ cookiecutter.docker_base.split(":")[0] }}:entrypoint.sh",
-    "docker/{{ cookiecutter.docker_base.split(":")[0] }}:Dockerfile",
+    "docker/{{ cookiecutter.docker_base.split(':')[0] }}:entrypoint.sh",
+    "docker/{{ cookiecutter.docker_base.split(':')[0] }}:Dockerfile",
     "service.cli:execute.sh",
     "tools:run_creator.py",
     "tools:update_compose_labels.py",
@@ -40,5 +40,6 @@ def test_path_in_repo(expected_path: str, project_slug_dir: Path):
         assert folder_path.exists(), f"folder {folder_path} is missing!"
         assert any(folder_path.glob(glob)), f"no {glob} in {folder_path}"
     else:
-        assert (project_slug_dir/expected_path).exists(
-        ), f"{expected_path} is missing from {project_slug_dir}"
+        assert (
+            project_slug_dir / expected_path
+        ).exists(), f"{expected_path} is missing from {project_slug_dir}"
