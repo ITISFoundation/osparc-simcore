@@ -225,6 +225,18 @@ class TutorialBase {
     return;
   }
 
+  async waitForStudyUnlocked(studyId, timeout = 10000) {
+    const start = new Date().getTime();
+    while ((new Date().getTime())-start < timeout) {
+      await utils.sleep(1000);
+      if (await utils.isStudyUnlocked(this.__page, studyId)) {
+        return;
+      }
+    }
+    console.log("Timeout reached waiting for study unlock", ((new Date().getTime())-start)/1000);
+    return;
+  }
+
   async restoreIFrame() {
     await auto.restoreIFrame(this.__page);
   }

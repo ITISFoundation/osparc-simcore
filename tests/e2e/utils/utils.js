@@ -197,6 +197,16 @@ async function isStudyDone(page, studyId) {
   return stopListening.includes(pipelineStatus);
 }
 
+async function isStudyUnlocked(page, studyId) {
+  const endPoint = "/projects/" + studyId +"/state";
+  console.log("-- Is study closed", endPoint);
+  const resp = await makeRequest(page, endPoint);
+
+  const studyLocked = resp["state"]["locked"];
+  console.log("Study Lock Status:", studyId, studyLocked);
+  return !studyLocked;
+}
+
 async function waitForValidOutputFile(page) {
   return new Promise((resolve, reject) => {
     page.on("response", function callback(resp) {
@@ -298,6 +308,7 @@ module.exports = {
   waitForResponse,
   isServiceReady,
   isStudyDone,
+  isStudyUnlocked,
   waitForValidOutputFile,
   waitAndClick,
   clearInput,
