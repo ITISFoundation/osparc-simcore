@@ -18,7 +18,6 @@ from shutil import copyfile
 
 import attr
 import pytest
-
 import utils
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
@@ -245,7 +244,9 @@ async def test_dsm_datcore(
     is_deleted = await dsm.delete_file(user_id, DATCORE_STR, fmd_to_delete.file_id)
     assert is_deleted
 
-    import time; time.sleep(1) # FIXME: takes some time to delete!!
+    import time
+
+    time.sleep(1)  # FIXME: takes some time to delete!!
 
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
@@ -295,8 +296,10 @@ async def test_dsm_s3_to_datcore(
         destination_id=datcore_structured_testbucket["coll2_id"],
     )
 
-    #FIXME: upload takes some time
-    import time; time.sleep(1)
+    # FIXME: upload takes some time
+    import time
+
+    time.sleep(1)
 
     data = await dsm.list_files(
         user_id=user_id, location=DATCORE_STR, uuid_filter=BUCKET_NAME
@@ -492,7 +495,7 @@ async def test_deep_copy_project_simcore_s3(
     user_id = USER_ID
 
     source_project = {
-        "uuid": "template-uuid-4d5e-b80e-401c8066782f",
+        "uuid": "de2578c5-431e-4d5e-b80e-401c8066782f",
         "name": "ISAN: 2D Plot",
         "description": "2D RawGraphs viewer with one input",
         "thumbnail": "",
@@ -500,7 +503,7 @@ async def test_deep_copy_project_simcore_s3(
         "creationDate": "2019-05-24T10:36:57.813Z",
         "lastChangeDate": "2019-05-24T11:36:12.015Z",
         "workbench": {
-            "template-uuid-48eb-a9d2-aaad6b72400a": {
+            "de2578c5-431e-48eb-a9d2-aaad6b72400a": {
                 "key": "simcore/services/frontend/file-picker",
                 "version": "1.0.0",
                 "label": "File Picker",
@@ -516,17 +519,17 @@ async def test_deep_copy_project_simcore_s3(
                 "thumbnail": "",
                 "position": {"x": 100, "y": 100},
             },
-            "template-uuid-4c63-a705-03a2c339646c": {
+            "de2578c5-431e-4c63-a705-03a2c339646c": {
                 "key": "simcore/services/dynamic/raw-graphs",
                 "version": "2.8.0",
                 "label": "2D plot",
                 "inputs": {
                     "input_1": {
-                        "nodeUuid": "template-uuid-48eb-a9d2-aaad6b72400a",
+                        "nodeUuid": "de2578c5-431e-48eb-a9d2-aaad6b72400a",
                         "output": "outFile",
                     }
                 },
-                "inputNodes": ["template-uuid-48eb-a9d2-aaad6b72400a"],
+                "inputNodes": ["de2578c5-431e-48eb-a9d2-aaad6b72400a"],
                 "outputs": {},
                 "progress": 0,
                 "thumbnail": "",
@@ -538,7 +541,7 @@ async def test_deep_copy_project_simcore_s3(
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
 
-    source_project["workbench"]["template-uuid-48eb-a9d2-aaad6b72400a"]["outputs"][
+    source_project["workbench"]["de2578c5-431e-48eb-a9d2-aaad6b72400a"]["outputs"][
         "outFile"
     ]["path"] = path_in_datcore
 

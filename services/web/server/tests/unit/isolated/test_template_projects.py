@@ -9,8 +9,6 @@ from typing import Dict
 import aiohttp
 import pytest
 from jsonschema import SchemaError, ValidationError
-from yarl import URL
-
 from servicelib.jsonschema_specs import create_jsonschema_specs
 from servicelib.jsonschema_validation import validate_instance
 from simcore_service_webserver.projects.projects_fakes import Fake
@@ -19,6 +17,7 @@ from simcore_service_webserver.projects.projects_utils import (
     variable_pattern,
 )
 from simcore_service_webserver.resources import resources
+from yarl import URL
 
 
 @pytest.fixture
@@ -47,7 +46,7 @@ def mock_parametrized_project(fake_data_dir):
         prj = json.load(fh)
 
     # check parameterized
-    inputs = prj["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"]
+    inputs = prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]
     assert variable_pattern.match(inputs["Na"])
     assert variable_pattern.match(inputs["BCL"])
     return prj
@@ -71,9 +70,9 @@ def test_substitutions(mock_parametrized_project):
     prj = substitute_parameterized_inputs(mock_parametrized_project, dict(url.query))
     assert prj
     assert (
-        prj["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"]["Na"] == 33
+        prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Na"] == 33
     )
     assert (
-        prj["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"]["BCL"]
+        prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["BCL"]
         == 54.0
     )
