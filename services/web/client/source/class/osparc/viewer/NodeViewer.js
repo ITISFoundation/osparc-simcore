@@ -188,16 +188,16 @@ qx.Class.define("osparc.viewer.NodeViewer", {
       const loadingPage = this.getLoadingPage();
       const iFrame = this.getIFrame();
       const src = iFrame.getSource();
-      let widget;
+      let iFrameView;
       if (src === null || src === "about:blank") {
-        widget = loadingPage;
+        iFrameView = loadingPage;
       } else {
         this.getLayoutParent().set({
           zIndex: iFrame.getZIndex()-1
         });
-        widget = iFrame;
+        iFrameView = iFrame;
       }
-      this._add(widget, {
+      this._add(iFrameView, {
         flex: 1
       });
     }

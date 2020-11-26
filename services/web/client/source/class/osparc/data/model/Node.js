@@ -608,7 +608,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-      if (study && study.isReadOnly()) {
+      if (study && study.isReadOnly() && this.getPropsForm()) {
         this.getPropsForm().setEnabled(false);
       }
     },
