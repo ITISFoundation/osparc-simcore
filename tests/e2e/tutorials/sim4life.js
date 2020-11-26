@@ -21,6 +21,8 @@ async function runTutorial() {
     tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openService(1000);
+    const studyId = studyData["data"]["uuid"];
+    console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
@@ -31,7 +33,7 @@ async function runTutorial() {
 
     await tutorial.closeStudy();
 
-    await tutorial.removeStudy();
+    await tutorial.removeStudy(studyId);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

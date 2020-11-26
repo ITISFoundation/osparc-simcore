@@ -42,7 +42,7 @@ async function runTutorial() {
 
     await tutorial.closeStudy();
 
-    await tutorial.removeStudy();
+    await tutorial.removeStudy(studyId);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
