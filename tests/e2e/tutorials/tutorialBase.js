@@ -228,7 +228,7 @@ class TutorialBase {
   async waitForStudyUnlocked(studyId, timeout = 10000) {
     const start = new Date().getTime();
     while ((new Date().getTime())-start < timeout) {
-      await utils.sleep(1000);
+      await utils.sleep(timeout/10);
       if (await utils.isStudyUnlocked(this.__page, studyId)) {
         return;
       }
