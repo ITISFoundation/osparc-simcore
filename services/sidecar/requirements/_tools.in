@@ -1,4 +1,5 @@
 -c _base.txt
+-c _packages.txt
 -c _test.txt
 
 -r ../../../requirements/devenv.txt
