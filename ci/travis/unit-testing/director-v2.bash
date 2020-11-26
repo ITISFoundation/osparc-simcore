@@ -34,7 +34,7 @@ script() {
     then
         pytest --numprocesses=auto --cov=simcore_service_director-v2 --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/director-v2/tests
+          -v -m "not travis" services/director-v2/tests/unit
     else
         echo "No changes detected. Skipping unit-testing of director-v2."
     fi

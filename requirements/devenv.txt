@@ -1,0 +1,26 @@
+# COMMON python tools for DEVelopment ENVironment.
+#
+# $ make devenv
+#
+# - Installs in .venv common development tools
+# - Do not impose constraints on the version. Try to get always latest version of the tools
+# - This file SHALL be included in requirements/_tools.in of any service/package and then pip-compiled it
+#
+# NOTE: None of thes tools are part of the automatic testing
+# NOTE: pylint is already included as test dependency
+# NOTE: DO NOT pip-compile/freeze these requirements
+
+# git hooks. pre-commit fails to install directly! (SAME as in .pre-commit-config.yaml)
+pre-commit
+
+# formatter
+# NOTE: pre-commit installs also these in a different virtualenv. SEE .pre-commit-config.yaml
+# NOTE: currently cannot hard-code versions since isort's versions has uncompromising constraints in webserver
+black
+isort
+
+# dependency manager
+pip-tools
+
+# version manager
+bump2version

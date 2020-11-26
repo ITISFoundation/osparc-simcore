@@ -60,7 +60,7 @@ Every python package specifies its dependencies to the installer via the ``setup
   - should not be very restrictive with versions. Add only contraints that must be enforced: e.g. to fix vulnerabilities, compatibility issues, etc
   - used as input to [pip-tools] which will determine the final version used
 - All ``*.txt`` files are actual requirements, i.e. can be used in ``pip install -r requirements/filename.txt``. There are two types:
-  1. *frozen dependencies* are automaticaly created using [pip-tools] from ``_*.in`` files. These includes a strict list of libraries with pinned versions. Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these files start with ``_`` and therefore are listed at the top of the tree.
+  1. *frozen dependencies* are automaticaly created using [pip-tools] from ``_*.in`` files. These includes a strict list of libraries with pinned versions. Every ``_*.in`` file has a ``_*.txt`` counterpart. **Notice** that these files start with ``_`` and therefore are listed at the top of the tree. These follow a [workflow of layered requirements](https://github.com/jazzband/pip-tools#workflow-for-layered-requirements) in which ``_base.txt`` contains dependencies for production and ``_test.txt`` **extra** dependencies for setting up testing.
   2. installation *shortcuts* for three different *contexts*:
      1. **development**: ``pip install -r requirements/dev.txt``
         - Installs target package in [develop (or edit)](https://pip.pypa.io/en/stable/reference/pip_install/#usage) mode as well as  other tools or packages whithin the simcore repository

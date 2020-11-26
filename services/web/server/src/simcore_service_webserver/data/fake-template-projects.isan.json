@@ -1,6 +1,6 @@
 [
   {
-    "uuid": "template-uuid-4d5e-b80e-401c8066782f",
+    "uuid": "de2578c5-431e-4d5e-b80e-401c8066782f",
     "name": "ISAN: 2D Plot",
     "description": "2D RawGraphs viewer with one input",
     "thumbnail": "",
@@ -10,7 +10,7 @@
     "tags": [],
     "accessRights": {},
     "workbench": {
-      "template-uuid-48eb-a9d2-aaad6b72400a": {
+      "de2578c5-431e-48eb-a9d2-aaad6b72400a": {
         "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker",
@@ -28,18 +28,18 @@
           "y": 100
         }
       },
-      "template-uuid-4c63-a705-03a2c339646c": {
+      "de2578c5-431e-4c63-a705-03a2c339646c": {
         "key": "simcore/services/dynamic/raw-graphs",
         "version": "2.8.0",
         "label": "2D plot",
         "inputs": {
           "input_1": {
-            "nodeUuid": "template-uuid-48eb-a9d2-aaad6b72400a",
+            "nodeUuid": "de2578c5-431e-48eb-a9d2-aaad6b72400a",
             "output": "outFile"
           }
         },
         "inputNodes": [
-          "template-uuid-48eb-a9d2-aaad6b72400a"
+          "de2578c5-431e-48eb-a9d2-aaad6b72400a"
         ],
         "outputs": {},
         "progress": 0,
@@ -51,7 +51,7 @@
     }
   },
   {
-    "uuid": "template-uuid-4d5e-b80e-401c8066781f",
+    "uuid": "de2578c5-431e-4d5e-b80e-401c8066781f",
     "name": "ISAN: 3D Paraview",
     "description": "3D Paraview viewer with two inputs",
     "thumbnail": "",
@@ -61,7 +61,7 @@
     "tags": [],
     "accessRights": {},
     "workbench": {
-      "template-uuid-403e-865a-8c5ca30671c6": {
+      "de2578c5-431e-403e-865a-8c5ca30671c6": {
         "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 1",
@@ -79,7 +79,7 @@
           "y": 100
         }
       },
-      "template-uuid-421f-be24-d44d112cc5c1": {
+      "de2578c5-431e-421f-be24-d44d112cc5c1": {
         "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 2",
@@ -97,23 +97,23 @@
           "y": 250
         }
       },
-      "template-uuid-4ecd-9636-62e619a9ca69": {
+      "de2578c5-431e-4ecd-9636-62e619a9ca69": {
         "key": "simcore/services/dynamic/3d-viewer",
         "version": "2.10.0",
         "label": "3D ParaViewer",
         "inputs": {
           "A": {
-            "nodeUuid": "template-uuid-403e-865a-8c5ca30671c6",
+            "nodeUuid": "de2578c5-431e-403e-865a-8c5ca30671c6",
             "output": "outFile"
           },
           "B": {
-            "nodeUuid": "template-uuid-421f-be24-d44d112cc5c1",
+            "nodeUuid": "de2578c5-431e-421f-be24-d44d112cc5c1",
             "output": "outFile"
           }
         },
         "inputNodes": [
-          "template-uuid-403e-865a-8c5ca30671c6",
-          "template-uuid-421f-be24-d44d112cc5c1"
+          "de2578c5-431e-403e-865a-8c5ca30671c6",
+          "de2578c5-431e-421f-be24-d44d112cc5c1"
         ],
         "outputs": {},
         "progress": 0,
@@ -125,7 +125,7 @@
     }
   },
   {
-    "uuid": "template-uuid-420d-b82d-e80bfa272ebd",
+    "uuid": "de2578c5-431e-420d-b82d-e80bfa272ebd",
     "name": "ISAN: MattWard use case",
     "description": "MattWard Solver/PostPro viewer",
     "thumbnail": "",
@@ -135,7 +135,7 @@
     "tags": [],
     "accessRights": {},
     "workbench": {
-      "template-uuid-4021-b2ef-b2e163bfbd16": {
+      "de2578c5-431e-4021-b2ef-b2e163bfbd16": {
         "key": "simcore/services/dynamic/mattward-viewer",
         "version": "2.9.0",
         "label": "MattWard",
@@ -151,7 +151,7 @@
     }
   },
   {
-    "uuid": "template-uuid-1234-a1a7-f7d4f3a8f26b",
+    "uuid": "de2578c5-431e-1234-a1a7-f7d4f3a8f26b",
     "name": "ISAN: UCDavis use case: 0D",
     "description": "Colleen Clancy Single Cell solver with a file picker and PostPro viewer",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
@@ -161,7 +161,7 @@
     "tags": [],
     "accessRights": {},
     "workbench": {
-      "template-uuid-4674-b758-946151cae351": {
+      "de2578c5-431e-4674-b758-946151cae351": {
         "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker 0D",
@@ -179,7 +179,7 @@
           "y": 150
         }
       },
-      "template-uuid-409d-998c-c1f04de67f8b": {
+      "de2578c5-431e-409d-998c-c1f04de67f8b": {
         "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
         "version": "1.0.0",
         "label": "DBP-Clancy-Rabbit-Single-Cell solver",
@@ -199,12 +199,12 @@
           "Ligand": 0,
           "cAMKII": "WT",
           "initfile": {
-            "nodeUuid": "template-uuid-4674-b758-946151cae351",
+            "nodeUuid": "de2578c5-431e-4674-b758-946151cae351",
             "output": "outFile"
           }
         },
         "inputNodes": [
-          "template-uuid-4674-b758-946151cae351"
+          "de2578c5-431e-4674-b758-946151cae351"
         ],
         "outputs": {},
         "position": {
@@ -212,22 +212,22 @@
           "y": 150
         }
       },
-      "template-uuid-43e7-9fda-cf9625e59986": {
+      "de2578c5-431e-43e7-9fda-cf9625e59986": {
         "key": "simcore/services/dynamic/cc-0d-viewer",
         "version": "2.8.0",
         "label": "cc-0d-viewer",
         "inputs": {
           "vm_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+            "nodeUuid": "de2578c5-431e-409d-998c-c1f04de67f8b",
             "output": "out_4"
           },
           "all_results_1Hz": {
-            "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+            "nodeUuid": "de2578c5-431e-409d-998c-c1f04de67f8b",
             "output": "out_1"
           }
         },
         "inputNodes": [
-          "template-uuid-409d-998c-c1f04de67f8b"
+          "de2578c5-431e-409d-998c-c1f04de67f8b"
         ],
         "outputs": {},
         "position": {

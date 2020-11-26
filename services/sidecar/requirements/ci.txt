@@ -7,6 +7,8 @@
 #
 
 # installs base + tests requirements
+-r _base.txt
+-r _packages.txt
 -r _test.txt
 
 # installs this repo's packages

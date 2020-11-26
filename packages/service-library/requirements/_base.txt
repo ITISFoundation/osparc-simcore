@@ -14,7 +14,7 @@ chardet==3.0.4            # via aiohttp
 dataclasses==0.7          # via pydantic
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via idna-ssl, yarl
-importlib-metadata==2.0.0  # via jsonschema
+importlib-metadata==3.0.0  # via jsonschema
 isodate==0.6.0            # via openapi-core
 jsonschema==3.2.0         # via -r requirements/_base.in, openapi-spec-validator
 lazy-object-proxy==1.4.3  # via -r requirements/_base.in, openapi-core
