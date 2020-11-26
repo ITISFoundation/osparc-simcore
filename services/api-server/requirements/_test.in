@@ -25,15 +25,9 @@ passlib[bcrypt]
 respx
 
 # db migration
-alembic
-docker
+-r ../../../packages/postgres-database/requirements/_migration.in
 
 # tools
 pylint
 coveralls
 codecov
-
-# scripts/templates
-change_case
-jinja2
-ptvsd
