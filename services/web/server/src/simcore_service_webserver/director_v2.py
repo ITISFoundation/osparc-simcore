@@ -188,7 +188,7 @@ async def request_retrieve_dyn_service(
     try:
         # request to director-v2
         await _request_director_v2(app, "POST", backend_url, data=body)
-    except _DirectorServiceError as exc:
+    except _DirectorServiceError:
         pass
 
 
