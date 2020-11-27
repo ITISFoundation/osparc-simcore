@@ -330,8 +330,11 @@ push-version: tag-version
 		setuptools
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
-	$</bin/pip3 --quiet install -r requirements.txt
+	$</bin/pip3 --quiet install -r requirements/devenv.txt
+	# Installing pre-commit hooks in current .git repo
+	@$</bin/pre-commit install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
+
 
 devenv-all: devenv ## sets up extra development tools (everything else besides python)
 	# Upgrading client compiler
@@ -511,8 +514,11 @@ _running_containers = $(shell docker ps -aq)
 
 clean-venv: devenv ## Purges .venv into original configuration
 	# Cleaning your venv
-	.venv/bin/pip-sync --quiet $(CURDIR)/requirements.txt
+	.venv/bin/pip-sync --quiet $(CURDIR)/requirements/devenv.txt
 	@pip list
+
+clean-hooks: ## Uninstalls git pre-commit hooks
+	@-pre-commit uninstall 2> /dev/null || rm .git/hooks/pre-commit
 
 clean: .check-clean ## cleans all unversioned files in project and temp files create by this makefile
 	# Cleaning unversioned
@@ -535,7 +541,7 @@ clean-images: ## removes all created images
 	# Cleaning postgres maintenance
 	@$(MAKE_C) packages/postgres-database/docker clean
 
-clean-all: clean clean-more clean-images # Deep clean including .venv and produced images
+clean-all: clean clean-more clean-images clean-hooks # Deep clean including .venv and produced images
 	-rm -rf .venv
 
 

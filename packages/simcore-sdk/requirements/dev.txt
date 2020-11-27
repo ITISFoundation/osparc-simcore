@@ -6,8 +6,10 @@
 #   pip install -r requirements/dev.txt
 #
 
-# installs base + tests requirements
+# installs requirements
+-r _base.txt
 -r _test.txt
+-r _tools.txt
 
 # installs this repo's packages
 -e ../postgres-database/[migration]
@@ -19,11 +21,3 @@
 
 # installs current package
 -e .
-
-## NOTE: Copied from ../../../requirements.txt to avoid mounting
-#        basedir in docker during devel-mode.
-#  TODO: Better solution needed!
-black
-pip-tools
-bump2version
-rope

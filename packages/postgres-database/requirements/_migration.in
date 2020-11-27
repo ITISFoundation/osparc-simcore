@@ -1,8 +1,9 @@
 # Installs dependencies to migrate 'simcore-postgres-database'
 #
+# NOTE: this is an EXTRA!
 
-# frozen specs
--r _base.txt
+# Adds base AS CONSTRAINT specs, not requirement.
+-c _base.txt
 
 urllib3>=1.25.8    # Vulnerability
 

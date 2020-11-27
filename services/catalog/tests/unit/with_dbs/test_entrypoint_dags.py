@@ -7,7 +7,7 @@ from typing import Dict, List
 import pytest
 from starlette.testclient import TestClient
 
-from simcore_service_catalog.__version__ import api_version
+from simcore_service_catalog.meta import api_version
 from simcore_service_catalog.models.schemas.meta import Meta
 
 core_services = ["postgres"]

@@ -40,9 +40,9 @@ async function runTutorial() {
     await tutorial.openNodeFiles(4);
     await tutorial.checkResults(outFiles.length);
 
-    await tutorial.closeStudy();
+    await tutorial.toDashboard();
 
-    await tutorial.removeStudy();
+    await tutorial.removeStudy(studyId);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

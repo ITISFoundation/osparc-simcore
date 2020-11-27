@@ -1,6 +1,6 @@
 [
   {
-    "uuid": "template-uuid-4d5e-9b09-ddcc63121ef4",
+    "uuid": "de2578c5-431e-4d5e-9b09-ddcc63121ef4",
     "name": "Sleepers",
     "description": "",
     "thumbnail": "",
@@ -9,7 +9,7 @@
     "lastChangeDate": "2018-07-09T16:02:22Z",
     "accessRights": {},
     "workbench": {
-      "template-uuid-4434-9504-d4a9bebeda37": {
+      "de2578c5-431e-4434-9504-d4a9bebeda37": {
         "key": "simcore/services/comp/itis/sleeper",
         "version": "1.0.0",
         "label": "sleeper 0",
@@ -27,19 +27,19 @@
           "y": 300
         }
       },
-      "template-uuid-45ac-b2cd-2052ffc64608": {
+      "de2578c5-431e-45ac-b2cd-2052ffc64608": {
         "key": "simcore/services/comp/itis/sleeper",
         "version": "1.0.0",
         "label": "sleeper 1",
         "inputs": {
           "in_1": {
-            "nodeUuid": "template-uuid-4434-9504-d4a9bebeda37",
+            "nodeUuid": "de2578c5-431e-4434-9504-d4a9bebeda37",
             "output": "out_1"
           },
           "in_2": 2
         },
         "inputNodes": [
-          "template-uuid-4434-9504-d4a9bebeda37"
+          "de2578c5-431e-4434-9504-d4a9bebeda37"
         ],
         "outputs": {},
         "position": {
@@ -47,22 +47,22 @@
           "y": 200
         }
       },
-      "template-uuid-4dae-9f64-94ab71317e99": {
+      "de2578c5-431e-4dae-9f64-94ab71317e99": {
         "key": "simcore/services/comp/itis/sleeper",
         "version": "1.0.0",
         "label": "sleeper 2",
         "inputs": {
           "in_1": {
-            "nodeUuid": "template-uuid-45ac-b2cd-2052ffc64608",
+            "nodeUuid": "de2578c5-431e-45ac-b2cd-2052ffc64608",
             "output": "out_1"
           },
           "in_2": {
-            "nodeUuid": "template-uuid-45ac-b2cd-2052ffc64608",
+            "nodeUuid": "de2578c5-431e-45ac-b2cd-2052ffc64608",
             "output": "out_2"
           }
         },
         "inputNodes": [
-          "template-uuid-45ac-b2cd-2052ffc64608"
+          "de2578c5-431e-45ac-b2cd-2052ffc64608"
         ],
         "outputs": {},
         "position": {
@@ -70,18 +70,18 @@
           "y": 200
         }
       },
-      "template-uuid-499e-86d6-9980c33dc8bb": {
+      "de2578c5-431e-499e-86d6-9980c33dc8bb": {
         "key": "simcore/services/comp/itis/sleeper",
         "version": "1.0.0",
         "label": "sleeper 3",
         "inputs": {
           "in_2": {
-            "nodeUuid": "template-uuid-4434-9504-d4a9bebeda37",
+            "nodeUuid": "de2578c5-431e-4434-9504-d4a9bebeda37",
             "output": "out_2"
           }
         },
         "inputNodes": [
-          "template-uuid-4434-9504-d4a9bebeda37"
+          "de2578c5-431e-4434-9504-d4a9bebeda37"
         ],
         "outputs": {},
         "position": {
@@ -89,23 +89,23 @@
           "y": 400
         }
       },
-      "template-uuid-4ac7-aff6-6bb537766c2d": {
+      "de2578c5-431e-4ac7-aff6-6bb537766c2d": {
         "key": "simcore/services/comp/itis/sleeper",
         "version": "1.0.0",
         "label": "sleeper 4",
         "inputs": {
           "in_1": {
-            "nodeUuid": "template-uuid-4dae-9f64-94ab71317e99",
+            "nodeUuid": "de2578c5-431e-4dae-9f64-94ab71317e99",
             "output": "out_1"
           },
           "in_2": {
-            "nodeUuid": "template-uuid-499e-86d6-9980c33dc8bb",
+            "nodeUuid": "de2578c5-431e-499e-86d6-9980c33dc8bb",
             "output": "out_2"
           }
         },
         "inputNodes": [
-          "template-uuid-4dae-9f64-94ab71317e99",
-          "template-uuid-499e-86d6-9980c33dc8bb"
+          "de2578c5-431e-4dae-9f64-94ab71317e99",
+          "de2578c5-431e-499e-86d6-9980c33dc8bb"
         ],
         "outputs": {},
         "position": {

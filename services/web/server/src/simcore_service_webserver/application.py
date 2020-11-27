@@ -3,7 +3,7 @@
 """
 import json
 import logging
-from typing import Dict
+from typing import Dict, Any
 
 from aiohttp import web
 
@@ -40,7 +40,7 @@ from .studies_dispatcher.module_setup import setup_studies_dispatcher
 log = logging.getLogger(__name__)
 
 
-def create_application(config: Dict) -> web.Application:
+def create_application(config: Dict[str, Any]) -> web.Application:
     """
     Initializes service
     """
@@ -84,10 +84,7 @@ def create_application(config: Dict) -> web.Application:
     return app
 
 
-def run_service(config: dict):
-    """Runs service"""
-    log.debug("Serving app ... ")
-
+def run_service(config: Dict[str,Any]):
     app = create_application(config)
 
     async def welcome_banner(_app: web.Application):
