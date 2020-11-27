@@ -5,140 +5,64 @@
 
 import asyncio
 import json
+import logging
 from asyncio import Future
+from typing import Any, Dict
 from unittest.mock import MagicMock
 
 import aiopg.sa
 import pytest
-import sqlalchemy as sa
-from _pytest.nodes import Node
+import tenacity
 from aiopg.sa.result import RowProxy
+from servicelib.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.models.comp_pipeline import StateType
+from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
+from simcore_service_webserver.computation_comp_tasks_listening_task import (
+    comp_tasks_listening_task,
+)
 from sqlalchemy.sql.elements import literal_column
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
-from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME
-from simcore_service_webserver.computation_comp_tasks_listening_task import listen
 
-
-def future_with_result(result):
+def future_with_result(result: Any) -> asyncio.Future:
     f = Future()
     f.set_result(result)
     return f
 
 
 @pytest.fixture
-def mock_project_subsystem(mocker):
-    mock_project_api = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_project_for_user",
-        return_value=future_with_result(""),
+async def mock_project_subsystem(mocker) -> Dict:
+    mocked_project_calls = {
+        "_get_project_owner": mocker.patch(
+            "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
+            return_value=future_with_result(""),
+        ),
+        "_update_project_state": mocker.patch(
+            "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
+            return_value=future_with_result(""),
+        ),
+        "_update_project_outputs": mocker.patch(
+            "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_outputs",
+            return_value=future_with_result(""),
+        ),
+    }
+    yield mocked_project_calls
+
+
+async def test_mock_project_api(mock_project_subsystem: Dict):
+    from simcore_service_webserver.computation_comp_tasks_listening_task import (
+        _get_project_owner,
+        _update_project_outputs,
+        _update_project_state,
     )
-    yield mock_project_api
 
-
-async def test_mock_project_api(mock_project_subsystem):
-    from simcore_service_webserver.projects.projects_api import get_project_for_user
-
-    assert isinstance(get_project_for_user, MagicMock)
-
-
-async def test_listen_query(client):
-    """this tests how the postgres LISTEN query and in particular the aiopg implementation of it works"""
-    listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
-    async with db_engine.acquire() as conn:
-        await conn.execute(listen_query)
-        notifications_queue: asyncio.Queue = conn.connection.notifies
-        assert notifications_queue.empty()
-        # let's put some stuff in there now
-        result = await conn.execute(
-            comp_tasks.insert()
-            .values(outputs=json.dumps({}), node_class=NodeClass.COMPUTATIONAL)
-            .returning(literal_column("*"))
-        )
-        row: RowProxy = await result.fetchone()
-        task = dict(row)
-        # the queue should still be empty because we only check on update
-        assert notifications_queue.empty()
-        # let's update that thing now
-        updated_output = {"some new stuff": "it is new"}
-        await conn.execute(
-            comp_tasks.update()
-            .values(outputs=updated_output)
-            .where(comp_tasks.c.task_id == task["task_id"])
-        )
-        assert not notifications_queue.empty()
-        msg = await notifications_queue.get()
-        assert notifications_queue.empty()
-        assert msg, "notification msg from postgres is empty!"
-
-        task_data = json.loads(msg.payload)
-        assert (
-            task_data["data"]["outputs"] == updated_output
-        ), f"the data received from the database is {task_data}, expected new output is {updated_output}"
-        # FIXME: so currently setting the exact same data again does not trigger again
-        updated_output = {"some new stuff": "it is newer"}
-        await conn.execute(
-            comp_tasks.update()
-            .values(outputs=updated_output)
-            .where(comp_tasks.c.task_id == task["task_id"])
-        )
-        await conn.execute(
-            comp_tasks.update()
-            .values(outputs=updated_output)
-            .where(comp_tasks.c.task_id == task["task_id"])
-        )
-        assert not notifications_queue.empty()
-        assert (
-            notifications_queue.qsize() == 1
-        )  # the DB notifies only if the outputs are distinct!
-        msg = await notifications_queue.get()
-        assert notifications_queue.empty()
-        assert msg, "notification msg from postgres is empty!"
-
-        task_data = json.loads(msg.payload)
-        assert (
-            task_data["data"]["outputs"] == updated_output
-        ), f"the data received from the database is {task_data}, expected new output is {updated_output}"
-
-        # check if we update 2 times only the last time should come out
-        updated_output1 = {"some new stuff": "a first time"}
-        await conn.execute(
-            comp_tasks.update()
-            .values(outputs=updated_output1)
-            .where(comp_tasks.c.task_id == task["task_id"])
-        )
-        updated_output2 = {"some new stuff": "a second time"}
-        await conn.execute(
-            comp_tasks.update()
-            .values(outputs=updated_output2)
-            .where(comp_tasks.c.task_id == task["task_id"])
-        )
-        assert not notifications_queue.empty()
-        assert notifications_queue.qsize() == 2
-        msg1 = await notifications_queue.get()
-        assert not notifications_queue.empty()
-        msg2 = await notifications_queue.get()
-        assert notifications_queue.empty()
-
-        task_data1 = json.loads(msg1.payload)
-        assert (
-            task_data1["data"]["outputs"] == updated_output1
-        ), f"the data received from the database is {task_data}, expected new output is {updated_output1}"
-        task_data2 = json.loads(msg2.payload)
-        assert (
-            task_data2["data"]["outputs"] == updated_output2
-        ), f"the data received from the database is {task_data}, expected new output is {updated_output1}"
-
-
-from simcore_service_webserver.computation_comp_tasks_listening_task import (
-    comp_tasks_listening_task,
-)
+    assert isinstance(_get_project_owner, MagicMock)
+    assert isinstance(_update_project_state, MagicMock)
+    assert isinstance(_update_project_outputs, MagicMock)
 
 
 @pytest.fixture
 async def comp_task_listening_task(
-    loop, mock_project_subsystem, client
+    loop, mock_project_subsystem: Dict, client
 ) -> asyncio.Task:
     listening_task = loop.create_task(comp_tasks_listening_task(client.app))
     yield listening_task
@@ -147,8 +71,25 @@ async def comp_task_listening_task(
     await listening_task
 
 
+MAX_TIMEOUT_S = 10
+logger = logging.getLogger(__name__)
+
+
+@tenacity.retry(
+    wait=tenacity.wait_fixed(1),
+    stop=tenacity.stop_after_delay(MAX_TIMEOUT_S),
+    retry=tenacity.retry_if_exception_type(AssertionError),
+    before=tenacity.before_log(logger, logging.INFO),
+    reraise=True,
+)
+async def _wait_for_call(mock_fct):
+    mock_fct.assert_called()
+
+
 async def test_listen_comp_tasks_task(
-    mock_project_subsystem, comp_task_listening_task, client
+    mock_project_subsystem: Dict,
+    comp_task_listening_task: asyncio.Task,
+    client,
 ):
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
     async with db_engine.acquire() as conn:
@@ -161,10 +102,24 @@ async def test_listen_comp_tasks_task(
         row: RowProxy = await result.fetchone()
         task = dict(row)
 
-        # let's update that thing now
+        # let's update the output
         updated_output = {"some new stuff": "it is new"}
         await conn.execute(
             comp_tasks.update()
             .values(outputs=updated_output)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
+        await _wait_for_call(mock_project_subsystem["_get_project_owner"])
+        await _wait_for_call(mock_project_subsystem["_update_project_outputs"])
+        mock_project_subsystem["_update_project_state"].assert_not_called()
+
+        # let's update the state
+        updated_state = StateType.ABORTED
+        await conn.execute(
+            comp_tasks.update()
+            .values(state=updated_state)
+            .where(comp_tasks.c.task_id == task["task_id"])
+        )
+        await _wait_for_call(mock_project_subsystem["_get_project_owner"])
+        await _wait_for_call(mock_project_subsystem["_update_project_state"])
+        mock_project_subsystem["_update_project_outputs"].assert_not_called()
