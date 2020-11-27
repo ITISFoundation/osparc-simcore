@@ -7,7 +7,7 @@ import asyncio
 import json
 import logging
 from asyncio import Future
-from typing import Any, Dict
+from typing import Any, Dict, List
 from unittest.mock import MagicMock
 
 import aiopg.sa
@@ -86,40 +86,57 @@ async def _wait_for_call(mock_fct):
     mock_fct.assert_called()
 
 
+@pytest.mark.parametrize(
+    "task_class", [NodeClass.COMPUTATIONAL, NodeClass.INTERACTIVE, NodeClass.FRONTEND]
+)
+@pytest.mark.parametrize(
+    "upd_value, exp_calls",
+    [
+        (
+            {"outputs": {"some new stuff": "it is new"}},
+            ["_get_project_owner", "_update_project_outputs"],
+        ),
+        (
+            {"state": StateType.ABORTED},
+            ["_get_project_owner", "_update_project_state"],
+        ),
+        (
+            {"outputs": {"some new stuff": "it is new"}, "state": StateType.ABORTED},
+            ["_get_project_owner", "_update_project_outputs", "_update_project_state"],
+        ),
+        (
+            {"inputs": {"should not trigger": "right?"}},
+            [],
+        ),
+    ],
+)
 async def test_listen_comp_tasks_task(
     mock_project_subsystem: Dict,
     comp_task_listening_task: asyncio.Task,
     client,
+    upd_value: Dict[str, Any],
+    exp_calls: List[str],
+    task_class: NodeClass,
 ):
     db_engine: aiopg.sa.Engine = client.app[APP_DB_ENGINE_KEY]
     async with db_engine.acquire() as conn:
         # let's put some stuff in there now
         result = await conn.execute(
             comp_tasks.insert()
-            .values(outputs=json.dumps({}), node_class=NodeClass.COMPUTATIONAL)
+            .values(outputs=json.dumps({}), node_class=task_class)
             .returning(literal_column("*"))
         )
         row: RowProxy = await result.fetchone()
         task = dict(row)
 
-        # let's update the output
-        updated_output = {"some new stuff": "it is new"}
+        # let's update some values
         await conn.execute(
             comp_tasks.update()
-            .values(outputs=updated_output)
+            .values(**upd_value)
             .where(comp_tasks.c.task_id == task["task_id"])
         )
-        await _wait_for_call(mock_project_subsystem["_get_project_owner"])
-        await _wait_for_call(mock_project_subsystem["_update_project_outputs"])
-        mock_project_subsystem["_update_project_state"].assert_not_called()
-
-        # let's update the state
-        updated_state = StateType.ABORTED
-        await conn.execute(
-            comp_tasks.update()
-            .values(state=updated_state)
-            .where(comp_tasks.c.task_id == task["task_id"])
-        )
-        await _wait_for_call(mock_project_subsystem["_get_project_owner"])
-        await _wait_for_call(mock_project_subsystem["_update_project_state"])
-        mock_project_subsystem["_update_project_outputs"].assert_not_called()
+        for key, mock_fct in mock_project_subsystem.items():
+            if key in exp_calls:
+                await _wait_for_call(mock_fct)
+            else:
+                mock_fct.assert_not_called()
