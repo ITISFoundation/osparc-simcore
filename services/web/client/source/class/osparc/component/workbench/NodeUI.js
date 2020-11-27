@@ -300,14 +300,61 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return bounds;
     },
 
+    __unscaleMoveCoordinates: function(x, y) {
+      x /= this.getScale();
+      y /= this.getScale();
+      return {
+        x,
+        y
+      };
+    },
+
+    // override qx.ui.core.MMovable
+    _onMovePointerDown : function(e) {
+      this.base(arguments, e);
+
+      const widgetLocation = this.getContentLocation();
+      this.__dragOffX = widgetLocation.left - e.getDocumentLeft();
+      this.__dragOffY = widgetLocation.top - e.getDocumentTop();
+    },
+
     // override qx.ui.core.MMovable
     _onMovePointerMove: function(e) {
-      this.base(arguments, e);
-      if (e.getPropagationStopped() === true) {
-        const cBounds = this.getCurrentBounds();
-        this.getNode().setPosition(cBounds.left, cBounds.top);
-        this.fireEvent("nodeMoving");
+      // Only react when dragging is active
+      if (!this.hasState("move")) {
+        return;
       }
+      const native = e.getNativeEvent();
+      const x = native.clientX + this.__dragOffX - 351;
+      const y = native.clientY + this.__dragOffY - 51;
+      const coords = this.__unscaleMoveCoordinates(x, y);
+      const insets = this.getLayoutParent().getInsets();
+      this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
+      e.stopPropagation();
+
+      this.getNode().setPosition(coords.x, coords.y);
+      this.fireEvent("nodeMoving");
+    },
+
+    // override qx.ui.core.MMovable
+    _onMovePointerUp : function(e) {
+      if (this.hasListener("roll")) {
+        this.removeListener("roll", this._onMoveRoll, this);
+      }
+
+      // Only react when dragging is active
+      if (!this.hasState("move")) {
+        return;
+      }
+
+      this._onMovePointerMove(e);
+
+      // Remove drag state
+      this.removeState("move");
+
+      this.releaseCapture();
+
+      e.stopPropagation();
     },
 
     _applyThumbnail: function(thumbnail, oldThumbnail) {
