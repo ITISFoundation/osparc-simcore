@@ -11,6 +11,7 @@ import pytest
 from _pytest.nodes import Node
 from aiopg.sa.engine import Engine, SAConnection
 from aiopg.sa.result import RowProxy
+from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import (
     DB_CHANNEL_NAME,
     NodeClass,
@@ -72,7 +73,7 @@ async def _assert_notification_queue_status(
         assert msg, "notification msg from postgres is empty!"
         task_data = json.loads(msg.payload)
 
-        for k in ["table", "schema", "action", "data"]:
+        for k in ["table", "changes", "action", "data"]:
             assert k in task_data, f"invalid structure, expected [{k}] in {task_data}"
 
         tasks.append(task_data)
@@ -103,8 +104,11 @@ async def test_listen_query(
     """this tests how the postgres LISTEN query and in particular the aiopg implementation of it works"""
     # let's test the trigger
     updated_output = {"some new stuff": "it is new"}
-    await _update_comp_task_with(db_connection, task, outputs=updated_output)
+    await _update_comp_task_with(
+        db_connection, task, outputs=updated_output, state=StateType.ABORTED
+    )
     tasks = await _assert_notification_queue_status(db_notification_queue, 1)
+    assert tasks[0]["changes"] == ["outputs", "state"]
     assert (
         tasks[0]["data"]["outputs"] == updated_output
     ), f"the data received from the database is {tasks[0]}, expected new output is {updated_output}"
@@ -114,6 +118,7 @@ async def test_listen_query(
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     await _update_comp_task_with(db_connection, task, outputs=updated_output)
     tasks = await _assert_notification_queue_status(db_notification_queue, 1)
+    assert tasks[0]["changes"] == ["outputs"]
     assert (
         tasks[0]["data"]["outputs"] == updated_output
     ), f"the data received from the database is {tasks[0]}, expected new output is {updated_output}"
@@ -129,6 +134,7 @@ async def test_listen_query(
     tasks = await _assert_notification_queue_status(db_notification_queue, NUM_CALLS)
 
     for n, output in enumerate(update_outputs):
+        assert tasks[n]["changes"] == ["outputs"]
         assert (
             tasks[n]["data"]["outputs"] == output
         ), f"the data received from the database is {tasks[n]}, expected new output is {output}"

@@ -71,6 +71,7 @@ CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
     DECLARE
         record RECORD;
         payload JSON;
+        changes JSONB;
     BEGIN
         IF (TG_OP = 'DELETE') THEN
             record = OLD;
@@ -78,8 +79,12 @@ CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
             record = NEW;
         END IF;
 
+        SELECT jsonb_agg(pre.key ORDER BY pre.key) INTO changes
+        FROM jsonb_each(to_jsonb(OLD)) AS pre, jsonb_each(to_jsonb(NEW)) AS post
+        WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
+
         payload = json_build_object('table', TG_TABLE_NAME,
-                                    'schema', TG_TABLE_SCHEMA,
+                                    'changes', changes,
                                     'action', TG_OP,
                                     'data', row_to_json(record));
 
