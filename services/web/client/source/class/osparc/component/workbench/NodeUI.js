@@ -74,11 +74,19 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       check: "osparc.data.model.Node",
       nullable: false
     },
+
+    scale: {
+      check: "Number",
+      event: "changeScale",
+      nullable: false
+    },
+
     thumbnail: {
       check: "String",
       nullable: true,
       apply: "_applyThumbnail"
     },
+
     appearance: {
       init: "window-small-cap",
       refine: true

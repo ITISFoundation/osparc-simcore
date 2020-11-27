@@ -136,6 +136,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       check: "Number",
       init: 1,
       apply: "__applyScale",
+      event: "changeScale",
       nullable: false
     }
   },
@@ -330,7 +331,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __createNodeUI: function(nodeId) {
       let node = this.__getWorkbench().getNode(nodeId);
 
-      let nodeUI = new osparc.component.workbench.NodeUI(node);
+      const nodeUI = new osparc.component.workbench.NodeUI(node);
+      this.bind("scale", nodeUI, "scale");
       nodeUI.populateNodeLayout();
       this.__createDragDropMechanism(nodeUI);
 
