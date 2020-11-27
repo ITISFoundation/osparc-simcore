@@ -37,7 +37,7 @@ expiringdict==1.2.1       # via -r requirements/_base.in
 hiredis==1.1.0            # via aioredis
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via email-validator, idna-ssl, yarl
-importlib-metadata==1.7.0  # via jsonschema, kombu
+importlib-metadata==3.0.0  # via jsonschema, kombu
 isodate==0.6.0            # via openapi-core
 jinja-app-loader==1.0.2   # via -r requirements/_base.in
 jinja2==2.11.2            # via aiohttp-jinja2, aiohttp-swagger

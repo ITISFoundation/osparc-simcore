@@ -3,13 +3,12 @@
     - config-file schema
     - settings
 """
-from typing import Optional
+from typing import Dict, Optional
 
 import trafaret as T
+from aiohttp.web import Application
 from pydantic import BaseSettings
 from servicelib.application_keys import APP_CONFIG_KEY
-from aiohttp.web import Application
-from typing import Dict
 
 CONFIG_SECTION_NAME = "projects"
 
