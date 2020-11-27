@@ -48,7 +48,7 @@ async def mock_project_subsystem(mocker) -> Dict:
     yield mocked_project_calls
 
 
-async def test_mock_project_api(mock_project_subsystem: Dict):
+async def test_mock_project_api(loop, mock_project_subsystem: Dict):
     from simcore_service_webserver.computation_comp_tasks_listening_task import (
         _get_project_owner,
         _update_project_outputs,
