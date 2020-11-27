@@ -874,7 +874,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else {
         newScale = this.getScale()/factor;
       }
-      if (newScale > 0.25 && newScale < 3.0) {
+      if (newScale > 0.25 && newScale < 4.0) {
         this.setScale(newScale);
       }
     },
