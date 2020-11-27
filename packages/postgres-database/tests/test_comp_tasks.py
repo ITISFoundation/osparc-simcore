@@ -8,7 +8,6 @@ import json
 from typing import Dict, List
 
 import pytest
-from _pytest.nodes import Node
 from aiopg.sa.engine import Engine, SAConnection
 from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.comp_pipeline import StateType
