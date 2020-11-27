@@ -266,8 +266,7 @@ qx.Class.define("osparc.data.model.Study", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
-      osparc.data.Resources.fetch("studies", "close", params)
-        .catch(err => console.error(err));
+      return osparc.data.Resources.fetch("studies", "close", params);
     },
 
     removeIFrames: function() {

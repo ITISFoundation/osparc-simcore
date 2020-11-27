@@ -225,6 +225,18 @@ class TutorialBase {
     return;
   }
 
+  async waitForStudyUnlocked(studyId, timeout = 10000) {
+    const start = new Date().getTime();
+    while ((new Date().getTime())-start < timeout) {
+      await utils.sleep(timeout/10);
+      if (await utils.isStudyUnlocked(this.__page, studyId)) {
+        return;
+      }
+    }
+    console.log("Timeout reached waiting for study unlock", ((new Date().getTime())-start)/1000);
+    return;
+  }
+
   async restoreIFrame() {
     await auto.restoreIFrame(this.__page);
   }
@@ -289,6 +301,10 @@ class TutorialBase {
     await this.takeScreenshot("checkResults_after");
   }
 
+  async toDashboard() {
+    await auto.toDashboard(this.__page);
+  }
+
   async closeStudy() {
     await this.takeScreenshot("closeStudy_before");
     this.__responsesQueue.addResponseListener(":close");
@@ -303,11 +319,10 @@ class TutorialBase {
     await this.takeScreenshot("closeStudy_after");
   }
 
-  async removeStudy() {
+  async removeStudy(studyId) {
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
-      // wait for projects to be loaded
-      await utils.sleep(2000);
+      await this.waitForStudyUnlocked(studyId);
       await auto.deleteFirstStudy(this.__page, this.__templateName);
     }
     catch(err) {
