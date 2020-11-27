@@ -53,8 +53,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
 
-    this.__desktopCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this._add(this.__desktopCanvas, {
+    this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+    this._add(this.__workbenchLayout, {
       flex: 1
     });
 
@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this._add(nodesExposedLayout);
 
     this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-    this.__desktopCanvas.add(this.__desktop, {
+    this.__workbenchLayout.add(this.__desktop, {
       left: 0,
       top: 0,
       right: 0,
@@ -74,7 +74,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       textColor: "workbench-start-hint",
       visibility: "excluded"
     });
-    this.__desktopCanvas.add(this.__startHint);
+    this.__workbenchLayout.add(this.__startHint);
 
     this.__svgWidgetLinks = new osparc.component.workbench.SvgWidget("SvgWidget_Links");
     this.__desktop.add(this.__svgWidgetLinks, {
@@ -96,7 +96,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     });
 
     let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
-    this.__desktopCanvas.add(buttonContainer, {
+    this.__workbenchLayout.add(buttonContainer, {
       bottom: 10,
       right: 10
     });
@@ -649,7 +649,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       let portPos = nodeUI.getEdgePoint(port);
       if (portPos[0] === null) {
-        portPos[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
+        portPos[0] = parseInt(this.__workbenchLayout.getBounds().width - 6);
       }
 
       let x1;
@@ -693,7 +693,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       let p1 = node1.getEdgePoint(port1);
       let p2 = node2.getEdgePoint(port2);
       if (p2[0] === null) {
-        p2[0] = parseInt(this.__desktopCanvas.getBounds().width - 6);
+        p2[0] = parseInt(this.__workbenchLayout.getBounds().width - 6);
       }
       return [p1, p2];
     },
@@ -880,7 +880,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __applyScale: function(value) {
-      this.__setZoom(this.__desktopCanvas.getContentElement().getDomElement(), value);
+      this.__setZoom(this.__workbenchLayout.getContentElement().getDomElement(), value);
     },
 
     __setZoom: function(el, zoom) {
@@ -951,9 +951,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.resetSelectedNodes();
       });
 
-      this.__desktopCanvas.addListener("resize", () => this.__updateHint(), this);
+      this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
 
-      this.__desktopCanvas.addListener("tap", e => {
+      this.__workbenchLayout.addListener("tap", e => {
         this.__selectedItemChanged(null);
       }, this);
     },
@@ -1024,7 +1024,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           textColor: "workbench-start-hint",
           visibility: "excluded"
         });
-        this.__desktopCanvas.add(this.__dropHint);
+        this.__workbenchLayout.add(this.__dropHint);
         this.__dropHint.rect = this.__svgWidgetDrop.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
       }
       if (dragging) {
@@ -1053,7 +1053,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const {
           height,
           width
-        } = this.__desktopCanvas.getBounds();
+        } = this.__workbenchLayout.getBounds();
         this.__startHint.setLayoutProperties({
           top: Math.round((height - hintBounds.height) / 2),
           left: Math.round((width - hintBounds.width) / 2)
