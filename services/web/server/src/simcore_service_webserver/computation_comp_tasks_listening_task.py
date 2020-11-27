@@ -13,6 +13,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from pydantic.types import PositiveInt
 from sqlalchemy.sql import select
+from servicelib.logging_utils import log_decorator
 
 from models_library.projects import ProjectID
 from servicelib.application_keys import APP_DB_ENGINE_KEY
@@ -30,12 +31,10 @@ def _is_state_changed(current_state: str, new_state: str) -> bool:
     return current_state != new_state
 
 
+@log_decorator(logger=log)
 async def _update_project_node_and_notify_if_needed(
     app: web.Application, project: Dict, new_node_data: Dict, user_id: int
 ) -> None:
-    log.debug(
-        "Received update from comp_task update from DB: %s", pformat(new_node_data)
-    )
     node_uuid = new_node_data["node_id"]
     project_uuid = new_node_data["project_id"]
 
@@ -79,6 +78,7 @@ async def _update_project_node_and_notify_if_needed(
         await projects_api.notify_project_state_update(app, project)
 
 
+@log_decorator(logger=log)
 async def _get_project_owner(
     conn: SAConnection, project_uuid: ProjectID
 ) -> PositiveInt:
@@ -99,21 +99,13 @@ async def listen(app: web.Application):
         while True:
             # this is a blocking call
             msg = await conn.connection.notifies.get()
+            log.debug("received update from database: %s", pformat(msg.payload))
 
-            # Changes on comp_tasks.outputs of non-frontend task
-            log.debug("DB comp_tasks.outputs/state updated: <- %s", msg.payload)
-            task_data = json.loads(msg.payload)["data"]
-            log.debug(
-                "node %s new outputs: %s",
-                task_data["node_id"],
-                pformat(task_data["outputs"]),
-            )
-            log.debug(
-                "node %s new state: %s",
-                task_data["node_id"],
-                pformat(task_data["state"]),
-            )
-            project_uuid = task_data["project_id"]
+            task_data = json.loads(msg.payload).get("data", {})
+            project_uuid = task_data.get("project_id", None)
+            if not task_data or not project_uuid:
+                log.error("task data invalid: %s", pformat(msg.payload))
+                continue
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
@@ -132,18 +124,19 @@ async def listen(app: web.Application):
                 )
             except projects_exceptions.ProjectNotFoundError as exc:
                 log.warning(
-                    "Project %s was not found and cannot be updated", exc.project_uuid
+                    "Project %s was not found and cannot be updated. Maybe was it deleted?",
+                    exc.project_uuid,
                 )
                 continue
             except projects_exceptions.ProjectOwnerNotFoundError as exc:
                 log.warning(
-                    "Project %s user owner was not found and cannot be updated",
+                    "Project owner of project %s could not be found, is the project valid?",
                     exc.project_uuid,
                 )
                 continue
             except projects_exceptions.NodeNotFoundError as exc:
                 log.warning(
-                    "Node %s ib project %s not found and cannot be updated",
+                    "Node %s of project %s not found and cannot be updated. Maybe was it deleted?",
                     exc.node_uuid,
                     exc.project_uuid,
                 )
