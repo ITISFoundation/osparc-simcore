@@ -300,7 +300,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return bounds;
     },
 
-    // override qx.ui.window.Window "move" event listener
+    // override qx.ui.core.MMovable
     _onMovePointerMove: function(e) {
       this.base(arguments, e);
       if (e.getPropagationStopped() === true) {
