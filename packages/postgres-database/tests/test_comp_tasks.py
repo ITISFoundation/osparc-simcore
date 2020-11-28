@@ -122,7 +122,7 @@ async def test_listen_query(
         tasks[0]["data"]["outputs"] == updated_output
     ), f"the data received from the database is {tasks[0]}, expected new output is {updated_output}"
 
-    # updating twice with different stuff comes out in FIFO order
+    # updating a number of times with different stuff comes out in FIFO order
     NUM_CALLS = 20
     update_outputs = []
     for n in range(NUM_CALLS):
