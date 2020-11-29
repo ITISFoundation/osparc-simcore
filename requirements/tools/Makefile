@@ -15,7 +15,7 @@
 .DEFAULT_GOAL := help
 
 # locations
-REPODIR := $(abspath $(CURDIR)/../..)
+REPODIR := $(shell git rev-parse --show-toplevel)
 PACKAGES_DIR := $(abspath $(REPODIR)/packages)
 SERVICES_DIR := $(abspath $(REPODIR)/services)
 
@@ -69,6 +69,7 @@ run: build ## Runs upgrade in a container
 		--entrypoint=/bin/bash \
 		local/python-devkit:latest \
 		-c "cd scripts/requirements; make reqs $(if $(upgrade),upgrade=$(upgrade),)"
+
 
 .PHONY: shell
 shell:
