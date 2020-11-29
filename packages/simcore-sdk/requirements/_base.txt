@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
 aiofiles==0.5.0           # via -r requirements/_base.in
-aiohttp==3.6.3            # via -r requirements/_base.in
+aiohttp==3.7.3            # via -r requirements/_base.in
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 async-timeout==3.0.1      # via aiohttp
 attrs==20.3.0             # via -r requirements/_base.in, aiohttp

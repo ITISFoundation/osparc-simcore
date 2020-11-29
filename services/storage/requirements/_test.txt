@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.2            # via -c requirements/_base.txt, pytest-aiohttp
+aiohttp==3.7.3            # via -c requirements/_base.txt, pytest-aiohttp
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp
 attrs==20.2.0             # via -c requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker

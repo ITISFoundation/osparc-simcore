@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_packages.txt requirements/_packages.in
 #
 aiodebug==1.1.2           # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiohttp==3.6.3            # via -c requirements/_base.txt, -r requirements/../../../packages/service-library/requirements/_base.in, aiozipkin
+aiohttp==3.7.3            # via -c requirements/_base.txt, -r requirements/../../../packages/service-library/requirements/_base.in, aiozipkin
 aiopg[sa]==1.0.0          # via -c requirements/_base.txt, -r requirements/../../../packages/service-library/requirements/_base.in
 aiozipkin==0.7.1          # via -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../requirements/constraints.txt, -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp

@@ -6,7 +6,7 @@
 #
 aiodocker==0.19.1         # via -r requirements/_base.in
 aiofiles==0.5.0           # via fastapi
-aiohttp==3.7.2            # via aiodocker
+aiohttp==3.7.3            # via aiodocker
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 amqp==5.0.2               # via kombu
 aniso8601==7.0.0          # via graphene
