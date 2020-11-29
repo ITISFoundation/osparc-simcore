@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
 import json
 from pathlib import Path
 from typing import Dict, Iterator, Optional
@@ -9,9 +10,9 @@ import pytest
 import yaml
 
 
-@pytest.fixture
-def port_type() -> str:
-    return ""
+@pytest.fixture(params=["input", "output"])
+def port_type(request) -> str:
+    return request.param
 
 
 @pytest.fixture
@@ -38,6 +39,9 @@ def validation_cfg(validation_dir: Path, port_type: str) -> Optional[Dict]:
     return None
 
 
+# HELPERS -----------
+
+
 def _find_key_in_cfg(filename: str, value: Dict) -> Iterator[str]:
     for k, v in value.items():
         if k == filename:
@@ -51,8 +55,7 @@ def _find_key_in_cfg(filename: str, value: Dict) -> Iterator[str]:
                 yield result
 
 
-@pytest.mark.parametrize("port_type", ["input", "output"])
-def test_validation_data_follows_definition(
+def assert_validation_data_follows_definition(
     label_cfg: Dict, validation_cfg: Dict, validation_folder: Path
 ):
     for key, value in label_cfg.items():

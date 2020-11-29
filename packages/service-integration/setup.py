@@ -32,6 +32,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3.6",
+        "Framework :: Pytest",
     ],
     long_description=readme,
     license="MIT license",
@@ -45,7 +46,8 @@ setup(
     zip_safe=False,
     entry_points={
         "console_scripts": [
-            "simcore-service-integrator=service_integration.__main__:main",
-        ]
+            "simcore-service-integrator=service_integration.__main__:main"
+        ],
+        "pytest11": ["simcore_service_integration = service_integration.pytest_plugin"],
     },
 )

@@ -4,5 +4,28 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
+attrs==20.3.0             # via jsonschema, pytest
+certifi==2020.11.8        # via requests
+chardet==3.0.4            # via requests
 click==7.1.2              # via -r requirements/_base.in
+docker==4.4.0             # via -r requirements/_base.in
+idna==2.10                # via requests
+importlib-metadata==3.1.0  # via jsonschema, pluggy, pytest
+iniconfig==1.1.1          # via pytest
+jsonschema==3.2.0         # via -r requirements/_base.in
+packaging==20.7           # via pytest
+pluggy==0.13.1            # via pytest
+py==1.9.0                 # via pytest
+pyparsing==2.4.7          # via packaging
+pyrsistent==0.17.3        # via jsonschema
+pytest==6.1.2             # via -r requirements/_base.in
 pyyaml==5.3.1             # via -r requirements/_base.in
+requests==2.25.0          # via docker
+six==1.15.0               # via docker, jsonschema, websocket-client
+toml==0.10.2              # via pytest
+urllib3==1.26.2           # via requests
+websocket-client==0.57.0  # via docker
+zipp==3.4.0               # via importlib-metadata
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools

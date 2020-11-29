@@ -25,6 +25,8 @@ Commands:
 
 ```
 
+Makefile sample:
+
 ```Makefile
 service.cli/run: $(metatada)
 	# Updates adapter script from metadata in $<
@@ -35,4 +37,34 @@ docker-compose-meta.yml: $(metatada)
 	simcore-service-integrator update-compose-labels --compose $@ --metadata $<
 
 ```
+
+
+### testing
+
+Created a pytest-plugin from submodule ``service_integration.pytest_plugin`` with fixtures and helper assert function.
+
+A sample of ``conftest.py`` in target repo
+
+```python
+import pytest
+
+pytest_plugins = [
+    "service_integration.pytest_plugin.folder_structure",
+    "service_integration.pytest_plugin.validation_data",
+]
+
+current_dir = Path(sys.argv[0] if __name__ ==
+                   "__main__" else __file__).resolve().parent
+
+
+@pytest.fixture(scope='session')
+def project_slug_dir() -> Path:
+    project_slug_dir = current_dir.parent
+    assert project_slug_dir.exists()
+    return project_slug_dir
+
+```
+
+----
+
  Implementing https://github.com/ITISFoundation/osparc-simcore/issues/1884

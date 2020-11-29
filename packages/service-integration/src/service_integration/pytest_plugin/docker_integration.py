@@ -6,15 +6,82 @@ import filecmp
 import json
 import os
 import shutil
+import urllib.request
 from pathlib import Path
 from pprint import pformat
 from typing import Dict
 
 import docker
+import jsonschema
 import pytest
+import yaml
 
 _FOLDER_NAMES = ["input", "output"]
 _CONTAINER_FOLDER = Path("/home/scu/data")
+
+
+@pytest.fixture
+def docker_client() -> docker.DockerClient:
+    return docker.from_env()
+
+
+@pytest.fixture
+def docker_image_key(docker_client: docker.DockerClient, project_name: str) -> str:
+    image_key = f"{project_name}:"
+    docker_images = [
+        image
+        for image in docker_client.images.list()
+        if any(image_key in tag for tag in image.tags)
+    ]
+    return docker_images[0].tags[0]
+
+
+@pytest.fixture
+def docker_image(
+    docker_client: docker.DockerClient, docker_image_key: str
+) -> docker.models.images.Image:
+    docker_image = docker_client.images.get(docker_image_key)
+    assert docker_image
+    return docker_image
+
+
+@pytest.fixture
+def temporary_path(tmp_path: Path) -> Path:
+    def _is_gitlab_executor() -> bool:
+        return "GITLAB_CI" in os.environ
+
+    if _is_gitlab_executor():
+        # /builds is a path that is shared between the docker in docker container and the job builder container
+        shared_path = Path("/builds/{}/tmp".format(os.environ["CI_PROJECT_PATH"]))
+        shared_path.mkdir(parents=True, exist_ok=True)
+        return shared_path
+    return tmp_path
+
+
+# FIXTURES
+@pytest.fixture
+def osparc_service_labels_jsonschema(tmp_path) -> Dict:
+    def _download_url(url: str, file: Path):
+        # Download the file from `url` and save it locally under `file_name`:
+        with urllib.request.urlopen(url) as response, file.open("wb") as out_file:
+            shutil.copyfileobj(response, out_file)
+        assert file.exists()
+
+    url = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/api/specs/common/schemas/node-meta-v0.0.1.json"
+    # TODO: Make sure this is installed with this package!!!
+
+    file_name = tmp_path / "service_label.json"
+    _download_url(url, file_name)
+    with file_name.open() as fp:
+        json_schema = json.load(fp)
+        return json_schema
+
+
+@pytest.fixture(scope="session")
+def metadata_labels(metadata_file: Path) -> Dict:
+    with metadata_file.open() as fp:
+        metadata = yaml.safe_load(fp)
+        return metadata
 
 
 @pytest.fixture
@@ -114,7 +181,10 @@ def docker_container(
             container.remove()
 
 
-def _convert_to_simcore_labels(image_labels: Dict) -> Dict:
+# HELPERS --------------------
+
+
+def convert_to_simcore_labels(image_labels: Dict) -> Dict:
     io_simcore_labels = {}
     for key, value in image_labels.items():
         if str(key).startswith("io.simcore."):
@@ -128,7 +198,7 @@ def _convert_to_simcore_labels(image_labels: Dict) -> Dict:
     return io_simcore_labels
 
 
-def test_run_container(
+def assert_container_runs(
     validation_folders: Dict,
     host_folders: Dict,
     docker_container: docker.models.containers.Container,
@@ -183,7 +253,7 @@ def test_run_container(
             output_cfg = json.load(fp)
 
     container_labels = docker_container.labels
-    io_simcore_labels = _convert_to_simcore_labels(container_labels)
+    io_simcore_labels = convert_to_simcore_labels(container_labels)
     assert "outputs" in io_simcore_labels
     for key, value in io_simcore_labels["outputs"].items():
         assert "type" in value
@@ -201,3 +271,31 @@ def test_run_container(
                     assert mapped_value == key
                     filename_to_look_for = filename
             assert (host_folders["output"] / filename_to_look_for).exists()
+
+
+def assert_docker_io_simcore_labels_against_files(
+    docker_image: docker.models.images.Image, metadata_labels: Dict
+):
+    image_labels = docker_image.labels
+    io_simcore_labels = convert_to_simcore_labels(image_labels)
+    # check files are identical
+    for key, value in io_simcore_labels.items():
+        assert key in metadata_labels
+        assert value == metadata_labels[key]
+
+
+def assert_validate_docker_io_simcore_labels(
+    docker_image: docker.models.images.Image, osparc_service_labels_jsonschema: Dict
+):
+    image_labels = docker_image.labels
+    # get io labels
+    io_simcore_labels = convert_to_simcore_labels(image_labels)
+    # validate schema
+    try:
+        jsonschema.validate(io_simcore_labels, osparc_service_labels_jsonschema)
+    except jsonschema.SchemaError:
+        pytest.fail(
+            "Schema {} contains errors".format(osparc_service_labels_jsonschema)
+        )
+    except jsonschema.ValidationError:
+        pytest.fail("Failed to validate docker image io labels against schema")
