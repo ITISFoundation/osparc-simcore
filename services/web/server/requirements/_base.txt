@@ -52,7 +52,7 @@ openapi-core==0.12.0      # via -r requirements/../../../../packages/service-lib
 openapi-spec-validator==0.2.9  # via openapi-core
 pamqp==2.3.0              # via aiormq
 passlib==1.7.2            # via -r requirements/_base.in
-prometheus-client==0.8.0  # via -r requirements/../../../../packages/service-library/requirements/_base.in
+prometheus-client==0.9.0  # via -r requirements/../../../../packages/service-library/requirements/_base.in
 prompt-toolkit==3.0.8     # via click-repl
 psycopg2-binary==2.8.5    # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiopg, sqlalchemy
 pycparser==2.20           # via cffi
