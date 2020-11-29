@@ -23,7 +23,7 @@ pathspec==0.8.1           # via black
 pathtools==0.1.2          # via watchdog
 pip-tools==5.4.0          # via -r requirements/../../../../requirements/devenv.txt
 pre-commit==2.9.2         # via -r requirements/../../../../requirements/devenv.txt
-pyyaml==5.3.1             # via -c requirements/_base.txt, -c requirements/_test.txt, pre-commit, watchdog
+pyyaml==5.3.1             # via -c requirements/../../../../requirements/constraints.txt, -c requirements/_base.txt, -c requirements/_test.txt, pre-commit, watchdog
 regex==2020.11.13         # via black
 six==1.15.0               # via -c requirements/_base.txt, -c requirements/_test.txt, pip-tools, virtualenv
 toml==0.10.2              # via -c requirements/_test.txt, black, pre-commit

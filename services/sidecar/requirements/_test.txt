@@ -4,8 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.6.3            # via -c requirements/_base.txt, -c requirements/_packages.txt, pytest-aiohttp
-aiopg[sa]==1.0.0          # via -c requirements/_base.txt, -c requirements/_packages.txt, -r requirements/_test.in
+aiopg==1.0.0              # via -c requirements/_base.txt, -c requirements/_packages.txt, -r requirements/_test.in
 alembic==1.4.3            # via -r requirements/_test.in
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -c requirements/_base.txt, -c requirements/_packages.txt, aiohttp
@@ -48,12 +47,12 @@ python-dotenv==0.15.0     # via -r requirements/_test.in
 python-editor==1.0.4      # via alembic
 requests==2.25.0          # via coveralls, docker
 six==1.15.0               # via -c requirements/_base.txt, -c requirements/_packages.txt, astroid, docker, packaging, python-dateutil, websocket-client
-sqlalchemy[postgresql_psycopg2binary]==1.3.19  # via -c requirements/_base.txt, -c requirements/_packages.txt, aiopg, alembic
+sqlalchemy[postgresql_psycopg2binary]==1.3.19  # via -c requirements/../../../requirements/constraints.txt, -c requirements/_base.txt, -c requirements/_packages.txt, aiopg, alembic
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.2              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -c requirements/_base.txt, -c requirements/_packages.txt, aiohttp, yarl
-urllib3==1.25.11          # via -c requirements/_base.txt, -c requirements/_packages.txt, requests
+urllib3==1.25.11          # via -c requirements/../../../requirements/constraints.txt, -c requirements/_base.txt, -c requirements/_packages.txt, requests
 websocket-client==0.57.0  # via docker
 wrapt==1.12.1             # via astroid
 yarl==1.5.1               # via -c requirements/_base.txt, -c requirements/_packages.txt, aiohttp

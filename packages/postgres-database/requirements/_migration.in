@@ -3,9 +3,10 @@
 # NOTE: this is an EXTRA!
 
 # Adds base AS CONSTRAINT specs, not requirement.
+-c ../../../requirements/constraints.txt
 -c _base.txt
 
-urllib3>=1.25.8    # Vulnerability
+urllib3
 
 alembic
 click
