@@ -22,13 +22,20 @@ def get_input_config(metadata_file: Path) -> Dict:
 @click.command()
 @click.option(
     "--metadata",
+    "metadata_file_path",
     help="The metadata yaml of the node",
     type=Path,
     required=False,
     default="metadata/metadata.yml",
 )
-@click.option("--runscript", help="Path to the run script ", type=Path, required=True)
-def main(metadata_file_path: Path, run_script_file_path: Path) -> int:
+@click.option(
+    "--runscript",
+    "run_script_file_path",
+    help="Path to the run script ",
+    type=Path,
+    required=True,
+)
+def main(metadata_file_path: Path, run_script_file_path: Path):
     """Creates a sh script that uses jq tool to retrieve variables
     to use in sh from a json file for use in an osparc service.
 

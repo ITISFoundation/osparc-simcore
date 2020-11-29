@@ -13,4 +13,4 @@ def main():
 
 
 main.add_command(run_creator.main, "run-creator")
-main.add_command(update_compose_labels.main, "updated-compose-label")
+main.add_command(update_compose_labels.main, "update-compose-labels")

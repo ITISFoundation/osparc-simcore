@@ -44,12 +44,14 @@ def update_compose_labels(compose_cfg: Dict, metadata: Dict[str, str]) -> bool:
 @click.command()
 @click.option(
     "--compose",
+    "compose_file_path",
     help="The compose file where labels shall be updated",
     type=Path,
     required=True,
 )
 @click.option(
     "--metadata",
+    "metadata_file_path",
     help="The metadata yaml file",
     type=Path,
     required=False,
