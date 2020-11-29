@@ -2,16 +2,24 @@
 # Specifies third-party dependencies for 'service-integration'
 #
 
+
+click
+
+# publising
+#bump2version
+
+
+
 # tools
 pyyaml
-docker
-jsonschema
+#docker
+#jsonschema
 
 
 # tests
-pytest
-pytest-cookies
-pytest-cov
-pytest-instafail
-pytest-mock
-pytest-sugar
+#pytest
+#pytest-cookies
+#pytest-cov
+#pytest-instafail
+#pytest-mock
+#pytest-sugar

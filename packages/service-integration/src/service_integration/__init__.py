@@ -1,4 +1,4 @@
-""" osparc's service models library
+""" Library to facilitate the integration of user services running in osparc-simcore
 
 """
 

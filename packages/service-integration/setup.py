@@ -41,6 +41,11 @@ setup(
     include_package_data=True,
     test_suite="tests",
     tests_require=test_requirements,
-    extras_require={"test": test_requirements},
+    extras_require={},
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "simcore-service-integrator=service_integration.__main__:main",
+        ]
+    },
 )
