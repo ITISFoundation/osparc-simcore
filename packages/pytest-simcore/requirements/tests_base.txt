@@ -10,12 +10,12 @@ pytest-sugar
 
 # enhances test runs
 pytest-xdist
-pytest-runner # NOTE REQUIRED ANYMORE ???
+pytest-runner # TODO: check if REQUIRED ANYMORE ???
 
 # adds functionality
 pytest-lazy-fixture
 
 
 # support testing features built on frameworks
-pytest-docker
-pytest-celery
+# pytest-docker
+# pytest-celery
