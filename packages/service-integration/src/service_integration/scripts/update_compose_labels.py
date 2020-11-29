@@ -1,13 +1,9 @@
 import json
-import logging
 from pathlib import Path
 from typing import Dict
 
 import click
 import yaml
-
-log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 def get_compose_file(compose_file: Path) -> Dict:
@@ -27,10 +23,10 @@ def stringify_metadata(metadata: Dict) -> Dict[str, str]:
     return jsons
 
 
-def update_compose_labels(compose_cfg: Dict, metadata: Dict[str, str]) -> bool:
-    compose_labels = compose_cfg["services"]["{{ cookiecutter.project_slug }}"][
-        "build"
-    ]["labels"]
+def update_compose_labels(
+    compose_cfg: Dict, metadata: Dict[str, str], service_name: str
+) -> bool:
+    compose_labels = compose_cfg["services"][service_name]["build"]["labels"]
     changed = False
     for key, value in metadata.items():
         if key in compose_labels:
@@ -69,16 +65,20 @@ def main(compose_file_path: Path, metadata_file_path: Path):
     compose_cfg = get_compose_file(compose_file_path)
     metadata = get_metadata_file(metadata_file_path)
     json_metadata = stringify_metadata(metadata)
-    if update_compose_labels(compose_cfg, json_metadata):
-        log.info(
-            "Updating %s using labels in %s", compose_file_path, metadata_file_path
+
+    # TODO: require key ends with service-name, i.e. the one listed in docker-compose.yml::services
+    service_name = metadata["key"].split("/")[-1]
+
+    if update_compose_labels(compose_cfg, json_metadata, service_name):
+        click.echo(
+            "Updating {compose_file_path} using labels in {metadata_file_path}",
         )
         # write the file back
         with compose_file_path.open("w") as fp:
             yaml.safe_dump(compose_cfg, fp, default_flow_style=False)
-            log.info("Update completed")
+            click.echo("Update completed")
     else:
-        log.info("No update necessary")
+        click.echo("No update necessary")
 
 
 if __name__ == "__main__":

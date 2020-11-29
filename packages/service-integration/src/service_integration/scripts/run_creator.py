@@ -1,13 +1,9 @@
-import logging
 import stat
 from pathlib import Path
 from typing import Dict
 
 import click
 import yaml
-
-log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 def get_input_config(metadata_file: Path) -> Dict:
