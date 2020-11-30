@@ -301,11 +301,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __unscaleMoveCoordinates: function(x, y) {
-      x /= this.getScale();
-      y /= this.getScale();
       return {
-        x,
-        y
+        x: parseInt(x / this.getScale()),
+        y: parseInt(y / this.getScale())
       };
     },
 

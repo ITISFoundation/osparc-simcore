@@ -624,7 +624,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
       const y = pointerEvent.getDocumentTop() - topOffset;
-      return [x, y];
+      const pos = this.__unscaleMoveCoordinates(x, y);
+      return [pos.x, pos.y];
     },
 
     __startTempEdge: function(pointerEvent) {
@@ -864,6 +865,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __isSelectedItemAnEdge: function() {
       return Boolean(this.__getEdgeUI(this.__selectedItemId));
+    },
+
+    __unscaleMoveCoordinates: function(x, y) {
+      return {
+        x: parseInt(x / this.getScale()),
+        y: parseInt(y / this.getScale())
+      };
     },
 
     __mouseWheel: function(e) {
