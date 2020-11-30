@@ -8,11 +8,13 @@ aiohttp==3.7.3            # via -c requirements/_base.txt, aioresponses, pytest-
 aioresponses==0.7.1       # via -r requirements/_test.in
 alembic==1.4.3            # via -r requirements/_test.in
 apipkg==1.5               # via execnet
+appdirs==1.4.4            # via black
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp
 attrs==20.3.0             # via -c requirements/_base.txt, aiohttp, pytest
 certifi==2020.12.5        # via -c requirements/_base.txt, requests
 chardet==3.0.4            # via -c requirements/_base.txt, aiohttp, requests
+click==7.1.2              # via black
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.2.0          # via -r requirements/_test.in
 docker==4.4.0             # via -r requirements/_test.in
@@ -35,6 +37,7 @@ py==1.9.0                 # via pytest, pytest-forked
 pylint==2.6.0             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
+pytest-black==0.3.12      # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-forked==1.3.0      # via pytest-xdist
 pytest-icdiff==0.5        # via -r requirements/_test.in
@@ -43,10 +46,11 @@ pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest-xdist==2.1.0       # via -r requirements/_test.in
-pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-forked, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar, pytest-xdist
+pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-black, pytest-cov, pytest-forked, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar, pytest-xdist
 python-dateutil==2.8.1    # via alembic
 python-dotenv==0.15.0     # via -r requirements/_test.in
 python-editor==1.0.4      # via alembic
+regex==2020.11.13         # via black
 requests==2.25.0          # via -r requirements/_test.in, coveralls, docker
 six==1.15.0               # via -c requirements/_base.txt, astroid, docker, packaging, python-dateutil, websocket-client
 sqlalchemy[postgresql_psycopg2binary]==1.3.19  # via -c requirements/_base.txt, alembic
