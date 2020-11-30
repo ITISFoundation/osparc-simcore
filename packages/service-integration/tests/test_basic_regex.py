@@ -1,7 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
+
 import re
 
 from pkg_resources import parse_version

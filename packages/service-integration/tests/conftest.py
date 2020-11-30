@@ -11,6 +11,7 @@ import models_library
 import pytest
 
 pytest_plugins = [
+    "pytester",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
 ]
