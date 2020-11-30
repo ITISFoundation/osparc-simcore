@@ -479,7 +479,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         let dragNodeId = data.nodeId;
 
         if (this.__tempEdgeNodeId === dragNodeId) {
-          const pos = this.__unscaleMoveCoordinates(this.__pointerPosX, this.__pointerPosY);
+          const pos = this.__unscaleCoordinates(this.__pointerPosX, this.__pointerPosY);
           const srvCat = this.__createServiceCatalog(pos);
           if (this.__tempEdgeIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
@@ -620,7 +620,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
       const y = pointerEvent.getDocumentTop() - topOffset;
       if (unscale) {
-        return this.__scaleMoveCoordinates(x, y);
+        return this.__scaleCoordinates(x, y);
       }
       return {
         x,
@@ -869,14 +869,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return Boolean(this.__getEdgeUI(this.__selectedItemId));
     },
 
-    __scaleMoveCoordinates: function(x, y) {
+    __scaleCoordinates: function(x, y) {
       return {
         x: parseInt(x / this.getScale()),
         y: parseInt(y / this.getScale())
       };
     },
 
-    __unscaleMoveCoordinates: function(x, y) {
+    __unscaleCoordinates: function(x, y) {
       return {
         x: parseInt(x * this.getScale()),
         y: parseInt(y * this.getScale())

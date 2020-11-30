@@ -300,7 +300,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return bounds;
     },
 
-    __unscaleMoveCoordinates: function(x, y) {
+    __scaleCoordinates: function(x, y) {
       return {
         x: parseInt(x / this.getScale()),
         y: parseInt(y / this.getScale())
@@ -318,7 +318,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const native = e.getNativeEvent();
       const x = native.clientX + this.__dragLeft - sideBarWidth;
       const y = native.clientY + this.__dragTop - navigationBarHeight;
-      const coords = this.__unscaleMoveCoordinates(x, y);
+      const coords = this.__scaleCoordinates(x, y);
       const insets = this.getLayoutParent().getInsets();
       this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
       e.stopPropagation();
