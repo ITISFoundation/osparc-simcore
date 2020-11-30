@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.3            # via -c requirements/_base.txt, aioresponses, pytest-aiohttp
+aiohttp==3.6.3            # via -c requirements/_base.txt, aioresponses, pytest-aiohttp
 aioresponses==0.7.1       # via -r requirements/_test.in
 alembic==1.4.3            # via -r requirements/_test.in
 astroid==2.4.2            # via pylint

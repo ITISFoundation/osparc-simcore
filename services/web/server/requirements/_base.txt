@@ -10,7 +10,7 @@ aiohttp-jinja2==1.2.0     # via -r requirements/_base.in
 aiohttp-security==0.4.0   # via -r requirements/_base.in
 aiohttp-session[secure]==2.9.0  # via -r requirements/_base.in
 aiohttp-swagger[performance]==1.0.15  # via -r requirements/_base.in
-aiohttp==3.7.3            # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin
+aiohttp==3.6.3            # via -r requirements/../../../../packages/service-library/requirements/_base.in, aiohttp-jinja2, aiohttp-security, aiohttp-session, aiohttp-swagger, aiozipkin
 aiopg[sa]==1.0.0          # via -r requirements/../../../../packages/service-library/requirements/_base.in, -r requirements/_base.in
 aioredis==1.3.1           # via -r requirements/_base.in, aioredlock
 aioredlock==0.5.2         # via -r requirements/_base.in
