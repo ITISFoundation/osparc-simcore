@@ -10,7 +10,8 @@
     "Dockerfile*": "dockerfile",
     "**/requirements/*.txt": "pip-requirements",
     "**/requirements/*.in": "pip-requirements",
-    "*Makefile": "makefile"
+    "*Makefile": "makefile",
+    "*.cwl": "yaml"
   },
   "files.eol": "\n",
   "files.exclude": {
