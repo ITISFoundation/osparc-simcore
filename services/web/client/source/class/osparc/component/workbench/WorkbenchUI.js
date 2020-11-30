@@ -646,7 +646,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return;
       }
 
-      [this.__pointerPosX, this.__pointerPosY] = this.__getPointEventPosition(pointerEvent);
+      const pos = this.__getPointEventPosition(pointerEvent);
+      this.__pointerPosX = pos.x;
+      this.__pointerPosY = pos.y;
 
       let portPos = nodeUI.getEdgePoint(port);
       if (portPos[0] === null) {
@@ -951,11 +953,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           return;
         }
 
-        const [x, y] = this.__getPointEventPosition(e);
-        const pos = {
-          x,
-          y
-        };
+        const pos = this.__getPointEventPosition(e);
         const srvCat = this.__createServiceCatalog(pos);
         srvCat.open();
       }, this);
