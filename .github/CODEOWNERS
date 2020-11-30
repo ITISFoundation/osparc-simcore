@@ -1,27 +1,32 @@
 # Maps code in repository with maintainers
 # Order is important. The last matching pattern has the most precedence.
+# SEE https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/about-code-owners#example-of-a-codeowners-file
+
 
 # files and folders recursively
 Makefile                                  @pcrespov, @sanderegg
 .codeclimate.yml                          @sanderegg, @pcrespov
 .travis.yml                               @sanderegg
+
+# NOTE: '/' denotes the root of the repository
 /api/                                     @sanderegg, @pcrespov
 /ci/                                      @sanderegg, @pcrespov
 /docs/                                    @pcrespov
-/packages/pytest-simcore                  @pcrespov, @sanderegg
-/packages/models-library                  @sanderegg, @pcrespov
-/packages/service-library                 @pcrespov
-/scripts/demo                             @odeimaiz, @pcrespov
+/packages/pytest-simcore/                 @pcrespov, @sanderegg
+/packages/models-library/                 @sanderegg, @pcrespov
+/packages/service-library/                @pcrespov
+/requirements/                            @pcrespov
+/scripts/demo/                            @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
-/scripts/template-projects                @odeimaiz, @pcrespov
-/services/api-server                      @pcrespov
-/services/director*                       @sanderegg, @pcrespov
-/services/catalog                         @pcrespov, @sanderegg
-/services/migration                       @pcrespov
-/services/sidecar                         @pcrespov, @mguidon
-/services/web/client                      @odeimaiz, @oetiker, @ignapas
-/services/web/server                      @pcrespov
-/services/storage                         @mguidon
+/scripts/template-projects/               @odeimaiz, @pcrespov
+/services/api-server/                     @pcrespov
+/services/director*/                      @sanderegg, @pcrespov
+/services/catalog/                        @pcrespov, @sanderegg
+/services/migration/                      @pcrespov
+/services/sidecar/                        @pcrespov, @mguidon
+/services/web/client/                     @odeimaiz, @oetiker, @ignapas
+/services/web/server/                     @pcrespov
+/services/storage/                        @mguidon
 
 requirements/*                            @pcrespov
 tools/*                                   @pcrespov
