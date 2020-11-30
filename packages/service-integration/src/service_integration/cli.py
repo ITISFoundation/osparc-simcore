@@ -1,10 +1,9 @@
 # Allows entrypoint via python -m as well
 
 import click
-import service_integration.scripts.metadata as metadata
-import service_integration.scripts.run_creator as run_creator
-import service_integration.scripts.update_compose_labels as update_compose_labels
-from service_integration import __version__
+
+from .meta import __version__
+from .scripts import metadata, run_creator, update_compose_labels
 
 
 @click.group()
