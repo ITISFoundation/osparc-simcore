@@ -310,25 +310,16 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     // override qx.ui.core.MMovable
-    _onMovePointerDown : function(e) {
-      this.base(arguments, e);
-
-      const widgetLocation = this.getContentLocation();
-      this.__dragOffX = widgetLocation.left - e.getDocumentLeft();
-      this.__dragOffY = widgetLocation.top - e.getDocumentTop();
-    },
-
-    // override qx.ui.core.MMovable
     _onMovePointerMove: function(e) {
       // Only react when dragging is active
       if (!this.hasState("move")) {
         return;
       }
       const sideBarWidth = this.__dragRange.left;
-      const naviagionBarHeight = this.__dragRange.top;
+      const navigationBarHeight = this.__dragRange.top;
       const native = e.getNativeEvent();
-      const x = native.clientX + this.__dragOffX - sideBarWidth;
-      const y = native.clientY + this.__dragOffY - naviagionBarHeight;
+      const x = native.clientX + this.__dragLeft - sideBarWidth;
+      const y = native.clientY + this.__dragTop - navigationBarHeight;
       const coords = this.__unscaleMoveCoordinates(x, y);
       const insets = this.getLayoutParent().getInsets();
       this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
