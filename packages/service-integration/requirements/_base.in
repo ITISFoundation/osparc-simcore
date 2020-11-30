@@ -6,10 +6,9 @@
 pyyaml
 click
 
-# publising
-#bump2version
-#jsonschema
-
+# validation
+pydantic[email]
+-e file:../models-library#egg=simcore-models-library
 
 # pytest-plugin
 pytest

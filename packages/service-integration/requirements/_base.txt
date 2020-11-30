@@ -4,18 +4,23 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
+-e file:../models-library#egg=simcore-models-library  # via -r requirements/_base.in
 attrs==20.3.0             # via jsonschema, pytest
 certifi==2020.11.8        # via requests
 chardet==3.0.4            # via requests
 click==7.1.2              # via -r requirements/_base.in
+dataclasses==0.8          # via pydantic
+dnspython==2.0.0          # via email-validator
 docker==4.4.0             # via -r requirements/_base.in
-idna==2.10                # via requests
+email-validator==1.1.2    # via pydantic
+idna==2.10                # via email-validator, requests
 importlib-metadata==3.1.0  # via jsonschema, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 jsonschema==3.2.0         # via -r requirements/_base.in
 packaging==20.7           # via pytest
 pluggy==0.13.1            # via pytest
 py==1.9.0                 # via pytest
+pydantic[email]==1.7.2    # via -r requirements/_base.in, simcore-models-library
 pyparsing==2.4.7          # via packaging
 pyrsistent==0.17.3        # via jsonschema
 pytest==6.1.2             # via -r requirements/_base.in
