@@ -1,3 +1,5 @@
+-c ../../../requirements/constraints.txt
+
 aio-pika
 alembic
 click
@@ -12,4 +14,4 @@ pytest-runner
 pytest-sugar
 docker
 tenacity
-pyyaml>=5.3         # Vulnerable
+pyyaml

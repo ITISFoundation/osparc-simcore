@@ -1,3 +1,4 @@
+-c ../../../requirements/constraints.txt
 -c _base.txt
 -c _test.txt
 

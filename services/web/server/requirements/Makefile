@@ -4,7 +4,7 @@
 # NOTE: More details in docs/python-dependencies.md
 #
 
-include ../../../../scripts/requirements.Makefile
+include ../../../../requirements/base.Makefile
 
 packages_input_reqs = $(shell grep "requirements/_base.in" _base.in | awk '{print $$2}')
 
