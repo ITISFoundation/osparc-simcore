@@ -53,8 +53,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
 
+    const scroll = this.__workbenchLayoutScroll = new qx.ui.container.Scroll();
     this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this._add(this.__workbenchLayout, {
+    this.__workbenchLayout.set({
+      minWidth: 2000,
+      minHeight: 2000
+    });
+    scroll.add(this.__workbenchLayout);
+    this._add(scroll, {
       flex: 1
     });
 
