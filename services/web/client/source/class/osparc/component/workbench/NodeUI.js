@@ -324,8 +324,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (!this.hasState("move")) {
         return;
       }
-      const sideBarWidth = 350;
-      const naviagionBarHeight = 50;
+      const sideBarWidth = this.__dragRange.left;
+      const naviagionBarHeight = this.__dragRange.top;
       const native = e.getNativeEvent();
       const x = native.clientX + this.__dragOffX - sideBarWidth;
       const y = native.clientY + this.__dragOffY - naviagionBarHeight;
