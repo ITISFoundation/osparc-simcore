@@ -18,6 +18,7 @@ def get_input_config(metadata_file: Path) -> Dict:
 @click.command()
 @click.option(
     "--metadata",
+    "--metadata-file",
     "metadata_file_path",
     help="The metadata yaml of the node",
     type=Path,

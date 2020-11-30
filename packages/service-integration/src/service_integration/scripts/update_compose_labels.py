@@ -47,6 +47,7 @@ def update_compose_labels(
 )
 @click.option(
     "--metadata",
+    "--metadata-file",
     "metadata_file_path",
     help="The metadata yaml file",
     type=Path,
