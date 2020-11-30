@@ -53,12 +53,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
 
-    const scroll = this.__workbenchLayoutScroll = new qx.ui.container.Scroll();
+    const scroll = new qx.ui.container.Scroll();
     this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this.__workbenchLayout.set({
-      minWidth: 2000,
-      minHeight: 2000
-    });
     scroll.add(this.__workbenchLayout);
     this._add(scroll, {
       flex: 1
@@ -266,6 +262,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         position.x = 50 + farthestRight;
         position.y = 200;
       }
+      if (this.__workbenchLayout.getBounds().width < position.x) {
+        this.__workbenchLayout.setMinWidth(position.x + osparc.component.workbench.NodeUI.NodeWidth);
+      }
+      if (this.__workbenchLayout.getBounds().height < position.y) {
+        this.__workbenchLayout.setMinHeight(position.y + osparc.component.workbench.NodeUI.NodeHeight);
+      }
+
       const node = nodeUI.getNode();
       node.setPosition(position.x, position.y);
       nodeUI.moveTo(node.getPosition().x, node.getPosition().y);
@@ -803,7 +806,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         let nodes = isContainer ? model.getInnerNodes() : model.getNodes();
         for (const nodeUuid in nodes) {
           const node = nodes[nodeUuid];
-          let nodeUI = this.__createNodeUI(nodeUuid);
+          const nodeUI = this.__createNodeUI(nodeUuid);
           this.__addNodeToWorkbench(nodeUI, node.getPosition());
         }
 
