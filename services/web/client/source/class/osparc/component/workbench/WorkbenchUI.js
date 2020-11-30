@@ -201,20 +201,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return inputOutputNodesLayout;
     },
 
-    __createServiceCatalog: function(pos) {
+    __createServiceCatalog: function(winPos, srvPos) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
-      if (pos) {
-        srvCat.moveTo(pos.x + this.__getSidePanelWidth(), pos.y);
-      } else {
-        const bounds = this.getLayoutParent().getBounds();
-        const workbenchUICenter = {
-          x: bounds.left + parseInt((bounds.left + bounds.width) / 2),
-          y: bounds.top + parseInt((bounds.top + bounds.height) / 2)
-        };
-        srvCat.moveTo(workbenchUICenter.x - 200, workbenchUICenter.y - 200);
-      }
-      srvCat.addListener("addService", ev => {
-        this.__addServiceFromCatalog(ev.getData(), pos);
+      srvCat.moveTo(winPos.x + this.__getSidePanelWidth(), winPos.y);
+      srvCat.addListener("addService", e => {
+        this.__addServiceFromCatalog(e.getData(), srvPos);
       }, this);
       return srvCat;
     },
@@ -479,8 +470,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         let dragNodeId = data.nodeId;
 
         if (this.__tempEdgeNodeId === dragNodeId) {
-          const pos = this.__unscaleCoordinates(this.__pointerPosX, this.__pointerPosY);
-          const srvCat = this.__createServiceCatalog(pos);
+          const winPos = this.__unscaleCoordinates(this.__pointerPosX, this.__pointerPosY);
+          const srvPos = {
+            x: this.__pointerPosX,
+            y: this.__pointerPosY
+          };
+          const srvCat = this.__createServiceCatalog(winPos, srvPos);
           if (this.__tempEdgeIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
@@ -613,13 +608,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return sidePanelWidth;
     },
 
-    __getPointEventPosition: function(pointerEvent, unscale = false) {
+    __getPointEventPosition: function(pointerEvent, scale = false) {
       const topOffset = 50;
       const leftOffset = this.__getSidePanelWidth();
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
       const y = pointerEvent.getDocumentTop() - topOffset;
-      if (unscale) {
+      if (scale) {
         return this.__scaleCoordinates(x, y);
       }
       return {
@@ -960,9 +955,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-
-        const pos = this.__getPointEventPosition(e, false);
-        const srvCat = this.__createServiceCatalog(pos);
+        const winPos = this.__getPointEventPosition(e, false);
+        const srvPos = this.__getPointEventPosition(e, true);
+        const srvCat = this.__createServiceCatalog(winPos, srvPos);
         srvCat.open();
       }, this);
 
