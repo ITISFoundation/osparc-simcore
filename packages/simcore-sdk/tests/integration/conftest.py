@@ -3,22 +3,19 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
+import asyncio
 import json
 import sys
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
-
-import pytest
-import sqlalchemy as sa
-from yarl import URL
+from typing import Any, Callable, Dict, List, Tuple
 
 import np_helpers
-from simcore_sdk.models.pipeline_models import (
-    ComputationalPipeline,
-    ComputationalTask,
-)
+import pytest
+import sqlalchemy as sa
+from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_sdk.node_ports import node_config
+from yarl import URL
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -47,13 +44,13 @@ def s3_simcore_location() -> str:
 
 @pytest.fixture
 async def filemanager_cfg(
-    loop,
+    loop: asyncio.events.AbstractEventLoop,
     storage_service: URL,
     devel_environ: Dict,
     user_id: str,
     bucket: str,
     postgres_db,  # waits for db and initializes it
-):
+) -> None:
     node_config.STORAGE_ENDPOINT = f"{storage_service.host}:{storage_service.port}"
     node_config.USER_ID = user_id
     node_config.BUCKET = bucket
@@ -71,7 +68,7 @@ def node_uuid() -> str:
 
 
 @pytest.fixture
-def file_uuid(project_id, node_uuid) -> str:
+def file_uuid(project_id: str, node_uuid: str) -> Callable:
     def create(file_path: Path, project: str = None, node: str = None):
         if project is None:
             project = project_id
@@ -100,7 +97,7 @@ def default_configuration(
     default_configuration_file: Path,
     project_id,
     node_uuid,
-):
+) -> Dict:
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
 
@@ -117,16 +114,18 @@ def default_configuration(
 
 
 @pytest.fixture()
-def node_link():
-    def create_node_link(key: str):
+def node_link() -> Callable:
+    def create_node_link(key: str) -> Dict[str, str]:
         return {"nodeUuid": "TEST_NODE_UUID", "output": key}
 
     yield create_node_link
 
 
 @pytest.fixture()
-def store_link(minio_service, bucket, file_uuid, s3_simcore_location):
-    def create_store_link(file_path: Path, project_id: str = None, node_id: str = None):
+def store_link(minio_service, bucket, file_uuid, s3_simcore_location) -> Callable:
+    def create_store_link(
+        file_path: Path, project_id: str = None, node_id: str = None
+    ) -> Dict[str, str]:
         # upload the file to S3
         assert Path(file_path).exists()
         file_id = file_uuid(file_path, project_id, node_id)
@@ -141,19 +140,19 @@ def store_link(minio_service, bucket, file_uuid, s3_simcore_location):
 
 @pytest.fixture(scope="function")
 def special_configuration(
-    nodeports_config,
-    bucket,
+    nodeports_config: None,
+    bucket: str,
     postgres_session: sa.orm.session.Session,
     empty_configuration_file: Path,
-    project_id,
-    node_uuid,
-):
+    project_id: str,
+    node_uuid: str,
+) -> Callable:
     def create_config(
         inputs: List[Tuple[str, str, Any]] = None,
         outputs: List[Tuple[str, str, Any]] = None,
         project_id: str = project_id,
         node_id: str = node_uuid,
-    ):
+    ) -> Tuple[Dict, str, str]:
         config_dict = json.loads(empty_configuration_file.read_text())
         _assign_config(config_dict, "inputs", inputs)
         _assign_config(config_dict, "outputs", outputs)
@@ -174,12 +173,12 @@ def special_configuration(
 
 @pytest.fixture(scope="function")
 def special_2nodes_configuration(
-    nodeports_config,
-    bucket,
+    nodeports_config: None,
+    bucket: str,
     postgres_session: sa.orm.session.Session,
     empty_configuration_file: Path,
-    project_id,
-    node_uuid,
+    project_id: str,
+    node_uuid: str,
 ):
     def create_config(
         prev_node_inputs: List[Tuple[str, str, Any]] = None,
@@ -189,7 +188,7 @@ def special_2nodes_configuration(
         project_id: str = project_id,
         previous_node_id: str = node_uuid,
         node_id: str = "asdasdadsa",
-    ):
+    ) -> Tuple[Dict, str, str]:
         _create_new_pipeline(postgres_session, project_id)
 
         # create previous node
@@ -225,15 +224,20 @@ def special_2nodes_configuration(
     postgres_session.commit()
 
 
-def _create_new_pipeline(session, project: str) -> str:
+def _create_new_pipeline(postgres_session: sa.orm.session.Session, project: str) -> str:
     # pylint: disable=no-member
     new_Pipeline = ComputationalPipeline(project_id=project)
-    session.add(new_Pipeline)
-    session.commit()
+    postgres_session.add(new_Pipeline)
+    postgres_session.commit()
     return new_Pipeline.project_id
 
 
-def _set_configuration(session, project_id: str, node_id: str, json_configuration: str):
+def _set_configuration(
+    postgres_session: sa.orm.session.Session,
+    project_id: str,
+    node_id: str,
+    json_configuration: str,
+) -> str:
     node_uuid = node_id
     json_configuration = json_configuration.replace("SIMCORE_NODE_UUID", str(node_uuid))
     configuration = json.loads(json_configuration)
@@ -245,8 +249,8 @@ def _set_configuration(session, project_id: str, node_id: str, json_configuratio
         inputs=configuration["inputs"],
         outputs=configuration["outputs"],
     )
-    session.add(new_Node)
-    session.commit()
+    postgres_session.add(new_Node)
+    postgres_session.commit()
     return node_uuid
 
 

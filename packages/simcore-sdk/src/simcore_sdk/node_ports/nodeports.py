@@ -19,9 +19,7 @@ log = logging.getLogger(__name__)
 
 
 class Nodeports:
-    """Allows the client to access the inputs and outputs assigned to the node
-
-    """
+    """Allows the client to access the inputs and outputs assigned to the node"""
 
     _version = "0.1"
 

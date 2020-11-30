@@ -2,9 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Callable, Dict
 
 from simcore_sdk.node_ports import config
 from simcore_sdk.node_ports.dbmanager import DBManager
@@ -17,7 +18,9 @@ ops_services = ["minio"]
 
 
 async def test_db_manager_read_config(
-    loop, nodeports_config, default_configuration: Dict
+    loop: asyncio.events.AbstractEventLoop,
+    nodeports_config: None,
+    default_configuration: Dict,
 ):
     db_manager = DBManager()
     ports_configuration_str = await db_manager.get_ports_configuration_from_node_uuid(
@@ -29,7 +32,10 @@ async def test_db_manager_read_config(
 
 
 async def test_db_manager_write_config(
-    loop, nodeports_config, special_configuration, default_configuration_file: Path
+    loop: asyncio.events.AbstractEventLoop,
+    nodeports_config: None,
+    special_configuration: Callable,
+    default_configuration_file: Path,
 ):
     # create an empty config
     special_configuration()

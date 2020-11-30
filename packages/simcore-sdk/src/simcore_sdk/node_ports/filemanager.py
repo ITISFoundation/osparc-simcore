@@ -5,16 +5,16 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
+import aiofiles
 from aiohttp import ClientSession, ClientTimeout
 from yarl import URL
 
-import aiofiles
+from models_library.settings.services_common import ServicesCommonSettings
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
-from models_library.settings.services_common import ServicesCommonSettings
 
-from . import config, exceptions
 from ..config.http_clients import client_request_settings
+from . import config, exceptions
 
 log = logging.getLogger(__name__)
 

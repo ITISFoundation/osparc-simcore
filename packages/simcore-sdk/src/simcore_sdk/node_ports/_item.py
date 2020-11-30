@@ -6,13 +6,18 @@ from typing import Dict, Union
 from yarl import URL
 
 from . import config, data_items_utils, exceptions, filemanager
-from ._data_item import DataItem
+from ._data_item import DataItem, DataItemValue
 from ._schema_item import SchemaItem
 
 log = logging.getLogger(__name__)
 
 
-def _check_type(item_type: str, value: Union[int, float, bool, str, Dict]):
+ItemConcreteValue = Union[int, float, bool, str, Path]
+NodeLink = Dict[str,str]
+StoreLink = Dict[str,str]
+DownloadLink = Dict[str,str]
+
+def _check_type(item_type: str, value: DataItemValue):
     if item_type not in config.TYPE_TO_PYTHON_TYPE_MAP and not data_items_utils.is_file_type(item_type):
         raise exceptions.InvalidItemTypeError(item_type, value)
 
@@ -74,7 +79,7 @@ class Item:
 
         raise AttributeError
 
-    async def get(self) -> Union[int, float, bool, str, Path]:
+    async def get(self) -> ItemConcreteValue:
         """ gets data converted to the underlying type
 
         :raises exceptions.InvalidProtocolError: if the underlying type is unknown
@@ -124,7 +129,7 @@ class Item:
             config.TYPE_TO_PYTHON_TYPE_MAP[self.type]["converter"](self.value)
         )
 
-    async def set(self, value: Union[int, float, bool, str, Path]):
+    async def set(self, value: ItemConcreteValue):
         """ sets the data to the underlying port
 
         :param value: must be convertible to a string, or an exception will be thrown.
@@ -171,7 +176,7 @@ class Item:
             log.debug("database updated")
 
     async def __get_value_from_link(
-        self, value: Dict[str, str]
+        self, value: NodeLink
     ) -> Union[int, float, bool, str, Path]:  # pylint: disable=R1710
         log.debug("Getting value %s", value)
         node_uuid, port_key = data_items_utils.decode_link(value)
@@ -187,7 +192,7 @@ class Item:
         log.debug("Received node from DB %s, now returning value", other_nodeports)
         return await other_nodeports.get(port_key)
 
-    async def __get_value_from_store(self, value: Dict[str, str]) -> Path:
+    async def __get_value_from_store(self, value: StoreLink) -> Path:
         log.debug("Getting value from storage %s", value)
         store_id, s3_path = data_items_utils.decode_store(value)
         # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
@@ -206,7 +211,7 @@ class Item:
 
         return downloaded_file
 
-    async def _get_value_from_download_link(self, value: Dict[str,str]) -> Path:
+    async def _get_value_from_download_link(self, value: DownloadLink) -> Path:
         log.debug("Getting value from download link [%s] with label %s", value["downloadLink"], value.get("label", "undef"))
 
         download_link = URL(value["downloadLink"])

@@ -9,4 +9,3 @@ from .nodeports import ports
 # in that sense it should not log stuff unless the application code wants it to be so.
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
-

@@ -2,20 +2,22 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 from asyncio import Future
 from filecmp import cmpfiles
 from pathlib import Path
-from shutil import make_archive, unpack_archive, copy
+from shutil import copy, make_archive, unpack_archive
+from typing import Callable, List
 
 import pytest
 from simcore_sdk.node_data import data_manager
 
 
 @pytest.fixture
-def create_files():
+def create_files() -> Callable:
     created_files = []
 
-    def _create_files(number: int, folder: Path):
+    def _create_files(number: int, folder: Path) -> List[Path]:
 
         for i in range(number):
             file_path = folder / "{}.test".format(i)
@@ -30,7 +32,9 @@ def create_files():
         file_path.unlink()
 
 
-async def test_push_folder(loop, mocker, tmpdir, create_files):
+async def test_push_folder(
+    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+):
     # create some files
     assert tmpdir.exists()
 
@@ -93,7 +97,9 @@ async def test_push_folder(loop, mocker, tmpdir, create_files):
     assert not errors
 
 
-async def test_push_file(loop, mocker, tmpdir, create_files):
+async def test_push_file(
+    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+):
     mock_filemanager = mocker.patch(
         "simcore_sdk.node_data.data_manager.filemanager", spec=True
     )
@@ -122,7 +128,9 @@ async def test_push_file(loop, mocker, tmpdir, create_files):
     mock_filemanager.reset_mock()
 
 
-async def test_pull_folder(loop, mocker, tmpdir, create_files):
+async def test_pull_folder(
+    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+):
     assert tmpdir.exists()
     # create a folder to compress from
     test_control_folder = Path(tmpdir) / "test_control_folder"
@@ -186,7 +194,9 @@ async def test_pull_folder(loop, mocker, tmpdir, create_files):
     assert not errors
 
 
-async def test_pull_file(loop, mocker, tmpdir, create_files):
+async def test_pull_file(
+    loop: asyncio.events.AbstractEventLoop, mocker, tmpdir: Path, create_files: Callable
+):
     file_path = create_files(1, Path(tmpdir))[0]
     assert file_path.exists()
     assert file_path.is_file()

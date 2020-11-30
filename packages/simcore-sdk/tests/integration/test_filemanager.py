@@ -15,7 +15,12 @@ ops_services = ["minio"]
 
 
 async def test_valid_upload_download(
-    tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
@@ -37,7 +42,12 @@ async def test_valid_upload_download(
 
 
 async def test_invalid_file_path(
-    tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
@@ -60,7 +70,11 @@ async def test_invalid_file_path(
 
 
 async def test_invalid_fileid(
-    tmpdir, bucket, filemanager_cfg, user_id, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
@@ -88,7 +102,12 @@ async def test_invalid_fileid(
 
 
 async def test_invalid_store(
-    tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
