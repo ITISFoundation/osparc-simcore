@@ -188,8 +188,14 @@ async def request_retrieve_dyn_service(
     try:
         # request to director-v2
         await _request_director_v2(app, "POST", backend_url, data=body)
-    except _DirectorServiceError:
-        pass
+    except _DirectorServiceError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
+            service_uuid,
+            port_keys,
+            exc.status,
+            exc.reason,
+        )
 
 
 @app_module_setup(
