@@ -150,7 +150,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __selectedNodes: null,
     __inputNodesLayout: null,
     __outputNodesLayout: null,
-    __workbenchLayoutScroll: null,
     __workbenchLayout: null,
     __desktop: null,
     __svgWidgetLinks: null,
