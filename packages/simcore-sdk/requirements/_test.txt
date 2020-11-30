@@ -6,6 +6,7 @@
 #
 aiohttp==3.7.3            # via -c requirements/_base.txt, aioresponses, pytest-aiohttp
 aioresponses==0.7.1       # via -r requirements/_test.in
+alembic==1.4.3            # via -r requirements/_test.in
 apipkg==1.5               # via execnet
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp
@@ -29,6 +30,7 @@ multidict==5.1.0          # via -c requirements/_base.txt, aiohttp, yarl
 packaging==20.7           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
 pprintpp==0.4.0           # via pytest-icdiff
+psycopg2-binary==2.8.6    # via -c requirements/_base.txt, sqlalchemy
 py==1.9.0                 # via pytest, pytest-forked
 pylint==2.6.0             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
@@ -42,9 +44,12 @@ pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest-xdist==2.1.0       # via -r requirements/_test.in
 pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-forked, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar, pytest-xdist
+python-dateutil==2.8.1    # via alembic
 python-dotenv==0.15.0     # via -r requirements/_test.in
+python-editor==1.0.4      # via alembic
 requests==2.25.0          # via -r requirements/_test.in, coveralls, docker
-six==1.15.0               # via -c requirements/_base.txt, astroid, docker, packaging, websocket-client
+six==1.15.0               # via -c requirements/_base.txt, astroid, docker, packaging, python-dateutil, websocket-client
+sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -c requirements/_base.txt, alembic
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.2              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
