@@ -174,7 +174,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         width: BUTTON_SIZE,
         height: BUTTON_SIZE
       });
-      unlinkBtn.addListener("execute", function() {
+      unlinkBtn.addListener("execute", () => {
         if (this.__selectedItemId && this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
@@ -275,11 +275,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       nodeUI.open();
       this.__nodesUI.push(nodeUI);
 
-      nodeUI.addListener("nodeMoving", function() {
+      nodeUI.addListener("nodeMoving", () => {
         this.__updateEdges(nodeUI);
       }, this);
 
-      nodeUI.addListener("appear", function() {
+      nodeUI.addListener("appear", () => {
         this.__updateEdges(nodeUI);
       }, this);
 
