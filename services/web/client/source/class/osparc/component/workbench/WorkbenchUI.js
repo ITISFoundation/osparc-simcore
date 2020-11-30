@@ -261,17 +261,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         position.x = 50 + farthestRight;
         position.y = 200;
       }
-      if (this.__workbenchLayout.getBounds().width < position.x) {
+      if (this.__workbenchLayout.getMinWidth() < position.x + osparc.component.workbench.NodeUI.NodeWidth) {
         this.__workbenchLayout.setMinWidth(position.x + osparc.component.workbench.NodeUI.NodeWidth);
       }
-      if (this.__workbenchLayout.getBounds().height < position.y) {
+      if (this.__workbenchLayout.getMinHeight() < position.y + osparc.component.workbench.NodeUI.NodeHeight) {
         this.__workbenchLayout.setMinHeight(position.y + osparc.component.workbench.NodeUI.NodeHeight);
       }
 
       const node = nodeUI.getNode();
       node.setPosition(position.x, position.y);
       nodeUI.moveTo(node.getPosition().x, node.getPosition().y);
-      this.__addWindowToDesktop(nodeUI);
+      this.__desktop.add(nodeUI);
+      nodeUI.open();
       this.__nodesUI.push(nodeUI);
 
       nodeUI.addListener("nodeMoving", function() {
@@ -841,11 +842,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           }
         }
       }
-    },
-
-    __addWindowToDesktop: function(node) {
-      this.__desktop.add(node);
-      node.open();
     },
 
     __selectedItemChanged: function(newID) {
