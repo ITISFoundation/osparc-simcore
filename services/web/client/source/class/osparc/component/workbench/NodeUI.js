@@ -324,9 +324,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (!this.hasState("move")) {
         return;
       }
+      const sideBarWidth = 350;
+      const naviagionBarHeight = 50;
       const native = e.getNativeEvent();
-      const x = native.clientX + this.__dragOffX - 351;
-      const y = native.clientY + this.__dragOffY - 51;
+      const x = native.clientX + this.__dragOffX - sideBarWidth;
+      const y = native.clientY + this.__dragOffY - naviagionBarHeight;
       const coords = this.__unscaleMoveCoordinates(x, y);
       const insets = this.getLayoutParent().getInsets();
       this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
