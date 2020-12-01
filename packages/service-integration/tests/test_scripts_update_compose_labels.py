@@ -43,8 +43,8 @@ def test_make_docker_compose_meta(
 
     assert compose_file_path.exists()
 
-    compose_cfg = yaml.load(compose_file_path.read_text())
-    metadata_cfg = yaml.load(metadata_file_path.read_text())
+    compose_cfg = yaml.safe_load(compose_file_path.read_text())
+    metadata_cfg = yaml.safe_load(metadata_file_path.read_text())
 
     # TODO: compare labels vs metadata
     service_name = metadata_cfg["key"].split("/")[-1]

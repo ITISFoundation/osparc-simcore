@@ -12,7 +12,7 @@ install() {
 }
 
 test() {
-  pytest --cov=models_library --durations=10 --cov-append \
+  pytest --cov=service_integration --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     -v -m "not travis" packages/service-integration/tests
 }
