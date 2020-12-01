@@ -73,3 +73,33 @@ def test_make_version(
     new_metadata.pop(target_version)
     current_metadata.pop(target_version)
     assert new_metadata == current_metadata
+
+
+@pytest.mark.parametrize(
+    "cmd,expected_output",
+    [
+        (
+            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml",
+            "1.1.0\n",
+        ),
+        (
+            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml integration-version",
+            "1.0.0\n",
+        ),
+        (
+            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml version",
+            "1.1.0\n",
+        ),
+    ],
+)
+def test_get_version_from_metadata(
+    cmd,
+    expected_output,
+    metadata_file_path: Path,
+    run_simcore_service_integrator: Callable,
+):
+    cmd = cmd.replace("tests/data/metadata.yml", str(metadata_file_path))
+    result = run_simcore_service_integrator(*cmd.split()[1:])
+    assert result.exit_code == os.EX_OK, (result.output, result.exception)
+
+    assert result.output == expected_output

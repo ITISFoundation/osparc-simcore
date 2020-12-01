@@ -59,3 +59,29 @@ def bump_version(target_version, upgrade, metadata_file_path):
         )
     )
     click.echo(f"{target_version.title()} bumped: {current_version} → {new_version}")
+
+
+@click.command()
+@click.argument(
+    "target_version",
+    default="version",
+    type=click.Choice(TARGET_VERSION_CHOICES),
+)
+@click.option(
+    "--metadata-file",
+    "metadata_file_path",
+    help="The metadata yaml file",
+    type=Path,
+    required=False,
+    default="metadata/metadata.yml",
+)
+def get_version(target_version, metadata_file_path):
+    """ Prints to output requested version """
+
+    # load and validate metadata
+    with open(metadata_file_path, "rt") as fh:
+        metadata = ServiceDockerData(**yaml.safe_load(fh))
+
+    attrname = target_version.replace("-", "_")
+    current_version: str = getattr(metadata, attrname)
+    click.echo(current_version)

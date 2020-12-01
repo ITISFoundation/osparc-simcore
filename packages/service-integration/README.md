@@ -1,44 +1,48 @@
 # simcore service integration library
 
 
-## installation
+
 
 
 ```cmd
 pip install git+https://github.com/pcrespov/osparc-simcore.git@is1884/integration-library#egg=simcore-service-integration&subdirectory=packages/service-integration
 ```
 
-## tooling
+## ``simcore-service-integrator`` entrypoint
 
-Subcommands of ``simcore-service-integrator`` CLI:
+Commands of ``simcore-service-integrator`` CLI:
 ```cmd
-$ simcore-service-integrator --help
+$ simcore-service-integrator  --help
 Usage: simcore-service-integrator [OPTIONS] COMMAND [ARGS]...
 
 Options:
-  --version      Show the version and exit.
-  -v, --verbose
-  --help         Show this message and exit.
+  --version  Show the version and exit.
+  --help     Show this message and exit.
 
 Commands:
-  bump-version           Increases version in metadata
+  bump-version           Bumps target version in metadata
+  get-version            Prints to output requested version
   run-creator            Creates a sh script that uses jq tool to retrieve...
   update-compose-labels  Update a docker-compose file with json files in a...
 ```
 
+
+### tooling
+
+
 A replacement for the old Makefile recipes might be:
 
 ```Makefile
-service.cli/run: $(metatada)
+service.cli/run: $(METADATA)
 	# Updates adapter script from metadata in $<
 	simcore-service-integrator run-creator --metadata $< --runscript $@
 
-docker-compose-meta.yml: $(metatada)
+docker-compose-meta.yml: $(METADATA)
 	# Injects metadata from $< as labels
 	simcore-service-integrator update-compose-labels --compose $@ --metadata $<
 
 ```
-## testing plugin
+### testing plugin
 
 Created a pytest-plugin from submodule ``service_integration.pytest_plugin`` with fixtures and helper assert function.
 
@@ -63,7 +67,7 @@ def project_slug_dir() -> Path:
 
 ```
 
-## versioning
+### versioning
 
 The publication of a service requires different type of versions explictly set in the ``metadata`` file or deduced by this tool. These versions are
 
@@ -98,14 +102,18 @@ so a replacement Makefile recipes might be
 ```Makefile
 
 .PHONY: version-service-patch version-service-minor version-service-major
-version-service-patch version-service-minor version-service-major: $(metatada) ## kernel/service versioning as patch
+version-service-patch version-service-minor version-service-major: $(METADATA) ## kernel/service versioning as patch
 	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
 
 .PHONY: version-integration-patch version-integration-minor version-integration-major
-version-integration-patch version-integration-minor version-integration-major: $(metatada) ## integration versioning as patch (bug fixes not affecting API/handling), minor/major (backwards-compatible/INcompatible API changes)
+version-integration-patch version-integration-minor version-integration-major: $(METADATA) ## integration versioning as patch (bug fixes not affecting API/handling), minor/major (backwards-compatible/INcompatible API changes)
 	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-integration-,,$@) integration_version
-```
 
+
+CURRENT_VERSION := $(shell simcore-service-integrator get-version --metadata-file $(METADATA))
+CURRENT_INTEGRATION_VERSION := $(shell simcore-service-integrator get-version --metadata-file $(METADATA) integration-version)
+
+```
 
 
 

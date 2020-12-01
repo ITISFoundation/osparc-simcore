@@ -15,3 +15,4 @@ def main():
 main.add_command(run_creator.main, "run-creator")
 main.add_command(update_compose_labels.main, "update-compose-labels")
 main.add_command(metadata.bump_version, "bump-version")
+main.add_command(metadata.get_version, "get-version")
