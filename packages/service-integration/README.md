@@ -107,7 +107,7 @@ version-service-patch version-service-minor version-service-major: $(METADATA) #
 
 .PHONY: version-integration-patch version-integration-minor version-integration-major
 version-integration-patch version-integration-minor version-integration-major: $(METADATA) ## integration versioning as patch (bug fixes not affecting API/handling), minor/major (backwards-compatible/INcompatible API changes)
-	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-integration-,,$@) integration_version
+	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-integration-,,$@) integration-version
 
 
 CURRENT_VERSION := $(shell simcore-service-integrator get-version --metadata-file $(METADATA))
