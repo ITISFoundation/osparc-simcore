@@ -261,14 +261,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         position.x = 50 + farthestRight;
         position.y = 200;
       }
-      const minWidth = position.x + osparc.component.workbench.NodeUI.NodeWidth;
-      const minHeight = position.y + osparc.component.workbench.NodeUI.NodeHeight;
-      if (this.__workbenchLayout.getMinWidth() < minWidth) {
-        this.__workbenchLayout.setMinWidth(minWidth);
-      }
-      if (this.__workbenchLayout.getMinHeight() < minHeight) {
-        this.__workbenchLayout.setMinHeight(minHeight);
-      }
+      this.__updateLayoutSize(position);
 
       const node = nodeUI.getNode();
       node.setPosition(position.x, position.y);
@@ -298,6 +291,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       qx.ui.core.queue.Layout.flush();
 
       this.__updateHint();
+    },
+
+    __updateLayoutSize: function(position) {
+      const minWidth = position.x + osparc.component.workbench.NodeUI.NodeWidth;
+      const minHeight = position.y + osparc.component.workbench.NodeUI.NodeHeight;
+      if (this.__workbenchLayout.getMinWidth() < minWidth) {
+        this.__workbenchLayout.setMinWidth(minWidth);
+      }
+      if (this.__workbenchLayout.getMinHeight() < minHeight) {
+        this.__workbenchLayout.setMinHeight(minHeight);
+      }
     },
 
     getCurrentModel: function() {
