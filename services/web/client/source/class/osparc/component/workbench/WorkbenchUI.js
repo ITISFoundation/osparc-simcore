@@ -247,20 +247,26 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return nodeUI;
     },
 
-    __addNodeToWorkbench: function(nodeUI, position) {
-      if (position === undefined || position === null) {
-        position = {};
-        let farthestRight = 0;
-        for (let i = 0; i < this.__nodesUI.length; i++) {
-          let boundPos = this.__nodesUI[i].getBounds();
-          let rightPos = boundPos.left + boundPos.width;
-          if (farthestRight < rightPos) {
-            farthestRight = rightPos;
-          }
+    __getMaxBounds: function() {
+      const bounds = {
+        left: 0,
+        top: 0
+      };
+      this.__nodesUI.forEach(nodeUI => {
+        const boundPos = nodeUI.getBounds();
+        const leftPos = boundPos.left + boundPos.width;
+        if (bounds.left < leftPos) {
+          bounds.left = leftPos;
         }
-        position.x = 50 + farthestRight;
-        position.y = 200;
-      }
+        const topPos = boundPos.top + boundPos.height;
+        if (bounds.top < topPos) {
+          bounds.top = topPos;
+        }
+      });
+      return bounds;
+    },
+
+    __addNodeToWorkbench: function(nodeUI, position) {
       this.__updateWorkbenchLayoutSize(position);
 
       const node = nodeUI.getNode();
@@ -904,7 +910,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __applyScale: function(value) {
+    __applyScale: function(value, oldValue) {
+      const factor = value/oldValue;
+      this.__workbenchLayout.setMinWidth(parseInt(this.__workbenchLayout.getMinWidth()*factor));
+      this.__workbenchLayout.setMinHeight(parseInt(this.__workbenchLayout.getMinHeight()*factor));
+
       this.__setZoom(this.__workbenchLayout.getContentElement().getDomElement(), value);
       const oldWidth = this.__workbenchLayout.getBounds().width;
       const oldHeight = this.__workbenchLayout.getBounds().height;
