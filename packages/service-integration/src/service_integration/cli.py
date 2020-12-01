@@ -8,10 +8,8 @@ from .scripts import metadata, run_creator, update_compose_labels
 
 @click.group()
 @click.version_option(version=__version__)
-# @click.option("-v", "--verbose", count=True)
-def main():  # verbose):
+def main():
     pass
-    # click.echo("Verbosity: %s" % verbose)
 
 
 main.add_command(run_creator.main, "run-creator")
