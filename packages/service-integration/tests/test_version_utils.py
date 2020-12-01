@@ -1,13 +1,10 @@
-import os
-
-import pytest
-from pkg_resources import parse_version
-from service_integration.version_utils import bump_version_string
-
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import pytest
+from pkg_resources import parse_version
+from service_integration.version_utils import bump_version_string
 
 # TESTS ------------------------------------------
 

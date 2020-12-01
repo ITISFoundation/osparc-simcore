@@ -1,8 +1,8 @@
-import os
-
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
+import os
 from pathlib import Path
 from typing import Callable, Dict
 
