@@ -1,6 +1,6 @@
 import pkg_resources
 
-current_distribution = pkg_resources.get_distribution("service_integration")
+current_distribution = pkg_resources.get_distribution("simcore-service-integration")
 
 project_name: str = current_distribution.project_name
 

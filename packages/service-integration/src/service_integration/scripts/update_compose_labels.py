@@ -1,12 +1,13 @@
 import json
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import click
 import yaml
 
 
 def get_compose_file(compose_file: Path) -> Dict:
+    # TODO: auto-generate minimal: catch FileNotFoundError and deduce minimal from model
     with compose_file.open() as filep:
         return yaml.safe_load(filep)
 
@@ -19,12 +20,13 @@ def get_metadata_file(metadata_file: Path) -> Dict:
 def stringify_metadata(metadata: Dict) -> Dict[str, str]:
     jsons = {}
     for key, value in metadata.items():
+        # TODO: connect this with models
         jsons[f"io.simcore.{key}"] = json.dumps({key: value})
     return jsons
 
 
 def update_compose_labels(
-    compose_cfg: Dict, metadata: Dict[str, str], service_name: str
+    compose_cfg: Dict[str, Any], metadata: Dict[str, Any], service_name: str
 ) -> bool:
     compose_labels = compose_cfg["services"][service_name]["build"]["labels"]
     changed = False

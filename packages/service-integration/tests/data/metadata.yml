@@ -1,0 +1,28 @@
+name: oSparc Python Runner
+key: simcore/services/comp/osparc-python-runner
+type: computational
+integration-version: 1.0.0
+version: 1.1.0
+description: oSparc Python Runner
+contact: anderegg@itis.swiss
+authors:
+  - name: Sylvain Anderegg
+    email: anderegg@itis.swiss
+    affiliation: IT'IS Foundation
+  - name: Pedro Crespo
+    email: 32402063+pcrespov@users.noreply.github.com
+    affiliation: IT'IS Foundation
+inputs:
+  input_1:
+    displayOrder: 1
+    label: Input data
+    description: Any code, requirements or data file
+    type: data:*/*
+outputs:
+  output_1:
+    displayOrder: 1
+    label: Output data
+    description: All data produced by the script is zipped as output_data.zip
+    type: data:*/*
+    fileToKeyMap:
+      output_data.zip: output_1
