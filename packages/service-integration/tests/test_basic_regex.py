@@ -5,11 +5,29 @@
 import re
 
 from pkg_resources import parse_version
+from service_integration import __version__
 from service_integration.basic_regex import (
     PEP404_VERSION_RE,
     PEP440_VERSION_NG_RE,
     SEMANTIC_VERSION_NG_RE,
+    VERSION_RE,
 )
+from service_integration.meta import INTEGRATION_API_VERSION, project_name
+
+
+def test_package_meta_data():
+    assert project_name == "simcore-service-integration"
+
+    # versions are semantic
+    assert re.match(
+        SEMANTIC_VERSION_NG_RE, __version__
+    ), f"{__version__} is invalid version"
+    assert re.match(
+        SEMANTIC_VERSION_NG_RE, INTEGRATION_API_VERSION
+    ), f"{INTEGRATION_API_VERSION} is invalid version"
+
+    assert re.match(VERSION_RE, __version__)
+    assert re.match(VERSION_RE, INTEGRATION_API_VERSION)
 
 
 def test_semantic_version_with_named_groups():
