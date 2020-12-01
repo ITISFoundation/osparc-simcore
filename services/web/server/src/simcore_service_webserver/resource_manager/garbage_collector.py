@@ -610,4 +610,3 @@ async def remove_user(app: web.Application, user_id: int) -> None:
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
         )
-
