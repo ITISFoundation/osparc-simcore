@@ -323,7 +323,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
       e.stopPropagation();
 
-      this.getNode().setPosition(coords.x, coords.y);
+      this.getNode().setPosition(coords);
       this.fireEvent("nodeMoving");
     },
 
