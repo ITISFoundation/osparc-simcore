@@ -1,10 +1,10 @@
 import logging
 from typing import List
-from models_library.projects_state import RunningState
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import ProjectID
+from models_library.projects_state import RunningState
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -316,7 +316,7 @@ async def delete_pipeline(
                 stop=stop_after_delay(PIPELINE_ABORT_TIMEOUT_S),
                 wait=wait_random(0, 2),
                 retry=retry_if_result(lambda result: result is False),
-                reraise=True,
+                reraise=False,
                 before_sleep=before_sleep_log(log, logging.INFO),
             )
             async def check_pipeline_stopped() -> bool:
