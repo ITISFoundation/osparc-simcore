@@ -14,6 +14,8 @@ from service_integration.basic_regex import (
 )
 from service_integration.meta import INTEGRATION_API_VERSION, project_name
 
+# TODO: replace with https://importlib-metadata.readthedocs.io/en/latest/index.html so it is standard in 3.8
+
 
 def test_package_meta_data():
     assert project_name == "simcore-service-integration"
@@ -95,3 +97,9 @@ def test_pep404_compare_versions():
     assert parse_version("1.9.a.dev") == parse_version("1.9a0dev")
     assert parse_version("2.1-rc2") < parse_version("2.1")
     assert parse_version("0.6a9dev-r41475") < parse_version("0.6a9")
+
+    # same release but one is pre-release
+    assert (
+        parse_version("2.1-rc2").release == parse_version("2.1").release
+        and ("2.1-rc2").is_prelease
+    )
