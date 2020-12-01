@@ -48,7 +48,7 @@ def run_simcore_service_integrator() -> Callable:
     runner = CliRunner()
 
     def _invoke(*cmd):
-        print("RUNNING", "simcore-service-integrator", " ".join(cmd))
+        print("RUNNING", "simcore-service-integrator", cmd)
         return runner.invoke(main, list(cmd))
 
     return _invoke
