@@ -261,7 +261,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         position.x = 50 + farthestRight;
         position.y = 200;
       }
-      this.__updateLayoutSize(position);
+      this.__updateWorkbenchLayoutSize(position);
 
       const node = nodeUI.getNode();
       node.setPosition(position);
@@ -293,7 +293,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__updateHint();
     },
 
-    __updateLayoutSize: function(position) {
+    __updateWorkbenchLayoutSize: function(position) {
       const minWidth = position.x + osparc.component.workbench.NodeUI.NodeWidth;
       const minHeight = position.y + osparc.component.workbench.NodeUI.NodeHeight;
       if (this.__workbenchLayout.getMinWidth() < minWidth) {
