@@ -1,5 +1,7 @@
 #
 # Specifies third-party dependencies for 's3wrapper'
 #
-urllib3>=1.25.8 # Vulnerability
+-c ../../../requirements/constraints.txt
+
+urllib3
 minio

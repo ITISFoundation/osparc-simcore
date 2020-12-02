@@ -2,6 +2,7 @@
 # Specifies dependencies required to run 'services/catalog/test'
 #  both for unit and integration tests!!
 #
+-c ../../../requirements/constraints.txt
 
 # Adds base AS CONSTRAINT specs, not requirement.
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
@@ -22,8 +23,7 @@ pytest-docker
 
 # fixtures
 Faker
-# [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
-respx<0.13.0
+respx
 
 # migration due to pytest_simcore.postgres_service
 alembic

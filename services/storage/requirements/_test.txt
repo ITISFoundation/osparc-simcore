@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.2            # via -c requirements/_base.txt, pytest-aiohttp
+aiohttp==3.7.3            # via -c requirements/_base.txt, pytest-aiohttp
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp
 attrs==20.2.0             # via -c requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
@@ -54,7 +54,7 @@ pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest
 python-dateutil==2.8.1    # via -c requirements/_base.txt, pandas
 python-dotenv==0.15.0     # via docker-compose
 pytz==2020.1              # via -c requirements/_base.txt, pandas
-pyyaml==5.3.1             # via -c requirements/_base.txt, docker-compose
+pyyaml==5.3.1             # via -c requirements/../../../requirements/constraints.txt, -c requirements/_base.txt, docker-compose
 requests==2.24.0          # via -c requirements/_base.txt, codecov, coveralls, docker, docker-compose
 six==1.15.0               # via -c requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, jsonschema, packaging, pynacl, python-dateutil, websocket-client
 termcolor==1.1.0          # via pytest-sugar
@@ -62,7 +62,7 @@ texttable==1.6.3          # via docker-compose
 toml==0.10.2              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -c requirements/_base.txt, aiohttp, yarl
-urllib3==1.25.11          # via -c requirements/_base.txt, requests
+urllib3==1.25.11          # via -c requirements/../../../requirements/constraints.txt, -c requirements/_base.txt, requests
 websocket-client==0.57.0  # via -c requirements/_base.txt, docker, docker-compose
 wrapt==1.12.1             # via -c requirements/_base.txt, astroid
 yarl==1.6.2               # via -c requirements/_base.txt, aiohttp

@@ -2,6 +2,7 @@
 # Specifies third-party dependencies for 'services/director-v2/src'
 #
 # NOTE: ALL version constraints MUST be commented
+-c ../../../requirements/constraints.txt
 
 async-exit-stack; python_version < '3.7'
 async-generator ; python_version < '3.7'
@@ -29,5 +30,5 @@ celery[redis]
 tenacity
 orjson
 
-# httpx [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
-httpx<0.15.0
+# clients
+httpx
