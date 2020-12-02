@@ -7,7 +7,7 @@ import re
 import urllib.parse
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict, Tuple
+from typing import Tuple
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
@@ -99,7 +99,7 @@ async def test_api_get_viewer_for_file(client):
     assert await resp.json() == {
         "data": {
             "file_type": "DICOM",
-            "viewer_title": "Sim4life v1.0.16",
+            "viewer_title": "Sim4life v1.0.29",
             "redirection_url": f"{base_url}/view?file_type=DICOM&file_name=foo&file_size=10000",
         },
         "error": None,
@@ -142,12 +142,12 @@ async def test_api_list_supported_filetypes(client):
         "data": [
             {
                 "file_type": "DICOM",
-                "viewer_title": "Sim4life v1.0.16",
+                "viewer_title": "Sim4life v1.0.29",
                 "redirection_url": f"{base_url}/view?file_type=DICOM",
             },
             {
                 "file_type": "CSV",
-                "viewer_title": "2d plot - rawgraphs v2.10.6",
+                "viewer_title": "2d plot - rawgraphs v2.11.1",
                 "redirection_url": f"{base_url}/view?file_type=CSV",
             },
         ],
@@ -175,7 +175,7 @@ async def catalog_subsystem_mock(monkeypatch):
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker) -> Dict:
+def mocks_on_projects_api(mocker):
     """
     All projects in this module are UNLOCKED
     """

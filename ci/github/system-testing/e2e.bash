@@ -153,18 +153,19 @@ test() {
 }
 
 dump_docker_logs() {
-  # all screenshots are in tests/e2e/screenshots if any
-
-  # get docker logs.
-  # NOTE: dumping logs sometimes hangs. Introducing a timeout
+  # get docker logs
+  # NOTE: Timeout avoids issue with dumping logs that hang!
   mkdir --parents simcore_logs
   (timeout 30 docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director  >simcore_logs/director.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage   >simcore_logs/storage.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar   >simcore_logs/sidecar.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog   >simcore_logs/catalog.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_migration >simcore_logs/migration.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_postgres >simcore_logs/postgres.log 2>&1) || true
+  # then the rest (alphabetically)
+  (timeout 30 docker service logs --timestamps --tail=100 --details ${SWARM_STACK_NAME}_api-server  >simcore_logs/api-server.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog     >simcore_logs/catalog.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director    >simcore_logs/director.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director-v2 >simcore_logs/director-v2.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar     >simcore_logs/sidecar.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage     >simcore_logs/storage.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_migration   >simcore_logs/migration.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_postgres    >simcore_logs/postgres.log 2>&1) || true
 }
 
 clean_up() {

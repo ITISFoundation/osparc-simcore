@@ -232,7 +232,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     closeStudy: function() {
-      this.getStudy().closeStudy();
+      return this.getStudy().closeStudy();
     }
   }
 });

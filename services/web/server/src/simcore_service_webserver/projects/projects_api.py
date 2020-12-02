@@ -9,8 +9,9 @@
 # pylint: disable=too-many-arguments
 
 import logging
+from collections import defaultdict
 from pprint import pformat
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from uuid import uuid4
 
 from aiohttp import web
@@ -28,7 +29,11 @@ from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..director import director_api
-from ..director_v2 import delete_pipeline, get_pipeline_state
+from ..director_v2 import (
+    delete_pipeline,
+    get_pipeline_state,
+    request_retrieve_dyn_service,
+)
 from ..resource_manager.websocket_manager import managed_resource
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
@@ -420,7 +425,42 @@ async def notify_project_node_update(
         await post_group_messages(app, room, messages)
 
 
+async def trigger_connected_service_retrieve(
+    app: web.Application, project: Dict, updated_node_uuid: str, changed_keys: List[str]
+) -> None:
+    workbench = project["workbench"]
+    nodes_keys_to_update: Dict[str, List[str]] = defaultdict(list)
+    # find the nodes that need to retrieve data
+    for node_uuid, node in workbench.items():
+        # check this node is dynamic
+        if not _is_node_dynamic(node["key"]):
+            continue
+
+        # check whether this node has our updated node as linked inputs
+        node_inputs = node.get("inputs", {})
+        for port_key, port_value in node_inputs.items():
+            # we look for node port links, not values
+            if not isinstance(port_value, dict):
+                continue
+
+            input_node_uuid = port_value.get("nodeUuid")
+            if input_node_uuid != updated_node_uuid:
+                continue
+            # so this node is linked to the updated one, now check if the port was changed?
+            linked_input_port = port_value.get("output")
+            if linked_input_port in changed_keys:
+                nodes_keys_to_update[node_uuid].append(port_key)
+
+    # call /retrieve on the nodes
+    update_tasks = [
+        request_retrieve_dyn_service(app, node, keys)
+        for node, keys in nodes_keys_to_update.items()
+    ]
+    await logged_gather(*update_tasks)
+
+
 # PROJECT STATE -------------------------------------------------------------------
+
 
 async def _get_project_lock_state(
     user_id: int, project_uuid: str, app: web.Application

@@ -450,6 +450,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(studyServicesButton);
       }
 
+      if (this.self().isTemplate(studyData) && osparc.data.model.Study.isOwner(studyData)) {
+        const publishOnPortalButton = this.__getPublishOnPortalMenuButton(studyData);
+        menu.add(publishOnPortalButton);
+      }
+
       const deleteButton = this.__getDeleteTemplateMenuButton(studyData);
       if (deleteButton) {
         menu.addSeparator();
@@ -533,6 +538,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 400, 100);
       }, this);
       return studyServicesButton;
+    },
+
+    __getPublishOnPortalMenuButton: function() {
+      const publishOnPortalButton = new qx.ui.menu.Button(this.tr("Publish on Portal"));
+      publishOnPortalButton.addListener("execute", () => {
+        const msg = this.tr("Not yet implemented");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+      }, this);
+      return publishOnPortalButton;
     },
 
     __getDeleteTemplateMenuButton: function(studyData) {

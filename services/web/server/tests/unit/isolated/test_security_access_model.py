@@ -11,7 +11,6 @@ import json
 
 import jsondiff
 import pytest
-
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.security_access_model import (
     RoleBasedAccessModel,
@@ -173,7 +172,7 @@ async def test_checked_permissions(access_model):
 
     current = {}
     for prj in data:
-        if prj["uuid"] == "template-uuid-1234-a1a7-f7d4f3a8f26b":
+        if prj["uuid"] == "de2578c5-431e-1234-a1a7-f7d4f3a8f26b":
             current = prj
             break
 
@@ -181,10 +180,10 @@ async def test_checked_permissions(access_model):
 
     # updates both allowed and not allowed fields
     candidate = copy.deepcopy(current)
-    candidate["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"][
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
         "Kr"
     ] = 66  # ReadOnly!
-    candidate["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"][
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
         "Na"
     ] = 66  # ReadWrite
 
@@ -196,7 +195,7 @@ async def test_checked_permissions(access_model):
 
     # updates allowed fields
     candidate = copy.deepcopy(current)
-    candidate["workbench"]["template-uuid-409d-998c-c1f04de67f8b"]["inputs"][
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
         "Na"
     ] = 66  # ReadWrite
 

@@ -6,7 +6,7 @@
 #
 aiodocker==0.19.1         # via -r requirements/_base.in
 aiofiles==0.5.0           # via fastapi
-aiohttp==3.7.2            # via aiodocker
+aiohttp==3.7.3            # via aiodocker
 aiopg[sa]==1.0.0          # via -r requirements/_base.in
 amqp==5.0.2               # via kombu
 aniso8601==7.0.0          # via graphene
@@ -33,7 +33,7 @@ graphql-relay==2.0.1      # via graphene
 h11==0.9.0                # via httpcore, uvicorn
 httpcore==0.10.2          # via httpx
 httptools==0.1.1          # via uvicorn
-httpx==0.14.3             # via -r requirements/_base.in
+httpx==0.14.3             # via -c requirements/../../../requirements/constraints.txt, -r requirements/_base.in
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via email-validator, idna-ssl, requests, rfc3986, yarl
 immutables==0.14          # via contextvars
@@ -52,19 +52,19 @@ pydantic[dotenv]==1.7.2   # via -r requirements/_base.in, fastapi
 python-dotenv==0.15.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
 pytz==2020.4              # via celery
-pyyaml==5.3.1             # via fastapi
+pyyaml==5.3.1             # via -c requirements/../../../requirements/constraints.txt, fastapi
 redis==3.5.3              # via celery
 requests==2.24.0          # via fastapi
 rfc3986[idna2008]==1.4.0  # via httpx
 rx==1.6.1                 # via graphql-core
 six==1.15.0               # via click-repl, graphene, graphql-core, graphql-relay, python-multipart, tenacity
 sniffio==1.2.0            # via httpcore, httpx
-sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via aiopg
+sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -c requirements/../../../requirements/constraints.txt, aiopg
 starlette==0.13.6         # via fastapi
 tenacity==6.2.0           # via -r requirements/_base.in
 typing-extensions==3.7.4.3  # via aiodocker, aiohttp, yarl
 ujson==3.2.0              # via fastapi
-urllib3==1.25.11          # via requests
+urllib3==1.25.11          # via -c requirements/../../../requirements/constraints.txt, requests
 uvicorn==0.11.8           # via fastapi
 uvloop==0.14.0            # via uvicorn
 vine==5.0.0               # via amqp, celery

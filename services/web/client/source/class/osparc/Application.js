@@ -171,13 +171,18 @@ qx.Class.define("osparc.Application", {
         case "error": {
           // Route: /#/error/?message={errorMessage}&status_code={statusCode}
           if (urlFragment.params && urlFragment.params.message) {
-            osparc.utils.Utils.cookie.deleteCookie("user");
-            this.__restart();
             let msg = urlFragment.params.message;
             // Relpace plus sign in URL query string by spaces
             msg = msg.replace(/\+/g, "%20");
             msg = decodeURIComponent(msg);
-            osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+            osparc.utils.Utils.cookie.deleteCookie("user");
+            const errorPage = new osparc.Error().set({
+              code: urlFragment.params.status_code,
+              messages: [
+                msg
+              ]
+            });
+            this.__loadView(errorPage);
           }
           break;
         }
@@ -238,34 +243,28 @@ qx.Class.define("osparc.Application", {
         this.__restart();
       }, this);
       this.__loadView(view, {
-        top: "10%",
-        bottom: 0,
-        left: 0,
-        right: 0
+        top: "10%"
       });
     },
 
     __loadMainPage: function() {
       this.__connectWebSocket();
-      this.__loadView(new osparc.desktop.MainPage(), {
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0
-      });
+      this.__loadView(new osparc.desktop.MainPage());
     },
 
     __loadNodeViewerPage: function(studyId, viewerNodeId) {
       this.__connectWebSocket();
-      this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId), {
+      this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
+    },
+
+    __loadView: function(view, opts) {
+      const options = {
         top: 0,
         bottom: 0,
         left: 0,
-        right: 0
-      });
-    },
-
-    __loadView: function(view, options) {
+        right: 0,
+        ...opts
+      };
       this.assert(view!==null);
       // Update root document and currentness
       let doc = this.getRoot();

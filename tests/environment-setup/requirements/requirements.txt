@@ -4,15 +4,15 @@
 #
 #    pip-compile --output-file=requirements/requirements.txt requirements/requirements.in
 #
-aiohttp==3.7.2            # via pytest-aiohttp
+aiohttp==3.7.3            # via pytest-aiohttp
 async-timeout==3.0.1      # via aiohttp
 attrs==20.3.0             # via aiohttp, pytest
 chardet==3.0.4            # via aiohttp
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via idna-ssl, yarl
-importlib-metadata==2.0.0  # via pluggy, pytest
+importlib-metadata==3.0.0  # via pluggy, pytest
 iniconfig==1.1.1          # via pytest
-multidict==5.0.0          # via aiohttp, yarl
+multidict==5.0.2          # via aiohttp, yarl
 packaging==20.4           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
 py==1.9.0                 # via pytest
@@ -26,5 +26,5 @@ six==1.15.0               # via packaging
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.2              # via pytest
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-yarl==1.6.2               # via aiohttp
+yarl==1.6.3               # via aiohttp
 zipp==3.4.0               # via importlib-metadata

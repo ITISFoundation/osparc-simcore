@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ...__version__ import __version__, api_version, api_vtag
+from ...meta import __version__, api_version, api_vtag
 from ...models.schemas.meta import Meta
 
 router = APIRouter()

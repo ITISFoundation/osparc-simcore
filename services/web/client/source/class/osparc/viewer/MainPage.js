@@ -41,7 +41,7 @@ qx.Class.define("osparc.viewer.MainPage", {
     },
 
     __createNodeViewer: function(studyId, viewerNodeId) {
-      const nodeViewer = new osparc.viewer.NodeViewer(viewerNodeId);
+      const nodeViewer = new osparc.viewer.NodeViewer(studyId, viewerNodeId);
       return nodeViewer;
     }
   }

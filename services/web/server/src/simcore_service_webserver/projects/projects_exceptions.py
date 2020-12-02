@@ -19,6 +19,14 @@ class ProjectInvalidRightsError(ProjectsException):
         self.project_uuid = project_uuid
 
 
+class ProjectOwnerNotFoundError(ProjectsException):
+    """Project owner was not found"""
+
+    def __init__(self, project_uuid):
+        super().__init__(f"Project with uuid {project_uuid} has not project owner")
+        self.project_uuid = project_uuid
+
+
 class ProjectNotFoundError(ProjectsException):
     """Project was not found in DB"""
 

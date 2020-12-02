@@ -40,3 +40,6 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
         strict=True,
     )
     app.router.add_routes(rest_routes)
+
+    # TODO: add a background task that builds _FILETYPE_TO_VIEWER with viewers
+    #       shared with everybody.
