@@ -11,9 +11,9 @@ def read_reqs(reqs_path: Path):
     return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
 
 
-install_requirements = read_reqs(
-    here / "requirements" / "_base.in"
-)  # WEAK requirements
+install_requirements = read_reqs(here / "requirements" / "_base.in") + [
+    "simcore-models-library"
+]  # WEAK requirements
 
 test_requirements = read_reqs(
     here / "requirements" / "_test.txt"

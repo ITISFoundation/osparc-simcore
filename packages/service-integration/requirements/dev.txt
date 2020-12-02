@@ -11,6 +11,7 @@
 -r _test.txt
 -r _tools.txt
 
-
+-e ../models-library/
+-e ../pytest-simcore/
 # current module
 -e .

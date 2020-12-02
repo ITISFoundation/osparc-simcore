@@ -10,6 +10,8 @@
 -r _base.txt
 -r _test.txt
 
+../models-library/
+../pytest-simcore/
 
 # current module
 .

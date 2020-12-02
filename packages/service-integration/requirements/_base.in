@@ -1,14 +1,14 @@
 #
 # Specifies third-party dependencies for 'service-integration'
 #
+-c ../../../requirements/constraints.txt
+
+-r ../../../packages/models-library/requirements/_base.in
 
 # tools
 pyyaml
 click
 
-# validation
-pydantic[email]
--e file:../models-library#egg=simcore-models-library
 
 # pytest-plugin
 pytest
