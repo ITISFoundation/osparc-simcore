@@ -982,32 +982,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.addListener("resize", () => this.__updateAllEdges(), this);
       });
 
-      this.addListenerOnce("appear", () => {
-        const domEl = this.getContentElement().getDomElement();
-        domEl.addEventListener("dragenter", this.__dragEnter.bind(this), false);
-        domEl.addEventListener("dragover", this.__dragOver.bind(this), false);
-        domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
-        domEl.addEventListener("drop", this.__drop.bind(this), false);
-
-        this.addListener("mousewheel", this.__mouseWheel, this);
-      });
-
-      this.addListener("disappear", () => {
-        // Reset filters
-        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
-      });
-
-      this.addListener("dbltap", e => {
-        if (this.getStudy().isReadOnly()) {
-          return;
-        }
-        const winPos = this.__getPointEventPosition(e, false);
-        const srvPos = this.__getPointEventPosition(e, true);
-        const srvCat = this.__createServiceCatalog(winPos, srvPos);
-        srvCat.open();
-      }, this);
-
       const commandDel = new qx.ui.command.Command("Delete");
       commandDel.addListener("execute", () => {
         const selectedNodes = this.getSelectedNodes();
@@ -1021,6 +995,38 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__selectedNodes.forEach(node => node.removeState("selected"));
         this.resetSelectedNodes();
       });
+
+      this.addListenerOnce("appear", () => {
+        const domEl = this.getContentElement().getDomElement();
+        domEl.addEventListener("dragenter", this.__dragEnter.bind(this), false);
+        domEl.addEventListener("dragover", this.__dragOver.bind(this), false);
+        domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
+        domEl.addEventListener("drop", this.__drop.bind(this), false);
+
+        this.addListener("mousewheel", this.__mouseWheel, this);
+
+        commandDel.setEnabled(true);
+        commandEsc.setEnabled(true);
+      });
+
+      this.addListener("disappear", () => {
+        // Reset filters
+        osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
+        osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
+
+        commandDel.setEnabled(false);
+        commandEsc.setEnabled(false);
+      });
+
+      this.addListener("dbltap", e => {
+        if (this.getStudy().isReadOnly()) {
+          return;
+        }
+        const winPos = this.__getPointEventPosition(e, false);
+        const srvPos = this.__getPointEventPosition(e, true);
+        const srvCat = this.__createServiceCatalog(winPos, srvPos);
+        srvCat.open();
+      }, this);
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
 
