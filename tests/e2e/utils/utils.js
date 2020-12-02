@@ -295,6 +295,29 @@ function extractWorkbenchData(data) {
   return workbenchData;
 }
 
+function getGrayLogSnapshotUrl(environment, since_secs=30){
+  // WARNING: This list might change!!
+  const monitoring_base_url = {
+    "staging.osparc.io": "https://monitoring.staging.osparc.io/graylog/",
+    "osparc.io": "https://monitoring.osparc.io/graylog/",
+    "osparc-master.speag.com": "https://monitoring.osparc-master.speag.com/graylog/",
+    "osparc-staging.speag.com": "https://monitoring.osparc.speag.com/graylog/",
+    "osparc.speag.com": "https://monitoring.osparc.speag.com/graylog/",
+  }[environment];
+
+  if (monitoring_base_url != undefined) {
+    const now_millisecs = Date.now();
+    const from = encodeURIComponent(new Date(now_millisecs - since_secs * 1000).toISOString());
+    const to = encodeURIComponent(new Date(now_millisecs).toISOString());
+
+    search_query = "image_name%3Aitisfoundation%2A"; //image_name:itisfoundation*
+    url = `${monitoring_base_url}search?q=${search_query}&rangetype=absolute&from=${from}&to=${to}`;
+  }
+
+  return url
+}
+
+
 module.exports = {
   getUserAndPass,
   getDomain,
@@ -316,5 +339,6 @@ module.exports = {
   createScreenshotsDir,
   takeScreenshot,
   extractWorkbenchData,
-  parseCommandLineArguments
+  parseCommandLineArguments,
+  getGrayLogSnapshotUrl
 }
