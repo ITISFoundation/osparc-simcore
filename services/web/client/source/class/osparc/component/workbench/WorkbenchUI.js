@@ -917,20 +917,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __applyScale: function(value) {
       this.__setZoom(this.__workbenchLayout.getContentElement().getDomElement(), value);
 
-      const oldWidth = this.__workbenchLayout.getBounds().width;
-      const oldHeight = this.__workbenchLayout.getBounds().height;
-      const width = parseInt(oldWidth / this.getScale());
-      const height = parseInt(oldHeight / this.getScale());
-      [
-        this.__workbenchLayout,
-        this.__desktop,
-        this.__svgWidgetLinks,
-        this.__svgWidgetDrop
-      ].forEach(widget => {
-        widget.getContentElement().setStyles({
-          width: width + "px",
-          height: height + "px"
-        });
+      const oldBounds = this.__workbenchLayout.getBounds();
+      const width = parseInt(oldBounds.width / this.getScale());
+      const height = parseInt(oldBounds.height / this.getScale());
+      this.__workbenchLayout.getContentElement().setStyles({
+        width: width + "px",
+        height: height + "px"
       });
 
       this.__updateBounds();
