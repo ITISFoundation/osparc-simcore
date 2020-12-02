@@ -98,7 +98,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     "edgeDragOver": "qx.event.type.Data",
     "edgeDrop": "qx.event.type.Data",
     "edgeDragEnd": "qx.event.type.Data",
-    "nodeMoving": "qx.event.type.Event"
+    "nodeMoving": "qx.event.type.Event",
+    "nodeStoppedMoving": "qx.event.type.Event"
   },
 
   statics: {
@@ -339,6 +340,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
 
       this._onMovePointerMove(e);
+
+      this.fireEvent("nodeStoppedMoving");
 
       // Remove drag state
       this.removeState("move");

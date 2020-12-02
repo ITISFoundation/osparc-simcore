@@ -280,6 +280,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__updateEdges(nodeUI);
       }, this);
 
+      nodeUI.addListener("nodeStoppedMoving", () => {
+        this.__updateBounds();
+      }, this);
+
       nodeUI.addListener("appear", () => {
         this.__updateEdges(nodeUI);
       }, this);
@@ -910,12 +914,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __applyScale: function(value, oldValue) {
-      const factor = value/oldValue;
-      this.__workbenchLayout.setMinWidth(parseInt(this.__workbenchLayout.getMinWidth()*factor));
-      this.__workbenchLayout.setMinHeight(parseInt(this.__workbenchLayout.getMinHeight()*factor));
-
+    __applyScale: function(value) {
       this.__setZoom(this.__workbenchLayout.getContentElement().getDomElement(), value);
+
       const oldWidth = this.__workbenchLayout.getBounds().width;
       const oldHeight = this.__workbenchLayout.getBounds().height;
       const width = parseInt(oldWidth / this.getScale());
@@ -931,6 +932,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           height: height + "px"
         });
       });
+
+      this.__updateBounds();
     },
 
     __setZoom: function(el, zoom) {
@@ -944,6 +947,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       el.style["transform"] = s;
       el.style["transformOrigin"] = oString;
+    },
+
+    __updateBounds: function() {
+      // Fit to nodes size
+      const nodesWidth = this.__getMaxBounds().left + osparc.component.workbench.NodeUI.NodeWidth; // a bit more of margin
+      const nodesHeight = this.__getMaxBounds().top + osparc.component.workbench.NodeUI.NodeHeight; // a bit more of margin
+      const scaledNodes = this.__unscaleCoordinates(nodesWidth, nodesHeight);
+      this.__workbenchLayout.setMinWidth(scaledNodes.x);
+      this.__workbenchLayout.setMinHeight(scaledNodes.y);
+
+      // Fit to screen
+      const screenWidth = this.getBounds().width - 10; // scrollbar
+      const screenHeight = this.getBounds().height - 10; // scrollbar
+      const scaledScreen = this.__scaleCoordinates(screenWidth, screenHeight);
+      if (this.__workbenchLayout.getMinWidth() < scaledScreen.x) {
+        // Layout smaller than screen
+        this.__workbenchLayout.setMinWidth(scaledScreen.x);
+      }
+      if (this.__workbenchLayout.getMinHeight() < scaledScreen.y) {
+        // Layout smaller than screen
+        this.__workbenchLayout.setMinHeight(scaledScreen.y);
+      }
     },
 
     __addEventListeners: function() {
