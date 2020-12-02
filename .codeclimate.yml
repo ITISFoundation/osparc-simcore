@@ -78,4 +78,5 @@ exclude_patterns:
   - "**/migrations/"
   - "**/*.js"
   - "**/pytest-simcore/"
+  - "**/pytest_plugin/"
   - "**/sandbox/"
