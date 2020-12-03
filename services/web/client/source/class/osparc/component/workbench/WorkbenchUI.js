@@ -902,6 +902,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
 
     __mouseWheel: function(e) {
+      this.__zoom(e.getWheelDelta() < 0);
+    },
+
+    __zoom: function(zoomIn = true) {
       const zoomValues = [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3];
       const nextItem = () => {
         const i = zoomValues.indexOf(this.getScale());
@@ -918,7 +922,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return zoomValues[i];
       };
 
-      const newScale = (e.getWheelDelta() < 0) ? nextItem() : prevItem();
+      const newScale = zoomIn ? nextItem() : prevItem();
       this.setScale(newScale);
     },
 
