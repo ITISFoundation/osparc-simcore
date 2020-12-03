@@ -62,6 +62,7 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
 
     if (osparc.data.Permissions.getInstance().canDo("user.tag")) {
       const tagsPage = new osparc.desktop.preferences.pages.TagsPage();
+      osparc.utils.Utils.setIdToWidget(tagsPage.getChildControl("button"), "preferencesTagsTabBtn");
       tabView.add(tagsPage);
     }
 
