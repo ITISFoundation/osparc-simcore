@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
-from simcore_sdk.node_ports_v2.links import PortLink
+from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 
 
 @pytest.mark.parametrize(
@@ -12,8 +12,36 @@ from simcore_sdk.node_ports_v2.links import PortLink
         {"nodeUuid": f"{uuid4()}"},
         {"output": "some stuff"},
         {"nodeUuid": "some stuff", "output": "some stuff"},
+        {"nodeUuid": "", "output": "some stuff"},
+        {"nodeUuid": f"{uuid4()}", "output": ""},
     ],
 )
 def test_invalid_port_link(port_link: Dict[str, str]):
     with pytest.raises(ValidationError):
         PortLink(**port_link)
+
+
+@pytest.mark.parametrize(
+    "download_link",
+    [
+        {"downloadLink": ""},
+        {"downloadLink": "some stuff"},
+        {"label": "some stuff"},
+    ],
+)
+def test_invalid_download_link(download_link: Dict[str, str]):
+    with pytest.raises(ValidationError):
+        DownloadLink(**download_link)
+
+
+@pytest.mark.parametrize(
+    "file_link",
+    [
+        {"store": ""},
+        {"store": "0", "path": ""},
+        {"path": "/somefile/blahblah:"},
+    ],
+)
+def test_invalid_file_link(file_link: Dict[str, str]):
+    with pytest.raises(ValidationError):
+        FileLink(**file_link)

@@ -14,11 +14,12 @@ from pydantic import (
 UUID_REGEX = (
     r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
 )
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
 
 
 class PortLink(BaseModel):
     node_uuid: str = Field(..., regex=UUID_REGEX, alias="nodeUuid")
-    output: str
+    output: str = Field(..., regex=PROPERTY_KEY_RE)
 
 
 class DownloadLink(BaseModel):
@@ -28,7 +29,7 @@ class DownloadLink(BaseModel):
 
 class FileLink(BaseModel):
     store: Union[str, int]
-    path: str
+    path: str = Field(..., regex=r".+")
     dataset: Optional[str]
     label: Optional[str]
 
