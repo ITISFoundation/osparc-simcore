@@ -33,25 +33,25 @@ async def _check_port_valid(
     assert (await getattr(ports, port_type))[key].description == config_dict["schema"][
         port_type
     ][key_name]["description"]
-    assert (await getattr(ports, port_type))[key].type == config_dict["schema"][
-        port_type
-    ][key_name]["type"]
-    assert (await getattr(ports, port_type))[key].displayOrder == config_dict["schema"][
-        port_type
-    ][key_name]["displayOrder"]
+    assert (await getattr(ports, port_type))[key].property_type == config_dict[
+        "schema"
+    ][port_type][key_name]["type"]
+    assert (await getattr(ports, port_type))[key].display_order == config_dict[
+        "schema"
+    ][port_type][key_name]["displayOrder"]
     # check optional values
     if "defaultValue" in config_dict["schema"][port_type][key_name]:
-        assert (await getattr(ports, port_type))[key].defaultValue == config_dict[
+        assert (await getattr(ports, port_type))[key].default_value == config_dict[
             "schema"
         ][port_type][key_name]["defaultValue"]
     else:
-        assert (await getattr(ports, port_type))[key].defaultValue == None
+        assert (await getattr(ports, port_type))[key].default_value == None
     if "fileToKeyMap" in config_dict["schema"][port_type][key_name]:
-        assert (await getattr(ports, port_type))[key].fileToKeyMap == config_dict[
+        assert (await getattr(ports, port_type))[key].file_to_key_map == config_dict[
             "schema"
         ][port_type][key_name]["fileToKeyMap"]
     else:
-        assert (await getattr(ports, port_type))[key].fileToKeyMap == None
+        assert (await getattr(ports, port_type))[key].file_to_key_map == None
     if "widget" in config_dict["schema"][port_type][key_name]:
         assert (await getattr(ports, port_type))[key].widget == config_dict["schema"][
             port_type
@@ -130,7 +130,7 @@ async def test_port_value_accessors(
     item_value: ItemConcreteValue,
     item_pytype: Type,
 ):  # pylint: disable=W0613, W0621
-    item_key = "some key"
+    item_key = "some_key"
     config_dict, _, _ = special_configuration(
         inputs=[(item_key, item_type, item_value)],
         outputs=[(item_key, item_type, None)],
