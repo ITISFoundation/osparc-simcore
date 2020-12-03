@@ -347,9 +347,9 @@ class TutorialBase {
 
   async takeScreenshot(screenshotTitle) {
     // Generates an URL that points to the backend logs at this time
-    const snapshot_url = utils.getGrayLogSnapshotUrl(this.__url, 30);
-    if (snapshot_url !== undefined) {
-      console.log("Backend Snapshot: ", snapshot_url)
+    const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
+    if (snapshotUrl) {
+      console.log("Backend Snapshot: ", snapshotUrl)
     }
 
     if (this.__demo) {

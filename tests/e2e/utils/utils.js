@@ -295,9 +295,8 @@ function extractWorkbenchData(data) {
   return workbenchData;
 }
 
-function getGrayLogSnapshotUrl(target_url, since_secs = 30) {
-  let monitoring_base_url;
-  let snapshot_url;
+function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
+  let snapshotUrl = null;
 
   // WARNING: This mappings might change
   const table = {
@@ -307,23 +306,20 @@ function getGrayLogSnapshotUrl(target_url, since_secs = 30) {
     "osparc-staging.speag.com": "https://monitoring.osparc.speag.com/graylog/",
     "osparc.speag.com": "https://monitoring.osparc.speag.com/graylog/",
   };
-  for (var key in table) {
-    if (target_url.startsWith("https://" + key)) {
-      monitoring_base_url = table[key];
-      break;
-    }
-  }
 
-  if (monitoring_base_url != undefined) {
+  const { hostname } = new URL(targetUrl)
+  const monitoringBaseUrl = table[hostname] || null;
+
+  if (monitoringBaseUrl) {
     const now_millisecs = Date.now();
     const from = encodeURIComponent(new Date(now_millisecs - since_secs * 1000).toISOString());
     const to = encodeURIComponent(new Date(now_millisecs).toISOString());
 
-    search_query = "image_name%3Aitisfoundation%2A"; //image_name:itisfoundation*
-    snapshot_url = `${monitoring_base_url}search?q=${search_query}&rangetype=absolute&from=${from}&to=${to}`;
+    const searchQuery = "image_name%3Aitisfoundation%2A"; // image_name:itisfoundation*
+    snapshotUrl = `${monitoringBaseUrl}search?q=${searchQuery}&rangetype=absolute&from=${from}&to=${to}`;
   }
 
-  return snapshot_url
+  return snapshotUrl
 }
 
 
