@@ -17,7 +17,7 @@ isodate==0.6.0            # via openapi-core, openapi-schema-validator
 jsonschema==3.2.0         # via openapi-schema-validator, openapi-spec-validator
 lazy-object-proxy==1.5.2  # via openapi-core
 more-itertools==8.6.0     # via openapi-core
-multidict==5.0.2          # via aiohttp, yarl
+multidict==5.1.0          # via aiohttp, yarl
 openapi-core==0.13.4      # via -r requirements.in
 openapi-schema-validator==0.1.1  # via openapi-core
 openapi-spec-validator==0.2.9  # via openapi-core

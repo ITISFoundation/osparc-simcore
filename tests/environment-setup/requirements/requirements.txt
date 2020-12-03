@@ -12,7 +12,7 @@ idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via idna-ssl, yarl
 importlib-metadata==3.1.1  # via pluggy, pytest
 iniconfig==1.1.1          # via pytest
-multidict==5.0.2          # via aiohttp, yarl
+multidict==5.1.0          # via aiohttp, yarl
 packaging==20.7           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
 py==1.9.0                 # via pytest

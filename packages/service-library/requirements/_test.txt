@@ -23,13 +23,13 @@ dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 idna-ssl==1.1.0           # via -c requirements/_base.txt, aiohttp
 idna==2.10                # via -c requirements/_base.txt, idna-ssl, requests, yarl
-importlib-metadata==3.0.0  # via -c requirements/_base.txt, jsonschema, pluggy, pytest
+importlib-metadata==3.1.1  # via -c requirements/_base.txt, jsonschema, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
 jsonschema==3.2.0         # via -c requirements/_base.txt, docker-compose
 lazy-object-proxy==1.4.3  # via -c requirements/_base.txt, astroid
 mccabe==0.6.1             # via pylint
-multidict==4.7.6          # via -c requirements/_base.txt, aiohttp, yarl
+multidict==5.1.0          # via -c requirements/_base.txt, aiohttp, yarl
 packaging==20.7           # via pytest, pytest-sugar
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
