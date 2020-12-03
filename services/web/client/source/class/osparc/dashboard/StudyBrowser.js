@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __reloadUserStudy: function(studyId) {
+    reloadUserStudy: function(studyId) {
       const params = {
         url: {
           "projectId": studyId
@@ -481,7 +481,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
       classifiersEditor.addListener("updateClassifiers", e => {
         const studyId = e.getData();
-        this.__reloadUserStudy(studyId);
+        this.reloadUserStudy(studyId);
       }, this);
     },
 
@@ -493,7 +493,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
         permissionsView.addListener("updateStudy", e => {
           const studyId = e.getData();
-          this.__reloadUserStudy(studyId);
+          this.reloadUserStudy(studyId);
         }, this);
       }, this);
       return permissionsButton;
@@ -581,7 +581,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, false, winWidth);
       studyDetails.addListener("updateStudy", e => {
         const newStudyData = e.getData();
-        this.__reloadUserStudy(newStudyData.uuid);
+        this.reloadUserStudy(newStudyData.uuid);
       });
       studyDetails.addListener("openStudy", () => {
         this.__startStudy(studyData["uuid"]);
