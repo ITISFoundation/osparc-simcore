@@ -105,6 +105,7 @@ def assert_validation_data_follows_definition(
                 ), f"{value} has not the expected type {label2types[label_cfg[key]['type']]}"
 
     for path in validation_folder.glob("**/*"):
+        # TODO: ANE this will not take into accounts subfolders. I had issues in the passed with such a bug. Make sure it is ok like this
         if path.name in ["inputs.json", "outputs.json", ".gitkeep"]:
             continue
         assert path.is_file(), f"{path} is not a file!"

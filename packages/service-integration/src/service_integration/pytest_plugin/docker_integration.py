@@ -7,16 +7,21 @@ import json
 import os
 import shutil
 import urllib.request
+from contextlib import suppress
 from pathlib import Path
 from pprint import pformat
-from typing import Dict
+from typing import Dict, Iterator, Optional
 
 import docker
 import jsonschema
 import pytest
 import yaml
+from docker.errors import APIError
+from docker.models.containers import Container
 
 _FOLDER_NAMES = ["input", "output"]
+
+## FIXME: 'Not all images have this home directory. Why impose it? Maybe I am mistaken but I do not understand what this var refers to.' by ANE
 _CONTAINER_FOLDER = Path("/home/scu/data")
 
 
@@ -124,13 +129,13 @@ def docker_container(
     docker_client: docker.DockerClient,
     docker_image_key: str,
     container_variables: Dict,
-) -> docker.models.containers.Container:
+) -> Iterator[Container]:
     # copy files to input folder, copytree needs to not have the input folder around.
     host_folders["input"].rmdir()
     shutil.copytree(validation_folders["input"], host_folders["input"])
     assert Path(host_folders["input"]).exists()
     # run the container (this may take some time)
-    container = None
+    container: Optional[Container] = None
     try:
         volumes = {
             host_folders[folder]: {
@@ -160,7 +165,9 @@ def docker_container(
                 )
             )
         else:
+
             yield container
+
     except docker.errors.ContainerError as exc:
         # the container did not run correctly
         pytest.fail(
@@ -178,7 +185,8 @@ def docker_container(
     finally:
         # cleanup
         if container:
-            container.remove()
+            with suppress(APIError):
+                container.remove()
 
 
 # HELPERS --------------------
@@ -201,7 +209,7 @@ def convert_to_simcore_labels(image_labels: Dict) -> Dict:
 def assert_container_runs(
     validation_folders: Dict,
     host_folders: Dict,
-    docker_container: docker.models.containers.Container,
+    docker_container: Container,
 ):
     for folder in _FOLDER_NAMES:
         # test if the files that should be there are actually there and correct
