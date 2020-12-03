@@ -33,7 +33,7 @@
  * </pre>
  */
 
-const BUTTON_SIZE = 50;
+const BUTTON_SIZE = 38;
 const BUTTON_SPACING = 10;
 const ZOOM_BUTTON_SIZE = 24;
 const NODE_INPUTS_WIDTH = 210;
@@ -154,7 +154,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     scale: {
-      check: "Number",
+      check: "osparc.component.workbench.WorkbenchUI.ZoomValues",
       init: 1,
       apply: "__applyScale",
       event: "changeScale",
@@ -314,6 +314,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getNodesBounds: function() {
+      if (this.__nodesUI.length === 0) {
+        return null;
+      }
+
       const bounds = {
         minLeft: null,
         minTop: null,
@@ -1028,12 +1032,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateBounds: function() {
-      // Fit to nodes size
-      const nodesWidth = this.__getNodesBounds().maxLeft + osparc.component.workbench.NodeUI.NodeWidth; // a bit more of margin
-      const nodesHeight = this.__getNodesBounds().maxTop + osparc.component.workbench.NodeUI.NodeHeight; // a bit more of margin
-      const scaledNodes = this.__unscaleCoordinates(nodesWidth, nodesHeight);
-      this.__workbenchLayout.setMinWidth(scaledNodes.x);
-      this.__workbenchLayout.setMinHeight(scaledNodes.y);
+      const nodeBounds = this.__getNodesBounds();
+      if (nodeBounds) {
+        // Fit to nodes size
+        const nodesWidth = nodeBounds.maxLeft + osparc.component.workbench.NodeUI.NodeWidth; // a bit more of margin
+        const nodesHeight = nodeBounds.maxTop + osparc.component.workbench.NodeUI.NodeHeight; // a bit more of margin
+        const scaledNodes = this.__unscaleCoordinates(nodesWidth, nodesHeight);
+        this.__workbenchLayout.setMinWidth(scaledNodes.x);
+        this.__workbenchLayout.setMinHeight(scaledNodes.y);
+      }
 
       // Fit to screen
       const screenWidth = this.getBounds().width - 10; // scrollbar
