@@ -918,11 +918,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return zoomValues[i];
       };
 
-      const oldScale = this.getScale();
       const newScale = (e.getWheelDelta() < 0) ? nextItem() : prevItem();
-      if (oldScale !== newScale) {
-        this.setScale(newScale);
-      }
+      this.setScale(newScale);
     },
 
     __applyScale: function(value) {
