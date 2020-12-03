@@ -13,7 +13,7 @@ dnspython==2.0.0          # via email-validator
 docker==4.4.0             # via -r requirements/_base.in
 email-validator==1.1.2    # via pydantic
 idna==2.10                # via email-validator, requests
-importlib-metadata==3.1.0  # via jsonschema, pluggy, pytest
+importlib-metadata==3.1.1  # via jsonschema, pluggy, pytest
 iniconfig==1.1.1          # via pytest
 jsonschema==3.2.0         # via -r requirements/_base.in
 packaging==20.7           # via pytest

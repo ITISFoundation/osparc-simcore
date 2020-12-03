@@ -13,5 +13,6 @@
 
 -e ../models-library/
 -e ../pytest-simcore/
+
 # current module
 -e .

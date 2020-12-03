@@ -1,12 +1,16 @@
 # simcore service integration library
 
 
-
+This package is intended to be installed as an external library to help integrating services in osparc-simcore. Here "integration" means
+that the resulting service can be reliably deployed and run as a part of a node in the study pipeline. This library defines requirements
+on this services as well as tools to assist for their development and validation.
 
 
 ```cmd
-pip install git+https://github.com/pcrespov/osparc-simcore.git@is1884/integration-library#egg=simcore-service-integration&subdirectory=packages/service-integration
+pip install git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg=simcore-service-integration&subdirectory=packages/service-integration
+
 ```
+
 
 ## ``simcore-service-integrator`` entrypoint
 
@@ -100,18 +104,19 @@ Options:
 so a replacement Makefile recipes might be
 
 ```Makefile
+CURRENT_VERSION := $(shell VERSION)
+
+VERSION: $(METADATA) ## creates VERSION file
+  @simcore-service-integrator get-version --metadata-file $< > $@
 
 .PHONY: version-service-patch version-service-minor version-service-major
 version-service-patch version-service-minor version-service-major: $(METADATA) ## kernel/service versioning as patch
 	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
+  $(MAKE) VERSION
 
 .PHONY: version-integration-patch version-integration-minor version-integration-major
 version-integration-patch version-integration-minor version-integration-major: $(METADATA) ## integration versioning as patch (bug fixes not affecting API/handling), minor/major (backwards-compatible/INcompatible API changes)
 	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-integration-,,$@) integration-version
-
-
-CURRENT_VERSION := $(shell simcore-service-integrator get-version --metadata-file $(METADATA))
-CURRENT_INTEGRATION_VERSION := $(shell simcore-service-integrator get-version --metadata-file $(METADATA) integration-version)
 
 ```
 
