@@ -9,7 +9,6 @@ from pydantic import AnyUrl, BaseModel, Extra, Field, constr
 
 from .services import PROPERTY_KEY_RE
 
-
 NodeID = UUID
 
 # Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
@@ -54,6 +53,7 @@ class BaseFileLink(BaseModel):
     )
     path: str = Field(
         ...,
+        regex=r"^.+$",
         description="The path to the file in the storage provider domain",
         example=[
             "N:package:b05739ef-260c-4038-b47d-0240d04b0599",

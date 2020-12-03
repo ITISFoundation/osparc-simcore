@@ -3,38 +3,15 @@ from pathlib import Path
 from pprint import pformat
 from typing import Dict, Optional, Tuple, Type, Union
 
-from models_library.projects_nodes_io import BaseFileLink, DownloadLink, PortLink
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
-from pydantic import (
-    BaseModel,
-    Extra,
-    Field,
-    PrivateAttr,
-    StrictBool,
-    StrictFloat,
-    StrictInt,
-    StrictStr,
-    validator,
-)
+from pydantic import BaseModel, Field, PrivateAttr, validator
 
 from ..node_ports.exceptions import InvalidItemTypeError, UnboundPortError
 from . import port_utils
+from .links import DataItemValue, DownloadLink, FileLink, ItemConcreteValue, PortLink
 
 log = logging.getLogger(__name__)
 
-
-class FileLink(BaseFileLink):
-    """ allow all kind of file links """
-
-    class Config:
-        extra = Extra.allow
-
-
-DataItemValue = Union[
-    StrictBool, StrictInt, StrictFloat, StrictStr, DownloadLink, PortLink, FileLink
-]
-
-ItemConcreteValue = Union[int, float, bool, str, Path]
 
 TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
     "integer": int,
