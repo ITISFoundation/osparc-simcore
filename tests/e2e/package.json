@@ -17,7 +17,8 @@
   "scripts": {
     "test": "jest --runInBand --colors",
     "demo": "node demo/puppeteerDemo.js",
-    "tutorials": "node tutorials/sleepers.js"
+    "tutorials": "node tutorials/sleepers.js",
+    "tags": "node tags/tags.js"
   },
   "author": "odeimaiz",
   "license": "MIT"
