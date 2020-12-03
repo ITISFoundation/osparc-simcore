@@ -1,17 +1,16 @@
 import logging
 from asyncio import CancelledError
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from aiohttp import web
-from pydantic.types import PositiveInt
-from yarl import URL
-
 from models_library.projects_state import RunningState
+from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from yarl import URL
 
 from .director_v2_settings import (
     CONFIG_SECTION_NAME,
@@ -173,6 +172,29 @@ async def stop_pipeline(request: web.Request) -> web.Response:
     except _DirectorServiceError as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
+        )
+
+
+@log_decorator(logger=log)
+async def request_retrieve_dyn_service(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> None:
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(
+        f"{director2_settings.endpoint}/dynamic_services/{service_uuid}:retrieve"
+    )
+    body = {"port_keys": port_keys}
+
+    try:
+        # request to director-v2
+        await _request_director_v2(app, "POST", backend_url, data=body)
+    except _DirectorServiceError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
+            service_uuid,
+            port_keys,
+            exc.status,
+            exc.reason,
         )
 
 

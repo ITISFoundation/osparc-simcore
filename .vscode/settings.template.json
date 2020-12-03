@@ -46,14 +46,14 @@
   "[makefile]": {
     "editor.insertSpaces": false
   },
-  "python.testing.pyTestEnabled": true,
+  "python.testing.pytestEnabled": true,
   "autoDocstring.docstringFormat": "sphinx",
   "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true,
   "python.formatting.provider": "black",
-  "python.sortImports.path": "${VIRTUAL_ENV}/bin/isort",
+  "python.sortImports.path": "${workspaceFolder}/.venv/bin/isort",
   "python.sortImports.args": [
     "--settings-path=${workspaceFolder}/.isort.cfg"
   ]

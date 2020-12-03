@@ -1,6 +1,7 @@
 #
 # Adds intra-repo packages requirements
 #
+-c ../../../requirements/constraints.txt
 -c _base.txt
 
 -r ../../../packages/postgres-database/requirements/_base.in
