@@ -9,7 +9,7 @@ async function getBrowser(demo) {
       headless: false,
       devTools: true,
       defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
-      slowMo: 80 // Slows down Puppeteer operations by the specified amount of milliseconds.
+      slowMo: 50 // Slows down Puppeteer operations by the specified amount of milliseconds.
     };
     Object.assign(options, visibleOptions);
   }
