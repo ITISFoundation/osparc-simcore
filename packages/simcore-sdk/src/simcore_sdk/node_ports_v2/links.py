@@ -11,10 +11,7 @@ from pydantic import (
     StrictStr,
 )
 
-UUID_REGEX = (
-    r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-)
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
+from .constants import PROPERTY_KEY_RE, STORE_PATH_REGEX, UUID_REGEX
 
 
 class PortLink(BaseModel):
@@ -29,7 +26,7 @@ class DownloadLink(BaseModel):
 
 class FileLink(BaseModel):
     store: Union[str, int]
-    path: str = Field(..., regex=r".+")
+    path: str = Field(..., regex=STORE_PATH_REGEX)
     dataset: Optional[str]
     label: Optional[str]
 

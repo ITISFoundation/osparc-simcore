@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple, Type, Union
 
 from pydantic import (
     BaseModel,
+    Field,
     PrivateAttr,
     StrictBool,
     StrictFloat,
@@ -14,10 +15,10 @@ from pydantic import (
 
 from ..node_ports.exceptions import InvalidItemTypeError, UnboundPortError
 from . import port_utils
+from .constants import PROPERTY_KEY_RE, PROPERTY_TYPE_RE
 from .links import DataItemValue, DownloadLink, FileLink, ItemConcreteValue, PortLink
 
 log = logging.getLogger(__name__)
-
 
 TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
     "integer": int,
@@ -28,13 +29,15 @@ TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
 
 
 class Port(BaseModel):
-    key: str
+    key: str = Field(..., regex=PROPERTY_KEY_RE)
     label: str
     description: str
-    type: str
-    displayOrder: float
-    fileToKeyMap: Optional[Dict[str, str]] = None
-    defaultValue: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = None
+    type: str = Field(..., regex=PROPERTY_TYPE_RE)
+    display_order: float = Field(..., alias="displayOrder")
+    file_to_key_map: Optional[Dict[str, str]] = Field(None, alias="fileToKeyMap")
+    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
+        None, alias="defaultValue"
+    )
     widget: Optional[Dict] = None
 
     value: Optional[DataItemValue]
@@ -46,8 +49,8 @@ class Port(BaseModel):
     @validator("value", always=True)
     @classmethod
     def ensure_value(cls, v, values):
-        if not v and values.get("defaultValue"):
-            return values["defaultValue"]
+        if not v and values.get("default_value"):
+            return values["default_value"]
         return v
 
     def __init__(self, **data):
@@ -76,18 +79,18 @@ class Port(BaseModel):
             value = await port_utils.get_value_from_link(
                 self.key,
                 self.value,
-                self.fileToKeyMap,
+                self.file_to_key_map,
                 self._node_ports._node_ports_creator_cb,
             )
         elif isinstance(self.value, FileLink):
             # this is a link from storage
             value = await port_utils.pull_file_from_store(
-                self.key, self.fileToKeyMap, self.value
+                self.key, self.file_to_key_map, self.value
             )
         elif isinstance(self.value, DownloadLink):
             # this is a downloadable link
             value = await port_utils.pull_file_from_download_link(
-                self.key, self.fileToKeyMap, self.value
+                self.key, self.file_to_key_map, self.value
             )
         else:
             # this is directly the value

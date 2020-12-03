@@ -67,8 +67,8 @@ class Nodeports(BaseModel):
 
     async def set_file_by_keymap(self, item_value: Path):
         for output in (await self.outputs).values():
-            if is_file_type(output.type) and output.fileToKeyMap:
-                if item_value.name in output.fileToKeyMap:
+            if is_file_type(output.type) and output.file_to_key_map:
+                if item_value.name in output.file_to_key_map:
                     await output.set(item_value)
                     return
         raise PortNotFound(msg=f"output port for item {item_value} not found")
