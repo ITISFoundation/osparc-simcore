@@ -11,7 +11,7 @@ attrs==20.2.0             # via -c requirements/_base.txt, aiohttp, jsonschema, 
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
 certifi==2020.6.20        # via -c requirements/_base.txt, requests
-cffi==1.14.3              # via bcrypt, cryptography, pynacl
+cffi==1.14.4              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -c requirements/_base.txt, aiohttp, requests
 codecov==2.1.10           # via -r requirements/_test.in
 coverage==5.3             # via -r requirements/_test.in, codecov, coveralls, pytest-cov
@@ -19,7 +19,7 @@ coveralls==2.2.0          # via -r requirements/_test.in
 cryptography==3.2.1       # via paramiko
 distro==1.5.0             # via docker-compose
 docker-compose==1.27.4    # via pytest-docker
-docker[ssh]==4.3.1        # via docker-compose
+docker[ssh]==4.4.0        # via docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via -c requirements/_base.txt, coveralls, docker-compose
 idna-ssl==1.1.0           # via -c requirements/_base.txt, aiohttp
@@ -32,7 +32,7 @@ lazy-object-proxy==1.4.3  # via -c requirements/_base.txt, astroid
 mccabe==0.6.1             # via pylint
 multidict==5.0.0          # via -c requirements/_base.txt, aiohttp, yarl
 numpy==1.19.4             # via pandas
-packaging==20.4           # via pytest, pytest-sugar
+packaging==20.7           # via pytest, pytest-sugar
 pandas==1.1.4             # via -r requirements/_test.in
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
@@ -56,7 +56,7 @@ python-dotenv==0.15.0     # via docker-compose
 pytz==2020.1              # via -c requirements/_base.txt, pandas
 pyyaml==5.3.1             # via -c requirements/../../../requirements/constraints.txt, -c requirements/_base.txt, docker-compose
 requests==2.24.0          # via -c requirements/_base.txt, codecov, coveralls, docker, docker-compose
-six==1.15.0               # via -c requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, jsonschema, packaging, pynacl, python-dateutil, websocket-client
+six==1.15.0               # via -c requirements/_base.txt, astroid, bcrypt, cryptography, docker, dockerpty, jsonschema, pynacl, python-dateutil, websocket-client
 termcolor==1.1.0          # via pytest-sugar
 texttable==1.6.3          # via docker-compose
 toml==0.10.2              # via pylint, pytest

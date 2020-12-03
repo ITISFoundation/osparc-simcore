@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 aiohttp==3.7.3            # via -c requirements/_base.txt, -c requirements/_packages.txt, pytest-aiohttp
-aiopg==1.0.0              # via -c requirements/_base.txt, -c requirements/_packages.txt, -r requirements/_test.in
+aiopg[sa]==1.0.0          # via -c requirements/_base.txt, -c requirements/_packages.txt, -r requirements/_test.in
 alembic==1.4.3            # via -r requirements/_test.in
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -c requirements/_base.txt, -c requirements/_packages.txt, aiohttp
@@ -14,7 +14,7 @@ certifi==2020.6.20        # via -c requirements/_packages.txt, requests
 chardet==3.0.4            # via -c requirements/_base.txt, -c requirements/_packages.txt, aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.2.0          # via -r requirements/_test.in
-docker==4.3.1             # via -r requirements/_test.in
+docker==4.4.0             # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
 icdiff==1.9.1             # via pytest-icdiff
 idna-ssl==1.1.0           # via -c requirements/_base.txt, -c requirements/_packages.txt, aiohttp
