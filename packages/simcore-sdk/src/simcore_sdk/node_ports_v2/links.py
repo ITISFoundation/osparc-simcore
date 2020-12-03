@@ -1,8 +1,13 @@
 from pathlib import Path
 from typing import Union
 
-from models_library.projects_nodes_io import BaseFileLink, DownloadLink, PortLink
-from pydantic import Extra, StrictBool, StrictFloat, StrictInt, StrictStr
+from models_library.projects_nodes_io import UUID_REGEX, BaseFileLink, DownloadLink
+from models_library.projects_nodes_io import PortLink as BasePortLink
+from pydantic import Extra, Field, StrictBool, StrictFloat, StrictInt, StrictStr
+
+
+class PortLink(BasePortLink):
+    node_uuid: str = Field(..., regex=UUID_REGEX, alias="nodeUuid")
 
 
 class FileLink(BaseFileLink):
