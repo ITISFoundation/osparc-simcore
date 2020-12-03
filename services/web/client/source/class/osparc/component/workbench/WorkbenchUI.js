@@ -268,7 +268,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __createServiceCatalog: function(winPos, srvPos) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
-      srvCat.moveTo(winPos.x + this.__getSidePanelWidth(), winPos.y);
+      const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
+      const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
+      const posX = Math.min(winPos.x, maxLeft);
+      const posY = Math.min(winPos.y, maxHeight);
+      srvCat.moveTo(posX + this.__getSidePanelWidth(), posY + 50);
       srvCat.addListener("addService", e => {
         this.__addServiceFromCatalog(e.getData(), srvPos);
       }, this);

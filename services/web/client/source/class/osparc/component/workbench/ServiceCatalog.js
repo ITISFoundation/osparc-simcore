@@ -44,7 +44,9 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       caption: this.tr("Service catalog"),
       showMinimize: false,
       minWidth: 400,
+      width: this.self().Width,
       minHeight: 400,
+      height: this.self().Height,
       modal: true,
       contentPadding: 0,
       clickAwayClose: true
@@ -76,7 +78,9 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
   },
 
   statics: {
-    LATEST: "latest"
+    LATEST: "latest",
+    Width: 580,
+    Height: 400
   },
 
   members: {
