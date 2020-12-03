@@ -48,7 +48,7 @@ python-dateutil==2.8.1    # via alembic
 python-dotenv==0.15.0     # via -r requirements/_test.in
 python-editor==1.0.4      # via alembic
 requests==2.25.0          # via -r requirements/_test.in, coveralls, docker
-six==1.15.0               # via -c requirements/_base.txt, astroid, docker, packaging, python-dateutil, websocket-client
+six==1.15.0               # via -c requirements/_base.txt, astroid, docker, python-dateutil, websocket-client
 sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -c requirements/_base.txt, alembic
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.2              # via pylint, pytest

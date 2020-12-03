@@ -12,7 +12,7 @@ aiohttp
 aiopg[sa]
 networkx
 psycopg2-binary
-pydantic
+pydantic[email]
 tenacity
 trafaret-config
 
