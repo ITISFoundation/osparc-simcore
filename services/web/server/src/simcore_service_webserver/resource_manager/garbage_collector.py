@@ -196,11 +196,7 @@ async def remove_disconnected_user_resources(
             dead_key_resources,
         )
 
-        # shuffle order of guest users to allow for random errors to not stop
-        # the removal of "not erroring" services
-        dead_key_resources_items = dead_key_resources.items()
-        random.shuffle(dead_key_resources_items)
-        for resource_name, resource_value in dead_key_resources_items:
+        for resource_name, resource_value in dead_key_resources.items():
 
             # Releasing a resource consists of two steps
             #   - (1) release actual resource (e.g. stop service, close project, deallocate memory, etc)
@@ -292,9 +288,6 @@ async def remove_users_manually_marked_as_guests(
     guest_users: List[Tuple[int, str]] = await get_guest_user_ids_and_names(app)
     logger.info("GUEST user candidates to clean %s", guest_users)
 
-    # shuffle order of guest users to allow for random errors to not stop
-    # the removal of "not erroring" services
-    random.shuffle(guest_users)
     for guest_user_id, guest_user_name in guest_users:
         if guest_user_id in user_ids_to_ignore:
             logger.info(
@@ -380,8 +373,15 @@ async def remove_guest_user_with_all_its_resources(
         logger.debug("User is not GUEST, skipping cleanup")
         return
 
-    await remove_all_projects_for_user(app=app, user_id=user_id)
-    await remove_user(app=app, user_id=user_id)
+    try:
+        await remove_all_projects_for_user(app=app, user_id=user_id)
+        await remove_user(app=app, user_id=user_id)
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("%s", e)
+        logger.warning(
+            "Could not remove GUEST with id=%s. Check the logs above for details",
+            user_id,
+        )
 
 
 async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:
