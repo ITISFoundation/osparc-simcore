@@ -8,7 +8,6 @@ Keeps a list notes with relevant information about releases of python package. S
 - Is this package already (or will be) included in the current python standard library? If the latter, is there a backport package I can use right now?
 - ...
 
-
 ## Packages Notes
 
 
@@ -21,6 +20,9 @@ Keeps a list notes with relevant information about releases of python package. S
   - might prefer over ``pkg_resources``
 - [pkg_resources](https://setuptools.readthedocs.io/en/latest/pkg_resources.html)
   - most of the functionlity seems to be moved into the standard library. Some backports of those are ``importlib-metadata``, ``importlib-resources`` and ``packaging``.
+- [dataclasses](https://pypi.org/project/dataclasses/)
+  - a backport of the [``dataclasses`` module](https://docs.python.org/3/library/dataclasses.html) for Python 3.6. Included as dataclasses in standard library from python >=3.7.
+  - here is included as a dependency to [pydantic](https://pydantic-docs.helpmanual.io/)
 
 
 ## Improvements
@@ -28,5 +30,6 @@ Keeps a list notes with relevant information about releases of python package. S
 - An automatic way to "prune" a requirements list in a package: it is very common forgeting removing dependencies from the ``requirements.txt`` that we are not using anymore ... or as a result of a classic *copy&paste* snippet from another listing.
 - Create a ``blocklist/passlist`` of requirements. Add a comment that justify every selection
 - Integrate better dependenabot:
+  - currently it only covers two packages of this repository
   - due to the hybrid nature of this repo, we cannot take full advantage of this great tool
-  - one PR
+- Several backports above show some of the dependencies that will dissapear with a python upgrade!
