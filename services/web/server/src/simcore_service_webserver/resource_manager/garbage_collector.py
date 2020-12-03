@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import random
 from contextlib import suppress
 from itertools import chain
 from typing import Dict, List, Tuple
