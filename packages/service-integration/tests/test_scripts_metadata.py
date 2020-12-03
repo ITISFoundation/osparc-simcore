@@ -80,15 +80,15 @@ def test_make_version(
     [
         (
             "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml",
-            "1.1.0\n",
+            "1.1.0",
         ),
         (
             "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml integration-version",
-            "1.0.0\n",
+            "1.0.0",
         ),
         (
             "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml version",
-            "1.1.0\n",
+            "1.1.0",
         ),
     ],
 )
@@ -103,3 +103,7 @@ def test_get_version_from_metadata(
     assert result.exit_code == os.EX_OK, (result.output, result.exception)
 
     assert result.output == expected_output
+
+
+def test_changes_in_metadata_keeps_keys_order(metadata_file_path):
+    assert False
