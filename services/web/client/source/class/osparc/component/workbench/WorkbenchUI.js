@@ -135,7 +135,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       borderStyle["background-size"] = "5px 50px";
       borderStyle["background-repeat"] = "repeat-y";
       return borderStyle;
-    }
+    },
+
+    ZoomValues: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
   },
 
   events: {
@@ -974,7 +976,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __zoom: function(zoomIn = true) {
-      const zoomValues = [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3];
+      const zoomValues = this.self().ZoomValues;
       const nextItem = () => {
         const i = zoomValues.indexOf(this.getScale());
         if (i+1<zoomValues.length) {
