@@ -193,6 +193,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
       zoomToolbar.add(this.__getZoomOutButton());
       zoomToolbar.add(this.__getZoomResetButton());
+      zoomToolbar.add(this.__getZoomAllButton());
       zoomToolbar.add(this.__getZoomInButton());
       return zoomToolbar;
     },
@@ -229,8 +230,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return btn;
     },
 
+    __getZoomAllButton: function() {
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out_map");
+      btn.addListener("execute", () => {
+        this.__zoomAll();
+      }, this);
+      return btn;
+    },
+
     __getUnlinkButton: function() {
-      const icon = "@FontAwesome5Solid/unlink/16";
+      const icon = "@FontAwesome5Solid/unlink/18";
       let unlinkBtn = new qx.ui.form.Button(null, icon);
       unlinkBtn.set({
         width: BUTTON_SIZE,
@@ -1002,6 +1011,26 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const newScale = zoomIn ? nextItem() : prevItem();
       this.setScale(newScale);
+    },
+
+    __zoomAll: function() {
+      const zoomValues = this.self().ZoomValues;
+      const bounds = this.__getNodesBounds();
+      if (bounds === null) {
+        return;
+      }
+      const screenWidth = this.getBounds().width - 10; // scrollbar
+      const screenHeight = this.getBounds().height - 10; // scrollbar
+      if (bounds.maxLeft < screenWidth && bounds.maxTop < screenHeight) {
+        return;
+      }
+
+      const minScale = Math.min(screenWidth/bounds.maxLeft, screenHeight/bounds.maxTop);
+      const posibleZooms = zoomValues.filter(zoomValue => zoomValue < minScale);
+      const zoom = Math.max(...posibleZooms);
+      if (zoom) {
+        this.setScale(zoom);
+      }
     },
 
     __applyScale: function(value) {
