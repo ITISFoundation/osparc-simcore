@@ -16,7 +16,9 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 def read_reqs(reqs_path: Path):
-    return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+    return re.findall(
+        r"(^[^#-][[\]\w]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+    )
 
 
 readme = (current_dir / "README.md").read_text()
@@ -42,7 +44,9 @@ setup(
     license="MIT license",
     python_requires="~=3.6",
     packages=find_packages(where="src"),
-    package_dir={"": "src",},
+    package_dir={
+        "": "src",
+    },
     include_package_data=True,
     install_requires=install_requirements,
     test_suite="tests",

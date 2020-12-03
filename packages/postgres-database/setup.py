@@ -10,7 +10,9 @@ version = Path(current_dir / "VERSION").read_text().strip()
 
 
 def read_reqs(reqs_path: Path):
-    return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+    return re.findall(
+        r"(^[^#-][[\]\w]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+    )
 
 
 # Weak dependencies
@@ -44,7 +46,12 @@ setup(
     extras_require={"migration": migration_requirements, "test": test_requirements},
     include_package_data=True,
     package_data={
-        "": ["*.ini", "migration/*.py", "migration/*.mako", "migration/versions/*.py",]
+        "": [
+            "*.ini",
+            "migration/*.py",
+            "migration/*.mako",
+            "migration/versions/*.py",
+        ]
     },
     entry_points={
         "console_scripts": [

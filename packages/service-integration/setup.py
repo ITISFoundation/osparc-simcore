@@ -8,16 +8,18 @@ here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().paren
 
 
 def read_reqs(reqs_path: Path):
-    return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+    return re.findall(
+        r"(^[^#-][[\]\w]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+    )
 
 
-install_requirements = read_reqs(here / "requirements" / "_base.in") + [
+install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
     "simcore-models-library"
-]  # WEAK requirements
+]  # STRICT requirements
 
 test_requirements = read_reqs(
     here / "requirements" / "_test.txt"
-)  # STRONG requirements
+)  # STRICT requirements
 
 readme = Path(here / "README.md").read_text()
 
@@ -27,7 +29,7 @@ setup(
     author="Pedro Crespo (pcrespov), Sylvain Anderegg (sanderegg), Katie Zhuang (KZzizzle)",
     description="Toolkit for service integration",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
@@ -35,6 +37,7 @@ setup(
         "Framework :: Pytest",
     ],
     long_description=readme,
+    python_requires=">=3.6, <3.7",
     license="MIT license",
     install_requires=install_requirements,
     packages=find_packages(where="src"),
