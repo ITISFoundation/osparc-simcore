@@ -307,20 +307,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return nodeUI;
     },
 
-    __getMaxBounds: function() {
+    __getNodesBounds: function() {
       const bounds = {
-        left: 0,
-        top: 0
+        minLeft: null,
+        minTop: null,
+        maxLeft: null,
+        maxTop: null
       };
       this.__nodesUI.forEach(nodeUI => {
-        const boundPos = nodeUI.getBounds();
-        const leftPos = boundPos.left + boundPos.width;
-        if (bounds.left < leftPos) {
-          bounds.left = leftPos;
+        const nodeBounds = nodeUI.getBounds();
+        if (bounds.minLeft === null || bounds.minLeft > nodeBounds.left) {
+          bounds.minLeft = nodeBounds.left;
         }
-        const topPos = boundPos.top + boundPos.height;
-        if (bounds.top < topPos) {
-          bounds.top = topPos;
+        if (bounds.minTop === null || bounds.minTop > nodeBounds.top) {
+          bounds.minTop = nodeBounds.top;
+        }
+        const leftPos = nodeBounds.left + nodeBounds.width;
+        if (bounds.maxLeft === null || bounds.maxLeft < leftPos) {
+          bounds.maxLeft = leftPos;
+        }
+        const topPos = nodeBounds.top + nodeBounds.height;
+        if (bounds.maxTop === null || bounds.maxTop < topPos) {
+          bounds.maxTop = topPos;
         }
       });
       return bounds;
@@ -1015,8 +1023,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __updateBounds: function() {
       // Fit to nodes size
-      const nodesWidth = this.__getMaxBounds().left + osparc.component.workbench.NodeUI.NodeWidth; // a bit more of margin
-      const nodesHeight = this.__getMaxBounds().top + osparc.component.workbench.NodeUI.NodeHeight; // a bit more of margin
+      const nodesWidth = this.__getNodesBounds().maxLeft + osparc.component.workbench.NodeUI.NodeWidth; // a bit more of margin
+      const nodesHeight = this.__getNodesBounds().maxTop + osparc.component.workbench.NodeUI.NodeHeight; // a bit more of margin
       const scaledNodes = this.__unscaleCoordinates(nodesWidth, nodesHeight);
       this.__workbenchLayout.setMinWidth(scaledNodes.x);
       this.__workbenchLayout.setMinHeight(scaledNodes.y);
