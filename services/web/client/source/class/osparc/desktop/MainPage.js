@@ -74,7 +74,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__studyEditor.updateStudyDocument()
             .then(() => {
               this.__studyEditor.closeStudy()
-                .then(() => osparc.store.Store.getInstance().getStudyState(studyId))
+                .then(() => this.__dashboard.getStudyBrowser().reloadUserStudy(studyId))
                 .catch(err => console.error(err));
               this.__showDashboard();
             })
