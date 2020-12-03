@@ -15,7 +15,7 @@ if sys.version_info < (3, 6):
 
 def read_reqs(reqs_path: Path):
     return re.findall(
-        r"(^[^#-][[\]\w]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+        r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
     )
 
 

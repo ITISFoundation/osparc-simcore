@@ -15,7 +15,7 @@ if sys.version_info < (3, 6):
 
 def read_reqs(reqs_path: Path):
     reqs = re.findall(
-        r"(^[^#-][[\]\w]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+        r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
     )
     # TODO: temporary excluding requirements using git
     # https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support
