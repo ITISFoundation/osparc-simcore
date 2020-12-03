@@ -902,14 +902,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
 
     __mouseWheel: function(e) {
-      const factor = 1.25;
-      let newScale;
-      if (e.getWheelDelta() < 0) {
-        newScale = this.getScale()*factor;
-      } else {
-        newScale = this.getScale()/factor;
-      }
-      if (newScale > 0.25 && newScale < 4.0) {
+      const zoomValues = [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3];
+      const nextItem = () => {
+        const i = zoomValues.indexOf(this.getScale());
+        if (i+1<zoomValues.length) {
+          return zoomValues[i+1];
+        }
+        return zoomValues[i];
+      };
+      const prevItem = () => {
+        const i = zoomValues.indexOf(this.getScale());
+        if (i-1>=0) {
+          return zoomValues[i-1];
+        }
+        return zoomValues[i];
+      };
+
+      const oldScale = this.getScale();
+      const newScale = (e.getWheelDelta() < 0) ? nextItem() : prevItem();
+      if (oldScale !== newScale) {
         this.setScale(newScale);
       }
     },
