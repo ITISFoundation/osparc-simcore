@@ -35,6 +35,7 @@
 
 const BUTTON_SIZE = 50;
 const BUTTON_SPACING = 10;
+const ZOOM_BUTTON_SIZE = 24;
 const NODE_INPUTS_WIDTH = 210;
 
 qx.Class.define("osparc.component.workbench.WorkbenchUI", {
@@ -53,12 +54,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
 
+    this.__workbenchLayer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+    this._add(this.__workbenchLayer, {
+      flex: 1
+    });
+
     const scroll = new qx.ui.container.Scroll();
     this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
     scroll.add(this.__workbenchLayout);
-    this._add(scroll, {
-      flex: 1
+    this.__workbenchLayer.add(scroll, {
+      left: 0,
+      top: 0,
+      right: 0,
+      bottom: 0
     });
+
 
     const nodesExposedLayout = this.__outputNodesLayout = this.__createInputOutputNodesLayout(false);
     this._add(nodesExposedLayout);
@@ -97,8 +107,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       bottom: 0
     });
 
-    let buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
-    this.__workbenchLayout.add(buttonContainer, {
+    const zoomToolbar = this.__getZoomToolbar();
+    this._add(zoomToolbar);
+    this.__workbenchLayer.add(zoomToolbar, {
+      left: 10,
+      bottom: 10
+    });
+
+    const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(BUTTON_SPACING));
+    this.__workbenchLayer.add(buttonContainer, {
       bottom: 10,
       right: 10
     });
@@ -165,6 +182,49 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __getWorkbench: function() {
       return this.getStudy().getWorkbench();
+    },
+
+    __getZoomToolbar: function() {
+      const zoomToolbar = new qx.ui.toolbar.ToolBar().set({
+        spacing: 0,
+        opacity: 0.8
+      });
+      zoomToolbar.add(this.__getZoomOutButton());
+      zoomToolbar.add(this.__getZoomResetButton());
+      zoomToolbar.add(this.__getZoomInButton());
+      return zoomToolbar;
+    },
+
+    __getZoomBtn: function(icon) {
+      const btn = new qx.ui.toolbar.Button(null, icon+"/18").set({
+        width: ZOOM_BUTTON_SIZE,
+        height: ZOOM_BUTTON_SIZE
+      });
+      return btn;
+    },
+
+    __getZoomInButton: function() {
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_in");
+      btn.addListener("execute", () => {
+        this.__zoom(true);
+      }, this);
+      return btn;
+    },
+
+    __getZoomOutButton: function() {
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out");
+      btn.addListener("execute", () => {
+        this.__zoom(false);
+      }, this);
+      return btn;
+    },
+
+    __getZoomResetButton: function() {
+      const btn = this.__getZoomBtn("@MaterialIcons/find_replace");
+      btn.addListener("execute", () => {
+        this.setScale(1);
+      }, this);
+      return btn;
     },
 
     __getUnlinkButton: function() {
@@ -1022,7 +1082,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         commandEsc.setEnabled(false);
       });
 
-      this.addListener("dbltap", e => {
+      this.__workbenchLayout.addListener("dbltap", e => {
         if (this.getStudy().isReadOnly()) {
           return;
         }
