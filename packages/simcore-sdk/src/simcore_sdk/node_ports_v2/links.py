@@ -11,9 +11,13 @@ from pydantic import (
     StrictStr,
 )
 
+UUID_REGEX = (
+    r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+)
+
 
 class PortLink(BaseModel):
-    node_uuid: str = Field(..., alias="nodeUuid")
+    node_uuid: str = Field(..., regex=UUID_REGEX, alias="nodeUuid")
     output: str
 
 
