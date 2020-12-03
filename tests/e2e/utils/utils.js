@@ -46,9 +46,9 @@ function getUserAndPass(args) {
   return userPass;
 }
 
-function  __getRandUserAndPass() {
+function __getRandUserAndPass() {
   const randUser = Math.random().toString(36).substring(7);
-  const user = 'puppeteer_'+randUser+'@itis.testing';
+  const user = 'puppeteer_' + randUser + '@itis.testing';
   const pass = Math.random().toString(36).substring(7);
   return {
     user,
@@ -69,7 +69,7 @@ async function getNodeTreeItemIDs(page) {
     const treeRoot = document.querySelector(selector);
     if (treeRoot.parentElement) {
       const tree = treeRoot.parentElement;
-      for (let i=1; i<tree.children.length; i++) {
+      for (let i = 1; i < tree.children.length; i++) {
         const child = tree.children[i];
         children.push(child.getAttribute("osparc-test-id"));
       }
@@ -85,7 +85,7 @@ async function getFileTreeItemIDs(page, rootName) {
     const treeRoot = document.querySelector(selector);
     if (treeRoot.parentElement) {
       const tree = treeRoot.parentElement;
-      for (let i=1; i<tree.children.length; i++) {
+      for (let i = 1; i < tree.children.length; i++) {
         const child = tree.children[i];
         children.push(child.getAttribute("osparc-test-id"));
       }
@@ -116,7 +116,7 @@ async function fetchReq(endpoint) {
     // NOTE: without the following comment it fails here with some weird message
     /* istanbul ignore next */
     async (url, apiVersion, endpoint) => {
-      const response = await fetch(url+apiVersion+endpoint);
+      const response = await fetch(url + apiVersion + endpoint);
       return await response.json();
     }, url, apiVersion, endpoint);
   return responseEnv;
@@ -136,7 +136,7 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
   const resp = await page.evaluate(async (host, endpoint, apiVersion) => {
-    const url = host+apiVersion+endpoint;
+    const url = host + apiVersion + endpoint;
     console.log("makeRequest", url);
     const resp = await fetch(url);
     const jsonResp = await resp.json();
@@ -169,7 +169,7 @@ async function waitForResponse(page, url) {
 }
 
 async function isServiceReady(page, studyId, nodeId) {
-  const endPoint = "/projects/" + studyId +"/nodes/" + nodeId;
+  const endPoint = "/projects/" + studyId + "/nodes/" + nodeId;
   console.log("-- Is service ready", endPoint);
   const resp = await makeRequest(page, endPoint);
 
@@ -184,7 +184,7 @@ async function isServiceReady(page, studyId, nodeId) {
 }
 
 async function isStudyDone(page, studyId) {
-  const endPoint = "/projects/" + studyId +"/state";
+  const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Is study done", endPoint);
   const resp = await makeRequest(page, endPoint);
 
@@ -198,7 +198,7 @@ async function isStudyDone(page, studyId) {
 }
 
 async function isStudyUnlocked(page, studyId) {
-  const endPoint = "/projects/" + studyId +"/state";
+  const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Is study closed", endPoint);
   const resp = await makeRequest(page, endPoint);
 
@@ -214,7 +214,7 @@ async function waitForValidOutputFile(page) {
       if (header['content-type'] === "binary/octet-stream") {
         resp.text().then(
           b => {
-            if (b>=0 && b<=10) {
+            if (b >= 0 && b <= 10) {
               page.removeListener("response", callback)
               resolve(b)
             }
@@ -278,7 +278,7 @@ async function takeScreenshot(page, captureName = "") {
       quality: 15
     })
   }
-  catch(err) {
+  catch (err) {
     console.error("Error taking screenshot", err);
   }
 }
@@ -295,15 +295,24 @@ function extractWorkbenchData(data) {
   return workbenchData;
 }
 
-function getGrayLogSnapshotUrl(environment, since_secs=30){
-  // WARNING: This list might change!!
-  const monitoring_base_url = {
+function getGrayLogSnapshotUrl(target_url, since_secs = 30) {
+  let monitoring_base_url;
+  let snapshot_url;
+
+  // WARNING: This mappings might change
+  const table = {
     "staging.osparc.io": "https://monitoring.staging.osparc.io/graylog/",
     "osparc.io": "https://monitoring.osparc.io/graylog/",
     "osparc-master.speag.com": "https://monitoring.osparc-master.speag.com/graylog/",
     "osparc-staging.speag.com": "https://monitoring.osparc.speag.com/graylog/",
     "osparc.speag.com": "https://monitoring.osparc.speag.com/graylog/",
-  }[environment];
+  };
+  for (var key in table) {
+    if (target_url.startsWith("https://" + key)) {
+      monitoring_base_url = table[key];
+      break;
+    }
+  }
 
   if (monitoring_base_url != undefined) {
     const now_millisecs = Date.now();
@@ -311,10 +320,10 @@ function getGrayLogSnapshotUrl(environment, since_secs=30){
     const to = encodeURIComponent(new Date(now_millisecs).toISOString());
 
     search_query = "image_name%3Aitisfoundation%2A"; //image_name:itisfoundation*
-    url = `${monitoring_base_url}search?q=${search_query}&rangetype=absolute&from=${from}&to=${to}`;
+    snapshot_url = `${monitoring_base_url}search?q=${search_query}&rangetype=absolute&from=${from}&to=${to}`;
   }
 
-  return url
+  return snapshot_url
 }
 
 
