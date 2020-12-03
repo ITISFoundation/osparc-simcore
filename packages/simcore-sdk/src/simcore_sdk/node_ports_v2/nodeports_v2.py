@@ -67,7 +67,7 @@ class Nodeports(BaseModel):
 
     async def set_file_by_keymap(self, item_value: Path):
         for output in (await self.outputs).values():
-            if is_file_type(output.type) and output.file_to_key_map:
+            if is_file_type(output.property_type) and output.file_to_key_map:
                 if item_value.name in output.file_to_key_map:
                     await output.set(item_value)
                     return

@@ -3,22 +3,38 @@ from pathlib import Path
 from pprint import pformat
 from typing import Dict, Optional, Tuple, Type, Union
 
+from models_library.projects_nodes_io import BaseFileLink, DownloadLink, PortLink
+from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import (
     BaseModel,
+    Extra,
     Field,
     PrivateAttr,
     StrictBool,
     StrictFloat,
     StrictInt,
+    StrictStr,
     validator,
 )
 
 from ..node_ports.exceptions import InvalidItemTypeError, UnboundPortError
 from . import port_utils
-from .constants import PROPERTY_KEY_RE, PROPERTY_TYPE_RE
-from .links import DataItemValue, DownloadLink, FileLink, ItemConcreteValue, PortLink
 
 log = logging.getLogger(__name__)
+
+
+class FileLink(BaseFileLink):
+    """ allow all kind of file links """
+
+    class Config:
+        extra = Extra.allow
+
+
+DataItemValue = Union[
+    StrictBool, StrictInt, StrictFloat, StrictStr, DownloadLink, PortLink, FileLink
+]
+
+ItemConcreteValue = Union[int, float, bool, str, Path]
 
 TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
     "integer": int,
@@ -28,16 +44,8 @@ TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
 }
 
 
-class Port(BaseModel):
+class Port(ServiceProperty):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
-    label: str
-    description: str
-    type: str = Field(..., regex=PROPERTY_TYPE_RE)
-    display_order: float = Field(..., alias="displayOrder")
-    file_to_key_map: Optional[Dict[str, str]] = Field(None, alias="fileToKeyMap")
-    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
-        None, alias="defaultValue"
-    )
     widget: Optional[Dict] = None
 
     value: Optional[DataItemValue]
@@ -58,16 +66,21 @@ class Port(BaseModel):
         # let's define the converter
         self._py_value_type = (
             (Path, str)
-            if port_utils.is_file_type(self.type)
-            else (TYPE_TO_PYTYPE[self.type])
+            if port_utils.is_file_type(self.property_type)
+            else (TYPE_TO_PYTYPE[self.property_type])
         )
         self._py_value_converter = (
-            Path if port_utils.is_file_type(self.type) else TYPE_TO_PYTYPE[self.type]
+            Path
+            if port_utils.is_file_type(self.property_type)
+            else TYPE_TO_PYTYPE[self.property_type]
         )
 
     async def get(self) -> ItemConcreteValue:
         log.debug(
-            "getting %s[%s] with value %s", self.key, self.type, pformat(self.value)
+            "getting %s[%s] with value %s",
+            self.key,
+            self.property_type,
+            pformat(self.value),
         )
 
         if self.value is None:
@@ -99,15 +112,17 @@ class Port(BaseModel):
         return self._py_value_converter(value)
 
     async def set(self, new_value: ItemConcreteValue):
-        log.debug("setting %s[%s] with value %s", self.key, self.type, new_value)
+        log.debug(
+            "setting %s[%s] with value %s", self.key, self.property_type, new_value
+        )
         if not isinstance(new_value, self._py_value_type):
-            raise InvalidItemTypeError(self.type, new_value)
+            raise InvalidItemTypeError(self.property_type, new_value)
 
         # convert the concrete value to a data value
         data_value = self._py_value_converter(new_value)
-        if port_utils.is_file_type(self.type):
+        if port_utils.is_file_type(self.property_type):
             if not data_value.exists() or not data_value.is_file():
-                raise InvalidItemTypeError(self.type, new_value)
+                raise InvalidItemTypeError(self.property_type, new_value)
             data_value: FileLink = await port_utils.push_file_to_store(data_value)
 
         self.value = data_value
