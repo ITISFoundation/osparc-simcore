@@ -11,7 +11,7 @@ from typing import Any, Dict, Type, Union
 import pytest
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports import config
-from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink
+from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
 
 
@@ -125,7 +125,7 @@ def camel_to_snake(name):
         ),
         (
             {
-                "key": "some_file_with_file_in_defaulvalue",
+                "key": "some_file_with_file_in_storage",
                 "label": "",
                 "description": "",
                 "type": "data:*/*",
@@ -139,13 +139,13 @@ def camel_to_snake(name):
         ),
         (
             {
-                "key": "some_file_with_file_in_defaulvalue",
+                "key": "some_file_with_file_in_storage",
                 "label": "",
                 "description": "",
                 "type": "data:*/*",
                 "displayOrder": 2.3,
                 "value": {
-                    "store": "0",
+                    "store": "1",
                     "path": __file__,
                     "dataset": "some blahblah",
                     "label": "some blahblah",
@@ -154,13 +154,13 @@ def camel_to_snake(name):
             (Path, str),
             Path,
             FileLink(
-                store="0", path=__file__, dataset="some blahblah", label="some blahblah"
+                store="1", path=__file__, dataset="some blahblah", label="some blahblah"
             ),
             __file__,
         ),
         (
             {
-                "key": "some_file_with_file_in_defaulvalue",
+                "key": "some_file_with_file_as_download_link",
                 "label": "",
                 "description": "",
                 "type": "data:*/*",
@@ -176,6 +176,26 @@ def camel_to_snake(name):
             ),
             __file__,
         ),
+        (
+            {
+                "key": "some_file_with_file_as_port_link",
+                "label": "",
+                "description": "",
+                "type": "data:*/*",
+                "displayOrder": 2.3,
+                "value": {
+                    "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                    "output": "the_output_of_that_node",
+                },
+            },
+            (Path, str),
+            Path,
+            PortLink(
+                nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                output="the_output_of_that_node",
+            ),
+            __file__,
+        ),
     ],
 )
 async def test_valid_port(
@@ -185,7 +205,16 @@ async def test_valid_port(
     exp_value: Union[int, float, bool, str, Path],
     exp_get_value: Union[int, float, bool, str, Path],
 ):
+    class FakeNodePorts:
+        async def get(self, key):
+            return exp_get_value
+
+        async def _node_ports_creator_cb(self, node_uuid: str):
+            return FakeNodePorts()
+
+    fake_node_ports = FakeNodePorts()
     port = Port(**port_cfg)
+    port._node_ports = fake_node_ports
 
     for k, v in port_cfg.items():
         camel_key = camel_to_snake(k)
