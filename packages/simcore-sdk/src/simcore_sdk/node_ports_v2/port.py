@@ -34,7 +34,7 @@ class Port(ServiceProperty):
     @validator("value", always=True)
     @classmethod
     def ensure_value(cls, v, values):
-        if not v and values.get("default_value"):
+        if v is None and values.get("default_value"):
             return values["default_value"]
         return v
 
