@@ -26,8 +26,20 @@ async def mock_download_file(mocker):
     yield mock
 
 
+@pytest.fixture
+async def mock_upload_file(mocker):
+    mock = mocker.patch(
+        "simcore_sdk.node_ports.filemanager.upload_file",
+        return_value=Future(),
+    )
+    mock.return_value.set_result("")
+    yield mock
+
+
 @pytest.fixture(autouse=True)
-def node_ports_config(loop, storage_v0_subsystem_mock, mock_download_file):
+def node_ports_config(
+    loop, storage_v0_subsystem_mock, mock_download_file, mock_upload_file
+):
     config.USER_ID = "666"
     config.STORAGE_ENDPOINT = "storage:8080"
 
