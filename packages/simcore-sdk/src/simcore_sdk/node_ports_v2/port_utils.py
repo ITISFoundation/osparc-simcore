@@ -3,8 +3,6 @@ import shutil
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict
 
-from yarl import URL
-
 from ..node_ports import config, data_items_utils, filemanager
 from .links import DownloadLink, FileLink, ItemConcreteValue, PortLink
 

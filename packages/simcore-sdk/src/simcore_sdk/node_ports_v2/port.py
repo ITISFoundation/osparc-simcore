@@ -74,6 +74,7 @@ class Port(ServiceProperty):
         if isinstance(self.value, PortLink):
             # this is a link to another node
             value = await port_utils.get_value_from_link(
+                # pylint: disable=protected-access
                 self.key,
                 self.value,
                 self.file_to_key_map,
