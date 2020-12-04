@@ -74,7 +74,7 @@ def main(compose_file_path: Path, metadata_file_path: Path):
 
     if update_compose_labels(compose_cfg, json_metadata, service_name):
         click.echo(
-            "Updating {compose_file_path} using labels in {metadata_file_path}",
+            f"Updating {compose_file_path} using labels in {metadata_file_path}",
         )
         # write the file back
         with compose_file_path.open("w") as fp:
