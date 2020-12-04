@@ -6,8 +6,9 @@ from pydantic import BaseModel, Field
 
 from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import PortNotFound, UnboundPortError
-from .port import InputsList, ItemConcreteValue, OutputsList
+from .port import ItemConcreteValue
 from .port_utils import is_file_type
+from .ports_mapping import InputsList, OutputsList
 
 log = logging.getLogger(__name__)
 
