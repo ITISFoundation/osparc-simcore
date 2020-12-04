@@ -80,14 +80,13 @@ async def pull_file_from_download_link(
 ) -> Path:
     log.debug(
         "Getting value from download link [%s] with label %s",
-        value["downloadLink"],
-        value.get("label", "undef"),
+        value.download_link,
+        value.label,
     )
 
-    download_link = URL(value["downloadLink"])
     local_path = data_items_utils.create_folder_path(key)
     downloaded_file = await filemanager.download_file_from_link(
-        download_link,
+        value.download_link,
         local_path,
         file_name=next(iter(fileToKeyMap)) if fileToKeyMap else None,
     )

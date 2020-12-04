@@ -11,7 +11,7 @@ from typing import Any, Dict, Type, Union
 import pytest
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports import config
-from simcore_sdk.node_ports_v2.links import FileLink
+from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink
 from simcore_sdk.node_ports_v2.port import Port
 
 
@@ -137,6 +137,45 @@ def camel_to_snake(name):
             FileLink(store="0", path=__file__),
             __file__,
         ),
+        (
+            {
+                "key": "some_file_with_file_in_defaulvalue",
+                "label": "",
+                "description": "",
+                "type": "data:*/*",
+                "displayOrder": 2.3,
+                "value": {
+                    "store": "0",
+                    "path": __file__,
+                    "dataset": "some blahblah",
+                    "label": "some blahblah",
+                },
+            },
+            (Path, str),
+            Path,
+            FileLink(
+                store="0", path=__file__, dataset="some blahblah", label="some blahblah"
+            ),
+            __file__,
+        ),
+        (
+            {
+                "key": "some_file_with_file_in_defaulvalue",
+                "label": "",
+                "description": "",
+                "type": "data:*/*",
+                "displayOrder": 2.3,
+                "value": {
+                    "downloadLink": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md",
+                },
+            },
+            (Path, str),
+            Path,
+            DownloadLink(
+                downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
+            ),
+            __file__,
+        ),
     ],
 )
 async def test_valid_port(
@@ -152,7 +191,8 @@ async def test_valid_port(
         camel_key = camel_to_snake(k)
         if k == "type":
             camel_key = "property_type"
-        assert v == getattr(port, camel_key)
+        if k != "value":
+            assert v == getattr(port, camel_key)
 
     assert port._py_value_type == exp_value_type
     assert port._py_value_converter == exp_value_converter
