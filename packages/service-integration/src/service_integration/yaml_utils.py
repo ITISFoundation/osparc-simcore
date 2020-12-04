@@ -17,7 +17,7 @@ def ordered_safe_load(stream, object_pairs_hook=OrderedDict):
     OrderedLoader.add_constructor(
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping
     )
-    return yaml.load(stream, OrderedLoader)
+    return yaml.load(stream, OrderedLoader)  # nosec
 
 
 def ordered_safe_dump(data, stream=None, **kwds):
