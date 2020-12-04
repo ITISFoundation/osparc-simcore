@@ -13,29 +13,31 @@ def read_reqs(reqs_path: Path):
     )
 
 
-install_requirements = read_reqs(
-    here / "requirements" / "_base.in"
-)  # WEAK requirements
+install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
+    "simcore-models-library"
+]  # STRICT requirements
 
 test_requirements = read_reqs(
     here / "requirements" / "_test.txt"
-)  # STRONG requirements
+)  # STRICT requirements
 
 readme = Path(here / "README.md").read_text()
 
 setup(
-    name="simcore-models-library",
-    version="0.1.0",
-    author="Sylvain Anderegg (sanderegg)",
-    description="Core service library for simcore pydantic models",
+    name="simcore-service-integration",
+    version="1.0.0",
+    author="Pedro Crespo (pcrespov), Sylvain Anderegg (sanderegg), Katie Zhuang (KZzizzle)",
+    description="Toolkit for service integration",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3.6",
+        "Framework :: Pytest",
     ],
     long_description=readme,
+    python_requires=">=3.6, <3.7",
     license="MIT license",
     install_requires=install_requirements,
     packages=find_packages(where="src"),
@@ -43,6 +45,10 @@ setup(
     include_package_data=True,
     test_suite="tests",
     tests_require=test_requirements,
-    extras_require={"test": test_requirements},
+    extras_require={},
     zip_safe=False,
+    entry_points={
+        "console_scripts": ["simcore-service-integrator=service_integration.cli:main"],
+        "pytest11": ["simcore_service_integration = service_integration.pytest_plugin"],
+    },
 )
