@@ -4,12 +4,31 @@
 # pylint:disable=no-member
 # pylint:disable=protected-access
 import re
+from asyncio import Future
 from pathlib import Path
 from typing import Any, Dict, Type, Union
 
 import pytest
 from pydantic.error_wrappers import ValidationError
+from simcore_sdk.node_ports import config
+from simcore_sdk.node_ports_v2.links import FileLink
 from simcore_sdk.node_ports_v2.port import Port
+
+
+@pytest.fixture
+async def mock_download_file(mocker):
+    mock = mocker.patch(
+        "simcore_sdk.node_ports.filemanager.download_file_from_link",
+        return_value=Future(),
+    )
+    mock.return_value.set_result(__file__)
+    yield mock
+
+
+@pytest.fixture(autouse=True)
+def node_ports_config(loop, storage_v0_subsystem_mock, mock_download_file):
+    config.USER_ID = "666"
+    config.STORAGE_ENDPOINT = "storage:8080"
 
 
 def camel_to_snake(name):
@@ -18,7 +37,7 @@ def camel_to_snake(name):
 
 
 @pytest.mark.parametrize(
-    "port_cfg, exp_value_type, exp_value_converter, exp_value",
+    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value",
     [
         (
             {
@@ -31,6 +50,7 @@ def camel_to_snake(name):
             },
             (int),
             int,
+            3,
             3,
         ),
         (
@@ -45,6 +65,7 @@ def camel_to_snake(name):
             (float),
             float,
             -23.45,
+            -23.45,
         ),
         (
             {
@@ -57,6 +78,7 @@ def camel_to_snake(name):
             },
             (bool),
             bool,
+            True,
             True,
         ),
         (
@@ -72,6 +94,7 @@ def camel_to_snake(name):
             (bool),
             bool,
             False,
+            False,
         ),
         (
             {
@@ -83,6 +106,7 @@ def camel_to_snake(name):
             },
             (Path, str),
             Path,
+            None,
             None,
         ),
         (
@@ -97,6 +121,21 @@ def camel_to_snake(name):
             (Path, str),
             Path,
             None,
+            None,
+        ),
+        (
+            {
+                "key": "some_file_with_file_in_defaulvalue",
+                "label": "",
+                "description": "",
+                "type": "data:*/*",
+                "displayOrder": 2.3,
+                "value": {"store": "0", "path": __file__},
+            },
+            (Path, str),
+            Path,
+            FileLink(store="0", path=__file__),
+            __file__,
         ),
     ],
 )
@@ -105,6 +144,7 @@ async def test_valid_port(
     exp_value_type: Type[Union[int, float, bool, str, Path]],
     exp_value_converter: Type[Union[int, float, bool, str, Path]],
     exp_value: Union[int, float, bool, str, Path],
+    exp_get_value: Union[int, float, bool, str, Path],
 ):
     port = Port(**port_cfg)
 
@@ -119,7 +159,7 @@ async def test_valid_port(
 
     assert port.value == exp_value
     if exp_value:
-        assert await port.get() == exp_value_converter(exp_value)
+        assert await port.get() == exp_value_converter(exp_get_value)
 
 
 @pytest.mark.parametrize(

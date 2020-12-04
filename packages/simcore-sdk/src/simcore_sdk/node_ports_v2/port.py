@@ -31,7 +31,7 @@ class Port(ServiceProperty):
     _py_value_converter: Type[ItemConcreteValue] = PrivateAttr()
     _node_ports = PrivateAttr()
 
-    @validator("value", pre=True, always=True)
+    @validator("value", always=True)
     @classmethod
     def ensure_value(cls, v, values):
         if "property_type" in values and port_utils.is_file_type(
