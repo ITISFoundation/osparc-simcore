@@ -44,7 +44,7 @@ def camel_to_snake(name):
             },
             (float),
             float,
-            -23.46,
+            -23.45,
         ),
         (
             {

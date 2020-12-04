@@ -31,10 +31,17 @@ class Port(ServiceProperty):
     _py_value_converter: Type[ItemConcreteValue] = PrivateAttr()
     _node_ports = PrivateAttr()
 
-    @validator("value", always=True)
+    @validator("value", pre=True, always=True)
     @classmethod
     def ensure_value(cls, v, values):
-        if v is None and values.get("default_value"):
+        if "property_type" in values and port_utils.is_file_type(
+            values["property_type"]
+        ):
+            if v is not None and not isinstance(v, (FileLink, DownloadLink, PortLink)):
+                raise ValueError(
+                    f"[{values['property_type']}] must follow {FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
+                )
+        elif v is None and values.get("default_value"):
             return values["default_value"]
         return v
 
