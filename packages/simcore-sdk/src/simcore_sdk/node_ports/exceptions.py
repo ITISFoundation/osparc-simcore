@@ -1,10 +1,12 @@
+from typing import Optional
+
 """Defines the different exceptions that may arise in the nodeports package"""
 
 
 class NodeportsException(Exception):
     """Basic exception for errors raised in nodeports"""
 
-    def __init__(self, msg=None):
+    def __init__(self, msg: Optional[str] = None):
         super().__init__(msg or "An error occured in simcore")
 
 
@@ -30,7 +32,7 @@ class WrongProtocolVersionError(NodeportsException):
 class UnboundPortError(NodeportsException, IndexError):
     """Accessed port is not configured"""
 
-    def __init__(self, port_index, msg=None):
+    def __init__(self, port_index, msg: Optional[str] = None):
         super().__init__(f"No port bound at index {port_index}")
         self.port_index = port_index
 
@@ -38,7 +40,7 @@ class UnboundPortError(NodeportsException, IndexError):
 class InvalidKeyError(NodeportsException):
     """Accessed key does not exist"""
 
-    def __init__(self, item_key, msg=None):
+    def __init__(self, item_key: str, msg: Optional[str] = None):
         super().__init__(f"No port bound with key {item_key}")
         self.item_key = item_key
 
@@ -46,9 +48,10 @@ class InvalidKeyError(NodeportsException):
 class InvalidItemTypeError(NodeportsException):
     """Item type incorrect"""
 
-    def __init__(self, item_type, item_value):
+    def __init__(self, item_type: str, item_value: str, msg: Optional[str] = None):
         super().__init__(
-            f"Invalid item type, value [{item_value}] does not qualify as type [{item_type}]"
+            msg
+            or f"Invalid item type, value [{item_value}] does not qualify as type [{item_type}]"
         )
         self.item_type = item_type
         self.item_value = item_value
@@ -57,7 +60,7 @@ class InvalidItemTypeError(NodeportsException):
 class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
 
-    def __init__(self, dct, msg=None):
+    def __init__(self, dct, msg: Optional[str] = None):
         super().__init__(f"Invalid protocol used: {dct}\n{msg}")
         self.dct = dct
 
@@ -73,7 +76,7 @@ class StorageServerIssue(NodeportsException):
 class S3TransferError(NodeportsException):
     """S3 transfer error"""
 
-    def __init__(self, msg=None):
+    def __init__(self, msg: Optional[str] = None):
         super().__init__(msg or "Error while transferring to/from S3 storage")
 
 
