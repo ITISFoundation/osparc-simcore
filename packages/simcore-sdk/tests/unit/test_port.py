@@ -5,6 +5,7 @@
 # pylint:disable=protected-access
 import re
 from asyncio import Future
+from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Type, Union
 
@@ -36,11 +37,17 @@ def camel_to_snake(name):
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
+PortParams = namedtuple(
+    "PortParams",
+    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value",
+)
+
+
 @pytest.mark.parametrize(
     "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value",
     [
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_integer",
                 "label": "some label",
                 "description": "some description",
@@ -48,13 +55,13 @@ def camel_to_snake(name):
                 "displayOrder": 2.3,
                 "defaultValue": 3,
             },
-            (int),
-            int,
-            3,
-            3,
+            exp_value_type=(int),
+            exp_value_converter=int,
+            exp_value=3,
+            exp_get_value=3,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_number",
                 "label": "",
                 "description": "",
@@ -62,13 +69,13 @@ def camel_to_snake(name):
                 "displayOrder": 2.3,
                 "defaultValue": -23.45,
             },
-            (float),
-            float,
-            -23.45,
-            -23.45,
+            exp_value_type=(float),
+            exp_value_converter=float,
+            exp_value=-23.45,
+            exp_get_value=-23.45,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_boolean",
                 "label": "",
                 "description": "",
@@ -76,13 +83,13 @@ def camel_to_snake(name):
                 "displayOrder": 2.3,
                 "defaultValue": True,
             },
-            (bool),
-            bool,
-            True,
-            True,
+            exp_value_type=(bool),
+            exp_value_converter=bool,
+            exp_value=True,
+            exp_get_value=True,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_boolean",
                 "label": "",
                 "description": "",
@@ -91,26 +98,26 @@ def camel_to_snake(name):
                 "defaultValue": True,
                 "value": False,
             },
-            (bool),
-            bool,
-            False,
-            False,
+            exp_value_type=(bool),
+            exp_value_converter=bool,
+            exp_value=False,
+            exp_get_value=False,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_file",
                 "label": "",
                 "description": "",
                 "type": "data:*/*",
                 "displayOrder": 2.3,
             },
-            (Path, str),
-            Path,
-            None,
-            None,
+            exp_value_type=(Path, str),
+            exp_value_converter=Path,
+            exp_value=None,
+            exp_get_value=None,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_file_with_file_in_defaulvalue",
                 "label": "",
                 "description": "",
@@ -118,13 +125,13 @@ def camel_to_snake(name):
                 "displayOrder": 2.3,
                 "defaultValue": __file__,
             },
-            (Path, str),
-            Path,
-            None,
-            None,
+            exp_value_type=(Path, str),
+            exp_value_converter=Path,
+            exp_value=None,
+            exp_get_value=None,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_file_with_file_in_storage",
                 "label": "",
                 "description": "",
@@ -132,13 +139,13 @@ def camel_to_snake(name):
                 "displayOrder": 2.3,
                 "value": {"store": "0", "path": __file__},
             },
-            (Path, str),
-            Path,
-            FileLink(store="0", path=__file__),
-            __file__,
+            exp_value_type=(Path, str),
+            exp_value_converter=Path,
+            exp_value=FileLink(store="0", path=__file__),
+            exp_get_value=__file__,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_file_with_file_in_storage",
                 "label": "",
                 "description": "",
@@ -151,15 +158,15 @@ def camel_to_snake(name):
                     "label": "some blahblah",
                 },
             },
-            (Path, str),
-            Path,
-            FileLink(
+            exp_value_type=(Path, str),
+            exp_value_converter=Path,
+            exp_value=FileLink(
                 store="1", path=__file__, dataset="some blahblah", label="some blahblah"
             ),
-            __file__,
+            exp_get_value=__file__,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_file_with_file_as_download_link",
                 "label": "",
                 "description": "",
@@ -169,15 +176,15 @@ def camel_to_snake(name):
                     "downloadLink": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md",
                 },
             },
-            (Path, str),
-            Path,
-            DownloadLink(
+            exp_value_type=(Path, str),
+            exp_value_converter=Path,
+            exp_value=DownloadLink(
                 downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
             ),
-            __file__,
+            exp_get_value=__file__,
         ),
-        (
-            {
+        PortParams(
+            port_cfg={
                 "key": "some_file_with_file_as_port_link",
                 "label": "",
                 "description": "",
@@ -188,13 +195,13 @@ def camel_to_snake(name):
                     "output": "the_output_of_that_node",
                 },
             },
-            (Path, str),
-            Path,
-            PortLink(
+            exp_value_type=(Path, str),
+            exp_value_converter=Path,
+            exp_value=PortLink(
                 nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
                 output="the_output_of_that_node",
             ),
-            __file__,
+            exp_get_value=__file__,
         ),
     ],
 )
