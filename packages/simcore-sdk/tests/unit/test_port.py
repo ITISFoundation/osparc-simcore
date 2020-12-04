@@ -18,7 +18,7 @@ def camel_to_snake(name):
 
 
 @pytest.mark.parametrize(
-    "port_cfg, exp_value_type, exp_value_converter",
+    "port_cfg, exp_value_type, exp_value_converter, exp_value",
     [
         (
             {
@@ -31,6 +31,7 @@ def camel_to_snake(name):
             },
             (int),
             int,
+            3,
         ),
         (
             {
@@ -43,6 +44,7 @@ def camel_to_snake(name):
             },
             (float),
             float,
+            -23.46,
         ),
         (
             {
@@ -55,6 +57,7 @@ def camel_to_snake(name):
             },
             (bool),
             bool,
+            True,
         ),
         (
             {
@@ -68,6 +71,7 @@ def camel_to_snake(name):
             },
             (bool),
             bool,
+            False,
         ),
         (
             {
@@ -79,18 +83,20 @@ def camel_to_snake(name):
             },
             (Path, str),
             Path,
+            None,
         ),
         (
             {
-                "key": "some_file",
+                "key": "some_file_with_file_in_defaulvalue",
                 "label": "",
                 "description": "",
                 "type": "data:*/*",
                 "displayOrder": 2.3,
-                "value": __file__,
+                "defaultValue": __file__,
             },
             (Path, str),
             Path,
+            None,
         ),
     ],
 )
@@ -98,6 +104,7 @@ async def test_valid_port(
     port_cfg: Dict[str, Any],
     exp_value_type: Type[Union[int, float, bool, str, Path]],
     exp_value_converter: Type[Union[int, float, bool, str, Path]],
+    exp_value: Union[int, float, bool, str, Path],
 ):
     port = Port(**port_cfg)
 
@@ -110,18 +117,9 @@ async def test_valid_port(
     assert port._py_value_type == exp_value_type
     assert port._py_value_converter == exp_value_converter
 
-    expected_value = None
-    if "defaultValue" in port_cfg and (
-        "value" not in port_cfg or port_cfg["value"] is None
-    ):
-        expected_value = port_cfg["defaultValue"]
-    elif "value" in port_cfg:
-        expected_value = port_cfg["value"]
-    assert port.value == expected_value
-    if expected_value:
-        assert await port.get() == exp_value_converter(expected_value)
-
-    value = await port.get()
+    assert port.value == exp_value
+    if exp_value:
+        assert await port.get() == exp_value_converter(exp_value)
 
 
 @pytest.mark.parametrize(
@@ -147,6 +145,14 @@ async def test_valid_port(
             "description": "",
             "type": "blahblah",
             "displayOrder": 2.3,
+        },
+        {
+            "key": "some_file_with_file_in_value",
+            "label": "",
+            "description": "",
+            "type": "data:*/*",
+            "displayOrder": 2.3,
+            "value": __file__,
         },
     ],
 )
