@@ -39,12 +39,12 @@ def camel_to_snake(name):
 
 PortParams = namedtuple(
     "PortParams",
-    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value",
+    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value, new_value, exp_new_value, exp_new_get_value",
 )
 
 
 @pytest.mark.parametrize(
-    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value",
+    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value, new_value, exp_new_value, exp_new_get_value",
     [
         PortParams(
             port_cfg={
@@ -59,6 +59,9 @@ PortParams = namedtuple(
             exp_value_converter=int,
             exp_value=3,
             exp_get_value=3,
+            new_value=7,
+            exp_new_value=7,
+            exp_new_get_value=7,
         ),
         PortParams(
             port_cfg={
@@ -73,6 +76,9 @@ PortParams = namedtuple(
             exp_value_converter=float,
             exp_value=-23.45,
             exp_get_value=-23.45,
+            new_value=7,
+            exp_new_value=7.0,
+            exp_new_get_value=7.0,
         ),
         PortParams(
             port_cfg={
@@ -87,6 +93,9 @@ PortParams = namedtuple(
             exp_value_converter=bool,
             exp_value=True,
             exp_get_value=True,
+            new_value=False,
+            exp_new_value=False,
+            exp_new_get_value=False,
         ),
         PortParams(
             port_cfg={
@@ -102,6 +111,9 @@ PortParams = namedtuple(
             exp_value_converter=bool,
             exp_value=False,
             exp_get_value=False,
+            new_value=True,
+            exp_new_value=True,
+            exp_new_get_value=True,
         ),
         PortParams(
             port_cfg={
@@ -115,6 +127,9 @@ PortParams = namedtuple(
             exp_value_converter=Path,
             exp_value=None,
             exp_get_value=None,
+            new_value=__file__,
+            exp_new_value=FileLink(store="0", path=__file__),
+            exp_new_get_value=__file__,
         ),
         PortParams(
             port_cfg={
@@ -129,6 +144,9 @@ PortParams = namedtuple(
             exp_value_converter=Path,
             exp_value=None,
             exp_get_value=None,
+            new_value=__file__,
+            exp_new_value=FileLink(store="0", path=__file__),
+            exp_new_get_value=__file__,
         ),
         PortParams(
             port_cfg={
@@ -143,6 +161,9 @@ PortParams = namedtuple(
             exp_value_converter=Path,
             exp_value=FileLink(store="0", path=__file__),
             exp_get_value=__file__,
+            new_value=None,
+            exp_new_value=None,
+            exp_new_get_value=None,
         ),
         PortParams(
             port_cfg={
@@ -164,6 +185,9 @@ PortParams = namedtuple(
                 store="1", path=__file__, dataset="some blahblah", label="some blahblah"
             ),
             exp_get_value=__file__,
+            new_value=__file__,
+            exp_new_value=FileLink(store="0", path=__file__),
+            exp_new_get_value=__file__,
         ),
         PortParams(
             port_cfg={
@@ -182,6 +206,9 @@ PortParams = namedtuple(
                 downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
             ),
             exp_get_value=__file__,
+            new_value=__file__,
+            exp_new_value=FileLink(store="0", path=__file__),
+            exp_new_get_value=__file__,
         ),
         PortParams(
             port_cfg={
@@ -202,6 +229,9 @@ PortParams = namedtuple(
                 output="the_output_of_that_node",
             ),
             exp_get_value=__file__,
+            new_value=__file__,
+            exp_new_value=FileLink(store="0", path=__file__),
+            exp_new_get_value=__file__,
         ),
     ],
 )
@@ -209,8 +239,11 @@ async def test_valid_port(
     port_cfg: Dict[str, Any],
     exp_value_type: Type[Union[int, float, bool, str, Path]],
     exp_value_converter: Type[Union[int, float, bool, str, Path]],
-    exp_value: Union[int, float, bool, str, Path],
+    exp_value: Union[int, float, bool, str, Path, FileLink, DownloadLink, PortLink],
     exp_get_value: Union[int, float, bool, str, Path],
+    new_value: Union[int, float, bool, str, Path],
+    exp_new_value: Union[int, float, bool, str, Path, FileLink],
+    exp_new_get_value: Union[int, float, bool, str, Path],
 ):
     class FakeNodePorts:
         async def get(self, key):
@@ -219,10 +252,14 @@ async def test_valid_port(
         async def _node_ports_creator_cb(self, node_uuid: str):
             return FakeNodePorts()
 
+        async def save_to_db_cb(self, node_ports):
+            return
+
     fake_node_ports = FakeNodePorts()
     port = Port(**port_cfg)
     port._node_ports = fake_node_ports
 
+    # check schema
     for k, v in port_cfg.items():
         camel_key = camel_to_snake(k)
         if k == "type":
@@ -230,12 +267,16 @@ async def test_valid_port(
         if k != "value":
             assert v == getattr(port, camel_key)
 
+    # check payload
     assert port._py_value_type == exp_value_type
     assert port._py_value_converter == exp_value_converter
 
     assert port.value == exp_value
     if exp_value:
         assert await port.get() == exp_value_converter(exp_get_value)
+
+    # set a new value
+    await port.set(new_value)
 
 
 @pytest.mark.parametrize(

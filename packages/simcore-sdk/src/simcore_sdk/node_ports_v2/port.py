@@ -100,11 +100,12 @@ class Port(ServiceProperty):
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
-        if not isinstance(new_value, self._py_value_type):
-            raise InvalidItemTypeError(self.property_type, new_value)
-
         # convert the concrete value to a data value
         data_value = self._py_value_converter(new_value)
+
+        if not isinstance(data_value, self._py_value_type):
+            raise InvalidItemTypeError(self.property_type, new_value)
+
         if port_utils.is_file_type(self.property_type):
             if not data_value.exists() or not data_value.is_file():
                 raise InvalidItemTypeError(self.property_type, new_value)

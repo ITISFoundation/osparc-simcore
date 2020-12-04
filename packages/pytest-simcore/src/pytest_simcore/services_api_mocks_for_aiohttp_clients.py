@@ -88,7 +88,15 @@ async def storage_v0_subsystem_mock() -> aioresponses:
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+$"
     )
 
+    get_locations_link_pattern = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations.*$"
+    )
+
     with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
         mock.get(get_download_link_pattern, callback=get_download_link_cb, repeat=True)
-
+        mock.get(
+            get_locations_link_pattern,
+            status=200,
+            payload={"data": [{"name": "simcore.s3", "id": "0"}]},
+        )
         yield mock
