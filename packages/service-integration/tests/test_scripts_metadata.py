@@ -105,5 +105,24 @@ def test_get_version_from_metadata(
     assert result.output == expected_output
 
 
-def test_changes_in_metadata_keeps_keys_order(metadata_file_path):
-    assert False
+def test_changes_in_metadata_keeps_keys_order(
+    metadata_file_path, run_simcore_service_integrator
+):
+
+    before = metadata_file_path.read_text()
+    assert "1.1.0" in before
+
+    print(before)
+    result = run_simcore_service_integrator(
+        "bump-version",
+        "--metadata-file",
+        metadata_file_path,
+        "--upgrade",
+        "major",
+    )
+    assert result.exit_code == os.EX_OK, (result.output, result.exception)
+    after = metadata_file_path.read_text()
+    print(after)
+
+    assert "2.0.0" in after
+    assert before == after.replace("2.0.0", "1.1.0")
