@@ -39,7 +39,8 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     maxScore: {
       check: "Number",
       init: 5,
-      nullable: false
+      nullable: false,
+      apply: "__applyMaxScore"
     }
   },
 
@@ -69,8 +70,23 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     __applyScore: function(value) {
       const maxScore = this.getMaxScore();
       if (value && value >= 0 && value <= maxScore) {
+        this.__renderStars();
+      }
+    },
+
+    __applyMaxScore: function(value) {
+      const score = this.getScore();
+      if (value && score >= 0 && score <= value) {
+        this.__renderStars();
+      }
+    },
+
+    __renderStars: function() {
+      const score = this.getMaxScore();
+      const maxScore = this.getMaxScore();
+      if (score && maxScore && score >= 0 && score <= maxScore) {
         const maxStars = 5;
-        const nomrScore = value/maxScore;
+        const nomrScore = score/maxScore;
         const fullStars = nomrScore/(1.0/maxStars);
         const halfStar = Math.round((nomrScore%(1.0/maxStars))*maxStars);
         const emptyStars = maxStars - fullStars - halfStar;
