@@ -28,6 +28,25 @@ function parseCommandLineArguments(args) {
   }
 }
 
+function parseCommandLineArgumentsTemplate(args) {
+  // node $template.js [url] [template_uuid] [--demo]
+
+  if (args.length < 2) {
+    console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [--demo]');
+    process.exit(1);
+  }
+
+  const urlPrefix = args[0];
+  const templateUuid = args[1];
+  const enableDemoMode = args.includes("--demo");
+
+  return {
+    urlPrefix,
+    templateUuid,
+    enableDemoMode
+  }
+}
+
 function getUserAndPass(args) {
   const userPass = {
     user: null,
@@ -348,5 +367,6 @@ module.exports = {
   takeScreenshot,
   extractWorkbenchData,
   parseCommandLineArguments,
+  parseCommandLineArgumentsTemplate,
   getGrayLogSnapshotUrl
 }
