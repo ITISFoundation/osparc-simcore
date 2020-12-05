@@ -29,6 +29,9 @@ class PortsMapping(BaseModel):
     def values(self):
         return self.__root__.values()
 
+    def __len__(self):
+        return self.__root__.__len__()
+
 
 class InputsList(PortsMapping):
     __root__: Dict[PortKey, Port]
