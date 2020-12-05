@@ -105,6 +105,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyTags"
     },
 
+    tsrMetadata: {
+      check: "Object",
+      nullable: true,
+      apply: "_applyTsrMetadata"
+    },
+
     state: {
       check: "Object",
       nullable: false,
@@ -139,7 +145,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
     TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/14",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/50",
     PERM_READ: "@FontAwesome5Solid/eye/16",
     PERM_WRITE: "@FontAwesome5Solid/edit/16",
     PERM_EXECUTE: "@FontAwesome5Solid/crown/16"
@@ -198,6 +204,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         }
+        case "tsr-rating":
+          control = new qx.ui.basic.Label().set({
+            font: "text-16"
+          });
+          this._add(control, {
+            left: 2,
+            bottom: 2
+          });
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -222,6 +237,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
+      let tsrMetadata = null;
       switch (studyData["resourceType"]) {
         case "study":
           uuid = studyData.uuid ? studyData.uuid : uuid;
@@ -240,6 +256,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
+          tsrMetadata = {
+            "tsr": Math.floor(Math.random()*(50))
+          };
           break;
       }
 
@@ -253,7 +272,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
-        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : []
+        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
+        tsrMetadata
       });
     },
 
@@ -435,6 +455,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           tagUI.setFont("text-12");
           tagsContainer.add(tagUI);
         });
+      }
+    },
+
+    _applyTsrMetadata: function(tsrMetadata) {
+      if (tsrMetadata && "tsr" in tsrMetadata) {
+        const tsrRating = this.getChildControl("tsr-rating");
+        tsrRating.setValue(tsrMetadata["tsr"]);
       }
     },
 
