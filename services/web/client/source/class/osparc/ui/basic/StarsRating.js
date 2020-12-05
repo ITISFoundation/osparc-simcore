@@ -16,7 +16,8 @@
 ************************************************************************ */
 
 /**
- * App/theme dependant logo
+ * Widget that displays a score in form of stars.
+ * It can also show the score with the max score next to it "87/100"
  */
 qx.Class.define("osparc.ui.basic.StarsRating", {
   extend: qx.ui.core.Widget,
@@ -30,14 +31,14 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   properties: {
     score: {
       check: "Number",
-      init: 0,
+      init: 1,
       nullable: false,
       apply: "__applyScore"
     },
 
     maxScore: {
       check: "Number",
-      init: 1,
+      init: 5,
       nullable: false
     }
   },
