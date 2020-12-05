@@ -4,18 +4,22 @@
 # pylint:disable=no-member
 # pylint:disable=protected-access
 import re
+import shutil
+import tempfile
 from asyncio import Future
 from collections import namedtuple
 from pathlib import Path
 from random import randint
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 import pytest
+from aiohttp.client import ClientSession
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports import config
 from simcore_sdk.node_ports.exceptions import InvalidItemTypeError
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
+from yarl import URL
 
 
 @pytest.fixture(scope="module")
@@ -33,14 +37,64 @@ def user_id() -> str:
     return str(randint(1, 666))
 
 
+THIS_NODE_FILE_NAME: str = f"{tempfile.gettempdir()}/this_node_file.txt"
+DOWNLOAD_FILE_DIR: Path = Path(tempfile.gettempdir(), "simcorefiles")
+ANOTHER_NODE_FILE_NAME: Path = Path(tempfile.gettempdir(), "another_node_file.txt")
+
+
 @pytest.fixture
-async def mock_download_file(mocker):
-    mock = mocker.patch(
-        "simcore_sdk.node_ports.filemanager.download_file_from_link",
-        return_value=Future(),
+def this_node_file() -> Path:
+    file_path = Path(THIS_NODE_FILE_NAME)
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+    yield file_path
+    if file_path.exists():
+        file_path.unlink()
+
+
+@pytest.fixture
+def another_node_file() -> Path:
+    file_path = Path(tempfile.gettempdir(), "another_node_file.txt")
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+    yield file_path
+    if file_path.exists():
+        file_path.unlink()
+
+
+@pytest.fixture
+def downloaded_file_folder() -> Path:
+    destination_path = DOWNLOAD_FILE_DIR
+    yield destination_path
+    if destination_path.exists():
+        shutil.rmtree(destination_path)
+
+
+@pytest.fixture
+async def mock_download_file(
+    monkeypatch,
+    this_node_file: Path,
+    project_id: str,
+    node_uuid: str,
+    downloaded_file_folder: Path,
+):
+    async def mock_download_file_from_link(
+        download_link: URL,
+        local_folder: Path,
+        session: Optional[ClientSession] = None,
+        file_name: Optional[str] = None,
+    ) -> Path:
+        assert str(local_folder).startswith(str(DOWNLOAD_FILE_DIR))
+        destination_path = local_folder / this_node_file.name
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(this_node_file, destination_path)
+        return destination_path
+
+    from simcore_sdk.node_ports import filemanager
+
+    monkeypatch.setattr(
+        filemanager, "download_file_from_link", mock_download_file_from_link
     )
-    mock.return_value.set_result(__file__)
-    yield mock
 
 
 @pytest.fixture
@@ -95,177 +149,233 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
 @pytest.mark.parametrize(
     "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value, new_value, exp_new_value, exp_new_get_value",
     [
-        PortParams(
-            port_cfg=create_valid_port_config("integer", defaultValue=3),
-            exp_value_type=(int),
-            exp_value_converter=int,
-            exp_value=3,
-            exp_get_value=3,
-            new_value=7,
-            exp_new_value=7,
-            exp_new_get_value=7,
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config("integer", defaultValue=3),
+                exp_value_type=(int),
+                exp_value_converter=int,
+                exp_value=3,
+                exp_get_value=3,
+                new_value=7,
+                exp_new_value=7,
+                exp_new_get_value=7,
+            ),
+            id="integer value with default",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config("number", defaultValue=-23.45),
-            exp_value_type=(float),
-            exp_value_converter=float,
-            exp_value=-23.45,
-            exp_get_value=-23.45,
-            new_value=7,
-            exp_new_value=7.0,
-            exp_new_get_value=7.0,
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config("number", defaultValue=-23.45),
+                exp_value_type=(float),
+                exp_value_converter=float,
+                exp_value=-23.45,
+                exp_get_value=-23.45,
+                new_value=7,
+                exp_new_value=7.0,
+                exp_new_get_value=7.0,
+            ),
+            id="number value with default",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config("boolean", defaultValue=True),
-            exp_value_type=(bool),
-            exp_value_converter=bool,
-            exp_value=True,
-            exp_get_value=True,
-            new_value=False,
-            exp_new_value=False,
-            exp_new_get_value=False,
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config("boolean", defaultValue=True),
+                exp_value_type=(bool),
+                exp_value_converter=bool,
+                exp_value=True,
+                exp_get_value=True,
+                new_value=False,
+                exp_new_value=False,
+                exp_new_get_value=False,
+            ),
+            id="boolean value with default",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config(
-                "boolean", defaultValue=True, value=False
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "boolean", defaultValue=True, value=False
+                ),
+                exp_value_type=(bool),
+                exp_value_converter=bool,
+                exp_value=False,
+                exp_get_value=False,
+                new_value=True,
+                exp_new_value=True,
+                exp_new_get_value=True,
             ),
-            exp_value_type=(bool),
-            exp_value_converter=bool,
-            exp_value=False,
-            exp_get_value=False,
-            new_value=True,
-            exp_new_value=True,
-            exp_new_get_value=True,
+            id="boolean value with default and value",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config("data:*/*", key="no_file"),
-            exp_value_type=(Path, str),
-            exp_value_converter=Path,
-            exp_value=None,
-            exp_get_value=None,
-            new_value=__file__,
-            exp_new_value=FileLink(
-                store="0",
-                path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(__file__).name}",
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config("data:*/*", key="no_file"),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=None,
+                exp_get_value=None,
+                new_value=THIS_NODE_FILE_NAME,
+                exp_new_value=FileLink(
+                    store="0",
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                ),
+                exp_new_get_value=DOWNLOAD_FILE_DIR
+                / "no_file"
+                / Path(THIS_NODE_FILE_NAME).name,
             ),
-            exp_new_get_value=__file__,
+            id="file type with no payload",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config(
-                "data:*/*", key="no_file_with_default", defaultValue=__file__
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
+                    key="no_file_with_default",
+                    defaultValue=THIS_NODE_FILE_NAME,
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=None,
+                exp_get_value=None,
+                new_value=THIS_NODE_FILE_NAME,
+                exp_new_value=FileLink(
+                    store="0",
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                ),
+                exp_new_get_value=DOWNLOAD_FILE_DIR
+                / "no_file_with_default"
+                / Path(THIS_NODE_FILE_NAME).name,
             ),
-            exp_value_type=(Path, str),
-            exp_value_converter=Path,
-            exp_value=None,
-            exp_get_value=None,
-            new_value=__file__,
-            exp_new_value=FileLink(
-                store="0",
-                path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(__file__).name}",
-            ),
-            exp_new_get_value=__file__,
+            id="file link with no payload and default value",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config(
-                "data:*/*",
-                key="some_file",
-                value={"store": "0", "path": __file__},
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
+                    key="some_file",
+                    value={"store": "0", "path": THIS_NODE_FILE_NAME},
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=FileLink(store="0", path=THIS_NODE_FILE_NAME),
+                exp_get_value=DOWNLOAD_FILE_DIR
+                / "some_file"
+                / Path(THIS_NODE_FILE_NAME).name,
+                new_value=None,
+                exp_new_value=None,
+                exp_new_get_value=None,
             ),
-            exp_value_type=(Path, str),
-            exp_value_converter=Path,
-            exp_value=FileLink(store="0", path=__file__),
-            exp_get_value=__file__,
-            new_value=None,
-            exp_new_value=None,
-            exp_new_get_value=None,
+            id="file link with payload that get reset",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config(
-                "data:*/*",
-                key="some_file_on_datcore",
-                value={
-                    "store": "1",
-                    "path": __file__,
-                    "dataset": "some blahblah",
-                    "label": "some blahblah",
-                },
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
+                    key="some_file_on_datcore",
+                    value={
+                        "store": "1",
+                        "path": THIS_NODE_FILE_NAME,
+                        "dataset": "some blahblah",
+                        "label": "some blahblah",
+                    },
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=FileLink(
+                    store="1",
+                    path=THIS_NODE_FILE_NAME,
+                    dataset="some blahblah",
+                    label="some blahblah",
+                ),
+                exp_get_value=DOWNLOAD_FILE_DIR
+                / "some_file_on_datcore"
+                / Path(THIS_NODE_FILE_NAME).name,
+                new_value=THIS_NODE_FILE_NAME,
+                exp_new_value=FileLink(
+                    store="0",
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                ),
+                exp_new_get_value=DOWNLOAD_FILE_DIR
+                / "some_file_on_datcore"
+                / Path(THIS_NODE_FILE_NAME).name,
             ),
-            exp_value_type=(Path, str),
-            exp_value_converter=Path,
-            exp_value=FileLink(
-                store="1", path=__file__, dataset="some blahblah", label="some blahblah"
-            ),
-            exp_get_value=__file__,
-            new_value=__file__,
-            exp_new_value=FileLink(
-                store="0",
-                path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(__file__).name}",
-            ),
-            exp_new_get_value=__file__,
+            id="file link with payload on store 1",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config(
-                "data:*/*",
-                key="download_link",
-                value={
-                    "downloadLink": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
-                },
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
+                    key="download_link",
+                    value={
+                        "downloadLink": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
+                    },
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=DownloadLink(
+                    downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
+                ),
+                exp_get_value=DOWNLOAD_FILE_DIR
+                / "download_link"
+                / Path(THIS_NODE_FILE_NAME).name,
+                new_value=THIS_NODE_FILE_NAME,
+                exp_new_value=FileLink(
+                    store="0",
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                ),
+                exp_new_get_value=DOWNLOAD_FILE_DIR
+                / "download_link"
+                / Path(THIS_NODE_FILE_NAME).name,
             ),
-            exp_value_type=(Path, str),
-            exp_value_converter=Path,
-            exp_value=DownloadLink(
-                downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
-            ),
-            exp_get_value=__file__,
-            new_value=__file__,
-            exp_new_value=FileLink(
-                store="0",
-                path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(__file__).name}",
-            ),
-            exp_new_get_value=__file__,
+            id="download link file type gets set back on store",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config(
-                "data:*/*",
-                key="file_port_link",
-                value={
-                    "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
-                    "output": "the_output_of_that_node",
-                },
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
+                    key="file_port_link",
+                    value={
+                        "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                        "output": "the_output_of_that_node",
+                    },
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=PortLink(
+                    nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                    output="the_output_of_that_node",
+                ),
+                exp_get_value=DOWNLOAD_FILE_DIR
+                / "file_port_link"
+                / Path(ANOTHER_NODE_FILE_NAME).name,
+                new_value=THIS_NODE_FILE_NAME,
+                exp_new_value=FileLink(
+                    store="0",
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                ),
+                exp_new_get_value=DOWNLOAD_FILE_DIR
+                / "file_port_link"
+                / Path(THIS_NODE_FILE_NAME).name,
             ),
-            exp_value_type=(Path, str),
-            exp_value_converter=Path,
-            exp_value=PortLink(
-                nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
-                output="the_output_of_that_node",
-            ),
-            exp_get_value=__file__,
-            new_value=__file__,
-            exp_new_value=FileLink(
-                store="0",
-                path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(__file__).name}",
-            ),
-            exp_new_get_value=__file__,
+            id="file node link type gets set back on store",
         ),
-        PortParams(
-            port_cfg=create_valid_port_config(
-                "number",
-                key="number_port_link",
-                value={
-                    "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
-                    "output": "the_output_of_that_node",
-                },
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "number",
+                    key="number_port_link",
+                    value={
+                        "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                        "output": "the_output_of_that_node",
+                    },
+                ),
+                exp_value_type=(float),
+                exp_value_converter=float,
+                exp_value=PortLink(
+                    nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                    output="the_output_of_that_node",
+                ),
+                exp_get_value=562.45,
+                new_value=None,
+                exp_new_value=None,
+                exp_new_get_value=None,
             ),
-            exp_value_type=(float),
-            exp_value_converter=float,
-            exp_value=PortLink(
-                nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
-                output="the_output_of_that_node",
-            ),
-            exp_get_value=562.45,
-            new_value=None,
-            exp_new_value=None,
-            exp_new_get_value=None,
+            id="number node link type gets reset",
         ),
     ],
 )
@@ -278,10 +388,17 @@ async def test_valid_port(
     new_value: Union[int, float, bool, str, Path],
     exp_new_value: Union[int, float, bool, str, Path, FileLink],
     exp_new_get_value: Union[int, float, bool, str, Path],
+    this_node_file: Path,
+    another_node_file: Path,
 ):
     class FakeNodePorts:
         async def get(self, key):
-            return exp_get_value
+            # this gets called when a node links to another node we return the get value but for files it needs to be a real one
+            return (
+                another_node_file
+                if port_cfg["type"].startswith("data:")
+                else exp_get_value
+            )
 
         async def _node_ports_creator_cb(self, node_uuid: str):
             return FakeNodePorts()
@@ -309,7 +426,7 @@ async def test_valid_port(
     if exp_get_value is None:
         assert await port.get() == None
     else:
-        assert await port.get() == exp_value_converter(exp_get_value)
+        assert await port.get() == exp_get_value
 
     # set a new value
     await port.set(new_value)
@@ -317,7 +434,7 @@ async def test_valid_port(
     if exp_new_get_value is None:
         assert await port.get() == None
     else:
-        assert await port.get() == exp_value_converter(exp_new_get_value)
+        assert await port.get() == exp_new_get_value
 
 
 @pytest.mark.parametrize(
