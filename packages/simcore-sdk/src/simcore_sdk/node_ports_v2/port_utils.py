@@ -86,8 +86,16 @@ async def pull_file_from_download_link(
     downloaded_file = await filemanager.download_file_from_link(
         value.download_link,
         local_path,
-        file_name=next(iter(fileToKeyMap)) if fileToKeyMap else None,
     )
+
+    # if a file alias is present use it to rename the file accordingly
+    if fileToKeyMap:
+        renamed_file = local_path / next(iter(fileToKeyMap))
+        if downloaded_file != renamed_file:
+            if renamed_file.exists():
+                renamed_file.unlink()
+            shutil.move(downloaded_file, renamed_file)
+            downloaded_file = renamed_file
 
     return downloaded_file
 

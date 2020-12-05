@@ -260,7 +260,29 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 exp_new_value=None,
                 exp_new_get_value=None,
             ),
-            id="file link with payload that get reset",
+            id="file link with payload that gets reset",
+        ),
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
+                    key="some_file_with_file_to_key_map",
+                    fileToKeyMap={
+                        "a_new_fancy_name.csv": "some_file_with_file_to_key_map"
+                    },
+                    value={"store": "0", "path": THIS_NODE_FILE_NAME},
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=FileLink(store="0", path=THIS_NODE_FILE_NAME),
+                exp_get_value=DOWNLOAD_FILE_DIR
+                / "some_file_with_file_to_key_map"
+                / "a_new_fancy_name.csv",
+                new_value=None,
+                exp_new_value=None,
+                exp_new_get_value=None,
+            ),
+            id="file link with fileToKeyMap with payload that gets reset",
         ),
         pytest.param(
             *PortParams(
@@ -269,7 +291,7 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                     key="some_file_on_datcore",
                     value={
                         "store": "1",
-                        "path": THIS_NODE_FILE_NAME,
+                        "path": f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
                         "dataset": "some blahblah",
                         "label": "some blahblah",
                     },
@@ -278,7 +300,7 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 exp_value_converter=Path,
                 exp_value=FileLink(
                     store="1",
-                    path=THIS_NODE_FILE_NAME,
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
                     dataset="some blahblah",
                     label="some blahblah",
                 ),
@@ -328,6 +350,37 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
             *PortParams(
                 port_cfg=create_valid_port_config(
                     "data:*/*",
+                    key="download_link_with_file_to_key",
+                    fileToKeyMap={
+                        "a_cool_file_type.zip": "download_link_with_file_to_key"
+                    },
+                    value={
+                        "downloadLink": "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
+                    },
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=DownloadLink(
+                    downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
+                ),
+                exp_get_value=DOWNLOAD_FILE_DIR
+                / "download_link_with_file_to_key"
+                / "a_cool_file_type.zip",
+                new_value=THIS_NODE_FILE_NAME,
+                exp_new_value=FileLink(
+                    store="0",
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                ),
+                exp_new_get_value=DOWNLOAD_FILE_DIR
+                / "download_link_with_file_to_key"
+                / "a_cool_file_type.zip",
+            ),
+            id="download link file type with filetokeymap gets set back on store",
+        ),
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
                     key="file_port_link",
                     value={
                         "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
@@ -353,6 +406,39 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 / Path(THIS_NODE_FILE_NAME).name,
             ),
             id="file node link type gets set back on store",
+        ),
+        pytest.param(
+            *PortParams(
+                port_cfg=create_valid_port_config(
+                    "data:*/*",
+                    key="file_port_link_with_file_to_key_map",
+                    fileToKeyMap={
+                        "a_cool_file_type.zip": "file_port_link_with_file_to_key_map"
+                    },
+                    value={
+                        "nodeUuid": "238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                        "output": "the_output_of_that_node",
+                    },
+                ),
+                exp_value_type=(Path, str),
+                exp_value_converter=Path,
+                exp_value=PortLink(
+                    nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
+                    output="the_output_of_that_node",
+                ),
+                exp_get_value=DOWNLOAD_FILE_DIR
+                / "file_port_link_with_file_to_key_map"
+                / "a_cool_file_type.zip",
+                new_value=THIS_NODE_FILE_NAME,
+                exp_new_value=FileLink(
+                    store="0",
+                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                ),
+                exp_new_get_value=DOWNLOAD_FILE_DIR
+                / "file_port_link_with_file_to_key_map"
+                / "a_cool_file_type.zip",
+            ),
+            id="file node link type with file to key map gets set back on store",
         ),
         pytest.param(
             *PortParams(
