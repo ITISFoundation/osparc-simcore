@@ -10,7 +10,8 @@
     "Dockerfile*": "dockerfile",
     "**/requirements/*.txt": "pip-requirements",
     "**/requirements/*.in": "pip-requirements",
-    "*Makefile": "makefile"
+    "*Makefile": "makefile",
+    "*.cwl": "yaml"
   },
   "files.eol": "\n",
   "files.exclude": {
@@ -27,15 +28,18 @@
     "./packages/postgres-database/src",
     "./packages/pytest-simcore/src",
     "./packages/s3wrapper/src",
+    "./packages/service-integration/src",
     "./packages/service-library/src",
     "./packages/simcore-sdk/src",
     "./services/api-server/src",
+    "./services/api-server/tests/unit",
     "./services/catalog/src",
     "./services/director/src",
     "./services/director-v2/src",
     "./services/sidecar/src",
     "./services/storage/src",
-    "./services/web/server/src"
+    "./services/web/server/src",
+    "./services/web/server/tests/unit/with_dbs/slow"
   ],
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
