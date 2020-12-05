@@ -42,6 +42,12 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     }
   },
 
+  statics: {
+    StarFull: "FontAwesome5Solid/star/12",
+    StarHalf: "FontAwesome5Solid/star-half-alt/12",
+    StarEmpty: "FontAwesome5Regular/star/12"
+  },
+
   members: {
     // overridden
     _createChildControlImpl: function(id) {
@@ -60,10 +66,24 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     },
 
     __applyScore: function(value) {
-      if (value && value >= 0 && value <= 1) {
+      const maxScore = this.getMaxScore();
+      if (value && value >= 0 && value <= maxScore) {
+        const maxStars = 5;
+        const nomrScore = value/maxScore;
+        const fullStars = nomrScore/(1.0/maxStars);
+        const halfStar = Math.round((nomrScore%(1.0/maxStars))*maxStars);
+        const emptyStars = maxStars - fullStars - halfStar;
         const starsLayout = this.getChildControl("stars-layout");
-        for (let i=0; i<value*5; i++) {
-          const star = new qx.ui.basic.Image("FontAwesome5Solid/star/12");
+        for (let i=0; i<fullStars; i++) {
+          const star = new qx.ui.basic.Image(this.self().StarFull);
+          starsLayout.add(star);
+        }
+        for (let i=0; i<halfStar; i++) {
+          const star = new qx.ui.basic.Image(this.self().StarHalf);
+          starsLayout.add(star);
+        }
+        for (let i=0; i<emptyStars; i++) {
+          const star = new qx.ui.basic.Image(this.self().StarEmpty);
           starsLayout.add(star);
         }
       }
