@@ -1,4 +1,5 @@
 const pathLib = require('path');
+const URL = require('url').URL;
 
 const SCREENSHOTS_DIR = "../screenshots/";
 
@@ -307,7 +308,9 @@ function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
     "osparc.speag.com": "https://monitoring.osparc.speag.com/graylog/",
   };
 
-  const { hostname } = new URL(targetUrl)
+  const {
+    hostname
+  } = new URL(targetUrl)
   const monitoringBaseUrl = table[hostname] || null;
 
   if (monitoringBaseUrl) {
