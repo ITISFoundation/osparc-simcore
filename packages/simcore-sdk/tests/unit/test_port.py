@@ -509,6 +509,12 @@ async def test_valid_port(
     assert port._py_value_converter == exp_value_converter
 
     assert port.value == exp_value
+
+    if isinstance(exp_get_value, Path):
+        # if it's a file let's create one there already
+        exp_get_value.parent.mkdir(parents=True, exist_ok=True)
+        exp_get_value.touch()
+
     if exp_get_value is None:
         assert await port.get() == None
     else:
@@ -517,6 +523,11 @@ async def test_valid_port(
     # set a new value
     await port.set(new_value)
     assert port.value == exp_new_value
+
+    if isinstance(exp_new_get_value, Path):
+        # if it's a file let's create one there already
+        exp_new_get_value.parent.mkdir(parents=True, exist_ok=True)
+        exp_new_get_value.touch()
     if exp_new_get_value is None:
         assert await port.get() == None
     else:
