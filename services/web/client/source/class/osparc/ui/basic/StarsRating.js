@@ -101,9 +101,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       const maxScore = this.getMaxScore();
       if (score && maxScore && score >= 0 && score <= maxScore) {
         const maxStars = this.getNStars();
-        const nomrScore = score/maxScore;
-        const fullStars = nomrScore/(1.0/maxStars);
-        const halfStar = Math.round((nomrScore%(1.0/maxStars))*maxStars);
+        const normScore = score/maxScore;
+        const fullStars = Math.floor(normScore/(1.0/maxStars));
+        const halfStar = Math.round((normScore%(1.0/maxStars))*maxStars);
         const emptyStars = maxStars - fullStars - halfStar;
         const starsLayout = this.getChildControl("stars-layout");
         for (let i=0; i<fullStars; i++) {
