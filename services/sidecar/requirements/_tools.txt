@@ -29,7 +29,7 @@ six==1.15.0               # via -c requirements/_base.txt, -c requirements/_pack
 toml==0.10.2              # via -c requirements/_test.txt, black, pre-commit
 typed-ast==1.4.1          # via -c requirements/_test.txt, black
 typing-extensions==3.7.4.3  # via -c requirements/_base.txt, -c requirements/_packages.txt, -c requirements/_test.txt, black
-virtualenv==20.2.1        # via pre-commit
+virtualenv==20.2.2        # via pre-commit
 watchdog[watchmedo]==0.10.4  # via -r requirements/_tools.in
 zipp==3.2.0               # via -c requirements/_base.txt, -c requirements/_packages.txt, -c requirements/_test.txt, importlib-metadata, importlib-resources
 
