@@ -1,7 +1,5 @@
 from typing import Optional
 
-"""Defines the different exceptions that may arise in the nodeports package"""
-
 
 class NodeportsException(Exception):
     """Basic exception for errors raised in nodeports"""

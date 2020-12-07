@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+import simcore_sdk
 from simcore_sdk.node_ports import config as node_config
 
 ## HELPERS
@@ -23,6 +24,13 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
 ]
+
+
+@pytest.fixture(scope="session")
+def package_dir():
+    pdir = Path(simcore_sdk.__file__).resolve().parent
+    assert pdir.exists()
+    return pdir
 
 
 @pytest.fixture(scope="session")
