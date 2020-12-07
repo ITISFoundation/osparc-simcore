@@ -435,6 +435,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (myGid && this.self().isService(studyData) && osparc.component.export.ServicePermissions.canGroupWrite(studyData["access_rights"], myGid)) {
+        const metadataButton = this.__getMetadataMenuButton(studyData);
+        menu.add(metadataButton);
+      }
+
       const classifiersButton = this.__getClassifiersMenuButton(studyData);
       if (classifiersButton) {
         menu.add(classifiersButton);
@@ -475,6 +481,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
       }, this);
       return moreInfoButton;
+    },
+
+    __getMetadataMenuButton: function(studyData) {
+      const srvMetadataButton = new qx.ui.menu.Button(this.tr("Metadata"));
+      srvMetadataButton.addListener("execute", () => {
+        this.__openMetadataEditor(studyData);
+      }, this);
+      return srvMetadataButton;
     },
 
     __getClassifiersMenuButton: function(studyData) {
@@ -615,6 +629,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         this.__resetServiceItem(newServiceData);
         win.close();
       });
+    },
+
+    __openMetadataEditor: function(serviceData) {
+      const serviceMetadataEditor = new osparc.component.metadata.ServiceMetadataEditor(serviceData);
+      osparc.ui.window.Window.popUpInWindow(serviceMetadataEditor, serviceData.name, 600, 600);
     },
 
     __openServicePermissions: function(serviceData) {
