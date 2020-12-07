@@ -2,8 +2,10 @@
 # pylint:disable=redefined-outer-name
 import sys
 from pathlib import Path
+from typing import Dict
 
 import pytest
+import sqlalchemy as sa
 
 ## HELPERS
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -43,3 +45,17 @@ def env_devel_file(osparc_simcore_root_dir) -> Path:
     env_devel_fpath = osparc_simcore_root_dir / ".env-devel"
     assert env_devel_fpath.exists()
     return env_devel_fpath
+
+
+@pytest.fixture(scope="session")
+def default_configuration_file() -> Path:
+    path = current_dir / "mock" / "default_config.json"
+    assert path.exists()
+    return path
+
+
+@pytest.fixture(scope="session")
+def empty_configuration_file() -> Path:
+    return current_dir / "mock" / "empty_config.json"
+    assert path.exists()
+    return path

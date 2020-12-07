@@ -79,16 +79,6 @@ def file_uuid(project_id: str, node_uuid: str) -> Callable:
     yield create
 
 
-@pytest.fixture
-def default_configuration_file() -> Path:
-    return current_dir / "mock" / "default_config.json"
-
-
-@pytest.fixture
-def empty_configuration_file() -> Path:
-    return current_dir / "mock" / "empty_config.json"
-
-
 @pytest.fixture()
 def default_configuration(
     nodeports_config,
