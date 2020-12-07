@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import Field, PrivateAttr, validator
@@ -23,7 +23,7 @@ TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
 
 class Port(ServiceProperty):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
-    widget: Optional[Dict] = None
+    widget: Optional[Dict[str, Any]] = None
 
     value: Optional[DataItemValue]
 
@@ -34,7 +34,7 @@ class Port(ServiceProperty):
 
     @validator("value", always=True)
     @classmethod
-    def ensure_value(cls, v, values):
+    def ensure_value(cls, v: DataItemValue, values: Dict[str, Any]) -> DataItemValue:
         if "property_type" in values and port_utils.is_file_type(
             values["property_type"]
         ):
@@ -44,7 +44,7 @@ class Port(ServiceProperty):
                 )
         return v
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any):
         super().__init__(**data)
 
         self._py_value_type = (
@@ -102,22 +102,22 @@ class Port(ServiceProperty):
 
         return self._py_value_converter(value)
 
-    async def set(self, new_value: ItemConcreteValue):
+    async def set(self, new_value: ItemConcreteValue) -> None:
         log.debug(
             "setting %s[%s] with value %s", self.key, self.property_type, new_value
         )
-        converted_value = None
+        final_value: Optional[DataItemValue] = None
         if new_value is not None:
             # convert the concrete value to a data value
-            converted_value = self._py_value_converter(new_value)
+            converted_value: ItemConcreteValue = self._py_value_converter(new_value)
 
-            if port_utils.is_file_type(self.property_type):
+            if isinstance(converted_value, Path):
                 if not converted_value.exists() or not converted_value.is_file():
-                    raise InvalidItemTypeError(self.property_type, new_value)
-                converted_value: FileLink = await port_utils.push_file_to_store(
-                    converted_value
-                )
+                    raise InvalidItemTypeError(self.property_type, str(new_value))
+                final_value = await port_utils.push_file_to_store(converted_value)
+            else:
+                final_value = converted_value
 
-        self.value = converted_value
+        self.value = final_value
         self._used_default_value = False
         await self._node_ports.save_to_db_cb(self._node_ports)

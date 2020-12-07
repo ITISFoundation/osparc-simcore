@@ -1,7 +1,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict
+from typing import Any, Callable, Coroutine, Dict, Optional
 
 from ..node_ports import config, data_items_utils, filemanager
 from .links import DownloadLink, FileLink, ItemConcreteValue, PortLink
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 async def get_value_from_link(
     key: str,
     value: PortLink,
-    fileToKeyMap: Dict,
+    fileToKeyMap: Optional[Dict[str, str]],
     node_port_creator: Callable[[str], Coroutine[Any, Any, Any]],
 ) -> ItemConcreteValue:
     log.debug("Getting value %s", value)
@@ -42,7 +42,9 @@ async def get_value_from_link(
     return value
 
 
-async def pull_file_from_store(key: str, fileToKeyMap: Dict, value: FileLink) -> Path:
+async def pull_file_from_store(
+    key: str, fileToKeyMap: Optional[Dict[str, str]], value: FileLink
+) -> Path:
     log.debug("Getting value from storage %s", value)
     # do not make any assumption about s3_path, it is a str containing stuff that can be anything depending on the store
     local_path = data_items_utils.create_folder_path(key)
@@ -74,7 +76,7 @@ async def push_file_to_store(file: Path) -> FileLink:
 
 
 async def pull_file_from_download_link(
-    key: str, fileToKeyMap: Dict, value: DownloadLink
+    key: str, fileToKeyMap: Optional[Dict[str, str]], value: DownloadLink
 ) -> Path:
     log.debug(
         "Getting value from download link [%s] with label %s",
@@ -100,5 +102,5 @@ async def pull_file_from_download_link(
     return downloaded_file
 
 
-def is_file_type(port_type: str):
+def is_file_type(port_type: str) -> bool:
     return port_type.startswith("data:")

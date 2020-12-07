@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import Any, Dict, Set
 
 from aiopg.sa.result import RowProxy
 
@@ -7,7 +7,7 @@ from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import InvalidProtocolError
 from .nodeports_v2 import Nodeports
 
-NODE_REQUIRED_KEYS: List[str] = {
+NODE_REQUIRED_KEYS: Set[str] = {
     "schema",
     "inputs",
     "outputs",
@@ -26,7 +26,10 @@ async def create_nodeports_from_db(
         )
     # convert to our internal node ports
     _PY_INT = "__root__"
-    node_ports_cfg = {"inputs": {_PY_INT: {}}, "outputs": {_PY_INT: {}}}
+    node_ports_cfg: Dict[str, Dict[str, Any]] = {
+        "inputs": {_PY_INT: {}},
+        "outputs": {_PY_INT: {}},
+    }
     for port_type in ["inputs", "outputs"]:
         # schemas first
         node_ports_cfg.update(

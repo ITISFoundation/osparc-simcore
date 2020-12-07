@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import PortNotFound, UnboundPortError
-from .port import ItemConcreteValue
+from .links import ItemConcreteValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
 
@@ -25,7 +25,7 @@ class Nodeports(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any):
         super().__init__(**data)
         # let's pass ourselves down
         for input_key in self.internal_inputs:
@@ -56,7 +56,7 @@ class Nodeports(BaseModel):
         # if this fails it will raise an exception
         return await (await self.outputs)[item_key].get()
 
-    async def set(self, item_key: str, item_value):
+    async def set(self, item_key: str, item_value: ItemConcreteValue) -> None:
         try:
             await (await self.inputs)[item_key].set(item_value)
             return
@@ -66,7 +66,7 @@ class Nodeports(BaseModel):
         # if this fails it will raise an exception
         return await (await self.outputs)[item_key].set(item_value)
 
-    async def set_file_by_keymap(self, item_value: Path):
+    async def set_file_by_keymap(self, item_value: Path) -> None:
         for output in (await self.outputs).values():
             if is_file_type(output.property_type) and output.file_to_key_map:
                 if item_value.name in output.file_to_key_map:
@@ -74,7 +74,7 @@ class Nodeports(BaseModel):
                     return
         raise PortNotFound(msg=f"output port for item {item_value} not found")
 
-    async def _node_ports_creator_cb(self, node_uuid: str) -> Type["NodePorts"]:
+    async def _node_ports_creator_cb(self, node_uuid: str) -> Type["Nodeports"]:
         return await self.node_port_creator_cb(self.db_manager, node_uuid)
 
     async def _auto_update_from_db(self) -> None:
