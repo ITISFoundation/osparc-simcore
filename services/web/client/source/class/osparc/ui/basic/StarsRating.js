@@ -52,6 +52,13 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       apply: "__applyNStars"
     },
 
+    showEmptyStars: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "__render"
+    },
+
     showScore: {
       check: "Boolean",
       init: false,
@@ -119,24 +126,33 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     },
 
     __renderStars: function() {
+      const starsLayout = this.getChildControl("stars-layout");
+      starsLayout.removeAll();
+
       const score = this.getScore();
       const maxScore = this.getMaxScore();
       const maxStars = this.getNStars();
       const normScore = score/maxScore;
+
       const fullStars = Math.floor(normScore/(1.0/maxStars));
-      const halfStar = Math.round((normScore%(1.0/maxStars))*maxStars);
-      const emptyStars = maxStars - fullStars - halfStar;
-      const starsLayout = this.getChildControl("stars-layout");
-      starsLayout.removeAll();
       for (let i=0; i<fullStars; i++) {
         const star = new qx.ui.basic.Image(this.self().StarFull);
         starsLayout.add(star);
       }
+
+      const halfStar = Math.round((normScore%(1.0/maxStars))*maxStars);
       for (let i=0; i<halfStar; i++) {
         const star = new qx.ui.basic.Image(this.self().StarHalf);
         starsLayout.add(star);
       }
-      for (let i=0; i<emptyStars; i++) {
+
+      const emptyStars = maxStars - fullStars - halfStar;
+      if (this.getShowEmptyStars()) {
+        for (let i=0; i<emptyStars; i++) {
+          const star = new qx.ui.basic.Image(this.self().StarEmpty);
+          starsLayout.add(star);
+        }
+      } else if (emptyStars === maxStars) {
         const star = new qx.ui.basic.Image(this.self().StarEmpty);
         starsLayout.add(star);
       }
