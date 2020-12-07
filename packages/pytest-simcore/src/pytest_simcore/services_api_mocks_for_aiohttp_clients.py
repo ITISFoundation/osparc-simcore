@@ -1,5 +1,4 @@
 import re
-from unittest.mock import call
 
 import pytest
 from aioresponses import aioresponses
