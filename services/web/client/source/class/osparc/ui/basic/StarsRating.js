@@ -48,13 +48,25 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       init: 5,
       nullable: false,
       apply: "__applyNStars"
+    },
+
+    showScore: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      apply: "__render"
     }
   },
 
   statics: {
+    /*
     StarFull: "@FontAwesome5Solid/star/12",
     StarHalf: "@FontAwesome5Solid/star-half-alt/12",
     StarEmpty: "@FontAwesome5Regular/star/12"
+    */
+    StarFull: "@FontAwesome5Solid/globe/12",
+    StarHalf: "@FontAwesome5Solid/users/12",
+    StarEmpty: "@FontAwesome5Solid/user/12"
   },
 
   members: {
@@ -77,14 +89,14 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     __applyScore: function(value) {
       const maxScore = this.getMaxScore();
       if (value && value >= 0 && value <= maxScore) {
-        this.__renderStars();
+        this.__render();
       }
     },
 
     __applyMaxScore: function(value) {
       const score = this.getScore();
       if (value && score >= 0 && score <= value) {
-        this.__renderStars();
+        this.__render();
       }
     },
 
@@ -92,39 +104,46 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       const score = this.getScore();
       const maxScore = this.getMaxScore();
       if (score >= 0 && score <= maxScore) {
+        this.__render();
+      }
+    },
+
+    __render: function() {
+      const score = this.getScore();
+      const maxScore = this.getMaxScore();
+      if (score && maxScore && score >= 0 && score <= maxScore) {
         this.__renderStars();
+        this.__renderScore();
       }
     },
 
     __renderStars: function() {
       const score = this.getScore();
       const maxScore = this.getMaxScore();
-      if (score && maxScore && score >= 0 && score <= maxScore) {
-        const maxStars = this.getNStars();
-        const normScore = score/maxScore;
-        const fullStars = Math.floor(normScore/(1.0/maxStars));
-        const halfStar = Math.round((normScore%(1.0/maxStars))*maxStars);
-        const emptyStars = maxStars - fullStars - halfStar;
-        const starsLayout = this.getChildControl("stars-layout");
-        starsLayout.removeAll();
-        for (let i=0; i<fullStars; i++) {
-          const star = new qx.ui.basic.Image(this.self().StarFull);
-          starsLayout.add(star);
-        }
-        for (let i=0; i<halfStar; i++) {
-          const star = new qx.ui.basic.Image(this.self().StarHalf);
-          starsLayout.add(star);
-        }
-        for (let i=0; i<emptyStars; i++) {
-          const star = new qx.ui.basic.Image(this.self().StarEmpty);
-          starsLayout.add(star);
-        }
+      const maxStars = this.getNStars();
+      const normScore = score/maxScore;
+      const fullStars = Math.floor(normScore/(1.0/maxStars));
+      const halfStar = Math.round((normScore%(1.0/maxStars))*maxStars);
+      const emptyStars = maxStars - fullStars - halfStar;
+      const starsLayout = this.getChildControl("stars-layout");
+      starsLayout.removeAll();
+      for (let i=0; i<fullStars; i++) {
+        const star = new qx.ui.basic.Image(this.self().StarFull);
+        starsLayout.add(star);
+      }
+      for (let i=0; i<halfStar; i++) {
+        const star = new qx.ui.basic.Image(this.self().StarHalf);
+        starsLayout.add(star);
+      }
+      for (let i=0; i<emptyStars; i++) {
+        const star = new qx.ui.basic.Image(this.self().StarEmpty);
+        starsLayout.add(star);
       }
     },
 
-    showScore: function(show) {
+    __renderScore: function() {
       const scoreText = this.getChildControl("score-text");
-      if (show) {
+      if (this.getShowScore()) {
         const score = this.getScore();
         const maxScore = this.getMaxScore();
         scoreText.setValue(`${toString(score)}/${toString(maxScore)}`);
@@ -132,6 +151,6 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       } else {
         scoreText.exclude();
       }
-    }
+    },
   }
 });

@@ -207,8 +207,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         case "tsr-rating":
           control = new osparc.ui.basic.StarsRating();
           this._add(control, {
-            left: 2,
-            bottom: 2
+            left: 0,
+            bottom: 0
           });
           break;
       }
@@ -463,7 +463,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         tsrRating.set({
           score,
           maxScore: 40,
-          nStars: 4
+          nStars: 4,
+          showScore: true
         });
       }
     },
