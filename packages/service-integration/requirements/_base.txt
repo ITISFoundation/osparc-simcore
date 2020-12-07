@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
 attrs==20.3.0             # via jsonschema, pytest
-certifi==2020.11.8        # via requests
+certifi==2020.12.5        # via requests
 chardet==3.0.4            # via requests
 click==7.1.2              # via -r requirements/_base.in
 dataclasses==0.8          # via pydantic
