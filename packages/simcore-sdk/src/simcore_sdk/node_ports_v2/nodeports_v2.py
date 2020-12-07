@@ -59,6 +59,7 @@ class Nodeports(BaseModel):
     async def set(self, item_key: str, item_value):
         try:
             await (await self.inputs)[item_key].set(item_value)
+            return
         except UnboundPortError:
             # not available try outputs
             pass
@@ -83,6 +84,7 @@ class Nodeports(BaseModel):
         self.internal_inputs = updated_node_ports.internal_inputs
         self.internal_outputs = updated_node_ports.internal_outputs
         # let's pass ourselves down
+        # pylint: disable=protected-access
         for input_key in self.internal_inputs:
             self.internal_inputs[input_key]._node_ports = self
         for output_key in self.internal_outputs:

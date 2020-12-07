@@ -19,6 +19,7 @@ from simcore_sdk.node_ports import config
 from simcore_sdk.node_ports.exceptions import InvalidItemTypeError
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
+from utils_port_v2 import create_valid_port_config
 from yarl import URL
 
 
@@ -32,18 +33,6 @@ PortParams = namedtuple(
     "PortParams",
     "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value, new_value, exp_new_value, exp_new_get_value",
 )
-
-
-def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
-    valid_config = {
-        "key": f"some_{conf_type}",
-        "label": "some label",
-        "description": "some description",
-        "type": conf_type,
-        "displayOrder": 2.3,
-    }
-    valid_config.update(kwargs)
-    return valid_config
 
 
 def this_node_file_name() -> Path:
