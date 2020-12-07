@@ -52,9 +52,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   },
 
   statics: {
-    StarFull: "FontAwesome5Solid/star/12",
-    StarHalf: "FontAwesome5Solid/star-half-alt/12",
-    StarEmpty: "FontAwesome5Regular/star/12"
+    StarFull: "@FontAwesome5Solid/star/12",
+    StarHalf: "@FontAwesome5Solid/star-half-alt/12",
+    StarEmpty: "@FontAwesome5Regular/star/12"
   },
 
   members: {
@@ -106,6 +106,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
         const halfStar = Math.round((normScore%(1.0/maxStars))*maxStars);
         const emptyStars = maxStars - fullStars - halfStar;
         const starsLayout = this.getChildControl("stars-layout");
+        starsLayout.removeAll();
         for (let i=0; i<fullStars; i++) {
           const star = new qx.ui.basic.Image(this.self().StarFull);
           starsLayout.add(star);

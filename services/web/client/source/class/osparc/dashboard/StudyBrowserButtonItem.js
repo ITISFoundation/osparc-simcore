@@ -205,9 +205,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           break;
         }
         case "tsr-rating":
-          control = new qx.ui.basic.Label().set({
-            font: "text-16"
-          });
+          control = new osparc.ui.basic.StarsRating();
           this._add(control, {
             left: 2,
             bottom: 2
@@ -257,7 +255,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
           tsrMetadata = {
-            "tsr": Math.floor(Math.random()*(50))
+            "tsr": Math.floor(Math.random()*(40))
           };
           break;
       }
@@ -460,8 +458,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyTsrMetadata: function(tsrMetadata) {
       if (tsrMetadata && "tsr" in tsrMetadata) {
+        const score = tsrMetadata["tsr"];
         const tsrRating = this.getChildControl("tsr-rating");
-        tsrRating.setValue(tsrMetadata["tsr"]);
+        tsrRating.set({
+          score,
+          maxScore: 40,
+          nStars: 4
+        });
       }
     },
 
