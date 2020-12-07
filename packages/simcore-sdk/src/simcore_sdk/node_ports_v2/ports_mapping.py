@@ -23,6 +23,9 @@ class PortsMapping(BaseModel):
     def __iter__(self):
         return iter(self.__root__)
 
+    def keys(self):
+        return self.__root__.keys()
+
     def items(self):
         return self.__root__.items()
 
