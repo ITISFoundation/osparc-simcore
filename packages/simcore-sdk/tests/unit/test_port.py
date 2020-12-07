@@ -3,13 +3,13 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-member
 # pylint:disable=protected-access
+# pylint:disable=too-many-arguments
 import re
 import shutil
 import tempfile
 from asyncio import Future
 from collections import namedtuple
 from pathlib import Path
-from random import randint
 from typing import Any, Dict, Optional, Type, Union
 
 import pytest
@@ -22,107 +22,7 @@ from simcore_sdk.node_ports_v2.port import Port
 from yarl import URL
 
 
-@pytest.fixture(scope="module")
-def project_id() -> str:
-    return "cd0d8dbb-3263-44dc-921c-49c075ac0dd9"
-
-
-@pytest.fixture(scope="module")
-def node_uuid() -> str:
-    return "609b7af4-6861-4aa7-a16e-730ea8125190"
-
-
-@pytest.fixture(scope="module")
-def user_id() -> str:
-    return str(randint(1, 666))
-
-
-THIS_NODE_FILE_NAME: str = f"{tempfile.gettempdir()}/this_node_file.txt"
-DOWNLOAD_FILE_DIR: Path = Path(tempfile.gettempdir(), "simcorefiles")
-ANOTHER_NODE_FILE_NAME: Path = Path(tempfile.gettempdir(), "another_node_file.txt")
-
-
-@pytest.fixture
-def this_node_file() -> Path:
-    file_path = Path(THIS_NODE_FILE_NAME)
-    file_path.write_text("some dummy data")
-    assert file_path.exists()
-    yield file_path
-    if file_path.exists():
-        file_path.unlink()
-
-
-@pytest.fixture
-def another_node_file() -> Path:
-    file_path = Path(tempfile.gettempdir(), "another_node_file.txt")
-    file_path.write_text("some dummy data")
-    assert file_path.exists()
-    yield file_path
-    if file_path.exists():
-        file_path.unlink()
-
-
-@pytest.fixture
-def downloaded_file_folder() -> Path:
-    destination_path = DOWNLOAD_FILE_DIR
-    yield destination_path
-    if destination_path.exists():
-        shutil.rmtree(destination_path)
-
-
-@pytest.fixture
-async def mock_download_file(
-    monkeypatch,
-    this_node_file: Path,
-    project_id: str,
-    node_uuid: str,
-    downloaded_file_folder: Path,
-):
-    async def mock_download_file_from_link(
-        download_link: URL,
-        local_folder: Path,
-        session: Optional[ClientSession] = None,
-        file_name: Optional[str] = None,
-    ) -> Path:
-        assert str(local_folder).startswith(str(DOWNLOAD_FILE_DIR))
-        destination_path = local_folder / this_node_file.name
-        destination_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(this_node_file, destination_path)
-        return destination_path
-
-    from simcore_sdk.node_ports import filemanager
-
-    monkeypatch.setattr(
-        filemanager, "download_file_from_link", mock_download_file_from_link
-    )
-
-
-@pytest.fixture
-async def mock_upload_file(mocker):
-    mock = mocker.patch(
-        "simcore_sdk.node_ports.filemanager.upload_file",
-        return_value=Future(),
-    )
-    mock.return_value.set_result("0")
-    yield mock
-
-
-@pytest.fixture(autouse=True)
-def node_ports_config(
-    loop,
-    storage_v0_subsystem_mock,
-    mock_download_file,
-    mock_upload_file,
-    project_id: str,
-    user_id: str,
-    node_uuid: str,
-):
-    config.USER_ID = user_id
-    config.PROJECT_ID = project_id
-    config.NODE_UUID = node_uuid
-    config.STORAGE_ENDPOINT = "storage:8080"
-
-
+##################### HELPERS
 def camel_to_snake(name):
     name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
@@ -144,6 +44,149 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
     }
     valid_config.update(kwargs)
     return valid_config
+
+
+def this_node_file_name() -> Path:
+    return Path(tempfile.gettempdir(), "this_node_file.txt")
+
+
+def another_node_file_name() -> Path:
+    return Path(tempfile.gettempdir(), "another_node_file.txt")
+
+
+def download_file_folder_name() -> Path:
+    return Path(tempfile.gettempdir(), "simcorefiles")
+
+
+def project_id() -> str:
+    return "cd0d8dbb-3263-44dc-921c-49c075ac0dd9"
+
+
+def node_uuid() -> str:
+    return "609b7af4-6861-4aa7-a16e-730ea8125190"
+
+
+def user_id() -> str:
+    return "666"
+
+
+def simcore_store_id() -> str:
+    return "0"
+
+
+def datcore_store_id() -> str:
+    return "1"
+
+
+##################### FIXTURES
+
+
+@pytest.fixture
+async def mock_upload_file(mocker):
+    mock = mocker.patch(
+        "simcore_sdk.node_ports.filemanager.upload_file",
+        return_value=Future(),
+    )
+    mock.return_value.set_result(simcore_store_id())
+    yield mock
+
+
+@pytest.fixture
+def this_node_file(tmp_path: Path) -> Path:
+    file_path = this_node_file_name()
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+    yield file_path
+    if file_path.exists():
+        file_path.unlink()
+
+
+@pytest.fixture
+def another_node_file() -> Path:
+    file_path = another_node_file_name()
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+    yield file_path
+    if file_path.exists():
+        file_path.unlink()
+
+
+@pytest.fixture
+def download_file_folder() -> Path:
+    destination_path = download_file_folder_name()
+    destination_path.mkdir(parents=True, exist_ok=True)
+    yield destination_path
+    if destination_path.exists():
+        shutil.rmtree(destination_path)
+
+
+@pytest.fixture(scope="module", name="project_id")
+def project_id_fixture() -> str:
+    """NOTE: since pytest does not allow to use fixtures inside parametrizations,
+    this trick allows to re-use the same function in a fixture with a same "fixture" name"""
+    return project_id()
+
+
+@pytest.fixture(scope="module", name="node_uuid")
+def node_uuid_fixture() -> str:
+    """NOTE: since pytest does not allow to use fixtures inside parametrizations,
+    this trick allows to re-use the same function in a fixture with a same "fixture" name"""
+    return node_uuid()
+
+
+@pytest.fixture(scope="module", name="user_id")
+def user_id_fixture() -> str:
+    """NOTE: since pytest does not allow to use fixtures inside parametrizations,
+    this trick allows to re-use the same function in a fixture with a same "fixture" name"""
+    return user_id()
+
+
+@pytest.fixture
+async def mock_download_file(
+    monkeypatch,
+    this_node_file: Path,
+    project_id: str,
+    node_uuid: str,
+    download_file_folder: Path,
+):
+    async def mock_download_file_from_link(
+        download_link: URL,
+        local_folder: Path,
+        session: Optional[ClientSession] = None,
+        file_name: Optional[str] = None,
+    ) -> Path:
+        assert str(local_folder).startswith(str(download_file_folder))
+        destination_path = local_folder / this_node_file.name
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(this_node_file, destination_path)
+        return destination_path
+
+    from simcore_sdk.node_ports import filemanager
+
+    monkeypatch.setattr(
+        filemanager, "download_file_from_link", mock_download_file_from_link
+    )
+
+
+@pytest.fixture(autouse=True)
+def node_ports_config(
+    loop,
+    storage_v0_subsystem_mock,
+    mock_download_file,
+    mock_upload_file,
+    project_id: str,
+    user_id: str,
+    node_uuid: str,
+    this_node_file: Path,
+    another_node_file: Path,
+    download_file_folder: Path,
+):
+    """this module main fixture"""
+
+    config.USER_ID = user_id
+    config.PROJECT_ID = project_id
+    config.NODE_UUID = node_uuid
+    config.STORAGE_ENDPOINT = "storage:8080"
 
 
 @pytest.mark.parametrize(
@@ -210,14 +253,14 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 exp_value_converter=Path,
                 exp_value=None,
                 exp_get_value=None,
-                new_value=THIS_NODE_FILE_NAME,
+                new_value=str(this_node_file_name()),
                 exp_new_value=FileLink(
-                    store="0",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_new_get_value=DOWNLOAD_FILE_DIR
+                exp_new_get_value=download_file_folder_name()
                 / "no_file"
-                / Path(THIS_NODE_FILE_NAME).name,
+                / this_node_file_name().name,
             ),
             id="file type with no payload",
         ),
@@ -226,20 +269,20 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 port_cfg=create_valid_port_config(
                     "data:*/*",
                     key="no_file_with_default",
-                    defaultValue=THIS_NODE_FILE_NAME,
+                    defaultValue=str(this_node_file_name()),
                 ),
                 exp_value_type=(Path, str),
                 exp_value_converter=Path,
                 exp_value=None,
                 exp_get_value=None,
-                new_value=THIS_NODE_FILE_NAME,
+                new_value=this_node_file_name(),
                 exp_new_value=FileLink(
-                    store="0",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_new_get_value=DOWNLOAD_FILE_DIR
+                exp_new_get_value=download_file_folder_name()
                 / "no_file_with_default"
-                / Path(THIS_NODE_FILE_NAME).name,
+                / this_node_file_name().name,
             ),
             id="file link with no payload and default value",
         ),
@@ -248,14 +291,20 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 port_cfg=create_valid_port_config(
                     "data:*/*",
                     key="some_file",
-                    value={"store": "0", "path": THIS_NODE_FILE_NAME},
+                    value={
+                        "store": simcore_store_id(),
+                        "path": f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    },
                 ),
                 exp_value_type=(Path, str),
                 exp_value_converter=Path,
-                exp_value=FileLink(store="0", path=THIS_NODE_FILE_NAME),
-                exp_get_value=DOWNLOAD_FILE_DIR
+                exp_value=FileLink(
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                ),
+                exp_get_value=download_file_folder_name()
                 / "some_file"
-                / Path(THIS_NODE_FILE_NAME).name,
+                / this_node_file_name().name,
                 new_value=None,
                 exp_new_value=None,
                 exp_new_get_value=None,
@@ -270,12 +319,18 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                     fileToKeyMap={
                         "a_new_fancy_name.csv": "some_file_with_file_to_key_map"
                     },
-                    value={"store": "0", "path": THIS_NODE_FILE_NAME},
+                    value={
+                        "store": simcore_store_id(),
+                        "path": f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    },
                 ),
                 exp_value_type=(Path, str),
                 exp_value_converter=Path,
-                exp_value=FileLink(store="0", path=THIS_NODE_FILE_NAME),
-                exp_get_value=DOWNLOAD_FILE_DIR
+                exp_value=FileLink(
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                ),
+                exp_get_value=download_file_folder_name()
                 / "some_file_with_file_to_key_map"
                 / "a_new_fancy_name.csv",
                 new_value=None,
@@ -290,8 +345,8 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                     "data:*/*",
                     key="some_file_on_datcore",
                     value={
-                        "store": "1",
-                        "path": f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                        "store": datcore_store_id(),
+                        "path": f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                         "dataset": "some blahblah",
                         "label": "some blahblah",
                     },
@@ -299,22 +354,22 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 exp_value_type=(Path, str),
                 exp_value_converter=Path,
                 exp_value=FileLink(
-                    store="1",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=datcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                     dataset="some blahblah",
                     label="some blahblah",
                 ),
-                exp_get_value=DOWNLOAD_FILE_DIR
+                exp_get_value=download_file_folder_name()
                 / "some_file_on_datcore"
-                / Path(THIS_NODE_FILE_NAME).name,
-                new_value=THIS_NODE_FILE_NAME,
+                / this_node_file_name().name,
+                new_value=this_node_file_name(),
                 exp_new_value=FileLink(
-                    store="0",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_new_get_value=DOWNLOAD_FILE_DIR
+                exp_new_get_value=download_file_folder_name()
                 / "some_file_on_datcore"
-                / Path(THIS_NODE_FILE_NAME).name,
+                / this_node_file_name().name,
             ),
             id="file link with payload on store 1",
         ),
@@ -332,17 +387,17 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 exp_value=DownloadLink(
                     downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
                 ),
-                exp_get_value=DOWNLOAD_FILE_DIR
+                exp_get_value=download_file_folder_name()
                 / "download_link"
-                / Path(THIS_NODE_FILE_NAME).name,
-                new_value=THIS_NODE_FILE_NAME,
+                / this_node_file_name().name,
+                new_value=this_node_file_name(),
                 exp_new_value=FileLink(
-                    store="0",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_new_get_value=DOWNLOAD_FILE_DIR
+                exp_new_get_value=download_file_folder_name()
                 / "download_link"
-                / Path(THIS_NODE_FILE_NAME).name,
+                / this_node_file_name().name,
             ),
             id="download link file type gets set back on store",
         ),
@@ -363,15 +418,15 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                 exp_value=DownloadLink(
                     downloadLink="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/master/README.md"
                 ),
-                exp_get_value=DOWNLOAD_FILE_DIR
+                exp_get_value=download_file_folder_name()
                 / "download_link_with_file_to_key"
                 / "a_cool_file_type.zip",
-                new_value=THIS_NODE_FILE_NAME,
+                new_value=this_node_file_name(),
                 exp_new_value=FileLink(
-                    store="0",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_new_get_value=DOWNLOAD_FILE_DIR
+                exp_new_get_value=download_file_folder_name()
                 / "download_link_with_file_to_key"
                 / "a_cool_file_type.zip",
             ),
@@ -393,17 +448,17 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                     nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
                     output="the_output_of_that_node",
                 ),
-                exp_get_value=DOWNLOAD_FILE_DIR
+                exp_get_value=download_file_folder_name()
                 / "file_port_link"
-                / Path(ANOTHER_NODE_FILE_NAME).name,
-                new_value=THIS_NODE_FILE_NAME,
+                / another_node_file_name().name,
+                new_value=this_node_file_name(),
                 exp_new_value=FileLink(
-                    store="0",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_new_get_value=DOWNLOAD_FILE_DIR
+                exp_new_get_value=download_file_folder_name()
                 / "file_port_link"
-                / Path(THIS_NODE_FILE_NAME).name,
+                / this_node_file_name().name,
             ),
             id="file node link type gets set back on store",
         ),
@@ -426,15 +481,15 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
                     nodeUuid="238e5b86-ed65-44b0-9aa4-f0e23ca8a083",
                     output="the_output_of_that_node",
                 ),
-                exp_get_value=DOWNLOAD_FILE_DIR
+                exp_get_value=download_file_folder_name()
                 / "file_port_link_with_file_to_key_map"
                 / "a_cool_file_type.zip",
-                new_value=THIS_NODE_FILE_NAME,
+                new_value=this_node_file_name(),
                 exp_new_value=FileLink(
-                    store="0",
-                    path=f"cd0d8dbb-3263-44dc-921c-49c075ac0dd9/609b7af4-6861-4aa7-a16e-730ea8125190/{Path(THIS_NODE_FILE_NAME).name}",
+                    store=simcore_store_id(),
+                    path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
                 ),
-                exp_new_get_value=DOWNLOAD_FILE_DIR
+                exp_new_get_value=download_file_folder_name()
                 / "file_port_link_with_file_to_key_map"
                 / "a_cool_file_type.zip",
             ),
@@ -474,7 +529,6 @@ async def test_valid_port(
     new_value: Union[int, float, bool, str, Path],
     exp_new_value: Union[int, float, bool, str, Path, FileLink],
     exp_new_get_value: Union[int, float, bool, str, Path],
-    this_node_file: Path,
     another_node_file: Path,
 ):
     class FakeNodePorts:
