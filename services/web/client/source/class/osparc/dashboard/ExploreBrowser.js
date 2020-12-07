@@ -425,7 +425,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return item;
     },
 
-    __getStudyItemMenu: function(item, studyData) {
+    __getStudyItemMenu: function(studyData) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
