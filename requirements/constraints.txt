@@ -15,6 +15,6 @@ urllib3>=1.25.8                               # Vulnerability
 
 
 # httpx [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
-httpx<0.15.0
+httpx<0.17.0
 # [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
 respx<0.13.0
