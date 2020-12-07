@@ -10,7 +10,7 @@ async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp
 attrs==20.3.0             # via -c requirements/_base.txt, aiohttp, jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
-certifi==2020.11.8        # via requests
+certifi==2020.12.5        # via requests
 cffi==1.14.4              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -c requirements/_base.txt, aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
@@ -59,7 +59,7 @@ typing-extensions==3.7.4.3  # via -c requirements/_base.txt, aiohttp, yarl
 urllib3==1.26.2           # via -c requirements/../../../requirements/constraints.txt, requests
 websocket-client==0.57.0  # via docker, docker-compose
 wrapt==1.12.1             # via astroid
-yarl==1.5.1               # via -c requirements/_base.txt, aiohttp
+yarl==1.6.3               # via -c requirements/_base.txt, aiohttp
 zipp==3.4.0               # via -c requirements/_base.txt, importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
