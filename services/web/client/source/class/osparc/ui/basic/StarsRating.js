@@ -35,21 +35,21 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       check: "Number",
       init: 1,
       nullable: false,
-      apply: "__applyScore"
+      apply: "__render"
     },
 
     maxScore: {
       check: "Number",
       init: 5,
       nullable: false,
-      apply: "__applyMaxScore"
+      apply: "__render"
     },
 
     nStars: {
       check: "Number",
       init: 5,
       nullable: false,
-      apply: "__applyNStars"
+      apply: "__render"
     },
 
     showEmptyStars: {
@@ -94,32 +94,17 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       return control || this.base(arguments, id);
     },
 
-    __applyScore: function(value) {
-      const maxScore = this.getMaxScore();
-      if (value && value >= 0 && value <= maxScore) {
-        this.__render();
-      }
-    },
-
-    __applyMaxScore: function(value) {
-      const score = this.getScore();
-      if (value && score >= 0 && score <= value) {
-        this.__render();
-      }
-    },
-
-    __applyNStars: function(value) {
-      const score = this.getScore();
-      const maxScore = this.getMaxScore();
-      if (score >= 0 && score <= maxScore) {
-        this.__render();
-      }
-    },
-
-    __render: function() {
+    __checkValues: function() {
       const score = this.getScore();
       const maxScore = this.getMaxScore();
       if (score && maxScore && score >= 0 && score <= maxScore) {
+        return true;
+      }
+      return false;
+    },
+
+    __render: function() {
+      if (this.__checkValues()) {
         this.__renderStars();
         this.__renderScore();
       }
