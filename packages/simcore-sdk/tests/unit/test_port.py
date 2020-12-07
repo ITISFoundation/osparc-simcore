@@ -71,16 +71,6 @@ def datcore_store_id() -> str:
 
 
 @pytest.fixture
-async def mock_upload_file(mocker):
-    mock = mocker.patch(
-        "simcore_sdk.node_ports.filemanager.upload_file",
-        return_value=Future(),
-    )
-    mock.return_value.set_result(simcore_store_id())
-    yield mock
-
-
-@pytest.fixture
 def this_node_file(tmp_path: Path) -> Path:
     file_path = this_node_file_name()
     file_path.write_text("some dummy data")
@@ -155,6 +145,16 @@ async def mock_download_file(
     monkeypatch.setattr(
         filemanager, "download_file_from_link", mock_download_file_from_link
     )
+
+
+@pytest.fixture
+async def mock_upload_file(mocker):
+    mock = mocker.patch(
+        "simcore_sdk.node_ports.filemanager.upload_file",
+        return_value=Future(),
+    )
+    mock.return_value.set_result(simcore_store_id())
+    yield mock
 
 
 @pytest.fixture(autouse=True)
@@ -563,6 +563,11 @@ async def test_valid_port(
         assert await port.get() == None
     else:
         assert await port.get() == exp_get_value
+        if isinstance(exp_value, PortLink) and isinstance(exp_get_value, Path):
+            # as the file is moved internally we need to re-create it or it fails
+            another_node_file_name().touch(exist_ok=True)
+        # it should work several times
+        assert await port.get() == exp_get_value
 
     # set a new value
     await port.set(new_value)
@@ -575,6 +580,7 @@ async def test_valid_port(
     if exp_new_get_value is None:
         assert await port.get() == None
     else:
+        assert await port.get() == exp_new_get_value
         assert await port.get() == exp_new_get_value
 
 
