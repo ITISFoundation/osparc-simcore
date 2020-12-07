@@ -8,7 +8,7 @@ aiohttp==3.7.3            # via pytest-aiohttp
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via aiohttp
 attrs==20.3.0             # via aiohttp, pytest
-certifi==2020.11.8        # via requests
+certifi==2020.12.5        # via requests
 chardet==3.0.4            # via aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.2.0          # via -r requirements/_test.in
