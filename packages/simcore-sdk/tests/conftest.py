@@ -6,6 +6,7 @@ from typing import Dict
 
 import pytest
 import sqlalchemy as sa
+from simcore_sdk.node_ports import config as node_config
 
 ## HELPERS
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -56,6 +57,17 @@ def default_configuration_file() -> Path:
 
 @pytest.fixture(scope="session")
 def empty_configuration_file() -> Path:
-    return current_dir / "mock" / "empty_config.json"
+    path = current_dir / "mock" / "empty_config.json"
     assert path.exists()
     return path
+
+
+@pytest.fixture(scope="module")
+def node_ports_config(
+    postgres_dsn: Dict[str, str], minio_config: Dict[str, str]
+) -> None:
+    node_config.POSTGRES_DB = postgres_dsn["database"]
+    node_config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
+    node_config.POSTGRES_USER = postgres_dsn["user"]
+    node_config.POSTGRES_PW = postgres_dsn["password"]
+    node_config.BUCKET = minio_config["bucket_name"]

@@ -21,20 +21,19 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture
-def nodeports_config(
-    postgres_dsn: Dict[str, str], minio_config: Dict[str, str]
-) -> None:
-    node_config.POSTGRES_DB = postgres_dsn["database"]
-    node_config.POSTGRES_ENDPOINT = f"{postgres_dsn['host']}:{postgres_dsn['port']}"
-    node_config.POSTGRES_USER = postgres_dsn["user"]
-    node_config.POSTGRES_PW = postgres_dsn["password"]
-    node_config.BUCKET = minio_config["bucket_name"]
-
-
-@pytest.fixture
 def user_id() -> int:
     # see fixtures/postgres.py
     yield 1258
+
+
+@pytest.fixture
+def project_id() -> str:
+    return str(uuid.uuid4())
+
+
+@pytest.fixture
+def node_uuid() -> str:
+    return str(uuid.uuid4())
 
 
 @pytest.fixture
@@ -58,16 +57,6 @@ async def filemanager_cfg(
 
 
 @pytest.fixture
-def project_id() -> str:
-    return str(uuid.uuid4())
-
-
-@pytest.fixture
-def node_uuid() -> str:
-    return str(uuid.uuid4())
-
-
-@pytest.fixture
 def file_uuid(project_id: str, node_uuid: str) -> Callable:
     def create(file_path: Path, project: str = None, node: str = None):
         if project is None:
@@ -81,7 +70,7 @@ def file_uuid(project_id: str, node_uuid: str) -> Callable:
 
 @pytest.fixture()
 def default_configuration(
-    nodeports_config,
+    node_ports_config,
     bucket,
     postgres_session: sa.orm.session.Session,
     default_configuration_file: Path,
@@ -130,7 +119,7 @@ def store_link(minio_service, bucket, file_uuid, s3_simcore_location) -> Callabl
 
 @pytest.fixture(scope="function")
 def special_configuration(
-    nodeports_config: None,
+    node_ports_config: None,
     bucket: str,
     postgres_session: sa.orm.session.Session,
     empty_configuration_file: Path,
@@ -163,7 +152,7 @@ def special_configuration(
 
 @pytest.fixture(scope="function")
 def special_2nodes_configuration(
-    nodeports_config: None,
+    node_ports_config: None,
     bucket: str,
     postgres_session: sa.orm.session.Session,
     empty_configuration_file: Path,

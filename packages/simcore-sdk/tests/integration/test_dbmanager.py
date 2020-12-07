@@ -19,7 +19,7 @@ ops_services = ["minio"]
 
 async def test_db_manager_read_config(
     loop: asyncio.events.AbstractEventLoop,
-    nodeports_config: None,
+    node_ports_config: None,
     default_configuration: Dict,
 ):
     db_manager = DBManager()
@@ -33,7 +33,7 @@ async def test_db_manager_read_config(
 
 async def test_db_manager_write_config(
     loop: asyncio.events.AbstractEventLoop,
-    nodeports_config: None,
+    node_ports_config: None,
     special_configuration: Callable,
     default_configuration_file: Path,
 ):

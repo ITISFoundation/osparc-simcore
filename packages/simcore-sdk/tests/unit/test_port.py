@@ -169,7 +169,7 @@ async def mock_download_file(
 
 
 @pytest.fixture(autouse=True)
-def node_ports_config(
+def common_fixtures(
     loop,
     storage_v0_subsystem_mock,
     mock_download_file,
