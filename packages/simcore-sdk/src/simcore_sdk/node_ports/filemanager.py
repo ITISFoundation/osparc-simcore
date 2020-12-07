@@ -142,14 +142,6 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         return await response.release()
 
 
-async def _file_sender(file_path: Path):
-    async with aiofiles.open(file_path, "rb") as file_pointer:
-        chunk = await file_pointer.read(CHUNK_SIZE)
-        while chunk:
-            yield chunk
-            chunk = await file_pointer.read(CHUNK_SIZE)
-
-
 async def _upload_file_to_link(session: ClientSession, url: URL, file_path: Path):
     log.debug("Uploading from %s to %s", file_path, url)
     async with session.put(url, data=file_path.open("rb")) as resp:
