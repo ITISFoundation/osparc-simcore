@@ -7,7 +7,7 @@ from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import InvalidProtocolError
 from .nodeports_v2 import Nodeports
 
-NODE_REQUIORED_KEYS: List[str] = {
+NODE_REQUIRED_KEYS: List[str] = {
     "schema",
     "inputs",
     "outputs",
@@ -20,7 +20,7 @@ async def create_nodeports_from_db(
     """creates a nodeport object from a row from comp_tasks"""
     row: RowProxy = await db_manager.get_ports_configuration_from_node_uuid(node_uuid)
     port_cfg = json.loads(row)
-    if any(k not in port_cfg for k in NODE_REQUIORED_KEYS):
+    if any(k not in port_cfg for k in NODE_REQUIRED_KEYS):
         raise InvalidProtocolError(
             port_cfg, "nodeport in comp_task does not follow protocol"
         )
@@ -45,12 +45,12 @@ async def create_nodeports_from_db(
         node_uuid=node_uuid,
         save_to_db_cb=save_nodeports_to_db,
         node_port_creator_cb=create_nodeports_from_db,
-        auto_update=auto_update
+        auto_update=auto_update,
     )
     return ports
 
 
-async def save_nodeports_to_db(nodeports: Nodeports):
+async def save_nodeports_to_db(nodeports: Nodeports) -> None:
     _nodeports_cfg = nodeports.dict(
         include={"internal_inputs", "internal_outputs"},
         by_alias=True,
@@ -68,8 +68,12 @@ async def save_nodeports_to_db(nodeports: Nodeports):
                 if k not in ["key", "value"]
             }
             port_cfg["schema"][port_type][port_key] = key_schema
-            # payload
-            port_cfg[port_type][port_key] = port_values["value"]
+            # payload (only if default value was not used)
+            # pylint: disable=protected-access
+            if not getattr(nodeports, f"internal_{port_type}")[
+                port_key
+            ]._used_default_value:
+                port_cfg[port_type][port_key] = port_values["value"]
 
     await nodeports.db_manager.write_ports_configuration(
         json.dumps(port_cfg), nodeports.node_uuid

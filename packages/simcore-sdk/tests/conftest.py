@@ -1,11 +1,12 @@
+import json
+
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import pytest
-import sqlalchemy as sa
 from simcore_sdk.node_ports import config as node_config
 
 ## HELPERS
@@ -53,6 +54,12 @@ def default_configuration_file() -> Path:
     path = current_dir / "mock" / "default_config.json"
     assert path.exists()
     return path
+
+
+@pytest.fixture(scope="session")
+def default_configuration(default_configuration_file: Path) -> Dict[str, Any]:
+    config = json.loads(default_configuration_file.read_text())
+    return config
 
 
 @pytest.fixture(scope="session")

@@ -124,7 +124,6 @@ class DBManager:
                 node = await _get_node_from_db(node_uuid, connection)
                 node_json_config = json.dumps(
                     {
-                        "version": "0.1",
                         "schema": node.schema,
                         "inputs": node.inputs,
                         "outputs": node.outputs,

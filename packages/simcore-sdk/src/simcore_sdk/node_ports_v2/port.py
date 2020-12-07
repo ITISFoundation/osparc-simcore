@@ -30,6 +30,7 @@ class Port(ServiceProperty):
     _py_value_type: Tuple[Type[ItemConcreteValue]] = PrivateAttr()
     _py_value_converter: Type[ItemConcreteValue] = PrivateAttr()
     _node_ports = PrivateAttr()
+    _used_default_value: bool = PrivateAttr(False)
 
     @validator("value", always=True)
     @classmethod
@@ -41,13 +42,11 @@ class Port(ServiceProperty):
                 raise ValueError(
                     f"[{values['property_type']}] must follow {FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
                 )
-        elif v is None and values.get("default_value"):
-            return values["default_value"]
         return v
 
     def __init__(self, **data):
         super().__init__(**data)
-        # let's define the converter
+
         self._py_value_type = (
             (Path, str)
             if port_utils.is_file_type(self.property_type)
@@ -58,6 +57,13 @@ class Port(ServiceProperty):
             if port_utils.is_file_type(self.property_type)
             else TYPE_TO_PYTYPE[self.property_type]
         )
+        if (
+            self.value is None
+            and self.default_value is not None
+            and not port_utils.is_file_type(self.property_type)
+        ):
+            self.value = self.default_value
+            self._used_default_value = True
 
     async def get(self) -> ItemConcreteValue:
         log.debug(
@@ -113,4 +119,5 @@ class Port(ServiceProperty):
                 )
 
         self.value = converted_value
+        self._used_default_value = False
         await self._node_ports.save_to_db_cb(self._node_ports)
