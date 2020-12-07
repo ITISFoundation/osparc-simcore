@@ -18,17 +18,6 @@ class ReadOnlyError(NodeportsException):
         self.obj = obj
 
 
-class WrongProtocolVersionError(NodeportsException):
-    """Using wrong protocol version"""
-
-    def __init__(self, expected_version, found_version):
-        super().__init__(
-            f"Expecting version {expected_version}, found version {found_version}"
-        )
-        self.expected_version = expected_version
-        self.found_version = found_version
-
-
 class UnboundPortError(NodeportsException, IndexError):
     """Accessed port is not configured"""
 

@@ -93,7 +93,6 @@ class _NodeportsEncoder(json.JSONEncoder):
             log.debug("Encoding Nodeports object")
             return {
                 # pylint: disable=W0212
-                "version": o._version,
                 "schema": {
                     "inputs": o._input_schemas,
                     "outputs": o._output_schemas,
@@ -142,7 +141,6 @@ def __decodeNodePorts(dct: Dict):
     )
 
     return nodeports.Nodeports(
-        dct["version"],
         SchemaItemsList(decoded_input_schema),
         SchemaItemsList(decoded_output_schema),
         DataItemsList(decoded_input_payload),

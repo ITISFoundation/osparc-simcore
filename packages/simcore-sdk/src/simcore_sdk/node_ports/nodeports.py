@@ -21,11 +21,8 @@ log = logging.getLogger(__name__)
 class Nodeports:
     """Allows the client to access the inputs and outputs assigned to the node"""
 
-    _version = "0.1"
-
     def __init__(
         self,
-        version: str,
         input_schemas: SchemaItemsList = None,
         output_schemas: SchemaItemsList = None,
         input_payloads: DataItemsList = None,
@@ -33,14 +30,10 @@ class Nodeports:
     ):
 
         log.debug(
-            "Initialising Nodeports object with version %s, inputs %s and outputs %s",
-            version,
+            "Initialising Nodeports object with inputs %s and outputs %s",
             input_payloads,
             outputs_payloads,
         )
-        if self._version != version:
-            raise exceptions.WrongProtocolVersionError(self._version, version)
-
         if not input_schemas:
             input_schemas = SchemaItemsList()
         if not output_schemas:
@@ -59,8 +52,7 @@ class Nodeports:
         self.autowrite = False
 
         log.debug(
-            "Initialised Nodeports object with version %s, inputs %s and outputs %s",
-            version,
+            "Initialised Nodeports object with inputs %s and outputs %s",
             input_payloads,
             outputs_payloads,
         )
