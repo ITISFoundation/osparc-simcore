@@ -415,7 +415,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         tags
       });
 
-      const menu = this.__getStudyItemMenu(item, studyData);
+      const menu = this.__getStudyItemMenu(studyData);
       item.setMenu(menu);
       item.subscribeToFilterGroup("sideSearchFilter");
       item.addListener("execute", () => {
