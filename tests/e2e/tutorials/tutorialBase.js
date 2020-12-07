@@ -302,7 +302,17 @@ class TutorialBase {
   }
 
   async toDashboard() {
-    await auto.toDashboard(this.__page);
+    await this.takeScreenshot("toDashboard_before");
+    this.__responsesQueue.addResponseListener("projects");
+    try {
+      await auto.toDashboard(this.__page);
+      await this.__responsesQueue.waitUntilResponse("projects");
+    }
+    catch (err) {
+      console.error("Failed going to dashboard study", err);
+      throw (err);
+    }
+    await this.takeScreenshot("toDashboard_after");
   }
 
   async closeStudy() {
