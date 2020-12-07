@@ -8,7 +8,7 @@
 <!-- NOTE: when branched replace `master` in urls -->
 [![Code style: black]](https://github.com/psf/black)
 [![Requires.io]](https://requires.io/github/ITISFoundation/osparc-simcore/requirements/?branch=master "State of third party python dependencies")
-[![travis-ci]](https://travis-ci.org/ITISFoundation/osparc-simcore "State of CI: build, test and pushing images")
+<!-- [![travis-ci]](https://travis-ci.org/ITISFoundation/osparc-simcore "State of CI: build, test and pushing images")  Commented until #2029 is resolved-->
 [![Github-CI Push/PR]](https://github.com/ITISFoundation/osparc-simcore/actions?query=workflow%3A%22Github-CI+Push%2FPR%22+branch%3Amaster)
 [![coveralls.io]](https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master)
 [![codecov.io]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
