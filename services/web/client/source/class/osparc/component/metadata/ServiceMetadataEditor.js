@@ -43,6 +43,15 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     }
   },
 
+  statics: {
+    getDummyMetadataTSR: function() {
+      const dummyMetadataTSR = {
+        "tsrScore": Math.floor(Math.random()*(40))
+      };
+      return dummyMetadataTSR;
+    }
+  },
+
   members: {
     __serviceData: null,
     __stack: null,
