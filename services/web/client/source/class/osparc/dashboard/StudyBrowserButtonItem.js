@@ -455,8 +455,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyMetadataTSR: function(metadataTSR) {
-      if (metadataTSR && "tsr" in metadataTSR) {
-        const score = metadataTSR["tsr"];
+      if (metadataTSR && "tsrScore" in metadataTSR) {
+        const score = metadataTSR["tsrScore"];
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
           score,
