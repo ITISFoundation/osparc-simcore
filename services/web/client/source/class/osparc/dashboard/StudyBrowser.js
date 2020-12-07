@@ -105,17 +105,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        osparc.data.Resources.get("studies", null, false)
-          .then(studies => {
-            this.__resetStudyList(studies);
-            this.resetSelection();
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      } else {
-        this.__resetStudyList([]);
+        return new Promise((resolve, reject) => {
+          osparc.data.Resources.get("studies", null, false)
+            .then(studies => {
+              this.__resetStudyList(studies);
+              this.resetSelection();
+              resolve(studies);
+            })
+            .catch(err => {
+              console.error(err);
+              reject(err);
+            });
+        });
       }
+      this.__resetStudyList([]);
+      return null;
     },
 
     __initResources: function() {
