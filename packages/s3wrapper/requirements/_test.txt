@@ -8,7 +8,7 @@ astroid==2.4.2            # via pylint
 attrs==20.3.0             # via jsonschema, pytest, pytest-docker
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
-certifi==2020.11.8        # via -c requirements/_base.txt, requests
+certifi==2020.12.5        # via -c requirements/_base.txt, requests
 cffi==1.14.4              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov

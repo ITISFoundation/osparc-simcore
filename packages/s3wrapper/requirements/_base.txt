@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
-certifi==2020.11.8        # via minio
+certifi==2020.12.5        # via minio
 configparser==5.0.1       # via minio
-minio==6.0.0              # via -r requirements/_base.in
+minio==6.0.2              # via -r requirements/_base.in
 python-dateutil==2.8.1    # via minio
 pytz==2020.4              # via minio
 six==1.15.0               # via python-dateutil
