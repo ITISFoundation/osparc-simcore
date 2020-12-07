@@ -25,7 +25,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox());
+    this._setLayout(new qx.ui.layout.HBox(5).set({
+      alignY: "middle"
+    }));
   },
 
   properties: {
@@ -59,14 +61,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   },
 
   statics: {
-    /*
     StarFull: "@FontAwesome5Solid/star/12",
     StarHalf: "@FontAwesome5Solid/star-half-alt/12",
     StarEmpty: "@FontAwesome5Regular/star/12"
-    */
-    StarFull: "@FontAwesome5Solid/globe/12",
-    StarHalf: "@FontAwesome5Solid/users/12",
-    StarEmpty: "@FontAwesome5Solid/user/12"
   },
 
   members: {
@@ -75,10 +72,14 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       let control;
       switch (id) {
         case "stars-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
+          this._add(control);
           break;
         case "score-text": {
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            font: "text-12"
+          });
+          this._add(control);
           break;
         }
       }
@@ -144,13 +145,13 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     __renderScore: function() {
       const scoreText = this.getChildControl("score-text");
       if (this.getShowScore()) {
-        const score = this.getScore();
-        const maxScore = this.getMaxScore();
-        scoreText.setValue(`${toString(score)}/${toString(maxScore)}`);
+        const score = this.getScore().toString();
+        const maxScore = this.getMaxScore().toString();
+        scoreText.setValue(`${score}/${maxScore}`);
         scoreText.show();
       } else {
         scoreText.exclude();
       }
-    },
+    }
   }
 });
