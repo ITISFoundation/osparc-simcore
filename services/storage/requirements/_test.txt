@@ -33,7 +33,7 @@ mccabe==0.6.1             # via pylint
 multidict==5.0.0          # via -c requirements/_base.txt, aiohttp, yarl
 numpy==1.19.4             # via pandas
 packaging==20.7           # via pytest, pytest-sugar
-pandas==1.1.4             # via -r requirements/_test.in
+pandas==1.1.5             # via -r requirements/_test.in
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
 ptvsd==4.3.2              # via -r requirements/_test.in
