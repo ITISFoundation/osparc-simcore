@@ -53,5 +53,5 @@ typing-extensions==3.7.4.3  # via -c requirements/_base.txt, aiohttp, yarl
 urllib3==1.26.2           # via -c requirements/_base.txt, requests
 websocket-client==0.57.0  # via docker
 wrapt==1.12.1             # via astroid
-yarl==1.5.1               # via -c requirements/_base.txt, aiohttp
+yarl==1.6.3               # via -c requirements/_base.txt, aiohttp
 zipp==3.4.0               # via importlib-metadata
