@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
 
     __createDisplayView: function(serviceData) {
       const displayView = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      console.log(serviceData);
+      displayView.add(new osparc.component.metadata.ServiceMetadataView(serviceData));
       return displayView;
     },
 
