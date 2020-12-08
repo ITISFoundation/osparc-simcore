@@ -67,6 +67,10 @@ def datcore_store_id() -> str:
     return "1"
 
 
+def e_tag() -> str:
+    return "1212132546546321-1"
+
+
 ##################### FIXTURES
 
 
@@ -147,13 +151,18 @@ async def mock_download_file(
     )
 
 
+@pytest.fixture(scope="session", name="e_tag")
+def e_tag_fixture() -> str:
+    return "1212132546546321-1"
+
+
 @pytest.fixture
-async def mock_upload_file(mocker):
+async def mock_upload_file(mocker, e_tag):
     mock = mocker.patch(
         "simcore_sdk.node_ports.filemanager.upload_file",
         return_value=Future(),
     )
-    mock.return_value.set_result(simcore_store_id())
+    mock.return_value.set_result((simcore_store_id(), e_tag))
     yield mock
 
 
@@ -247,6 +256,7 @@ def common_fixtures(
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "no_file"
@@ -269,6 +279,7 @@ def common_fixtures(
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "no_file_with_default"
@@ -356,6 +367,7 @@ def common_fixtures(
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "some_file_on_datcore"
@@ -384,6 +396,7 @@ def common_fixtures(
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "download_link"
@@ -415,6 +428,7 @@ def common_fixtures(
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "download_link_with_file_to_key"
@@ -445,6 +459,7 @@ def common_fixtures(
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "file_port_link"
@@ -478,6 +493,7 @@ def common_fixtures(
                 exp_new_value=FileLink(
                     store=simcore_store_id(),
                     path=f"{project_id()}/{node_uuid()}/{this_node_file_name().name}",
+                    e_tag=e_tag(),
                 ),
                 exp_new_get_value=download_file_folder_name()
                 / "file_port_link_with_file_to_key_map"

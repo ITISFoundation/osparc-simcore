@@ -161,7 +161,7 @@ class Item:
             s3_object = data_items_utils.encode_file_id(
                 file_path, project_id=config.PROJECT_ID, node_id=config.NODE_UUID
             )
-            store_id = await filemanager.upload_file(
+            store_id, _ = await filemanager.upload_file(
                 store_name=config.STORE, s3_object=s3_object, local_file_path=file_path
             )
             log.debug("file path %s uploaded", value)

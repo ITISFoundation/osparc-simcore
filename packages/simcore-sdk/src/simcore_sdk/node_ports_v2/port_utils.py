@@ -68,11 +68,11 @@ async def push_file_to_store(file: Path) -> FileLink:
     s3_object = data_items_utils.encode_file_id(
         file, project_id=config.PROJECT_ID, node_id=config.NODE_UUID
     )
-    store_id = await filemanager.upload_file(
+    store_id, e_tag = await filemanager.upload_file(
         store_name=config.STORE, s3_object=s3_object, local_file_path=file
     )
-    log.debug("file path %s uploaded", file)
-    return FileLink(store=store_id, path=s3_object)
+    log.debug("file path %s uploaded, received ETag %s", file, e_tag)
+    return FileLink(store=store_id, path=s3_object, e_tag=e_tag)
 
 
 async def pull_file_from_download_link(

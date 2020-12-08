@@ -116,13 +116,18 @@ async def test_node_ports_accessors(
         await node_ports.set(port.key, port.value)
 
 
+@pytest.fixture(scope="session")
+def e_tag() -> str:
+    return "123154654684321-1"
+
+
 @pytest.fixture
-async def mock_upload_file(mocker):
+async def mock_upload_file(mocker, e_tag):
     mock = mocker.patch(
         "simcore_sdk.node_ports.filemanager.upload_file",
         return_value=Future(),
     )
-    mock.return_value.set_result("0")
+    mock.return_value.set_result(("0", e_tag))
     yield mock
 
 

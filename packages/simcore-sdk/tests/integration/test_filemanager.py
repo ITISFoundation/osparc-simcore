@@ -27,14 +27,15 @@ async def test_valid_upload_download(
     assert file_path.exists()
 
     file_id = file_uuid(file_path)
-    store = s3_simcore_location
-    await filemanager.upload_file(
-        store_id=store, s3_object=file_id, local_file_path=file_path
+    store_id, e_tag = await filemanager.upload_file(
+        store_id=s3_simcore_location, s3_object=file_id, local_file_path=file_path
     )
+    assert store_id == s3_simcore_location
+    assert e_tag
 
     download_folder = Path(tmpdir) / "downloads"
     download_file_path = await filemanager.download_file_from_s3(
-        store_id=store, s3_object=file_id, local_folder=download_folder
+        store_id=s3_simcore_location, s3_object=file_id, local_folder=download_folder
     )
     assert download_file_path.exists()
     assert download_file_path.name == "test.test"

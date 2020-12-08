@@ -3,7 +3,7 @@ import logging
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout
@@ -124,6 +124,24 @@ async def _get_upload_link(store_id: int, file_id: str, api: UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.upload_file)
 
 
+async def _get_file_metadata(store_id: int, file_id: str) -> Dict[str, Any]:
+    log.debug("Getting file metadata from store id [%s] for %s", store_id, file_id)
+    try:
+        with api_client() as client:
+            api = UsersApi(client)
+            resp = await api.get_file_metadata(
+                file_id=file_id, location_id=store_id, user_id=config.USER_ID
+            )
+            if resp.error:
+                raise exceptions.StorageServerIssue(
+                    f"getting file {file_id} metadata failed: [{resp.error.to_str()}]"
+                )
+            return resp.data
+
+    except ApiException as err:
+        _handle_api_exception(store_id, err)
+
+
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
     log.debug("Downloading from %s to %s", url, file_path)
     async with session.get(url) as response:
@@ -142,7 +160,12 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         return await response.release()
 
 
-async def _upload_file_to_link(session: ClientSession, url: URL, file_path: Path):
+ETag = str
+
+
+async def _upload_file_to_link(
+    session: ClientSession, url: URL, file_path: Path
+) -> Optional[ETag]:
     log.debug("Uploading from %s to %s", file_path, url)
     async with session.put(url, data=file_path.open("rb")) as resp:
         if resp.status > 299:
@@ -150,6 +173,15 @@ async def _upload_file_to_link(session: ClientSession, url: URL, file_path: Path
             raise exceptions.S3TransferError(
                 "Could not upload file {}:{}".format(file_path, response_text)
             )
+        if resp.status != 200:
+            response_text = await resp.text()
+            raise exceptions.S3TransferError(
+                "Issue when uploading file {}:{}".format(file_path, response_text)
+            )
+        # get the S3 etag from the headers
+        e_tag = resp.headers.get("Etag", None)
+        log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
+        return e_tag
 
 
 async def download_file_from_s3(
@@ -158,7 +190,7 @@ async def download_file_from_s3(
     store_id: str = None,
     s3_object: str,
     local_folder: Path,
-    session: Optional[ClientSession] = None
+    session: Optional[ClientSession] = None,
 ) -> Path:
     """Downloads a file from S3
 
@@ -215,12 +247,12 @@ async def download_file_from_link(
 
 async def upload_file(
     *,
-    store_id: str = None,
-    store_name: str = None,
+    store_id: Optional[str] = None,
+    store_name: Optional[str] = None,
     s3_object: str,
     local_file_path: Path,
-    session: Optional[ClientSession] = None
-) -> str:
+    session: Optional[ClientSession] = None,
+) -> Tuple[str, str]:
     """Uploads a file to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
@@ -243,14 +275,14 @@ async def upload_file(
 
         if store_name is not None:
             store_id = await _get_location_id_from_location_name(store_name, api)
-        upload_link = await _get_upload_link(store_id, s3_object, api)
+        upload_link: URL = await _get_upload_link(store_id, s3_object, api)
 
         if upload_link:
-            upload_link = URL(upload_link)
-
+            # FIXME: This client should be kept with the nodeports instead of creating one each time
             async with ClientSessionContextManager(session) as active_session:
-                await _upload_file_to_link(active_session, upload_link, local_file_path)
-
-            return store_id
+                e_tag = await _upload_file_to_link(
+                    active_session, upload_link, local_file_path
+                )
+                return store_id, e_tag
 
     raise exceptions.S3InvalidPathError(s3_object)
