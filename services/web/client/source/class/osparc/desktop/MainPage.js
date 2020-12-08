@@ -73,7 +73,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           const studyId = this.__studyEditor.getStudy().getUuid();
           this.__studyEditor.updateStudyDocument()
             .then(() => {
-              this.__studyEditor.closeStudy();
+              this.__studyEditor.closeEditor();
               const reloadUserStudiesPromise = this.__showDashboard();
               reloadUserStudiesPromise
                 .then(() => {

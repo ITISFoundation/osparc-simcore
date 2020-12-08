@@ -257,7 +257,7 @@ qx.Class.define("osparc.data.model.Study", {
       return osparc.data.Resources.fetch("studies", "open", params);
     },
 
-    closeStudy: function() {
+    stopStudy: function() {
       this.removeIFrames();
     },
 
