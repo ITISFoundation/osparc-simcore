@@ -40,7 +40,7 @@ def setup_webserver(app: FastAPI) -> None:
 
     client = AsyncClient(
         base_url=settings.base_url,
-        timeout=settings.client_request.total_timeout,
+        timeout=app.state.settings.client_request.total_timeout,
     )
     app.state.webserver_client = client
 
