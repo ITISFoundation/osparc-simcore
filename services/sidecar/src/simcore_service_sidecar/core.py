@@ -12,8 +12,8 @@ from simcore_postgres_database.sidecar_models import (
     comp_pipeline,
     comp_tasks,
 )
-from simcore_sdk import node_ports
-from simcore_sdk.node_ports import log as node_port_log
+from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_v2 import log as node_port_v2_log
 from sqlalchemy import and_, literal_column
 
 from . import config, exceptions
@@ -24,7 +24,7 @@ from .utils import execution_graph, find_entry_point, is_node_ready
 
 log = get_task_logger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
-node_port_log.setLevel(config.SIDECAR_LOGLEVEL)
+node_port_v2_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 
 async def task_required_resources(node_id: str) -> Union[Dict[str, bool], None]:
@@ -220,9 +220,9 @@ async def inspect(
         )
 
         # config nodeports
-        node_ports.node_config.USER_ID = user_id
-        node_ports.node_config.NODE_UUID = task.node_id
-        node_ports.node_config.PROJECT_ID = task.project_id
+        node_ports_v2.node_config.USER_ID = user_id
+        node_ports_v2.node_config.NODE_UUID = task.node_id
+        node_ports_v2.node_config.PROJECT_ID = task.project_id
 
         # now proceed actually running the task (we do that after the db session has been closed)
         # try to run the task, return empyt list of next nodes if anything goes wrong

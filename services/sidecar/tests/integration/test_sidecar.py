@@ -193,7 +193,7 @@ async def pipeline(
     """creates a full pipeline.
     NOTE: 'pipeline', defined as parametrization
     """
-    from simcore_sdk import node_ports
+    from simcore_sdk import node_ports_v2
 
     tasks = {key: osparc_service for key in pipeline_cfg}
     dag = {key: pipeline_cfg[key]["next"] for key in pipeline_cfg}
@@ -233,15 +233,15 @@ async def pipeline(
                 ):
                     # update the files in mock_dir to S3
                     # FIXME: node_ports config shall not global! here making a hack so it works
-                    node_ports.node_config.USER_ID = user_id
-                    node_ports.node_config.PROJECT_ID = project_id
-                    node_ports.node_config.NODE_UUID = node_uuid
+                    node_ports_v2.node_config.USER_ID = user_id
+                    node_ports_v2.node_config.PROJECT_ID = project_id
+                    node_ports_v2.node_config.NODE_UUID = node_uuid
 
                     print("--" * 10)
-                    print_module_variables(module=node_ports.node_config)
+                    print_module_variables(module=node_ports_v2.node_config)
                     print("--" * 10)
 
-                    PORTS = await node_ports.ports()
+                    PORTS = await node_ports_v2.ports()
                     await (await PORTS.inputs)[input_key].set(
                         mock_dir / node_inputs[input_key]["path"]
                     )
