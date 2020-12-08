@@ -435,8 +435,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid && this.self().isService(studyData) && osparc.component.export.ServicePermissions.canGroupWrite(studyData["access_rights"], myGid)) {
+      if (this.self().isService(studyData) && "metadataTSR" in studyData) {
         const metadataButton = this.__getMetadataMenuButton(studyData);
         menu.add(metadataButton);
       }
