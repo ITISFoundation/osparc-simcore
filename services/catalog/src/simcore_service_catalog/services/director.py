@@ -98,7 +98,7 @@ class DirectorApi:
     """
 
     def __init__(self, base_url: str, vtag: str):
-        self.client = AsyncClient(base_url=base_url, timeout=1.0)
+        self.client = AsyncClient(base_url=base_url, timeout=10)
         self.vtag = vtag
 
     # OPERATIONS

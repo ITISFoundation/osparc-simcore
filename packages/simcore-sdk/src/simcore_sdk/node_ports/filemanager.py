@@ -28,6 +28,8 @@ class ClientSessionContextManager:
     # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
     #
     def __init__(self, session=None):
+        # We are interested in fast connections, if a connection is established
+        # there is no timeout for file download operations
         self.active_session = session or ClientSession(
             timeout=ClientTimeout(total=None, connect=1, sock_connect=1)
         )

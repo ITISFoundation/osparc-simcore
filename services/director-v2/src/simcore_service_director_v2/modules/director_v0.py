@@ -34,7 +34,7 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
         DirectorV0Client.create(
             app,
             client=httpx.AsyncClient(
-                base_url=settings.base_url(include_tag=True), timeout=1.0
+                base_url=settings.base_url(include_tag=True), timeout=10
             ),
         )
 
