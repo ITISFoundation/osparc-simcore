@@ -254,7 +254,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
-          metadataTSR = osparc.component.metadata.ServiceMetadataEditor.getDummyMetadataTSR();
+          metadataTSR = studyData.metadataTSR ? studyData.metadataTSR : null;
           break;
       }
 

@@ -43,45 +43,6 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     }
   },
 
-  statics: {
-    getDummyMetadataTSR: function() {
-      const maxLevel = 5; // random integer from 0-4
-      const dummyMetadataTSR = {
-        "r01": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r02": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r03": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r04": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r05": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r06": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r07": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r08": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r09": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        },
-        "r10": {
-          "level": Math.floor(Math.random()*(maxLevel))
-        }
-      };
-      return dummyMetadataTSR;
-    }
-  },
-
   members: {
     __serviceData: null,
     __stack: null,
