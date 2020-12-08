@@ -38,7 +38,10 @@ def setup_webserver(app: FastAPI) -> None:
     # init client
     logger.debug("Setup webserver at %s...", settings.base_url)
 
-    client = AsyncClient(base_url=settings.base_url, timeout=20)
+    client = AsyncClient(
+        base_url=settings.base_url,
+        timeout=app.state.settings.client_request.total_timeout,
+    )
     app.state.webserver_client = client
 
     # TODO: raise if attribute already exists
@@ -108,7 +111,7 @@ class AuthSession:
     # TODO: add ping to healthcheck
 
     async def get(self, path: str) -> Optional[Dict]:
-        url = path.lstrip('/')
+        url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
         except Exception as err:
@@ -118,7 +121,7 @@ class AuthSession:
         return self._process(resp)
 
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
-        url = path.lstrip('/')
+        url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
         except Exception as err:

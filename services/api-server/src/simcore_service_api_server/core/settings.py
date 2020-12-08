@@ -63,6 +63,17 @@ class PostgresSettings(BaseSettings):
         env_prefix = "POSTGRES_"
 
 
+class ClientRequestSettings(BaseSettings):
+    total_timeout: Optional[str] = Field(
+        default=20,
+        description="timeout used for outgoing http requests",
+        env="HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT",
+    )
+
+    class Config(_CommonConfig):
+        env_prefix = ""
+
+
 class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
@@ -86,7 +97,6 @@ class AppSettings(BaseSettings):
         except AttributeError as err:
             raise ValueError(f"{value.upper()} is not a valid level") from err
 
-
     @property
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
@@ -96,6 +106,8 @@ class AppSettings(BaseSettings):
 
     # WEB-SERVER SERVICE
     webserver: WebServerSettings
+
+    client_request: ClientRequestSettings
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec
