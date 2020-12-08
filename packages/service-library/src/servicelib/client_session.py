@@ -23,7 +23,7 @@ def get_client_session(app: web.Application) -> ClientSession:
         # also requests should be as fast as possible
         # some services are not that fast to  reply
         # Setting the time of a request using this client session to 5 seconds total
-        timeout_settings = ClientTimeout(total=10, connect=1, sock_connect=1)
+        timeout_settings = ClientTimeout(total=20, connect=1, sock_connect=1)
         app[APP_CLIENT_SESSION_KEY] = session = ClientSession(timeout=timeout_settings)
     return session
 

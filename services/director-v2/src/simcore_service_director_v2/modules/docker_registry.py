@@ -58,7 +58,7 @@ class RegistryApiClient:
         # TODO: add auth https://www.python-httpx.org/advanced/#customizing-authentication
         # TODO: see https://colin-b.github.io/httpx_auth/
 
-        self.client = AsyncClient(base_url=self.settings.api_url, timeout=10)
+        self.client = AsyncClient(base_url=self.settings.api_url, timeout=20)
 
     def get_basic_auth(self):
         auth = (self.settings.user, self.settings.pw.get_secret_value())
