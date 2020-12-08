@@ -158,6 +158,19 @@ domain and the intended context of use",
         }
       };
       return dummyMetadataTSR;
+    },
+
+    computeTSRScore: function(metadataTSR) {
+      let score = 0;
+      let maxScore = 0;
+      Object.values(metadataTSR).forEach(rule => {
+        score += rule.level;
+        maxScore += 4;
+      });
+      return {
+        score,
+        maxScore
+      };
     }
   }
 });
