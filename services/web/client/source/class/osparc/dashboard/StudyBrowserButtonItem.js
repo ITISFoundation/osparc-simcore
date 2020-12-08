@@ -456,12 +456,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyMetadataTSR: function(metadataTSR) {
       if (metadataTSR) {
-        let score = 0;
-        let maxScore = 0;
-        Object.values(metadataTSR).forEach(rule => {
-          score += rule.level;
-          maxScore += 4;
-        });
+        const {
+          score,
+          maxScore
+        } = osparc.component.metadata.ServiceMetadata.computeTSRScore(metadataTSR);
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
           score,

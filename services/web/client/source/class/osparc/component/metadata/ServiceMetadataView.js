@@ -24,9 +24,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
   construct: function(serviceData) {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(5, 5);
+    const grid = new qx.ui.layout.Grid(10, 5);
     grid.setColumnAlign(0, "left", "middle");
-    grid.setColumnFlex(0, 1);
     grid.setColumnAlign(1, "left", "middle");
     this._setLayout(grid);
 
@@ -42,12 +41,16 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
     __populateHeaders: function() {
       const rules = osparc.component.metadata.ServiceMetadata.getMetadataTSR();
 
-      const header0 = new qx.ui.basic.Label(this.tr("Rule"));
+      const header0 = new qx.ui.basic.Label(this.tr("Ten Simple Rules")).set({
+        font: "title-14"
+      });
       this._add(header0, {
         row: 0,
         column: 0
       });
-      const header1 = new qx.ui.basic.Label(this.tr("Conformance Level"));
+      const header1 = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
+        font: "title-14"
+      });
       this._add(header1, {
         row: 0,
         column: 1
@@ -56,17 +59,56 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
       let row = 1;
       Object.values(rules).forEach(rule => {
         const label = new qx.ui.basic.Label(rule.title);
-        const ruleWHint = new osparc.component.form.FieldWHint(null, rule.description, label);
+        const ruleWHint = new osparc.component.form.FieldWHint(null, rule.description, label).set({
+          hintPosition: "left"
+        });
         this._add(ruleWHint, {
           row,
           column: 0
         });
         row++;
       });
+      const label = new qx.ui.basic.Label("TSR score").set({
+        font: "title-13"
+      });
+      this._add(label, {
+        row,
+        column: 0
+      });
+      row++;
     },
 
     __populateData: function() {
-      
+      const metadataTSR = this.__serviceData["metadataTSR"];
+      let row = 1;
+      Object.values(metadataTSR).forEach(rule => {
+        const ruleRating = new osparc.ui.basic.StarsRating();
+        ruleRating.set({
+          score: rule.level,
+          maxScore: 4,
+          nStars: 4
+        });
+        this._add(ruleRating, {
+          row,
+          column: 1
+        });
+        row++;
+      });
+      const {
+        score,
+        maxScore
+      } = osparc.component.metadata.ServiceMetadata.computeTSRScore(metadataTSR);
+      const tsrRating = new osparc.ui.basic.StarsRating();
+      tsrRating.set({
+        score,
+        maxScore,
+        nStars: 4,
+        showScore: true
+      });
+      this._add(tsrRating, {
+        row,
+        column: 1
+      });
     }
   }
 });

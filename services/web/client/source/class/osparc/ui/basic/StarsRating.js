@@ -137,7 +137,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
           const star = new qx.ui.basic.Image(this.self().StarEmpty);
           starsLayout.add(star);
         }
-      } else if (emptyStars === maxStars) {
+      } else if (fullStars === 0 && halfStar === 0) {
         const star = new qx.ui.basic.Image(this.self().StarEmpty);
         starsLayout.add(star);
       }
