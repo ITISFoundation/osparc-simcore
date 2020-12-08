@@ -397,7 +397,7 @@ async def test_run_services(
     for key in pipeline_cfg:
         dag.extend(pipeline_cfg[key]["next"])
     assert next_task_nodes == dag
-    await asyncio.sleep(10)  # wait a little bit for logs to come in
+    await asyncio.sleep(15)  # wait a little bit for logs to come in
     await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),
         incoming_data,

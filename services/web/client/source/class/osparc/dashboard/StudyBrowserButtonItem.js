@@ -224,21 +224,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let accessRights = {};
       switch (studyData["resourceType"]) {
         case "study":
-          uuid = studyData.uuid;
-          owner = studyData.prjOwner;
-          accessRights = studyData.accessRights;
+          uuid = studyData.uuid ? studyData.uuid : uuid;
+          owner = studyData.prjOwner ? studyData.prjOwner : owner;
+          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().STUDY_ICON;
           break;
         case "template":
-          uuid = studyData.uuid;
-          owner = studyData.prjOwner;
-          accessRights = studyData.accessRights;
+          uuid = studyData.uuid ? studyData.uuid : uuid;
+          owner = studyData.prjOwner ? studyData.prjOwner : owner;
+          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().TEMPLATE_ICON;
           break;
         case "service":
-          uuid = studyData.key;
-          owner = studyData.owner;
-          accessRights = studyData.access_rights;
+          uuid = studyData.key ? studyData.key : uuid;
+          owner = studyData.owner ? studyData.owner : owner;
+          accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
           break;
       }
@@ -363,8 +363,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 
-        if (this.isResourceType("study") || this.isResourceType("template")) {
-          this._applyStudyPermissions(value);
+        if (this.isResourceType("study")) {
+          this.__setStudyPermissions(value);
         }
       }
     },
@@ -438,7 +438,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyStudyPermissions: function(accessRights) {
+    __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const studyPerm = osparc.component.export.StudyPermissions;
       const image = this.getChildControl("permission-icon");

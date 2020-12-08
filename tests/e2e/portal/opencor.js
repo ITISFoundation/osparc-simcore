@@ -1,20 +1,21 @@
-// node opencor.js [url_prefix] [template_uuid]
+// node opencor.js [url_prefix] [template_uuid] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
 const utils = require('../utils/utils');
 
 const args = process.argv.slice(2);
-if (args.length < 1) {
-  process.exit(1);
-}
-const URL = args[0];
-const TEMPLATE_UUID = args[1];
-const anonURL = URL + TEMPLATE_UUID + "?stimulation_mode=1&stimulation_level=0.5";
+const {
+  urlPrefix,
+  templateUuid,
+  enableDemoMode
+} = utils.parseCommandLineArgumentsTemplate(args);
+
+const anonURL = urlPrefix + templateUuid + "?stimulation_mode=1&stimulation_level=0.5";
 const screenshotPrefix = "Opencor_";
 
 
 async function runTutorial () {
-  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix);
+  const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
   tutorial.startScreenshooter();
   const page = await tutorial.beforeScript();

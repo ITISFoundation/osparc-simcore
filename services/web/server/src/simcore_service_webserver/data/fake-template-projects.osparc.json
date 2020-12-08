@@ -1,6 +1,6 @@
 [
   {
-    "uuid": "template-uuid-4537-9f2d-2fbcbee4afb1",
+    "uuid": "de2578c5-431e-4537-9f2d-2fbcbee4afb1",
     "name": "NIH SPARC Hackathon 2018",
     "description": "NIH SPARC Hackathon 2018 template consisting of a FilePicker, and two notebooks",
     "thumbnail": "https://placeimg.com/171/96/tech/grayscale/?18.jpg",
@@ -9,7 +9,7 @@
     "lastChangeDate": "2018-12-05T21:13:13.360Z",
     "accessRights": {},
     "workbench": {
-      "template-uuid-4261-b92f-7343aecaab44": {
+      "de2578c5-431e-4261-b92f-7343aecaab44": {
         "key": "simcore/services/frontend/file-picker",
         "version": "1.0.0",
         "label": "File Picker",
@@ -22,18 +22,18 @@
           "y": 150
         }
       },
-      "template-uuid-49b0-968d-a6545f9dc878": {
+      "de2578c5-431e-49b0-968d-a6545f9dc878": {
         "key": "simcore/services/dynamic/jupyter-scipy-notebook",
         "version": "1.7.0",
         "label": "Jupyter SciPy notebook",
         "inputs": {
           "input_1": {
-            "nodeUuid": "template-uuid-4261-b92f-7343aecaab44",
+            "nodeUuid": "de2578c5-431e-4261-b92f-7343aecaab44",
             "output": "outFile"
           }
         },
         "inputNodes": [
-          "template-uuid-4261-b92f-7343aecaab44"
+          "de2578c5-431e-4261-b92f-7343aecaab44"
         ],
         "outputs": {},
         "parent": null,
@@ -42,18 +42,18 @@
           "y": 150
         }
       },
-      "template-uuid-4a0e-bf7e-abad5e22e054": {
+      "de2578c5-431e-4a0e-bf7e-abad5e22e054": {
         "key": "simcore/services/dynamic/jupyter-base-notebook",
         "version": "1.7.0",
         "label": "Jupyter base notebook",
         "inputs": {
           "input_1": {
-            "nodeUuid": "template-uuid-49b0-968d-a6545f9dc878",
+            "nodeUuid": "de2578c5-431e-49b0-968d-a6545f9dc878",
             "output": "output_1"
           }
         },
         "inputNodes": [
-          "template-uuid-49b0-968d-a6545f9dc878"
+          "de2578c5-431e-49b0-968d-a6545f9dc878"
         ],
         "outputs": {},
         "parent": null,

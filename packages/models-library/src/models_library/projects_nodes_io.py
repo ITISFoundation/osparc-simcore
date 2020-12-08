@@ -14,9 +14,10 @@ NodeID = UUID
 
 # Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
 # this is a regex for having uuids of type: 8-4-4-4-12 digits
-NodeID_AsDictKey = constr(
-    regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+UUID_REGEX = (
+    r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
 )
+NodeID_AsDictKey = constr(regex=UUID_REGEX)
 
 
 class PortLink(BaseModel):

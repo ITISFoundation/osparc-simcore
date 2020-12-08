@@ -1,30 +1,30 @@
 .DEFAULT_GOAL := help
 
-ROOT_DIR  = $(abspath $(CURDIR)/../../)
-VENV_DIR ?= $(abspath $(ROOT_DIR)/.venv)
 UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
 
 
 .PHONY: all
-all: install tests
+all: install test-dev
 
 .PHONY: reqs
 requirements.txt: requirements.in
 	# pip compiling $<
-	@$(VENV_DIR)/bin/pip-compile $(UPGRADE_OPTION) --build-isolation --output-file $@ $<
+	pip-compile $(UPGRADE_OPTION) --build-isolation --output-file $@ $<
 
 reqs: requirements.txt ## alias to compile requirements.txt
 
+
 .PHONY: install
-install: $(VENV_DIR) requirements.txt ## installs dependencies
+install: _check_venv_active requirements.txt ## installs dependencies
 	# installing requirements
-	@$</bin/pip3 install -r requirements.txt
+	pip3 install -r requirements.txt
 
 
-.PHONY: tests
-tests: ## runs all tests [DEV]
+.PHONY: test-dev
+test-dev: _check_venv_active ## runs all tests [DEV]
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)
+	pytest -vv --exitfirst --failed-first  --durations=10 --pdb $(CURDIR)
+
 
 
 .PHONY: help
@@ -34,3 +34,9 @@ help: ## this colorful help
 	@echo ""
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
+
+
+.PHONY: _check_venv_active
+_check_venv_active:
+	# checking whether virtual environment was activated
+	@python3 -c "import sys; assert sys.base_prefix!=sys.prefix"

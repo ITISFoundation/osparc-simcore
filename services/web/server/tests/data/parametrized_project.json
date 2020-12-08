@@ -7,7 +7,7 @@
   "creationDate": "2018-10-22T09:13:13.360Z",
   "lastChangeDate": "2018-10-22T09:33:41.858Z",
   "workbench": {
-    "template-uuid-4674-b758-946151cae351": {
+    "de2578c5-431e-4674-b758-946151cae351": {
       "key": "simcore/services/frontend/file-picker",
       "version": "1.0.0",
       "label": "File Picker 0D",
@@ -26,7 +26,7 @@
         "y": 150
       }
     },
-    "template-uuid-409d-998c-c1f04de67f8b": {
+    "de2578c5-431e-409d-998c-c1f04de67f8b": {
       "key": "simcore/services/comp/ucdavis-singlecell-cardiac-model",
       "version": "1.0.0",
       "label": "DBP-Clancy-Rabbit-Single-Cell solver",
@@ -46,12 +46,12 @@
         "Ligand": 0,
         "cAMKII": "WT",
         "initfile": {
-          "nodeUuid": "template-uuid-4674-b758-946151cae351",
+          "nodeUuid": "de2578c5-431e-4674-b758-946151cae351",
           "output": "outFile"
         }
       },
       "inputNodes": [
-        "template-uuid-4674-b758-946151cae351"
+        "de2578c5-431e-4674-b758-946151cae351"
       ],
       "outputs": {},
       "parent": null,
@@ -60,22 +60,22 @@
         "y": 150
       }
     },
-    "template-uuid-43e7-9fda-cf9625e59986": {
+    "de2578c5-431e-43e7-9fda-cf9625e59986": {
       "key": "simcore/services/dynamic/cc-0d-viewer",
       "version": "2.8.0",
       "label": "cc-0d-viewer",
       "inputs": {
         "vm_1Hz": {
-          "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+          "nodeUuid": "de2578c5-431e-409d-998c-c1f04de67f8b",
           "output": "out_4"
         },
         "all_results_1Hz": {
-          "nodeUuid": "template-uuid-409d-998c-c1f04de67f8b",
+          "nodeUuid": "de2578c5-431e-409d-998c-c1f04de67f8b",
           "output": "out_1"
         }
       },
       "inputNodes": [
-        "template-uuid-409d-998c-c1f04de67f8b"
+        "de2578c5-431e-409d-998c-c1f04de67f8b"
       ],
       "outputs": {},
       "parent": null,

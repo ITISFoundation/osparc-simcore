@@ -477,7 +477,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       const avgPos = this.__getAveragePosition(selectedNodes);
-      nodesGroup.setPosition(avgPos.x, avgPos.y);
+      nodesGroup.setPosition(avgPos);
 
       // change parents on future inner nodes
       selectedNodes.forEach(selectedNode => {

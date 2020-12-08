@@ -246,7 +246,9 @@ properties:
               - nodeUuid1
               - nodeUuid2
           parent:
-            type: string
+            type:
+              - 'null'
+              - string
             format: uuid
             description: Parent's (group-nodes') node ID s.
             example:

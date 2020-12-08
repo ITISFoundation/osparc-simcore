@@ -1,6 +1,8 @@
 #
 # Specifies third-party dependencies for 'simcore-sdk'
 #
+-c ../../../requirements/constraints.txt
+
 aiofiles
 aiohttp
 aiopg[sa]

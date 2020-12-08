@@ -70,9 +70,12 @@ qx.Class.define("osparc.desktop.MainPage", {
         if (this.__studyEditor) {
           const dashboardBtn = navBar.getDashboardButton();
           dashboardBtn.setFetching(true);
-          this.__studyEditor.updateStudyDocument(false)
+          const studyId = this.__studyEditor.getStudy().getUuid();
+          this.__studyEditor.updateStudyDocument()
             .then(() => {
-              this.__studyEditor.closeStudy();
+              this.__studyEditor.closeStudy()
+                .then(() => this.__dashboard.getStudyBrowser().reloadUserStudy(studyId))
+                .catch(err => console.error(err));
               this.__showDashboard();
             })
             .finally(() => {

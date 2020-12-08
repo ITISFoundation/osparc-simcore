@@ -65,6 +65,13 @@ class DirectorV0Settings(ApiServiceSettings):
         env_prefix = "DIRECTOR_"
 
 
+class DynamicServicesSettings(BaseSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
+
+    class Config(CommonConfig):
+        pass
+
+
 class PGSettings(PostgresSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
@@ -119,6 +126,7 @@ class AppSettings(BaseSettings):
             director_v0=DirectorV0Settings(),
             registry=RegistrySettings(),
             celery=CelerySettings.create_from_env(),
+            dynamic_services=DynamicServicesSettings(),
             **settings_kwargs,
         )
 
@@ -129,6 +137,7 @@ class AppSettings(BaseSettings):
     log_level_name: str = Field("DEBUG", env="LOG_LEVEL")
 
     @validator("log_level_name")
+    @classmethod
     def match_logging_level(cls, value) -> str:
         try:
             getattr(logging, value.upper())
@@ -145,6 +154,9 @@ class AppSettings(BaseSettings):
 
     # DIRECTOR submodule
     director_v0: DirectorV0Settings
+
+    # Dynamic Services submodule
+    dynamic_services: DynamicServicesSettings
 
     # REGISTRY submodule
     registry: RegistrySettings

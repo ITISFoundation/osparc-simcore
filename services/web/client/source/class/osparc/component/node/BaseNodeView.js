@@ -55,7 +55,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   members: {
     __pane2: null,
     __title: null,
-    __toolbar: null,
+    __serviceInfoLayout: null,
+    __header: null,
     _mainView: null,
     __inputsView: null,
     __outputsView: null,
@@ -81,9 +82,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const inputs = this.__buildSideView(true);
 
       const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const toolbar = this.__buildToolbar();
+      const header = this.__buildHeader();
       const mainView = this.__buildMainView();
-      vBox.add(toolbar);
+      vBox.add(header);
       vBox.add(mainView, {
         flex: 1
       });
@@ -110,20 +111,20 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         collapsedWidth: collapsedWidth
       });
 
-      const titleBar = new qx.ui.toolbar.ToolBar();
+      const sideHeader = new qx.ui.toolbar.ToolBar();
       const titlePart = new qx.ui.toolbar.Part();
       const buttonPart = new qx.ui.toolbar.Part();
-      titleBar.add(titlePart);
-      titleBar.addSpacer();
-      titleBar.add(buttonPart);
-      this.add(titleBar, 0);
+      sideHeader.add(titlePart);
+      sideHeader.addSpacer();
+      sideHeader.add(buttonPart);
+      this.add(sideHeader, 0);
       titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
         alignY: "middle",
-        font: "title-18"
+        font: "text-16"
       }));
       const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
       buttonPart.add(collapseBtn);
-      sidePanel.add(titleBar);
+      sidePanel.add(sideHeader);
 
       const scroll = new qx.ui.container.Scroll();
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -202,20 +203,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return mainView;
     },
 
-    __buildToolbar: function() {
+    __buildHeader: function() {
+      const header = this.__header = new qx.ui.toolbar.ToolBar().set({
+        spacing: 20
+      });
+
+      const nodeEditPart = new qx.ui.toolbar.Part().set({
+        spacing: 10
+      });
       const study = osparc.store.Store.getInstance().getCurrentStudy();
-
-      const toolbar = this.__toolbar = new qx.ui.toolbar.ToolBar();
-      const titlePart = new qx.ui.toolbar.Part();
-      const infoPart = new qx.ui.toolbar.Part();
-      const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
-      toolbar.add(titlePart);
-      toolbar.add(infoPart);
-      toolbar.addSpacer();
-
       const title = this.__title = new osparc.ui.form.EditLabel().set({
-        labelFont: "title-18",
-        inputFont: "text-18",
+        maxWidth: 180,
+        labelFont: "text-16",
+        inputFont: "text-16",
         editable: osparc.data.Permissions.getInstance().canDo("study.node.rename")
       });
       title.addListener("editValue", evt => {
@@ -227,24 +227,35 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serialize());
         }
       }, this);
-      titlePart.add(title);
-
-      const infoBtn = new qx.ui.toolbar.Button(this.tr("Info"), "@FontAwesome5Solid/info-circle/14");
-      infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
-      infoPart.add(infoBtn);
+      nodeEditPart.add(title);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update") && osparc.data.model.Study.isOwner(study)) {
-        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit Access Level"), "@FontAwesome5Solid/edit/14");
+        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
-        infoPart.add(editAccessLevel);
+        nodeEditPart.add(editAccessLevel);
       }
+      header.add(nodeEditPart);
 
-      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Files"), "@FontAwesome5Solid/folder-open/14");
+      header.addSpacer();
+
+      const nameVersionPart = this.__serviceInfoLayout = new qx.ui.toolbar.Part();
+      header.add(nameVersionPart);
+
+      header.addSpacer();
+
+      const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
+      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsPart.add(filesBtn);
 
-      return toolbar;
+      return header;
+    },
+
+    __getInfoButton: function() {
+      const infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/14");
+      infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
+      return infoBtn;
     },
 
     _addToMainView: function(view, options = {}) {
@@ -322,7 +333,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__buttonContainer.add(retrieveIFrameButton);
       }
       this.__buttonContainer.add(this.__filesButton);
-      this.__toolbar.add(this.__buttonContainer);
+      this.__header.add(this.__buttonContainer);
     },
 
     _maximizeIFrame: function(maximize) {
@@ -333,7 +344,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
       this._mapperLayout.setVisibility(othersStatus);
-      this.__toolbar.setVisibility(othersStatus);
+      this.__header.setVisibility(othersStatus);
     },
 
     __hasIFrame: function() {
@@ -424,11 +435,21 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     /**
-      * @abstract
       * @param node {osparc.data.model.Node} node
       */
     _applyNode: function(node) {
-      throw new Error("Abstract method called!");
+      this.__serviceInfoLayout.removeAll();
+      if (node && node.getMetaData()) {
+        const metadata = node.getMetaData();
+        const label = new qx.ui.basic.Label(metadata.name + " : " + metadata.version).set({
+          enabled: false,
+          alignY: "middle"
+        });
+        this.__serviceInfoLayout.add(label);
+
+        const infoButton = this.__getInfoButton();
+        this.__serviceInfoLayout.add(infoButton);
+      }
     }
   }
 });
