@@ -26,23 +26,23 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    this.__serviceData = serviceData;
+
     const grid = new qx.ui.layout.Grid(10, 8);
     grid.setColumnAlign(0, "left", "middle");
     grid.setColumnAlign(1, "left", "middle");
     this.__tsrGrid = new qx.ui.container.Composite(grid);
     this._add(this.__tsrGrid);
 
-    this.__serviceData = serviceData;
-
-    this.__populateHeaders();
-    this.__populateData();
+    this.__populateTSRHeaders();
+    this.__populateTSRData();
   },
 
   members: {
     __serviceData: null,
     __tsrGrid: null,
 
-    __populateHeaders: function() {
+    __populateTSRHeaders: function() {
       const rules = osparc.component.metadata.ServiceMetadata.getMetadataTSR();
 
       const header0 = new qx.ui.basic.Label(this.tr("Ten Simple Rules")).set({
@@ -82,7 +82,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
       row++;
     },
 
-    __populateData: function() {
+    __populateTSRData: function() {
       const metadataTSR = this.__serviceData["metadataTSR"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
