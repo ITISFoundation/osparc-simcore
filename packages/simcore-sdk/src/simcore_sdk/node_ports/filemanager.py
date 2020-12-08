@@ -31,7 +31,7 @@ class ClientSessionContextManager:
         # We are interested in fast connections, if a connection is established
         # there is no timeout for file download operations
         self.active_session = session or ClientSession(
-            timeout=ClientTimeout(total=None, connect=1, sock_connect=1)
+            timeout=ClientTimeout(total=None, connect=5, sock_connect=5)
         )
         self.is_owned = self.active_session is not session
 
