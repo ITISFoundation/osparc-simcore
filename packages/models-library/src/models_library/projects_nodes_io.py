@@ -63,6 +63,7 @@ class BaseFileLink(BaseModel):
     e_tag: Optional[str] = Field(
         None,
         description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+        alias="eTag",
     )
 
     class Config:

@@ -90,6 +90,11 @@ async def check_config_valid(ports: Nodeports, config_dict: Dict):
     await _check_ports_valid(ports, config_dict, "outputs")
 
 
+@pytest.fixture(scope="session")
+def e_tag() -> str:
+    return "123154654684321-1"
+
+
 async def test_default_configuration(
     default_configuration: Dict,
 ):  # pylint: disable=W0613, W0621
@@ -169,6 +174,7 @@ async def test_port_file_accessors(
     item_value: str,
     item_pytype: Type,
     config_value: Dict[str, str],
+    e_tag: str,
 ):  # pylint: disable=W0613, W0621
     config_dict, project_id, node_uuid = special_configuration(
         inputs=[("in_1", item_type, config_value)],
@@ -183,12 +189,17 @@ async def test_port_file_accessors(
     # this triggers an upload to S3 + configuration change
     await (await PORTS.outputs)["out_34"].set(item_value)
     # this is the link to S3 storage
-    assert (await PORTS.outputs)["out_34"].value.dict(
+    received_file_link = (await PORTS.outputs)["out_34"].value.dict(
         by_alias=True, exclude_unset=True
-    ) == {
-        "store": s3_simcore_location,
-        "path": Path(str(project_id), str(node_uuid), Path(item_value).name).as_posix(),
-    }
+    )
+    assert received_file_link["store"] == s3_simcore_location
+    assert (
+        received_file_link["path"]
+        == Path(str(project_id), str(node_uuid), Path(item_value).name).as_posix()
+    )
+    # the eTag is created by the S3 server
+    assert received_file_link["eTag"]
+
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
     assert isinstance(await (await PORTS.outputs)["out_34"].get(), item_pytype)
     assert (await (await PORTS.outputs)["out_34"].get()).exists()
@@ -440,9 +451,10 @@ async def test_file_mapping(
 
     await PORTS.set_file_by_keymap(file_path)
     file_id = np_helpers.file_uuid(file_path, project_id, node_uuid)
-    assert (await PORTS.outputs)["out_1"].value.dict(
+    received_file_link = (await PORTS.outputs)["out_1"].value.dict(
         by_alias=True, exclude_unset=True
-    ) == {
-        "store": s3_simcore_location,
-        "path": file_id,
-    }
+    )
+    assert received_file_link["store"] == s3_simcore_location
+    assert received_file_link["path"] == file_id
+    # received a new eTag
+    assert received_file_link["eTag"]
