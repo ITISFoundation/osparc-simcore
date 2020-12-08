@@ -93,7 +93,7 @@ qx.Class.define("osparc.component.form.FieldWHint", {
           top: 0,
           right: 0,
           bottom: 0,
-          left: 20
+          left: 18
         });
       } else {
         this._removeAll();
