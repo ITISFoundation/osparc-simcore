@@ -368,8 +368,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     populateNodeUIData: function(nodeUIData) {
       if ("position" in nodeUIData) {
-        const pos = nodeUIData.position;
-        this.setPosition(pos.x, pos.y);
+        this.setPosition(nodeUIData.position);
       }
     },
 
@@ -1118,7 +1117,11 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setPosition: function(x, y) {
+    setPosition: function(pos) {
+      const {
+        x,
+        y
+      } = pos;
       // keep positions positive
       this.__posX = parseInt(x) < 0 ? 0 : parseInt(x);
       this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);

@@ -15,6 +15,7 @@ Makefile                                  @pcrespov, @sanderegg
 /packages/pytest-simcore/                 @pcrespov, @sanderegg
 /packages/models-library/                 @sanderegg, @pcrespov
 /packages/service-library/                @pcrespov
+/packages/service-integration/            @pcrespov, @sanderegg, @KZzizzle
 /requirements/                            @pcrespov
 /scripts/demo/                            @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
