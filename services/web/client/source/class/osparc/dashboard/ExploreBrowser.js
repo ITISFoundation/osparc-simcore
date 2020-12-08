@@ -466,6 +466,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __getMoreInfoMenuButton: function(studyData) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
+      osparc.utils.Utils.setIdToWidget(moreInfoButton, "studyItemMenuMoreInfo");
       moreInfoButton.addListener("execute", () => {
         if (this.self().isTemplate(studyData)) {
           const winWidth = 400;
