@@ -27,8 +27,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadata", {
 use(s) of the model or simulation."
         },
         "r02": {
-          "title": "R2 - Use appropiate data",
-          "description": "Employ relevant and tracable inforamtion in the \
+          "title": "R2 - Use appropriate data",
+          "description": "Employ relevant and traceable information in the \
 development or operation of a model or simulation."
         },
         "r03": {
@@ -93,7 +93,7 @@ the conformance with the rule",
         },
         "l01": {
           "title": "Partial",
-          "description": "Unlcear to the M&S practitioners familiar with the application \
+          "description": "Unclear to the M&S practitioners familiar with the application \
 domain and the intended context of use",
           "level": 1,
           "outreach": "Outreach to application-domain specific M&S practitioners"
@@ -117,7 +117,7 @@ domain and the intended context of use",
           "description": "Can be understood by non-M&S practitioners familiar with the application \
 domain and the intended context of use",
           "level": 4,
-          "outreach": "Outreach to application-domain experts who may not be m&S practitioners"
+          "outreach": "Outreach to application-domain experts who may not be M&S practitioners"
         }
       };
       return conformanceLevel;
