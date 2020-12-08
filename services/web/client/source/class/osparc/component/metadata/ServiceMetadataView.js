@@ -24,10 +24,13 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
   construct: function(serviceData) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox());
+
     const grid = new qx.ui.layout.Grid(10, 8);
     grid.setColumnAlign(0, "left", "middle");
     grid.setColumnAlign(1, "left", "middle");
-    this._setLayout(grid);
+    this.__tsrGrid = new qx.ui.container.Composite(grid);
+    this._add(this.__tsrGrid);
 
     this.__serviceData = serviceData;
 
@@ -37,6 +40,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
 
   members: {
     __serviceData: null,
+    __tsrGrid: null,
 
     __populateHeaders: function() {
       const rules = osparc.component.metadata.ServiceMetadata.getMetadataTSR();
@@ -44,14 +48,14 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
       const header0 = new qx.ui.basic.Label(this.tr("Ten Simple Rules")).set({
         font: "title-14"
       });
-      this._add(header0, {
+      this.__tsrGrid.add(header0, {
         row: 0,
         column: 0
       });
       const header1 = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
         font: "title-14"
       });
-      this._add(header1, {
+      this.__tsrGrid.add(header1, {
         row: 0,
         column: 1
       });
@@ -62,7 +66,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
         const ruleWHint = new osparc.component.form.FieldWHint(null, rule.description, label).set({
           hintPosition: "left"
         });
-        this._add(ruleWHint, {
+        this.__tsrGrid.add(ruleWHint, {
           row,
           column: 0
         });
@@ -71,7 +75,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
       const label = new qx.ui.basic.Label("TSR score").set({
         font: "title-13"
       });
-      this._add(label, {
+      this.__tsrGrid.add(label, {
         row,
         column: 0
       });
@@ -93,7 +97,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
         const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
           hintPosition: "left"
         });
-        this._add(ruleRatingWHint, {
+        this.__tsrGrid.add(ruleRatingWHint, {
           row,
           column: 1
         });
@@ -110,7 +114,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
         nStars: 4,
         showScore: true
       });
-      this._add(tsrRating, {
+      this.__tsrGrid.add(tsrRating, {
         row,
         column: 1
       });
