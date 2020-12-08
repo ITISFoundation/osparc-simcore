@@ -12,6 +12,7 @@ from yarl import URL
 from models_library.settings.services_common import ServicesCommonSettings
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
+from tqdm import tqdm
 
 from ..config.http_clients import client_request_settings
 from . import config, exceptions
@@ -150,13 +151,22 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         if response.status > 299:
             raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(file_path, "wb") as file_pointer:
-            # await file_pointer.write(await response.read())
-            chunk = await response.content.read(CHUNK_SIZE)
-            while chunk:
-                await file_pointer.write(chunk)
+        file_size = int(response.headers.get("content-length", 0)) or None
+
+        with tqdm(
+            desc=f"downloading {file_path} [{file_size} bytes]",
+            total=file_size,
+            unit="byte",
+            unit_scale=True,
+        ) as pbar:
+            async with aiofiles.open(file_path, "wb") as file_pointer:
+                # await file_pointer.write(await response.read())
                 chunk = await response.content.read(CHUNK_SIZE)
-        log.debug("Download complete")
+                while chunk:
+                    await file_pointer.write(chunk)
+                    pbar.update(len(chunk))
+                    chunk = await response.content.read(CHUNK_SIZE)
+            log.debug("Download complete")
         return await response.release()
 
 
@@ -167,21 +177,29 @@ async def _upload_file_to_link(
     session: ClientSession, url: URL, file_path: Path
 ) -> Optional[ETag]:
     log.debug("Uploading from %s to %s", file_path, url)
-    async with session.put(url, data=file_path.open("rb")) as resp:
-        if resp.status > 299:
-            response_text = await resp.text()
-            raise exceptions.S3TransferError(
-                "Could not upload file {}:{}".format(file_path, response_text)
-            )
-        if resp.status != 200:
-            response_text = await resp.text()
-            raise exceptions.S3TransferError(
-                "Issue when uploading file {}:{}".format(file_path, response_text)
-            )
-        # get the S3 etag from the headers
-        e_tag = resp.headers.get("Etag", None)
-        log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
-        return e_tag
+    file_size = file_path.stat().st_size
+    with tqdm(
+        desc=f"uploading {file_path} [{file_size} bytes]",
+        total=file_size,
+        unit="byte",
+        unit_scale=True,
+    ) as pbar:
+        async with session.put(url, data=file_path.open("rb")) as resp:
+            if resp.status > 299:
+                response_text = await resp.text()
+                raise exceptions.S3TransferError(
+                    "Could not upload file {}:{}".format(file_path, response_text)
+                )
+            if resp.status != 200:
+                response_text = await resp.text()
+                raise exceptions.S3TransferError(
+                    "Issue when uploading file {}:{}".format(file_path, response_text)
+                )
+            pbar.update(file_size)
+            # get the S3 etag from the headers
+            e_tag = resp.headers.get("Etag", None)
+            log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
+            return e_tag
 
 
 async def download_file_from_s3(
