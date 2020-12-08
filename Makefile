@@ -199,7 +199,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
 ifndef ops_disabled
-	@docker stack deploy -c $< ops
+	@docker stack deploy --with-registry-auth -c $< ops
 else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
@@ -209,7 +209,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	# Start compile+watch front-end container [front-end]
 	$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
-	@docker stack deploy -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 	$(MAKE_C) services/web/client follow-dev-logs
 
@@ -217,7 +217,7 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
@@ -226,7 +226,7 @@ endif
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
-	@docker stack deploy -c $< $(SWARM_STACK_NAME)
+	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	$(MAKE) .deploy-ops
 
 up-latest:

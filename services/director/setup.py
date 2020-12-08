@@ -14,7 +14,9 @@ if sys.version_info < (3, 6):
 
 
 def read_reqs(reqs_path: Path):
-    reqs = re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+    reqs = re.findall(
+        r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+    )
     # TODO: temporary excluding requirements using git
     # https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support
     return [r for r in reqs if not r.startswith("git")]
@@ -23,7 +25,7 @@ def read_reqs(reqs_path: Path):
 install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
     "aiohttp-apiset",
     "simcore-service-library",
-    "simcore-models-library"
+    "simcore-models-library",
 ]
 
 test_requirements = read_reqs(here / "requirements" / "_test.txt")
@@ -36,12 +38,16 @@ _CONFIG = dict(
     author="Sylvain Anderegg (sanderegg)",
     python_requires=">=3.6",
     packages=find_packages(where="src"),
-    package_dir={"": "src",},
+    package_dir={
+        "": "src",
+    },
     include_package_data=True,
     install_requires=install_requirements,
     tests_require=test_requirements,
     setup_requires=["pytest-runner"],
-    package_data={"": ["api/v0/openapi.yaml", "api/v0/schemas/*.json"],},
+    package_data={
+        "": ["api/v0/openapi.yaml", "api/v0/schemas/*.json"],
+    },
     entry_points={
         "console_scripts": [
             "simcore-service-director = simcore_service_director.__main__:main",
@@ -51,8 +57,7 @@ _CONFIG = dict(
 
 
 def main():
-    """ Execute the setup commands.
-     """
+    """Execute the setup commands."""
     setup(**_CONFIG)
     return 0  # syccessful termination
 

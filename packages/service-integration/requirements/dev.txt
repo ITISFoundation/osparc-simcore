@@ -1,0 +1,18 @@
+# Shortcut to install all packages needed to develop 'service-integration'
+#
+# - As ci.txt but with current and repo packages in develop (edit) mode
+#
+# Usage:
+#   pip install -r requirements/dev.txt
+#
+
+# installs base + tests requirements
+-r _base.txt
+-r _test.txt
+-r _tools.txt
+
+-e ../models-library/
+-e ../pytest-simcore/
+
+# current module
+-e .

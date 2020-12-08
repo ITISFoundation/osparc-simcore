@@ -14,7 +14,9 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 def read_reqs(reqs_path: Path):
-    return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+    return re.findall(
+        r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+    )
 
 
 readme = (current_dir / "README.md").read_text()

@@ -440,6 +440,56 @@ jobs:
           name: unit_postgresdb_coverage
           path: codeclimate.unit_postgresdb_coverage.json
 
+  unit-test-service-integration:
+    name: "[unit] service-integration"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+          ./ci/github/helpers/setup_docker_buildx.bash
+          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-service-integration-${{ hashFiles('packages/service-integration/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-service-integration-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/service-integration.bash install
+      - name: test
+        run: ./ci/github/unit-testing/service-integration.bash test
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_service_integration_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit_service_integration_coverage
+          path: codeclimate.unit_service_integration_coverage.json
+
+
   unit-test-service-library:
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
@@ -1306,6 +1356,7 @@ jobs:
         unit-test-director,
         unit-test-director-v2,
         unit-test-sidecar,
+        unit-test-service-integration,
         unit-test-service-library,
         unit-test-models-library,
         unit-test-simcore-sdk,
@@ -1338,6 +1389,9 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: unit_sidecar_coverage
+      - uses: actions/download-artifact@v1
+        with:
+          name: unit_service_integration_coverage
       - uses: actions/download-artifact@v1
         with:
           name: unit_servicelib_coverage
@@ -1383,6 +1437,7 @@ jobs:
             unit_director_coverage/*.json \
             unit_director_v2_coverage/*.json \
             unit_sidecar_coverage/*.json \
+            unit_service_integration_coverage/*.json \
             unit_servicelib_coverage/*.json \
             unit_modelslib_coverage/*.json \
             unit_simcoresdk_coverage/*.json \
@@ -1418,6 +1473,7 @@ jobs:
         unit-test-sidecar,
         unit-test-frontend,
         unit-test-python-linting,
+        unit-test-service-integration,
         unit-test-service-library,
         unit-test-models-library,
         unit-test-simcore-sdk,
@@ -1430,7 +1486,7 @@ jobs:
         integration-test-director-v2,
         integration-test-sidecar,
         integration-test-simcore-sdk,
-        system-test-swarm-deploy,        
+        system-test-swarm-deploy,
       ]
     runs-on: ubuntu-latest
     steps:
