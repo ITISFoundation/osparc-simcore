@@ -73,7 +73,7 @@ class RESTClientObject(object):
         # https pool manager
         # We are interested in fast connections, if a connection is established
         # there is no timeout for file download operations
-        timeout = aiohttp.ClientTimeout(total=None, connect=1, sock_connect=1)
+        timeout = aiohttp.ClientTimeout(total=None, connect=5, sock_connect=5)
         if configuration.proxy:
             self.pool_manager = aiohttp.ClientSession(
                 connector=connector,
