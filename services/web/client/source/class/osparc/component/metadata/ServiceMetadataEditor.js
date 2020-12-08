@@ -73,6 +73,35 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
           "title": "R5 - Use version control",
           "description": "Implement a system to trace the time history of M&S activities \
                           including delineation of contributors' efforts."
+        },
+        "r06": {
+          "title": "R6 - Document adequately",
+          "description": "Maintain up-to-date informative record of all M&S activities, \
+                          including simulation code, model mark-up, scope and \
+                          intended use of M&S activities, as well as users' and \
+                          developers' guides."
+        },
+        "r07": {
+          "title": "R7 - Disseminate broadly",
+          "description": "Publish all components of M&S activities, including simulation \
+                          software, models, simulation scenarios and results."
+        },
+        "r08": {
+          "title": "R8 - Get independent reviews",
+          "description": "Have the M&S activity reviewed by nonpartisan third-party \
+                          users and developers."
+        },
+        "r09": {
+          "title": "R9 - Test competing implementations",
+          "description": "Use contrasting M&S execution strategies to check the \
+                          conclusions of the different execution strategies against each \
+                          other."
+        },
+        "r10": {
+          "title": "R10 - Conform to standards",
+          "description": "Adopt and promote generally applicable and discipline \
+                          specific operating procedures, guidelines, and regulations \
+                          accepted as best practices."
         }
       };
       return metadataTSR;
