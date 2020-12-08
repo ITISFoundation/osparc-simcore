@@ -164,6 +164,21 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
         },
         "r05": {
           "level": Math.floor(Math.random()*(4))
+        },
+        "r06": {
+          "level": Math.floor(Math.random()*(4))
+        },
+        "r07": {
+          "level": Math.floor(Math.random()*(4))
+        },
+        "r08": {
+          "level": Math.floor(Math.random()*(4))
+        },
+        "r09": {
+          "level": Math.floor(Math.random()*(4))
+        },
+        "r10": {
+          "level": Math.floor(Math.random()*(4))
         }
       };
       return dummyMetadataTSR;
