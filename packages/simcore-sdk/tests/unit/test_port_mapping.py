@@ -1,7 +1,7 @@
 from typing import Any, Dict, Type, Union
 
 import pytest
-from simcore_sdk.node_ports.exceptions import UnboundPortError
+from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 
@@ -39,8 +39,8 @@ def test_filled_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
     for index, port_key in enumerate(port_cfgs):
         assert port_mapping[index] == port_mapping[port_key]
 
-    with pytest.raises(UnboundPortError):
+    with pytest.raises(exceptions.UnboundPortError):
         _ = port_mapping[len(port_cfgs)]
 
-    with pytest.raises(UnboundPortError):
+    with pytest.raises(exceptions.UnboundPortError):
         _ = port_mapping["whatever"]

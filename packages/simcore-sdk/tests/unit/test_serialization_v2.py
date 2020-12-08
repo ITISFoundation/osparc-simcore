@@ -5,8 +5,7 @@
 from typing import Any, Dict
 
 import pytest
-from simcore_sdk.node_ports.dbmanager import DBManager
-from simcore_sdk.node_ports.exceptions import InvalidProtocolError
+from simcore_sdk.node_ports_v2 import DBManager, exceptions
 from simcore_sdk.node_ports_v2.serialization_v2 import (
     create_nodeports_from_db,
     save_nodeports_to_db,
@@ -36,7 +35,7 @@ async def test_create_nodeports_from_db_with_invalid_cfg(
 ):
     invalid_config = {"bad_key": "bad_value"}
     db_manager: DBManager = mock_db_manager(invalid_config)
-    with pytest.raises(InvalidProtocolError):
+    with pytest.raises(exceptions.InvalidProtocolError):
         _ = await create_nodeports_from_db(db_manager, node_uuid)
 
 

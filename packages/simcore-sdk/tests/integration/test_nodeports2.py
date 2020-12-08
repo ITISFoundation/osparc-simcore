@@ -13,7 +13,7 @@ import np_helpers  # pylint: disable=no-name-in-module
 import pytest
 import sqlalchemy as sa
 from simcore_sdk import node_ports_v2
-from simcore_sdk.node_ports import exceptions
+from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 

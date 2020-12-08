@@ -7,8 +7,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict
 
 import pytest
-from simcore_sdk.node_ports.exceptions import PortNotFound, UnboundPortError
-from simcore_sdk.node_ports_v2 import Nodeports, ports
+from simcore_sdk.node_ports_v2 import Nodeports, exceptions, ports
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_mapping
 
@@ -108,7 +107,7 @@ async def test_node_ports_accessors(
         assert await node_ports.get(port.key) == port.value
         await node_ports.set(port.key, port.value)
 
-    with pytest.raises(UnboundPortError):
+    with pytest.raises(exceptions.UnboundPortError):
         await node_ports.get("some_invalid_key")
 
     for port in original_outputs.values():
@@ -171,7 +170,7 @@ async def test_node_ports_set_file_by_keymap(
 
     await node_ports.set_file_by_keymap(Path(__file__))
 
-    with pytest.raises(PortNotFound):
+    with pytest.raises(exceptions.PortNotFound):
         await node_ports.set_file_by_keymap(Path("/whatever/file/that/is/invalid"))
 
 

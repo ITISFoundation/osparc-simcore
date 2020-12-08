@@ -5,6 +5,7 @@ from ..node_ports import config as node_config
 from ..node_ports import exceptions
 from ..node_ports.dbmanager import DBManager
 from .nodeports_v2 import Nodeports
+from .port import Port
 from .serialization_v2 import create_nodeports_from_db
 
 # nodeports is a library for accessing data linked to the node
@@ -23,4 +24,4 @@ async def ports(db_manager: Optional[DBManager] = None) -> Nodeports:
     )
 
 
-__all__ = ["ports", "node_config", "exceptions"]
+__all__ = ["ports", "node_config", "exceptions", "Port"]

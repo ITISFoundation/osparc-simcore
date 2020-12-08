@@ -73,9 +73,12 @@ async def save_nodeports_to_db(nodeports: Nodeports) -> None:
             port_cfg["schema"][port_type][port_key] = key_schema
             # payload (only if default value was not used)
             # pylint: disable=protected-access
-            if not getattr(nodeports, f"internal_{port_type}")[
-                port_key
-            ]._used_default_value:
+            if (
+                port_values["value"] is not None
+                and not getattr(nodeports, f"internal_{port_type}")[
+                    port_key
+                ]._used_default_value
+            ):
                 port_cfg[port_type][port_key] = port_values["value"]
 
     await nodeports.db_manager.write_ports_configuration(

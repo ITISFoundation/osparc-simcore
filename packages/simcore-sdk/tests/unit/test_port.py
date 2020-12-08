@@ -15,8 +15,7 @@ from typing import Any, Dict, Optional, Type, Union
 import pytest
 from aiohttp.client import ClientSession
 from pydantic.error_wrappers import ValidationError
-from simcore_sdk.node_ports import config
-from simcore_sdk.node_ports.exceptions import InvalidItemTypeError
+from simcore_sdk.node_ports_v2 import exceptions, node_config
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
 from utils_port_v2 import create_valid_port_config
@@ -181,10 +180,10 @@ def common_fixtures(
 ):
     """this module main fixture"""
 
-    config.USER_ID = user_id
-    config.PROJECT_ID = project_id
-    config.NODE_UUID = node_uuid
-    config.STORAGE_ENDPOINT = "storage:8080"
+    node_config.USER_ID = user_id
+    node_config.PROJECT_ID = project_id
+    node_config.NODE_UUID = node_uuid
+    node_config.STORAGE_ENDPOINT = "storage:8080"
 
 
 ##################### TESTS
@@ -645,9 +644,9 @@ def test_invalid_port(port_cfg: Dict[str, Any]):
 async def test_invalid_file_type_setter(port_cfg: Dict[str, Any]):
     port = Port(**port_cfg)
     # set a file that does not exist
-    with pytest.raises(InvalidItemTypeError):
+    with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set("some/dummy/file/name")
 
     # set a folder fails too
-    with pytest.raises(InvalidItemTypeError):
+    with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set(Path(__file__).parent)
