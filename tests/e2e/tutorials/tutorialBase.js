@@ -302,7 +302,19 @@ class TutorialBase {
   }
 
   async toDashboard() {
-    await auto.toDashboard(this.__page);
+    await this.takeScreenshot("toDashboard_before");
+    this.__responsesQueue.addResponseListener("projects");
+    this.__responsesQueue.addResponseListener(":close");
+    try {
+      await auto.toDashboard(this.__page);
+      await this.__responsesQueue.waitUntilResponse("projects");
+      await this.__responsesQueue.waitUntilResponse(":close");
+    }
+    catch (err) {
+      console.error("Failed going to dashboard study", err);
+      throw (err);
+    }
+    await this.takeScreenshot("toDashboard_after");
   }
 
   async closeStudy() {
@@ -322,8 +334,16 @@ class TutorialBase {
   async removeStudy(studyId) {
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
-      await this.waitForStudyUnlocked(studyId);
-      await auto.deleteFirstStudy(this.__page, this.__templateName);
+      // await this.waitForStudyUnlocked(studyId);
+      const nTries = 3;
+      for (let i = 0; i < nTries; i++) {
+        const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
+        if (cardUnlocked) {
+          break;
+        }
+        console.log(studyId, "study card still locked");
+        await utils.sleep(3000);
+      }
     }
     catch (err) {
       console.error("Failed deleting study", err);
