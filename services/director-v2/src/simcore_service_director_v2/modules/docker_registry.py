@@ -11,7 +11,7 @@ from typing import Dict, List
 from fastapi import FastAPI
 from httpx import AsyncClient
 
-from ..core.settings import RegistrySettings
+from ..core.settings import RegistrySettings, ClientRequestSettings
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,10 @@ class RegistryApiClient:
         # TODO: add auth https://www.python-httpx.org/advanced/#customizing-authentication
         # TODO: see https://colin-b.github.io/httpx_auth/
 
-        self.client = AsyncClient(base_url=self.settings.api_url, timeout=20)
+        self.client = AsyncClient(
+            base_url=self.settings.api_url,
+            timeout=ClientRequestSettings().total_timeout,
+        )
 
     def get_basic_auth(self):
         auth = (self.settings.user, self.settings.pw.get_secret_value())

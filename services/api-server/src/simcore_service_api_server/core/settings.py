@@ -78,7 +78,11 @@ class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
         # This call triggers parsers
-        return cls(postgres=PostgresSettings(), webserver=WebServerSettings())
+        return cls(
+            postgres=PostgresSettings(),
+            webserver=WebServerSettings(),
+            client_request=ClientRequestSettings(),
+        )
 
     # pylint: disable=no-self-use
     # pylint: disable=no-self-argument

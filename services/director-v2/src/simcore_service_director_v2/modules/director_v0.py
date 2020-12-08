@@ -15,7 +15,7 @@ from models_library.services import ServiceDockerData, ServiceKeyVersion
 from starlette import status
 from starlette.datastructures import URL
 
-from ..core.settings import DirectorV0Settings
+from ..core.settings import DirectorV0Settings, ClientRequestSettings
 from ..models.schemas.services import RunningServiceDetails, ServiceExtras
 from ..utils.client_decorators import handle_errors, handle_retry
 from ..utils.clients import unenvelope_or_raise_error
@@ -34,7 +34,8 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
         DirectorV0Client.create(
             app,
             client=httpx.AsyncClient(
-                base_url=settings.base_url(include_tag=True), timeout=20
+                base_url=settings.base_url(include_tag=True),
+                timeout=ClientRequestSettings().total_timeout,
             ),
         )
 

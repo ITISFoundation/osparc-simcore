@@ -118,6 +118,17 @@ class RegistrySettings(BaseSettings):
         env_prefix = "REGISTRY_"
 
 
+class ClientRequestSettings(BaseSettings):
+    total_timeout: Optional[str] = Field(
+        default=20,
+        description="timeout used for outgoing http requests",
+        env="HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT",
+    )
+
+    class Config(CommonConfig):
+        env_prefix = ""
+
+
 class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls, **settings_kwargs) -> "AppSettings":
@@ -127,6 +138,7 @@ class AppSettings(BaseSettings):
             registry=RegistrySettings(),
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(),
+            client_request=ClientRequestSettings(),
             **settings_kwargs,
         )
 
@@ -222,6 +234,8 @@ class AppSettings(BaseSettings):
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     remote_debug_port: PortInt = 3000
+
+    client_request: ClientRequestSettings
 
     class Config(CommonConfig):
         env_prefix = ""
