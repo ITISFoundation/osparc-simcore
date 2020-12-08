@@ -15,12 +15,17 @@ logger = logging.getLogger(__name__)
 
 def is_production_environ() -> bool:
     """
-        If True, this code most probably
-        runs in a production container of one of the
-        osparc-simcore services.
+    If True, this code most probably
+    runs in a production container of one of the
+    osparc-simcore services.
     """
     # WARNING: based on a convention that is not constantly verified
     return os.environ.get("SC_BUILD_TARGET") == "production"
+
+
+def get_http_client_request_total_timeout() -> int:
+    # search for the env variable containing the timeout or default is 20 if not set
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT", "20"))
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
@@ -31,9 +36,9 @@ def is_osparc_repo_dir(path: Path) -> bool:
 
 
 def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optional[Path]:
-    """ Returns path to root repo dir or None if it does not exists
+    """Returns path to root repo dir or None if it does not exists
 
-        NOTE: assumes starts is a path within repo
+    NOTE: assumes starts is a path within repo
     """
     max_iterations = max(max_iterations, 1)
     root_dir = Path(start)
