@@ -131,6 +131,14 @@ async function getVisibleChildrenIDs(page, parentSelector) {
   return childrenIDs;
 }
 
+async function getStyle(page, selector) {
+  const style = await page.evaluate((selector) => {
+    const node = document.querySelector(selector);
+    return JSON.parse(JSON.stringify(getComputedStyle(node)));
+  }, selector);
+  return style;
+}
+
 async function fetchReq(endpoint) {
   const responseEnv = await page.evaluate(
     // NOTE: without the following comment it fails here with some weird message
@@ -351,6 +359,7 @@ module.exports = {
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
+  getStyle,
   fetchReq,
   makeRequest,
   emptyField,

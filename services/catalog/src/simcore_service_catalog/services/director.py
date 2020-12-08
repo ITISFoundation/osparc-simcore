@@ -109,7 +109,8 @@ class DirectorApi:
 
     @safe_request
     async def get(self, path: str) -> Optional[Dict]:
-        return await self.client.get(path)
+        # temp solution: default timeout increased to 20"
+        return await self.client.get(path, timeout=20.0)
 
     @safe_request
     async def put(self, path: str, body: Dict) -> Optional[Dict]:

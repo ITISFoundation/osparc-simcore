@@ -231,8 +231,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    closeStudy: function() {
-      return this.getStudy().closeStudy();
+    closeEditor: function() {
+      return this.getStudy().stopStudy();
     }
   }
 });

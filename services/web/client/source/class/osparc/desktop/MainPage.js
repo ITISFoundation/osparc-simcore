@@ -73,10 +73,12 @@ qx.Class.define("osparc.desktop.MainPage", {
           const studyId = this.__studyEditor.getStudy().getUuid();
           this.__studyEditor.updateStudyDocument()
             .then(() => {
-              this.__studyEditor.closeStudy()
-                .then(() => this.__dashboard.getStudyBrowser().reloadUserStudy(studyId))
-                .catch(err => console.error(err));
-              this.__showDashboard();
+              this.__studyEditor.closeEditor();
+              const reloadUserStudiesPromise = this.__showDashboard();
+              reloadUserStudiesPromise
+                .then(() => {
+                  this.__closeStudy(studyId);
+                });
             })
             .finally(() => {
               dashboardBtn.setFetching(false);
@@ -173,16 +175,17 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (osparc.data.Permissions.getInstance().getRole() === "guest") {
         // If guest fails to load study, log him out
         osparc.auth.Manager.getInstance().logout();
-        return;
+        return null;
       }
 
       this.__mainStack.setSelection([this.__dashboardLayout]);
-      this.__dashboard.getStudyBrowser().reloadUserStudies();
+      const studiesPromise = this.__dashboard.getStudyBrowser().reloadUserStudies();
       this.__navBar.setStudy(null);
       this.__navBar.setPageContext("dashboard");
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
+      return studiesPromise;
     },
 
     __showLoadingPage: function(msg) {
@@ -254,6 +257,16 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__showDashboard();
           return;
         });
+    },
+
+    __closeStudy: function(studyId) {
+      const params = {
+        url: {
+          projectId: studyId
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "close", params);
     },
 
     __syncStudyEditor: function(pageContext) {
