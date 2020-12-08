@@ -62,6 +62,17 @@ class PostgresSettings(BaseSettings):
         env_prefix = "POSTGRES_"
 
 
+class ClientRequestSettings(BaseSettings):
+    total_timeout: Optional[str] = Field(
+        default=20,
+        description="timeout used for outgoing http requests",
+        env="HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT",
+    )
+
+    class Config(_CommonConfig):
+        env_prefix = ""
+
+
 class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
@@ -91,6 +102,8 @@ class AppSettings(BaseSettings):
 
     # POSTGRES
     postgres: PostgresSettings
+
+    client_request: ClientRequestSettings
 
     # DIRECTOR SERVICE
     director: DirectorSettings
