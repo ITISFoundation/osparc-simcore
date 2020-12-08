@@ -8,6 +8,7 @@ from simcore_service_api_server.core.settings import (
     BootModeEnum,
     PostgresSettings,
     WebServerSettings,
+    ClientRequestSettings,
 )
 
 
@@ -26,7 +27,11 @@ def test_min_environ_for_settings(monkeypatch):
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     # NOTE: pg and weberver settings parse environ NOW!
-    settings = AppSettings(postgres=PostgresSettings(), webserver=WebServerSettings())
+    settings = AppSettings(
+        postgres=PostgresSettings(),
+        webserver=WebServerSettings(),
+        client_request=ClientRequestSettings(),
+    )
 
     pprint(settings.dict())
 
