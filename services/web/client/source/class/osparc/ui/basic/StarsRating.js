@@ -97,7 +97,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     __checkValues: function() {
       const score = this.getScore();
       const maxScore = this.getMaxScore();
-      if (score && maxScore && score >= 0 && score <= maxScore) {
+      if (score >= 0 && score <= maxScore) {
         return true;
       }
       return false;
