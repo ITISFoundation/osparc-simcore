@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
   construct: function(serviceData) {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(10, 5);
+    const grid = new qx.ui.layout.Grid(10, 8);
     grid.setColumnAlign(0, "left", "middle");
     grid.setColumnAlign(1, "left", "middle");
     this._setLayout(grid);
@@ -88,7 +88,12 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
           maxScore: 4,
           nStars: 4
         });
-        this._add(ruleRating, {
+        const confLevel = osparc.component.metadata.ServiceMetadata.findConformanceLevel(rule.level);
+        const hint = confLevel.title + "<br>" + confLevel.description;
+        const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
+          hintPosition: "left"
+        });
+        this._add(ruleRatingWHint, {
           row,
           column: 1
         });

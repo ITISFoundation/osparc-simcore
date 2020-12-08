@@ -123,6 +123,17 @@ domain and the intended context of use",
       return conformanceLevel;
     },
 
+    findConformanceLevel: function(level) {
+      let confLevel = null;
+      const conformanceLevels = osparc.component.metadata.ServiceMetadata.getConformanceLevel();
+      Object.values(conformanceLevels).forEach(conformanceLevel => {
+        if (conformanceLevel.level === level) {
+          confLevel = conformanceLevel;
+        }
+      });
+      return confLevel;
+    },
+
     getDummyMetadataTSR: function() {
       const maxLevel = 5; // random integer from 0-4
       const dummyMetadataTSR = {
