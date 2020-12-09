@@ -10,50 +10,50 @@ aniso8601==7.0.0          # via graphene
 async-exit-stack==1.0.1   # via -r requirements/_base.in, fastapi
 async-generator==1.10     # via -r requirements/_base.in, fastapi
 attrs==20.3.0             # via -r requirements/_base.in
-certifi==2020.11.8        # via httpx, requests
+certifi==2020.12.5        # via httpx, requests
 cffi==1.14.4              # via cryptography
-chardet==3.0.4            # via requests
+chardet==3.0.4            # via httpx, requests
 click==7.1.2              # via uvicorn
 contextvars==2.4          # via sniffio
-cryptography==3.2.1       # via -r requirements/_base.in
+cryptography==3.3         # via -r requirements/_base.in
 dataclasses==0.8          # via pydantic
 dnspython==2.0.0          # via email-validator
 email-validator==1.1.2    # via fastapi, pydantic
-fastapi[all]==0.61.2      # via -r requirements/_base.in
+fastapi[all]==0.62.0      # via -r requirements/_base.in
 graphene==2.1.8           # via fastapi
 graphql-core==2.3.2       # via graphene, graphql-relay
 graphql-relay==2.0.1      # via graphene
 h11==0.9.0                # via httpcore, uvicorn
-httpcore==0.12.2          # via httpx
+httpcore==0.10.2          # via httpx
 httptools==0.1.1          # via uvicorn
-httpx==0.16.1             # via -r requirements/_base.in
+httpx==0.14.3             # via -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt, -c requirements/../../../requirements/constraints.txt, -r requirements/_base.in
 idna==2.10                # via email-validator, requests, rfc3986, yarl
 immutables==0.14          # via contextvars
 itsdangerous==1.1.0       # via fastapi
 jinja2==2.11.2            # via fastapi
 markupsafe==1.1.1         # via jinja2
-multidict==5.0.2          # via yarl
-orjson==3.4.4             # via fastapi
-packaging==20.4           # via -r requirements/_base.in
+multidict==5.1.0          # via yarl
+orjson==3.4.6             # via fastapi
+packaging==20.7           # via -r requirements/_base.in
 promise==2.3              # via graphql-core, graphql-relay
 psycopg2-binary==2.8.6    # via aiopg, sqlalchemy
 pycparser==2.20           # via cffi
-pydantic[dotenv,email]==1.7.2  # via -r requirements/../../../packages/models-library/requirements/_base.in, -r requirements/_base.in, fastapi
+pydantic[dotenv,email]==1.7.3  # via -r requirements/../../../packages/models-library/requirements/_base.in, -r requirements/_base.in, fastapi
 pyparsing==2.4.7          # via packaging
 python-dotenv==0.15.0     # via pydantic
 python-multipart==0.0.5   # via fastapi
-pyyaml==5.3.1             # via fastapi
+pyyaml==5.3.1             # via -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt, -c requirements/../../../requirements/constraints.txt, fastapi
 requests==2.25.0          # via fastapi
 rfc3986[idna2008]==1.4.0  # via httpx
 rx==1.6.1                 # via graphql-core
-six==1.15.0               # via cryptography, graphene, graphql-core, graphql-relay, packaging, python-multipart, tenacity
+six==1.15.0               # via cryptography, graphene, graphql-core, graphql-relay, python-multipart, tenacity
 sniffio==1.2.0            # via httpcore, httpx
-sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -r requirements/../../../packages/postgres-database/requirements/_base.in, aiopg
+sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt, -c requirements/../../../requirements/constraints.txt, -r requirements/../../../packages/postgres-database/requirements/_base.in, aiopg
 starlette==0.13.6         # via fastapi
 tenacity==6.2.0           # via -r requirements/_base.in
 typing-extensions==3.7.4.3  # via yarl
 ujson==3.2.0              # via fastapi
-urllib3==1.26.2           # via requests
+urllib3==1.26.2           # via -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt, -c requirements/../../../requirements/constraints.txt, requests
 uvicorn==0.11.8           # via fastapi
 uvloop==0.14.0            # via uvicorn
 websockets==8.1           # via uvicorn
