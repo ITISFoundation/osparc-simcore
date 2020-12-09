@@ -5,6 +5,8 @@ from typing import Optional
 from pydantic import BaseSettings, Field, SecretStr, validator
 from yarl import URL
 
+from models_library.settings.http_clients import ClientRequestSettings
+
 
 class BootModeEnum(str, Enum):
     debug = "debug-ptvsd"
@@ -61,17 +63,6 @@ class PostgresSettings(BaseSettings):
 
     class Config(_CommonConfig):
         env_prefix = "POSTGRES_"
-
-
-class ClientRequestSettings(BaseSettings):
-    total_timeout: Optional[int] = Field(
-        default=20,
-        description="timeout used for outgoing http requests",
-        env="HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT",
-    )
-
-    class Config(_CommonConfig):
-        env_prefix = ""
 
 
 class AppSettings(BaseSettings):

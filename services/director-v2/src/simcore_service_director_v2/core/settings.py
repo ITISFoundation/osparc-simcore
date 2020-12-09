@@ -6,6 +6,7 @@ from typing import Optional
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.postgres import PostgresSettings
+from models_library.settings.http_clients import ClientRequestSettings
 from pydantic import (
     BaseSettings,
     Field,
@@ -116,17 +117,6 @@ class RegistrySettings(BaseSettings):
 
     class Config(CommonConfig):
         env_prefix = "REGISTRY_"
-
-
-class ClientRequestSettings(BaseSettings):
-    total_timeout: Optional[int] = Field(
-        default=20,
-        description="timeout used for outgoing http requests",
-        env="HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT",
-    )
-
-    class Config(CommonConfig):
-        env_prefix = ""
 
 
 class AppSettings(BaseSettings):
