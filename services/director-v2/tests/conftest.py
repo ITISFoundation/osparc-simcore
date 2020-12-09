@@ -39,18 +39,6 @@ def project_slug_dir(services_dir) -> Path:
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(project_slug_dir):
-    root_dir = project_slug_dir.parent.parent
-    assert (
-        root_dir and root_dir.exists()
-    ), "Did you renamed or moved the integration folder under api-server??"
-    assert any(root_dir.glob("services/api-server")), (
-        "%s not look like rootdir" % root_dir
-    )
-    return root_dir
-
-
-@pytest.fixture(scope="session")
 def package_dir() -> Path:
     dirpath = Path(simcore_service_director_v2.__file__).resolve().parent
     assert dirpath.exists()
