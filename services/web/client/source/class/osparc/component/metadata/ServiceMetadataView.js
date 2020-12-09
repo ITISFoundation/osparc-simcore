@@ -34,13 +34,27 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
     this.__tsrGrid = new qx.ui.container.Composite(grid);
     this._add(this.__tsrGrid);
 
-    this.__populateTSRHeaders();
-    this.__populateTSRData();
+    this.__populateTSR();
+  },
+
+  properties: {
+    mode: {
+      check: ["display", "edit"],
+      init: "edit",
+      nullable: false,
+      apply: "__populateTSR"
+    }
   },
 
   members: {
     __serviceData: null,
     __tsrGrid: null,
+
+    __populateTSR: function() {
+      this.__tsrGrid.removeAll();
+      this.__populateTSRHeaders();
+      this.__populateTSRData();
+    },
 
     __populateTSRHeaders: function() {
       const rules = osparc.component.metadata.ServiceMetadata.getMetadataTSR();
@@ -83,6 +97,17 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
     },
 
     __populateTSRData: function() {
+      switch (this.getMode()) {
+        case "edit":
+          this.__populateTSRDataEdit();
+          break;
+        default:
+          this.__populateTSRDataView();
+          break;
+      }
+    },
+
+    __populateTSRDataView: function() {
       const metadataTSR = this.__serviceData["metadataTSR"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
@@ -98,6 +123,68 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
           hintPosition: "left"
         });
         this.__tsrGrid.add(ruleRatingWHint, {
+          row,
+          column: 1
+        });
+        row++;
+      });
+      const {
+        score,
+        maxScore
+      } = osparc.component.metadata.ServiceMetadata.computeTSRScore(metadataTSR);
+      const tsrRating = new osparc.ui.basic.StarsRating();
+      tsrRating.set({
+        score,
+        maxScore,
+        nStars: 4,
+        showScore: true
+      });
+      this.__tsrGrid.add(tsrRating, {
+        row,
+        column: 1
+      });
+    },
+
+    __populateTSRDataEdit: function() {
+      const metadataTSR = this.__serviceData["metadataTSR"];
+      let row = 1;
+      Object.values(metadataTSR).forEach(rule => {
+        const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+        const slider = new qx.ui.form.Slider().set({
+          width: 150,
+          minimum: 0,
+          maximum: 4,
+          singleStep: 1,
+          value: rule.level
+        });
+        layout.add(slider);
+
+        const updateLevel = value => {
+          // remove all but slider
+          while (layout.getChildren().length > 1) {
+            layout.removeAt(1);
+          }
+          const ruleRating = new osparc.ui.basic.StarsRating();
+          ruleRating.set({
+            maxScore: 4,
+            nStars: 4,
+            score: value
+          });
+          const confLevel = osparc.component.metadata.ServiceMetadata.findConformanceLevel(value);
+          const hint = confLevel.title + "<br>" + confLevel.description;
+          const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
+            hintPosition: "left"
+          });
+          layout.add(ruleRatingWHint);
+        };
+
+        updateLevel(rule.level);
+        slider.addListener("changeValue", e => {
+          updateLevel(e.getData());
+        }, this);
+
+        this.__tsrGrid.add(layout, {
           row,
           column: 1
         });
