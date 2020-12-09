@@ -61,7 +61,6 @@ afterAll(async () => {
       osparc.data.Resources.fetch('tags', 'delete', { url: { tagId: '${tagId}' } }, '${tagId}')
     ]);
   `);
-  await auto.logOut(page);
 }, ourTimeout);
 
 test('add a tag', async () => {
