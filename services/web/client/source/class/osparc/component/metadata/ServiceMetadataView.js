@@ -147,8 +147,29 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
 
     __populateTSRDataEdit: function() {
       const metadataTSR = this.__serviceData["metadataTSR"];
+      const copyMetadataTSR = osparc.utils.Utils.deepCloneObject(metadataTSR);
+
+      const tsrRating = new osparc.ui.basic.StarsRating();
+      tsrRating.set({
+        nStars: 4,
+        showScore: true
+      });
+      const updateTSRScore = () => {
+        const {
+          score,
+          maxScore
+        } = osparc.component.metadata.ServiceMetadata.computeTSRScore(copyMetadataTSR);
+
+        tsrRating.set({
+          score,
+          maxScore
+        });
+      };
+      updateTSRScore();
+
       let row = 1;
-      Object.values(metadataTSR).forEach(rule => {
+      Object.keys(copyMetadataTSR).forEach(ruleKey => {
+        const rule = copyMetadataTSR[ruleKey];
         const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
         const slider = new qx.ui.form.Slider().set({
@@ -181,7 +202,9 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
 
         updateLevel(rule.level);
         slider.addListener("changeValue", e => {
-          updateLevel(e.getData());
+          rule.level = e.getData();
+          updateLevel(rule.level);
+          updateTSRScore();
         }, this);
 
         this.__tsrGrid.add(layout, {
@@ -190,17 +213,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataView", {
         });
         row++;
       });
-      const {
-        score,
-        maxScore
-      } = osparc.component.metadata.ServiceMetadata.computeTSRScore(metadataTSR);
-      const tsrRating = new osparc.ui.basic.StarsRating();
-      tsrRating.set({
-        score,
-        maxScore,
-        nStars: 4,
-        showScore: true
-      });
+
+
       this.__tsrGrid.add(tsrRating, {
         row,
         column: 1
