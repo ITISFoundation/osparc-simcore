@@ -64,7 +64,7 @@ class Nodeports(BaseModel):
             # not available try outputs
             pass
         # if this fails it will raise an exception
-        return await (await self.outputs)[item_key].set(item_value)
+        await (await self.outputs)[item_key].set(item_value)
 
     async def set_file_by_keymap(self, item_value: Path) -> None:
         for output in (await self.outputs).values():
