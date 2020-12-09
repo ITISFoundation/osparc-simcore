@@ -14,7 +14,7 @@ from simcore_service_storage_sdk.rest import ApiException
 from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, exceptions
-from config.http_clients import client_request_settings
+from .config.http_clients import client_request_settings
 
 log = logging.getLogger(__name__)
 
