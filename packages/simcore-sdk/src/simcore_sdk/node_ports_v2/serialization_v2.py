@@ -1,4 +1,6 @@
 import json
+import logging
+from pprint import pformat
 from typing import Any, Dict, Set
 
 from aiopg.sa.result import RowProxy
@@ -6,6 +8,8 @@ from aiopg.sa.result import RowProxy
 from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import InvalidProtocolError
 from .nodeports_v2 import Nodeports
+
+log = logging.getLogger(__name__)
 
 NODE_REQUIRED_KEYS: Set[str] = {
     "schema",
@@ -18,6 +22,11 @@ async def load(
     db_manager: DBManager, node_uuid: str, auto_update: bool = False
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
+    log.debug(
+        "creating node_ports_v2 object from node %s with auto_uptate %s",
+        node_uuid,
+        auto_update,
+    )
     row: RowProxy = await db_manager.get_ports_configuration_from_node_uuid(node_uuid)
     port_cfg = json.loads(row)
     if any(k not in port_cfg for k in NODE_REQUIRED_KEYS):
@@ -50,10 +59,18 @@ async def load(
         node_port_creator_cb=load,
         auto_update=auto_update,
     )
+    log.debug(
+        "created node_ports_v2 object %s",
+        pformat(ports, indent=2),
+    )
     return ports
 
 
 async def dump(nodeports: Nodeports) -> None:
+    log.debug(
+        "dumping node_ports_v2 object %s",
+        pformat(nodeports, indent=2),
+    )
     _nodeports_cfg = nodeports.dict(
         include={"internal_inputs", "internal_outputs"},
         by_alias=True,
