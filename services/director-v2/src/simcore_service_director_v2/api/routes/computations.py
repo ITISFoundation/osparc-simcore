@@ -32,7 +32,7 @@ from ...utils.computations import (
     is_pipeline_running,
     is_pipeline_stopped,
 )
-from ...utils.dags import create_dag_graph, find_entrypoints
+from ...utils.dags import create_dag_graph, find_entrypoints, reduce_dag_graph
 from ...utils.exceptions import ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
 from ..dependencies.database import get_repository
@@ -120,6 +120,9 @@ async def create_computation(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Project {job.project_id} is not a valid directed acyclic graph!",
             )
+        # get a subgraph if needed
+        if job.sub_graph:
+            dag_graph = reduce_dag_graph(dag_graph, job.sub_graph)
 
         if job.start_pipeline:
             # find the entrypoints, if not the pipeline cannot be started
@@ -315,7 +318,7 @@ async def delete_pipeline(
             def return_last_value(retry_state):
                 """return the result of the last call attempt"""
                 return retry_state.outcome.result()
-            
+
             @retry(
                 stop=stop_after_delay(PIPELINE_ABORT_TIMEOUT_S),
                 wait=wait_random(0, 2),

@@ -1,21 +1,24 @@
 import logging
-from typing import List
+from typing import List, Set
 
 import networkx as nx
-from models_library.projects_nodes import NodeID
 from models_library.projects import Workbench
+from models_library.projects_nodes import NodeID
 
-from .computations import to_node_class, NodeClass
+from .computations import NodeClass, to_node_class
+from .logging_utils import log_decorator
 
-log = logging.getLogger(__file__)
+logger = logging.getLogger(__file__)
 
 
+@log_decorator(logger=logger)
 def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
     entrypoints = [n for n in graph.nodes if not list(graph.predecessors(n))]
-    log.debug("the entrypoints of the graph are %s", entrypoints)
+    logger.debug("the entrypoints of the graph are %s", entrypoints)
     return entrypoints
 
 
+@log_decorator(logger=logger)
 def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
@@ -30,11 +33,19 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
                     and to_node_class(predecessor_node.key) == NodeClass.COMPUTATIONAL
                 ):
                     dag_graph.add_edge(str(input_node_id), node_id)
-    log.debug("created DAG graph: %s", nx.to_dict_of_lists(dag_graph))
 
     return dag_graph
 
 
+@log_decorator(logger=logger)
+def reduce_dag_graph(
+    full_dag_graph: nx.DiGraph, selected_nodes: Set[NodeID]
+) -> nx.DiGraph:
+    # find depending nodes (if their linked output is missing, they should be run as well)
+    return full_dag_graph.subgraph(selected_nodes)
+
+
+@log_decorator(logger=logger)
 def topological_sort_grouping(dag_graph: nx.DiGraph) -> List:
     # copy the graph
     graph_copy = dag_graph.copy()
