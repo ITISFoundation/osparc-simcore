@@ -10,7 +10,7 @@ apipkg==1.5               # via execnet
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via -c requirements/_base.txt, aiohttp
 attrs==20.3.0             # via -c requirements/_base.txt, aiohttp, pytest
-certifi==2020.11.8        # via requests
+certifi==2020.11.8        # via -c requirements/_base.txt, requests
 chardet==3.0.4            # via -c requirements/_base.txt, aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.2.0          # via -r requirements/_test.in
@@ -23,7 +23,7 @@ idna==2.10                # via -c requirements/_base.txt, idna-ssl, requests, y
 importlib-metadata==3.0.0  # via pluggy, pytest
 iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
-lazy-object-proxy==1.4.3  # via astroid
+lazy-object-proxy==1.4.3  # via -c requirements/_base.txt, astroid
 mccabe==0.6.1             # via pylint
 mock==4.0.2               # via -r requirements/_test.in
 multidict==4.7.6          # via -c requirements/_base.txt, aiohttp, yarl
@@ -50,7 +50,7 @@ termcolor==1.1.0          # via pytest-sugar
 toml==0.10.2              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via -c requirements/_base.txt, aiohttp, yarl
-urllib3==1.26.2           # via requests
+urllib3==1.26.2           # via -c requirements/_base.txt, requests
 websocket-client==0.57.0  # via docker
 wrapt==1.12.1             # via astroid
 yarl==1.5.1               # via -c requirements/_base.txt, aiohttp
