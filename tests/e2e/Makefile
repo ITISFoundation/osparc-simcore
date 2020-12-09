@@ -70,4 +70,4 @@ test: ## test the platformå
 	# tests
 	npm test
 	# tests whether tutorial run
-	npm run tutorials http://172.16.8.52:9081/
+	npm run tutorials http://127.0.0.1:9081
