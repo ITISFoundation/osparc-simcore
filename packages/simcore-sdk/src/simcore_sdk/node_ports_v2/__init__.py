@@ -8,15 +8,14 @@ from .nodeports_v2 import Nodeports
 from .port import Port
 from .serialization_v2 import load
 
-# nodeports is a library for accessing data linked to the node
-# in that sense it should not log stuff unless the application code wants it to be so.
 log = logging.getLogger(__name__)
-log.addHandler(logging.NullHandler())
 
 
 async def ports(db_manager: Optional[DBManager] = None) -> Nodeports:
+    log.debug("creating node_ports_v2 object using provided dbmanager: %s", db_manager)
     # FIXME: warning every dbmanager create a new db engine!
     if db_manager is None:  # NOTE: keeps backwards compatibility
+        log.debug("no db manager provided, creating one...")
         db_manager = DBManager()
 
     return await load(db_manager, node_config.NODE_UUID, auto_update=True)
