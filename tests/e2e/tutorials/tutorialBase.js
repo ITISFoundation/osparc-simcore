@@ -65,14 +65,13 @@ class TutorialBase {
 
   async start() {
     try {
-      const page = await this.beforeScript();
+      await this.beforeScript();
       await this.__goTo();
 
       const needsRegister = await this.registerIfNeeded();
       if (!needsRegister) {
         await this.login();
       }
-      return page;
     }
     catch (err) {
       console.error("Error starting", err);

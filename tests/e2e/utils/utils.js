@@ -261,11 +261,10 @@ async function waitForValidOutputFile(page) {
   })
 }
 
-async function waitAndClick(page, id) {
-  await page.waitForSelector(id, {
+function waitAndClick(page, selector, clickCount=1) {
+  return page.waitForSelector(selector, {
     timeout: 30000 // default 30s
-  });
-  await page.click(id);
+  }).then(el => el.click({ clickCount }));
 }
 
 async function clearInput(page, selector) {
