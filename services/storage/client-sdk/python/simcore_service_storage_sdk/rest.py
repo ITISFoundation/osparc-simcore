@@ -14,6 +14,7 @@
 import io
 import json
 import logging
+import os
 import re
 import ssl
 
@@ -25,6 +26,12 @@ from six.moves.urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
+def get_http_client_request_aiohttp_connect_timeout() -> int:
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "5"))
+
+
+def get_http_client_request_aiohttp_sock_connect_timeout() -> int:
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
 
 class RESTResponse(io.IOBase):
 
@@ -73,7 +80,11 @@ class RESTClientObject(object):
         # https pool manager
         # We are interested in fast connections, if a connection is established
         # there is no timeout for file download operations
-        timeout = aiohttp.ClientTimeout(total=None, connect=5, sock_connect=5)
+        timeout = aiohttp.ClientTimeout(
+            total=None, 
+            connect=get_http_client_request_aiohttp_connect_timeout(), 
+            sock_connect=get_http_client_request_aiohttp_sock_connect_timeout(),
+        )
         if configuration.proxy:
             self.pool_manager = aiohttp.ClientSession(
                 connector=connector,
