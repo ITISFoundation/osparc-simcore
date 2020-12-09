@@ -53,14 +53,14 @@ beforeAll(async () => {
 }, ourTimeout * 2);
 
 afterAll(async () => {
-  page.removeAllListeners();
   // Cleaning
   await page.evaluate(`
-    Promise.all([
-      osparc.data.Resources.fetch('studies', 'delete', { url: { projectId: '${studyId}' } }, '${studyId}'),
-      osparc.data.Resources.fetch('tags', 'delete', { url: { tagId: '${tagId}' } }, '${tagId}')
-    ]);
+  Promise.all([
+    osparc.data.Resources.fetch('studies', 'delete', { url: { projectId: '${studyId}' } }, '${studyId}'),
+    osparc.data.Resources.fetch('tags', 'delete', { url: { tagId: '${tagId}' } }, '${tagId}')
+  ]);
   `);
+  page.off('response', responseHandler);
 }, ourTimeout);
 
 test('add a tag', async () => {
