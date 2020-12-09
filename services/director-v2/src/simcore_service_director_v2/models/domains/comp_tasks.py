@@ -22,7 +22,7 @@ class ComputationTaskCreate(BaseModel):
     start_pipeline: Optional[bool] = Field(
         False, description="if True the computation pipeline will start right away"
     )
-    sub_graph: Optional[Set[NodeID]] = Field(
+    subgraph: Optional[Set[NodeID]] = Field(
         None,
         description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
     )

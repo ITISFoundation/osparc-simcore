@@ -121,8 +121,8 @@ async def create_computation(
                 detail=f"Project {job.project_id} is not a valid directed acyclic graph!",
             )
         # get a subgraph if needed
-        if job.sub_graph:
-            dag_graph = reduce_dag_graph(dag_graph, job.sub_graph)
+        if job.subgraph:
+            dag_graph = reduce_dag_graph(dag_graph, job.subgraph)
 
         if job.start_pipeline:
             # find the entrypoints, if not the pipeline cannot be started
