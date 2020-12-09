@@ -31,29 +31,28 @@ def _get_fake_service_details(
     service: ServiceKeyVersion,
 ) -> Optional[ServiceDockerData]:
 
-    if "file-picker" not in service.key:
-        return
-
-    file_picker_outputs = {
-        "outFile": {
-            "label": "File",
-            "displayOrder": 0,
-            "description": "Chosen File",
-            "type": "data:*/*",
+    if "file-picker" in service.key:
+        file_picker_outputs = {
+            "outFile": {
+                "label": "File",
+                "displayOrder": 0,
+                "description": "Chosen File",
+                "type": "data:*/*",
+            }
         }
-    }
-    return ServiceDockerData(
-        **service.dict(),
-        name="File Picker",
-        description="File Picker",
-        authors=[
-            Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
-        ],
-        contact="maiz@itis.swiss",
-        inputs={},
-        outputs=file_picker_outputs,
-        type=ServiceType.FRONTEND,
-    )
+        return ServiceDockerData(
+            **service.dict(),
+            name="File Picker",
+            description="File Picker",
+            authors=[
+                Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
+            ],
+            contact="maiz@itis.swiss",
+            inputs={},
+            outputs=file_picker_outputs,
+            type=ServiceType.FRONTEND,
+        )
+    return None
 
 
 class CompTasksRepository(BaseRepository):
