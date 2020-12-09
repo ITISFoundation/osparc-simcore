@@ -24,8 +24,15 @@ def is_production_environ() -> bool:
 
 
 def get_http_client_request_total_timeout() -> int:
-    # search for the env variable containing the timeout or default is 20 if not set
     return int(os.environ.get("HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT", "20"))
+
+
+def get_http_client_request_aiohttp_connect_timeout() -> int:
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "5"))
+
+
+def get_http_client_request_aiohttp_sock_connect_timeout() -> int:
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
