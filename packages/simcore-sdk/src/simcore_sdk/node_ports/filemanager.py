@@ -3,10 +3,10 @@ import logging
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Optional, Tuple
 
 import aiofiles
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientPayloadError, ClientSession, ClientTimeout
 from yarl import URL
 
 from models_library.settings.services_common import ServicesCommonSettings
@@ -88,8 +88,6 @@ async def _get_location_id_from_location_name(store: str, api: UsersApi):
         raise exceptions.S3InvalidStore(store)
     except ApiException as err:
         _handle_api_exception(store, err)
-    if resp.error:
-        raise exceptions.StorageConnectionError(store, resp.error.to_str())
 
 
 async def _get_link(store_id: int, file_id: str, apifct) -> URL:
@@ -125,24 +123,6 @@ async def _get_upload_link(store_id: int, file_id: str, api: UsersApi) -> URL:
     return await _get_link(store_id, file_id, api.upload_file)
 
 
-async def _get_file_metadata(store_id: int, file_id: str) -> Dict[str, Any]:
-    log.debug("Getting file metadata from store id [%s] for %s", store_id, file_id)
-    try:
-        with api_client() as client:
-            api = UsersApi(client)
-            resp = await api.get_file_metadata(
-                file_id=file_id, location_id=store_id, user_id=config.USER_ID
-            )
-            if resp.error:
-                raise exceptions.StorageServerIssue(
-                    f"getting file {file_id} metadata failed: [{resp.error.to_str()}]"
-                )
-            return resp.data
-
-    except ApiException as err:
-        _handle_api_exception(store_id, err)
-
-
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
     log.debug("Downloading from %s to %s", url, file_path)
     async with session.get(url) as response:
@@ -152,22 +132,22 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
             raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_size = int(response.headers.get("content-length", 0)) or None
-
-        with tqdm(
-            desc=f"downloading {file_path} [{file_size} bytes]",
-            total=file_size,
-            unit="byte",
-            unit_scale=True,
-        ) as pbar:
-            async with aiofiles.open(file_path, "wb") as file_pointer:
-                # await file_pointer.write(await response.read())
-                chunk = await response.content.read(CHUNK_SIZE)
-                while chunk:
-                    await file_pointer.write(chunk)
-                    pbar.update(len(chunk))
+        try:
+            with tqdm(
+                desc=f"downloading {file_path} [{file_size} bytes]",
+                total=file_size,
+                unit="byte",
+                unit_scale=True,
+            ) as pbar:
+                async with aiofiles.open(file_path, "wb") as file_pointer:
                     chunk = await response.content.read(CHUNK_SIZE)
-            log.debug("Download complete")
-        return await response.release()
+                    while chunk:
+                        await file_pointer.write(chunk)
+                        pbar.update(len(chunk))
+                        chunk = await response.content.read(CHUNK_SIZE)
+                log.debug("Download complete")
+        except ClientPayloadError as exc:
+            raise exceptions.TransferError(url) from exc
 
 
 ETag = str
