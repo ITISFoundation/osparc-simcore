@@ -297,7 +297,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         if (osparc.auth.Manager.getInstance().isLoggedIn()) {
-          this.__resetStudyList(this.__userStudies);
+          this.reloadUserStudies();
         }
       }, this);
     },
@@ -594,7 +594,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__startStudy(studyData["uuid"]);
       }, this);
       studyDetails.addListener("updateTags", () => {
-        this.reloadUserStudies();
+        this.reloadUserStudy(studyData.uuid);
       });
 
       const height = 400;
