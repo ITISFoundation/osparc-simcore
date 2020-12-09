@@ -3,6 +3,11 @@
 
 """
 import logging
+
+# pylint: disable=missing-docstring
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+import warnings
 from pathlib import Path
 from typing import Optional
 
@@ -12,10 +17,6 @@ from ._items_list import ItemsList
 from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
-
-# pylint: disable=missing-docstring
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
 
 
 class Nodeports:
@@ -28,7 +29,10 @@ class Nodeports:
         input_payloads: DataItemsList = None,
         outputs_payloads: DataItemsList = None,
     ):
-
+        warnings.warn(
+            "node_ports is deprecated, use node_ports_v2 instead",
+            category=DeprecationWarning,
+        )
         log.debug(
             "Initialising Nodeports object with inputs %s and outputs %s",
             input_payloads,
@@ -163,6 +167,10 @@ class Nodeports:
 
 
 async def ports(db_manager: Optional[dbmanager.DBManager] = None) -> Nodeports:
+    warnings.warn(
+        "node_ports is deprecated, use node_ports_v2 instead",
+        category=DeprecationWarning,
+    )
     # FIXME: warning every dbmanager create a new db engine!
     if db_manager is None:  # NOTE: keeps backwards compatibility
         db_manager = dbmanager.DBManager()
