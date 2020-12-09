@@ -192,6 +192,58 @@ def _assert_pipeline_status(
     return task_out
 
 
+@pytest.mark.parametrize(
+    "subgraph_elements",
+    [pytest.param([0, 1], id="element 0,1"), pytest.param([0, 1], id="element 0,2,4")],
+)
+def test_run_partial_computation(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+    sleepers_workbench: Dict,
+    subgraph_elements: List[int],
+):
+    # send a valid project with sleepers
+    sleepers_project = project(workbench=sleepers_workbench)
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(sleepers_project.uuid),
+            "start_pipeline": True,
+            "sub_graph": [
+                str(node_id)
+                for index, node_id in enumerate(sleepers_project)
+                if index in subgraph_elements
+            ],
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    task_out = ComputationTaskOut.parse_obj(response.json())
+
+    assert task_out.id == sleepers_project.uuid
+    assert task_out.state == RunningState.PUBLISHED
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert (
+        task_out.stop_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    )
+
+    # now wait for the computation to finish
+    task_out = _assert_pipeline_status(
+        client, task_out.url, user_id, sleepers_project.uuid
+    )
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert task_out.stop_url == None
+
+    assert (
+        task_out.state == RunningState.SUCCESS
+    ), f"the pipeline complete with state {task_out.state}"
+
+
 def test_run_computation(
     client: TestClient,
     user_id: PositiveInt,
