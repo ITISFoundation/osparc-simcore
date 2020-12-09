@@ -128,15 +128,15 @@ class TutorialBase {
       throw (err);
     }
 
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
-      const services = resp["data"];
-      console.log("Services received:", services.length);
-    }
-    catch (err) {
-      console.error("Services could not be fetched", err);
-      throw (err);
-    }
+    // try {
+    //   const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
+    //   const services = resp["data"];
+    //   console.log("Services received:", services.length);
+    // }
+    // catch (err) {
+    //   console.error("Services could not be fetched", err);
+    //   throw (err);
+    // }
   }
 
   async waitForOpen() {

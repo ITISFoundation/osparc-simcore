@@ -587,7 +587,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__startStudy(studyData["uuid"]);
       }, this);
       studyDetails.addListener("updateTags", () => {
-        this.__resetStudyList(osparc.store.Store.getInstance().getStudies());
+        this.reloadUserStudies();
       });
 
       const height = 400;

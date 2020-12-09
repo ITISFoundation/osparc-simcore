@@ -1,4 +1,4 @@
-const demo = false;
+const demo = true;
 
 module.exports = {
   launch: {
