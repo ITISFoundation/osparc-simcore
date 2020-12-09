@@ -14,7 +14,7 @@ NODE_REQUIRED_KEYS: Set[str] = {
 }
 
 
-async def create_nodeports_from_db(
+async def load(
     db_manager: DBManager, node_uuid: str, auto_update: bool = False
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
@@ -46,14 +46,14 @@ async def create_nodeports_from_db(
         **node_ports_cfg,
         db_manager=db_manager,
         node_uuid=node_uuid,
-        save_to_db_cb=save_nodeports_to_db,
-        node_port_creator_cb=create_nodeports_from_db,
+        save_to_db_cb=dump,
+        node_port_creator_cb=load,
         auto_update=auto_update,
     )
     return ports
 
 
-async def save_nodeports_to_db(nodeports: Nodeports) -> None:
+async def dump(nodeports: Nodeports) -> None:
     _nodeports_cfg = nodeports.dict(
         include={"internal_inputs", "internal_outputs"},
         by_alias=True,
