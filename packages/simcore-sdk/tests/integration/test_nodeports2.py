@@ -183,8 +183,8 @@ async def test_port_file_accessors(
     PORTS = await node_ports_v2.ports()
     await check_config_valid(PORTS, config_dict)
     assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness
-    # with pytest.raises(exceptions.S3InvalidPathError):
-    #     await PORTS.inputs["in_1"].get()
+    with pytest.raises(exceptions.InvalidDownloadLinkError):
+        await (await PORTS.inputs)["in_1"].get()
 
     # this triggers an upload to S3 + configuration change
     await (await PORTS.outputs)["out_34"].set(item_value)
