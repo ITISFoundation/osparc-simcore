@@ -11,7 +11,7 @@ aiopg[sa]==1.0.0          # via -r requirements/../../../packages/service-librar
 aiozipkin==0.7.1          # via -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt, -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt, -c requirements/../../../requirements/constraints.txt, -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==3.0.1      # via aiohttp
 attrs==20.3.0             # via -r requirements/../../../packages/service-library/requirements/_base.in, -r requirements/_base.in, aiohttp, jsonschema, openapi-core
-certifi==2020.12.5        # via minio
+certifi==2020.11.8        # via minio
 chardet==3.0.4            # via aiohttp
 configparser==5.0.1       # via minio
 dataclasses==0.7          # via pydantic
