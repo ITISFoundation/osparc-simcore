@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID
@@ -27,30 +27,33 @@ logger = logging.getLogger(__name__)
 
 
 @log_decorator(logger=logger)
-def _get_fake_service_details(service: ServiceKeyVersion) -> ServiceDockerData:
-    if "file-picker" in service.key:
-        file_picker_outputs = {
-            "outFile": {
-                "label": "the output",
-                "displayOrder": 0,
-                "description": "a file",
-                "type": "data:*/*",
-            }
+def _get_fake_service_details(
+    service: ServiceKeyVersion,
+) -> Optional[ServiceDockerData]:
+
+    if "file-picker" not in service.key:
+        return
+
+    file_picker_outputs = {
+        "outFile": {
+            "label": "File",
+            "displayOrder": 0,
+            "description": "Chosen File",
+            "type": "data:*/*",
         }
-        file_picker_type = ServiceType.FRONTEND
-        return ServiceDockerData(
-            **service.dict(),
-            name="file-picker",
-            description="file-picks",
-            authors=[
-                Author(name="ITIS", email="itis@support.com", affiliation="IT'IS")
-            ],
-            contact="itis@support.com",
-            inputs={},
-            outputs=file_picker_outputs,
-            type=file_picker_type,
-        )
-    raise ValueError("")
+    }
+    return ServiceDockerData(
+        **service.dict(),
+        name="File Picker",
+        description="File Picker",
+        authors=[
+            Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
+        ],
+        contact="maiz@itis.swiss",
+        inputs={},
+        outputs=file_picker_outputs,
+        type=ServiceType.FRONTEND,
+    )
 
 
 class CompTasksRepository(BaseRepository):
@@ -101,6 +104,9 @@ class CompTasksRepository(BaseRepository):
                 node_extras: ServiceExtras = await director_client.get_service_extras(
                     service_key_version
                 )
+            if not node_details:
+                continue
+
             requires_mpi = False
             requires_gpu = False
             if node_extras:
