@@ -19,7 +19,7 @@ from utils_port_v2 import create_valid_port_mapping
         pytest.param(False, id="Autoupdate disabled"),
     ],
 )
-async def test_nodeports_aut_updates(
+async def test_nodeports_auto_updates(
     mock_db_manager: Callable,
     default_configuration: Dict[str, Any],
     node_uuid: str,
