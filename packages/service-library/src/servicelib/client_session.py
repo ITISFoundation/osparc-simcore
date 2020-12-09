@@ -8,7 +8,11 @@ import logging
 from aiohttp import ClientSession, ClientTimeout, web
 
 from .application_keys import APP_CLIENT_SESSION_KEY
-from .utils import get_http_client_request_total_timeout
+from .utils import (
+    get_http_client_request_total_timeout,
+    get_http_client_request_aiohttp_connect_timeout,
+    get_http_client_request_aiohttp_sock_connect_timeout,
+)
 
 log = logging.getLogger(__name__)
 
@@ -25,7 +29,9 @@ def get_client_session(app: web.Application) -> ClientSession:
         # some services are not that fast to  reply
         # Setting the time of a request using this client session to 5 seconds totals
         timeout_settings = ClientTimeout(
-            total=get_http_client_request_total_timeout(), connect=5, sock_connect=5
+            total=get_http_client_request_total_timeout(),
+            connect=get_http_client_request_aiohttp_connect_timeout(),
+            sock_connect=get_http_client_request_aiohttp_sock_connect_timeout(),
         )
         app[APP_CLIENT_SESSION_KEY] = session = ClientSession(timeout=timeout_settings)
     return session
