@@ -9,7 +9,7 @@ import httpx
 from fastapi import FastAPI, Response
 
 # Module's business logic ---------------------------------------------
-from ..core.settings import DynamicServicesSettings, ClientRequestSettings
+from ..core.settings import DynamicServicesSettings
 from ..utils.client_decorators import handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,9 @@ def setup(app: FastAPI, settings: DynamicServicesSettings):
     def on_startup() -> None:
         ServicesClient.create(
             app,
-            client=httpx.AsyncClient(timeout=ClientRequestSettings().total_timeout),
+            client=httpx.AsyncClient(
+                timeout=app.state.settings.client_request.total_timeout
+            ),
         )
 
     async def on_shutdown() -> None:
