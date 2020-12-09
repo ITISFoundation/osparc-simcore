@@ -31,7 +31,7 @@ async def get_value_from_link(
 
         file_path = data_items_utils.create_file_path(key, file_name)
         if value == file_path:
-            # this can happen in case
+            # this is a corner case: in case the output key of the other node has the same name as the input key
             return value
         if file_path.exists():
             file_path.unlink()
