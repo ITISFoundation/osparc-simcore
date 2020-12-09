@@ -1,5 +1,11 @@
 -c ../../../requirements/constraints.txt
 
+-r ../../../packages/s3wrapper/requirements/_base.txt
+-r ../../../packages/postgres-database/requirements/_migration.txt
+-r ../../../packages/simcore-sdk/requirements/_base.txt
+-r ../../../packages/service-library/requirements/_base.txt
+-r ../../../packages/models-library/requirements/_base.txt
+
 aio-pika
 alembic
 click
