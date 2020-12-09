@@ -9,12 +9,7 @@ from pathlib import Path
 from typing import Pattern, Set
 
 import pytest
-from models_library.services import (
-    SERVICE_KEY_RE,
-    ServiceDockerData,
-    ServiceKeyVersion,
-    ServiceOutput,
-)
+from models_library.services import SERVICE_KEY_RE, ServiceDockerData, ServiceKeyVersion
 from simcore_service_director_v2.modules.db.repositories.comp_tasks import (
     _get_fake_service_details,
 )
