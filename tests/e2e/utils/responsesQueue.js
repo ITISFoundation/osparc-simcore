@@ -66,7 +66,7 @@ class ResponsesQueue {
     });
   }
 
-  async waitUntilResponse(url, timeout = 10000) {
+  async waitUntilResponse(url, timeout = 20000) {
     let sleptFor = 0;
     const sleepFor = 100;
     while (this.isResponseInQueue(url) && sleptFor < timeout) {
