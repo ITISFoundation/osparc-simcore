@@ -25,7 +25,7 @@ def creation_cb(url, **kwargs) -> CallbackResult:
 
 
 @pytest.fixture
-async def director_v2_subsystem_mock() -> aioresponses:
+async def director_v2_service_mock() -> aioresponses:
 
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
@@ -67,7 +67,7 @@ async def director_v2_subsystem_mock() -> aioresponses:
 
 
 @pytest.fixture
-async def storage_v0_subsystem_mock() -> aioresponses:
+async def storage_v0_service_mock() -> aioresponses:
 
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is

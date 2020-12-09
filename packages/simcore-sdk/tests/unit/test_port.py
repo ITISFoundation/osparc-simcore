@@ -168,7 +168,7 @@ async def mock_upload_file(mocker, e_tag):
 @pytest.fixture(autouse=True)
 def common_fixtures(
     loop,
-    storage_v0_subsystem_mock,
+    storage_v0_service_mock,
     mock_download_file,
     mock_upload_file,
     project_id: str,
