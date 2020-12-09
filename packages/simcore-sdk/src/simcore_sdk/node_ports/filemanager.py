@@ -14,6 +14,7 @@ from simcore_service_storage_sdk.rest import ApiException
 from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, exceptions
+from config.http_clients import client_request_settings
 
 log = logging.getLogger(__name__)
 
@@ -30,8 +31,13 @@ class ClientSessionContextManager:
     def __init__(self, session=None):
         # We are interested in fast connections, if a connection is established
         # there is no timeout for file download operations
+
         self.active_session = session or ClientSession(
-            timeout=ClientTimeout(total=None, connect=5, sock_connect=5)
+            timeout=ClientTimeout(
+                total=None,
+                connect=client_request_settings.aiohttp_connect_timeout,
+                sock_connect=client_request_settings.aiohttp_sock_connect_timeout,
+            )
         )
         self.is_owned = self.active_session is not session
 
@@ -213,6 +219,7 @@ async def download_file_from_link(
         await _download_link_to_file(active_session, download_link, local_file_path)
 
     return local_file_path
+
 
 async def upload_file(
     *,
