@@ -50,6 +50,10 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     }
   },
 
+  events: {
+    "updateService": "qx.event.type.Data"
+  },
+
   properties: {
     mode: {
       check: ["display", "edit"],
@@ -276,7 +280,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
         appearance: "toolbar-md-button"
       });
       saveButton.addListener("execute", e => {
-
+        this.__save(saveButton);
       }, this);
       const cancelButton = new qx.ui.toolbar.Button(this.tr("Cancel")).set({
         appearance: "toolbar-md-button"
@@ -291,6 +295,31 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       buttonsToolbar.add(saveButton);
       buttonsToolbar.add(cancelButton);
       this._add(buttonsToolbar);
+    },
+
+    __save: function(btn) {
+      const data = {};
+      data["metadataTSR"] = this.__copyMetadata["metadataTSR"];
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(
+          this.__copyMetadata["key"],
+          this.__copyMetadata["version"]
+        ),
+        data: data
+      };
+      osparc.data.Resources.fetch("services", "patch", params)
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the metadata."), "ERROR");
+        })
+        .finally(() => {
+          btn.resetIcon();
+          btn.getChildControl("icon").getContentElement()
+            .removeClass("rotate");
+        });
     },
 
     __isUserOwner: function() {
