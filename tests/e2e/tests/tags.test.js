@@ -55,12 +55,13 @@ beforeAll(async () => {
 afterAll(async () => {
   // Cleaning
   await page.evaluate(`
-  Promise.all([
-    osparc.data.Resources.fetch('studies', 'delete', { url: { projectId: '${studyId}' } }, '${studyId}'),
-    osparc.data.Resources.fetch('tags', 'delete', { url: { tagId: '${tagId}' } }, '${tagId}')
-  ]);
+    Promise.all([
+      osparc.data.Resources.fetch('studies', 'delete', { url: { projectId: '${studyId}' } }, '${studyId}'),
+      osparc.data.Resources.fetch('tags', 'delete', { url: { tagId: '${tagId}' } }, '${tagId}')
+    ]);
   `);
   page.off('response', responseHandler);
+  await auto.logOut(page);
 }, ourTimeout);
 
 test('add a tag', async () => {
@@ -73,13 +74,13 @@ test('add a tag', async () => {
   await page.keyboard.type(TAG_NAME);
   await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.form.FetchButton"]');
   // Check tag was added
-  const tagLabel = await page.waitForFunction(tagName => {
+  await page.waitForFunction(tagName => {
     const el = document.querySelector(
       '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.basic.Tag"]'
     );
     return el && el.innerText === tagName;
-    // Close properties
   }, {}, TAG_NAME);
+  // Close properties
   await waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }, ourTimeout);
 
@@ -91,6 +92,10 @@ test('tag shows in filters', async () => {
 }, ourTimeout);
 
 test('assign tag and reflect changes', async () => {
+  await page.waitForSelector(
+    '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.component.widget.Thumbnail"]',
+    { hidden: true }
+  );
   // Assign to study
   await waitAndClick(page, '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [osparc-test-id="studyItemMenuButton"]');
   await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
@@ -113,11 +118,22 @@ test('change tag and reflect changes', async () => {
   await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] input[type="text"]', 2);
   await page.keyboard.type(TAG_NAME_2);
   await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="osparc.ui.form.FetchButton"]');
+  await page.waitForFunction(tagName => {
+    const el = document.querySelector(
+      '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="osparc.ui.basic.Tag"]'
+    );
+    return el && el.innerText === tagName;
+  }, {}, TAG_NAME_2);
+  // Close properties
   await waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
   // Check that tag name changed in filter and study list
   await waitAndClick(page, '[qxclass="osparc.component.filter.UserTagsFilter"] [qxclass="qx.ui.toolbar.MenuButton"]');
   tagFilterMenu = await page.waitForSelector('[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"])');
   expect(await tagFilterMenu.evaluate(el => el.innerText)).toContain(TAG_NAME_2);
-  displayedTag = await page.waitForSelector('[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [qxclass="osparc.ui.basic.Tag"]')
-  expect(await displayedTag.evaluate(el => el.innerText)).toContain(TAG_NAME_2);
+  await page.waitForFunction(tagName => {
+    const el = document.querySelector(
+      '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [qxclass="osparc.ui.basic.Tag"]'
+    );
+    return el && el.innerText === tagName;
+  }, {}, TAG_NAME_2);
 }, ourTimeout);

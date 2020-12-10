@@ -5,6 +5,6 @@ module.exports = {
     headless: !demo,
     slowMo: demo ? 60 : 0,
     defaultViewport: null,
-    devtools: false
+    devtools: true
   }
 }
