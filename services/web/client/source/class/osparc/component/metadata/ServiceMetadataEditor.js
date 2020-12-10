@@ -97,7 +97,9 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
 
       let row = 1;
       Object.values(rules).forEach(rule => {
-        const label = new qx.ui.basic.Label(rule.title);
+        const label = new qx.ui.basic.Label(rule.title).set({
+          margintTop: 5
+        });
         const ruleWHint = new osparc.component.form.FieldWHint(null, rule.description, label).set({
           hintPosition: "left"
         });
