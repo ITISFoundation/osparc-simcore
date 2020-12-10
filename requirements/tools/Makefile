@@ -29,7 +29,7 @@ MAKE_C := $(MAKE) --directory
 
 # requirements in packages and services
 _compiled-all = $(shell find $(REPODIR) -path "*/requirements/*.txt")
-
+_inputs-all = $(shell find $(REPODIR) -path "*/requirements/*.in")
 
 # packages/
 _target-inputs = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
@@ -40,7 +40,7 @@ _target-inputs += $(shell find $(REPODIR)/tests/ -type f -name "*.in")
 # services tests libraries, tools and fixtures
 _target-inputs += $(shell find ${SERVICES_DIR} -type f -name "_test.in")
 
-$(info Found $(_target-inputs))
+$(info Found $(words $(_target-inputs)) inputs)
 
 
 _check_py36_version:
@@ -49,13 +49,15 @@ _check_py36_version:
 
 
 touch: ## touches all package requirement inputs
-	# ensures compiled timestamp is older than target inputs
+	# First aligns time-stamps: ensures compiled timestamp is older than target inputs
+	@$(foreach p,${_inputs-all},touch $(p);)
 	@$(foreach p,${_compiled-all},touch $(p);)
+	# Touchs all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
 
-reqs: _check_py36_version touch ## updates requirements of all package libraries
+reqs: _check_py36_version ## updates requirements of all package libraries
 	# Upgrading $(upgrade) requirements
-	@$(foreach p,${_target-inputs},$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
 
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
