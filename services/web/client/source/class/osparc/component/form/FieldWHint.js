@@ -83,26 +83,19 @@ qx.Class.define("osparc.component.form.FieldWHint", {
     },
 
     __applyHintPosition: function(value) {
+      this._removeAll();
+      this._add(this.__field, {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: value === "left" ? 18 : 0
+      });
       if (value === "left") {
-        this._removeAll();
         this._add(this.__infoButton, {
           left: 0,
           top: 5
         });
-        this._add(this.__field, {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 18
-        });
       } else {
-        this._removeAll();
-        this._add(this.__field, {
-          top: 0,
-          right: 0,
-          bottom: 0,
-          left: 0
-        });
         this._add(this.__infoButton, {
           right: 0,
           top: 5
