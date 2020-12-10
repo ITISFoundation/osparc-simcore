@@ -132,7 +132,9 @@ class CompTasksRepository(BaseRepository):
             )
             internal_id = internal_id + 1
 
-            insert_stmt = insert(comp_tasks).values(**task_db.dict(by_alias=True))
+            insert_stmt = insert(comp_tasks).values(
+                **task_db.dict(by_alias=True, exclude_unset=True)
+            )
             on_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
                 set_=task_db.dict(by_alias=True, exclude_unset=True),
