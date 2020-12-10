@@ -1,13 +1,12 @@
 const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
-const {
-  user,
-  pass
-} = utils.getUserAndPass();
-
-
 describe('Calls after logging in', () => {
+  const {
+    user,
+    pass
+  } = utils.getUserAndPass();
+
   beforeAll(async () => {
     await page.goto(url);
     await auto.register(page, user, pass);
