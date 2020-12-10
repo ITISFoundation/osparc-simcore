@@ -35,7 +35,7 @@ docker[ssh]==4.4.0        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 execnet==1.7.1            # via pytest-xdist
-faker==5.0.0              # via -r requirements/_test.in
+faker==5.0.1              # via -r requirements/_test.in
 h11==0.9.0                # via -c requirements/_base.txt, httpcore
 hiredis==1.1.0            # via aioredis
 httpcore==0.10.2          # via -c requirements/_base.txt, httpx
