@@ -5,7 +5,7 @@
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
 aiohttp==3.7.3            # via pytest-aiohttp
-aiopg[sa]==1.0.0          # via -r requirements/_test.in
+aiopg[sa]==1.1.0          # via -r requirements/_test.in
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via aiohttp
 attrs==20.3.0             # via aiohttp, jsonschema, pytest, pytest-docker
