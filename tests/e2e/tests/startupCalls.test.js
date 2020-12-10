@@ -6,17 +6,18 @@ const {
   pass
 } = utils.getUserAndPass();
 
-beforeAll(async () => {
-  await page.goto(url);
-  await auto.register(page, user, pass);
-  await page.waitFor(1000);
-}, ourTimeout);
-
-afterAll(async () => {
-  await auto.logOut(page);
-}, ourTimeout);
 
 describe('Calls after logging in', () => {
+  beforeAll(async () => {
+    await page.goto(url);
+    await auto.register(page, user, pass);
+    await page.waitFor(1000);
+  }, ourTimeout);
+  
+  afterAll(async () => {
+    await auto.logOut(page);
+  }, ourTimeout);
+  
   test('Profile', async () => {
     const responseEnv = await utils.fetchReq('me');
     expect(responseEnv.data["login"]).toBe(user);
