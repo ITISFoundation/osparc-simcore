@@ -26,16 +26,21 @@ MAKE_C := $(MAKE) --directory
 
 
 .PHONY: touch reqs _check_py36_version
-# packages/
-_input-requirements = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
-# api tests
-_input-requirements += $(shell find $(REPODIR)/api/tests/ -type f -name "*.in")
-# system tests
-_input-requirements += $(shell find $(REPODIR)/tests/ -type f -name "*.in")
-# services tests libraries, tools and fixtures
-_input-requirements += $(shell find ${SERVICES_DIR} -type f -name "_test.in")
 
-$(info Found $(_input-requirements))
+# requirements in packages and services
+_compiled-all = $(shell find $(REPODIR) -path "*/requirements/*.txt")
+
+
+# packages/
+_target-inputs = $(shell find ${PACKAGES_DIR} -type f -name _base.in)
+# api tests
+_target-inputs += $(shell find $(REPODIR)/api/tests/ -type f -name "*.in")
+# system tests
+_target-inputs += $(shell find $(REPODIR)/tests/ -type f -name "*.in")
+# services tests libraries, tools and fixtures
+_target-inputs += $(shell find ${SERVICES_DIR} -type f -name "_test.in")
+
+$(info Found $(_target-inputs))
 
 
 _check_py36_version:
@@ -44,11 +49,13 @@ _check_py36_version:
 
 
 touch: ## touches all package requirement inputs
-	$(foreach p,${_input-requirements},touch $(p);)
+	# ensures compiled timestamp is older than target inputs
+	@$(foreach p,${_compiled-all},touch $(p);)
+	@$(foreach p,${_target-inputs},touch $(p);)
 
-reqs: _check_py36_version ## updates requirements of all package libraries
+reqs: _check_py36_version touch ## updates requirements of all package libraries
 	# Upgrading $(upgrade) requirements
-	$(foreach p,${_input-requirements},touch $(p); $(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
+	@$(foreach p,${_target-inputs},$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
 
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
@@ -68,13 +75,13 @@ run: build ## Runs upgrade in a container
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \
 		local/python-devkit:latest \
-		-c "cd scripts/requirements; make reqs $(if $(upgrade),upgrade=$(upgrade),)"
+		-c "cd requirements/tools; make reqs $(if $(upgrade),upgrade=$(upgrade),)"
 
 
 .PHONY: shell
 shell:
 	docker run -it \
-		--workdir="/home/$(USER)" \
+		--workdir="/home/$(USER)/requirements/tools" \
     --volume="/etc/group:/etc/group:ro" \
     --volume="/etc/passwd:/etc/passwd:ro" \
 		--volume="/etc/shadow:/etc/shadow:ro" \
