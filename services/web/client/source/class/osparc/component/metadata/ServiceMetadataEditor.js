@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
   construct: function(serviceData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(15));
 
     if (!("metadataTSR" in serviceData)) {
       osparc.component.message.FlashMessenger.logAs(this.tr("Metadata not found"), "ERROR");
@@ -33,15 +33,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
 
     this.__serviceData = serviceData;
 
-    const grid = new qx.ui.layout.Grid(10, 8);
-    grid.setColumnAlign(0, "left", "middle");
-    grid.setColumnAlign(1, "left", "middle");
-    this.__tsrGrid = new qx.ui.container.Composite(grid);
-    this._add(this.__tsrGrid, {
-      flex: 1
-    });
-
-    this.__populateTSR();
+    this.__createTSRSection();
+    this.__createAnnotationsSection();
 
     if (this.__isUserOwner()) {
       const metadata = this.__serviceData;
@@ -67,6 +60,57 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     __serviceData: null,
     __copyMetadata: null,
     __tsrGrid: null,
+    __annotationsGrid: null,
+
+    __createTSRSection: function() {
+      const box = new qx.ui.groupbox.GroupBox(this.tr("Ten Simple Rules"));
+      box.getChildControl("legend").set({
+        font: "title-14"
+      });
+      box.getChildControl("frame").set({
+        backgroundColor: "transparent"
+      });
+      box.setLayout(new qx.ui.layout.VBox(10));
+
+      const helpText = "[10 Simple Rules with Conformance Rubric](https://www.imagwiki.nibib.nih.gov/content/10-simple-rules-conformance-rubric)";
+      const helpTextMD = new osparc.ui.markdown.Markdown(helpText);
+      box.add(helpTextMD);
+
+      const grid = new qx.ui.layout.Grid(10, 8);
+      grid.setColumnAlign(0, "left", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      this.__tsrGrid = new qx.ui.container.Composite(grid);
+      box.add(this.__tsrGrid, {
+        flex: 1
+      });
+
+      this._add(box, {
+        flex: 1
+      });
+
+      this.__populateTSR();
+    },
+
+    __createAnnotationsSection: function() {
+      const box = new qx.ui.groupbox.GroupBox(this.tr("Annotations"));
+      box.getChildControl("legend").set({
+        font: "title-14"
+      });
+      box.getChildControl("frame").set({
+        backgroundColor: "transparent"
+      });
+      box.setLayout(new qx.ui.layout.VBox(10));
+
+      const grid = new qx.ui.layout.Grid(10, 8);
+      grid.setColumnAlign(0, "left", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      this.__annotationsGrid = new qx.ui.container.Composite(grid);
+      box.add(this.__annotationsGrid);
+
+      this._add(box);
+
+      this.__populateAnnotations();
+    },
 
     __populateTSR: function() {
       this.__tsrGrid.removeAll();
@@ -77,7 +121,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     __populateTSRHeaders: function() {
       const rules = osparc.component.metadata.ServiceMetadata.getMetadataTSR();
 
-      const headerTSR = new qx.ui.basic.Label(this.tr("Ten Simple Rules")).set({
+      const headerTSR = new qx.ui.basic.Label(this.tr("Rules")).set({
         font: "title-14"
       });
       this.__tsrGrid.add(headerTSR, {
@@ -264,6 +308,109 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
 
       this.__tsrGrid.add(tsrRating, {
         row,
+        column: 1
+      });
+    },
+
+    __populateAnnotations: function() {
+      this.__annotationsGrid.removeAll();
+      this.__populateAnnotationsHeaders();
+      this.__populateAnnotationsData();
+    },
+
+    __populateAnnotationsHeaders: function() {
+      let row = 0;
+      const header0 = new qx.ui.basic.Label(this.tr("Certification status"));
+      this.__annotationsGrid.add(header0, {
+        row: row++,
+        column: 0
+      });
+
+      const header1 = new qx.ui.basic.Label(this.tr("Certification link"));
+      this.__annotationsGrid.add(header1, {
+        row: row++,
+        column: 0
+      });
+
+      const header2 = new qx.ui.basic.Label(this.tr("Intended purpose/context"));
+      this.__annotationsGrid.add(header2, {
+        row: row++,
+        column: 0
+      });
+
+      const header3 = new qx.ui.basic.Label(this.tr("Verification & Validation"));
+      this.__annotationsGrid.add(header3, {
+        row: row++,
+        column: 0
+      });
+
+      const header4 = new qx.ui.basic.Label(this.tr("Known limitations"));
+      this.__annotationsGrid.add(header4, {
+        row: row++,
+        column: 0
+      });
+
+      const header5 = new qx.ui.basic.Label(this.tr("Documentation"));
+      this.__annotationsGrid.add(header5, {
+        row: row++,
+        column: 0
+      });
+
+      const header6 = new qx.ui.basic.Label(this.tr("Relevant standards"));
+      this.__annotationsGrid.add(header6, {
+        row: row++,
+        column: 0
+      });
+    },
+
+    __populateAnnotationsData: function() {
+      const editMode = this.getMode() === "edit";
+
+      let row = 0;
+      const certification = new qx.ui.form.SelectBox().set({
+        enabled: editMode
+      });
+      certification.add(new qx.ui.form.ListItem("Uncertified"));
+      certification.add(new qx.ui.form.ListItem("Independently reviewed"));
+      certification.add(new qx.ui.form.ListItem("Regulatory grade"));
+      this.__annotationsGrid.add(certification, {
+        row: row++,
+        column: 1
+      });
+
+      const certificationLink = new osparc.ui.markdown.Markdown();
+      this.__annotationsGrid.add(certificationLink, {
+        row: row++,
+        column: 1
+      });
+
+      const purpose = new osparc.ui.markdown.Markdown();
+      this.__annotationsGrid.add(purpose, {
+        row: row++,
+        column: 1
+      });
+
+      const vandv = new osparc.ui.markdown.Markdown();
+      this.__annotationsGrid.add(vandv, {
+        row: row++,
+        column: 1
+      });
+
+      const limitations = new osparc.ui.markdown.Markdown();
+      this.__annotationsGrid.add(limitations, {
+        row: row++,
+        column: 1
+      });
+
+      const documentation = new osparc.ui.markdown.Markdown();
+      this.__annotationsGrid.add(documentation, {
+        row: row++,
+        column: 1
+      });
+
+      const standards = new osparc.ui.markdown.Markdown();
+      this.__annotationsGrid.add(standards, {
+        row: row++,
         column: 1
       });
     },
