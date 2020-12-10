@@ -3,11 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from typing import Dict
-from pathlib import Path
 import pytest
-
-HERE = Path(__file__).resolve().parent
-CLIENT_SDK_DIR = HERE / ".." / "client-sdk" / "python"
 
 
 @pytest.fixture
@@ -26,9 +22,10 @@ def assert_all_hits_found(filled_search_dict: Dict[str, int]) -> None:
         ), f"Could not find an entry for search_key='{search_key}' in storge's python client"
 
 
-def test_are_settings_present(search_dict):
+def test_are_settings_present(search_dict, here):
     # scanning all the files in the
-    all_python_files = CLIENT_SDK_DIR.rglob("*.py")
+    client_sdk_dir = here / ".." / "client-sdk" / "python"
+    all_python_files = client_sdk_dir.rglob("*.py")
     for python_file in all_python_files:
         print(f"seaching in file {python_file}")
         for search_hit in search_dict.keys():
