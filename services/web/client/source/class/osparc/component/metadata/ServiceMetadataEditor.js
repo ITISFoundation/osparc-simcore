@@ -73,19 +73,26 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     __populateTSRHeaders: function() {
       const rules = osparc.component.metadata.ServiceMetadata.getMetadataTSR();
 
-      const header0 = new qx.ui.basic.Label(this.tr("Ten Simple Rules")).set({
+      const headerTSR = new qx.ui.basic.Label(this.tr("Ten Simple Rules")).set({
         font: "title-14"
       });
-      this.__tsrGrid.add(header0, {
+      this.__tsrGrid.add(headerTSR, {
         row: 0,
         column: 0
       });
-      const header1 = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
+      const headerCL = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
         font: "title-14"
       });
-      this.__tsrGrid.add(header1, {
+      this.__tsrGrid.add(headerCL, {
         row: 0,
         column: 1
+      });
+      const headerRef = new qx.ui.basic.Label(this.tr("References")).set({
+        font: "title-14"
+      });
+      this.__tsrGrid.add(headerRef, {
+        row: 0,
+        column: 2
       });
 
       let row = 1;
@@ -140,6 +147,13 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
           row,
           column: 1
         });
+
+        const referenceMD = new osparc.ui.markdown.Markdown(rule.references);
+        this.__tsrGrid.add(referenceMD, {
+          row,
+          column: 2
+        });
+
         row++;
       });
       const {
@@ -223,6 +237,13 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
           row,
           column: 1
         });
+
+        const description = new qx.ui.form.TextArea(rule.references);
+        this.__tsrGrid.add(description, {
+          row,
+          column: 2
+        });
+
         row++;
       });
 
@@ -241,7 +262,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
         this.setMode("edit");
       }, this);
 
-      const saveButton = new qx.ui.toolbar.Button(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
+      const saveButton = new qx.ui.toolbar.Button(this.tr("Save")).set({
         appearance: "toolbar-md-button"
       });
       saveButton.addListener("execute", e => {
