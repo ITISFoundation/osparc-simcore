@@ -20,7 +20,7 @@ mypy-extensions==0.4.3    # via black
 nodeenv==1.5.0            # via pre-commit
 pathspec==0.8.1           # via black
 pip-tools==5.4.0          # via -r requirements/../../../requirements/devenv.txt
-pre-commit==2.9.2         # via -r requirements/../../../requirements/devenv.txt
+pre-commit==2.9.3         # via -r requirements/../../../requirements/devenv.txt
 pyyaml==5.3.1             # via -c requirements/../../../requirements/constraints.txt, -c requirements/_test.txt, pre-commit
 regex==2020.11.13         # via black
 six==1.15.0               # via -c requirements/_base.txt, -c requirements/_test.txt, pip-tools, virtualenv
