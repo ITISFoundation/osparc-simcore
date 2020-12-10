@@ -66,7 +66,6 @@ BASE_URL = os.environ.get("SCICRUNCH_API_BASE_URL", "https://scicrunch.org/api/1
 # TODO:
 
 
-
 ## MODELS
 
 
@@ -84,9 +83,9 @@ BASE_URL = os.environ.get("SCICRUNCH_API_BASE_URL", "https://scicrunch.org/api/1
 #   }, ...
 # ]
 class FieldItem(BaseModel):
-    field: str
+    field_name: str = Field(..., alias="field")
     required: bool
-    # type: str  # text, textarea, resource-types, ...
+    # field_type: str = Field(..., alias="type") # text, textarea, resource-types, ...
     # max_number: str  # convertable to int
     value: Union[str, None, List[Any]] = None
     # position: int
@@ -125,14 +124,16 @@ class ResourceView(BaseModel):
         return self.curation_status.lower() == "curated"
 
 
-
 SPLIT_STRIP_PATTERN = r"[^:\s][^:]*[^:\s]*"
 
 
 # model used to load from db??
 class BasicClassifier(BaseModel):
     """ Default/minimal model for a classifier """
-    classifier: str = Field(..., description="Classifier hierarchical classifier", regex=r"[^:]+")
+
+    classifier: str = Field(
+        ..., description="Classifier hierarchical classifier", regex=r"[^:]+"
+    )
     display_name: str
 
     # TODO: normalize classifier??
@@ -143,8 +144,11 @@ class BasicClassifier(BaseModel):
 
 class KCoreClassifier(BasicClassifier):
     # If curated by K-Core
-    rrid: str = Field(..., description="Research Resource Identifier as defined in https://scicrunch.org/resources", regex=r"^SRC_\d+$")
-
+    rrid: str = Field(
+        ...,
+        description="Research Resource Identifier as defined in https://scicrunch.org/resources",
+        regex=r"^SRC_\d+$",
+    )
 
 
 def create_valid_classifiers_tree():
@@ -157,18 +161,20 @@ def create_valid_classifiers_tree():
     pass
 
 
-
 def test_classifier_model():
     classifier = BasicClassifier(classifier="a: b: cc 23", display_name="A B C")
 
     assert classifier.split() == ["a", "b", "cc 23"]
 
-    classifier = BasicClassifier(classifier="a: b: cc 23", display_name="A B C", rrid="SRC_1234")
+    classifier = BasicClassifier(
+        classifier="a: b: cc 23", display_name="A B C", rrid="SRC_1234"
+    )
 
     assert classifier.split() == ["a", "b", "cc 23"]
 
 
 ## FREE HELPER FUNCTIONS
+
 
 async def get_resource_fields(client: ClientSession, rrid: str) -> ResourceView:
     async with client.get(
@@ -216,9 +222,14 @@ async def validate_rrid(client: ClientSession, rrid: str) -> ValidationResult:
 
     return ValidationResult.INVALID
 
-#---------------------
 
-@pytest.mark.skipif( RRID_PORTAL_API_KEY is None, reason="Testing agains actual service is intended for manual exploratory testing")
+# ---------------------
+
+
+@pytest.mark.skipif(
+    RRID_PORTAL_API_KEY is None,
+    reason="Testing agains actual service is intended for manual exploratory testing",
+)
 async def test_scicrunch_api_specs(loop):
     async with ClientSession() as client:
         resp = await client.get("https://scicrunch.org/swagger-docs/swagger.json")
@@ -227,7 +238,10 @@ async def test_scicrunch_api_specs(loop):
         assert openapi_specs["info"]["version"] == 1
 
 
-@pytest.mark.skipif( RRID_PORTAL_API_KEY is None, reason="Testing agains actual service is intended for manual exploratory testing")
+@pytest.mark.skipif(
+    RRID_PORTAL_API_KEY is None,
+    reason="Testing agains actual service is intended for manual exploratory testing",
+)
 @pytest.mark.parametrize(
     "classifier,rrid",
     [
