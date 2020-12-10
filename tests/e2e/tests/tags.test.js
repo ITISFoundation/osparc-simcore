@@ -54,12 +54,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   // Cleaning
-  await page.evaluate(`
-    Promise.all([
-      osparc.data.Resources.fetch('studies', 'delete', { url: { projectId: '${studyId}' } }, '${studyId}'),
-      osparc.data.Resources.fetch('tags', 'delete', { url: { tagId: '${tagId}' } }, '${tagId}')
-    ]);
-  `);
+  await page.evaluate(async function(studyId, tagId) {
+    await osparc.data.Resources.fetch('studies', 'delete', { url: { projectId: studyId } }, studyId);
+    await osparc.data.Resources.fetch('tags', 'delete', { url: { tagId: tagId } }, tagId);
+  }, studyId, tagId);
   page.off('response', responseHandler);
   await auto.logOut(page);
 }, ourTimeout);
