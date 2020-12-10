@@ -30,6 +30,7 @@ typed-ast==1.4.1          # via -c requirements/_test.txt, black
 typing-extensions==3.7.4.2  # via -c requirements/_base.txt, -c requirements/_test.txt, black
 virtualenv==20.2.2        # via pre-commit
 watchdog[watchmedo]==1.0.0  # via -r requirements/_tools.in
+zipp==3.1.0               # via -c requirements/_base.txt, -c requirements/_test.txt, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

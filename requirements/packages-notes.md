@@ -23,6 +23,9 @@ Keeps a list notes with relevant information about releases of python package. S
 - [dataclasses](https://pypi.org/project/dataclasses/)
   - a backport of the [``dataclasses`` module](https://docs.python.org/3/library/dataclasses.html) for Python 3.6. Included as dataclasses in standard library from python >=3.7.
   - here is included as a dependency to [pydantic](https://pydantic-docs.helpmanual.io/)
+- [mock](https://pypi.org/project/mock/)
+  - is a rolling backport of the standard library mock code available as unittest.mock in Python 3.3 onwards.
+
 
 
 ## Improvements
