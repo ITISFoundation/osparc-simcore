@@ -138,34 +138,44 @@ domain and the intended context of use",
       const maxLevel = 5; // random integer from 0-4
       const dummyMetadataTSR = {
         "r01": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": "[osparc](https://osparc.io/)"
         },
         "r02": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         },
         "r03": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         },
         "r04": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": "[Ten Simple Rules](https://www.imagwiki.nibib.nih.gov/content/10-simple-rules-conformance-rubric)"
         },
         "r05": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         },
         "r06": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         },
         "r07": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         },
         "r08": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         },
         "r09": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         },
         "r10": {
-          "level": Math.floor(Math.random()*(maxLevel))
+          "level": Math.floor(Math.random()*(maxLevel)),
+          "references": ""
         }
       };
       return dummyMetadataTSR;
