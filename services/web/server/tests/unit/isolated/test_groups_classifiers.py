@@ -37,14 +37,26 @@
 #       all classifiers in cache, based on some rules (e.g. usage, etc) are used to automaticaly update existing classifiers
 #
 
+#
+#  Branches defined in osparc-framework
+#  Leafs are RRID's from scicrunch
+#  Where leafs go is suggested by users
+#  Both saved in db
+#
+#
+
 ####################################################################################################################
 
+import json
 import os
+import random
 import re
+from collections import defaultdict
+from copy import deepcopy
 from enum import IntEnum
 from http import HTTPStatus
 from pprint import pprint
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, DefaultDict, Dict, List, Optional, Set, Union
 from uuid import UUID
 
 import aiohttp
@@ -151,14 +163,74 @@ class KCoreClassifier(BasicClassifier):
     )
 
 
-def create_valid_classifiers_tree():
+####################################################################################################################
+
+
+def list_folders_paths(tree) -> List[str]:
+    paths = []
+
+    def _traverse(d, path=""):
+        for k, v in d.items():
+            if isinstance(v, dict):
+                _traverse(v, f"{path}/{k}")
+            else:
+                paths.append(f"{path}/{k}".strip("/"))
+
+    _traverse(tree)
+    return paths
+
+
+# def create_valid_classifiers_tree():
+def test_it():
     # builds a tree view with a selection of classifiers
     #  - needs a criteria to decide what to include
 
-    # classifiers in tree ARE VALID (no need for extra validation)
-    #
+    # K-core provides
+    curated_tags = "foo, bar, baz, qux, quux, corge, grault, garply, waldo, fred, plugh, xyzzy, thud".split(
+        ", "
+    )
 
-    pass
+    # osparc organziation provides some classifiers (a skeleton of folder) to place some tags
+    tree_skeleton = {
+        "Type of Study": {
+            "Data Analysis": [],
+            "Data Processing": [],
+        },
+        "Type of Service": {"Computational": []},
+    }
+    folder_paths: List[str] = list_folders_paths(tree_skeleton)
+
+    # user drags&drop tags (curated documents) into one or more folders
+    tag2folders: DefaultDict[str, Set[str]] = defaultdict(set)
+    for tag in curated_tags:
+        tag2folders[tag].add(random.choice(folder_paths))
+
+    # build a tree with tag
+    print("tree-skeleton", json.dumps(tree_skeleton, indent=2))
+    tree_view = deepcopy(tree_skeleton)
+
+    # add tag in tree
+    for tag in tag2folders.keys():
+        for folder_path in tag2folders[tag]:
+            # get leaf
+            leaf = tree_view
+            for p in folder_path.split("/"):
+                leaf = leaf[p]
+            assert isinstance(leaf, List)  # leaf is always a list
+            leaf.append(tag)
+
+    # classifiers in tree ARE VALID (no need for extra validation)
+    print("osparc-tree-view", json.dumps(tree_view, indent=2))
+
+    alphabetical_tree = dict.fromkeys(sorted(tag[0].upper() for tag in curated_tags))
+    for key in alphabetical_tree:
+        alphabetical_tree[key] = list()
+
+    for tag in curated_tags:
+        key = tag[0].upper()
+        alphabetical_tree[key].append(tag)
+
+    print("alphabetical-tree-view", json.dumps(alphabetical_tree, indent=2))
 
 
 def test_classifier_model():
@@ -248,6 +320,7 @@ async def test_scicrunch_api_specs(loop):
         ("Jupyter Notebook", "SCR_018315"),
         ("Language::Python", "SCR_008394"),
         ("Language::Octave", "SCR_014398"),
+        ("osparc", "SCR_018997"),  # proper citation: (o²S²PARC, RRID:SCR_018997)
         (None, "RRID:SCR_014398"),
         (None, "SCR_INVALID_XXXXX"),
         (None, "ANOTHER_INVALID_RRID"),
