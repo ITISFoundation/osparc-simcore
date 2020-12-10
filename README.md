@@ -124,6 +124,12 @@ Would you like to make a change or add something new? Please read the [contribut
 This project is licensed under the terms of the [MIT license](LICENSE).
 
 
+---
+
+<p align="center">
+<img src="https://forthebadge.com/images/badges/built-with-love.svg" width="150">
+</p>
+
 <!-- ADD REFERENCES BELOW AND KEEP THEM IN ALPHABETICAL ORDER -->
 [chocolatey]:https://chocolatey.org/
 [vscode]:https://code.visualstudio.com/
