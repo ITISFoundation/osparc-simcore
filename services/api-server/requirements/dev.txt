@@ -12,6 +12,7 @@
 -r _tools.txt
 
 # installs this repo's packages
+-e ../../packages/models-library
 -e ../../packages/pytest-simcore/
 -e ../../packages/postgres-database/[migration]
 

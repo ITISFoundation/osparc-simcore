@@ -6,6 +6,7 @@ from typing import Optional
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.postgres import PostgresSettings
+from models_library.settings.http_clients import ClientRequestSettings
 from pydantic import (
     BaseSettings,
     Field,
@@ -127,6 +128,7 @@ class AppSettings(BaseSettings):
             registry=RegistrySettings(),
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(),
+            client_request=ClientRequestSettings(),
             **settings_kwargs,
         )
 
@@ -222,6 +224,8 @@ class AppSettings(BaseSettings):
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
 
     remote_debug_port: PortInt = 3000
+
+    client_request: ClientRequestSettings
 
     class Config(CommonConfig):
         env_prefix = ""
