@@ -17,13 +17,13 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
 IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
+IS_WSL2 := $(if $(findstring -microsoft-,$(shell uname -a)),WSL2,)
 IS_OSX  := $(filter Darwin,$(shell uname -a))
 IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
 
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
-
 
 # VARIABLES ----------------------------------------------
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
@@ -69,6 +69,12 @@ ifeq ($(IS_WSL),WSL)
 ETC_HOSTNAME = $(CURDIR)/.fake_hostname_file
 export ETC_HOSTNAME
 host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
+endif
+
+# NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
+ifeq ($(IS_WSL2),WSL2)
+S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+export S3_ENDPOINT
 endif
 
 
@@ -356,6 +362,7 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	$(if $(wildcard $@), \
 	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
+	$(if $(IS_WSL2),sed --in-place --regexp-extended "s/S3_ENDPOINT=(.+):([[:digit:]]+)/S3_ENDPOINT=$(S3_ENDPOINT)\2/"  .env,)
 
 
 .vscode/settings.json: .vscode-template/settings.json
@@ -471,7 +478,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
 	# setup info:
-	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN)'
+	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WSL2)$(IS_WIN)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo ' DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
