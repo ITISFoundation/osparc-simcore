@@ -71,14 +71,14 @@ domain and the intended context of use",
       return confLevel;
     },
 
-    getDummyMetadata: function() {
+    getDefaultMetadata: function() {
       const dummyMetadata = {};
-      dummyMetadata["annotations"] = osparc.component.metadata.ServiceMetadata.getDummyMetadataAnnotations();
-      dummyMetadata["tsr"] = osparc.component.metadata.ServiceMetadata.getDummyMetadataTSR();
+      dummyMetadata["annotations"] = osparc.component.metadata.ServiceMetadata.getDefaultMetadataAnnotations();
+      dummyMetadata["tsr"] = osparc.component.metadata.ServiceMetadata.getDefaultMetadataTSR();
       return dummyMetadata;
     },
 
-    getDummyMetadataAnnotations: function() {
+    getDefaultMetadataAnnotations: function() {
       const dummyMetadataAnnotations = {
         "certificationStatus": "Uncertified",
         "certificationLink": "",
@@ -91,47 +91,46 @@ domain and the intended context of use",
       return dummyMetadataAnnotations;
     },
 
-    getDummyMetadataTSR: function() {
-      const maxLevel = 5; // random integer from 0-4
+    getDefaultMetadataTSR: function() {
       const dummyMetadataTSR = {
         "r01": {
-          "level": Math.floor(Math.random()*(maxLevel)),
-          "references": "[osparc](https://osparc.io/)"
+          "level": 0,
+          "references": ""
         },
         "r02": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         },
         "r03": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         },
         "r04": {
-          "level": Math.floor(Math.random()*(maxLevel)),
-          "references": "[Ten Simple Rules](https://www.imagwiki.nibib.nih.gov/content/10-simple-rules-conformance-rubric)"
+          "level": 0,
+          "references": ""
         },
         "r05": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         },
         "r06": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         },
         "r07": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         },
         "r08": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         },
         "r09": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         },
         "r10": {
-          "level": Math.floor(Math.random()*(maxLevel)),
+          "level": 0,
           "references": ""
         }
       };
