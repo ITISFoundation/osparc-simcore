@@ -13,6 +13,7 @@ from simcore_service_catalog.core.settings import (
     AppSettings,
     DirectorSettings,
     PostgresSettings,
+    ClientRequestSettings,
 )
 from simcore_service_catalog.services.director import DirectorApi
 
@@ -25,6 +26,7 @@ def minimal_app(loop, devel_environ) -> FastAPI:
     settings = AppSettings(
         postgres=PostgresSettings(enabled=False),
         director=DirectorSettings(enabled=False),
+        client_request=ClientRequestSettings(),
     )
     app = init_app(settings)
 
