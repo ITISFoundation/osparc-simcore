@@ -362,7 +362,7 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	$(if $(wildcard $@), \
 	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
-	$(if $(IS_WSL2),sed --in-place --regexp-extended "s/S3_ENDPOINT=(.+):([[:digit:]]+)/S3_ENDPOINT=$(S3_ENDPOINT)\2/"  .env,)
+	$(if $(IS_WSL2),sed --in-place --regexp-extended "s/S3_ENDPOINT=(.+):([[:digit:]]+)/S3_ENDPOINT=$(S3_ENDPOINT):\2/"  .env,)
 
 
 .vscode/settings.json: .vscode-template/settings.json
