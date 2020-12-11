@@ -6,6 +6,8 @@ from pydantic import BaseSettings, Field, SecretStr, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
+from models_library.settings.http_clients import ClientRequestSettings
+
 
 class BootModeEnum(str, Enum):
     DEBUG = "debug-ptvsd"
@@ -66,7 +68,11 @@ class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
         # This call triggers parsers
-        return cls(postgres=PostgresSettings(), director=DirectorSettings())
+        return cls(
+            postgres=PostgresSettings(),
+            director=DirectorSettings(),
+            client_request=ClientRequestSettings(),
+        )
 
     # pylint: disable=no-self-use
     # pylint: disable=no-self-argument
@@ -91,6 +97,8 @@ class AppSettings(BaseSettings):
 
     # POSTGRES
     postgres: PostgresSettings
+
+    client_request: ClientRequestSettings
 
     # DIRECTOR SERVICE
     director: DirectorSettings

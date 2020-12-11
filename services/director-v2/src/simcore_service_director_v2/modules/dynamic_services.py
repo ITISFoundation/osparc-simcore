@@ -25,7 +25,9 @@ def setup(app: FastAPI, settings: DynamicServicesSettings):
     def on_startup() -> None:
         ServicesClient.create(
             app,
-            client=httpx.AsyncClient(),
+            client=httpx.AsyncClient(
+                timeout=app.state.settings.client_request.total_timeout
+            ),
         )
 
     async def on_shutdown() -> None:
