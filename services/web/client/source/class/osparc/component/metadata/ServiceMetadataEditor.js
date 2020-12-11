@@ -378,37 +378,60 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
         column: 1
       });
 
-      const certificationLink = new osparc.ui.markdown.Markdown();
+      let certificationLink;
+      let purpose;
+      let vandv;
+      let limitations;
+      let documentation;
+      let standards;
+      if (editMode) {
+        certificationLink = new qx.ui.form.TextArea().set({
+          minimalLineHeight: 1
+        });
+        purpose = new qx.ui.form.TextArea().set({
+          minimalLineHeight: 1
+        });
+        vandv = new qx.ui.form.TextArea().set({
+          minimalLineHeight: 1
+        });
+        limitations = new qx.ui.form.TextArea().set({
+          minimalLineHeight: 1
+        });
+        documentation = new qx.ui.form.TextArea().set({
+          minimalLineHeight: 1
+        });
+        standards = new qx.ui.form.TextArea().set({
+          minimalLineHeight: 1
+        });
+      } else {
+        certificationLink = new osparc.ui.markdown.Markdown();
+        purpose = new osparc.ui.markdown.Markdown();
+        vandv = new osparc.ui.markdown.Markdown();
+        limitations = new osparc.ui.markdown.Markdown();
+        documentation = new osparc.ui.markdown.Markdown();
+        standards = new osparc.ui.markdown.Markdown();
+      }
+
       this.__annotationsGrid.add(certificationLink, {
         row: row++,
         column: 1
       });
-
-      const purpose = new osparc.ui.markdown.Markdown();
       this.__annotationsGrid.add(purpose, {
         row: row++,
         column: 1
       });
-
-      const vandv = new osparc.ui.markdown.Markdown();
       this.__annotationsGrid.add(vandv, {
         row: row++,
         column: 1
       });
-
-      const limitations = new osparc.ui.markdown.Markdown();
       this.__annotationsGrid.add(limitations, {
         row: row++,
         column: 1
       });
-
-      const documentation = new osparc.ui.markdown.Markdown();
       this.__annotationsGrid.add(documentation, {
         row: row++,
         column: 1
       });
-
-      const standards = new osparc.ui.markdown.Markdown();
       this.__annotationsGrid.add(standards, {
         row: row++,
         column: 1
