@@ -41,6 +41,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       this.__copyMetadata = osparc.utils.Utils.deepCloneObject(metadata);
       this.__createEditBtns();
     }
+
+    this.__populateForms();
   },
 
   events: {
@@ -52,7 +54,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       check: ["display", "edit"],
       init: "display",
       nullable: false,
-      apply: "__populateTSR"
+      event: "changeMode",
+      apply: "__populateForms"
     }
   },
 
@@ -61,6 +64,11 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     __copyMetadata: null,
     __tsrGrid: null,
     __annotationsGrid: null,
+
+    __populateForms: function() {
+      this.__populateTSR();
+      this.__populateAnnotations();
+    },
 
     __createTSRSection: function() {
       const box = new qx.ui.groupbox.GroupBox(this.tr("Ten Simple Rules"));
@@ -87,8 +95,6 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       this._add(box, {
         flex: 1
       });
-
-      this.__populateTSR();
     },
 
     __createAnnotationsSection: function() {
@@ -108,8 +114,6 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       box.add(this.__annotationsGrid);
 
       this._add(box);
-
-      this.__populateAnnotations();
     },
 
     __populateTSR: function() {
@@ -364,11 +368,11 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __populateAnnotationsData: function() {
-      const editMode = this.getMode() === "edit";
+      const isEditMode = this.getMode() === "edit";
 
       let row = 0;
       const certification = new qx.ui.form.SelectBox().set({
-        enabled: editMode
+        enabled: isEditMode
       });
       certification.add(new qx.ui.form.ListItem("Uncertified"));
       certification.add(new qx.ui.form.ListItem("Independently reviewed"));
@@ -384,7 +388,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       let limitations;
       let documentation;
       let standards;
-      if (editMode) {
+      if (isEditMode) {
         certificationLink = new qx.ui.form.TextArea().set({
           minimalLineHeight: 1
         });
@@ -439,8 +443,12 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __createEditBtns: function() {
+      console.log(this.getMode());
       const editButton = new qx.ui.toolbar.Button(this.tr("Edit")).set({
         appearance: "toolbar-md-button"
+      });
+      this.bind("mode", editButton, "visibility", {
+        converter: value => value === "edit" ? "hidden" : "visible"
       });
       editButton.addListener("execute", () => {
         this.setMode("edit");
@@ -449,11 +457,18 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       const saveButton = new qx.ui.toolbar.Button(this.tr("Save")).set({
         appearance: "toolbar-md-button"
       });
+      this.bind("mode", saveButton, "visibility", {
+        converter: value => value === "edit" ? "visible" : "hidden"
+      });
       saveButton.addListener("execute", e => {
         this.__save(saveButton);
       }, this);
+
       const cancelButton = new qx.ui.toolbar.Button(this.tr("Cancel")).set({
         appearance: "toolbar-md-button"
+      });
+      this.bind("mode", cancelButton, "visibility", {
+        converter: value => value === "edit" ? "visible" : "hidden"
       });
       cancelButton.addListener("execute", () => {
         this.setMode("display");
