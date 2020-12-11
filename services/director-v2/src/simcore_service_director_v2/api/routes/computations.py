@@ -32,7 +32,11 @@ from ...utils.computations import (
     is_pipeline_running,
     is_pipeline_stopped,
 )
-from ...utils.dags import create_dag_graph, find_entrypoints, reduce_dag_graph
+from ...utils.dags import (
+    create_dag_graph,
+    create_minimal_graph_based_on_selection,
+    find_entrypoints,
+)
 from ...utils.exceptions import ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
 from ..dependencies.database import get_repository
@@ -122,7 +126,7 @@ async def create_computation(
             )
         # get a subgraph if needed
         if job.subgraph:
-            dag_graph = reduce_dag_graph(dag_graph, job.subgraph)
+            dag_graph = create_minimal_graph_based_on_selection(dag_graph, job.subgraph)
 
         if job.start_pipeline:
             # find the entrypoints, if not the pipeline cannot be started
