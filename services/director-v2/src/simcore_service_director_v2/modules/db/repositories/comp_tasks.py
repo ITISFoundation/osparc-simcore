@@ -125,9 +125,11 @@ class CompTasksRepository(BaseRepository):
             outputs=node.outputs,
             image=image,
             submit=datetime.utcnow(),
-            state=comp_state
-            if node_class == NodeClass.COMPUTATIONAL
-            else RunningState.NOT_STARTED,
+            state=(
+                comp_state
+                if node_class == NodeClass.COMPUTATIONAL
+                else RunningState.NOT_STARTED
+            ),
             internal_id=internal_id,
             node_class=node_class,
         )
