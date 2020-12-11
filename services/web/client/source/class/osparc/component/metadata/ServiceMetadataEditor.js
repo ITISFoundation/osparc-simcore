@@ -422,8 +422,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       certification.add(new qx.ui.form.ListItem("Uncertified"));
       certification.add(new qx.ui.form.ListItem("Independently reviewed"));
       certification.add(new qx.ui.form.ListItem("Regulatory grade"));
-      certification.addListener("changeValue", e => {
-        copyMetadataAnnotations.certificationStatus = "Uncertified";
+      certification.addListener("changeSelection", e => {
+        copyMetadataAnnotations.certificationStatus = e.getData()[0].getLabel();
       }, this);
       this.__annotationsGrid.add(certification, {
         row: row++,
