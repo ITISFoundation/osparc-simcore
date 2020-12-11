@@ -38,10 +38,15 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
 
 
 @log_decorator(logger=logger)
-def reduce_dag_graph(
-    full_dag_graph: nx.DiGraph, selected_nodes: Set[NodeID]
+def create_minimal_graph_based_on_selection(
+    workbench: Workbench, full_dag_graph: nx.DiGraph, selected_nodes: Set[NodeID]
 ) -> nx.DiGraph:
     # find depending nodes (if their linked output is missing, they should be run as well)
+    for node in selected_nodes:
+        # get list of predecessors of that node (will return only first degree)
+        for parent_node in full_dag_graph.predecessors(node):
+            pass
+
     return full_dag_graph.subgraph(selected_nodes)
 
 
