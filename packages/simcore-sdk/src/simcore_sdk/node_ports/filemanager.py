@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from yarl import URL
 
 import aiofiles
@@ -14,6 +14,7 @@ from simcore_service_storage_sdk.rest import ApiException
 from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, exceptions
+from ..config.http_clients import client_request_settings
 
 log = logging.getLogger(__name__)
 
@@ -28,7 +29,16 @@ class ClientSessionContextManager:
     # See https://github.com/ITISFoundation/osparc-simcore/issues/1098
     #
     def __init__(self, session=None):
-        self.active_session = session or ClientSession()
+        # We are interested in fast connections, if a connection is established
+        # there is no timeout for file download operations
+
+        self.active_session = session or ClientSession(
+            timeout=ClientTimeout(
+                total=None,
+                connect=client_request_settings.aiohttp_connect_timeout,
+                sock_connect=client_request_settings.aiohttp_sock_connect_timeout,
+            )
+        )
         self.is_owned = self.active_session is not session
 
     async def __aenter__(self):

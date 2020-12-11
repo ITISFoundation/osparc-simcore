@@ -33,7 +33,10 @@ def setup(app: FastAPI, settings: DirectorV0Settings):
     def on_startup() -> None:
         DirectorV0Client.create(
             app,
-            client=httpx.AsyncClient(base_url=settings.base_url(include_tag=True)),
+            client=httpx.AsyncClient(
+                base_url=settings.base_url(include_tag=True),
+                timeout=app.state.settings.client_request.total_timeout,
+            ),
         )
 
     async def on_shutdown() -> None:
