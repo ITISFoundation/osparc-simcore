@@ -15,6 +15,13 @@
 
 ************************************************************************ */
 
+/**
+ * @asset(form/service-metadata.json)
+ * @asset(object-path/object-path-0-11-4.min.js)
+ * @asset(ajv/ajv-6-11-0.min.js)
+ * @ignore(Ajv)
+ */
+
 qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
   extend: qx.ui.core.Widget,
 
@@ -26,23 +33,40 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (!("metadataTSR" in serviceData)) {
+    if (!("metadata" in serviceData)) {
       osparc.component.message.FlashMessenger.logAs(this.tr("Metadata not found"), "ERROR");
       return;
     }
 
-    this.__serviceData = serviceData;
-
-    this.__createTSRSection();
-    this.__createAnnotationsSection();
-
-    if (this.__isUserOwner()) {
-      const metadata = this.__serviceData;
-      this.__copyMetadata = osparc.utils.Utils.deepCloneObject(metadata);
-      this.__createEditBtns();
-    }
-
-    this.__populateForms();
+    const schemaUrl = "/resource/form/service-metadata.json";
+    const data = serviceData["metadata"];
+    const ajvLoader = new qx.util.DynamicScriptLoader([
+      "/resource/ajv/ajv-6-11-0.min.js",
+      "/resource/object-path/object-path-0-11-4.min.js"
+    ]);
+    ajvLoader.addListener("ready", () => {
+      this.__ajv = new Ajv();
+      osparc.utils.Utils.fetchJSON(schemaUrl)
+        .then(schema => {
+          if (this.__validate(schema.$schema, schema)) {
+            // If schema is valid
+            if (this.__validate(schema, data)) {
+              // Validate data if present
+              this.__serviceData = serviceData;
+            }
+            return schema;
+          }
+          return null;
+        })
+        .then(this.__render)
+        .catch(err => {
+          console.error(err);
+          this.__render(null);
+        });
+    }, this);
+    ajvLoader.addListener("failed", console.error, this);
+    this.__render = this.__render.bind(this);
+    ajvLoader.start();
   },
 
   events: {
@@ -62,8 +86,48 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
   members: {
     __serviceData: null,
     __copyMetadata: null,
+    __schema: null,
     __tsrGrid: null,
     __annotationsGrid: null,
+
+    /**
+     * Uses Ajv library to validate data against a schema.
+     *
+     * @param {Object} schema JSONSchema to validate against
+     * @param {Object} data Data to be validated
+     * @param {Boolean} showMessage Determines whether an error message is displayed to the user
+     */
+    __validate: function(schema, data, showMessage=true) {
+      this.__ajv.validate(schema, data);
+      const errors = this.__ajv.errors;
+      if (errors) {
+        console.error(errors);
+        if (showMessage) {
+          let message = `${errors[0].dataPath} ${errors[0].message}`;
+          osparc.component.message.FlashMessenger.logAs(message, "ERROR");
+        }
+        return false;
+      }
+      return true;
+    },
+
+    __render: function(schema) {
+      if (schema) {
+        this.__schema = schema;
+        this.__createTSRSection();
+        this.__createAnnotationsSection();
+
+        if (this.__isUserOwner()) {
+          const metadata = this.__serviceData;
+          this.__copyMetadata = osparc.utils.Utils.deepCloneObject(metadata);
+          this.__createEditBtns();
+        }
+
+        this.__populateForms();
+      } else {
+        osparc.component.message.FlashMessenger.logAs(this.tr("There was an error validating the metadata."), "ERROR");
+      }
+    },
 
     __populateForms: function() {
       this.__populateTSR();
@@ -123,7 +187,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __populateTSRHeaders: function() {
-      const rules = osparc.component.metadata.ServiceMetadata.getMetadataTSR();
+      const rules = this.__schema["properties"]["tsr"]["properties"];
 
       const headerTSR = new qx.ui.basic.Label(this.tr("Rules")).set({
         font: "title-14"
@@ -183,7 +247,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __populateTSRDataView: function() {
-      const metadataTSR = this.__serviceData["metadataTSR"];
+      const metadataTSR = this.__serviceData["metadata"]["tsr"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
         const ruleRating = new osparc.ui.basic.StarsRating();
@@ -230,7 +294,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __populateTSRDataEdit: function() {
-      const copyMetadataTSR = this.__copyMetadata["metadataTSR"];
+      const copyMetadataTSR = this.__copyMetadata["metadata"]["tsr"];
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         nStars: 4,
@@ -323,47 +387,23 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __populateAnnotationsHeaders: function() {
+      const metadataAnnotations = this.__schema["properties"]["annotations"]["properties"];
+
       let row = 0;
-      const header0 = new qx.ui.basic.Label(this.tr("Certification status"));
-      this.__annotationsGrid.add(header0, {
-        row: row++,
-        column: 0
-      });
-
-      const header1 = new qx.ui.basic.Label(this.tr("Certification link"));
-      this.__annotationsGrid.add(header1, {
-        row: row++,
-        column: 0
-      });
-
-      const header2 = new qx.ui.basic.Label(this.tr("Intended purpose/context"));
-      this.__annotationsGrid.add(header2, {
-        row: row++,
-        column: 0
-      });
-
-      const header3 = new qx.ui.basic.Label(this.tr("Verification & Validation"));
-      this.__annotationsGrid.add(header3, {
-        row: row++,
-        column: 0
-      });
-
-      const header4 = new qx.ui.basic.Label(this.tr("Known limitations"));
-      this.__annotationsGrid.add(header4, {
-        row: row++,
-        column: 0
-      });
-
-      const header5 = new qx.ui.basic.Label(this.tr("Documentation"));
-      this.__annotationsGrid.add(header5, {
-        row: row++,
-        column: 0
-      });
-
-      const header6 = new qx.ui.basic.Label(this.tr("Relevant standards"));
-      this.__annotationsGrid.add(header6, {
-        row: row++,
-        column: 0
+      Object.values(metadataAnnotations).forEach(annotation => {
+        let header = new qx.ui.basic.Label(annotation.title).set({
+          marginTop: 5
+        });
+        if (annotation.description !== "") {
+          header = new osparc.component.form.FieldWHint(null, annotation.description, header).set({
+            hintPosition: "left"
+          });
+        }
+        this.__annotationsGrid.add(header, {
+          row,
+          column: 0
+        });
+        row++;
       });
     },
 
@@ -443,7 +483,6 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __createEditBtns: function() {
-      console.log(this.getMode());
       const editButton = new qx.ui.toolbar.Button(this.tr("Edit")).set({
         appearance: "toolbar-md-button"
       });
@@ -483,8 +522,11 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __save: function(btn) {
-      const data = {};
-      data["metadataTSR"] = this.__copyMetadata["metadataTSR"];
+      const data = {
+        "metadata" : {}
+      };
+      data["metadata"]["tsr"] = this.__copyMetadata["metadata"]["tsr"];
+      data["metadata"]["annotations"] = this.__copyMetadata["metadata"]["annotations"];
       const params = {
         url: osparc.data.Resources.getServiceUrl(
           this.__copyMetadata["key"],

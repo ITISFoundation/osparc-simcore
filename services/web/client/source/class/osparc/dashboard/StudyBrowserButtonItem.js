@@ -105,10 +105,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyTags"
     },
 
-    metadataTSR: {
+    metadata: {
       check: "Object",
       nullable: true,
-      apply: "_applyMetadataTSR"
+      apply: "_applyMetadata"
     },
 
     state: {
@@ -235,7 +235,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
-      let metadataTSR = null;
+      let metadata = null;
       switch (studyData["resourceType"]) {
         case "study":
           uuid = studyData.uuid ? studyData.uuid : uuid;
@@ -254,7 +254,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
-          metadataTSR = studyData.metadataTSR ? studyData.metadataTSR : null;
+          metadata = studyData.metadata ? studyData.metadata : null;
           break;
       }
 
@@ -269,7 +269,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        metadataTSR
+        metadata
       });
     },
 
@@ -454,12 +454,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyMetadataTSR: function(metadataTSR) {
-      if (metadataTSR) {
+    _applyMetadata: function(metadata) {
+      if (metadata && "tsr" in metadata) {
         const {
           score,
           maxScore
-        } = osparc.component.metadata.ServiceMetadata.computeTSRScore(metadataTSR);
+        } = osparc.component.metadata.ServiceMetadata.computeTSRScore(metadata["tsr"]);
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
           score,

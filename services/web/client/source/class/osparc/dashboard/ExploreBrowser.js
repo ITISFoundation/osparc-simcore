@@ -435,7 +435,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
-      if (this.self().isService(studyData) && "metadataTSR" in studyData) {
+      if (this.self().isService(studyData) && "metadata" in studyData) {
         const metadataButton = this.__getMetadataMenuButton(studyData);
         menu.add(metadataButton);
       }

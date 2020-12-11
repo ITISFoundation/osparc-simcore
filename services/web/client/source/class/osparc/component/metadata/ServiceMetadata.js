@@ -19,69 +19,6 @@ qx.Class.define("osparc.component.metadata.ServiceMetadata", {
   type: "static",
 
   statics: {
-    getMetadataTSR: function() {
-      const metadataTSR = {
-        "r01": {
-          "title": "R1 - Define context clearly",
-          "description": "Develop and document the subject, purpose, and intended \
-use(s) of the model or simulation."
-        },
-        "r02": {
-          "title": "R2 - Use appropriate data",
-          "description": "Employ relevant and traceable information in the \
-development or operation of a model or simulation."
-        },
-        "r03": {
-          "title": "R3 - Evaluate within context",
-          "description": "Verification, validation, uncertainty quantification, and \
-sensitivity analysis of the model or simulation are \
-accomplished with respect to the reality of interest and \
-intended use(s) of the model or simulation."
-        },
-        "r04": {
-          "title": "R4 - List limitations explicitly",
-          "description": "Restrictions, constraints, or qualifications for or on the use of \
-the model or simulation are available for consideration by the \
-users or customers of a model or simulation."
-        },
-        "r05": {
-          "title": "R5 - Use version control",
-          "description": "Implement a system to trace the time history of M&S activities \
-including delineation of contributors' efforts."
-        },
-        "r06": {
-          "title": "R6 - Document adequately",
-          "description": "Maintain up-to-date informative record of all M&S activities, \
-including simulation code, model mark-up, scope and \
-intended use of M&S activities, as well as users' and \
-developers' guides."
-        },
-        "r07": {
-          "title": "R7 - Disseminate broadly",
-          "description": "Publish all components of M&S activities, including simulation \
-software, models, simulation scenarios and results."
-        },
-        "r08": {
-          "title": "R8 - Get independent reviews",
-          "description": "Have the M&S activity reviewed by nonpartisan third-party \
-users and developers."
-        },
-        "r09": {
-          "title": "R9 - Test competing implementations",
-          "description": "Use contrasting M&S execution strategies to check the \
-conclusions of the different execution strategies against each \
-other."
-        },
-        "r10": {
-          "title": "R10 - Conform to standards",
-          "description": "Adopt and promote generally applicable and discipline \
-specific operating procedures, guidelines, and regulations \
-accepted as best practices."
-        }
-      };
-      return metadataTSR;
-    },
-
     getConformanceLevel: function() {
       const conformanceLevel = {
         "l00": {
@@ -132,6 +69,18 @@ domain and the intended context of use",
         }
       });
       return confLevel;
+    },
+
+    getDummyMetadata: function() {
+      const dummyMetadata = osparc.component.metadata.ServiceMetadata.getDummyMetadataAnnotations();
+      dummyMetadata["tsr"] = osparc.component.metadata.ServiceMetadata.getDummyMetadataTSR();
+      return dummyMetadata;
+    },
+
+    getDummyMetadataAnnotations: function() {
+      const dummyMetadataAnnotations = {
+      };
+      return dummyMetadataAnnotations;
     },
 
     getDummyMetadataTSR: function() {
