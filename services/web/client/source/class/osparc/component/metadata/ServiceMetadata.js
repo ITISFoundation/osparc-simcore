@@ -72,7 +72,8 @@ domain and the intended context of use",
     },
 
     getDummyMetadata: function() {
-      const dummyMetadata = osparc.component.metadata.ServiceMetadata.getDummyMetadataAnnotations();
+      const dummyMetadata = {};
+      dummyMetadata["annotations"] = osparc.component.metadata.ServiceMetadata.getDummyMetadataAnnotations();
       dummyMetadata["tsr"] = osparc.component.metadata.ServiceMetadata.getDummyMetadataTSR();
       return dummyMetadata;
     },

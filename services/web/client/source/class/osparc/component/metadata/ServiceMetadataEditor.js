@@ -411,6 +411,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
     },
 
     __populateAnnotationsData: function() {
+      const copyMetadataAnnotations = this.__copyMetadata["metadata"]["annotations"];
+
       const isEditMode = this.getMode() === "edit";
 
       let row = 0;
@@ -420,6 +422,9 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       certification.add(new qx.ui.form.ListItem("Uncertified"));
       certification.add(new qx.ui.form.ListItem("Independently reviewed"));
       certification.add(new qx.ui.form.ListItem("Regulatory grade"));
+      certification.addListener("changeValue", e => {
+        copyMetadataAnnotations.certificationStatus = "Uncertified";
+      }, this);
       this.__annotationsGrid.add(certification, {
         row: row++,
         column: 1
@@ -432,31 +437,54 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       let documentation;
       let standards;
       if (isEditMode) {
-        certificationLink = new qx.ui.form.TextArea().set({
+        certificationLink = new qx.ui.form.TextArea(copyMetadataAnnotations.certificationLink).set({
           minimalLineHeight: 1
         });
-        purpose = new qx.ui.form.TextArea().set({
+        certificationLink.addListener("changeValue", e => {
+          copyMetadataAnnotations.certificationLink = e.getData();
+        }, this);
+
+        purpose = new qx.ui.form.TextArea(copyMetadataAnnotations.purpose).set({
           minimalLineHeight: 1
         });
-        vandv = new qx.ui.form.TextArea().set({
+        purpose.addListener("changeValue", e => {
+          copyMetadataAnnotations.purpose = e.getData();
+        }, this);
+
+        vandv = new qx.ui.form.TextArea(copyMetadataAnnotations.vandv).set({
           minimalLineHeight: 1
         });
-        limitations = new qx.ui.form.TextArea().set({
+        vandv.addListener("changeValue", e => {
+          copyMetadataAnnotations.vandv = e.getData();
+        }, this);
+
+        limitations = new qx.ui.form.TextArea(copyMetadataAnnotations.limitations).set({
           minimalLineHeight: 1
         });
-        documentation = new qx.ui.form.TextArea().set({
+        limitations.addListener("changeValue", e => {
+          copyMetadataAnnotations.limitations = e.getData();
+        }, this);
+
+        documentation = new qx.ui.form.TextArea(copyMetadataAnnotations.documentation).set({
           minimalLineHeight: 1
         });
-        standards = new qx.ui.form.TextArea().set({
+        documentation.addListener("changeValue", e => {
+          copyMetadataAnnotations.documentation = e.getData();
+        }, this);
+
+        standards = new qx.ui.form.TextArea(copyMetadataAnnotations.standards).set({
           minimalLineHeight: 1
         });
+        standards.addListener("changeValue", e => {
+          copyMetadataAnnotations.standards = e.getData();
+        }, this);
       } else {
-        certificationLink = new osparc.ui.markdown.Markdown();
-        purpose = new osparc.ui.markdown.Markdown();
-        vandv = new osparc.ui.markdown.Markdown();
-        limitations = new osparc.ui.markdown.Markdown();
-        documentation = new osparc.ui.markdown.Markdown();
-        standards = new osparc.ui.markdown.Markdown();
+        certificationLink = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.certificationLink);
+        purpose = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.purpose);
+        vandv = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.vandv);
+        limitations = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.limitations);
+        documentation = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.documentation);
+        standards = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.standards);
       }
 
       this.__annotationsGrid.add(certificationLink, {
