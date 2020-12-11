@@ -110,6 +110,7 @@ class CompTasksRepository(BaseRepository):
                 )
             if not node_details:
                 continue
+
             requires_mpi = False
             requires_gpu = False
             if node_extras:
