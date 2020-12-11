@@ -75,72 +75,13 @@ class CompTasksRepository(BaseRepository):
         return tasks
 
     # pylint: disable=unused-argument
-    @run_sequentially_in_context(target_args=["str_project_uuid", "node_id"])
-    async def _upsert_node(
+    @run_sequentially_in_context(target_args=["str_project_uuid"])
+    async def _sequentially_upsert_tasks_from_project(
         self,
         project: ProjectAtDB,
         director_client: DirectorV0Client,
         publish: bool,
-        node_id: str,
-        internal_id: int,
         str_project_uuid: str,
-    ) -> None:
-        """Upsert data for each node sequentially"""
-        node: Node = project.workbench[node_id]
-
-        service_key_version = ServiceKeyVersion(
-            key=node.key,
-            version=node.version,
-        )
-        node_class = to_node_class(service_key_version.key)
-        node_details: ServiceDockerData = None
-        node_extras: ServiceExtras = None
-        if node_class == NodeClass.FRONTEND:
-            node_details = _get_fake_service_details(service_key_version)
-        else:
-            node_details = await director_client.get_service_details(
-                service_key_version
-            )
-            node_extras: ServiceExtras = await director_client.get_service_extras(
-                service_key_version
-            )
-        requires_mpi = False
-        requires_gpu = False
-        if node_extras:
-            requires_gpu = node_extras.node_requirements == NodeRequirement.GPU
-            requires_mpi = node_extras.node_requirements == NodeRequirement.MPI
-        image = Image(
-            name=service_key_version.key,
-            tag=service_key_version.version,
-            requires_gpu=requires_gpu,
-            requires_mpi=requires_mpi,
-        )
-
-        comp_state = RunningState.PUBLISHED if publish else RunningState.NOT_STARTED
-        task_db = CompTaskAtDB(
-            project_id=project.uuid,
-            node_id=node_id,
-            schema=NodeSchema(inputs=node_details.inputs, outputs=node_details.outputs),
-            inputs=node.inputs,
-            outputs=node.outputs,
-            image=image,
-            submit=datetime.utcnow(),
-            state=(
-                comp_state
-                if node_class == NodeClass.COMPUTATIONAL
-                else RunningState.NOT_STARTED
-            ),
-            internal_id=internal_id,
-            node_class=node_class,
-        )
-
-        await self.connection.execute(
-            insert(comp_tasks).values(**task_db.dict(by_alias=True, exclude_unset=True))
-        )
-
-    @log_decorator(logger=logger)
-    async def upsert_tasks_from_project(
-        self, project: ProjectAtDB, director_client: DirectorV0Client, publish: bool
     ) -> None:
         # start by removing the old tasks if they exist
         await self.connection.execute(
@@ -148,24 +89,83 @@ class CompTasksRepository(BaseRepository):
         )
         # create the tasks
 
-        # only used by the decorator on the "_upsert_node" function
+        for internal_id, node_id in enumerate(project.workbench, 1):
+            node: Node = project.workbench[node_id]
+
+            service_key_version = ServiceKeyVersion(
+                key=node.key,
+                version=node.version,
+            )
+            node_class = to_node_class(service_key_version.key)
+            node_details: ServiceDockerData = None
+            node_extras: ServiceExtras = None
+            if node_class == NodeClass.FRONTEND:
+                node_details = _get_fake_service_details(service_key_version)
+            else:
+                node_details = await director_client.get_service_details(
+                    service_key_version
+                )
+                node_extras: ServiceExtras = await director_client.get_service_extras(
+                    service_key_version
+                )
+            requires_mpi = False
+            requires_gpu = False
+            if node_extras:
+                requires_gpu = node_extras.node_requirements == NodeRequirement.GPU
+                requires_mpi = node_extras.node_requirements == NodeRequirement.MPI
+            image = Image(
+                name=service_key_version.key,
+                tag=service_key_version.version,
+                requires_gpu=requires_gpu,
+                requires_mpi=requires_mpi,
+            )
+
+            comp_state = RunningState.PUBLISHED if publish else RunningState.NOT_STARTED
+            task_db = CompTaskAtDB(
+                project_id=project.uuid,
+                node_id=node_id,
+                schema=NodeSchema(
+                    inputs=node_details.inputs, outputs=node_details.outputs
+                ),
+                inputs=node.inputs,
+                outputs=node.outputs,
+                image=image,
+                submit=datetime.utcnow(),
+                state=(
+                    comp_state
+                    if node_class == NodeClass.COMPUTATIONAL
+                    else RunningState.NOT_STARTED
+                ),
+                internal_id=internal_id,
+                node_class=node_class,
+            )
+
+            await self.connection.execute(
+                insert(comp_tasks).values(
+                    **task_db.dict(by_alias=True, exclude_unset=True)
+                )
+            )
+
+    @log_decorator(logger=logger)
+    async def upsert_tasks_from_project(
+        self, project: ProjectAtDB, director_client: DirectorV0Client, publish: bool
+    ) -> None:
+
+        # only used by the decorator on the "_sequentially_upsert_tasks_from_project"
         str_project_uuid: str = str(project.uuid)
 
-        for internal_id, node_id in enumerate(project.workbench, 1):
-            # It is guaranteed that in the context of this application  no 2 updates
-            # will run in parallel.
-            #
-            # If we need to scale this service or the same comp_task entry is used in
-            # a different service an implementation of "therun_sequentially_in_context"
-            # based on redis queues needs to be put in place
-            await self._upsert_node(
-                project=project,
-                director_client=director_client,
-                publish=publish,
-                node_id=node_id,
-                internal_id=internal_id,
-                str_project_uuid=str_project_uuid,
-            )
+        # It is guaranteed that in the context of this application  no 2 updates
+        # will run in parallel.
+        #
+        # If we need to scale this service or the same comp_task entry is used in
+        # a different service an implementation of "therun_sequentially_in_context"
+        # based on redis queues needs to be put in place.
+        await self._sequentially_upsert_tasks_from_project(
+            project=project,
+            director_client=director_client,
+            publish=publish,
+            str_project_uuid=str_project_uuid,
+        )
 
     @log_decorator(logger=logger)
     async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:
