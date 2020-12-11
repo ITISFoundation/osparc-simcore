@@ -194,7 +194,7 @@ def _assert_pipeline_status(
 
 @pytest.mark.parametrize(
     "subgraph_elements",
-    [pytest.param([0, 1], id="element 0,1"), pytest.param([0, 1], id="element 0,2,4")],
+    [pytest.param([0, 1], id="element 0,1"), pytest.param([0, 1], id="element 1,2,4")],
 )
 def test_run_partial_computation(
     client: TestClient,
