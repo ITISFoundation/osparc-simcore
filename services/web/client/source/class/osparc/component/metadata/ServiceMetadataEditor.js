@@ -366,6 +366,9 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
         const references = new qx.ui.form.TextArea(rule.references).set({
           minimalLineHeight: 1
         });
+        references.addListener("changeValue", e => {
+          rule.references = e.getData();
+        }, this);
         this.__tsrGrid.add(references, {
           row,
           column: 2
@@ -527,26 +530,29 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       };
       data["metadata"]["tsr"] = this.__copyMetadata["metadata"]["tsr"];
       data["metadata"]["annotations"] = this.__copyMetadata["metadata"]["annotations"];
-      const params = {
-        url: osparc.data.Resources.getServiceUrl(
-          this.__copyMetadata["key"],
-          this.__copyMetadata["version"]
-        ),
-        data: data
-      };
-      osparc.data.Resources.fetch("services", "patch", params)
-        .then(serviceData => {
-          this.fireDataEvent("updateService", serviceData);
-        })
-        .catch(err => {
-          console.error(err);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the metadata."), "ERROR");
-        })
-        .finally(() => {
-          btn.resetIcon();
-          btn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
-        });
+      if (this.__validate(this.__schema, data["metadata"])) {
+        const params = {
+          url: osparc.data.Resources.getServiceUrl(
+            this.__copyMetadata["key"],
+            this.__copyMetadata["version"]
+          ),
+          data: data
+        };
+        osparc.data.Resources.fetch("services", "patch", params)
+          .then(serviceData => {
+            this.fireDataEvent("updateService", serviceData);
+            this.setMode("display");
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the metadata."), "ERROR");
+          })
+          .finally(() => {
+            btn.resetIcon();
+            btn.getChildControl("icon").getContentElement()
+              .removeClass("rotate");
+          });
+      }
     },
 
     __isUserOwner: function() {
