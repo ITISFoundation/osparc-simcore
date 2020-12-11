@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID
@@ -28,30 +28,32 @@ logger = logging.getLogger(__name__)
 
 
 @log_decorator(logger=logger)
-def _get_fake_service_details(service: ServiceKeyVersion) -> ServiceDockerData:
+def _get_fake_service_details(
+    service: ServiceKeyVersion,
+) -> Optional[ServiceDockerData]:
+
     if "file-picker" in service.key:
         file_picker_outputs = {
             "outFile": {
-                "label": "the output",
+                "label": "File",
                 "displayOrder": 0,
-                "description": "a file",
+                "description": "Chosen File",
                 "type": "data:*/*",
             }
         }
-        file_picker_type = ServiceType.FRONTEND
         return ServiceDockerData(
             **service.dict(),
-            name="file-picker",
-            description="file-picks",
+            name="File Picker",
+            description="File Picker",
             authors=[
-                Author(name="ITIS", email="itis@support.com", affiliation="IT'IS")
+                Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
             ],
-            contact="itis@support.com",
+            contact="maiz@itis.swiss",
             inputs={},
             outputs=file_picker_outputs,
-            type=file_picker_type,
+            type=ServiceType.FRONTEND,
         )
-    raise ValueError("")
+    return None
 
 
 class CompTasksRepository(BaseRepository):
