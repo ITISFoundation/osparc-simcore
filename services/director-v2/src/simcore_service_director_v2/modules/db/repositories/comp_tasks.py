@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID
@@ -132,15 +132,11 @@ class CompTasksRepository(BaseRepository):
             )
             internal_id = internal_id + 1
 
-            task_values: Dict[str, Any] = task_db.dict(
-                by_alias=True, exclude_unset=True
+            await self.connection.execute(
+                insert(comp_tasks).values(
+                    **task_db.dict(by_alias=True, exclude_unset=True)
+                )
             )
-            insert_stmt = insert(comp_tasks).values(task_values)
-            on_update_stmt = insert_stmt.on_conflict_do_update(
-                index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                set_=task_values,
-            )
-            await self.connection.execute(on_update_stmt)
 
     @log_decorator(logger=logger)
     async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:
