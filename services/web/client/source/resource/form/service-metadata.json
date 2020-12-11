@@ -112,6 +112,7 @@
                   "title": "Certification status",
                   "description": "",
                   "type": "string",
+                  "default": "Uncertified",
                   "enum": ["Uncertified", "Independently reviewed", "Regulatory grade"]
                 },
                 "certificationLink": {

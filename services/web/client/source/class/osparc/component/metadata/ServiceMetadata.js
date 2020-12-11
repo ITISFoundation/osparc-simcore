@@ -79,6 +79,13 @@ domain and the intended context of use",
 
     getDummyMetadataAnnotations: function() {
       const dummyMetadataAnnotations = {
+        "certificationStatus": "Uncertified",
+        "certificationLink": "",
+        "purpose": "",
+        "vandv": "",
+        "limitations": "",
+        "documentation": "",
+        "standards": ""
       };
       return dummyMetadataAnnotations;
     },
