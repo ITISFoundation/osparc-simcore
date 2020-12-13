@@ -4,20 +4,21 @@
     SEE https://docs.aiohttp.org/en/latest/client_advanced.html#persistent-session
 """
 import logging
+from typing import Any, MutableMapping
 
 from aiohttp import ClientSession, ClientTimeout, web
 
 from .application_keys import APP_CLIENT_SESSION_KEY
 from .utils import (
-    get_http_client_request_total_timeout,
     get_http_client_request_aiohttp_connect_timeout,
     get_http_client_request_aiohttp_sock_connect_timeout,
+    get_http_client_request_total_timeout,
 )
 
 log = logging.getLogger(__name__)
 
 
-def get_client_session(app: web.Application) -> ClientSession:
+def get_client_session(app: MutableMapping[str, Any]) -> ClientSession:
     """Lazy initialization of ClientSession
 
     Ensures unique session
