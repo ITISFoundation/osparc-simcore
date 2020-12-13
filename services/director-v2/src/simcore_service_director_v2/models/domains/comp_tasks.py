@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, Set
+from typing import Dict, List, Optional, Set
 from uuid import UUID
 
 from models_library.basic_regex import VERSION_RE
@@ -11,6 +11,7 @@ from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
+from ...utils.db import DB_TO_RUNNING_STATE
 from ..schemas.constants import UserID
 
 TaskID = UUID
@@ -45,6 +46,9 @@ class ComputationTask(BaseModel):
     result: Optional[str] = Field(
         None, description="the result of the computational task"
     )
+    pipeline: Dict[NodeID, List[NodeID]] = Field(
+        ..., description="the corresponding pipeline in terms of node uuids"
+    )
 
 
 class ComputationTaskOut(ComputationTask):
@@ -54,17 +58,6 @@ class ComputationTaskOut(ComputationTask):
     stop_url: Optional[AnyHttpUrl] = Field(
         None, description="the link where to stop the task"
     )
-
-
-DB_TO_RUNNING_STATE = {
-    StateType.FAILED: RunningState.FAILED,
-    StateType.PENDING: RunningState.PENDING,
-    StateType.SUCCESS: RunningState.SUCCESS,
-    StateType.PUBLISHED: RunningState.PUBLISHED,
-    StateType.NOT_STARTED: RunningState.NOT_STARTED,
-    StateType.RUNNING: RunningState.STARTED,
-    StateType.ABORTED: RunningState.ABORTED,
-}
 
 
 class Image(BaseModel):

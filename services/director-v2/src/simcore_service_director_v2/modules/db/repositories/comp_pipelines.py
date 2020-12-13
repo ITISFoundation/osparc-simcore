@@ -2,10 +2,10 @@ import logging
 
 import networkx as nx
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert
-
+from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_pipelines import CompPipelineAtDB
 from ....utils.logging_utils import log_decorator
@@ -16,6 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class CompPipelinesRepository(BaseRepository):
+    @log_decorator(logger=logger)
+    async def get_pipeline(self, project_id: ProjectID) -> CompPipelineAtDB:
+        result = await self.connection.execute(
+            sa.select([comp_pipeline]).where(
+                comp_pipeline.c.project_id == str(project_id)
+            )
+        )
+        row: RowProxy = await result.fetchone()
+        return CompPipelineAtDB.from_orm(row)
+
     @log_decorator(logger=logger)
     async def upsert_pipeline(
         self, project_id: ProjectID, dag_graph: nx.DiGraph, publish: bool

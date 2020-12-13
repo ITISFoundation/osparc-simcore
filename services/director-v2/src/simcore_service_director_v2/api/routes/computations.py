@@ -5,6 +5,7 @@ import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -161,6 +162,7 @@ async def create_computation(
             state=RunningState.PUBLISHED
             if job.start_pipeline
             else RunningState.NOT_STARTED,
+            pipeline=nx.to_dict_of_lists(dag_graph),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"
             if job.start_pipeline
@@ -182,6 +184,9 @@ async def get_computation(
     project_id: ProjectID,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
+    computation_pipelines: CompPipelinesRepository = Depends(
+        get_repository(CompPipelinesRepository)
+    ),
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
@@ -192,6 +197,11 @@ async def get_computation(
         # check that project actually exists
         # TODO: get a copy of the project and process it here instead!
         await project_repo.get_project(project_id)
+
+        # get the project pipeline
+        pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
+            project_id
+        )
 
         # get the project task states
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
@@ -211,6 +221,7 @@ async def get_computation(
         task_out = ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
+            pipeline=pipeline_at_db.dag_adjacency_list,
             url=f"{request.url.remove_query_params('user_id')}",
             stop_url=f"{request.url.remove_query_params('user_id')}:stop"
             if is_pipeline_running(pipeline_state)
@@ -245,6 +256,9 @@ async def stop_computation_project(
     project_id: ProjectID,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
+    computation_pipelines: CompPipelinesRepository = Depends(
+        get_repository(CompPipelinesRepository)
+    ),
     computation_tasks: CompTasksRepository = Depends(
         get_repository(CompTasksRepository)
     ),
@@ -258,6 +272,10 @@ async def stop_computation_project(
     try:
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
+        # get the project pipeline
+        pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
+            project_id
+        )
         # check if current state allow to stop the computation
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
@@ -273,6 +291,7 @@ async def stop_computation_project(
         return ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
+            pipeline=pipeline_at_db.dag_adjacency_list,
             url=f"{str(request.url).rstrip(':stop')}",
         )
 
