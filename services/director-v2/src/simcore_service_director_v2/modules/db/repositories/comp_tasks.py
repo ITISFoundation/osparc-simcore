@@ -5,6 +5,7 @@ from typing import List, Optional
 import sqlalchemy as sa
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import (
     Author,
@@ -17,9 +18,9 @@ from sqlalchemy.dialects.postgresql import insert
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.domains.projects import ProjectAtDB
 from ....models.schemas.services import NodeRequirement, ServiceExtras
+from ....utils.async_utils import run_sequentially_in_context
 from ....utils.computations import to_node_class
 from ....utils.logging_utils import log_decorator
-from ....utils.async_utils import run_sequentially_in_context
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
 from ._base import BaseRepository
@@ -80,7 +81,7 @@ class CompTasksRepository(BaseRepository):
         self,
         project: ProjectAtDB,
         director_client: DirectorV0Client,
-        publish: bool,
+        published_nodes: List[NodeID],
         str_project_uuid: str,
     ) -> None:
         # start by removing the old tasks if they exist
@@ -123,7 +124,6 @@ class CompTasksRepository(BaseRepository):
                 requires_mpi=requires_mpi,
             )
 
-            comp_state = RunningState.PUBLISHED if publish else RunningState.NOT_STARTED
             task_db = CompTaskAtDB(
                 project_id=project.uuid,
                 node_id=node_id,
@@ -135,8 +135,9 @@ class CompTasksRepository(BaseRepository):
                 image=image,
                 submit=datetime.utcnow(),
                 state=(
-                    comp_state
-                    if node_class == NodeClass.COMPUTATIONAL
+                    RunningState.PUBLISHED
+                    if node_id in published_nodes
+                    and node_class == NodeClass.COMPUTATIONAL
                     else RunningState.NOT_STARTED
                 ),
                 internal_id=internal_id,
@@ -151,7 +152,10 @@ class CompTasksRepository(BaseRepository):
 
     @log_decorator(logger=logger)
     async def upsert_tasks_from_project(
-        self, project: ProjectAtDB, director_client: DirectorV0Client, publish: bool
+        self,
+        project: ProjectAtDB,
+        director_client: DirectorV0Client,
+        published_nodes: List[NodeID],
     ) -> None:
 
         # only used by the decorator on the "_sequentially_upsert_tasks_from_project"
@@ -166,7 +170,7 @@ class CompTasksRepository(BaseRepository):
         await self._sequentially_upsert_tasks_from_project(
             project=project,
             director_client=director_client,
-            publish=publish,
+            published_nodes=published_nodes,
             str_project_uuid=str_project_uuid,
         )
 

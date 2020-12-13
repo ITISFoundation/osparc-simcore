@@ -129,21 +129,14 @@ async def create_computation(
         if job.subgraph:
             dag_graph = create_minimal_graph_based_on_selection(dag_graph, job.subgraph)
 
-        if job.start_pipeline:
-            # find the entrypoints, if not the pipeline cannot be started
-            entrypoints = find_entrypoints(dag_graph)
-            if not entrypoints:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Project {job.project_id} has no services to compute",
-                )
-
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
             project.uuid, dag_graph, job.start_pipeline
         )
         await computation_tasks.upsert_tasks_from_project(
-            project, director_client, job.start_pipeline
+            project,
+            director_client,
+            [n for n in dag_graph.nodes()] if job.start_pipeline else [],
         )
 
         if job.start_pipeline:

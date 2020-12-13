@@ -26,7 +26,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_rand
 from yarl import URL
 
 core_services = ["director", "redis", "rabbit", "sidecar", "storage", "postgres"]
-ops_services = ["minio"]
+ops_services = ["minio", "adminer"]
 
 COMPUTATION_URL: str = "v2/computations"
 
@@ -193,8 +193,16 @@ def _assert_pipeline_status(
 
 
 @pytest.mark.parametrize(
-    "subgraph_elements",
-    [pytest.param([0, 1], id="element 0,1"), pytest.param([0, 1], id="element 1,2,4")],
+    "subgraph_elements,exp_pipeline_dag_adj_list_1st_run, exp_pipeline_dag_adj_list_2nd_run",
+    [
+        pytest.param([0, 1], {0: [1], 1: []}, {0: [1], 1: []}, id="element 0,1"),
+        pytest.param(
+            [1, 2, 4],
+            {0: [1, 2], 1: [4], 2: [], 4: []},
+            {1: [4], 2: [], 4: []},
+            id="element 1,2,4",
+        ),
+    ],
 )
 def test_run_partial_computation(
     client: TestClient,
@@ -202,6 +210,8 @@ def test_run_partial_computation(
     project: Callable,
     sleepers_workbench: Dict,
     subgraph_elements: List[int],
+    exp_pipeline_dag_adj_list_1st_run: Dict[str, List[str]],
+    exp_pipeline_dag_adj_list_2nd_run: Dict[str, List[str]],
 ):
     # send a valid project with sleepers
     sleepers_project = project(workbench=sleepers_workbench)
@@ -211,9 +221,9 @@ def test_run_partial_computation(
             "user_id": user_id,
             "project_id": str(sleepers_project.uuid),
             "start_pipeline": True,
-            "sub_graph": [
+            "subgraph": [
                 str(node_id)
-                for index, node_id in enumerate(sleepers_project)
+                for index, node_id in enumerate(sleepers_project.workbench)
                 if index in subgraph_elements
             ],
         },
@@ -231,6 +241,9 @@ def test_run_partial_computation(
         task_out.stop_url
         == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
+    import pdb
+
+    pdb.set_trace()
 
     # now wait for the computation to finish
     task_out = _assert_pipeline_status(
