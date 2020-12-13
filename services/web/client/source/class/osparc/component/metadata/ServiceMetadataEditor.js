@@ -569,7 +569,6 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
         osparc.data.Resources.fetch("services", "patch", params)
           .then(serviceData => {
             this.fireDataEvent("updateService", serviceData);
-            this.setMode("display");
           })
           .catch(err => {
             console.error(err);

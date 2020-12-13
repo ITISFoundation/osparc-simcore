@@ -632,7 +632,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __openMetadataEditor: function(serviceData) {
       const serviceMetadataEditor = new osparc.component.metadata.ServiceMetadataEditor(serviceData);
-      osparc.ui.window.Window.popUpInWindow(serviceMetadataEditor, serviceData.name, 760, 760);
+      const win = osparc.ui.window.Window.popUpInWindow(serviceMetadataEditor, serviceData.name, 760, 760);
+      serviceMetadataEditor.addListener("updateService", e => {
+        const newServiceData = e.getData();
+        this.__resetServiceItem(newServiceData);
+        win.close();
+      });
     },
 
     __openServicePermissions: function(serviceData) {
