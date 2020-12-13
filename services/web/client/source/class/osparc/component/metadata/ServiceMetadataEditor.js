@@ -299,7 +299,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       tsrRating.set({
         nStars: 4,
         showScore: true,
-        marginTop: 5
+        marginTop: 5,
+        mode: "edit"
       });
       const updateTSRScore = () => {
         const {
@@ -341,7 +342,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
             maxScore: 4,
             nStars: 4,
             score: value,
-            marginTop: 5
+            marginTop: 5,
+            mode: "edit"
           });
           const confLevel = osparc.component.metadata.ServiceMetadata.findConformanceLevel(value);
           const hint = confLevel.title + "<br>" + confLevel.description;

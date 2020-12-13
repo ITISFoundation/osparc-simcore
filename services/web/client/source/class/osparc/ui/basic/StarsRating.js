@@ -64,6 +64,13 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       init: false,
       nullable: false,
       apply: "__render"
+    },
+
+    mode: {
+      check: ["display", "edit"],
+      init: "display",
+      nullable: false,
+      apply: "__render"
     }
   },
 
@@ -120,26 +127,47 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       const normScore = score/maxScore;
 
       const fullStars = Math.floor(normScore/(1.0/maxStars));
+      let currentScore = 1;
       for (let i=0; i<fullStars; i++) {
-        const star = new qx.ui.basic.Image(this.self().StarFull);
+        const star = this.__getStarImage(this.self().StarFull, currentScore);
         starsLayout.add(star);
+        currentScore++;
       }
 
       const halfStar = Math.round((normScore%(1.0/maxStars))*maxStars);
       for (let i=0; i<halfStar; i++) {
-        const star = new qx.ui.basic.Image(this.self().StarHalf);
+        const star = this.__getStarImage(this.self().StarHalf);
         starsLayout.add(star);
       }
 
       const emptyStars = maxStars - fullStars - halfStar;
-      if (this.getShowEmptyStars()) {
+      if (this.getShowEmptyStars() || this.getMode() === "edit") {
         for (let i=0; i<emptyStars; i++) {
-          const star = new qx.ui.basic.Image(this.self().StarEmpty);
+          const star = this.__getStarImage(this.self().StarEmpty, currentScore);
           starsLayout.add(star);
+          currentScore++;
         }
       } else if (fullStars === 0 && halfStar === 0) {
         const star = new qx.ui.basic.Image(this.self().StarEmpty);
         starsLayout.add(star);
+      }
+    },
+
+    __getStarImage: function(imageUrl, currentScore) {
+      const star = new qx.ui.basic.Image(imageUrl);
+      if (this.getMode() === "edit" && currentScore !== undefined) {
+        star.addListener("tap", e => {
+          this.__updateScore(currentScore);
+        }, this);
+      }
+      return star;
+    },
+
+    __updateScore: function(score) {
+      if (score === this.getScore()) {
+        this.setScore(0);
+      } else {
+        this.setScore(score);
       }
     },
 
