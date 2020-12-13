@@ -334,6 +334,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
           });
           ruleRating.addListener("changeScore", e => {
             rule.level = e.getData();
+            updateLevel(rule.level);
             updateTSRScore();
           }, this);
           const confLevel = osparc.component.metadata.ServiceMetadata.findConformanceLevel(value);
