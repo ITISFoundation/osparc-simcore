@@ -6,17 +6,16 @@
 from asyncio import sleep
 from copy import deepcopy
 from typing import Callable
+from unittest.mock import call
 
 import pytest
 import socketio
 import socketio.exceptions
 from aiohttp import web
 from aioresponses import aioresponses
-from mock import call
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
-
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director import setup_director

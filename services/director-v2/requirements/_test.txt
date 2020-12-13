@@ -19,7 +19,7 @@ billiard==3.6.3.0         # via -c requirements/_base.txt, celery
 cached-property==1.5.2    # via docker-compose
 celery[redis]==5.0.2      # via -c requirements/_base.txt, pytest-celery
 certifi==2020.11.8        # via -c requirements/_base.txt, httpx, requests
-cffi==1.14.3              # via bcrypt, cryptography, pynacl
+cffi==1.14.4              # via bcrypt, cryptography, pynacl
 chardet==3.0.4            # via -c requirements/_base.txt, aiohttp, httpx, requests
 click-didyoumean==0.0.3   # via -c requirements/_base.txt, celery
 click-repl==0.1.6         # via -c requirements/_base.txt, celery
@@ -28,14 +28,14 @@ codecov==2.1.10           # via -r requirements/_test.in
 contextvars==2.4          # via -c requirements/_base.txt, sniffio
 coverage==5.3             # via codecov, coveralls, pytest-cov
 coveralls==2.2.0          # via -r requirements/_test.in
-cryptography==3.2.1       # via paramiko
+cryptography==3.3.1       # via paramiko
 distro==1.5.0             # via docker-compose
 docker-compose==1.27.4    # via pytest-docker
-docker[ssh]==4.3.1        # via -r requirements/_test.in, docker-compose
+docker[ssh]==4.4.0        # via -r requirements/_test.in, docker-compose
 dockerpty==0.4.1          # via docker-compose
 docopt==0.6.2             # via coveralls, docker-compose
 execnet==1.7.1            # via pytest-xdist
-faker==4.17.1             # via -r requirements/_test.in
+faker==5.0.1              # via -r requirements/_test.in
 h11==0.9.0                # via -c requirements/_base.txt, httpcore
 hiredis==1.1.0            # via aioredis
 httpcore==0.10.2          # via -c requirements/_base.txt, httpx
@@ -54,7 +54,7 @@ mako==1.1.3               # via alembic
 markupsafe==1.1.1         # via -c requirements/_base.txt, mako
 mccabe==0.6.1             # via pylint
 multidict==5.0.0          # via -c requirements/_base.txt, aiohttp, yarl
-packaging==20.4           # via pytest
+packaging==20.7           # via pytest
 pamqp==2.3.0              # via aiormq
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
@@ -87,7 +87,7 @@ redis==3.5.3              # via -c requirements/_base.txt, celery
 requests==2.24.0          # via -c requirements/_base.txt, codecov, coveralls, docker, docker-compose
 respx==0.12.1             # via -c requirements/../../../requirements/constraints.txt, -r requirements/_test.in
 rfc3986[idna2008]==1.4.0  # via -c requirements/_base.txt, httpx
-six==1.15.0               # via -c requirements/_base.txt, astroid, bcrypt, click-repl, cryptography, docker, dockerpty, jsonschema, packaging, pynacl, python-dateutil, websocket-client
+six==1.15.0               # via -c requirements/_base.txt, astroid, bcrypt, click-repl, cryptography, docker, dockerpty, jsonschema, pynacl, python-dateutil, websocket-client
 sniffio==1.2.0            # via -c requirements/_base.txt, httpcore, httpx
 sqlalchemy[postgresql_psycopg2binary]==1.3.20  # via -c requirements/../../../requirements/constraints.txt, -c requirements/_base.txt, alembic
 text-unidecode==1.3       # via faker
