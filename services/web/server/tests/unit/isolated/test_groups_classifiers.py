@@ -48,92 +48,16 @@
 ####################################################################################################################
 
 import json
-import os
 import random
 import re
 from collections import defaultdict
 from copy import deepcopy
-from enum import IntEnum
-from http import HTTPStatus
-from pprint import pprint
-from typing import Any, Callable, DefaultDict, Dict, List, Optional, Set, Union
-from uuid import UUID
+from typing import List
 
-import aiohttp
-import pytest
-from aiohttp import ClientSession
-from pydantic import BaseModel, Field, ValidationError
-
-
-class ValidationResult(IntEnum):
-    UNKNOWN = -1
-    INVALID = 0
-    VALID = 1
-
-
-RRID_PORTAL_API_KEY = os.environ.get("RRID_PORTAL_API_KEY")
-BASE_URL = os.environ.get("SCICRUNCH_API_BASE_URL", "https://scicrunch.org/api/1")
+from pydantic import BaseModel, Field
 
 # TODO: emulate server for testing
 # TODO:
-
-
-## MODELS
-
-
-# NOTE: there is no need to capture everything
-# fields = [
-#   {
-#     "field": "Resource Name",
-#     "required": true,
-#     "type": "text",
-#     "max_number": "1",
-#     "value": "Jupyter Notebook",
-#     "position": 0,
-#     "display": "title",
-#     "alt": "The name of the unique resource you are submitting"
-#   }, ...
-# ]
-class FieldItem(BaseModel):
-    field_name: str = Field(..., alias="field")
-    required: bool
-    # field_type: str = Field(..., alias="type") # text, textarea, resource-types, ...
-    # max_number: str  # convertable to int
-    value: Union[str, None, List[Any]] = None
-    # position: int
-    # display: str  # title, descripiotn, url, text, owner-text
-    alt: str  # alternative text
-
-
-# NOTE: Response looks like
-# {
-#   "data": {
-#     "fields": [ ... ]
-#     "version": 2,
-#     "curation_status": "Curated",
-#     "last_curated_version": 2,
-#     "scicrunch_id": "SCR_018315",
-#     "original_id": "SCR_018315",
-#     "image_src": null,
-#     "uuid": "0e88ffa5-752f-5ae6-aab1-b350edbe2ccc",
-#     "typeID": 1
-#   },
-#   "success": true
-# }
-class ResourceView(BaseModel):
-    resource_fields: Optional[List[FieldItem]] = Field(None, alias="fields")
-    version: int
-    curation_status: str
-    last_curated_version: int
-    uuid: UUID
-    # typeID: int
-    image_src: Optional[str] = None
-    scicrunch_id: str
-    original_id: str
-
-    @property
-    def is_curated(self) -> bool:
-        return self.curation_status.lower() == "curated"
 
 
 SPLIT_STRIP_PATTERN = r"[^:\s][^:]*[^:\s]*"
@@ -243,99 +167,3 @@ def test_classifier_model():
     )
 
     assert classifier.split() == ["a", "b", "cc 23"]
-
-
-## FREE HELPER FUNCTIONS
-
-
-async def get_resource_fields(client: ClientSession, rrid: str) -> ResourceView:
-    async with client.get(
-        f"{BASE_URL}/resource/fields/view/{rrid}",
-        params={"key": RRID_PORTAL_API_KEY},
-        raise_for_status=True,
-    ) as resp:
-        body = await resp.json()
-        assert body.get("success")
-        return ResourceView(**body.get("data", {}))
-
-
-async def get_all_versions(client: ClientSession, rrid: str) -> List:
-    async with client.get(
-        f"{BASE_URL}/resource/versions/all/{rrid}",
-        params={"key": RRID_PORTAL_API_KEY},
-        raise_for_status=True,
-    ) as resp:
-        body = await resp.json()
-        return body.get("data") if body.get("success") else []
-
-
-async def validate_rrid(client: ClientSession, rrid: str) -> ValidationResult:
-    if rrid.startswith("SCR_"):
-        try:
-            versions = await get_all_versions(client, rrid)
-            return ValidationResult.VALID if versions else ValidationResult.INVALID
-
-        except aiohttp.ClientResponseError as err:
-            if err.status == HTTPStatus.BAD_REQUEST:
-                return ValidationResult.INVALID
-            return ValidationResult.UNKNOWN
-
-        except aiohttp.ClientError:
-            # connection handling and server response misbehaviors
-            # ClientResposeError over 300
-            # raises? --> does NOT mean it is invalid but that cannot determine validity right now!!!
-            # - server not reachable: down, wrong address
-            # - timeout: server slowed down (retry?)
-            return ValidationResult.UNKNOWN
-
-        except ValidationError as err:
-            print(err)
-            return ValidationResult.INVALID
-
-    return ValidationResult.INVALID
-
-
-# ---------------------
-
-
-@pytest.mark.skipif(
-    RRID_PORTAL_API_KEY is None,
-    reason="Testing agains actual service is intended for manual exploratory testing",
-)
-async def test_scicrunch_api_specs(loop):
-    async with ClientSession() as client:
-        resp = await client.get("https://scicrunch.org/swagger-docs/swagger.json")
-        openapi_specs = await resp.json()
-        pprint(openapi_specs["info"])
-        assert openapi_specs["info"]["version"] == 1
-
-
-@pytest.mark.skipif(
-    RRID_PORTAL_API_KEY is None,
-    reason="Testing agains actual service is intended for manual exploratory testing",
-)
-@pytest.mark.parametrize(
-    "classifier,rrid",
-    [
-        ("Jupyter Notebook", "SCR_018315"),
-        ("Language::Python", "SCR_008394"),
-        ("Language::Octave", "SCR_014398"),
-        ("osparc", "SCR_018997"),  # proper citation: (o²S²PARC, RRID:SCR_018997)
-        (None, "RRID:SCR_014398"),
-        (None, "SCR_INVALID_XXXXX"),
-        (None, "ANOTHER_INVALID_RRID"),
-    ],
-)
-async def test_resource_online_validation(classifier, rrid, loop):
-    async with ClientSession() as client:
-
-        validation_result = await validate_rrid(client, rrid)
-
-        assert validation_result == (
-            ValidationResult.VALID if classifier else ValidationResult.INVALID
-        ), f"{classifier} with rrid={rrid} is undefined"
-
-        if validation_result == ValidationResult.VALID:
-            resource = await get_resource_fields(client, rrid)
-
-            assert resource.scicrunch_id == rrid
