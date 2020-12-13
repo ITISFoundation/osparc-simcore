@@ -35,6 +35,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       check: "Number",
       init: 1,
       nullable: false,
+      event: "changeScore",
       apply: "__render"
     },
 

@@ -322,21 +322,8 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
           alignY: "middle"
         }));
 
-        const slider = new qx.ui.form.Slider().set({
-          width: 150,
-          maxHeight: 20,
-          minimum: 0,
-          maximum: 4,
-          singleStep: 1,
-          value: rule.level
-        });
-        layout.add(slider);
-
         const updateLevel = value => {
-          // remove all but slider
-          while (layout.getChildren().length > 1) {
-            layout.removeAt(1);
-          }
+          layout.removeAll();
           const ruleRating = new osparc.ui.basic.StarsRating();
           ruleRating.set({
             maxScore: 4,
@@ -345,6 +332,10 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
             marginTop: 5,
             mode: "edit"
           });
+          ruleRating.addListener("changeScore", e => {
+            rule.level = e.getData();
+            updateTSRScore();
+          }, this);
           const confLevel = osparc.component.metadata.ServiceMetadata.findConformanceLevel(value);
           const hint = confLevel.title + "<br>" + confLevel.description;
           const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
@@ -354,11 +345,6 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
         };
 
         updateLevel(rule.level);
-        slider.addListener("changeValue", e => {
-          rule.level = e.getData();
-          updateLevel(rule.level);
-          updateTSRScore();
-        }, this);
 
         this.__tsrGrid.add(layout, {
           row,
