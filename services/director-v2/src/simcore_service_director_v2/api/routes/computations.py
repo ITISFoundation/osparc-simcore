@@ -1,4 +1,5 @@
 import logging
+import pdb
 from typing import List
 
 import networkx as nx
@@ -136,7 +137,7 @@ async def create_computation(
         await computation_tasks.upsert_tasks_from_project(
             project,
             director_client,
-            [n for n in dag_graph.nodes()] if job.start_pipeline else [],
+            list(dag_graph.nodes()) if job.start_pipeline else [],
         )
 
         if job.start_pipeline:
@@ -200,8 +201,13 @@ async def get_computation(
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
+        dag_graph: nx.DiGraph = nx.from_dict_of_lists(pipeline_at_db.dag_adjacency_list)
+        # filter the tasks by the effective pipeline
+        filtered_tasks = [
+            t for t in comp_tasks if str(t.node_id) in list(dag_graph.nodes())
+        ]
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            filtered_tasks, celery_client.settings.publication_timeout
         )
 
         log.debug(

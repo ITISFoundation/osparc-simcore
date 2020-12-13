@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 
 import pytest
 import sqlalchemy as sa
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
@@ -241,9 +242,16 @@ def test_run_partial_computation(
         task_out.stop_url
         == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
-    import pdb
-
-    pdb.set_trace()
+    # convert the ids to the node uuids from the project
+    workbench_node_uuids = list(sleepers_project.workbench.keys())
+    expected_adj_list_1st_run: Dict[NodeID, List[NodeID]] = {}
+    expected_adj_list_2nd_run: Dict[NodeID, List[NodeID]] = {}
+    for conv in [expected_adj_list_1st_run, expected_adj_list_2nd_run]:
+        for node_key, next_nodes in exp_pipeline_dag_adj_list_1st_run.items():
+            conv[NodeID(workbench_node_uuids[node_key])] = [
+                NodeID(workbench_node_uuids[n]) for n in next_nodes
+            ]
+    assert task_out.pipeline == expected_adj_list_1st_run
 
     # now wait for the computation to finish
     task_out = _assert_pipeline_status(
@@ -255,6 +263,35 @@ def test_run_partial_computation(
     assert (
         task_out.state == RunningState.SUCCESS
     ), f"the pipeline complete with state {task_out.state}"
+
+    # run it a second time. the expected tasks to run might change.
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(sleepers_project.uuid),
+            "start_pipeline": True,
+            "subgraph": [
+                str(node_id)
+                for index, node_id in enumerate(sleepers_project.workbench)
+                if index in subgraph_elements
+            ],
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    task_out = ComputationTaskOut.parse_obj(response.json())
+
+    assert task_out.id == sleepers_project.uuid
+    assert task_out.state == RunningState.PUBLISHED
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert (
+        task_out.stop_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    )
+    assert task_out.pipeline == expected_adj_list_2nd_run
 
 
 def test_run_computation(
