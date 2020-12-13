@@ -217,7 +217,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
           marginTop: 5
         });
         const ruleWHint = new osparc.component.form.FieldWHint(null, rule.description, label).set({
-          hintPosition: "left"
+          allowGrowX: false
         });
         this.__tsrGrid.add(ruleWHint, {
           row,
