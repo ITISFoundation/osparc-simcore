@@ -74,11 +74,12 @@ def _node_outdated(full_dag_graph: nx.DiGraph, node_id: NodeID) -> bool:
 
 @log_decorator(logger=logger)
 def create_minimal_graph_based_on_selection(
-    full_dag_graph: nx.DiGraph, selected_nodes: Set[NodeID]
+    full_dag_graph: nx.DiGraph, selected_nodes: List[NodeID]
 ) -> nx.DiGraph:
+    selected_nodes_str = [str(n) for n in selected_nodes]
     # first pass, set the dirty attribute on the graph
     for node in nx.topological_sort(full_dag_graph):
-        if node in selected_nodes or _node_outdated(full_dag_graph, node):
+        if node in selected_nodes_str or _node_outdated(full_dag_graph, node):
             mark_node_dirty(full_dag_graph, node)
 
     # now we want all the outdated nodes that are in the tree from the selected nodes
