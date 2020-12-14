@@ -5,8 +5,6 @@ from typing import Optional
 
 import aiopg.sa
 import tenacity
-from sqlalchemy import and_
-
 from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
@@ -14,9 +12,10 @@ from servicelib.aiopg_utils import (
     is_postgres_responsive,
 )
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from .exceptions import NodeNotFound
+from sqlalchemy import and_
 
 from . import config
+from .exceptions import NodeNotFound
 
 log = logging.getLogger(__name__)
 
@@ -125,7 +124,6 @@ class DBManager:
                 node = await _get_node_from_db(node_uuid, connection)
                 node_json_config = json.dumps(
                     {
-                        "version": "0.1",
                         "schema": node.schema,
                         "inputs": node.inputs,
                         "outputs": node.outputs,

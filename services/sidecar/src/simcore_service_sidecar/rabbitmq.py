@@ -90,6 +90,7 @@ class RabbitMQ(BaseModel):
     async def _post_message(
         self, exchange: aio_pika.Exchange, data: Dict[str, Union[str, Any]]
     ):
+        log.debug("publishing message to the broker %s", data)
         await exchange.publish(
             aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
         )

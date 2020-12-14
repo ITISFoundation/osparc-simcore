@@ -210,6 +210,9 @@
                         },
                         "label": {
                           "type": "string"
+                        },
+                        "eTag": {
+                          "type": "string"
                         }
                       }
                     },
@@ -302,6 +305,9 @@
                         },
                         "label": {
                           "type": "string"
+                        },
+                        "eTag": {
+                          "type": "string"
                         }
                       }
                     },
@@ -344,7 +350,10 @@
               ]
             },
             "parent": {
-              "type": [ "null", "string" ],
+              "type": [
+                "null",
+                "string"
+              ],
               "format": "uuid",
               "description": "Parent's (group-nodes') node ID s.",
               "examples": [
