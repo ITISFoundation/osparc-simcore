@@ -17,6 +17,7 @@ paths:
                 subgraph:
                   description: The node uuids selected for running a partial pipeline
                   type: array
+                  uniqueItems: true
                   items:
                     type: string
                     format: uuid
