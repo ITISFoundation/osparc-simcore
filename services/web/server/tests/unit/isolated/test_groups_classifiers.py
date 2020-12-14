@@ -6,6 +6,7 @@
 ####################################################################################################################
 # NOTES
 
+
 #
 # To check times pytest --pdb -vv --durations=0  tests/unit/isolated/test_classifiers.py
 #
@@ -52,12 +53,31 @@ import random
 import re
 from collections import defaultdict
 from copy import deepcopy
-from typing import List
+from typing import DefaultDict, List, Set
 
 from pydantic import BaseModel, Field
 
 # TODO: emulate server for testing
 # TODO:
+
+GROUP_CLASSIFIER_SAMPLE = {
+    "build_date": "2020-12-14T18:10:00Z",
+    "classifiers": {
+        "Programming Language::Python": {
+            "classifier": "RRID:SCR_008394",
+            "display_name": "Python",
+            "short_description": "Python Programming Language",
+        },
+        "Programming Language::Octave": {
+            "classifier": "RRID:SCR_014398",
+            "display_name": "GNU Octave",
+        },
+        "Jupyter Notebook": {
+            "classifier": "RRID:SCR_018315",
+            "display_name": "Jupyter Notebook",
+        },
+    },
+}
 
 
 SPLIT_STRIP_PATTERN = r"[^:\s][^:]*[^:\s]*"
