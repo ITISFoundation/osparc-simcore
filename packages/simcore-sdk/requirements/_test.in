@@ -21,7 +21,6 @@ pytest-xdist
 
 # mockups/fixtures
 aioresponses
-mock
 requests
 docker
 python-dotenv

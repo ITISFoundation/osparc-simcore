@@ -4,26 +4,24 @@
 import asyncio
 import json
 import time
+import unittest.mock as mock
 import uuid as uuidlib
 from asyncio import Future, sleep
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple, Union
+from unittest.mock import call
 
-import mock
 import pytest
 import socketio
+from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from aiohttp import web
 from aioresponses import aioresponses
-from mock import call
-from socketio.exceptions import ConnectionError as SocketConnectionError
-
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from models_library.projects_access import Owner
 from models_library.projects_state import (
+    ProjectLocked,
     ProjectRunningState,
     ProjectState,
     RunningState,
-    ProjectLocked
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
@@ -49,6 +47,7 @@ from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
+from socketio.exceptions import ConnectionError as SocketConnectionError
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"

@@ -5,6 +5,8 @@ from typing import Optional
 from pydantic import BaseSettings, Field, SecretStr, validator
 from yarl import URL
 
+from models_library.settings.http_clients import ClientRequestSettings
+
 
 class BootModeEnum(str, Enum):
     debug = "debug-ptvsd"
@@ -67,7 +69,11 @@ class AppSettings(BaseSettings):
     @classmethod
     def create_default(cls) -> "AppSettings":
         # This call triggers parsers
-        return cls(postgres=PostgresSettings(), webserver=WebServerSettings())
+        return cls(
+            postgres=PostgresSettings(),
+            webserver=WebServerSettings(),
+            client_request=ClientRequestSettings(),
+        )
 
     # pylint: disable=no-self-use
     # pylint: disable=no-self-argument
@@ -86,7 +92,6 @@ class AppSettings(BaseSettings):
         except AttributeError as err:
             raise ValueError(f"{value.upper()} is not a valid level") from err
 
-
     @property
     def loglevel(self) -> int:
         return getattr(logging, self.log_level_name)
@@ -96,6 +101,8 @@ class AppSettings(BaseSettings):
 
     # WEB-SERVER SERVICE
     webserver: WebServerSettings
+
+    client_request: ClientRequestSettings
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = "0.0.0.0"  # nosec

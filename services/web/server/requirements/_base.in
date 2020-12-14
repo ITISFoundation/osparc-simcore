@@ -7,6 +7,7 @@
 -r ../../../../packages/postgres-database/requirements/_base.in
 -r ../../../../packages/service-library/requirements/_base.in
 
+aiohttp==3.6.3 ## Issue in https://github.com/ITISFoundation/osparc-simcore/issues/2008
 
 aio-pika
 aiohttp_jinja2

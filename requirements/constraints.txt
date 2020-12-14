@@ -2,18 +2,22 @@
 #
 #   - vulnerabilities
 #   - breaking changes
-#
+#   - known bugs/malfunction
 
-
-aiozipkin==0.7.1         # breaking changes with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases)
-
-
+# Vulnerabilities
 sqlalchemy>=1.3.3                             # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 sqlalchemy[postgresql_psycopg2binary]>=1.3.3  # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
 pyyaml>=5.3                                   # Vulnerable
 urllib3>=1.25.8                               # Vulnerability
 
 
+# Breaking changes
+# with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases).
+# TODO: Check again when moving to py3.8-3.9! SEE https://github.com/ITISFoundation/osparc-simcore/pull/2025
+aiozipkin==0.7.1
+
+
+# Malfunctions with routes including paths. TODO: report bug in repo!
 # httpx [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
 httpx<0.15.0
 # [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
