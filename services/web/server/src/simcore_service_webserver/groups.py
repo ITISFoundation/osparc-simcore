@@ -4,7 +4,6 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (
     get_handlers_from_namespace,
@@ -14,6 +13,7 @@ from servicelib.rest_routing import (
 
 from . import groups_handlers
 from .rest_config import APP_OPENAPI_SPECS_KEY
+from .scicrunch import setup_scicrunch
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,10 @@ logger = logging.getLogger(__name__)
     depends=["simcore_service_webserver.rest", "simcore_service_webserver.users"],
     logger=logger,
 )
-def setup(app: web.Application):
+def setup_groups(app: web.Application):
+
+    # prepares scicrunch api
+    setup_scicrunch(app)
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -34,9 +37,3 @@ def setup(app: web.Application):
         strict=True,
     )
     app.router.add_routes(routes)
-
-
-# alias
-setup_groups = setup
-
-__all__ = "setup_groups"

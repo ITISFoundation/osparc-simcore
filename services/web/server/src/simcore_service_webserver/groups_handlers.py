@@ -191,11 +191,54 @@ async def delete_group_user(request: web.Request):
         raise web.HTTPForbidden() from exc
 
 
-# groups/{gid}/classifiers --------------------------------------------
+# GET groups/{gid}/classifiers --------------------------------------------
 @login_required
 @permission_required("groups.*")
 async def get_group_classifiers(request: web.Request):
     gid = request.match_info["gid"]
 
+    tree_view: str = request.query.get("tree_view", "std")
+
     bundle: Dict = await groups_api.get_group_classifier(request.app, gid)
     return bundle
+
+    # TODO: special tree if sparc group
+
+
+#  GET /groups/sparc/classifiers/scicrunch-resources/{rrid}
+@login_required
+@permission_required("groups.*")
+async def get_scicrunch_resource(request: web.Request):
+    rrid = request.match_info["rrid"]
+
+    raise NotImplementedError()
+    # from .scicrunch import SciCrunchAPI
+    # rrid = request.match_info["rrid"]
+
+    # scicrunch = SciCrunchAPI.get_instance(request.app)
+    # if not scicrunch:
+    #     raise web.HTTPServiceUnavailable(reason="scicrunch.org, the validation service is not reachable due to setup problems")
+
+    # resource = await scicrunch.get_resource_fields(rrid)
+    # # cache??
+    # return resource.dict(exclude_unset=True)
+
+
+#  POST /groups/sparc/classifiers/scicrunch-resources/{rrid}
+@login_required
+@permission_required("groups.*")
+async def add_scicrunch_resource(request: web.Request):
+    rrid = request.match_info["rrid"]
+
+    raise NotImplementedError()
+    # fails if not available
+    raise web.HTTPUnprocessableEntity(reason="Invalid rrid")
+
+
+#  GET /groups/sparc/classifiers/scicrunch-resources:search
+@login_required
+@permission_required("groups.*")
+async def search_scicrunch_resources(request: web.Request):
+    resource_name_as: str = request.query["resource_name_as"]
+
+    raise NotImplementedError()
