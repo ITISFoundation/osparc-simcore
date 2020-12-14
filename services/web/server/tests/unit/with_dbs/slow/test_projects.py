@@ -13,12 +13,9 @@ from unittest.mock import call
 
 import pytest
 import socketio
+from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
 from aiohttp import web
 from aioresponses import aioresponses
-from socketio.exceptions import ConnectionError as SocketConnectionError
-
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
-from mock import call
 from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectLocked,
@@ -50,6 +47,7 @@ from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
+from socketio.exceptions import ConnectionError as SocketConnectionError
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
