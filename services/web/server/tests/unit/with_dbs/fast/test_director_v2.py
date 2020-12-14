@@ -63,7 +63,34 @@ async def test_start_pipeline(
     expected: ExpectedResponse,
 ):
     url = client.app.router["start_pipeline"].url_for(project_id=f"{project_id}")
-    rsp = await client.post(url, json={"user_id": "some id"})
+    rsp = await client.post(url)
+    data, error = await assert_status(
+        rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
+    )
+
+    if user_role != UserRole.ANONYMOUS:
+        assert not error, f"error received: {error}"
+    if data:
+        assert "pipeline_id" in data
+        assert (
+            data["pipeline_id"] == f"{project_id}"
+        ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
+
+
+@pytest.mark.parametrize(
+    *standard_role_response(),
+)
+async def test_start_partial_pipeline(
+    client,
+    logged_user: Dict,
+    project_id: UUID,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+):
+    url = client.app.router["start_pipeline"].url_for(project_id=f"{project_id}")
+    rsp = await client.post(
+        url, json={"subgraph": ["node_id1", "node_id2", "node_id498"]}
+    )
     data, error = await assert_status(
         rsp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
     )
@@ -88,7 +115,7 @@ async def test_stop_pipeline(
     expected: ExpectedResponse,
 ):
     url = client.app.router["stop_pipeline"].url_for(project_id=f"{project_id}")
-    rsp = await client.post(url, json={"user_id": "some id"})
+    rsp = await client.post(url)
     await assert_status(
         rsp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
     )
