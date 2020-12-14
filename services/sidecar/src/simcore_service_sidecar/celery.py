@@ -1,7 +1,9 @@
+import logging
+
 from celery.signals import worker_ready, worker_shutting_down
 
+from .__version__ import __version__
 from .celery_configurator import create_celery_app
-from .celery_log_setup import get_task_logger
 from .celery_task_utils import cancel_task
 from .cli import run_sidecar
 from .remote_debug import setup_remote_debugging
@@ -10,7 +12,21 @@ setup_remote_debugging()
 
 app = create_celery_app()
 
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
+
+WELCOME_MSG = r"""
+  .-')            _ .-') _     ('-.               ('-.     _  .-')
+ ( OO ).         ( (  OO) )  _(  OO)             ( OO ).-.( \( -O )
+(_)---\_)  ,-.-') \     .'_ (,------.   .-----.  / . --. / ,------.
+/    _ |   |  |OO),`'--..._) |  .---'  '  .--./  | \-.  \  |   /`. '
+\  :` `.   |  |  \|  |  \  ' |  |      |  |('-..-'-'  |  | |  /  | |
+ '..`''.)  |  |(_/|  |   ' |(|  '--.  /_) |OO  )\| |_.'  | |  |_.' |
+.-._)   \ ,|  |_.'|  |   / : |  .--'  ||  |`-'|  |  .-.  | |  .  '.'
+\       /(_|  |   |  '--'  / |  `---.(_'  '--'\  |  | |  | |  |\  \
+ `-----'   `--'   `-------'  `------'   `-----'  `--' `--' `--' '--' {0}
+""".format(
+    __version__
+)
 
 
 @worker_shutting_down.connect
@@ -28,7 +44,7 @@ def worker_shutting_down_handler(
 
 @worker_ready.connect
 def worker_ready_handler(*args, **kwargs):  # pylint: disable=unused-argument
-    log.info("!!!!!!!!!!!!!! Worker is READY now !!!!!!!!!!!!!!!!!!")
+    print(WELCOME_MSG)
 
 
 __all__ = ["app"]
