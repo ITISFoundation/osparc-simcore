@@ -20,6 +20,61 @@ REQUIREMENT_RE = re.compile(r"-r\w(\w.in|.txt)")
 # https://github.com/jazzband/pip-tools/issues/204
 
 
+# ANE: ---------------
+
+# PACKAGE_NAME_REMAPPING = {
+#     "packages/postgres-database": "simcore-postgres-database",
+#     "packages/service-library": "simcore-service-library",
+#     "services/storage/client-sdk/python": "simcore-service-storage-sdk",
+#     "packages/simcore-sdk": "simcore-sdk",
+#     "packages/models-library": "simcore-models-library",
+# }
+
+
+# def get_renamed_package(package: str) -> str:
+#     return PACKAGE_NAME_REMAPPING.get(package, package)
+
+
+# def read_reqs(reqs_path: Path):
+#     def git_link(entry: str):
+#         package_name = get_renamed_package(entry.rsplit("=")[-1])
+#         converted = entry.replace("git+git", "git+https").replace(
+#             "#subdirectory=", "#egg=subdir&subdirectory="
+#         )
+#         return f"{package_name} @ {converted}"
+
+#     requirements = deque()
+#     for line in reqs_path.read_text().split("\n"):
+#         parts = line.rsplit("#", maxsplit=1)
+
+#         candidate = parts[0].strip()
+#         if len(candidate) == 0:
+#             continue
+
+#         if candidate.startswith("git+git://"):
+#             candidate = git_link(candidate)
+
+#         requirements.append(candidate)
+
+#     return list(requirements)
+
+# produces ...
+#
+#
+# send2trash==1.5.0
+# simcore-models-library @ git+https://github.com/ITISFoundation/osparc-simcore.git@dd551e8d3d3af8d2e48d62458f096fc21cd75ecf#egg=subdir&subdirectory=packages/models-library
+# simcore-postgres-database @ git+https://github.com/ITISFoundation/osparc-simcore.git@dd551e8d3d3af8d2e48d62458f096fc21cd75ecf#egg=subdir&subdirectory=packages/postgres-database
+# simcore-sdk @ git+https://github.com/ITISFoundation/osparc-simcore.git@dd551e8d3d3af8d2e48d62458f096fc21cd75ecf#egg=subdir&subdirectory=packages/simcore-sdk
+# simcore-service-library @ git+https://github.com/ITISFoundation/osparc-simcore.git@dd551e8d3d3af8d2e48d62458f096fc21cd75ecf#egg=subdir&subdirectory=packages/service-library
+# simcore-service-storage-sdk @ git+https://github.com/ITISFoundation/osparc-simcore.git@dd551e8d3d3af8d2e48d62458f096fc21cd75ecf#egg=subdir&subdirectory=services/storage/client-sdk/python
+# six==1.15.0
+# sqlalchemy[postgresql_psycopg2binary]==1.3.20
+#
+#
+
+# install_requirements = read_reqs(here / "requirements" / "requirements.txt")
+
+
 def read_reqs(reqs_path: Path, *, reqpaths=None):
     reqpaths = reqpaths or []
     if reqs_path in reqpaths:
