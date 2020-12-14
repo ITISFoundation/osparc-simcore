@@ -1,5 +1,4 @@
 import logging
-import pdb
 from typing import List
 
 import networkx as nx
@@ -34,11 +33,7 @@ from ...utils.computations import (
     is_pipeline_running,
     is_pipeline_stopped,
 )
-from ...utils.dags import (
-    create_dag_graph,
-    create_minimal_graph_based_on_selection,
-    find_entrypoints,
-)
+from ...utils.dags import create_dag_graph, create_minimal_graph_based_on_selection
 from ...utils.exceptions import ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
 from ..dependencies.database import get_repository
