@@ -24,4 +24,4 @@ httpx<0.15.0
 respx<0.13.0
 
 # Breaking changes. TODO: review ASAP
- minio<7.0.0
+ minio<8.0.0
