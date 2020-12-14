@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from models_library.basic_regex import VERSION_RE
@@ -23,7 +23,7 @@ class ComputationTaskCreate(BaseModel):
     start_pipeline: Optional[bool] = Field(
         False, description="if True the computation pipeline will start right away"
     )
-    subgraph: Optional[Set[NodeID]] = Field(
+    subgraph: Optional[List[NodeID]] = Field(
         None,
         description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
     )

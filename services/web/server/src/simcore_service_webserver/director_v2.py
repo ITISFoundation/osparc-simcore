@@ -134,7 +134,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         "user_id": user_id,
         "project_id": project_id,
         "start_pipeline": True,
-        "subgraph": subgraph,
+        "subgraph": list(subgraph),  # sets are not natively json serializable
     }
 
     # request to director-v2
