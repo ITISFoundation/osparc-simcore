@@ -76,3 +76,13 @@ class ResourceView(BaseModel):
             if field.field_name == "Resource Name":
                 return field.value
         return None
+
+
+class ResourceHit(BaseModel):
+    rid: str
+    # original_id: str
+    name: str
+
+
+class ListOfResourceHits(BaseModel):
+    __root__ = List[ResourceHit]

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def setup_scicrunch(app: MutableMapping[str, Any]):
     try:
         cfg = SciCrunchSettings()
-        api = SciCrunchAPI.create_instance(app, cfg)
+        api = SciCrunchAPI.acquire_instance(app, cfg)
         assert api == SciCrunchAPI.get_instance(app)  # nosec
     except ValidationError as err:
         logger.warning(

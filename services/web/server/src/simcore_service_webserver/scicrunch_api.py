@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from servicelib.client_session import get_client_session
 
 from .scicrunch_config import SciCrunchSettings
-from .scicrunch_models import ResourceView
+from .scicrunch_models import ListOfResourceHits, ResourceView
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +40,49 @@ async def get_resource_fields(
         raise_for_status=True,
     ) as resp:
         body = await resp.json()
-        assert body.get("success")
+
+        assert body.get("success")  # nosec
         return ResourceView(**body.get("data", {}))
 
 
-# async def autocomplete_by_name(rrid: str) -> List:
-#     pass
+async def autocomplete_by_name(
+    resource_name_as: str, client: ClientSession, settings: SciCrunchSettings
+) -> ListOfResourceHits:
+    async with client.get(
+        f"{settings.api_base_url}/resource/fields/autocomplete",
+        params={
+            "key": settings.api_key.get_secret_value(),
+            "field": "Resource Name",
+            "value": resource_name_as,
+        },
+        raise_for_status=True,
+    ) as resp:
+        body = await resp.json()
+        assert body.get("success")  # nosec
+        return ListOfResourceHits(__root__=body.get("data", []))
+
+    #
+    # curl -X GET "https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave" -H "accept: application/json
+    # {
+    #   "data": [
+    #     {
+    #       "rid": "SCR_000860",
+    #       "original_id": "nlx_155680",
+    #       "name": "cbiNifti: Matlab/Octave Nifti library"
+    #     },
+    #     {
+    #       "rid": "SCR_009637",
+    #       "original_id": "nlx_155924",
+    #       "name": "Pipeline System for Octave and Matlab"
+    #     },
+    #     {
+    #       "rid": "SCR_014398",
+    #       "original_id": "SCR_014398",
+    #       "name": "GNU Octave"
+    #     }
+    #   ],
+    #   "success": true
+    # }
 
 
 class ValidationResult(IntEnum):
@@ -75,10 +112,10 @@ class SciCrunchAPI:
         self.client = client
 
     @classmethod
-    def create_instance(
+    def acquire_instance(
         cls, app: MutableMapping[str, Any], settings: SciCrunchSettings
     ) -> "SciCrunchAPI":
-        """ Creates single instance for the application and stores it """
+        """ Returns single instance for the application and stores it """
         obj = cls.get_instance(app)
         if not obj:
             session = get_client_session(app)
@@ -97,7 +134,7 @@ class SciCrunchAPI:
             return match.group(1)
         raise ValueError(f"Does not match a RRID {rrid}")
 
-    async def validate_rrid(self, rrid: str) -> ValidationResult:
+    async def validate_resource(self, rrid: str) -> ValidationResult:
         try:
             rrid = self.validate_identifier(rrid)
             versions = await get_all_versions(rrid, self.client, self.settings)
@@ -130,5 +167,12 @@ class SciCrunchAPI:
                 "Failed to get fields for resource RRID: %s", rrid, exc_info=True
             )
             raise web.HTTPNotFound(
-                reason=r"Cannot find a valid research resource for RRID {rrid}"
+                reason=f"Cannot find a valid research resource for RRID {rrid}"
             )
+
+    async def search_resource(self, name_as: str) -> ListOfResourceHits:
+        try:
+            return await autocomplete_by_name(name_as, self.client, self.settings)
+        except (aiohttp.ClientError, ValidationError):
+            logger.debug("Failed to autocomplete : %s", name_as)
+        return ListOfResourceHits(__root__=[])
