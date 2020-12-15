@@ -46,6 +46,9 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
       this.addOpenButton();
       this._add(this.getChildControl("checkbox"));
       this.addLabel();
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
     },
 
     _createChildControlImpl: function(id) {
