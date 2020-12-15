@@ -16,13 +16,13 @@
 ************************************************************************ */
 
 /**
- * @asset(form/service-metadata.json)
+ * @asset(form/service-quality.json)
  * @asset(object-path/object-path-0-11-4.min.js)
  * @asset(ajv/ajv-6-11-0.min.js)
  * @ignore(Ajv)
  */
 
-qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
+qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -38,7 +38,7 @@ qx.Class.define("osparc.component.metadata.ServiceMetadataEditor", {
       return;
     }
 
-    const schemaUrl = "/resource/form/service-metadata.json";
+    const schemaUrl = "/resource/form/service-quality.json";
     const data = serviceData["metadata"];
     const ajvLoader = new qx.util.DynamicScriptLoader([
       "/resource/ajv/ajv-6-11-0.min.js",

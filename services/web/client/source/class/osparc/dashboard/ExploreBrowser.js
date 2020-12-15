@@ -435,9 +435,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
-      if (this.self().isService(studyData) && "metadata" in studyData) {
-        const metadataButton = this.__getMetadataMenuButton(studyData);
-        menu.add(metadataButton);
+      if (this.self().isService(studyData) && osparc.data.model.Node.isComputational(studyData) && "metadata" in studyData) {
+        const qualityButton = this.__getServiceQualityMenuButton(studyData);
+        menu.add(qualityButton);
       }
 
       const classifiersButton = this.__getClassifiersMenuButton(studyData);
@@ -482,12 +482,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return moreInfoButton;
     },
 
-    __getMetadataMenuButton: function(studyData) {
-      const srvMetadataButton = new qx.ui.menu.Button(this.tr("Metadata"));
-      srvMetadataButton.addListener("execute", () => {
-        this.__openMetadataEditor(studyData);
+    __getServiceQualityMenuButton: function(studyData) {
+      const srvQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      srvQualityButton.addListener("execute", () => {
+        this.__openServiceQualityEditor(studyData);
       }, this);
-      return srvMetadataButton;
+      return srvQualityButton;
     },
 
     __getClassifiersMenuButton: function(studyData) {
@@ -630,10 +630,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       });
     },
 
-    __openMetadataEditor: function(serviceData) {
-      const serviceMetadataEditor = new osparc.component.metadata.ServiceMetadataEditor(serviceData);
-      const win = osparc.ui.window.Window.popUpInWindow(serviceMetadataEditor, serviceData.name, 650, 760);
-      serviceMetadataEditor.addListener("updateService", e => {
+    __openServiceQualityEditor: function(serviceData) {
+      const serviceQualityEditor = new osparc.component.metadata.ServiceQualityEditor(serviceData);
+      const title = serviceData.name + " - " + this.tr("Quality Assesment");
+      const win = osparc.ui.window.Window.popUpInWindow(serviceQualityEditor, title, 650, 760);
+      serviceQualityEditor.addListener("updateService", e => {
         const newServiceData = e.getData();
         this.__resetServiceItem(newServiceData);
         win.close();
