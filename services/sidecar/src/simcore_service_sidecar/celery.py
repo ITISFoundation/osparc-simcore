@@ -44,7 +44,7 @@ def worker_shutting_down_handler(
 
 @worker_ready.connect
 def worker_ready_handler(*args, **kwargs):  # pylint: disable=unused-argument
-    print(WELCOME_MSG)
+    print(WELCOME_MSG, flush=True)
 
 
 __all__ = ["app"]
