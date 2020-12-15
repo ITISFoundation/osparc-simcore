@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 import asyncio
+import importlib
 import inspect
 import json
 from collections import deque
@@ -178,7 +179,12 @@ async def _assert_incoming_data_logs(
     return (sidecar_logs, tasks_logs, progress_logs)
 
 
-@pytest.fixture
+@pytest.fixture(
+    params=[
+        "node_ports",
+        "node_ports_v2",
+    ]
+)
 async def pipeline(
     sidecar_config: None,
     postgres_host_config: Dict[str, str],
@@ -189,15 +195,17 @@ async def pipeline(
     pipeline_cfg: Dict,
     mock_dir: Path,
     user_id: int,
+    request,
 ) -> ComputationalPipeline:
     """creates a full pipeline.
     NOTE: 'pipeline', defined as parametrization
     """
-    from simcore_sdk import node_ports
 
     tasks = {key: osparc_service for key in pipeline_cfg}
     dag = {key: pipeline_cfg[key]["next"] for key in pipeline_cfg}
     inputs = {key: pipeline_cfg[key]["inputs"] for key in pipeline_cfg}
+
+    np = importlib.import_module(f".{request.param}", package="simcore_sdk")
 
     async def _create(
         tasks: Dict[str, Any],
@@ -233,15 +241,15 @@ async def pipeline(
                 ):
                     # update the files in mock_dir to S3
                     # FIXME: node_ports config shall not global! here making a hack so it works
-                    node_ports.node_config.USER_ID = user_id
-                    node_ports.node_config.PROJECT_ID = project_id
-                    node_ports.node_config.NODE_UUID = node_uuid
+                    np.node_config.USER_ID = user_id
+                    np.node_config.PROJECT_ID = project_id
+                    np.node_config.NODE_UUID = node_uuid
 
                     print("--" * 10)
-                    print_module_variables(module=node_ports.node_config)
+                    print_module_variables(module=np.node_config)
                     print("--" * 10)
 
-                    PORTS = await node_ports.ports()
+                    PORTS = await np.ports()
                     await (await PORTS.inputs)[input_key].set(
                         mock_dir / node_inputs[input_key]["path"]
                     )
@@ -254,29 +262,50 @@ SLEEPERS_STUDY = (
     "itisfoundation/sleeper",
     "1.0.0",
     {
-        "node_1": {
-            "next": ["node_2", "node_3"],
+        "a13d197a-bf8c-4e11-8a15-44a9894cbbe8": {
+            "next": [
+                "28bf052a-5fb8-4935-9c97-2b15109632b9",
+                "dfdc165b-a10d-4049-bf4e-555bf5e7d557",
+            ],
             "inputs": {},
         },
-        "node_2": {
-            "next": ["node_4"],
+        "28bf052a-5fb8-4935-9c97-2b15109632b9": {
+            "next": ["54901e30-6cd2-417b-aaf9-b458022639d2"],
             "inputs": {
-                "in_1": {"nodeUuid": "node_1", "output": "out_1"},
-                "in_2": {"nodeUuid": "node_1", "output": "out_2"},
+                "in_1": {
+                    "nodeUuid": "a13d197a-bf8c-4e11-8a15-44a9894cbbe8",
+                    "output": "out_1",
+                },
+                "in_2": {
+                    "nodeUuid": "a13d197a-bf8c-4e11-8a15-44a9894cbbe8",
+                    "output": "out_2",
+                },
             },
         },
-        "node_3": {
-            "next": ["node_4"],
+        "dfdc165b-a10d-4049-bf4e-555bf5e7d557": {
+            "next": ["54901e30-6cd2-417b-aaf9-b458022639d2"],
             "inputs": {
-                "in_1": {"nodeUuid": "node_1", "output": "out_1"},
-                "in_2": {"nodeUuid": "node_1", "output": "out_2"},
+                "in_1": {
+                    "nodeUuid": "a13d197a-bf8c-4e11-8a15-44a9894cbbe8",
+                    "output": "out_1",
+                },
+                "in_2": {
+                    "nodeUuid": "a13d197a-bf8c-4e11-8a15-44a9894cbbe8",
+                    "output": "out_2",
+                },
             },
         },
-        "node_4": {
+        "54901e30-6cd2-417b-aaf9-b458022639d2": {
             "next": [],
             "inputs": {
-                "in_1": {"nodeUuid": "node_2", "output": "out_1"},
-                "in_2": {"nodeUuid": "node_3", "output": "out_2"},
+                "in_1": {
+                    "nodeUuid": "28bf052a-5fb8-4935-9c97-2b15109632b9",
+                    "output": "out_1",
+                },
+                "in_2": {
+                    "nodeUuid": "dfdc165b-a10d-4049-bf4e-555bf5e7d557",
+                    "output": "out_2",
+                },
             },
         },
     },
@@ -286,25 +315,28 @@ PYTHON_RUNNER_STUDY = (
     "itisfoundation/osparc-python-runner",
     "1.0.0",
     {
-        "node_1": {
-            "next": ["node_2", "node_3"],
+        "a13d197a-bf8c-4e11-8a15-44a9894cbbe8": {
+            "next": [
+                "28bf052a-5fb8-4935-9c97-2b15109632b9",
+                "dfdc165b-a10d-4049-bf4e-555bf5e7d557",
+            ],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
             },
         },
-        "node_2": {
-            "next": ["node_4"],
+        "28bf052a-5fb8-4935-9c97-2b15109632b9": {
+            "next": ["54901e30-6cd2-417b-aaf9-b458022639d2"],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
             },
         },
-        "node_3": {
-            "next": ["node_4"],
+        "dfdc165b-a10d-4049-bf4e-555bf5e7d557": {
+            "next": ["54901e30-6cd2-417b-aaf9-b458022639d2"],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
             },
         },
-        "node_4": {
+        "54901e30-6cd2-417b-aaf9-b458022639d2": {
             "next": [],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_sample.py"}
@@ -319,18 +351,21 @@ PYTHON_RUNNER_FACTORY_STUDY = (
     "itisfoundation/osparc-python-runner",
     "1.0.0",
     {
-        "node_1": {
+        "a13d197a-bf8c-4e11-8a15-44a9894cbbe8": {
             "next": [
-                "node_2",
+                "28bf052a-5fb8-4935-9c97-2b15109632b9",
             ],
             "inputs": {
                 "input_1": {"store": SIMCORE_S3_ID, "path": "osparc_python_factory.py"}
             },
         },
-        "node_2": {
+        "28bf052a-5fb8-4935-9c97-2b15109632b9": {
             "next": [],
             "inputs": {
-                "input_1": {"nodeUuid": "node_1", "output": "output_1"},
+                "input_1": {
+                    "nodeUuid": "a13d197a-bf8c-4e11-8a15-44a9894cbbe8",
+                    "output": "output_1",
+                },
             },
         },
     },

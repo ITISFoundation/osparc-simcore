@@ -3,6 +3,11 @@
 
 """
 import logging
+
+# pylint: disable=missing-docstring
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+import warnings
 from pathlib import Path
 from typing import Optional
 
@@ -13,36 +18,26 @@ from ._schema_items_list import SchemaItemsList
 
 log = logging.getLogger(__name__)
 
-# pylint: disable=missing-docstring
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
-
 
 class Nodeports:
-    """Allows the client to access the inputs and outputs assigned to the node
-
-    """
-
-    _version = "0.1"
+    """Allows the client to access the inputs and outputs assigned to the node"""
 
     def __init__(
         self,
-        version: str,
         input_schemas: SchemaItemsList = None,
         output_schemas: SchemaItemsList = None,
         input_payloads: DataItemsList = None,
         outputs_payloads: DataItemsList = None,
     ):
-
+        warnings.warn(
+            "node_ports is deprecated, use node_ports_v2 instead",
+            category=DeprecationWarning,
+        )
         log.debug(
-            "Initialising Nodeports object with version %s, inputs %s and outputs %s",
-            version,
+            "Initialising Nodeports object with inputs %s and outputs %s",
             input_payloads,
             outputs_payloads,
         )
-        if self._version != version:
-            raise exceptions.WrongProtocolVersionError(self._version, version)
-
         if not input_schemas:
             input_schemas = SchemaItemsList()
         if not output_schemas:
@@ -61,8 +56,7 @@ class Nodeports:
         self.autowrite = False
 
         log.debug(
-            "Initialised Nodeports object with version %s, inputs %s and outputs %s",
-            version,
+            "Initialised Nodeports object with inputs %s and outputs %s",
             input_payloads,
             outputs_payloads,
         )
@@ -173,6 +167,10 @@ class Nodeports:
 
 
 async def ports(db_manager: Optional[dbmanager.DBManager] = None) -> Nodeports:
+    warnings.warn(
+        "node_ports is deprecated, use node_ports_v2 instead",
+        category=DeprecationWarning,
+    )
     # FIXME: warning every dbmanager create a new db engine!
     if db_manager is None:  # NOTE: keeps backwards compatibility
         db_manager = dbmanager.DBManager()

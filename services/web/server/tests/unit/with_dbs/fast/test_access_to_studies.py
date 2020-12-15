@@ -17,7 +17,6 @@ import pytest
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -135,8 +134,8 @@ async def unpublished_project(client, fake_project):
 
 
 @pytest.fixture(autouse=True)
-async def director_v2_mock(director_v2_subsystem_mock) -> aioresponses:
-    yield director_v2_subsystem_mock
+async def director_v2_mock(director_v2_service_mock) -> aioresponses:
+    yield director_v2_service_mock
 
 
 async def _get_user_projects(client):

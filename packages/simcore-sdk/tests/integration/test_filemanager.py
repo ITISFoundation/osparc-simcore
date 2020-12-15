@@ -15,21 +15,27 @@ ops_services = ["minio"]
 
 
 async def test_valid_upload_download(
-    tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
     file_id = file_uuid(file_path)
-    store = s3_simcore_location
-    await filemanager.upload_file(
-        store_id=store, s3_object=file_id, local_file_path=file_path
+    store_id, e_tag = await filemanager.upload_file(
+        store_id=s3_simcore_location, s3_object=file_id, local_file_path=file_path
     )
+    assert store_id == s3_simcore_location
+    assert e_tag
 
     download_folder = Path(tmpdir) / "downloads"
     download_file_path = await filemanager.download_file_from_s3(
-        store_id=store, s3_object=file_id, local_folder=download_folder
+        store_id=s3_simcore_location, s3_object=file_id, local_folder=download_folder
     )
     assert download_file_path.exists()
     assert download_file_path.name == "test.test"
@@ -37,7 +43,12 @@ async def test_valid_upload_download(
 
 
 async def test_invalid_file_path(
-    tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
@@ -60,7 +71,11 @@ async def test_invalid_file_path(
 
 
 async def test_invalid_fileid(
-    tmpdir, bucket, filemanager_cfg, user_id, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
@@ -88,7 +103,12 @@ async def test_invalid_fileid(
 
 
 async def test_invalid_store(
-    tmpdir, bucket, filemanager_cfg, user_id, file_uuid, s3_simcore_location
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
