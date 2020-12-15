@@ -62,7 +62,6 @@ services:
   redis-commander:
     image: rediscommander/redis-commander:latest
     init: true
-    restart: always
     environment:
       - REDIS_HOSTS=${REDIS_HOST}
     ports:
@@ -75,7 +74,6 @@ services:
     # SEE https://github.com/mher/flower/issues/1029
     image: mher/flower:0.9.5
     init: true
-    restart: always
     environment:
       - CELERY_BROKER_URL=amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}
       - FLOWER_BROKER_API=http://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:15672/api/

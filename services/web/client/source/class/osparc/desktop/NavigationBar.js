@@ -94,19 +94,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       0: "dashboard",
       1: "workbench",
       2: "slideshow"
-    },
-
-    areSlidesEnabled: function() {
-      return new Promise((resolve, reject) => {
-        osparc.utils.LibVersions.getPlatformName()
-          .then(platformName => {
-            if (["dev", "master"].includes(platformName)) {
-              resolve(true);
-            } else {
-              resolve(false);
-            }
-          });
-      });
     }
   },
 
@@ -327,25 +314,23 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __resetSlideCtrlBtnsVis: function() {
-      this.self().areSlidesEnabled()
-        .then(areSlidesEnabled => {
-          const context = ["workbench", "slideshow"].includes(this.getPageContext());
-          if (areSlidesEnabled && context) {
-            const study = this.getStudy();
-            if (Object.keys(study.getUi().getSlideshow()).length) {
-              if (this.getPageContext() === "slideshow") {
-                this.__startSlidesBtn.exclude();
-                this.__stopSlidesBtn.show();
-              } else if (this.getPageContext() === "workbench") {
-                this.__startSlidesBtn.show();
-                this.__stopSlidesBtn.exclude();
-              }
-              return;
-            }
+      const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
+      const context = ["workbench", "slideshow"].includes(this.getPageContext());
+      if (areSlidesEnabled && context) {
+        const study = this.getStudy();
+        if (Object.keys(study.getUi().getSlideshow()).length) {
+          if (this.getPageContext() === "slideshow") {
+            this.__startSlidesBtn.exclude();
+            this.__stopSlidesBtn.show();
+          } else if (this.getPageContext() === "workbench") {
+            this.__startSlidesBtn.show();
+            this.__stopSlidesBtn.exclude();
           }
-          this.__startSlidesBtn.exclude();
-          this.__stopSlidesBtn.exclude();
-        });
+          return;
+        }
+      }
+      this.__startSlidesBtn.exclude();
+      this.__stopSlidesBtn.exclude();
     },
 
     __createSlideStartBtn: function() {

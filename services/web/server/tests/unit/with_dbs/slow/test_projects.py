@@ -233,9 +233,9 @@ async def catalog_subsystem_mock(monkeypatch):
 
 @pytest.fixture(autouse=True)
 async def director_v2_automock(
-    director_v2_subsystem_mock: aioresponses,
+    director_v2_service_mock: aioresponses,
 ) -> aioresponses:
-    yield director_v2_subsystem_mock
+    yield director_v2_service_mock
 
 
 # HELPERS -----------------------------------------------------------------------------------------
@@ -525,7 +525,7 @@ async def test_list_projects(
     template_project,
     expected,
     catalog_subsystem_mock,
-    director_v2_subsystem_mock,
+    director_v2_service_mock,
 ):
     catalog_subsystem_mock([user_project, template_project])
     data = await _list_projects(client, expected)

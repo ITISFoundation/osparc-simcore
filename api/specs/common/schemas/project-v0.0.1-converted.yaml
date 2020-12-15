@@ -159,6 +159,8 @@ properties:
                         type: string
                       label:
                         type: string
+                      eTag:
+                        type: string
                   - type: object
                     additionalProperties: false
                     required:
@@ -220,6 +222,8 @@ properties:
                       path:
                         type: string
                       label:
+                        type: string
+                      eTag:
                         type: string
                   - type: object
                     additionalProperties: false

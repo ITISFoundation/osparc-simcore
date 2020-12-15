@@ -4,12 +4,12 @@
 # pylint:disable=no-member
 
 from pathlib import Path
-from typing import Callable, Dict, Union
+from typing import Callable
 
 import pytest
 from simcore_sdk.node_ports import config, data_items_utils, exceptions, filemanager
 from simcore_sdk.node_ports._data_item import DataItem
-from simcore_sdk.node_ports._item import Item
+from simcore_sdk.node_ports._item import DataItemValue, Item, ItemConcreteValue
 from simcore_sdk.node_ports._schema_item import SchemaItem
 from utils_futures import future_with_result
 
@@ -19,7 +19,7 @@ def node_ports_config():
     config.STORAGE_ENDPOINT = "storage:8080"
 
 
-def create_item(item_type: str, item_value):
+def create_item(item_type: str, item_value: DataItemValue) -> Item:
     key = "some key"
     return Item(
         SchemaItem(
@@ -78,7 +78,7 @@ async def test_valid_type_empty_value(item_type: str):
 
 @pytest.fixture
 async def file_link_mock(
-    monkeypatch, item_type: str, item_value: Union[int, float, bool, str, Dict]
+    monkeypatch, item_type: str, item_value: DataItemValue
 ) -> Callable:
     async def fake_download_file(*args, **kwargs) -> Path:
         return_value = "mydefault"
@@ -128,7 +128,7 @@ async def test_valid_type(
     loop,
     file_link_mock: Callable,
     item_type: str,
-    item_value: Union[int, float, bool, str, Dict],
+    item_value: DataItemValue,
 ):
     item = create_item(item_type, item_value)
     if not data_items_utils.is_value_link(item_value):
@@ -203,7 +203,7 @@ async def test_valid_type(
         ),
     ],
 )
-async def test_invalid_type(item_type, item_value):
+async def test_invalid_type(item_type: str, item_value: DataItemValue):
     # pylint: disable=W0612
     with pytest.raises(
         exceptions.InvalidItemTypeError, match=rf"Invalid item type, .*[{item_type}]"
@@ -216,13 +216,15 @@ async def test_invalid_type(item_type, item_value):
     [
         ("integer", 26, 26),
         ("number", -746.4748, -746.4748),
-        #     ("data:*/*", __file__, {"store":"s3-z43", "path":"undefined/undefined/{filename}".format(filename=Path(__file__).name)}),
         ("boolean", False, False),
         ("string", "test-string", "test-string"),
     ],
 )
 async def test_set_new_value(
-    item_type, item_value_to_set, expected_value, mocker
+    item_type: str,
+    item_value_to_set: ItemConcreteValue,
+    expected_value: ItemConcreteValue,
+    mocker,
 ):  # pylint: disable=W0613
     mock_method = mocker.Mock(return_value=future_with_result(""))
     item = create_item(item_type, None)
@@ -237,13 +239,14 @@ async def test_set_new_value(
     [
         ("integer", -746.4748),
         ("number", "a string"),
+        ("data:*/*", Path(__file__).parent),
         ("data:*/*", str(Path(__file__).parent)),
         ("boolean", 123),
         ("string", True),
     ],
 )
 async def test_set_new_invalid_value(
-    item_type, item_value_to_set
+    item_type: str, item_value_to_set: ItemConcreteValue
 ):  # pylint: disable=W0613
     item = create_item(item_type, None)
     assert await item.get() is None
