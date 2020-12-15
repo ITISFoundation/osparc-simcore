@@ -4,10 +4,10 @@ import os
 import re
 import shutil
 import tempfile
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from collections import deque
 
 import aiobotocore
 import aiofiles
@@ -16,16 +16,14 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from blackfynn.base import UnauthorizedException
-from sqlalchemy.sql import and_
-from tenacity import retry
-from yarl import URL
-
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
+from sqlalchemy.sql import and_
+from tenacity import retry
+from yarl import URL
 
-from .utils import expo
 from .datcore_wrapper import DatcoreWrapper
 from .models import (
     DatasetMetaData,
@@ -46,6 +44,7 @@ from .settings import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
+from .utils import expo
 
 # pylint: disable=no-value-for-parameter
 # FIXME: E1120:No value for argument 'dml' in method call
@@ -104,33 +103,33 @@ class DatCoreApiToken:
 
 @attr.s(auto_attribs=True)
 class DataStorageManager:
-    """ Data storage manager
+    """Data storage manager
 
-        The dsm has access to the database for all meta data and to the actual backend. For now this
-        is simcore's S3 [minio] and the datcore storage facilities.
+    The dsm has access to the database for all meta data and to the actual backend. For now this
+    is simcore's S3 [minio] and the datcore storage facilities.
 
-        For all data that is in-house (simcore.s3, ...) we keep a synchronized database with meta information
-        for the physical files.
+    For all data that is in-house (simcore.s3, ...) we keep a synchronized database with meta information
+    for the physical files.
 
-        For physical changes on S3, that might be time-consuming, the db keeps a state (delete and upload mostly)
+    For physical changes on S3, that might be time-consuming, the db keeps a state (delete and upload mostly)
 
-        The dsm provides the following additional functionalities:
+    The dsm provides the following additional functionalities:
 
-        - listing of folders for a given users, optionally filtered using a regular expression and optionally
-          sorted by one of the meta data keys
+    - listing of folders for a given users, optionally filtered using a regular expression and optionally
+      sorted by one of the meta data keys
 
-        - upload/download of files
+    - upload/download of files
 
-            client -> S3 : presigned upload link
-            S3 -> client : presigned download link
-            datcore -> client: presigned download link
-            S3 -> datcore: local copy and then upload via their api
+        client -> S3 : presigned upload link
+        S3 -> client : presigned download link
+        datcore -> client: presigned download link
+        S3 -> datcore: local copy and then upload via their api
 
-        minio/S3 and postgres can talk nicely with each other via Notifications using rabbigMQ which we already have.
-        See:
+    minio/S3 and postgres can talk nicely with each other via Notifications using rabbigMQ which we already have.
+    See:
 
-            https://blog.minio.io/part-5-5-publish-minio-events-via-postgresql-50f6cc7a7346
-            https://docs.minio.io/docs/minio-bucket-notification-guide.html
+        https://blog.minio.io/part-5-5-publish-minio-events-via-postgresql-50f6cc7a7346
+        https://docs.minio.io/docs/minio-bucket-notification-guide.html
     """
 
     s3_client: S3Client
@@ -166,7 +165,7 @@ class DataStorageManager:
         return _location_from_id(location_id)
 
     async def ping_datcore(self, user_id: str) -> bool:
-        """ Checks whether user account in datcore is accesible
+        """Checks whether user account in datcore is accesible
 
         :param user_id: user identifier
         :type user_id: str
@@ -193,13 +192,13 @@ class DataStorageManager:
     async def list_files(
         self, user_id: str, location: str, uuid_filter: str = "", regex: str = ""
     ) -> FileMetaDataExVec:
-        """ Returns a list of file paths
+        """Returns a list of file paths
 
-            Works for simcore.s3 and datcore
+        Works for simcore.s3 and datcore
 
-            Can filter on uuid: useful to filter on project_id/node_id
+        Can filter on uuid: useful to filter on project_id/node_id
 
-            Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
+        Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
         """
         data = deque()
         if location == SIMCORE_S3_STR:
@@ -308,9 +307,9 @@ class DataStorageManager:
         return data
 
     async def list_datasets(self, user_id: str, location: str) -> DatasetMetaDataVec:
-        """ Returns a list of top level datasets
+        """Returns a list of top level datasets
 
-            Works for simcore.s3 and datcore
+        Works for simcore.s3 and datcore
 
         """
         data = []
@@ -363,15 +362,15 @@ class DataStorageManager:
             return data
 
     async def delete_file(self, user_id: str, location: str, file_uuid: str):
-        """ Deletes a file given its fmd and location
+        """Deletes a file given its fmd and location
 
-            Additionally requires a user_id for 3rd party auth
+        Additionally requires a user_id for 3rd party auth
 
-            For internal storage, the db state should be updated upon completion via
-            Notification mechanism
+        For internal storage, the db state should be updated upon completion via
+        Notification mechanism
 
-            For simcore.s3 we can use the file_name
-            For datcore we need the full path
+        For simcore.s3 we can use the file_name
+        For datcore we need the full path
         """
         if location == SIMCORE_S3_STR:
             to_delete = []
@@ -462,13 +461,15 @@ class DataStorageManager:
                     await asyncio.sleep(sleep_amount)
                     continue
 
+                file_e_tag = result["Contents"][0]["ETag"]
                 # finally update the data in the database and exit
                 continue_loop = False
 
                 logger.info(
-                    "Obtained this from S3: new_file_size=%s new_last_modified=%s",
+                    "Obtained this from S3: new_file_size=%s new_last_modified=%s file ETag=%s",
                     new_file_size,
                     new_last_modified,
+                    file_e_tag,
                 )
 
                 async with self.engine.acquire() as conn:
@@ -635,22 +636,22 @@ class DataStorageManager:
     async def deep_copy_project_simcore_s3(
         self, user_id: str, source_project, destination_project, node_mapping
     ):
-        """ Parses a given source project and copies all related files to the destination project
+        """Parses a given source project and copies all related files to the destination project
 
-            Since all files are organized as
+        Since all files are organized as
 
-                project_id/node_id/filename or links to datcore
+            project_id/node_id/filename or links to datcore
 
-            this function creates a new folder structure
+        this function creates a new folder structure
 
-                project_id/node_id/filename
+            project_id/node_id/filename
 
-            and copies all files to the corresponding places.
+        and copies all files to the corresponding places.
 
-            Additionally, all external files from datcore are being copied and the paths in the destination
-            project are adapted accordingly
+        Additionally, all external files from datcore are being copied and the paths in the destination
+        project are adapted accordingly
 
-            Lastly, the meta data db is kept in sync
+        Lastly, the meta data db is kept in sync
         """
         source_folder = source_project["uuid"]
         dest_folder = destination_project["uuid"]
@@ -773,8 +774,8 @@ class DataStorageManager:
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> web.Response:
-        """ Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
-            If node_id is not given, then all the project files db entries are deleted.
+        """Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
+        If node_id is not given, then all the project files db entries are deleted.
         """
 
         async with self.engine.acquire() as conn:
