@@ -72,14 +72,14 @@ domain and the intended context of use",
     },
 
     getDefaultQuality: function() {
-      const dummyMetadata = {};
-      dummyMetadata["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
-      dummyMetadata["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
-      return dummyMetadata;
+      const defaultQuality = {};
+      defaultQuality["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
+      defaultQuality["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
+      return defaultQuality;
     },
 
     getDefaultQualityAnnotations: function() {
-      const dummyMetadataAnnotations = {
+      const defaultAnnotations = {
         "certificationStatus": "Uncertified",
         "certificationLink": "",
         "purpose": "",
@@ -88,11 +88,11 @@ domain and the intended context of use",
         "documentation": "",
         "standards": ""
       };
-      return dummyMetadataAnnotations;
+      return defaultAnnotations;
     },
 
     getDefaultQualityTSR: function() {
-      const dummyMetadataTSR = {
+      const defaultTSR = {
         "r01": {
           "level": 0,
           "references": ""
@@ -134,7 +134,7 @@ domain and the intended context of use",
           "references": ""
         }
       };
-      return dummyMetadataTSR;
+      return defaultTSR;
     },
 
     computeTSRScore: function(metadataTSR) {
