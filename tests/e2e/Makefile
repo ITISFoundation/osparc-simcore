@@ -1,33 +1,44 @@
-.DEFAULT_GOAL := help
+include ../../scripts/common.Makefile
 
-# Operating system
-ifeq ($(filter Windows_NT,$(OS)),)
-IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
-IS_OSX  := $(filter Darwin,$(shell uname -a))
-IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
-endif
+SIMCORE_DOT_ENV = $(abspath $(CURDIR)/../../.env)
+DOT_ENV_BACKUP = $(SIMCORE_DOT_ENV).bak
 
-IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
-$(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
+$(DOT_ENV_BACKUP): $(SIMCORE_DOT_ENV)
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
-SHELL := /bin/bash
 
-.PHONY: help
-help: ## help on rule's targets
-ifeq ($(IS_WIN),)
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-else
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-endif
+_build-simcore-images:
+	@$(MAKE_C) $(REPO_BASE_DIR) pull-version tag-local || $(MAKE_C) ../.. build-x
+	@$(MAKE_C) $(REPO_BASE_DIR) info-images
+
+_setup-registry:
+	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+
+_setup-simcore:
+	@echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
+	@echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
+	@echo SERVICES_MAX_NANO_CPUS=2000000000 >> $(SIMCORE_DOT_ENV)
+	@echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
+	@$(MAKE_C) $(REPO_BASE_DIR) up-prod
+
+_setup_python:
+	@$(MAKE_C) $(REPO_BASE_DIR) devenv
+	# install python dependencies
+	@$(VENV_DIR)/bin/pip install -r requirements/requirements.txt
+	# install node dependencies (puppeteer...)
+	@npm install
 
 
 .PHONY: install
-install: ## install testing framework
-	# install puppeteer
-	@npm install
-	@pip install -r requirements/requirements.txt
-	# installing postgres-db
-	@pushd "$(abspath $(CURDIR)/../../packages/postgres-database)"; pip install -r requirements/prod.txt; popd
+install: _build-simcore-images _setup-registry _setup-simcore ## install testing framework
+
+
+
+clean-up:
+	@$(MAKE_C) $(REPO_BASE_DIR) down
+	@$(MAKE_C) $(REPO_BASE_DIR) leave
 
 
 registry-up: ## deploys the insecure docker registry in the simcore network
@@ -38,7 +49,7 @@ registry-down: ## bring the docker registry down
 
 
 .PHONY: wait-for-services
-wait-for-services: ## wait for simcore services to be up
+wait-for-services:  _check_venv_active ## wait for simcore services to be up
 	@python utils/wait_for_services.py
 
 
@@ -66,7 +77,7 @@ inject-templates-in-db: ## inject project templates
 
 
 .PHONY: test
-test: ## test the platformå
+test: ## test the platform
 	# tests
 	npm test
 	# tests whether tutorial run

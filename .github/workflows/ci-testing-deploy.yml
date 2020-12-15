@@ -489,7 +489,6 @@ jobs:
           name: unit_service_integration_coverage
           path: codeclimate.unit_service_integration_coverage.json
 
-
   unit-test-service-library:
     name: "[unit] service-library"
     runs-on: ${{ matrix.os }}
@@ -1271,17 +1270,8 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
-      - name: setup images
-        run: ./ci/github/system-testing/e2e.bash setup_images
-      - name: setup and start swarm
-        run: ./ci/github/system-testing/e2e.bash setup_and_run_stack
-      - name: setup environment
-        run: ./ci/github/system-testing/e2e.bash setup_environment
-      - name: setup registry
-        run: ./ci/github/system-testing/e2e.bash setup_registry
-      - name: setup database
-        timeout-minutes: 2
-        run: ./ci/github/system-testing/e2e.bash setup_database
+      - name: setup
+        run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
       - name: recover docker logs

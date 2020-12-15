@@ -8,6 +8,25 @@ IFS=$'\n\t'
 DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
+
+install() {
+  pushd tests/e2e
+  make install
+  popd
+}
+
+test() {
+  pushd tests/e2e
+  make test
+  popd
+}
+
+clean_up() {
+  make down
+  make leave
+}
+
+
 SWARM_STACK_NAME=e2e_test_stack
 export SWARM_STACK_NAME
 
