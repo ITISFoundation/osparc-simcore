@@ -38,6 +38,15 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
       return;
     }
 
+    if (!("tsr" in this.__serviceData["metadata"])) {
+      this.__serviceData["metadata"]["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
+    }
+    if (!("annotations" in this.__serviceData["metadata"])) {
+      this.__serviceData["metadata"]["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
+    }
+    const metadata = this.__serviceData;
+    this.__copyMetadata = osparc.utils.Utils.deepCloneObject(metadata);
+
     const schemaUrl = "/resource/form/service-quality.json";
     const data = serviceData["metadata"];
     const ajvLoader = new qx.util.DynamicScriptLoader([
@@ -118,8 +127,6 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
         this.__createAnnotationsSection();
 
         if (this.__isUserOwner()) {
-          const metadata = this.__serviceData;
-          this.__copyMetadata = osparc.utils.Utils.deepCloneObject(metadata);
           this.__createEditBtns();
         }
 
