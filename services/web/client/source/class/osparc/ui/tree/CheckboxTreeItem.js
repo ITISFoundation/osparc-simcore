@@ -77,7 +77,13 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
       }
       if (url !== "" && url !== null) {
         const link = "<a href=" + url + " target='_blank'>More...</a>";
-        hints.push(link);
+        const linkWithRightColor = link.replace(/^<a /, "<a style=\"color:"+ qx.theme.manager.Color.getInstance().getTheme().colors["link"] + "\"");
+        hints.push(linkWithRightColor);
+
+        const themeManager = qx.theme.manager.Meta.getInstance();
+        themeManager.addListener("changeTheme", () => {
+          this.__recreateInfoButton();
+        }, this);
       }
       if (hints.length) {
         const hint = hints.join("<br>");
