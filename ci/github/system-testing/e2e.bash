@@ -21,10 +21,6 @@ test() {
   popd
 }
 
-clean_up() {
-  make down
-  make leave
-}
 
 
 SWARM_STACK_NAME=e2e_test_stack
@@ -155,21 +151,6 @@ setup_database() {
   popd
 }
 
-install() {
-  ## shortcut
-  setup_images
-  setup_and_run_stack
-  setup_environment
-  setup_registry
-  setup_database
-}
-
-test() {
-  sleep 5
-  pushd tests/e2e
-  make test
-  popd
-}
 
 dump_docker_logs() {
   # get docker logs
