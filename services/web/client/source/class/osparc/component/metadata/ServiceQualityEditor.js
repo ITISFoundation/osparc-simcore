@@ -257,7 +257,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
           nStars: 4,
           marginTop: 5
         });
-        const confLevel = osparc.component.metadata.ServiceMetadata.findConformanceLevel(rule.level);
+        const confLevel = osparc.component.metadata.ServiceQuality.findConformanceLevel(rule.level);
         const hint = confLevel.title + "<br>" + confLevel.description;
         const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
           hintPosition: "left"
@@ -278,7 +278,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
       const {
         score,
         maxScore
-      } = osparc.component.metadata.ServiceMetadata.computeTSRScore(metadataTSR);
+      } = osparc.component.metadata.ServiceQuality.computeTSRScore(metadataTSR);
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         score,
@@ -306,7 +306,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
         const {
           score,
           maxScore
-        } = osparc.component.metadata.ServiceMetadata.computeTSRScore(copyMetadataTSR);
+        } = osparc.component.metadata.ServiceQuality.computeTSRScore(copyMetadataTSR);
 
         tsrRating.set({
           score,
@@ -337,7 +337,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
             updateLevel(rule.level);
             updateTSRScore();
           }, this);
-          const confLevel = osparc.component.metadata.ServiceMetadata.findConformanceLevel(value);
+          const confLevel = osparc.component.metadata.ServiceQuality.findConformanceLevel(value);
           const hint = confLevel.title + "<br>" + confLevel.description;
           const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
             hintPosition: "left"

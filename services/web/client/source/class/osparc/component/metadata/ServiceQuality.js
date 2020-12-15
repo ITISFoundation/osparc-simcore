@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.metadata.ServiceMetadata", {
+qx.Class.define("osparc.component.metadata.ServiceQuality", {
   type: "static",
 
   statics: {
@@ -62,7 +62,7 @@ domain and the intended context of use",
 
     findConformanceLevel: function(level) {
       let confLevel = null;
-      const conformanceLevels = osparc.component.metadata.ServiceMetadata.getConformanceLevel();
+      const conformanceLevels = osparc.component.metadata.ServiceQuality.getConformanceLevel();
       Object.values(conformanceLevels).forEach(conformanceLevel => {
         if (conformanceLevel.level === level) {
           confLevel = conformanceLevel;
@@ -71,14 +71,14 @@ domain and the intended context of use",
       return confLevel;
     },
 
-    getDefaultMetadata: function() {
+    getDefaultQuality: function() {
       const dummyMetadata = {};
-      dummyMetadata["annotations"] = osparc.component.metadata.ServiceMetadata.getDefaultMetadataAnnotations();
-      dummyMetadata["tsr"] = osparc.component.metadata.ServiceMetadata.getDefaultMetadataTSR();
+      dummyMetadata["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
+      dummyMetadata["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
       return dummyMetadata;
     },
 
-    getDefaultMetadataAnnotations: function() {
+    getDefaultQualityAnnotations: function() {
       const dummyMetadataAnnotations = {
         "certificationStatus": "Uncertified",
         "certificationLink": "",
@@ -91,7 +91,7 @@ domain and the intended context of use",
       return dummyMetadataAnnotations;
     },
 
-    getDefaultMetadataTSR: function() {
+    getDefaultQualityTSR: function() {
       const dummyMetadataTSR = {
         "r01": {
           "level": 0,
