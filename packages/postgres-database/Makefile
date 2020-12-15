@@ -67,6 +67,7 @@ setup-prod: guard-POSTGRES_DATA_VOLUME install-dev up-prod ## sets up a database
 
 .PHONY: setup-commit
 setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
+	sleep 2
 	# discovering
 	sc-pg --help
 	sc-pg discover -u test -p test -d test
