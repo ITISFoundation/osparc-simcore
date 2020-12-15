@@ -418,27 +418,34 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 
 
 local_registry=registry
+get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 .PHONY: local-registry
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
-	# add registry to host file
-	@echo 127.0.0.1 $(local_registry) >> /etc/hosts
-	# allow docker engine to use local insecure registry
-	@echo {\"insecure-registries\": [\"$(local_registry):5000\"]} >> /etc/docker/daemon.json
-	@service docker restart
-	# start registry on port 5000...
-	@docker run --detach \
+	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),,\
+					echo setting host file to redirect $(etc_host_entry); \
+					echo 127.0.0.1 $(local_registry) >> /etc/hosts)
+	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
+					echo allowing docker engine to use insecure local registry and restarting engine...; \
+					echo {\"insecure-registries\": [\"$(local_registry):5000\"]} >> /etc/docker/daemon.json; service docker restart)
+	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
+					echo starting registry on $(local_registry):5000...; \
+					docker run --detach \
 							--init \
 							--publish 5000:5000 \
 							--volume $(local_registry):/var/lib/registry \
 							--name $(local_registry) \
-							registry:2
-	# set up environment variables to use local registry on port 5000 without any security (take care!)...
+							registry:2)
+
+	# WARNING: environment file .env is now setup to use local registry on port 5000 without any security (take care!)...
 	@echo REGISTRY_AUTH=False >> .env
 	@echo REGISTRY_SSL=False >> .env
-	@echo REGISTRY_URL=$(local_registry):5000 >> .env
+	@echo REGISTRY_PATH=$(local_registry):5000 >> .env
+	@echo REGISTRY_URL=$(get_my_ip):5000 >> .env
 	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
-	# add registry 172.17.0.1 as extra_host to containers that need access to the registry (e.g. director)
-
+	@echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
+	# local registry set in $(local_registry):5000
+	# images currently in registry:
+	curl --silent $(local_registry):5000/v2/_catalog | jq
 
 ## INFO -------------------------------
 
