@@ -194,7 +194,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
     },
 
     __populateTSRHeaders: function() {
-      const rules = this.__schema["properties"]["tsr"]["properties"];
+      const schemaRules = this.__schema["properties"]["tsr"]["properties"];
 
       const headerTSR = new qx.ui.basic.Label(this.tr("Rules")).set({
         font: "title-14"
@@ -219,7 +219,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
       });
 
       let row = 1;
-      Object.values(rules).forEach(rule => {
+      Object.values(schemaRules).forEach(rule => {
         const label = new qx.ui.basic.Label(rule.title).set({
           marginTop: 5
         });
@@ -386,10 +386,10 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
     },
 
     __populateAnnotationsHeaders: function() {
-      const metadataAnnotations = this.__schema["properties"]["annotations"]["properties"];
+      const schemaAnnotations = this.__schema["properties"]["annotations"]["properties"];
 
       let row = 0;
-      Object.values(metadataAnnotations).forEach(annotation => {
+      Object.values(schemaAnnotations).forEach(annotation => {
         let header = new qx.ui.basic.Label(annotation.title).set({
           marginTop: 5
         });
@@ -407,21 +407,26 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
     },
 
     __populateAnnotationsData: function() {
+      const schemaAnnotations = this.__schema["properties"]["annotations"]["properties"];
       const copyMetadataAnnotations = this.__copyMetadata["metadata"]["annotations"];
 
       const isEditMode = this.getMode() === "edit";
 
       let row = 0;
-      const certification = new qx.ui.form.SelectBox().set({
+      const certificationBox = new qx.ui.form.SelectBox().set({
         enabled: isEditMode
       });
-      certification.add(new qx.ui.form.ListItem("Uncertified"));
-      certification.add(new qx.ui.form.ListItem("Independently reviewed"));
-      certification.add(new qx.ui.form.ListItem("Regulatory grade"));
-      certification.addListener("changeSelection", e => {
+      schemaAnnotations["certificationStatus"]["enum"].forEach(certStatus => {
+        const certItem = new qx.ui.form.ListItem(certStatus);
+        certificationBox.add(certItem);
+        if (copyMetadataAnnotations.certificationStatus === certStatus) {
+          certificationBox.setSelection([certItem]);
+        }
+      });
+      certificationBox.addListener("changeSelection", e => {
         copyMetadataAnnotations.certificationStatus = e.getData()[0].getLabel();
       }, this);
-      this.__annotationsGrid.add(certification, {
+      this.__annotationsGrid.add(certificationBox, {
         row: row++,
         column: 1
       });
