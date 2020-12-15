@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 # webserver API models -----------------------------------------
 class ResearchResource(BaseModel):
-    rrid: constr(regex=RRID_PATTERN)
+    rrid: constr(
+        regex=RRID_PATTERN
+    )  # unique identifier used as classifier, i.e. to tag studies and services
     name: str
     description: str
 

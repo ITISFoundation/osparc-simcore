@@ -12,6 +12,7 @@ import aiohttp
 from aiohttp import ClientSession, web
 from pydantic import ValidationError
 from servicelib.client_session import get_client_session
+from yarl import URL
 
 from .scicrunch_config import RRID_PATTERN, SciCrunchSettings
 from .scicrunch_models import ListOfResourceHits, ResourceView
@@ -69,8 +70,9 @@ class ValidationResult(IntEnum):
 
 
 class SciCrunchAPI:
-    """
-    - wraps requests to scicrunch.org API
+    """Instance to communicate with scicrunch.org service
+
+    - wraps all calls to scicrunch.org API
         - return result or raises web.HTTPError
     - one instance per application
         - uses app aiohttp client session instance
@@ -82,6 +84,20 @@ class SciCrunchAPI:
     def __init__(self, client: ClientSession, settings: SciCrunchSettings):
         self.settings = settings
         self.client = client
+        self.base_url = URL.build(
+            scheme=self.settings.api_base_url.scheme,
+            host=self.settings.api_base_url.host,
+        )
+
+    def get_portal_link(self) -> str:
+        return str(self.base_url.with_path("/resources/"))
+
+    def get_rrid_link(self, rrid: str) -> str:
+        return str(
+            self.base_url.with_path("/resources/Any/search").with_query(
+                q="undefined", l=rrid
+            )
+        )
 
     @classmethod
     def acquire_instance(
