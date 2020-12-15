@@ -297,7 +297,7 @@ class ServiceMetaData(ServiceCommonData):
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
     classifiers: Optional[List[str]]
-    metadata: Optional[Dict[str, Any]]
+    metadata: Dict[str, Any] = {}
 
 
 # Databases models (tables services_meta_data and services_access_rights)
