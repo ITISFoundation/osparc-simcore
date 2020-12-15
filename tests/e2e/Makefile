@@ -9,34 +9,39 @@ $(DOT_ENV_BACKUP): $(SIMCORE_DOT_ENV)
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
-_build-simcore-images:
+_simcore-images:
 	@$(MAKE_C) $(REPO_BASE_DIR) pull-version tag-local || $(MAKE_C) ../.. build-x
 	@$(MAKE_C) $(REPO_BASE_DIR) info-images
 
-_setup-registry:
+_local-registry:
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 
-_setup-simcore:
+_simcore-up:
 	@echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
 	@echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
 	@echo SERVICES_MAX_NANO_CPUS=2000000000 >> $(SIMCORE_DOT_ENV)
 	@echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
 	@$(MAKE_C) $(REPO_BASE_DIR) up-prod
 
-_setup_python:
+_test_environment:
 	@$(MAKE_C) $(REPO_BASE_DIR) devenv
 	# install python dependencies
 	@$(VENV_DIR)/bin/pip install -r requirements/requirements.txt
 	# install node dependencies (puppeteer...)
 	@npm install
-
+	# wait for services being ready
+	@$(VENV_DIR)/bin/python utils/wait_for_services.py
 
 .PHONY: install
-install: _build-simcore-images _setup-registry _setup-simcore ## install testing framework
+install: _simcore-images _local-registry _simcore-up _test_environment ## install testing framework
+	@$(MAKE) _simcore-images
+	@$(MAKE) _local-registry
+	@$(MAKE) _simcore-up
+	@$(MAKE) _test_environment
+	@$(MAKE) transfer-images-to-registry
+	@$(MAKE) inject-templates-in-db
 
-
-
-clean-up:
+clean-up: ## remove everything
 	@$(MAKE_C) $(REPO_BASE_DIR) down
 	@$(MAKE_C) $(REPO_BASE_DIR) leave
 
@@ -60,20 +65,14 @@ transfer-images-to-registry: ## transfer images to registry
 	@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
 	@docker push registry:5000/simcore/services/comp/itis/sleeper:1.0.0
 	# completed transfer of images
-	curl -s registry:5000/v2/_catalog | jq '.repositories'
-	curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
+	@curl -s registry:5000/v2/_catalog | jq '.repositories'
+	@curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
 
 
-PUBLISHED_PORT = $(shell docker inspect $(shell docker service ls --format "{{ .Name }}" | grep postgres) --format "{{(index .Endpoint.Ports 0).PublishedPort}}")
 .PHONY: inject-templates-in-db
 inject-templates-in-db: ## inject project templates
-	# Injecting fixture tables in database via port $(PUBLISHED_PORT)
-	PGPASSWORD=adminadmin psql \
-		--host 127.0.0.1 \
-		--port $(PUBLISHED_PORT) \
-		--user scu \
-		--dbname simcoredb \
-		--command "\copy projects from 'tutorials/sleepers_project_template_sql.csv' csv header;";
+	@docker cp tutorials/sleepers_project_template_sql.csv $$(docker ps -q --filter="name=postgres"):/template_projects_sleepers_project_template_sql.csv
+	@docker exec $$(docker ps -q --filter="name=postgres") psql --user scu --dbname simcoredb --command "\copy projects from '/template_projects_sleepers_project_template_sql.csv' csv header;"
 
 
 .PHONY: test
