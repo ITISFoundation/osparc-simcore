@@ -20,8 +20,8 @@ pytest-sugar
 pytest-xdist
 
 # mockups/fixtures
+alembic
 aioresponses
-mock
 requests
 docker
 python-dotenv

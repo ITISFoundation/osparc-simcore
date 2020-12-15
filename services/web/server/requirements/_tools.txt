@@ -14,23 +14,22 @@ dataclasses==0.7          # via -c requirements/_base.txt, black
 distlib==0.3.1            # via virtualenv
 filelock==3.0.12          # via virtualenv
 identify==1.5.10          # via pre-commit
-importlib-metadata==3.0.0  # via -c requirements/_base.txt, -c requirements/_test.txt, pre-commit, virtualenv
+importlib-metadata==3.1.1  # via -c requirements/_base.txt, -c requirements/_test.txt, pre-commit, virtualenv
 importlib-resources==3.3.0  # via pre-commit, virtualenv
 isort==4.3.21             # via -c requirements/_test.txt, -r requirements/../../../../requirements/devenv.txt
 mypy-extensions==0.4.3    # via black
 nodeenv==1.5.0            # via pre-commit
 pathspec==0.8.1           # via black
-pathtools==0.1.2          # via watchdog
 pip-tools==5.4.0          # via -r requirements/../../../../requirements/devenv.txt
-pre-commit==2.9.2         # via -r requirements/../../../../requirements/devenv.txt
+pre-commit==2.9.3         # via -r requirements/../../../../requirements/devenv.txt
 pyyaml==5.3.1             # via -c requirements/../../../../requirements/constraints.txt, -c requirements/_base.txt, -c requirements/_test.txt, pre-commit, watchdog
 regex==2020.11.13         # via black
 six==1.15.0               # via -c requirements/_base.txt, -c requirements/_test.txt, pip-tools, virtualenv
 toml==0.10.2              # via -c requirements/_test.txt, black, pre-commit
 typed-ast==1.4.1          # via -c requirements/_test.txt, black
 typing-extensions==3.7.4.2  # via -c requirements/_base.txt, -c requirements/_test.txt, black
-virtualenv==20.2.1        # via pre-commit
-watchdog[watchmedo]==0.10.4  # via -r requirements/_tools.in
+virtualenv==20.2.2        # via pre-commit
+watchdog[watchmedo]==1.0.0  # via -r requirements/_tools.in
 zipp==3.1.0               # via -c requirements/_base.txt, -c requirements/_test.txt, importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:

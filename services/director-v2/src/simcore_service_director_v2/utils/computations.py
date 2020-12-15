@@ -3,8 +3,8 @@ import re
 from datetime import datetime
 from typing import List, Set
 
-from models_library.services import SERVICE_KEY_RE
 from models_library.projects_state import RunningState
+from models_library.services import SERVICE_KEY_RE
 
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass

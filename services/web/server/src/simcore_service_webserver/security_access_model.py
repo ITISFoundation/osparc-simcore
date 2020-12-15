@@ -8,7 +8,7 @@
 import inspect
 import logging
 import re
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import attr
 
@@ -16,24 +16,26 @@ from .db_models import UserRole
 
 log = logging.getLogger(__file__)
 
+ContextType = Optional[Dict[str, Any]]
+
 
 @attr.s(auto_attribs=True)
 class RolePermissions:
     role: UserRole
     allowed: List[str] = attr.Factory(list)  # named permissions allowed
-    check: Dict[str, Callable[[], bool]] = attr.Factory(
+    check: Dict[str, Callable[[ContextType], bool]] = attr.Factory(
         dict
     )  # checked permissions: permissions with conditions
-    inherits: List[str] = attr.Factory(list)
+    inherits: List[UserRole] = attr.Factory(list)
 
     @classmethod
-    def from_rawdata(cls, role, value: Dict):
+    def from_rawdata(cls, role: Union[str, UserRole], value: Dict) -> "RolePermissions":
 
         if isinstance(role, str):
             name = role
             role = UserRole[name]
 
-        role = RolePermissions(
+        role_permission = cls(
             role=role, allowed=[], check=[], inherits=value.get("inherits", [])
         )
 
@@ -45,15 +47,15 @@ class RolePermissions:
             elif isinstance(item, str):
                 allowed.add(item)
             else:
-                raise ValueError("Unexpected item for role '{}'".format(name))
+                raise ValueError(f"Unexpected item for role '{role}'")
 
-        role.allowed = list(allowed)
-        role.check = check
-        return role
+        role_permission.allowed = list(allowed)
+        role_permission.check = check
+        return role_permission
 
 
 class RoleBasedAccessModel:
-    """ Role-based access control model
+    """Role-based access control model
 
     - All role permissions get registered here
     - Access point to check for permissions on a given operation within a context (passed to check function)
@@ -63,13 +65,15 @@ class RoleBasedAccessModel:
     """
 
     def __init__(self, roles: List[RolePermissions]):
-        self.roles = {r.role: r for r in roles}
+        self.roles: Dict[UserRole, RolePermissions] = {r.role: r for r in roles}
 
     # TODO: all operations allowed for a given role
     # TODO: build a tree out of the list of allowed operations
     # TODO: operations to ADD/REMOVE/EDIT permissions in a role
 
-    async def can(self, role: UserRole, operation: str, context: Dict = None) -> bool:
+    async def can(
+        self, role: UserRole, operation: str, context: ContextType = None
+    ) -> bool:
         # pylint: disable=too-many-return-statements
 
         # undefined operation  TODO: check if such a name is defined??
@@ -134,9 +138,9 @@ operators_pattern = re.compile(r"(&|\||\bAND\b|\bOR\b)")
 async def check_access(
     model: RoleBasedAccessModel, role: UserRole, operations: str, context: Dict = None
 ) -> bool:
-    """ Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
+    """Extends `RoleBasedAccessModel.can` to check access to boolean expressions of operations
 
-        Returns True if a user with a role has permission on a given context
+    Returns True if a user with a role has permission on a given context
     """
     tokens = operators_pattern.split(operations)
     if len(tokens) == 1:

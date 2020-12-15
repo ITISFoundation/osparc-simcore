@@ -4,6 +4,7 @@
     The access model is created upon setting up of the security subsystem
 """
 
+
 from simcore_postgres_database.models.users import UserRole
 
 # A role defines a set of operations that the user *can* perform
@@ -71,43 +72,14 @@ ROLES_PERMISSIONS = {
         ],
         "inherits": [UserRole.GUEST, UserRole.ANONYMOUS],
     },
-    UserRole.TESTER: {"can": [], "inherits": [UserRole.USER]},
+    UserRole.TESTER: {
+        "can": [],
+        "inherits": [UserRole.USER],
+    },
 }
 
-#
-# REFERENCE IN THE FRONT_END
-#
 
-# "anonymous": [],
-# "guest": [
-###   "studies.templates.read",
-#   "study.node.data.pull", , <----------???
-###   "study.start",
-###   "study.stop",
-###   "study.update"
-# ],
-# "user": [
-###   "studies.user.read",
-###   "studies.user.create",
-###   "storage.datcore.read",
-###   "user.user.update",
-###   "user.apikey.create",
-###   "user.apikey.delete",
-###   "user.token.create",
-###   "user.token.delete",
-###   "study.node.create",
-###   "study.node.delete",
-###   "study.node.rename",
-###   "study.node.start",
-#   "study.node.data.push", <----------???
-#   "study.node.data.delete", <----------???
-# XX   "study.edge.create",
-# XX   "study.edge.delete"
-# ],
-# "tester": [
-#   "services.all.read",   <----------???
-###   "user.role.update",
-#   "study.nodestree.uuid.read", <----------???
-#   "study.logger.debug.read" <----------???
-# ],
-# "admin": []
+# static test
+assert set(e for e in ROLES_PERMISSIONS) == set(  # nosec
+    e for e in UserRole
+), "All user rols must be part define permissions"  # nosec

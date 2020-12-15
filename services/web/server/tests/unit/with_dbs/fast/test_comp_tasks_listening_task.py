@@ -92,21 +92,27 @@ async def _wait_for_call(mock_fct):
 @pytest.mark.parametrize(
     "upd_value, exp_calls",
     [
-        (
-            {"outputs": {"some new stuff": "it is new"}},
+        pytest.param(
+            {
+                "outputs": {"some new stuff": "it is new"},
+            },
             ["_get_project_owner", "_update_project_outputs"],
+            id="new output shall trigger",
         ),
-        (
+        pytest.param(
             {"state": StateType.ABORTED},
             ["_get_project_owner", "_update_project_state"],
+            id="new state shall trigger",
         ),
-        (
+        pytest.param(
             {"outputs": {"some new stuff": "it is new"}, "state": StateType.ABORTED},
             ["_get_project_owner", "_update_project_outputs", "_update_project_state"],
+            id="new output and state shall double trigger",
         ),
-        (
+        pytest.param(
             {"inputs": {"should not trigger": "right?"}},
             [],
+            id="no new outpuot or state shall not trigger",
         ),
     ],
 )

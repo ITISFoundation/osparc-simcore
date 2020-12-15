@@ -22,7 +22,6 @@ BUCKET: str = os.environ.get("S3_BUCKET_NAME", default="simcore")
 
 # -------------------------------------------------------------------------
 NODE_KEYS: Dict[str, bool] = {
-    "version": True,
     "schema": True,
     "inputs": True,
     "outputs": True,

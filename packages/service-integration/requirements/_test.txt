@@ -6,7 +6,7 @@
 #
 astroid==2.4.2            # via pylint
 attrs==20.3.0             # via -c requirements/_base.txt, pytest
-certifi==2020.11.8        # via -c requirements/_base.txt, requests
+certifi==2020.12.5        # via -c requirements/_base.txt, requests
 chardet==3.0.4            # via -c requirements/_base.txt, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
 coveralls==2.2.0          # via -r requirements/_test.in

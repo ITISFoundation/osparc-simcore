@@ -3,6 +3,7 @@
 #
 # NOTE: ALL version constraints MUST be commented
 -c ../../../requirements/constraints.txt
+-r ../../../packages/models-library/requirements/_base.in
 -r ../../../packages/postgres-database/requirements/_base.in
 
 # fastapi and extensions

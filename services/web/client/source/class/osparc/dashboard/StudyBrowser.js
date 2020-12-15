@@ -438,7 +438,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(saveAsTemplateButton);
       }
 
-      if (osparc.data.model.Study.hasSlideshow(studyData)) {
+      if (osparc.data.model.Study.hasSlideshow(studyData) && osparc.data.Permissions.getInstance().canDo("study.slides")) {
         const startAsSlideshowButton = this.__getStartAsSlideshowButton(studyData);
         menu.add(startAsSlideshowButton);
       }

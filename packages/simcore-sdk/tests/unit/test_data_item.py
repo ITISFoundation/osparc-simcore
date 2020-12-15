@@ -4,7 +4,7 @@
 
 import pytest
 from simcore_sdk.node_ports import exceptions
-from simcore_sdk.node_ports._data_item import DataItem
+from simcore_sdk.node_ports._data_item import DataItem, DataItemValue
 
 
 @pytest.mark.parametrize(
@@ -37,7 +37,7 @@ from simcore_sdk.node_ports._data_item import DataItem
         (None),
     ],
 )
-def test_default_item(item_value):
+def test_default_item(item_value: DataItemValue):
     with pytest.raises(exceptions.InvalidProtocolError):
         DataItem()
     with pytest.raises(exceptions.InvalidProtocolError):
