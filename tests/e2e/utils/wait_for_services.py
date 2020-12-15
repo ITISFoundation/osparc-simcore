@@ -79,7 +79,7 @@ def osparc_simcore_root_dir() -> Path:
 
 
 def core_docker_compose_file() -> Path:
-    return osparc_simcore_root_dir() / ".stack-simcore-version.yml"
+    return osparc_simcore_root_dir() / ".stack-simcore-production.yml"
 
 
 def core_services() -> List[str]:
