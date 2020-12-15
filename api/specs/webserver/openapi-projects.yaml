@@ -194,6 +194,33 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /projects/{project_id}/export:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: compressed
+        in: query
+        required: false
+        schema:
+          type: boolean
+    get:
+      tags:
+        - project
+      summary: creates an archive of the project and downloads it
+      operationId: export_project
+      responses:
+        "200":
+          description: an archived project file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
   /projects/{project_id}/close:
     parameters:
       - name: project_id

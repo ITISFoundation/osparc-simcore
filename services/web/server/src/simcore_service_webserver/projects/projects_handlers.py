@@ -10,6 +10,7 @@ from aiohttp import web
 from jsonschema import ValidationError
 
 from models_library.projects_state import ProjectState
+from models_library.basic_types import StringBool
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog, director_v2
@@ -23,6 +24,8 @@ from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
+from ..exporter.export_import import study_export
+from ..exporter.file_response import CleanupFileResponse, get_empty_tmp_dir
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -575,3 +578,42 @@ async def remove_tag(request: web.Request):
         request.match_info.get("study_uuid"),
     )
     return await db.remove_tag(project_uuid=study_uuid, user_id=uid, tag_id=int(tag_id))
+
+
+@login_required
+async def export_project(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+    compressed = StringBool.parse(request.query.get("compressed"))
+
+    log.info(project_uuid)
+    log.info("Is compressed %s", compressed)
+
+    temp_dir: str = await get_empty_tmp_dir()
+
+    file_to_download = await study_export(
+        app=request.app,
+        tmp_dir=temp_dir,
+        project_id=project_uuid,
+        user_id=user_id,
+        archive=True,
+        compress=compressed,
+    )
+    log.info("File to download '%s'", file_to_download)
+
+    if not file_to_download.is_file():
+        raise web.HTTPError(reason="Must provide a file to download")
+
+    # continue tomorrow to have the file download with sha256sum added to the header in order to check the file
+    # TODO: put the SHA256 header here for checksums?
+    headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
+    log.info("Will download file %s", file_to_download)
+
+    return CleanupFileResponse(
+        temp_dir=temp_dir, path=file_to_download, headers=headers
+    )
+
+
+@login_required
+async def import_project(request: web.Request):
+    return web.HTTPOk()
