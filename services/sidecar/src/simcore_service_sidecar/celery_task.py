@@ -1,16 +1,16 @@
+import logging
 from asyncio import CancelledError
 from pprint import pformat
 from typing import Optional
 
 from celery import Celery, states
 
-from .celery_log_setup import get_task_logger
 from .cli import run_sidecar
 from .config import CPU_QUEUE_NAME, GPU_QUEUE_NAME, MPI_QUEUE_NAME
 from .core import task_required_resources
 from .utils import wrap_async_call
 
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 def entrypoint(

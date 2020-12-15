@@ -250,7 +250,7 @@ async def test_workflow(
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     storage_subsystem_mock,
-    director_v2_subsystem_mock,
+    director_v2_service_mock,
 ):
     # empty list
     projects = await _request_list(client)
@@ -374,7 +374,7 @@ async def test_list_template_projects(
     fake_template_projects_isan,
     fake_template_projects_osparc,
     catalog_subsystem_mock,
-    director_v2_subsystem_mock,
+    director_v2_service_mock,
 ):
     catalog_subsystem_mock(
         fake_template_projects

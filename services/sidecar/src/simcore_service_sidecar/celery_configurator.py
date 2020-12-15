@@ -7,6 +7,7 @@ To decide where a task should be routed to, the current worker will
 use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
+import logging
 from functools import wraps
 from typing import Callable
 
@@ -16,12 +17,11 @@ from kombu import Queue
 
 from . import config
 from .boot_mode import BootMode, get_boot_mode, set_boot_mode
-from .celery_log_setup import get_task_logger
 from .celery_task import entrypoint
 from .celery_task_utils import on_task_failure_handler, on_task_success_handler
 from .utils import is_gpu_node, start_as_mpi_node
 
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 CELERY_APP_CONFIGS = {
@@ -65,7 +65,7 @@ def define_celery_task(app: Celery, name: str) -> None:
 
 
 def configure_node(bootmode: BootMode) -> Celery:
-    log.info("Initializing celery app in %s...", bootmode)
+    log.debug("Initializing celery app in %s...", bootmode)
     app = Celery(
         f"sidecar.{str(bootmode.name).lower()}.{config.SIDECAR_HOST_HOSTNAME_PATH.read_text()}",
         broker=config.CELERY_CONFIG.broker_url,

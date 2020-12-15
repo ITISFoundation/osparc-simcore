@@ -5515,9 +5515,23 @@ paths:
           schema:
             type: string
             example: 123e4567-e89b-12d3-a456-426655440000
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subgraph:
+                  description: The node uuids selected for running a partial pipeline
+                  type: array
+                  uniqueItems: true
+                  items:
+                    type: string
+                    format: uuid
       responses:
         '201':
-          description: Succesffully started the pipeline
+          description: Successfully started the pipeline
           content:
             application/json:
               schema:
@@ -5926,6 +5940,8 @@ paths:
                                                   type: string
                                                 label:
                                                   type: string
+                                                eTag:
+                                                  type: string
                                             - type: object
                                               additionalProperties: false
                                               required:
@@ -5987,6 +6003,8 @@ paths:
                                                 path:
                                                   type: string
                                                 label:
+                                                  type: string
+                                                eTag:
                                                   type: string
                                             - type: object
                                               additionalProperties: false
@@ -6486,6 +6504,8 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                    eTag:
+                                      type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -6547,6 +6567,8 @@ paths:
                                     path:
                                       type: string
                                     label:
+                                      type: string
+                                    eTag:
                                       type: string
                                 - type: object
                                   additionalProperties: false
@@ -6926,6 +6948,8 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                              eTag:
+                                                type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -6987,6 +7011,8 @@ paths:
                                               path:
                                                 type: string
                                               label:
+                                                type: string
+                                              eTag:
                                                 type: string
                                           - type: object
                                             additionalProperties: false
@@ -7484,6 +7510,8 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                              eTag:
+                                                type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -7545,6 +7573,8 @@ paths:
                                               path:
                                                 type: string
                                               label:
+                                                type: string
+                                              eTag:
                                                 type: string
                                           - type: object
                                             additionalProperties: false
@@ -8048,6 +8078,8 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                              eTag:
+                                                type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8109,6 +8141,8 @@ paths:
                                               path:
                                                 type: string
                                               label:
+                                                type: string
+                                              eTag:
                                                 type: string
                                           - type: object
                                             additionalProperties: false
@@ -8603,6 +8637,8 @@ paths:
                                       type: string
                                     label:
                                       type: string
+                                    eTag:
+                                      type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -8664,6 +8700,8 @@ paths:
                                     path:
                                       type: string
                                     label:
+                                      type: string
+                                    eTag:
                                       type: string
                                 - type: object
                                   additionalProperties: false
@@ -9043,6 +9081,8 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                              eTag:
+                                                type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -9104,6 +9144,8 @@ paths:
                                               path:
                                                 type: string
                                               label:
+                                                type: string
+                                              eTag:
                                                 type: string
                                           - type: object
                                             additionalProperties: false
@@ -9623,6 +9665,8 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                              eTag:
+                                                type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -9684,6 +9728,8 @@ paths:
                                               path:
                                                 type: string
                                               label:
+                                                type: string
+                                              eTag:
                                                 type: string
                                           - type: object
                                             additionalProperties: false
@@ -11015,6 +11061,8 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                              eTag:
+                                                type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -11076,6 +11124,8 @@ paths:
                                               path:
                                                 type: string
                                               label:
+                                                type: string
+                                              eTag:
                                                 type: string
                                           - type: object
                                             additionalProperties: false
@@ -11572,6 +11622,8 @@ paths:
                                                 type: string
                                               label:
                                                 type: string
+                                              eTag:
+                                                type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -11633,6 +11685,8 @@ paths:
                                               path:
                                                 type: string
                                               label:
+                                                type: string
+                                              eTag:
                                                 type: string
                                           - type: object
                                             additionalProperties: false

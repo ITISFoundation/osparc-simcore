@@ -188,7 +188,7 @@ async def _wait_until(pred: Callable, timeout: int):
     ],
 )
 async def test_rabbit_websocket_computation(
-    director_v2_subsystem_mock,
+    director_v2_service_mock,
     mock_orphaned_services,
     logged_user,
     user_project,

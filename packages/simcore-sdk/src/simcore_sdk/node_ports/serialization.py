@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 async def create_from_json(
     db_mgr: DBManager, auto_read: bool = False, auto_write: bool = False
 ):
-    """ creates a Nodeports object provided a json configuration in form of a callback function
+    """creates a Nodeports object provided a json configuration in form of a callback function
 
     :param db_mgr: interface object to connect to nodeports description
     :param auto_read: the nodeports object shall automatically update itself when set to True, defaults to False
@@ -64,7 +64,7 @@ async def create_nodeports_from_uuid(db_mgr: DBManager, node_uuid: str):
 
 
 async def save_to_json(nodeports_obj) -> None:
-    """ Encodes a Nodeports object to json and calls a linked writer if available.
+    """Encodes a Nodeports object to json and calls a linked writer if available.
 
     :param nodeports_obj:  the object to encode
     :type nodeports_obj: Nodeports
@@ -93,8 +93,10 @@ class _NodeportsEncoder(json.JSONEncoder):
             log.debug("Encoding Nodeports object")
             return {
                 # pylint: disable=W0212
-                "version": o._version,
-                "schema": {"inputs": o._input_schemas, "outputs": o._output_schemas,},
+                "schema": {
+                    "inputs": o._input_schemas,
+                    "outputs": o._output_schemas,
+                },
                 "inputs": o._inputs_payloads,
                 "outputs": o._outputs_payloads,
             }
@@ -139,7 +141,6 @@ def __decodeNodePorts(dct: Dict):
     )
 
     return nodeports.Nodeports(
-        dct["version"],
         SchemaItemsList(decoded_input_schema),
         SchemaItemsList(decoded_output_schema),
         DataItemsList(decoded_input_payload),

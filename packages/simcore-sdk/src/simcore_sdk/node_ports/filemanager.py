@@ -1,20 +1,22 @@
+import json
+
 # pylint: disable=too-many-arguments
 import logging
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
-
-from aiohttp import ClientSession, ClientTimeout
-from yarl import URL
+from typing import Optional, Tuple
 
 import aiofiles
+from aiohttp import ClientPayloadError, ClientSession, ClientTimeout
+from models_library.settings.services_common import ServicesCommonSettings
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
-from models_library.settings.services_common import ServicesCommonSettings
+from tqdm import tqdm
+from yarl import URL
 
-from . import config, exceptions
 from ..config.http_clients import client_request_settings
+from . import config, exceptions
 
 log = logging.getLogger(__name__)
 
@@ -87,8 +89,6 @@ async def _get_location_id_from_location_name(store: str, api: UsersApi):
         raise exceptions.S3InvalidStore(store)
     except ApiException as err:
         _handle_api_exception(store, err)
-    if resp.error:
-        raise exceptions.StorageConnectionError(store, resp.error.to_str())
 
 
 async def _get_link(store_id: int, file_id: str, apifct) -> URL:
@@ -132,32 +132,55 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         if response.status > 299:
             raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        async with aiofiles.open(file_path, "wb") as file_pointer:
-            # await file_pointer.write(await response.read())
-            chunk = await response.content.read(CHUNK_SIZE)
-            while chunk:
-                await file_pointer.write(chunk)
-                chunk = await response.content.read(CHUNK_SIZE)
-        log.debug("Download complete")
-        return await response.release()
+        file_size = int(response.headers.get("content-length", 0)) or None
+        try:
+            with tqdm(
+                desc=f"downloading {file_path} [{file_size} bytes]",
+                total=file_size,
+                unit="byte",
+                unit_scale=True,
+            ) as pbar:
+                async with aiofiles.open(file_path, "wb") as file_pointer:
+                    chunk = await response.content.read(CHUNK_SIZE)
+                    while chunk:
+                        await file_pointer.write(chunk)
+                        pbar.update(len(chunk))
+                        chunk = await response.content.read(CHUNK_SIZE)
+                log.debug("Download complete")
+        except ClientPayloadError as exc:
+            raise exceptions.TransferError(url) from exc
 
 
-async def _file_sender(file_path: Path):
-    async with aiofiles.open(file_path, "rb") as file_pointer:
-        chunk = await file_pointer.read(CHUNK_SIZE)
-        while chunk:
-            yield chunk
-            chunk = await file_pointer.read(CHUNK_SIZE)
+ETag = str
 
 
-async def _upload_file_to_link(session: ClientSession, url: URL, file_path: Path):
+async def _upload_file_to_link(
+    session: ClientSession, url: URL, file_path: Path
+) -> Optional[ETag]:
     log.debug("Uploading from %s to %s", file_path, url)
-    async with session.put(url, data=file_path.open("rb")) as resp:
-        if resp.status > 299:
-            response_text = await resp.text()
-            raise exceptions.S3TransferError(
-                "Could not upload file {}:{}".format(file_path, response_text)
-            )
+    file_size = file_path.stat().st_size
+    with tqdm(
+        desc=f"uploading {file_path} [{file_size} bytes]",
+        total=file_size,
+        unit="byte",
+        unit_scale=True,
+    ) as pbar:
+        async with session.put(url, data=file_path.open("rb")) as resp:
+            if resp.status > 299:
+                response_text = await resp.text()
+                raise exceptions.S3TransferError(
+                    "Could not upload file {}:{}".format(file_path, response_text)
+                )
+            if resp.status != 200:
+                response_text = await resp.text()
+                raise exceptions.S3TransferError(
+                    "Issue when uploading file {}:{}".format(file_path, response_text)
+                )
+            pbar.update(file_size)
+            # get the S3 etag from the headers
+            e_tag = json.loads(resp.headers.get("Etag", None))
+            log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
+            return e_tag
 
 
 async def download_file_from_s3(
@@ -166,7 +189,7 @@ async def download_file_from_s3(
     store_id: str = None,
     s3_object: str,
     local_folder: Path,
-    session: Optional[ClientSession] = None
+    session: Optional[ClientSession] = None,
 ) -> Path:
     """Downloads a file from S3
 
@@ -223,12 +246,12 @@ async def download_file_from_link(
 
 async def upload_file(
     *,
-    store_id: str = None,
-    store_name: str = None,
+    store_id: Optional[str] = None,
+    store_name: Optional[str] = None,
     s3_object: str,
     local_file_path: Path,
-    session: Optional[ClientSession] = None
-) -> str:
+    session: Optional[ClientSession] = None,
+) -> Tuple[str, str]:
     """Uploads a file to S3
 
     :param session: add app[APP_CLIENT_SESSION_KEY] session here otherwise default is opened/closed every call
@@ -251,14 +274,14 @@ async def upload_file(
 
         if store_name is not None:
             store_id = await _get_location_id_from_location_name(store_name, api)
-        upload_link = await _get_upload_link(store_id, s3_object, api)
+        upload_link: URL = await _get_upload_link(store_id, s3_object, api)
 
         if upload_link:
-            upload_link = URL(upload_link)
-
+            # FIXME: This client should be kept with the nodeports instead of creating one each time
             async with ClientSessionContextManager(session) as active_session:
-                await _upload_file_to_link(active_session, upload_link, local_file_path)
-
-            return store_id
+                e_tag = await _upload_file_to_link(
+                    active_session, upload_link, local_file_path
+                )
+                return store_id, e_tag
 
     raise exceptions.S3InvalidPathError(s3_object)
