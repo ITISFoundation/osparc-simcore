@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import web
 
@@ -13,6 +13,9 @@ from .groups_exceptions import (
     UserInsufficientRightsError,
 )
 from .login.decorators import RQT_USERID_KEY, login_required
+from .scicrunch_api import SciCrunchAPI
+from .scicrunch_db import ResearchResourceRepository
+from .scicrunch_models import ListOfResourceHits, ResourceView
 from .security_decorators import permission_required
 from .users_exceptions import UserNotFoundError
 
@@ -196,8 +199,11 @@ async def delete_group_user(request: web.Request):
 @permission_required("groups.*")
 async def get_group_classifiers(request: web.Request):
     gid = request.match_info["gid"]
+    type_of_tree_view: str = request.query.get("tree_view", "std")
 
-    tree_view: str = request.query.get("tree_view", "std")
+    # if group is sparc
+    #  load rrids
+    #  build tree
 
     bundle: Dict = await groups_api.get_group_classifier(request.app, gid)
     return bundle
@@ -210,18 +216,18 @@ async def get_group_classifiers(request: web.Request):
 @permission_required("groups.*")
 async def get_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
+    rrid = SciCrunchAPI.validate_identifier(rrid)
 
-    raise NotImplementedError()
-    # from .scicrunch import SciCrunchAPI
-    # rrid = request.match_info["rrid"]
+    # check if in database first
+    repo = ResearchResourceRepository(request.app)
+    resource_view: Optional[ResourceView] = await repo.get(rrid)
 
-    # scicrunch = SciCrunchAPI.get_instance(request.app)
-    # if not scicrunch:
-    #     raise web.HTTPServiceUnavailable(reason="scicrunch.org, the validation service is not reachable due to setup problems")
+    if not resource_view:
+        # otherwise, request to scicrunch service
+        scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+        resource_view = await scicrunch.get_resource_fields(rrid)
 
-    # resource = await scicrunch.get_resource_fields(rrid)
-    # # cache??
-    # return resource.dict(exclude_unset=True)
+    return resource_view.dict()
 
 
 #  POST /groups/sparc/classifiers/scicrunch-resources/{rrid}
@@ -229,6 +235,20 @@ async def get_scicrunch_resource(request: web.Request):
 @permission_required("groups.*")
 async def add_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
+
+    # validate first against scicrunch service
+    scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+    resource_view = await scicrunch.get_resource_fields(rrid)
+
+    # check if in database first
+    repo = ResearchResourceRepository(request.app)
+    await repo.upsert(
+        rrid=resource_view.scicrunch_id,
+        name=resource_view.get_name(),
+        description=resource_view.get_description(),
+    )
+
+    # insert new or if exists, then update
 
     raise NotImplementedError()
     # fails if not available
@@ -241,4 +261,7 @@ async def add_scicrunch_resource(request: web.Request):
 async def search_scicrunch_resources(request: web.Request):
     resource_name_as: str = request.query["resource_name_as"]
 
-    raise NotImplementedError()
+    scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+    hits: ListOfResourceHits = await scicrunch.search_resource(resource_name_as)
+
+    return hits
