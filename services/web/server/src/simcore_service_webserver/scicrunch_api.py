@@ -13,7 +13,7 @@ from aiohttp import ClientSession, web
 from pydantic import ValidationError
 from servicelib.client_session import get_client_session
 
-from .scicrunch_config import SciCrunchSettings
+from .scicrunch_config import RRID_PATTERN, SciCrunchSettings
 from .scicrunch_models import ListOfResourceHits, ResourceView
 
 logger = logging.getLogger(__name__)
@@ -61,29 +61,6 @@ async def autocomplete_by_name(
         assert body.get("success")  # nosec
         return ListOfResourceHits(__root__=body.get("data", []))
 
-    #
-    # curl -X GET "https://scicrunch.org/api/1/resource/fields/autocomplete?field=Resource%20Name&value=octave" -H "accept: application/json
-    # {
-    #   "data": [
-    #     {
-    #       "rid": "SCR_000860",
-    #       "original_id": "nlx_155680",
-    #       "name": "cbiNifti: Matlab/Octave Nifti library"
-    #     },
-    #     {
-    #       "rid": "SCR_009637",
-    #       "original_id": "nlx_155924",
-    #       "name": "Pipeline System for Octave and Matlab"
-    #     },
-    #     {
-    #       "rid": "SCR_014398",
-    #       "original_id": "SCR_014398",
-    #       "name": "GNU Octave"
-    #     }
-    #   ],
-    #   "success": true
-    # }
-
 
 class ValidationResult(IntEnum):
     UNKNOWN = -1
@@ -100,12 +77,7 @@ class SciCrunchAPI:
         - uses settings
     """
 
-    # FIXME: From https://scicrunch.org/resources: To ensure they are recognizable, unique, and traceable,
-    # identifiers are prefixed with " RRID: ", followed by a second tag that indicates the source authority that provided it
-    # (e.g. "AB" for the Antibody Registry, "CVCL" for the Cellosaurus, "MMRRC" for Mutant Mouse Regional Resource Centers, "SCR"
-    # for the SciCrunch registry of tools).
-    # TODO: read https://www.force11.org/group/resource-identification-initiative
-    RRID_RE = re.compile(r"(RRID:)?\s*(SCR_\d+)")
+    RRID_RE = re.compile(RRID_PATTERN)
 
     def __init__(self, client: ClientSession, settings: SciCrunchSettings):
         self.settings = settings
@@ -123,16 +95,22 @@ class SciCrunchAPI:
         return obj
 
     @staticmethod
-    def get_instance(app: MutableMapping[str, Any]) -> Optional["SciCrunchAPI"]:
+    def get_instance(
+        app: MutableMapping[str, Any], *, raises=False
+    ) -> Optional["SciCrunchAPI"]:
         """ Get's application instance """
-        return app.get(f"{__name__}.SciCrunchAPI")
+        obj = app.get(f"{__name__}.SciCrunchAPI")
+        if obj is None and raises:
+            raise web.HTTPServiceUnavailable(
+                reason="Communication with scicrunch.org service could not be setup"
+            )
 
     @classmethod
     def validate_identifier(cls, rrid: str) -> str:
         match = cls.RRID_RE.match(rrid.strip())
         if match:
             return match.group(1)
-        raise ValueError(f"Does not match a RRID {rrid}")
+        raise web.HTTPUnprocessableEntity(reason=f"Invalid format for an RRID '{rrid}'")
 
     async def validate_resource(self, rrid: str) -> ValidationResult:
         try:
@@ -153,7 +131,7 @@ class SciCrunchAPI:
             # - timeout: server slowed down (retry?)
             return ValidationResult.UNKNOWN
 
-        except (ValidationError, ValueError):
+        except (ValidationError):
             logger.debug("Validation error of RRID: %s", rrid, exc_info=True)
             return ValidationResult.INVALID
 
@@ -162,7 +140,7 @@ class SciCrunchAPI:
             rrid = self.validate_identifier(rrid)
             resource_view = await get_resource_fields(rrid, self.client, self.settings)
             return resource_view
-        except (aiohttp.ClientError, ValidationError, ValueError):
+        except (aiohttp.ClientError, ValidationError):
             logger.debug(
                 "Failed to get fields for resource RRID: %s", rrid, exc_info=True
             )

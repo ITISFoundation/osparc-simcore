@@ -1,33 +1,40 @@
 """
-   Domain model to exchange data between scicrunch API, pg database and webserver API
+   Domain models at every interface: scicrunch API, pg database and webserver API
 """
 
-
 import logging
-from typing import Any, List, Optional, Union
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
+from yarl import URL
+
+from .scicrunch_config import RRID_PATTERN
 
 logger = logging.getLogger(__name__)
 
 
-# NOTE: there is no need to capture everything
+# webserver API models -----------------------------------------
+class ResearchResource(BaseModel):
+    rrid: constr(regex=RRID_PATTERN)
+    name: str
+    description: str
+
+
+# postgres_database.scicrunch_resources ORM --------------------
+class ResearchResourceAtdB(ResearchResource):
+    creation_date: datetime
+    last_change_date: datetime
+
+    class Config:
+        orm_mode = True
+
+
+# scrunch service API models -----------------------------------
 #
-# scicrunh API fields = [
-#   {
-#     "field": "Resource Name",
-#     "required": true,
-#     "type": "text",
-#     "max_number": "1",
-#     "value": "Jupyter Notebook",
-#     "position": 0,
-#     "display": "title",
-#     "alt": "The name of the unique resource you are submitting"
-#   }, ...
-# ]
-
-
+# NOTE: These models are a trucated version of the data payload for a scicrunch response.#
+# NOTE: Examples of complete responsens can be found in test_scicrunch.py::mock_scicrunch_service_api
 class FieldItem(BaseModel):
     field_name: str = Field(..., alias="field")
     required: bool
@@ -39,31 +46,20 @@ class FieldItem(BaseModel):
     alt: str  # alternative text
 
 
-# NOTE: scicrunch API response to
-# {
-#   "data": {
-#     "fields": [ ... ]
-#     "version": 2,
-#     "curation_status": "Curated",
-#     "last_curated_version": 2,
-#     "scicrunch_id": "SCR_018315",
-#     "original_id": "SCR_018315",
-#     "image_src": null,
-#     "uuid": "0e88ffa5-752f-5ae6-aab1-b350edbe2ccc",
-#     "typeID": 1
-#   },
-#   "success": true
-# }
 class ResourceView(BaseModel):
-    resource_fields: Optional[List[FieldItem]] = Field(None, alias="fields")
-    # version: int
+    resource_fields: List[FieldItem] = Field([], alias="fields")
+    version: int
     curation_status: str
     last_curated_version: int
     uuid: UUID
-    # typeID: int
-    image_src: Optional[str] = None
+    # NOTE: image_src is a path from https://scicrunch.org/ e.g. https://scicrunch.org/upload/resource-images/18997.png
+    image_src: Optional[str]
     scicrunch_id: str
-    # original_id: str
+
+    @classmethod
+    def from_response_payload(cls, payload: Dict):
+        assert payload["success"] == True  # nosec
+        return cls(**payload["data"])
 
     @property
     def is_curated(self) -> bool:
@@ -71,11 +67,20 @@ class ResourceView(BaseModel):
 
     # TODO: add validator to capture only selected fields
 
-    def get_name(self) -> Optional[str]:
+    def _get_field(self, fieldname: str):
         for field in self.resource_fields:
-            if field.field_name == "Resource Name":
+            if field.field_name == fieldname:
                 return field.value
-        return None
+        raise ValueError(f"Cannot file expected field {fieldname}")
+
+    def get_name(self):
+        return str(self._get_field("Resource Name"))
+
+    def get_description(self):
+        return str(self._get_field("Description"))
+
+    def get_resource_url(self):
+        return URL(str(self._get_field("Resource URL")))
 
 
 class ResourceHit(BaseModel):
