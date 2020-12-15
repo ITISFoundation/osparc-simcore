@@ -8,13 +8,13 @@ import networkx as nx
 from aiodocker.volumes import DockerVolume
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.sidecar_models import StateType, comp_tasks
 from sqlalchemy import and_
 
 from . import config
 from .exceptions import SidecarException
 from .mpi_lock import acquire_mpi_lock
-from servicelib.logging_utils import log_decorator
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +75,6 @@ def execution_graph(pipeline: RowProxy) -> nx.DiGraph:
     return G
 
 
-@log_decorator(logger=logger)
 def is_gpu_node() -> bool:
     """Returns True if this node has support to GPU,
     meaning that the `VRAM` label was added to it."""
