@@ -44,6 +44,7 @@ install: _simcore-images _local-registry _simcore-up _test_environment ## instal
 clean-up: ## remove everything
 	@$(MAKE_C) $(REPO_BASE_DIR) down
 	@$(MAKE_C) $(REPO_BASE_DIR) leave
+	@$(MAKE_C) $(REPO_BASE_DIR) rm-local-registry
 
 
 registry-up: ## deploys the insecure docker registry in the simcore network

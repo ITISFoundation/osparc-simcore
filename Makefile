@@ -419,7 +419,7 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 
 local_registry=registry
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
-.PHONY: local-registry
+.PHONY: local-registry rm-local-registry
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),,\
 					echo setting host file to redirect $(etc_host_entry); \
@@ -446,6 +446,11 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 	# local registry set in $(local_registry):5000
 	# images currently in registry:
 	curl --silent $(local_registry):5000/v2/_catalog | jq
+
+rm-local-registry:
+	$(if $(shell grep "127.0.0.1 $(local_registry) /etc/hosts"),\
+	echo removing host file to redirect $(etc_host_entry); \
+	sed -i "/127.0.0.1 $(local_registry)/d" /etc/hosts;,)
 
 ## INFO -------------------------------
 
