@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import traceback
 from datetime import datetime
 from typing import Dict, List, Optional, Union
@@ -6,7 +7,6 @@ from typing import Dict, List, Optional, Union
 import networkx as nx
 from aiopg.sa import Engine, SAConnection
 from aiopg.sa.result import RowProxy
-from celery.utils.log import get_task_logger
 from simcore_postgres_database.sidecar_models import (
     StateType,
     comp_pipeline,
@@ -22,7 +22,7 @@ from .executor import Executor
 from .rabbitmq import RabbitMQ
 from .utils import execution_graph, find_entry_point, is_node_ready
 
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_v2_log.setLevel(config.SIDECAR_LOGLEVEL)
 
@@ -85,7 +85,7 @@ async def _try_get_task_from_db(
         return
 
     # Check if node's dependecies are there
-    if not await is_node_ready(task, graph, db_connection, log):
+    if not await is_node_ready(task, graph, db_connection):
         log.debug("TASK %s NOT YET READY", task.internal_id)
         return
 

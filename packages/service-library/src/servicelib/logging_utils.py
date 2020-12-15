@@ -93,7 +93,7 @@ def set_logging_handler(
 
 
 def _log_arguments(
-    logger_obj: logging.Logger, func: Callable, *args, **kwargs
+    logger_obj: logging.Logger, level: int, func: Callable, *args, **kwargs
 ) -> Dict[str, str]:
     args_passed_in_function = [repr(a) for a in args]
     kwargs_passed_in_function = [f"{k}={v!r}" for k, v in kwargs.items()]
@@ -112,7 +112,8 @@ def _log_arguments(
     }
 
     #  Before to the function execution, log function details.
-    logger_obj.info(
+    logger_obj.log(
+        level,
         "Arguments: %s - Begin function",
         formatted_arguments,
         extra=extra_args,
@@ -121,7 +122,7 @@ def _log_arguments(
     return extra_args
 
 
-def log_decorator(logger=None):
+def log_decorator(logger=None, level: int = logging.DEBUG):
     # Build logger object
     logger_obj = logger or log
 
@@ -130,12 +131,12 @@ def log_decorator(logger=None):
 
             @functools.wraps(func)
             async def log_decorator_wrapper(*args, **kwargs):
-                extra_args = _log_arguments(logger_obj, func, *args, **kwargs)
+                extra_args = _log_arguments(logger_obj, level, func, *args, **kwargs)
                 try:
                     # log return value from the function
                     value = await func(*args, **kwargs)
-                    logger_obj.debug(
-                        "Returned: - End function %r", value, extra=extra_args
+                    logger_obj.log(
+                        level, "Returned: - End function %r", value, extra=extra_args
                     )
                 except:
                     # log exception if occurs in function
@@ -154,8 +155,8 @@ def log_decorator(logger=None):
                 try:
                     # log return value from the function
                     value = func(*args, **kwargs)
-                    logger_obj.debug(
-                        "Returned: - End function %r", value, extra=extra_args
+                    logger_obj.log(
+                        level, "Returned: - End function %r", value, extra=extra_args
                     )
                 except:
                     # log exception if occurs in function
