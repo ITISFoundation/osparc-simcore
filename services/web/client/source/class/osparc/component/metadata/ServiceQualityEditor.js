@@ -395,7 +395,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
         });
         if (annotation.description !== "") {
           header = new osparc.component.form.FieldWHint(null, annotation.description, header).set({
-            hintPosition: "left"
+            allowGrowX: false
           });
         }
         this.__annotationsGrid.add(header, {
