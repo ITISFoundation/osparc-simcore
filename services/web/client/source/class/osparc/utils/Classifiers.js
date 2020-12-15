@@ -61,6 +61,8 @@ qx.Class.define("osparc.utils.Classifiers", {
         if (value.classifier) {
           return {
             label: value["display_name"],
+            description: value["short_description"],
+            url: value["url"],
             data: value
           };
         }
