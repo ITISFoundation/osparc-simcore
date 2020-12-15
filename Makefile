@@ -254,7 +254,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 .PHONY: .init-swarm
 .init-swarm:
 	# Ensures swarm is initialized
-	$(if $(SWARM_HOSTS),,docker swarm init)
+	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip))
 
 
 ## DOCKER TAGS  -------------------------------
