@@ -107,14 +107,7 @@ async def listen(app: web.Application):
                 continue
 
             project_uuid = task_data.get("project_id", None)
-            if not project_uuid:
-                log.error("missing project uuid in payload %s", pformat(payload))
-                continue
-
             node_uuid = task_data.get("node_id", None)
-            if not node_uuid:
-                log.error("missing node uuid in payload %s", pformat(payload))
-                continue
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
