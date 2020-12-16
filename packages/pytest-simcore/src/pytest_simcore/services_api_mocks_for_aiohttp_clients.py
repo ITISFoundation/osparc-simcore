@@ -1,10 +1,20 @@
 import re
+from typing import Dict, List
 
 import pytest
 from aioresponses import aioresponses
 from aioresponses.core import CallbackResult
 from models_library.projects_state import RunningState
 from yarl import URL
+
+# The adjacency list is defined as a dictionary with the key to the node and its list of successors
+FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
+    "node id 1": ["node id 2", "node id 3", "node id 4"],
+    "node id 2": ["node_id 5"],
+    "node id 3": ["node_id 5"],
+    "node id 4": ["node_id 5"],
+    "node id 5": [],
+}
 
 
 def creation_cb(url, **kwargs) -> CallbackResult:
@@ -18,9 +28,19 @@ def creation_cb(url, **kwargs) -> CallbackResult:
         if "start_pipeline" in body and body["start_pipeline"]
         else RunningState.NOT_STARTED
     )
+    pipeline: Dict[str, List[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    if body.get("subgraph"):
+        # create some fake adjacency list
+        for node_id in body.get("subgraph"):
+            pipeline[node_id] = ["some node 5334", "some node 2324"]
 
     return CallbackResult(
-        status=201, payload={"id": kwargs["json"]["project_id"], "state": state}
+        status=201,
+        payload={
+            "id": kwargs["json"]["project_id"],
+            "state": state,
+            "pipeline": pipeline,
+        },
     )
 
 

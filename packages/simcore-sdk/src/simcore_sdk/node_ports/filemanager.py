@@ -1,3 +1,5 @@
+import json
+
 # pylint: disable=too-many-arguments
 import logging
 import warnings
@@ -7,12 +9,11 @@ from typing import Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientPayloadError, ClientSession, ClientTimeout
-from yarl import URL
-
 from models_library.settings.services_common import ServicesCommonSettings
 from simcore_service_storage_sdk import ApiClient, Configuration, UsersApi
 from simcore_service_storage_sdk.rest import ApiException
 from tqdm import tqdm
+from yarl import URL
 
 from ..config.http_clients import client_request_settings
 from . import config, exceptions
@@ -177,7 +178,7 @@ async def _upload_file_to_link(
                 )
             pbar.update(file_size)
             # get the S3 etag from the headers
-            e_tag = resp.headers.get("Etag", None)
+            e_tag = json.loads(resp.headers.get("Etag", None))
             log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
             return e_tag
 
