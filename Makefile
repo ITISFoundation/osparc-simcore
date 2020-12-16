@@ -237,15 +237,15 @@ up-latest:
 .PHONY: down leave
 down: ## Stops and removes stack
 	# Removing stacks in reverse order to creation
-	-$(foreach stack,\
+	-@$(foreach stack,\
 		$(shell docker stack ls --format={{.Name}} | tac),\
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
-	-$(MAKE_C) services/web/client down
+	-@$(MAKE_C) services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
-	-$(shell rm $(wildcard .stack-*))
+	-@rm $(wildcard .stack-*)
 	# Removing local registry if any
-	-$(shell docker rm --force $(local_registry))
+	-@docker rm --force $(local_registry)
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -436,11 +436,15 @@ rm-registry: ## remove the registry and changes to host/file
 
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),,\
-					echo setting host file to redirect $(local_registry) to 127.0.0.1; \
-					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts)
+					echo configuring host file to redirect $(local_registry) to 127.0.0.1; \
+					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts;\
+					echo done)
 	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
-					echo allowing docker engine to use insecure local registry and restarting engine...; \
-					sudo echo {\"insecure-registries\": [\"$(local_registry):5000\"]} | sudo tee -a /etc/docker/daemon.json; service docker restart)
+					echo configuring docker engine to use insecure local registry...; \
+					sudo echo {\"insecure-registries\": [\"$(local_registry):5000\"]} | sudo tee -a /etc/docker/daemon.json; \
+					echo restarting engine...; \
+					sudo service docker restart;\
+					echo done)
 	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
 					echo starting registry on $(local_registry):5000...; \
 					docker run --detach \
