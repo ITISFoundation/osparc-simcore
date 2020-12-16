@@ -143,7 +143,7 @@ def wait_for_services() -> int:
                 )
     except RetryError:
         print(
-            f"found these services: {started_services}\nexpected services: {expected_services}"
+            f"found these services: {len(started_services)} {[s.name for s in started_services]}\nexpected services: {len(expected_services)} {expected_services}"
         )
         return os.EX_SOFTWARE
 
