@@ -4,6 +4,7 @@
 """
 
 from aiohttp import web
+import urllib
 from yarl import URL
 
 from servicelib.request_keys import RQT_USERID_KEY
@@ -14,17 +15,21 @@ from .security_api import check_permission
 from .storage_config import get_client_session, get_storage_config
 
 
-def _resolve_storage_url(request: web.Request) -> URL:
-    """ Composes a new url against storage API
-
-    """
-    userid = request[RQT_USERID_KEY]
-    cfg = get_storage_config(request.app)
+def _get_base_storage_url(app: web.Application) -> URL:
+    cfg = get_storage_config(app)
 
     # storage service API endpoint
-    endpoint = URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
+    return URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
         cfg["version"]
     )
+
+
+def _resolve_storage_url(request: web.Request) -> URL:
+    """Composes a new url against storage API"""
+    userid = request[RQT_USERID_KEY]
+
+    # storage service API endpoint
+    endpoint = _get_base_storage_url(request.app)
 
     BASEPATH_INDEX = 3
     # strip basepath from webserver API path (i.e. webserver api version)
@@ -118,3 +123,32 @@ async def delete_file(request: web.Request):
     await check_permission(request, "storage.files.*")
     payload = await _request_storage(request, "DELETE")
     return payload
+
+
+async def get_file_download_url(
+    app: web.Application, location_id: str, fileId: str, user_id: int
+) -> str:
+    session = get_client_session(app)
+
+    url: URL = (
+        _get_base_storage_url(app)
+        / "locations"
+        / location_id
+        / "files"
+        / urllib.parse.quote(fileId, safe="")
+    )
+    params = dict(user_id=user_id)
+    import logging
+
+    log = logging.getLogger(__name__)
+    log.info("URL: '%s', params=%s", url, params)
+    async with session.get(url, ssl=False, params=params) as resp:
+        payload = await resp.json()
+        if not isinstance(payload, dict):
+            raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
+        if "data" not in payload:
+            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
+        if "link" not in payload["data"]:
+            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
+
+        return payload["data"]["link"]

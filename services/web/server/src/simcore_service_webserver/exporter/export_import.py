@@ -1,14 +1,38 @@
 import json
+import logging
 
 from pathlib import Path
+from collections import deque, namedtuple
+from typing import Deque
 
 from aiohttp import web
 
 from .archiving import zip_folder
 from simcore_service_webserver.projects.projects_api import get_project_for_user
+from simcore_service_webserver.storage_handlers import get_file_download_url
+from .file_downloader import ParallelDownloader
+
+log = logging.getLogger(__name__)
 
 # used in the future, will change if export format changes
 EXPORT_VERSION = "1"
+KEYS_TO_VALIDATE = {"store", "path", "dataset", "label"}
+
+LinkAndPath = namedtuple("LinkAndPath", ["link", "path"])
+
+
+async def download_files(download_links: Deque[LinkAndPath], storage_path: Path):
+    """ Downloads links to files in storage_path """
+    # TODO: use utility
+    parallel_downloader = ParallelDownloader()
+    for link_and_path in download_links:
+        download_path = storage_path / link_and_path.path
+        log.info("Will download %s -> '%s'", link_and_path.link, download_path)
+        await parallel_downloader.append_file(
+            link=link_and_path.link, download_path=download_path
+        )
+
+    await parallel_downloader.download_files()
 
 
 async def generate_directory_contents(
@@ -16,6 +40,7 @@ async def generate_directory_contents(
 ) -> None:
     text_file = dir_path / "manifest.json"
     project_json = dir_path / "project.json"
+    storage_path = dir_path / "storage"
 
     project_data = await get_project_for_user(
         app=app,
@@ -24,6 +49,35 @@ async def generate_directory_contents(
         include_templates=True,
         include_state=True,
     )
+
+    log.info("Project data: %s", project_data)
+
+    download_links: Deque[LinkAndPath] = deque()
+
+    workbench = project_data["workbench"]
+    for node_data in workbench.values():
+        outputs = node_data.get("outputs", {})
+        for output in outputs.values():
+            if not isinstance(output, dict):
+                continue
+
+            is_storage_file = KEYS_TO_VALIDATE <= output.keys()
+            if not is_storage_file:
+                log.warning(
+                    "Expected a file from storage, the following format was provided %s",
+                    output,
+                )
+                continue
+
+            download_link = await get_file_download_url(
+                app=app,
+                location_id=output["store"],
+                fileId=output["path"],
+                user_id=user_id,
+            )
+            download_links.append(LinkAndPath(link=download_link, path=output["path"]))
+
+    await download_files(download_links=download_links, storage_path=storage_path)
 
     # TODO: maybe move this to a Pydantic model
     manifest = {
