@@ -3,7 +3,16 @@ from pathlib import Path
 import aiohttp
 import logging
 
+from passlib import pwd
+
+from .async_hashing import checksum, Algorithm
+from .file_response import rename
+
 log = logging.getLogger(__name__)
+
+
+def get_random_string(length: int) -> str:
+    return pwd.genword(entropy=52, charset="hex")[:length]
 
 
 async def zip_folder(project_id: str, input_path: Path, no_compression=False) -> Path:
@@ -40,4 +49,13 @@ async def zip_folder(project_id: str, input_path: Path, no_compression=False) ->
             reason=f"Could not create archive {str(zip_file)}"
         )
 
-    return zip_file
+    # compute checksum and rename
+    sha256_sum = await checksum(file_path=zip_file, algorithm=Algorithm.SHA256)
+
+    # opsarc_formatted_name= "4_rand_chars#sha256_sum.osparc"
+    osparc_formatted_name = (
+        Path(input_path.parent) / f"{get_random_string(4)}#{sha256_sum}.osparc"
+    )
+    await rename(zip_file, osparc_formatted_name)
+
+    return osparc_formatted_name

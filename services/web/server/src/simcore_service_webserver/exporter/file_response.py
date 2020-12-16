@@ -12,6 +12,7 @@ from aiohttp.typedefs import LooseHeaders
 from aiohttp.abc import AbstractStreamWriter
 
 makedirs = aiofiles_os.wrap(os.makedirs)  # as in aiofiles.os.py module
+rename = aiofiles_os.wrap(os.rename)  # as in aiofiles.os.py module
 
 
 def _candidate_tmp_dir() -> Path:
