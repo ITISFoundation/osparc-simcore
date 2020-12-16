@@ -1,8 +1,6 @@
 """
-    Models and client calls to K-Core's scicrunch API (https://scicrunch.org/api/)
+    Access to postgres database scicrunch_resources table where USED rrids get stored
 """
-# TODO: not happy at all with this!!
-
 
 import logging
 from typing import Optional
@@ -12,7 +10,7 @@ from aiohttp import web
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 
 from .db_models import scicrunch_resources
-from .scicrunch_models import ResearchResourceAtdB
+from .scicrunch_models import ResearchResource, ResearchResourceAtdB
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +35,13 @@ class ResearchResourceRepository:
             row = await rows.fetchone()
             return ResearchResourceAtdB(**row) if row else None
 
-    async def upsert(self, vals: ResearchResourceAtdB):
+    async def get_resource(self, rrid: str) -> Optional[ResearchResource]:
+        resource = await self.get(rrid)
+        if resource:
+            return ResearchResource(**resource.dict())
+        return resource
+
+    async def upsert(self, vals: ResearchResource):
         async with self._engine.acquire() as conn:
             values = vals.dict(exclude_unset=True)
 

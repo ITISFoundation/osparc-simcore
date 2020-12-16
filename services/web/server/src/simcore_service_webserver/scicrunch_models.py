@@ -53,9 +53,9 @@ class ResourceView(BaseModel):
     version: int
     curation_status: str
     last_curated_version: int
-    uuid: UUID
+    # uuid: UUID
     # NOTE: image_src is a path from https://scicrunch.org/ e.g. https://scicrunch.org/upload/resource-images/18997.png
-    image_src: Optional[str]
+    # image_src: Optional[str]
     scicrunch_id: str
 
     @classmethod
@@ -84,9 +84,16 @@ class ResourceView(BaseModel):
     def get_resource_url(self):
         return URL(str(self._get_field("Resource URL")))
 
+    def convert_to_api_model(self) -> ResearchResource:
+        return ResearchResource(
+            rrid=self.scicrunch_id,
+            name=self.get_name(),
+            description=self.get_description(),
+        )
+
 
 class ResourceHit(BaseModel):
-    rid: str
+    rrid: str = Field(..., alias="rid")
     # original_id: str
     name: str
 
