@@ -419,10 +419,24 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 
 local_registry=registry
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
-.PHONY: local-registry rm-local-registry
+.PHONY: local-registry rm-registry
+
+rm-registry: ## remove the registry and changes to host/file
+	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),\
+		echo removing entry in /etc/hosts...;\
+		sudo sed -i "/127.0.0.1 $(local_registry)/d" /etc/hosts,\
+		echo /etc/hosts is already cleaned)
+	@$(if $(shell grep "{\"insecure-registries\": \[\"$(local_registry):5000\"\]}" /etc/docker/daemon.json),\
+		echo removing entry in /etc/docker/daemon.json...;\
+		sudo sed -i '/{"insecure-registries": \["$(local_registry):5000"\]}/d' /etc/docker/daemon.json;,\
+		echo /etc/docker/daemon.json is already cleaned)
+
+
+
+
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),,\
-					echo setting host file to redirect $(etc_host_entry); \
+					echo setting host file to redirect $(local_registry) to 127.0.0.1; \
 					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts)
 	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
 					echo allowing docker engine to use insecure local registry and restarting engine...; \
@@ -447,10 +461,6 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 	# images currently in registry:
 	curl --silent $(local_registry):5000/v2/_catalog | jq
 
-rm-local-registry:
-	$(if $(shell grep "127.0.0.1 $(local_registry) /etc/hosts"),\
-	echo removing host file to redirect $(etc_host_entry); \
-	sed -i "/127.0.0.1 $(local_registry)/d" /etc/hosts;,)
 
 ## INFO -------------------------------
 
