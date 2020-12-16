@@ -13,8 +13,8 @@ import attr
 from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
-from celery.utils.log import get_task_logger
 from packaging import version
+from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager
@@ -25,7 +25,7 @@ from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
 from .utils import get_volume_mount_point
 
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 @attr.s(auto_attribs=True)
@@ -81,15 +81,8 @@ class Executor:
     shared_folders: TaskSharedVolumes = None
     integration_version: version.Version = version.parse("0.0.0")
 
+    @log_decorator(logger=log)
     async def run(self):
-        log.debug(
-            "Running %s project:%s node:%s internal_id:%s from container",
-            self.task.image["name"],
-            self.task.project_id,
-            self.task.node_id,
-            self.task.internal_id,
-        )
-
         try:
             await self.preprocess()
             await self.process()
@@ -110,37 +103,33 @@ class Executor:
         finally:
             await self.cleanup()
 
+    @log_decorator(logger=log)
     async def preprocess(self):
         await self._post_messages(LogType.LOG, "[sidecar]Preprocessing...")
-        log.debug("Pre-Processing...")
         self.shared_folders = TaskSharedVolumes.from_task(self.task)
         self.shared_folders.create()
         host_name = config.SIDECAR_HOST_HOSTNAME_PATH.read_text()
         await self._post_messages(LogType.LOG, f"[sidecar]Running on {host_name}")
         results = await logged_gather(self._process_task_inputs(), self._pull_image())
         await self._write_input_file(results[0])
-        log.debug("Pre-Processing Pipeline DONE")
 
+    @log_decorator(logger=log)
     async def process(self):
-        log.debug("Processing...")
         await self._post_messages(LogType.LOG, "[sidecar]Processing...")
         await self._run_container()
-        log.debug("Processing DONE")
 
+    @log_decorator(logger=log)
     async def postprocess(self):
-        log.debug("Post-Processing...")
         await self._post_messages(LogType.LOG, "[sidecar]Postprocessing...")
         await self._process_task_output()
         await self._process_task_log()
-        log.debug("Post-Processing DONE")
 
+    @log_decorator(logger=log)
     async def cleanup(self):
-        log.debug("Cleaning...")
         await self._post_messages(LogType.LOG, "[sidecar]Cleaning...")
         if self.shared_folders:
             self.shared_folders.delete()
         await self._post_messages(LogType.LOG, "[sidecar]Cleaning completed")
-        log.debug("Cleaning DONE")
 
     async def _get_node_ports(self):
         if self.db_manager is None:
@@ -148,8 +137,8 @@ class Executor:
             self.db_manager = DBManager(self.db_engine)
         return await node_ports_v2.ports(self.db_manager)
 
+    @log_decorator(logger=log)
     async def _process_task_input(self, port: node_ports_v2.Port, input_ports: Dict):
-        log.debug("getting value from node ports...")
         port_value = await port.get()
         input_ports[port.key] = port_value
         log.debug("PROCESSING %s [%s]: %s", port.key, type(port_value), port_value)
@@ -177,9 +166,8 @@ class Executor:
                 # finally remove the zip archive
                 os.remove(final_path)
 
+    @log_decorator(logger=log)
     async def _process_task_inputs(self) -> Dict:
-        log.debug("Inputs parsing...")
-
         input_ports: Dict = {}
         try:
             PORTS = await self._get_node_ports()
@@ -199,12 +187,11 @@ class Executor:
                 for port in (await PORTS.inputs).values()
             ]
         )
-        log.debug("Inputs parsing DONE")
         return input_ports
 
+    @log_decorator(logger=log)
     async def _write_input_file(self, inputs: Dict) -> None:
         if inputs:
-            log.debug("Writing input file...")
             stem = (
                 "input"
                 if self.integration_version == version.parse("0.0.0")
@@ -212,16 +199,10 @@ class Executor:
             )
             file_name = self.shared_folders.input_folder / f"{stem}.json"
             file_name.write_text(json.dumps(inputs))
-            log.debug("Writing input file DONE")
 
+    @log_decorator(logger=log)
     async def _pull_image(self):
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
-        log.debug(
-            "PULLING IMAGE %s as %s with pwd %s",
-            docker_image,
-            config.DOCKER_USER,
-            config.DOCKER_PASSWORD,
-        )
         async with Docker() as docker_client:
             await self._post_messages(
                 LogType.LOG,
@@ -245,6 +226,7 @@ class Executor:
                     )["integration-version"]
                 )
 
+    @log_decorator(logger=log)
     async def _create_container_config(self, docker_image: str) -> Dict:
         # NOTE: Env/Binds for log folder is only necessary for integraion "0"
         env_vars = [
@@ -292,6 +274,7 @@ class Executor:
         }
         return docker_container_config
 
+    @log_decorator(logger=log)
     async def _start_monitoring_container(
         self, container: DockerContainer
     ) -> asyncio.Future:
@@ -310,6 +293,7 @@ class Executor:
         return log_processor_task
 
     # pylint: disable=too-many-statements
+    @log_decorator(logger=log)
     async def _run_container(self):
         start_time = time.perf_counter()
         docker_image = f"{config.DOCKER_REGISTRY}/{self.task.image['name']}:{self.task.image['tag']}"
@@ -420,6 +404,7 @@ class Executor:
                 }
             )
 
+    @log_decorator(logger=log)
     async def _process_task_output(self):
         """There will be some files in the /output
 
@@ -429,7 +414,6 @@ class Executor:
         Files will be pushed to S3 with reference in db. output.json will be parsed
         and the db updated
         """
-        log.debug("Processing outputs...")
         await self._post_messages(
             LogType.LOG,
             "[sidecar]Uploading outputs...",
@@ -474,10 +458,9 @@ class Executor:
             )
         except (OSError, IOError):
             await self._error_message_to_ui_and_logs("Could not process output")
-        log.debug("Processing outputs DONE")
 
+    @log_decorator(logger=log)
     async def _process_task_log(self):
-        log.debug("Processing Logs...")
         await self._post_messages(
             LogType.LOG,
             "[sidecar]Uploading logs...",
@@ -486,7 +469,6 @@ class Executor:
             await node_data.data_manager.push(
                 self.shared_folders.log_folder, rename_to="logs"
             )
-        log.debug("Processing Logs DONE")
 
     async def _post_messages(self, log_type: LogType, message: str):
         if log_type == LogType.LOG:
