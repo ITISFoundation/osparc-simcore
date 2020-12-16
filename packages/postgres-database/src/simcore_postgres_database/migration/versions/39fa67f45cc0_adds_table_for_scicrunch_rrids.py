@@ -1,7 +1,7 @@
 """Adds table for scicrunch rrids
 
 Revision ID: 39fa67f45cc0
-Revises: a23183ac1742
+Revises: 3452ca7b13e9
 Create Date: 2020-12-15 18:16:03.581479+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "39fa67f45cc0"
-down_revision = "a23183ac1742"
+down_revision = "3452ca7b13e9"
 branch_labels = None
 depends_on = None
 
