@@ -56,7 +56,7 @@ def define_celery_task(app: Celery, name: str) -> None:
         base=AbortableTask,
         bind=True,
         autoretry_for=(Exception,),
-        retry_kwargs={"max_retries": 3, "countdown": 2},
+        retry_kwargs={"max_retries": 2, "countdown": 2},
         on_failure=on_task_failure_handler,
         on_success=on_task_success_handler,
         track_started=True,

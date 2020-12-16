@@ -16,11 +16,11 @@ from servicelib.monitor_services import (
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from tenacity import retry
 
-from .computation_config import get_settings as get_computation_settings
 from .computation_config import (
     APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
     ComputationSettings,
 )
+from .computation_config import get_settings as get_computation_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import post_messages
@@ -60,7 +60,7 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
             )
             messages["nodeUpdated"] = {
                 "Node": node_id,
-                "Data": project["workbench"][node_id],
+                "data": project["workbench"][node_id],
             }
         elif data["Channel"] == "Log":
             messages["logger"] = data
