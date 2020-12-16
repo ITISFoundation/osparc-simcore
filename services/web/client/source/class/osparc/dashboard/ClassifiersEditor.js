@@ -41,25 +41,18 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     __classifiersTree: null,
 
     __buildLayout: function() {
-      this.__addClassifiersTree();
       this.__addRRIDSection();
+      this.__addClassifiersTree();
       this.__addButtons();
-    },
-
-    __addClassifiersTree: function() {
-      const studyData = this.__studyData;
-      const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
-      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
-      this._add(classifiersTree, {
-        flex: 1
-      });
     },
 
     __addRRIDSection: function() {
       const rridLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const logo = new qx.ui.basic.Image("osparc/rrid-logo.png").set({
-        maxHeight: 15
+        height: 22,
+        width: 20,
+        scale: true
       });
       rridLayout.add(logo);
 
@@ -73,13 +66,22 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
         flex: 1
       });
 
-      const addAndAssign = new qx.ui.form.Button(this.tr("Add and assign"));
-      addAndAssign.addListener("execute", () => {
-        this.__addAndAssign(textField.getValue());
+      const addRRIDClassfierBtn = new osparc.ui.form.FetchButton(this.tr("Add RRID Classifier"));
+      addRRIDClassfierBtn.addListener("execute", () => {
+        this.__addRRIDClassfier(textField.getValue(), addRRIDClassfierBtn);
       }, this);
-      rridLayout.add(addAndAssign);
+      rridLayout.add(addRRIDClassfierBtn);
 
       this._add(rridLayout);
+    },
+
+    __addClassifiersTree: function() {
+      const studyData = this.__studyData;
+      const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
+      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
+      this._add(classifiersTree, {
+        flex: 1
+      });
     },
 
     __addButtons: function() {
@@ -94,8 +96,25 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       this._add(buttons);
     },
 
-    __addAndAssign: function(rrid) {
-      console.log(rrid);
+    __addRRIDClassfier: function(rrid, btn) {
+      const params = {
+        url: {
+          "rrid": rrid
+        }
+      };
+      btn.setFetching(true);
+      osparc.data.Resources.fetch("classifiers", "postRRID", params)
+        .then(() => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("RRID classifier successfuly added"), "INFO");
+          // reload this and main tree
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invalid RRID"), "ERROR");
+          console.error(err);
+        })
+        .finally(() => {
+          btn.setFetching(false);
+        });
     },
 
     __saveClassifiers: function(saveBtn) {
