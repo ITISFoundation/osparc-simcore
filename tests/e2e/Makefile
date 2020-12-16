@@ -16,9 +16,7 @@ echo WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
 echo WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=0 >> $(SIMCORE_DOT_ENV)
 echo SERVICES_MAX_NANO_CPUS=2000000000 >> $(SIMCORE_DOT_ENV)
 echo SIDECAR_FORCE_CPU_NODE=1 >> $(SIMCORE_DOT_ENV)
-# NOTE: in devel mode the stack is started as a separate process and we wait so the stack files are created
-$(MAKE_C) $(REPO_BASE_DIR) up$(if $(findstring -dev,$@),-devel &,-prod)
-$(if $(findstring -dev,$@),sleep 30,)
+$(MAKE_C) $(REPO_BASE_DIR) up-prod
 endef
 
 define _setup_test_environment
@@ -49,8 +47,8 @@ endef
 
 # SETUP ##################
 
-.PHONY: install-ci install-dev install-prod clean-up
-install-ci install-dev install-prod: ## install e2e testing framework and start simcore/registry
+.PHONY: install-ci install-prod clean-up
+install-ci install-prod: ## install e2e testing framework and start simcore/registry
 	@$(_build_simcore_images)
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
