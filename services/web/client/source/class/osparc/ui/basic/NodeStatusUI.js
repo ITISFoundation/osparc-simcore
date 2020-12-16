@@ -56,14 +56,12 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
 
     __setupComputational: function() {
       this.__node.getStatus().bind("runningStatus", this.__label, "value", {
-        converter: status => {
-          return status;
-        }
+        converter: state => state ? qx.lang.String.firstUp(state.toLowerCase()) : ""
       });
 
       this.__node.getStatus().bind("runningStatus", this.__icon, "source", {
-        converter: status => {
-          switch (status) {
+        converter: state => {
+          switch (state) {
             case "SUCCESS":
               return "@FontAwesome5Solid/check/12";
             case "FAILED":
@@ -81,8 +79,9 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           }
         },
         onUpdate: (source, target) => {
-          const status = source.getRunningStatus();
-          switch (status) {
+          target.show();
+          const state = source.getRunningStatus();
+          switch (state) {
             case "SUCCESS":
               this.__removeClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor("ready-green");
@@ -102,6 +101,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "UNKNOWN":
             case "NOT_STARTED":
             default:
+              target.exclude();
               return;
           }
         }
