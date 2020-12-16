@@ -2,11 +2,12 @@
 
 import json
 import logging
-from typing import Dict, Optional
+from typing import Optional
 
 from aiohttp import web
 
 from . import groups_api
+from .groups_classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .groups_exceptions import (
     GroupNotFoundError,
     UserInGroupNotFoundError,
@@ -15,7 +16,7 @@ from .groups_exceptions import (
 from .login.decorators import RQT_USERID_KEY, login_required
 from .scicrunch_api import SciCrunchAPI
 from .scicrunch_db import ResearchResourceRepository
-from .scicrunch_models import ListOfResourceHits, ResourceView
+from .scicrunch_models import ListOfResourceHits, ResearchResource
 from .security_decorators import permission_required
 from .users_exceptions import UserNotFoundError
 
@@ -199,16 +200,17 @@ async def delete_group_user(request: web.Request):
 @permission_required("groups.*")
 async def get_group_classifiers(request: web.Request):
     gid = request.match_info["gid"]
-    type_of_tree_view: str = request.query.get("tree_view", "std")
+    classifiers_tree_view = {}
 
-    # if group is sparc
-    #  load rrids
-    #  build tree
+    repo = GroupClassifierRepository(request.app)
+    if not await repo.uses_rrids(gid):
+        classifiers_tree_view = await repo.get_validated_bundle(gid)
+    else:
+        classifiers_tree_view = await build_rrids_tree_view(
+            request.app, tree_view_mode=request.query.get("tree_view", "std")
+        )
 
-    bundle: Dict = await groups_api.get_group_classifier(request.app, gid)
-    return bundle
-
-    # TODO: special tree if sparc group
+    return classifiers_tree_view
 
 
 #  GET /groups/sparc/classifiers/scicrunch-resources/{rrid}
@@ -220,14 +222,13 @@ async def get_scicrunch_resource(request: web.Request):
 
     # check if in database first
     repo = ResearchResourceRepository(request.app)
-    resource_view: Optional[ResourceView] = await repo.get(rrid)
-
-    if not resource_view:
+    resource: Optional[ResearchResource] = await repo.get_resource(rrid)
+    if not resource:
         # otherwise, request to scicrunch service
         scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
-        resource_view = await scicrunch.get_resource_fields(rrid)
-
-    return resource_view.dict()
+        scicrunch_resource = await scicrunch.get_resource_fields(rrid)
+        resource = scicrunch_resource.convert_to_api_model()
+    return resource.dict()
 
 
 #  POST /groups/sparc/classifiers/scicrunch-resources/{rrid}
@@ -238,21 +239,13 @@ async def add_scicrunch_resource(request: web.Request):
 
     # validate first against scicrunch service
     scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
-    resource_view = await scicrunch.get_resource_fields(rrid)
-
-    # check if in database first
-    repo = ResearchResourceRepository(request.app)
-    await repo.upsert(
-        rrid=resource_view.scicrunch_id,
-        name=resource_view.get_name(),
-        description=resource_view.get_description(),
-    )
+    resource = (await scicrunch.get_resource_fields(rrid)).convert_to_api_model()
 
     # insert new or if exists, then update
+    repo = ResearchResourceRepository(request.app)
+    await repo.upsert(resource)
 
-    raise NotImplementedError()
-    # fails if not available
-    raise web.HTTPUnprocessableEntity(reason="Invalid rrid")
+    return resource.dict()
 
 
 #  GET /groups/sparc/classifiers/scicrunch-resources:search
