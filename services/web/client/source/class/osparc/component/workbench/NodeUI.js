@@ -179,10 +179,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
-      if (node.isDynamic()) {
-        const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
-        this.__chipContainer.add(nodeStatus);
-      }
+
+      const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
+      this.__chipContainer.add(nodeStatus);
     },
 
     populateNodeLayout: function() {

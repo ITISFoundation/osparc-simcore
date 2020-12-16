@@ -17,6 +17,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
 
     if (node.isFilePicker()) {
       this.__setupFilepicker();
+    } else if (node.isComputational()) {
+      this.__setupComputational();
     } else {
       this.__setupInteractive();
     }
@@ -50,6 +52,61 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         const regex = new RegExp(className.trim(), "g");
         element.setAttribute("class", currentClass.replace(regex, ""));
       }
+    },
+
+    __setupComputational: function() {
+      this.__node.getStatus().bind("runningStatus", this.__label, "value", {
+        converter: status => {
+          if (status === "ready") {
+            return this.tr("Ready");
+          } else if (status === "failed") {
+            return this.tr("Error");
+          } else if (status === "starting") {
+            return this.tr("Starting...");
+          } else if (status === "pending") {
+            return this.tr("Pending...");
+          } else if (status === "pulling") {
+            return this.tr("Pulling...");
+          } else if (status === "connecting") {
+            return this.tr("Connecting...");
+          }
+          return this.tr("Idle");
+        }
+      });
+
+      this.__node.getStatus().bind("runningStatus", this.__icon, "value", {
+        converter: status => {
+          console.log(status);
+          if (status === "ready") {
+            return "@FontAwesome5Solid/check/12";
+          } else if (status === "failed") {
+            return "@FontAwesome5Solid/exclamation-circle/12";
+          } else if (status === "starting") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "pending") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "pulling") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          } else if (status === "connecting") {
+            return "@FontAwesome5Solid/circle-notch/12";
+          }
+          return "@FontAwesome5Solid/check/12";
+        },
+        onUpdate: (source, target) => {
+          if (source.getRunningStatus() == null) {
+            this.__removeClass(this.__icon.getContentElement(), "rotate");
+          } else if (source.getRunningStatus() === "ready") {
+            this.__removeClass(this.__icon.getContentElement(), "rotate");
+            target.setTextColor("ready-green");
+          } else if (source.getRunningStatus() === "failed") {
+            this.__removeClass(this.__icon.getContentElement(), "rotate");
+            target.setTextColor("failed-red");
+          } else {
+            this.__addClass(this.__icon.getContentElement(), "rotate");
+            target.resetTextColor();
+          }
+        }
+      });
     },
 
     __setupInteractive: function() {
