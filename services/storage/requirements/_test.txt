@@ -32,12 +32,12 @@ lazy-object-proxy==1.4.3  # via -c requirements/_base.txt, astroid
 mccabe==0.6.1             # via pylint
 multidict==5.0.0          # via -c requirements/_base.txt, aiohttp, yarl
 numpy==1.19.4             # via pandas
-packaging==20.7           # via pytest, pytest-sugar
+packaging==20.8           # via pytest, pytest-sugar
 pandas==1.1.5             # via -r requirements/_test.in
 paramiko==2.7.2           # via docker
 pluggy==0.13.1            # via pytest
 ptvsd==4.3.2              # via -r requirements/_test.in
-py==1.9.0                 # via pytest
+py==1.10.0                # via pytest
 pycparser==2.20           # via cffi
 pylint==2.6.0             # via -r requirements/_test.in
 pynacl==1.4.0             # via paramiko
@@ -47,10 +47,10 @@ pytest-aiohttp==0.3.0     # via -r requirements/_test.in
 pytest-cov==2.10.1        # via -r requirements/_test.in
 pytest-docker==0.10.1     # via -r requirements/_test.in
 pytest-instafail==0.4.2   # via -r requirements/_test.in
-pytest-mock==3.3.1        # via -r requirements/_test.in
+pytest-mock==3.4.0        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
-pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
+pytest==6.2.1             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-docker, pytest-instafail, pytest-mock, pytest-sugar
 python-dateutil==2.8.1    # via -c requirements/_base.txt, pandas
 python-dotenv==0.15.0     # via docker-compose
 pytz==2020.1              # via -c requirements/_base.txt, pandas
