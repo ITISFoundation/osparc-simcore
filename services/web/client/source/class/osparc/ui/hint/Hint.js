@@ -41,7 +41,8 @@ qx.Class.define("osparc.ui.hint.Hint", {
     if (text) {
       this.setLayout(new qx.ui.layout.Basic());
       this.add(new qx.ui.basic.Label(text).set({
-        rich: true
+        rich: true,
+        maxWidth: 200
       }));
     } else {
       this.setLayout(new qx.ui.layout.Grow());
