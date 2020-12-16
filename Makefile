@@ -423,7 +423,7 @@ get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),,\
 					echo setting host file to redirect $(etc_host_entry); \
-					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts
+					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts)
 	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
 					echo allowing docker engine to use insecure local registry and restarting engine...; \
 					sudo echo {\"insecure-registries\": [\"$(local_registry):5000\"]} | sudo tee -a /etc/docker/daemon.json; service docker restart)
