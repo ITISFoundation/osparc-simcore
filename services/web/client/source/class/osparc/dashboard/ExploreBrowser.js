@@ -415,7 +415,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         tags
       });
 
-      const menu = this.__getStudyItemMenu(item, studyData);
+      const menu = this.__getStudyItemMenu(studyData);
       item.setMenu(menu);
       item.subscribeToFilterGroup("sideSearchFilter");
       item.addListener("execute", () => {
@@ -425,7 +425,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return item;
     },
 
-    __getStudyItemMenu: function(item, studyData) {
+    __getStudyItemMenu: function(studyData) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
@@ -433,6 +433,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const moreInfoButton = this.__getMoreInfoMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
+      }
+
+      if (this.self().isService(studyData) && osparc.data.model.Node.isComputational(studyData) && "metadata" in studyData) {
+        const qualityButton = this.__getServiceQualityMenuButton(studyData);
+        menu.add(qualityButton);
       }
 
       const classifiersButton = this.__getClassifiersMenuButton(studyData);
@@ -475,6 +480,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }
       }, this);
       return moreInfoButton;
+    },
+
+    __getServiceQualityMenuButton: function(studyData) {
+      const srvQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      srvQualityButton.addListener("execute", () => {
+        this.__openServiceQualityEditor(studyData);
+      }, this);
+      return srvQualityButton;
     },
 
     __getClassifiersMenuButton: function(studyData) {
@@ -611,6 +624,17 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         win.close();
       });
       serviceDetailsEditor.addListener("updateService", e => {
+        const newServiceData = e.getData();
+        this.__resetServiceItem(newServiceData);
+        win.close();
+      });
+    },
+
+    __openServiceQualityEditor: function(serviceData) {
+      const serviceQualityEditor = new osparc.component.metadata.ServiceQualityEditor(serviceData);
+      const title = serviceData.name + " - " + this.tr("Quality Assesment");
+      const win = osparc.ui.window.Window.popUpInWindow(serviceQualityEditor, title, 650, 760);
+      serviceQualityEditor.addListener("updateService", e => {
         const newServiceData = e.getData();
         this.__resetServiceItem(newServiceData);
         win.close();
