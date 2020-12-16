@@ -74,7 +74,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.__node.getStatus().bind("runningStatus", this.__icon, "value", {
+      this.__node.getStatus().bind("runningStatus", this.__icon, "source", {
         converter: status => {
           console.log(status);
           if (status === "ready") {
