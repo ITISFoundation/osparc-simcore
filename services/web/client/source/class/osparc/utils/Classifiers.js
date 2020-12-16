@@ -24,13 +24,13 @@ qx.Class.define("osparc.utils.Classifiers", {
   type: "static",
 
   statics: {
-    getClassifiersAsTree: function() {
+    getClassifiersAsTree: function(reload = false) {
       return new Promise((resolve, reject) => {
         const rootData = {
           label: "root",
           children: []
         };
-        osparc.store.Store.getInstance().getAllClassifiers()
+        osparc.store.Store.getInstance().getAllClassifiers(reload)
           .then(classifiers => {
             const keys = Object.keys(classifiers);
             if (keys.length) {
