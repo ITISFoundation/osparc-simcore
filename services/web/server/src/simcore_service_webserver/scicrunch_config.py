@@ -19,13 +19,10 @@ class SciCrunchSettings(BaseSettings):
         description="Base url to scicrunch API's entrypoint",
     )
 
-    # Login in https://scicrunch.org and get API Key under My Account -> API Keys
+    # NOTE: Login in https://scicrunch.org and get API Key under My Account -> API Keys
+    # WARNING: this needs to be setup in osparc-ops before deploying
     api_key: SecretStr
 
-    new_submission_url: HttpUrl = Field(
-        f"{SCICRUNCH_DEFAULT_URL}/resources/about/resource",
-        description="Url with the submission form for a new resource",
-    )
-
     class Config:
-        env_prefix = "KCORE_SCICRUNCH_"
+        case_sensitive = False
+        env_prefix = "SCICRUNCH_"
