@@ -69,13 +69,7 @@ async def _try_get_task_from_db(
         query=comp_tasks.select(for_update=True).where(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
-            & (
-                (
-                    (comp_tasks.c.job_id == None)
-                    & (comp_tasks.c.state == StateType.PENDING)
-                )
-                | (comp_tasks.c.state == StateType.FAILED)
-            )
+            & (comp_tasks.c.state == StateType.PENDING)
         ),
     )
     task: RowProxy = await result.fetchone()
@@ -134,7 +128,7 @@ async def _get_pipeline_from_db(
 
 
 async def _set_task_status(
-    db_engine: Engine, project_id: str, node_id: str, run_result
+    db_engine: Engine, project_id: str, node_id: str, run_result: StateType
 ):
     log.debug("setting task status of %s:%s to %s", project_id, node_id, run_result)
     async with db_engine.acquire() as connection:
@@ -177,8 +171,12 @@ async def inspect(
     user_id: str,
     project_id: str,
     node_id: Optional[str],
+    retry: int,
+    max_retries: int,
 ) -> Optional[List[str]]:
 
+    task: Optional[RowProxy] = None
+    graph: Optional[nx.DiGraph] = None
     try:
         log.debug(
             "ENTERING inspect with user %s pipeline:node %s: %s",
@@ -187,8 +185,6 @@ async def inspect(
             node_id,
         )
 
-        task: Optional[RowProxy] = None
-        graph: Optional[nx.DiGraph] = None
         async with db_engine.acquire() as connection:
             pipeline: RowProxy = await _get_pipeline_from_db(connection, project_id)
             graph = execution_graph(pipeline)
@@ -250,8 +246,11 @@ async def inspect(
                 user_id,
                 project_id,
                 node_id,
-                f"[sidecar]Task completed with result: {run_result.name}",
+                f"[sidecar]Task completed with result: {run_result.name} [Trial {retry+1}/{max_retries}]",
             )
+            if (retry + 1) < max_retries and run_result == StateType.FAILED:
+                # try again!
+                run_result = StateType.PENDING
             await _set_task_status(db_engine, project_id, node_id, run_result)
 
     return next_task_nodes

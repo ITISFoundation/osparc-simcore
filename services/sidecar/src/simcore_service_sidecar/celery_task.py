@@ -25,14 +25,18 @@ def _shared_task_dispatch(
     celery_request, app: Celery, user_id: str, project_id: str, node_id: Optional[str]
 ) -> None:
     log.info(
-        "Run sidecar for user %s, project %s, node %s",
+        "Run sidecar for user %s, project %s, node %s retry [%s/%s]",
         user_id,
         project_id,
         node_id,
+        celery_request.request.retries,
+        celery_request.max_retries,
     )
     try:
         next_task_nodes = wrap_async_call(
             run_sidecar(
+                celery_request.request.retries,
+                celery_request.max_retries,
                 celery_request.request.id,
                 user_id,
                 project_id,

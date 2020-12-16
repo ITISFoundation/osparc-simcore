@@ -48,6 +48,8 @@ async def perdiodicaly_check_if_aborted(is_aborted_cb: Callable[[], bool]) -> No
 
 @log_decorator(logger=log, level=logging.INFO)
 async def run_sidecar(
+    retry: int,
+    max_retries: int,
     job_id: str,
     user_id: str,
     project_id: str,
@@ -62,12 +64,18 @@ async def run_sidecar(
         else None
     )
     try:
-        async with DBContextManager() as db_engine:
-            async with RabbitMQ() as rabbit_mq:
-                next_task_nodes: Optional[List[str]] = await inspect(
-                    db_engine, rabbit_mq, job_id, user_id, project_id, node_id=node_id
-                )
-                return next_task_nodes
+        async with DBContextManager() as db_engine, RabbitMQ() as rabbit_mq:
+            next_task_nodes: Optional[List[str]] = await inspect(
+                db_engine,
+                rabbit_mq,
+                job_id,
+                user_id,
+                project_id,
+                node_id=node_id,
+                retry=retry,
+                max_retries=max_retries,
+            )
+            return next_task_nodes
     finally:
         if abortion_task:
             abortion_task.cancel()
