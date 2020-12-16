@@ -348,6 +348,10 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/groups/{gid}/classifiers"
+          },
+          postRRID: {
+            method: "POST",
+            url: statics.API + "/groups/sparc/classifiers/scicrunch-resources/{rrid}"
           }
         }
       },
