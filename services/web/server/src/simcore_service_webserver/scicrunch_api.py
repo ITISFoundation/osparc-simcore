@@ -89,6 +89,8 @@ class SciCrunchAPI:
             host=self.settings.api_base_url.host,
         )
 
+    # Website links ---------
+
     def get_portal_link(self) -> str:
         return str(self.base_url.with_path("/resources/"))
 
@@ -98,6 +100,11 @@ class SciCrunchAPI:
                 q="undefined", l=rrid
             )
         )
+
+    def get_new_submission_link(self) -> str:
+        return str(self.base_url.with_path("/resources/about/resource"))
+
+    # Application instance ---------
 
     @classmethod
     def acquire_instance(
@@ -120,6 +127,8 @@ class SciCrunchAPI:
             raise web.HTTPServiceUnavailable(
                 reason="Communication with scicrunch.org service could not be setup"
             )
+
+    # API calls --------
 
     @classmethod
     def validate_identifier(cls, rrid: str) -> str:
