@@ -11,7 +11,7 @@ export DOCKER_IMAGE_TAG
 
 install() {
   pushd tests/e2e
-  make install
+  make install-ci
   popd
 }
 

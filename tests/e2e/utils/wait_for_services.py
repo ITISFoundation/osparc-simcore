@@ -79,7 +79,9 @@ def osparc_simcore_root_dir() -> Path:
 
 
 def core_docker_compose_file() -> Path:
-    return osparc_simcore_root_dir() / ".stack-simcore-production.yml"
+    stack_files = list(osparc_simcore_root_dir().glob(".stack-simcore*"))
+    assert stack_files
+    return stack_files[0]
 
 
 def core_services() -> List[str]:
@@ -116,23 +118,34 @@ def by_service_creation(service):
 
 def wait_for_services() -> int:
     expected_services = core_services() + ops_services()
-
+    started_services = []
     client = docker.from_env()
-    started_services = sorted(
-        [
-            s
-            for s in client.services.list()
-            if s.name.split("_")[-1] in expected_services
-        ],
-        key=by_service_creation,
-    )
+    try:
+        for attempt in Retrying(
+            stop=stop_after_attempt(MAX_RETRY_COUNT),
+            wait=wait_fixed(WAIT_BEFORE_RETRY),
+        ):
+            with attempt:
+                started_services = sorted(
+                    [
+                        s
+                        for s in client.services.list()
+                        if s.name.split("_")[-1] in expected_services
+                    ],
+                    key=by_service_creation,
+                )
 
-    assert len(started_services), "no services started!"
-    assert len(expected_services) == len(started_services), (
-        f"Some services are missing or unexpected:\n"
-        "expected: {len(expected_services)} {expected_services}\n"
-        "got: {len(started_services)} {[s.name for s in started_services]}"
-    )
+                assert len(started_services), "no services started!"
+                assert len(expected_services) == len(started_services), (
+                    "Some services are missing or unexpected:\n"
+                    f"expected: {len(expected_services)} {expected_services}\n"
+                    f"got: {len(started_services)} {[s.name for s in started_services]}"
+                )
+    except RetryError:
+        print(
+            f"found these services: {started_services}\nexpected services: {expected_services}"
+        )
+        return os.EX_SOFTWARE
 
     for service in started_services:
 
