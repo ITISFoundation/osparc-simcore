@@ -266,12 +266,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__requestStartPipeline(secondaryStudyId);
         });
       } else {
-        this.getStudy().getWorkbench().clearProgressData();
-        this.__requestStartPipeline(this.getStudy().getUuid());
+        const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+        if (this.__isSelectionEmpty(selectedNodeUIs)) {
+          this.getStudy().getWorkbench().clearProgressData();
+          this.__requestStartPipeline(this.getStudy().getUuid());
+        } else {
+          const selectedNodeIDs = [];
+          selectedNodeUIs.forEach(nodeUI => {
+            selectedNodeIDs.push(nodeUI.getNodeId());
+          });
+          // OM: clear only selected nodes
+          this.getStudy().getWorkbench().clearProgressData();
+          this.__requestStartPipeline(this.getStudy().getUuid(), selectedNodeIDs);
+        }
       }
     },
 
-    __requestStartPipeline: function(studyId) {
+    __requestStartPipeline: function(studyId, selectedNodeIDs = []) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const runButton = this.__mainPanel.getControls().getStartButton();
@@ -288,9 +299,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         runButton.setFetching(false);
       }, this);
-      req.send();
+      if (selectedNodeIDs.length) {
+        req.send(selectedNodeIDs);
+        this.getLogger().info(null, "Starting partial pipeline");
+      } else {
+        req.send();
+        this.getLogger().info(null, "Starting pipeline");
+      }
 
-      this.getLogger().info(null, "Starting pipeline");
       return true;
     },
 
