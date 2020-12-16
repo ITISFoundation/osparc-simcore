@@ -14,9 +14,7 @@ from simcore_service_webserver.statics import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )
-from simcore_service_webserver.statics_settings import (
-    FrontEndAppSettings,
-)
+from simcore_service_webserver.statics_settings import FrontEndAppSettings
 
 FOGBUGZ_NEWCASE_URL_TEMPLATE = r"https://z43.manuscript.com/f/cases/new?command=new&pg=pgEditBug&ixProject={project}&ixArea={area}"
 
@@ -107,8 +105,8 @@ def test_frontend_app_settings(
     assert "fogbugz_url" in statics
 
 
-def test_default_webserver_env_dev(env_devel_config):
-    assert "WEBSERVER_FOGBUGZ_NEWCASE_URL" in env_devel_config
-    assert env_devel_config[
+def test_default_webserver_env_dev(env_devel_dict):
+    assert "WEBSERVER_FOGBUGZ_NEWCASE_URL" in env_devel_dict
+    assert env_devel_dict[
         "WEBSERVER_FOGBUGZ_NEWCASE_URL"
     ] == FOGBUGZ_NEWCASE_URL_TEMPLATE.format(project=45, area=449)
