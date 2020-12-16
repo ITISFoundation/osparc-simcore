@@ -57,53 +57,52 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     __setupComputational: function() {
       this.__node.getStatus().bind("runningStatus", this.__label, "value", {
         converter: status => {
-          if (status === "ready") {
-            return this.tr("Ready");
-          } else if (status === "failed") {
-            return this.tr("Error");
-          } else if (status === "starting") {
-            return this.tr("Starting...");
-          } else if (status === "pending") {
-            return this.tr("Pending...");
-          } else if (status === "pulling") {
-            return this.tr("Pulling...");
-          } else if (status === "connecting") {
-            return this.tr("Connecting...");
-          }
-          return this.tr("Idle");
+          return status;
         }
       });
 
       this.__node.getStatus().bind("runningStatus", this.__icon, "source", {
         converter: status => {
-          console.log(status);
-          if (status === "ready") {
-            return "@FontAwesome5Solid/check/12";
-          } else if (status === "failed") {
-            return "@FontAwesome5Solid/exclamation-circle/12";
-          } else if (status === "starting") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "pending") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "pulling") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "connecting") {
-            return "@FontAwesome5Solid/circle-notch/12";
+          switch (status) {
+            case "SUCCESS":
+              return "@FontAwesome5Solid/check/12";
+            case "FAILED":
+            case "ABORTED":
+              return "@FontAwesome5Solid/exclamation-circle/12";
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+            case "RETRY":
+              return "@FontAwesome5Solid/circle-notch/12";
+            case "UNKNOWN":
+            case "NOT_STARTED":
+            default:
+              return "";
           }
-          return "@FontAwesome5Solid/check/12";
         },
         onUpdate: (source, target) => {
-          if (source.getRunningStatus() == null) {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-          } else if (source.getRunningStatus() === "ready") {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-            target.setTextColor("ready-green");
-          } else if (source.getRunningStatus() === "failed") {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-            target.setTextColor("failed-red");
-          } else {
-            this.__addClass(this.__icon.getContentElement(), "rotate");
-            target.resetTextColor();
+          const status = source.getRunningStatus();
+          switch (status) {
+            case "SUCCESS":
+              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor("ready-green");
+              return;
+            case "FAILED":
+            case "ABORTED":
+              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor("failed-red");
+              return;
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+            case "RETRY":
+              this.__addClass(this.__icon.getContentElement(), "rotate");
+              target.resetTextColor();
+              return;
+            case "UNKNOWN":
+            case "NOT_STARTED":
+            default:
+              return;
           }
         }
       });
