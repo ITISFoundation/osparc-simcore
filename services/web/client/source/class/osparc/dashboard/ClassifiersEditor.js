@@ -106,7 +106,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       osparc.data.Resources.fetch("classifiers", "postRRID", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("RRID classifier successfuly added"), "INFO");
-          // reload this and main tree
+          this.__classifiersTree.reloadTree();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invalid RRID"), "ERROR");
