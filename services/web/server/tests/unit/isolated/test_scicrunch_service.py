@@ -19,10 +19,10 @@ from simcore_service_webserver.scicrunch import SciCrunchAPI, SciCrunchSettings
 from simcore_service_webserver.scicrunch_api import ValidationResult
 from simcore_service_webserver.scicrunch_models import ListOfResourceHits
 
-RRID_PORTAL_API_KEY = os.environ.get("RRID_PORTAL_API_KEY")
+SCICRUNCH_API_KEY = os.environ.get("SCICRUNCH_API_KEY")
 
 pytestmark = pytest.mark.skipif(
-    RRID_PORTAL_API_KEY is None,
+    SCICRUNCH_API_KEY is None or "replace me" in SCICRUNCH_API_KEY.lower(),
     reason="Testing against actual service is intended for manual exploratory testing ONLY",
 )
 
@@ -40,7 +40,7 @@ async def fake_app(monkeypatch, loop):
 @pytest.fixture
 async def scicrunch(fake_app) -> SciCrunchAPI:
     scicrunch_api = SciCrunchAPI.acquire_instance(
-        app=fake_app, settings=SciCrunchSettings(api_key=RRID_PORTAL_API_KEY)
+        app=fake_app, settings=SciCrunchSettings(api_key=SCICRUNCH_API_KEY)
     )
     assert scicrunch_api is SciCrunchAPI.get_instance(fake_app)
     return scicrunch_api
