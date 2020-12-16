@@ -48,13 +48,13 @@ async def perdiodicaly_check_if_aborted(is_aborted_cb: Callable[[], bool]) -> No
 
 @log_decorator(logger=log, level=logging.INFO)
 async def run_sidecar(
-    retry: int,
-    max_retries: int,
     job_id: str,
     user_id: str,
     project_id: str,
     node_id: Optional[str] = None,
     is_aborted_cb: Optional[Callable[[], bool]] = None,
+    retry: int = 1,
+    max_retries: int = 1,
 ) -> Optional[List[str]]:
     abortion_task = (
         asyncio.get_event_loop().create_task(
