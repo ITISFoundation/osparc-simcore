@@ -41,13 +41,21 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     __classifiersTree: null,
 
     __buildLayout: function() {
+      this.__addClassifiersTree();
+      this.__addButtons();
+    },
+
+    __addClassifiersTree: function() {
       const studyData = this.__studyData;
       const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
       const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
       this._add(classifiersTree, {
         flex: 1
       });
+    },
 
+
+    __addButtons: function() {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
         alignX: "right"
       }));
