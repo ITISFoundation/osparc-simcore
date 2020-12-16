@@ -1,14 +1,10 @@
 include ../../scripts/common.Makefile
 
 SIMCORE_DOT_ENV = $(abspath $(CURDIR)/../../.env)
-DOT_ENV_BACKUP = $(SIMCORE_DOT_ENV).bak
-
-$(DOT_ENV_BACKUP): $(SIMCORE_DOT_ENV)
-	$(if $(wildcard $@), \
-	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
-	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 
+# UTILS ############
+.PHONY: _simcore-images _local-registry _simcore-up _test_environment _wait-for-services _transfer-images-to-registry _inject-templates-in-db
 _simcore-images:
 	@$(MAKE_C) $(REPO_BASE_DIR) pull-version tag-local || $(MAKE_C) ../.. build-x
 	@$(MAKE_C) $(REPO_BASE_DIR) info-images
@@ -32,35 +28,10 @@ _test_environment:
 	# wait for services being ready
 	@$(VENV_DIR)/bin/python utils/wait_for_services.py
 
-.PHONY: install
-install: _simcore-images _local-registry _simcore-up _test_environment ## install testing framework
-	@$(MAKE) _simcore-images
-	@$(MAKE) _local-registry
-	@$(MAKE) _simcore-up
-	@$(MAKE) _test_environment
-	@$(MAKE) transfer-images-to-registry
-	@$(MAKE) inject-templates-in-db
-
-clean-up: ## remove everything
-	@$(MAKE_C) $(REPO_BASE_DIR) down
-	@$(MAKE_C) $(REPO_BASE_DIR) leave
-	@$(MAKE_C) $(REPO_BASE_DIR) rm-local-registry
-
-
-registry-up: ## deploys the insecure docker registry in the simcore network
-	docker stack deploy -c docker-compose.yml registry
-
-registry-down: ## bring the docker registry down
-	docker stack rm registry
-
-
-.PHONY: wait-for-services
-wait-for-services:  _check_venv_active ## wait for simcore services to be up
+_wait-for-services:  _check_venv_active
 	@python utils/wait_for_services.py
 
-
-.PHONY: transfer-images-to-registry
-transfer-images-to-registry: ## transfer images to registry
+_transfer-images-to-registry:
 	# pushing sleeper image
 	@docker pull itisfoundation/sleeper:1.0.0
 	@docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
@@ -70,12 +41,33 @@ transfer-images-to-registry: ## transfer images to registry
 	@curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
 
 
-.PHONY: inject-templates-in-db
-inject-templates-in-db: ## inject project templates
+_inject-templates-in-db:
 	@docker cp tutorials/sleepers_project_template_sql.csv $$(docker ps -q --filter="name=postgres"):/template_projects_sleepers_project_template_sql.csv
 	@docker exec $$(docker ps -q --filter="name=postgres") psql --user scu --dbname simcoredb --command "\copy projects from '/template_projects_sleepers_project_template_sql.csv' csv header;"
 
 
+# SETUP ##################
+
+.PHONY: install clean-up
+install: _simcore-images _local-registry _simcore-up _test_environment ## install e2e testing framework and start simcore/registry
+	@$(MAKE) _simcore-images
+	@$(MAKE) _local-registry
+	@$(MAKE) _simcore-up
+	@$(MAKE) _test_environment
+	@$(MAKE) _transfer-images-to-registry
+	@$(MAKE) _inject-templates-in-db
+
+clean-up: ## remove everything
+	# switch simcore stack down
+	@$(MAKE_C) $(REPO_BASE_DIR) down
+	# leave docker swarm
+	@$(MAKE_C) $(REPO_BASE_DIR) leave
+	# remove local registry
+	@$(MAKE_C) $(REPO_BASE_DIR) rm-local-registry
+
+
+
+# TEST ###############
 .PHONY: test
 test: ## test the platform
 	# tests

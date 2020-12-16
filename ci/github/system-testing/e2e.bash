@@ -22,27 +22,6 @@ test() {
 }
 
 
-
-
-uninstall_insecure_registry() {
-  echo "------------------ reverting .env"
-  if [[ -f .env.bak ]]; then
-    mv .env.bak .env
-  fi
-
-  echo "------------------ reverting /etc/hosts"
-  if [[ -f .hosts.bak ]]; then
-    sudo mv .hosts.bak /etc/hosts
-  fi
-
-  if [[ -f .daemon.bak ]]; then
-    echo "------------------ reverting /etc/docker/daemon.json"
-    sudo mv .daemon.bak /etc/docker/daemon.json
-    echo "------------------ restarting daemon [takes some time]"
-    sudo service docker restart
-  fi
-}
-
 setup_images() {
   echo "--------------- preparing docker images..."
   make pull-version || ( (make pull-cache || true) && make build-x tag-version)
@@ -50,6 +29,20 @@ setup_images() {
 
 }
 
+clean_up() {
+  echo "--------------- listing services running..."
+  docker service ls
+  echo "--------------- listing service details..."
+  docker service ps --no-trunc $(docker service ls --quiet)
+  echo "--------------- listing container details..."
+  docker container ps -a
+  echo "--------------- listing images available..."
+  docker images
+  echo "--------------- switching off..."
+  pushd tests/e2e
+  make clean-up
+  popd
+}
 
 dump_docker_logs() {
   # get docker logs
@@ -65,21 +58,6 @@ dump_docker_logs() {
   (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage     >simcore_logs/storage.log 2>&1) || true
   (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_migration   >simcore_logs/migration.log 2>&1) || true
   (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_postgres    >simcore_logs/postgres.log 2>&1) || true
-}
-
-clean_up() {
-  echo "--------------- listing services running..."
-  docker service ls
-  echo "--------------- listing service details..."
-  docker service ps --no-trunc $(docker service ls --quiet)
-  echo "--------------- listing container details..."
-  docker container ps -a
-  echo "--------------- listing images available..."
-  docker images
-  echo "--------------- switching off..."
-  make leave
-  echo "--------------- uninstalling insecure registry"
-  uninstall_insecure_registry
 }
 
 # Check if the function exists (bash specific)
