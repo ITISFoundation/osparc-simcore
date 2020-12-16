@@ -108,8 +108,43 @@ qx.Class.define("osparc.component.form.FieldWHint", {
         this.__hint = new osparc.ui.hint.Hint(this.__infoButton, this.__hintText).set({
           active: false
         });
-        this.__infoButton.addListener("mouseover", () => this.__hint.show(), this);
-        this.__infoButton.addListener("mouseout", () => this.__hint.exclude(), this);
+
+        const that = this;
+        const showHint = () => {
+          // eslint-disable-next-line no-underscore-dangle
+          that.__hint.show();
+        };
+        const hideHint = () => {
+          // eslint-disable-next-line no-underscore-dangle
+          that.__hint.exclude();
+        };
+
+        // Make hint "modal" when info button is clicked
+        const tapListener = event => {
+          // eslint-disable-next-line no-underscore-dangle
+          const hintElement = that.__hint.getContentElement().getDomElement();
+          const boundRect = hintElement.getBoundingClientRect();
+          if (event.x > boundRect.x &&
+            event.y > boundRect.y &&
+            event.x < (boundRect.x + boundRect.width) &&
+            event.y < (boundRect.y + boundRect.height)) {
+            return;
+          }
+          // eslint-disable-next-line no-underscore-dangle
+          hideHint();
+          document.removeEventListener("mousedown", tapListener);
+          this.__infoButton.addListener("mouseover", showHint);
+          this.__infoButton.addListener("mouseout", hideHint);
+        };
+
+        this.__infoButton.addListener("mouseover", showHint);
+        this.__infoButton.addListener("mouseout", hideHint);
+        this.__infoButton.addListener("tap", () => {
+          showHint();
+          document.addEventListener("mousedown", tapListener);
+          this.__infoButton.removeListener("mouseover", showHint);
+          this.__infoButton.removeListener("mouseout", hideHint);
+        }, this);
 
         this.__field.bind("visibility", this, "visibility");
       }
