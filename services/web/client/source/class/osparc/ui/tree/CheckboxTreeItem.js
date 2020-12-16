@@ -67,8 +67,12 @@ qx.Class.define("osparc.ui.tree.CheckboxTreeItem", {
 
     __recreateInfoButton: function() {
       if (this.__infoButton) {
-        this._remove(this.__infoButton);
+        const idx = this._indexOf(this.__infoButton);
+        if (idx !== -1) {
+          this._remove(this.__infoButton);
+        }
       }
+
       const desc = this.getDescription();
       const url = this.getUrl();
       const hints = [];
