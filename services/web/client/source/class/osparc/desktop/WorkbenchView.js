@@ -254,7 +254,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__doStartPipeline();
         })
         .catch(() => {
-          this.getLogger().error(null, "Couldn't run the pipeline: Pipeline failed to save.");
+          this.getLogger().error(null, "Run failed");
           runButton.setFetching(false);
         });
     },
