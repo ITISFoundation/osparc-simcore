@@ -228,6 +228,11 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const selectedNodes = msg.getData();
       this.__groupButton.setVisibility(selectedNodes.length ? "visible" : "excluded");
       this.__ungroupButton.setVisibility((selectedNodes.length === 1 && selectedNodes[0].isContainer()) ? "visible" : "excluded");
+      if (selectedNodes.length) {
+        this.__startButton.setLabel(this.tr("Run selection"));
+      } else {
+        this.__startButton.setLabel(this.tr("Run"));
+      }
     },
 
     __attachEventHandlers: function() {
