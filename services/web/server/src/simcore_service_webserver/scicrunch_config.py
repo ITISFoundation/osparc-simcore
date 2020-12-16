@@ -9,6 +9,7 @@ SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"
 # "SCR" for the SciCrunch registry of tools).
 # SEE https://scicrunch.org/resources
 
+STRICT_RRID_PATTERN = r"(RRID:)\s*(SCR_\d+)"
 RRID_PATTERN = r"(RRID:)?\s*(SCR_\d+)"
 
 

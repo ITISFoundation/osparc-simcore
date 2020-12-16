@@ -47,20 +47,20 @@ async def get_resource_fields(
 
 
 async def autocomplete_by_name(
-    resource_name_as: str, client: ClientSession, settings: SciCrunchSettings
+    guess_name: str, client: ClientSession, settings: SciCrunchSettings
 ) -> ListOfResourceHits:
     async with client.get(
         f"{settings.api_base_url}/resource/fields/autocomplete",
         params={
             "key": settings.api_key.get_secret_value(),
             "field": "Resource Name",
-            "value": resource_name_as,
+            "value": guess_name.strip(),
         },
         raise_for_status=True,
     ) as resp:
         body = await resp.json()
         assert body.get("success")  # nosec
-        return ListOfResourceHits(__root__=body.get("data", []))
+        return ListOfResourceHits.parse_obj(body.get("data", []))
 
 
 class ValidationResult(IntEnum):
@@ -112,7 +112,7 @@ class SciCrunchAPI:
     ) -> "SciCrunchAPI":
         """ Returns single instance for the application and stores it """
         obj = cls.get_instance(app)
-        if not obj:
+        if obj is None:
             session = get_client_session(app)
             app[f"{__name__}.SciCrunchAPI"] = obj = cls(session, settings)
         return obj
@@ -123,10 +123,11 @@ class SciCrunchAPI:
     ) -> Optional["SciCrunchAPI"]:
         """ Get's application instance """
         obj = app.get(f"{__name__}.SciCrunchAPI")
-        if obj is None and raises:
+        if raises and obj is None:
             raise web.HTTPServiceUnavailable(
-                reason="Communication with scicrunch.org service could not be setup"
+                reason="Link to scicrunch.org services is currently disabled."
             )
+        return obj
 
     # API calls --------
 
@@ -134,7 +135,10 @@ class SciCrunchAPI:
     def validate_identifier(cls, rrid: str) -> str:
         match = cls.RRID_RE.match(rrid.strip())
         if match:
-            return match.group(1)
+            rrid = match.group(2)  # WARNING: captures indexing is 1-based
+            assert rrid and isinstance(rrid, str), "Captured {rrid}"  # nosec
+            return rrid
+
         raise web.HTTPUnprocessableEntity(reason=f"Invalid format for an RRID '{rrid}'")
 
     async def validate_resource(self, rrid: str) -> ValidationResult:
@@ -175,7 +179,11 @@ class SciCrunchAPI:
 
     async def search_resource(self, name_as: str) -> ListOfResourceHits:
         try:
+            # FIXME: timeout for this should be larger than standard
             return await autocomplete_by_name(name_as, self.client, self.settings)
         except (aiohttp.ClientError, ValidationError):
             logger.debug("Failed to autocomplete : %s", name_as)
         return ListOfResourceHits(__root__=[])
+
+
+# FIXME: scicrunch timeouts should raise -> Service not avialable with a msg that scicrunch is currently not responding

@@ -4,13 +4,12 @@
 
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID
+from typing import Any, Dict, List, Union
 
-from pydantic import BaseModel, Field, constr
+from pydantic import BaseModel, Field, constr, validator
 from yarl import URL
 
-from .scicrunch_config import RRID_PATTERN
+from .scicrunch_config import STRICT_RRID_PATTERN
 
 logger = logging.getLogger(__name__)
 
@@ -18,19 +17,27 @@ logger = logging.getLogger(__name__)
 # webserver API models -----------------------------------------
 class ResearchResource(BaseModel):
     rrid: constr(
-        regex=RRID_PATTERN
+        regex=STRICT_RRID_PATTERN
     )  # unique identifier used as classifier, i.e. to tag studies and services
     name: str
     description: str
+
+    @validator("rrid", pre=True)
+    @classmethod
+    def format_rrid(cls, v):
+        v = v.strip()
+        if not v.startswith("RRID:"):
+            return f"RRID: {v}"
+        return v
+
+    class Config:
+        orm_mode = True
 
 
 # postgres_database.scicrunch_resources ORM --------------------
 class ResearchResourceAtdB(ResearchResource):
     creation_date: datetime
     last_change_date: datetime
-
-    class Config:
-        orm_mode = True
 
 
 # scrunch service API models -----------------------------------
@@ -99,4 +106,4 @@ class ResourceHit(BaseModel):
 
 
 class ListOfResourceHits(BaseModel):
-    __root__ = List[ResourceHit]
+    __root__: List[ResourceHit]

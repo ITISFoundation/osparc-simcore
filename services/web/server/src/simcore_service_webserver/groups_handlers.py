@@ -199,7 +199,7 @@ async def delete_group_user(request: web.Request):
 @login_required
 @permission_required("groups.*")
 async def get_group_classifiers(request: web.Request):
-    gid = request.match_info["gid"]
+    gid = int(request.match_info["gid"])  # FIXME: raise http enetity error if not int
     classifiers_tree_view = {}
 
     repo = GroupClassifierRepository(request.app)
@@ -237,13 +237,17 @@ async def get_scicrunch_resource(request: web.Request):
 async def add_scicrunch_resource(request: web.Request):
     rrid = request.match_info["rrid"]
 
-    # validate first against scicrunch service
-    scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
-    resource = (await scicrunch.get_resource_fields(rrid)).convert_to_api_model()
-
-    # insert new or if exists, then update
+    # check if exists
     repo = ResearchResourceRepository(request.app)
-    await repo.upsert(resource)
+    resource: Optional[ResearchResource] = await repo.get_resource(rrid)
+    if not resource:
+        # then request scicrunch service
+        scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+        scicrunch_resource = await scicrunch.get_resource_fields(rrid)
+        resource = scicrunch_resource.convert_to_api_model()
+
+        # insert new or if exists, then update
+        await repo.upsert(resource)
 
     return resource.dict()
 
@@ -252,9 +256,9 @@ async def add_scicrunch_resource(request: web.Request):
 @login_required
 @permission_required("groups.*")
 async def search_scicrunch_resources(request: web.Request):
-    resource_name_as: str = request.query["resource_name_as"]
+    guess_name: str = request.query["guess_name"]
 
     scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
-    hits: ListOfResourceHits = await scicrunch.search_resource(resource_name_as)
+    hits: ListOfResourceHits = await scicrunch.search_resource(guess_name)
 
-    return hits
+    return hits.dict()["__root__"]

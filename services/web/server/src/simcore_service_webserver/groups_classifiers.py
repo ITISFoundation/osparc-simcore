@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 
 import sqlalchemy as sa
 from aiohttp import web
+from aiopg.sa.result import RowProxy
 
 # DATABASE --------
 from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr
@@ -79,11 +80,12 @@ class GroupClassifierRepository:
 
     async def uses_rrids(self, gid: int) -> bool:
         async with self.engine.acquire() as conn:
-            return await conn.scalar(
-                sa.select([group_classifiers.c.uses_scicrunch_rrids]).where(
+            value: Optional[RowProxy] = await conn.scalar(
+                sa.select([group_classifiers.c.uses_scicrunch]).where(
                     group_classifiers.c.gid == gid
                 )
             )
+            return bool(value)
 
 
 async def build_rrids_tree_view(app, tree_view_mode="std"):
@@ -96,7 +98,7 @@ async def build_rrids_tree_view(app, tree_view_mode="std"):
     repo = ResearchResourceRepository(app)
 
     flat_tree_view = {}
-    for resource in await repo.list_all():
+    for resource in await repo.list_resources():
         try:
             validated_item = ClassifierItem(
                 classifier=resource.rrid,

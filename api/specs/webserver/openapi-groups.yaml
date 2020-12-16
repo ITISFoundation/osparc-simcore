@@ -272,7 +272,7 @@ paths:
   /groups/sparc/classifiers/scicrunch-resources:search:
      get:
       parameters:
-        - name: resource_name_as
+        - name: guess_name
           in: query
           required: true
           schema:
