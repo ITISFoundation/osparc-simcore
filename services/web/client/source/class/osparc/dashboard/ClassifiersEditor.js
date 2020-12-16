@@ -42,6 +42,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
 
     __buildLayout: function() {
       this.__addClassifiersTree();
+      this.__addRRIDSection();
       this.__addButtons();
     },
 
@@ -54,6 +55,32 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       });
     },
 
+    __addRRIDSection: function() {
+      const rridLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const logo = new qx.ui.basic.Image("osparc/rrid-logo.png").set({
+        maxHeight: 15
+      });
+      rridLayout.add(logo);
+
+      const linkLabel = new osparc.ui.basic.LinkLabel(this.tr("Provide RRID"), "https://scicrunch.org/resources").set({
+        alignY: "middle"
+      });
+      rridLayout.add(linkLabel);
+
+      const textField = new qx.ui.form.TextField();
+      rridLayout.add(textField, {
+        flex: 1
+      });
+
+      const addAndAssign = new qx.ui.form.Button(this.tr("Add and assign"));
+      addAndAssign.addListener("execute", () => {
+        this.__addAndAssign(textField.getValue());
+      }, this);
+      rridLayout.add(addAndAssign);
+
+      this._add(rridLayout);
+    },
 
     __addButtons: function() {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
@@ -65,6 +92,10 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       }, this);
       buttons.add(saveBtn);
       this._add(buttons);
+    },
+
+    __addAndAssign: function(rrid) {
+      console.log(rrid);
     },
 
     __saveClassifiers: function(saveBtn) {
