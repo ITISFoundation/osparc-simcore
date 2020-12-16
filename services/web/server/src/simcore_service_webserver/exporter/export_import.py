@@ -1,6 +1,6 @@
-import json
 import logging
-
+import datetime
+import json
 from pathlib import Path
 from collections import deque, namedtuple
 from typing import Deque
@@ -8,9 +8,13 @@ from typing import Deque
 from aiohttp import web
 
 from .archiving import zip_folder
+from .file_downloader import ParallelDownloader
+from .serialize import dumps
+
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.storage_handlers import get_file_download_url
-from .file_downloader import ParallelDownloader
+from simcore_service_webserver.utils import format_datetime
+
 
 log = logging.getLogger(__name__)
 
@@ -38,8 +42,8 @@ async def download_files(download_links: Deque[LinkAndPath], storage_path: Path)
 async def generate_directory_contents(
     app: web.Application, dir_path: Path, project_id: str, user_id: int
 ) -> None:
-    text_file = dir_path / "manifest.json"
-    project_json = dir_path / "project.json"
+    manifest_path = dir_path / "manifest.yaml"
+    project_path = dir_path / "project.yaml"
     storage_path = dir_path / "storage"
 
     project_data = await get_project_for_user(
@@ -82,10 +86,12 @@ async def generate_directory_contents(
     # TODO: maybe move this to a Pydantic model
     manifest = {
         "version": EXPORT_VERSION,
+        "creation_date_utc": format_datetime(datetime.datetime.utcnow()),
     }
 
-    text_file.write_text(json.dumps(manifest))
-    project_json.write_text(json.dumps(project_data))
+    manifest_path.write_text(dumps(manifest))
+    pure_dict_project_data = json.loads(json.dumps(project_data))
+    project_path.write_text(dumps(pure_dict_project_data))
 
 
 # neagu-wkst:9081/v0/projects/d3cfd554-3ed9-11eb-9dd5-02420a0000f6/export?compressed=true
