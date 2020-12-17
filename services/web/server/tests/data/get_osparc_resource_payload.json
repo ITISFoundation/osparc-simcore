@@ -1,0 +1,448 @@
+
+{
+  "data": {
+    "fields": [
+      {
+        "field": "Resource Name",
+        "required": true,
+        "type": "text",
+        "max_number": "1",
+        "value": "o²S²PARC",
+        "position": 0,
+        "display": "title",
+        "alt": "The name of the unique resource you are submitting"
+      },
+      {
+        "field": "Description",
+        "required": true,
+        "type": "textarea",
+        "max_number": "1",
+        "value": "Simulation platform that enables users to create, access, tune, and run models or computational algorithms through web based interface. Web interactive simulation platform that hosts SPARC computational models and solvers.  Allows collaborative development and sharing, model coupling and cloud based execution, data visualization and analysis, and ensures sustainability of computational models developed within SPARC. Enables users to create predictive, multiscale, multi-physics models spanning from modulation sources acting on peripheral nervous system (PNS) to resulting modulation of organ functional response.",
+        "position": 0,
+        "display": "description",
+        "alt": "A description on what the resource is and what it is used for"
+      },
+      {
+        "field": "Resource URL",
+        "required": true,
+        "type": "text",
+        "max_number": "1",
+        "value": "https://docs.osparc.io/#",
+        "position": 0,
+        "display": "url",
+        "alt": "The URL location of this online resource. Please be sure to enter the full URL, including “http://“ or “https://“."
+      },
+      {
+        "field": "Additional Resource Types",
+        "required": false,
+        "type": "resource-types",
+        "max_number": "1",
+        "value": [
+          "simulation software"
+        ],
+        "position": 0,
+        "display": "text",
+        "alt": "The resource types this resource is categorized as"
+      },
+      {
+        "field": "Keywords",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": "SPARC, SPARC computational model, data sharing, model coupling, cloud based execution, data visualization, data analysis, peripheral nervous system, organ functional response",
+        "position": 3,
+        "display": "text",
+        "alt": "Words and concepts that relate to this resource"
+      },
+      {
+        "field": "Canonical ID",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 3,
+        "display": "owner-text",
+        "alt": "An ID that has been used for this resource previously in literature or other publications"
+      },
+      {
+        "field": "Defining Citation",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 4,
+        "display": "literature-text",
+        "alt": "The paper(s) that outline what this resource is about (eg. PMID:1234, DOI:10.1371/journal.pone.0146300)"
+      },
+      {
+        "field": "Abbreviation",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": "osparc",
+        "position": 7,
+        "display": "text",
+        "alt": "Any abbreviations this resource has"
+      },
+      {
+        "field": "Availability",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": "Free, Freely available",
+        "position": 7,
+        "display": "text",
+        "alt": "What is the current availability for this resource"
+      },
+      {
+        "field": "Synonyms",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": "open online Simulation platform for Stimulating Peripheral Activity to Relieve Conditions",
+        "position": 8,
+        "display": "text",
+        "alt": "Any synonyms for this resource"
+      },
+      {
+        "field": "Funding Information",
+        "required": false,
+        "type": "funding-types",
+        "max_number": "1",
+        "value": null,
+        "position": 9,
+        "display": "text",
+        "alt": "Any funding or grant information for this resource"
+      },
+      {
+        "field": "Alternate URLs",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 9,
+        "display": "text",
+        "alt": "The alternate URLs you can use to reach this resource"
+      },
+      {
+        "field": "Comment",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 10,
+        "display": "text",
+        "alt": "Comments for this resource"
+      },
+      {
+        "field": "Old URLs",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 10,
+        "display": "text",
+        "alt": "The previous URLs that reached this resource"
+      },
+      {
+        "field": "Editorial Note",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 11,
+        "display": "text",
+        "alt": "Editorial Notes about this resource"
+      },
+      {
+        "field": "Alternate IDs",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 11,
+        "display": "text",
+        "alt": "The alternate identifiers for this resource"
+      },
+      {
+        "field": "Related Application",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 13,
+        "display": "text",
+        "alt": "A comma separated list for applications related to this resource"
+      },
+      {
+        "field": "Related Disease",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 14,
+        "display": "text",
+        "alt": "A comma separated list for diseases related to this resource"
+      },
+      {
+        "field": "Species",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 17,
+        "display": "text",
+        "alt": "The species that this resource is used on/for"
+      },
+      {
+        "field": "Publication Link",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 19,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Social URLs",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 24,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Twitter Handle",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 26,
+        "display": "text",
+        "alt": "The twitter handle associated to this resource"
+      },
+      {
+        "field": "Hypothesis Center Resource Description",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 39,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Hypothesis Center Resource User Information",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 40,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Hypothesis Center Key Questions",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 41,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Resource Key Questions",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 42,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Hypothesis Center Tutorial Information",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 43,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Hypothesis Center Tutorial URL",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 44,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Terms Of Use URLs",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 8,
+        "display": "text",
+        "alt": "The location of the Terms of Use documentation for this resource"
+      },
+      {
+        "field": "Located In",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 15,
+        "display": "text",
+        "alt": "The physical location that the resource is located in."
+      },
+      {
+        "field": "Processing",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 16,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Supercategory",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": "Resource",
+        "position": 18,
+        "display": "text",
+        "alt": "The primary resource type (e.g., resource, commercial, institution or university)"
+      },
+      {
+        "field": "License",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 25,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Repository Scientific Discipline",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 27,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Data Type Keywords",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 28,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Data Type Information URL",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 29,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Data Submission Information URL",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 31,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Data Access Information URL",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 33,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Repository Guidelines",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 34,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Repository Guidelines Information URL",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 35,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Data size limits",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 36,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "Data storage fee/costs",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 37,
+        "display": "text",
+        "alt": ""
+      },
+      {
+        "field": "FAIRSharing URL",
+        "required": false,
+        "type": "text",
+        "max_number": "1",
+        "value": null,
+        "position": 38,
+        "display": "text",
+        "alt": ""
+      }
+    ],
+    "version": 2,
+    "curation_status": "Curated",
+    "last_curated_version": 2,
+    "scicrunch_id": "SCR_018997",
+    "original_id": "SCR_018997",
+    "image_src": "/upload/resource-images/18997.png",
+    "uuid": "809fab1f-ef98-5f56-8239-b87ffee728eb",
+    "typeID": 1
+  },
+  "success": true
+}
