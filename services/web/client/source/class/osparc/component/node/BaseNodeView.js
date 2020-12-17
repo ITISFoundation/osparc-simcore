@@ -332,7 +332,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
         retrieveBtn.addListener("execute", e => {
-          this.getNode().retrieveInputs();
+          this.getNode().callRetrieveInputs();
         }, this);
         this.getNode().bind("serviceUrl", retrieveBtn, "enabled", {
           converter: value => Boolean(value)

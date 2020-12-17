@@ -496,7 +496,7 @@ qx.Class.define("osparc.data.model.Node", {
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
         const portId = linkFieldModified.portId;
-        this.retrieveInputs(portId);
+        this.callRetrieveInputs(portId);
       }, this);
     },
 
@@ -634,7 +634,7 @@ qx.Class.define("osparc.data.model.Node", {
             this.__createAutoPortConnection(inputNode, innerNode);
           }
         }
-        this.retrieveInputs();
+        this.callRetrieveInputs();
       }
     },
 
@@ -816,7 +816,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    retrieveInputs: function(portKey) {
+    callRetrieveInputs: function(portKey) {
       if (this.isContainer()) {
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
@@ -1055,7 +1055,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.__restartIFrame();
       }, this, waitFor);
 
-      this.retrieveInputs();
+      this.callRetrieveInputs();
     },
 
     __removeInnerNodes: function() {
