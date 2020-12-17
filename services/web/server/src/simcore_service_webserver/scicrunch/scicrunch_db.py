@@ -24,9 +24,10 @@ class ResearchResourceRepository:
     - implements CRUD on rrids
     """
 
+    # WARNING: interfaces to both ResarchResource and ResearchResourceAtDB
+
     def __init__(self, app: web.Application):
         self._engine = app[APP_DB_ENGINE_KEY]
-        # TODO: acquire member to monitor connections
 
     async def list_resources(self) -> List[ResearchResource]:
         async with self._engine.acquire() as conn:
