@@ -97,9 +97,10 @@ class SciCrunchAPI:
         return str(self.base_url.with_path("/resources/"))
 
     def get_rrid_link(self, rrid: str) -> str:
+        # NOTE: for some reason scicrunch query does not like prefix!
         return str(
             self.base_url.with_path("/resources/Any/search").with_query(
-                q="undefined", l=rrid
+                q="undefined", l=rrid.replace("RRID: ", "").strip()
             )
         )
 
