@@ -105,7 +105,7 @@ def setup_module_path():
 
 @pytest.fixture
 def requirements_in_path(tmpdir) -> Path:
-    constraints_reqs_path = tmpdir.mkdir("requirements", exists_ok=True).join(
+    constraints_reqs_path = tmpdir.mkdir("requirements", exist_ok=True).join(
         "constraints.txt"
     )
     constraints_reqs_path.write_text(
@@ -120,7 +120,7 @@ def requirements_in_path(tmpdir) -> Path:
     )
 
     pg_reqs_path = tmpdir.mkdir(
-        "packages", "postgres-database", "requirements", exists_ok=True
+        "packages", "postgres-database", "requirements", exist_ok=True
     ).join("_base.in")
     pg_reqs_path.write_text(
         dedent(
@@ -136,7 +136,7 @@ def requirements_in_path(tmpdir) -> Path:
     )
 
     requirements_path = tmpdir.mkdir(
-        "services", "catalog", "requirements", exists_ok=True
+        "services", "catalog", "requirements", exist_ok=True
     ).join("_base.in")
     requirements_path.write_text(
         dedent(
