@@ -17,13 +17,13 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
 IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
+IS_WSL2 := $(if $(findstring -microsoft-,$(shell uname -a)),WSL2,)
 IS_OSX  := $(filter Darwin,$(shell uname -a))
 IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
 
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
-
 
 # VARIABLES ----------------------------------------------
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
@@ -69,6 +69,12 @@ ifeq ($(IS_WSL),WSL)
 ETC_HOSTNAME = $(CURDIR)/.fake_hostname_file
 export ETC_HOSTNAME
 host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
+endif
+
+# NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
+ifeq ($(IS_WSL2),WSL2)
+S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1):9001
+export S3_ENDPOINT
 endif
 
 
@@ -204,34 +210,44 @@ else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
 
+define _show_endpoints
+# The following endpoints are available
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                       - oSparc platform"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public  - Postgres DB"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                       - Portainer"
+endef
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
-	$(MAKE_C) services/web/client down compile-dev flags=--watch
+	@$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
-	$(MAKE_C) services/web/client follow-dev-logs
+	@$(MAKE) .deploy-ops
+	@$(_show_endpoints)
+	@$(MAKE_C) services/web/client follow-dev-logs
 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
-	docker-compose -f $< up --detach $(target)
+	@docker-compose -f $< up --detach $(target)
+	@$(_show_endpoints)
 endif
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-ops
+	@$(_show_endpoints)
 
 up-latest:
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) up-version
+	@$(_show_endpoints)
 
 
 .PHONY: down leave
@@ -471,7 +487,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
 	# setup info:
-	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN)'
+	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WSL2)$(IS_WIN)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo ' DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'
