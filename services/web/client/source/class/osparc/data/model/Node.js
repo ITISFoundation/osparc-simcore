@@ -342,7 +342,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setRunningStatus(nodeData.state);
         }
 
-        if (nodeData.progress) {
+        if ("progress" in nodeData) {
           this.getStatus().setProgress(nodeData.progress);
         }
 
