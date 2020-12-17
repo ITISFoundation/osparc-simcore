@@ -15,9 +15,12 @@ from pprint import pprint
 import pytest
 from aiohttp import ClientSession
 from servicelib.client_session import get_client_session
-from simcore_service_webserver.scicrunch import SciCrunchAPI, SciCrunchSettings
-from simcore_service_webserver.scicrunch_api import ValidationResult
-from simcore_service_webserver.scicrunch_models import ListOfResourceHits
+from simcore_service_webserver.scicrunch.scicrunch_api import ValidationResult
+from simcore_service_webserver.scicrunch.scicrunch_models import ListOfResourceHits
+from simcore_service_webserver.scicrunch.submodule_setup import (
+    SciCrunchAPI,
+    SciCrunchSettings,
+)
 
 SCICRUNCH_API_KEY = os.environ.get("SCICRUNCH_API_KEY")
 

@@ -2,6 +2,18 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import json
+import random
+import re
+from collections import defaultdict
+from copy import deepcopy
+from typing import DefaultDict, List, Set
+
+import pytest
+from pydantic import BaseModel, Field
+
+pytestmark = pytest.mark.skip(reason="Sandbox for development")
+
 
 ####################################################################################################################
 # NOTES
@@ -48,17 +60,6 @@
 
 ####################################################################################################################
 
-import json
-import random
-import re
-from collections import defaultdict
-from copy import deepcopy
-from typing import DefaultDict, List, Set
-
-from pydantic import BaseModel, Field
-
-# TODO: emulate server for testing
-# TODO:
 
 GROUP_CLASSIFIER_SAMPLE = {
     "build_date": "2020-12-14T18:10:00Z",

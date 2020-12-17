@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-from simcore_service_webserver.scicrunch_models import (
+from simcore_service_webserver.scicrunch.scicrunch_models import (
     ListOfResourceHits,
     ResearchResource,
     ResearchResourceAtdB,

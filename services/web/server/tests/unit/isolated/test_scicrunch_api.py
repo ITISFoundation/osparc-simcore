@@ -10,7 +10,10 @@ from pprint import pprint
 import pytest
 from aioresponses.core import aioresponses
 from servicelib.client_session import get_client_session
-from simcore_service_webserver.scicrunch import SciCrunchAPI, setup_scicrunch
+from simcore_service_webserver.scicrunch.submodule_setup import (
+    SciCrunchAPI,
+    setup_scicrunch_submodule,
+)
 from simcore_service_webserver.scicrunch_api import ValidationResult
 
 # From https://scicrunch.org/resources
@@ -115,7 +118,7 @@ async def fake_app(mock_env_devel_environment, loop):
 
 @pytest.fixture
 async def scicrunch(fake_app):
-    setup_scicrunch(fake_app)
+    setup_scicrunch_submodule(fake_app)
     return SciCrunchAPI.get_instance(fake_app, raises=True)
 
 
