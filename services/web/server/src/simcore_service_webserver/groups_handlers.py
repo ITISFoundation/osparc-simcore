@@ -2,17 +2,21 @@
 
 import json
 import logging
-from typing import Dict
+from typing import Optional
 
 from aiohttp import web
 
 from . import groups_api
+from .groups_classifiers import GroupClassifierRepository, build_rrids_tree_view
 from .groups_exceptions import (
     GroupNotFoundError,
     UserInGroupNotFoundError,
     UserInsufficientRightsError,
 )
 from .login.decorators import RQT_USERID_KEY, login_required
+from .scicrunch.scicrunch_db import ResearchResourceRepository
+from .scicrunch.scicrunch_models import ListOfResourceHits, ResearchResource
+from .scicrunch.service_client import SciCrunchAPI
 from .security_decorators import permission_required
 from .users_exceptions import UserNotFoundError
 
@@ -191,11 +195,70 @@ async def delete_group_user(request: web.Request):
         raise web.HTTPForbidden() from exc
 
 
-# groups/{gid}/classifiers --------------------------------------------
+# GET groups/{gid}/classifiers --------------------------------------------
 @login_required
 @permission_required("groups.*")
 async def get_group_classifiers(request: web.Request):
-    gid = request.match_info["gid"]
+    gid = int(request.match_info["gid"])  # FIXME: raise http enetity error if not int
+    classifiers_tree_view = {}
 
-    bundle: Dict = await groups_api.get_group_classifier(request.app, gid)
-    return bundle
+    repo = GroupClassifierRepository(request.app)
+    if not await repo.group_uses_scicrunch(gid):
+        classifiers_tree_view = await repo.get_classifiers_from_bundle(gid)
+    else:
+        classifiers_tree_view = await build_rrids_tree_view(
+            request.app, tree_view_mode=request.query.get("tree_view", "std")
+        )
+
+    return classifiers_tree_view
+
+
+#  GET /groups/sparc/classifiers/scicrunch-resources/{rrid}
+@login_required
+@permission_required("groups.*")
+async def get_scicrunch_resource(request: web.Request):
+    rrid = request.match_info["rrid"]
+    rrid = SciCrunchAPI.validate_identifier(rrid)
+
+    # check if in database first
+    repo = ResearchResourceRepository(request.app)
+    resource: Optional[ResearchResource] = await repo.get_resource(rrid)
+    if not resource:
+        # otherwise, request to scicrunch service
+        scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+        scicrunch_resource = await scicrunch.get_resource_fields(rrid)
+        resource = scicrunch_resource.convert_to_api_model()
+    return resource.dict()
+
+
+#  POST /groups/sparc/classifiers/scicrunch-resources/{rrid}
+@login_required
+@permission_required("groups.*")
+async def add_scicrunch_resource(request: web.Request):
+    rrid = request.match_info["rrid"]
+
+    # check if exists
+    repo = ResearchResourceRepository(request.app)
+    resource: Optional[ResearchResource] = await repo.get_resource(rrid)
+    if not resource:
+        # then request scicrunch service
+        scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+        scicrunch_resource = await scicrunch.get_resource_fields(rrid)
+        resource = scicrunch_resource.convert_to_api_model()
+
+        # insert new or if exists, then update
+        await repo.upsert(resource)
+
+    return resource.dict()
+
+
+#  GET /groups/sparc/classifiers/scicrunch-resources:search
+@login_required
+@permission_required("groups.*")
+async def search_scicrunch_resources(request: web.Request):
+    guess_name: str = request.query["guess_name"]
+
+    scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+    hits: ListOfResourceHits = await scicrunch.search_resource(guess_name)
+
+    return hits.dict()["__root__"]

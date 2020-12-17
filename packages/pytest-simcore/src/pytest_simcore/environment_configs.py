@@ -1,18 +1,23 @@
 # pylint: disable=redefined-outer-name
 
+from copy import deepcopy
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Union
 
+import dotenv
 import pytest
-
-from .helpers.utils_environs import load_env
 
 
 @pytest.fixture(scope="session")
-def env_devel_config(env_devel_file: Path) -> Dict[str,str]:
-    env_devel = {}
-    # TODO: use instead from dotenv import dotenv_values
-    # env_devel = dotenv_values(env_devel_file, verbose=True, interpolate=True)
-    with env_devel_file.open() as f:
-        env_devel = load_env(f)
-    return env_devel
+def env_devel_dict(env_devel_file: Path) -> Dict[str, Union[str, None]]:
+    assert env_devel_file.exists()
+    assert env_devel_file.name == ".env-devel"
+    environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
+    return environ
+
+
+@pytest.fixture(scope="function")
+def mock_env_devel_environment(env_devel_dict, monkeypatch):
+    for key, value in env_devel_dict.items():
+        monkeypatch.setenv(key, value)
+    return deepcopy(env_devel_dict)
