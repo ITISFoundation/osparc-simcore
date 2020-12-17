@@ -99,7 +99,10 @@ class Port(ServiceProperty):
         else:
             # this is directly the value
             value = self.value
-
+        # don't atempt conversion of None it fails
+        if value is None:
+            return None
+        
         return self._py_value_converter(value)
 
     async def set(self, new_value: ItemConcreteValue) -> None:

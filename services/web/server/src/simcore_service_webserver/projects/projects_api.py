@@ -295,7 +295,18 @@ async def update_project_node_state(
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
+    if project["workbench"][node_id].get("state") == new_state:
+        # nothing to do here
+        return project
     project["workbench"][node_id]["state"] = new_state
+    if RunningState(new_state) in [
+        RunningState.PUBLISHED,
+        RunningState.PENDING,
+        RunningState.STARTED,
+    ]:
+        project["workbench"][node_id]["progress"] = 0
+    elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
+        project["workbench"][node_id]["progress"] = 100
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
     updated_project["state"] = await get_project_state_for_user(
