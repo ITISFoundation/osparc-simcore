@@ -58,6 +58,7 @@ def configure_schemas_location(package_dir, common_schemas_specs_dir):
 @pytest.fixture
 def configure_registry_access(docker_registry):
     config.REGISTRY_URL = docker_registry
+    config.REGISTRY_PATH = docker_registry
     config.REGISTRY_SSL = False
     config.DIRECTOR_REGISTRY_CACHING = False
 
