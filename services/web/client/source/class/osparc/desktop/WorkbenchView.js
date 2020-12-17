@@ -300,7 +300,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         runButton.setFetching(false);
       }, this);
       if (selectedNodeIDs.length) {
-        req.send(selectedNodeIDs);
+        req.set({
+          requestData: selectedNodeIDs
+        });
+        req.send();
         this.getLogger().info(null, "Starting partial pipeline");
       } else {
         req.send();
