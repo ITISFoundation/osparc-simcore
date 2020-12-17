@@ -69,13 +69,7 @@ async def _try_get_task_from_db(
         query=comp_tasks.select(for_update=True).where(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
-            & (
-                (
-                    (comp_tasks.c.job_id == None)
-                    & (comp_tasks.c.state == StateType.PENDING)
-                )
-                | (comp_tasks.c.state == StateType.FAILED)
-            )
+            & (comp_tasks.c.state == StateType.PENDING)
         ),
     )
     task: RowProxy = await result.fetchone()
@@ -133,40 +127,33 @@ async def _get_pipeline_from_db(
     return pipeline
 
 
-async def _set_task_status(
-    db_engine: Engine, project_id: str, node_id: str, run_result
+async def _set_task_state(
+    conn: SAConnection, project_id: str, node_id: str, state: StateType
 ):
-    log.debug("setting task status of %s:%s to %s", project_id, node_id, run_result)
-    async with db_engine.acquire() as connection:
-        await connection.execute(
-            # FIXME: E1120:No value for argument 'dml' in method call
-            # pylint: disable=E1120
-            comp_tasks.update()
-            .where(
-                and_(
-                    comp_tasks.c.node_id == node_id,
-                    comp_tasks.c.project_id == project_id,
-                )
+    log.debug("setting task status of %s:%s to %s", project_id, node_id, state)
+    await conn.execute(
+        # pylint: disable=E1120
+        comp_tasks.update()
+        .where(
+            and_(
+                comp_tasks.c.node_id == node_id,
+                comp_tasks.c.project_id == project_id,
             )
-            .values(state=run_result, end=datetime.utcnow())
         )
+        .values(state=state, end=datetime.utcnow())
+    )
 
 
-async def _set_pipeline_tasks_as_pending(
-    conn: SAConnection, graph: nx.DiGraph, project_id: str
+async def _set_tasks_state(
+    conn: SAConnection,
+    project_id: str,
+    graph: nx.DiGraph,
+    state: StateType,
+    offset: int = 0,
 ):
-    node_ids = list(graph.nodes)
-    for node_id in node_ids:
-        await conn.execute(
-            # pylint: disable=no-value-for-parameter
-            comp_tasks.update()
-            .where(
-                (comp_tasks.c.node_id == node_id)
-                & (comp_tasks.c.project_id == project_id)
-                & (comp_tasks.c.state != StateType.ABORTED)
-            )
-            .values(state=StateType.PENDING)
-        )
+    log.debug("setting tasks state from %s to %s", graph, state)
+    for node_id in list(graph.nodes())[offset:]:
+        await _set_task_state(conn, project_id, node_id, state)
 
 
 async def inspect(
@@ -177,81 +164,94 @@ async def inspect(
     user_id: str,
     project_id: str,
     node_id: Optional[str],
+    retry: int,
+    max_retries: int,
 ) -> Optional[List[str]]:
 
-    try:
-        log.debug(
-            "ENTERING inspect with user %s pipeline:node %s: %s",
-            user_id,
-            project_id,
-            node_id,
-        )
-
+    async with db_engine.acquire() as connection:
         task: Optional[RowProxy] = None
         graph: Optional[nx.DiGraph] = None
-        async with db_engine.acquire() as connection:
+        try:
+            log.debug(
+                "ENTERING inspect with user %s pipeline:node %s: %s",
+                user_id,
+                project_id,
+                node_id,
+            )
+
             pipeline: RowProxy = await _get_pipeline_from_db(connection, project_id)
             graph = execution_graph(pipeline)
             if not node_id:
                 log.debug("NODE id was zero, this was the entry node id")
-                await _set_pipeline_tasks_as_pending(connection, graph, project_id)
+                await _set_tasks_state(connection, project_id, graph, StateType.PENDING)
                 return find_entry_point(graph)
             log.debug("NODE id is %s, getting the task from DB...", node_id)
             task = await _try_get_task_from_db(
                 connection, graph, job_request_id, project_id, node_id
             )
 
-        if not task:
-            log.debug("no task at hand, let's rest...")
-            return
-    except asyncio.CancelledError:
-        log.warning("Task has been cancelled")
-        if node_id:
-            await _set_task_status(db_engine, project_id, node_id, StateType.ABORTED)
-        raise
+            if not task:
+                log.debug("no task at hand, let's rest...")
+                return
+        except asyncio.CancelledError:
+            log.warning("Task has been cancelled")
+            if node_id:
+                await _set_task_state(
+                    connection, project_id, node_id, StateType.ABORTED
+                )
+            raise
 
-    run_result = StateType.FAILED
-    try:
-        await rabbit_mq.post_log_message(
-            user_id,
-            project_id,
-            node_id,
-            "[sidecar]Task found: starting...",
-        )
-
-        # config nodeports
-        node_ports_v2.node_config.USER_ID = user_id
-        node_ports_v2.node_config.NODE_UUID = task.node_id
-        node_ports_v2.node_config.PROJECT_ID = task.project_id
-
-        # now proceed actually running the task (we do that after the db session has been closed)
-        # try to run the task, return empyt list of next nodes if anything goes wrong
-
+        run_result = StateType.FAILED
         next_task_nodes = []
-
-        executor = Executor(
-            db_engine=db_engine,
-            rabbit_mq=rabbit_mq,
-            task=task,
-            user_id=user_id,
-        )
-        await executor.run()
-        next_task_nodes = list(graph.successors(node_id))
-        run_result = StateType.SUCCESS
-    except asyncio.CancelledError:
-        log.warning("Task has been cancelled")
-        run_result = StateType.ABORTED
-        await _set_task_status(db_engine, project_id, node_id, run_result)
-        raise
-
-    finally:
-        if node_id:
+        try:
             await rabbit_mq.post_log_message(
                 user_id,
                 project_id,
                 node_id,
-                f"[sidecar]Task completed with result: {run_result.name}",
+                "[sidecar]Task found: starting...",
             )
-            await _set_task_status(db_engine, project_id, node_id, run_result)
+
+            # config nodeports
+            node_ports_v2.node_config.USER_ID = user_id
+            node_ports_v2.node_config.NODE_UUID = task.node_id
+            node_ports_v2.node_config.PROJECT_ID = task.project_id
+
+            # now proceed actually running the task (we do that after the db session has been closed)
+            # try to run the task, return empyt list of next nodes if anything goes wrong
+            executor = Executor(
+                db_engine=db_engine,
+                rabbit_mq=rabbit_mq,
+                task=task,
+                user_id=user_id,
+            )
+            await executor.run()
+            next_task_nodes = list(graph.successors(node_id))
+            run_result = StateType.SUCCESS
+        except asyncio.CancelledError:
+            log.warning("Task has been cancelled")
+            run_result = StateType.ABORTED
+            raise
+
+        finally:
+            if node_id:
+                await rabbit_mq.post_log_message(
+                    user_id,
+                    project_id,
+                    node_id,
+                    f"[sidecar]Task completed with result: {run_result.name} [Trial {retry+1}/{max_retries}]",
+                )
+                if (retry + 1) < max_retries and run_result == StateType.FAILED:
+                    # try again!
+                    run_result = StateType.PENDING
+                await _set_task_state(connection, project_id, node_id, run_result)
+                if run_result == StateType.FAILED:
+                    # set the successive tasks as ABORTED
+                    await _set_tasks_state(
+                        connection,
+                        project_id,
+                        nx.bfs_tree(graph, node_id),
+                        StateType.ABORTED,
+                        offset=1,
+                    )
 
     return next_task_nodes

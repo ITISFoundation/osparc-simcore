@@ -109,7 +109,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       return buttonsToolbar;
     },
 
-    __createEditView: function(isTemplate) {
+    __createEditView: function() {
       const isCurrentUserOwner = this.__isUserOwner();
       const fieldIsEnabled = isCurrentUserOwner;
 

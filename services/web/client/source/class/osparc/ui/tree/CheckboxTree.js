@@ -20,6 +20,8 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
         },
         bindItem: function(controller, item, id) {
           controller.bindDefaultProperties(item, id);
+          controller.bindProperty("description", "description", null, item, id);
+          controller.bindProperty("url", "url", null, item, id);
           controller.bindProperty("checked", "checked", null, item, id);
           controller.bindPropertyReverse("checked", "checked", null, item, id);
         },

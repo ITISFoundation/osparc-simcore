@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import uuid
-from typing import Awaitable, List
+from typing import Awaitable, List, Optional
 
 import aiodocker
 import networkx as nx
@@ -25,7 +25,7 @@ def wrap_async_call(fct: Awaitable):
 
 def find_entry_point(g: nx.DiGraph) -> List:
     result = []
-    for node in g.nodes:
+    for node in g.nodes():
         if len(list(g.predecessors(node))) == 0:
             result.append(node)
     return result
@@ -62,17 +62,9 @@ async def is_node_ready(
     return True
 
 
-def execution_graph(pipeline: RowProxy) -> nx.DiGraph:
+def execution_graph(pipeline: RowProxy) -> Optional[nx.DiGraph]:
     d = pipeline.dag_adjacency_list
-    G = nx.DiGraph()
-
-    for node in d.keys():
-        nodes = d[node]
-        if len(nodes) == 0:
-            G.add_node(node)
-            continue
-        G.add_edges_from([(node, n) for n in nodes])
-    return G
+    return nx.from_dict_of_lists(d, create_using=nx.DiGraph)
 
 
 def is_gpu_node() -> bool:
