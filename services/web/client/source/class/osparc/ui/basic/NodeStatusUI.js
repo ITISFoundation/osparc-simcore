@@ -57,10 +57,15 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     __setupComputational: function() {
       this.__node.getStatus().bind("runningStatus", this.__label, "value", {
         converter: state => {
-          if (state === "STARTED") {
-            state = "Running";
+          if (state) {
+            this.show();
+            if (state === "STARTED") {
+              state = "Running";
+            }
+            return qx.lang.String.firstUp(state.toLowerCase());
           }
-          return state ? qx.lang.String.firstUp(state.toLowerCase()) : "";
+          this.exclude();
+          return null;
         }
       });
 
