@@ -222,6 +222,10 @@ qx.Class.define("osparc.data.Permissions", {
         osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
       }
       return canDo;
+    },
+
+    isTester: function() {
+      return this.__userRole === "tester";
     }
   }
 });

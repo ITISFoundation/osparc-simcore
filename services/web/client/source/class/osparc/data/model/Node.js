@@ -33,7 +33,6 @@
  *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
- *   node.addDynamicButtons();
  *   node.startDynamicService();
  * </pre>
  */
@@ -156,11 +155,6 @@ qx.Class.define("osparc.data.model.Node", {
       check: "osparc.component.widget.PersistentIframe",
       init: null,
       nullable: true
-    },
-
-    retrieveIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
     },
 
     status: {
@@ -344,6 +338,10 @@ qx.Class.define("osparc.data.model.Node", {
 
         this.populateInputOutputData(nodeData);
 
+        if (nodeData.state) {
+          this.getStatus().setRunningStatus(nodeData.state);
+        }
+
         if (nodeData.progress) {
           this.getStatus().setProgress(nodeData.progress);
         }
@@ -399,8 +397,6 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     startInBackend: function() {
-      this.addDynamicButtons();
-
       // create the node in the backend here
       const key = this.getKey();
       const version = this.getVersion();
@@ -500,7 +496,7 @@ qx.Class.define("osparc.data.model.Node", {
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
         const portId = linkFieldModified.portId;
-        this.__retrieveInputs(portId);
+        this.callRetrieveInputs(portId);
       }, this);
     },
 
@@ -638,7 +634,7 @@ qx.Class.define("osparc.data.model.Node", {
             this.__createAutoPortConnection(inputNode, innerNode);
           }
         }
-        this.__retrieveInputs();
+        this.callRetrieveInputs();
       }
     },
 
@@ -820,7 +816,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __retrieveInputs: function(portKey) {
+    callRetrieveInputs: function(portKey) {
       if (this.isContainer()) {
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
@@ -896,29 +892,6 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
       }
-    },
-
-    addDynamicButtons: function() {
-      if (this.isDynamic() && this.isRealService()) {
-        this.__addRetrieveButton();
-      }
-      if (this.isContainer()) {
-        const innerNodes = Object.values(this.getInnerNodes());
-        if (innerNodes.some(innerNode => innerNode.isDynamic())) {
-          this.__addRetrieveButton();
-          this.getRetrieveIFrameButton().setEnabled(true);
-        }
-      }
-    },
-
-    __addRetrieveButton: function() {
-      const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
-      osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
-      retrieveBtn.addListener("execute", e => {
-        this.__retrieveInputs();
-      }, this);
-      retrieveBtn.setEnabled(false);
-      this.setRetrieveIFrameButton(retrieveBtn);
     },
 
     startDynamicService: function() {
@@ -1072,7 +1045,6 @@ qx.Class.define("osparc.data.model.Node", {
       };
       this.fireDataEvent("showInLogger", msgData);
 
-      this.getRetrieveIFrameButton().setEnabled(true);
       this.getStatus().setProgress(100);
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
@@ -1083,7 +1055,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.__restartIFrame();
       }, this, waitFor);
 
-      this.__retrieveInputs();
+      this.callRetrieveInputs();
     },
 
     __removeInnerNodes: function() {

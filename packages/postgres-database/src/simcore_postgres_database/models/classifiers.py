@@ -17,7 +17,6 @@ group_classifiers = sa.Table(
     "group_classifiers",
     metadata,
     sa.Column("id", sa.BigInteger, nullable=False),
-    # TODO: add jsonschema validtion
     sa.Column("bundle", JSONB, nullable=False),
     sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
     sa.Column(
@@ -38,5 +37,7 @@ group_classifiers = sa.Table(
         ),
         unique=True,  # Every Group can ONLY have one set of classifiers
     ),
+    # uses scicrunch service to acccess curated classifiers instead of static bundle
+    sa.Column("uses_scicrunch", sa.Boolean, nullable=False, default=False),
     sa.PrimaryKeyConstraint("id", name="group_classifiers_pkey"),
 )

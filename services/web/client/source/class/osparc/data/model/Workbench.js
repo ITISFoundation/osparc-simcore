@@ -72,7 +72,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        node.addDynamicButtons();
         node.startDynamicService();
       }
     },
@@ -333,16 +332,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         }
       }
       return false;
-    },
-
-    clearProgressData: function() {
-      const allNodes = this.getNodes(true);
-      const nodes = Object.values(allNodes);
-      for (const node of nodes) {
-        if (node.isComputational() && !node.isFilePicker()) {
-          node.getStatus().setProgress(0);
-        }
-      }
     },
 
     __deserialize: function(workbenchData, workbenchUIData) {
