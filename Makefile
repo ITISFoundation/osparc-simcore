@@ -73,7 +73,7 @@ endif
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
 ifeq ($(IS_WSL2),WSL2)
-S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1):9001
 export S3_ENDPOINT
 endif
 
@@ -210,34 +210,44 @@ else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
 
+define _show_endpoints
+# The following endpoints are available
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                       - oSparc platform"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public  - Postgres DB"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                       - Portainer"
+endef
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
-	$(MAKE_C) services/web/client down compile-dev flags=--watch
+	@$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
-	$(MAKE_C) services/web/client follow-dev-logs
+	@$(MAKE) .deploy-ops
+	@$(_show_endpoints)
+	@$(MAKE_C) services/web/client follow-dev-logs
 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
-	docker-compose -f $< up --detach $(target)
+	@docker-compose -f $< up --detach $(target)
+	@$(_show_endpoints)
 endif
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-ops
+	@$(_show_endpoints)
 
 up-latest:
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) up-version
+	@$(_show_endpoints)
 
 
 .PHONY: down leave
@@ -362,7 +372,6 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 	$(if $(wildcard $@), \
 	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
-	$(if $(IS_WSL2),sed --in-place --regexp-extended "s/S3_ENDPOINT=(.+):([[:digit:]]+)/S3_ENDPOINT=$(S3_ENDPOINT):\2/"  .env,)
 
 
 .vscode/settings.json: .vscode-template/settings.json
