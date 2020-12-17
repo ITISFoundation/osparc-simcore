@@ -653,6 +653,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const node = workbench.getNode(nodeId);
           if (node) {
             node.getStatus().setProgress(progress);
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'progress' msg", d);
           }
         }, this);
       }
@@ -675,6 +677,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
               }
               node.getStatus().setProgress(progress);
             }
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'nodeUpdated' msg", d);
           }
         }, this);
       }
