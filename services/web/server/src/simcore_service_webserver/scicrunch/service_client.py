@@ -1,5 +1,5 @@
 """
-    http client to communicate with scicrunch API (https://scicrunch.org/api/)
+    Client to communicate with scicrunch service API (https://scicrunch.org/api/)
 """
 
 import logging
@@ -70,7 +70,7 @@ class ValidationResult(IntEnum):
 
 
 class SciCrunchAPI:
-    """Instance to communicate with scicrunch.org service
+    """Client to communicate with scicrunch.org service
 
     - wraps all calls to scicrunch.org API
         - return result or raises web.HTTPError
@@ -78,6 +78,8 @@ class SciCrunchAPI:
         - uses app aiohttp client session instance
         - uses settings
     """
+
+    # FIXME: scicrunch timeouts should raise -> Service not avialable with a msg that scicrunch is currently not responding
 
     RRID_RE = re.compile(RRID_PATTERN)
 
@@ -184,6 +186,3 @@ class SciCrunchAPI:
         except (aiohttp.ClientError, ValidationError):
             logger.debug("Failed to autocomplete : %s", name_as)
         return ListOfResourceHits(__root__=[])
-
-
-# FIXME: scicrunch timeouts should raise -> Service not avialable with a msg that scicrunch is currently not responding

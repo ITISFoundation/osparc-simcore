@@ -15,8 +15,8 @@ from pprint import pprint
 import pytest
 from aiohttp import ClientSession
 from servicelib.client_session import get_client_session
-from simcore_service_webserver.scicrunch.scicrunch_api import ValidationResult
 from simcore_service_webserver.scicrunch.scicrunch_models import ListOfResourceHits
+from simcore_service_webserver.scicrunch.service_client import ValidationResult
 from simcore_service_webserver.scicrunch.submodule_setup import (
     SciCrunchAPI,
     SciCrunchSettings,
@@ -42,11 +42,11 @@ async def fake_app(monkeypatch, loop):
 
 @pytest.fixture
 async def scicrunch(fake_app) -> SciCrunchAPI:
-    scicrunch_api = SciCrunchAPI.acquire_instance(
+    service_client = SciCrunchAPI.acquire_instance(
         app=fake_app, settings=SciCrunchSettings(api_key=SCICRUNCH_API_KEY)
     )
-    assert scicrunch_api is SciCrunchAPI.get_instance(fake_app)
-    return scicrunch_api
+    assert service_client is SciCrunchAPI.get_instance(fake_app)
+    return service_client
 
 
 # From https://scicrunch.org/resources

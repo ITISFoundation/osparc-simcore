@@ -14,7 +14,7 @@ from simcore_service_webserver.scicrunch.submodule_setup import (
     SciCrunchAPI,
     setup_scicrunch_submodule,
 )
-from simcore_service_webserver.scicrunch_api import ValidationResult
+from simcore_service_webserver.service_client import ValidationResult
 
 # From https://scicrunch.org/resources
 VALID_RRID_SAMPLES = [

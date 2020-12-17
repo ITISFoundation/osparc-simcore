@@ -7,7 +7,7 @@ from typing import Any, MutableMapping, Optional
 from pydantic import ValidationError
 
 from ._config import SciCrunchSettings
-from .scicrunch_api import SciCrunchAPI
+from .service_client import SciCrunchAPI
 
 logger = logging.getLogger(__name__)
 
