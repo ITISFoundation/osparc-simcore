@@ -117,7 +117,8 @@ qx.Class.define("osparc.store.Store", {
     },
     classifiers: {
       check: "Array",
-      init: []
+      init: [],
+      event: "changeClassifiers"
     }
   },
 
