@@ -7,6 +7,7 @@ from typing import Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
+from aiohttp.web_request import FileField
 from jsonschema import ValidationError
 
 from models_library.projects_state import ProjectState
@@ -24,8 +25,10 @@ from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
-from ..exporter.export_import import study_export
-from ..exporter.file_response import CleanupFileResponse, get_empty_tmp_dir
+from ..exporter.export_import import study_export, study_import
+from ..exporter.file_response import CleanupFileResponse, get_empty_tmp_dir, remove_dir
+
+ONE_GB: int = 1024 * 1024 * 1024
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -616,4 +619,20 @@ async def export_project(request: web.Request):
 
 @login_required
 async def import_project(request: web.Request):
+    # bumping this requet's max size
+    UPLOAD_CLIENT_MAX_SIZE = 10 * ONE_GB  # TODO: move to env_var in settings
+    request._client_max_size = UPLOAD_CLIENT_MAX_SIZE
+    user_id = request[RQT_USERID_KEY]
+
+    post_contents = await request.post()
+    log.info("POST body %s", post_contents)
+    file_name_field: FileField = post_contents.get("fileName", None)
+
+    if file_name_field is None:
+        raise web.HTTPException(reason="Expected a file as 'fileName' form parmeter")
+
+    temp_dir: str = await get_empty_tmp_dir()
+    await study_import(temp_dir=temp_dir, file_field=file_name_field, user_id=user_id)
+    # await remove_dir(directory=temp_dir)   #TODO: put this back
+
     return web.HTTPOk()
