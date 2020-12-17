@@ -1,18 +1,20 @@
 """
-   Submodule to interact with K-Core's scicrunch API (https://scicrunch.org/api/)
+    Notice that this is used as a submodule of groups'a app module
 """
 import logging
-from typing import Any, MutableMapping
+from typing import Any, MutableMapping, Optional
 
 from pydantic import ValidationError
 
+from ._config import SciCrunchSettings
 from .scicrunch_api import SciCrunchAPI
-from .scicrunch_config import SciCrunchSettings
 
 logger = logging.getLogger(__name__)
 
 
-def setup_scicrunch(app: MutableMapping[str, Any]):
+def setup_scicrunch_submodule(
+    app: MutableMapping[str, Any], *, cfg: Optional[SciCrunchSettings] = None
+):
     try:
         cfg = SciCrunchSettings()
         api = SciCrunchAPI.acquire_instance(app, cfg)

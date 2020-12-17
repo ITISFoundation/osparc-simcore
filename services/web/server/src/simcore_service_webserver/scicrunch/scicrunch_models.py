@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Union
 from pydantic import BaseModel, Field, constr, validator
 from yarl import URL
 
-from .scicrunch_config import STRICT_RRID_PATTERN
+from ._config import STRICT_RRID_PATTERN
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +25,13 @@ class ResearchResource(BaseModel):
     @validator("rrid", pre=True)
     @classmethod
     def format_rrid(cls, v):
-        v = v.strip()
         if not v.startswith("RRID:"):
             return f"RRID: {v}"
         return v
 
     class Config:
         orm_mode = True
+        anystr_strip_whitespace = True
 
 
 # postgres_database.scicrunch_resources ORM --------------------

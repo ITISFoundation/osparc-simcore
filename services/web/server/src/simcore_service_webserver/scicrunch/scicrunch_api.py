@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from servicelib.client_session import get_client_session
 from yarl import URL
 
-from .scicrunch_config import RRID_PATTERN, SciCrunchSettings
+from ._config import RRID_PATTERN, SciCrunchSettings
 from .scicrunch_models import ListOfResourceHits, ResourceView
 
 logger = logging.getLogger(__name__)

@@ -9,10 +9,9 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.application_keys import APP_DB_ENGINE_KEY
-from simcore_service_webserver import scicrunch_models
+from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 from sqlalchemy.dialects.postgresql import insert as sa_pg_insert
 
-from .db_models import scicrunch_resources
 from .scicrunch_models import ResearchResource, ResearchResourceAtdB
 
 logger = logging.getLogger(__name__)

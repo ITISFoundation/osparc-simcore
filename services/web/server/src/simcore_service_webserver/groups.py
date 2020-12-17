@@ -13,7 +13,7 @@ from servicelib.rest_routing import (
 
 from . import groups_handlers
 from .rest_config import APP_OPENAPI_SPECS_KEY
-from .scicrunch import setup_scicrunch
+from .scicrunch.submodule_setup import setup_scicrunch_submodule
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 def setup_groups(app: web.Application):
 
     # prepares scicrunch api
-    setup_scicrunch(app)
+    setup_scicrunch_submodule(app)
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]

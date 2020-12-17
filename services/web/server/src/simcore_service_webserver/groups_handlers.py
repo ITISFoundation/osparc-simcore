@@ -14,9 +14,9 @@ from .groups_exceptions import (
     UserInsufficientRightsError,
 )
 from .login.decorators import RQT_USERID_KEY, login_required
-from .scicrunch_api import SciCrunchAPI
-from .scicrunch_db import ResearchResourceRepository
-from .scicrunch_models import ListOfResourceHits, ResearchResource
+from .scicrunch.scicrunch_api import SciCrunchAPI
+from .scicrunch.scicrunch_db import ResearchResourceRepository
+from .scicrunch.scicrunch_models import ListOfResourceHits, ResearchResource
 from .security_decorators import permission_required
 from .users_exceptions import UserNotFoundError
 
