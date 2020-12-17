@@ -66,7 +66,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
         flex: 1
       });
 
-      const addRRIDClassfierBtn = new osparc.ui.form.FetchButton(this.tr("Add RRID Classifier"));
+      const addRRIDClassfierBtn = new osparc.ui.form.FetchButton(this.tr("Add Classifier"));
       addRRIDClassfierBtn.addListener("execute", () => {
         this.__addRRIDClassfier(textField.getValue(), addRRIDClassfierBtn);
       }, this);
