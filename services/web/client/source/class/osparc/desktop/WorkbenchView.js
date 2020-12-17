@@ -268,15 +268,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else {
         const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
         if (this.__isSelectionEmpty(selectedNodeUIs)) {
-          this.getStudy().getWorkbench().clearProgressData();
           this.__requestStartPipeline(this.getStudy().getUuid());
         } else {
           const selectedNodeIDs = [];
           selectedNodeUIs.forEach(nodeUI => {
             selectedNodeIDs.push(nodeUI.getNodeId());
           });
-          // OM: clear only selected nodes
-          this.getStudy().getWorkbench().clearProgressData();
           this.__requestStartPipeline(this.getStudy().getUuid(), selectedNodeIDs);
         }
       }
