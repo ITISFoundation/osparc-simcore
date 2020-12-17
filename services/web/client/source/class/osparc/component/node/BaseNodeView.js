@@ -328,9 +328,17 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     _addButtons: function() {
       this.__buttonContainer.removeAll();
-      let retrieveIFrameButton = this.getNode().getRetrieveIFrameButton();
-      if (retrieveIFrameButton) {
-        this.__buttonContainer.add(retrieveIFrameButton);
+      if (this.getNode().isDynamic() && this.getNode().isRealService()) {
+        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
+        osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
+        retrieveBtn.addListener("execute", e => {
+          this.getNode().callRetrieveInputs();
+        }, this);
+        this.getNode().bind("serviceUrl", retrieveBtn, "enabled", {
+          converter: value => Boolean(value)
+        });
+        retrieveBtn.setEnabled(Boolean(this.getNode().getServiceUrl()));
+        this.__buttonContainer.add(retrieveBtn);
       }
       this.__buttonContainer.add(this.__filesButton);
       this.__header.add(this.__buttonContainer);

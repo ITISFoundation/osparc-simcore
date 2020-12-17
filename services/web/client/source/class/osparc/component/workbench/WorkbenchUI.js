@@ -410,6 +410,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     resetSelectedNodes: function() {
+      this.__selectedNodes.forEach(node => node.removeState("selected"));
       this.__selectedNodes = [];
       qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", []);
     },
@@ -1106,7 +1107,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", () => {
-        this.__selectedNodes.forEach(node => node.removeState("selected"));
         this.resetSelectedNodes();
       });
 
@@ -1131,6 +1131,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         commandDel.setEnabled(false);
         commandEsc.setEnabled(false);
       });
+
+      this.__workbenchLayout.addListener("tap", () => {
+        this.resetSelectedNodes();
+      }, this);
 
       this.__workbenchLayout.addListener("dbltap", e => {
         if (this.getStudy().isReadOnly()) {
