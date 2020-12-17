@@ -29,8 +29,8 @@ async def get_empty_tmp_dir() -> str:
     return str(candidate)
 
 
-async def _remove_temp_dir(temp_dir: str) -> None:
-    await asyncio.create_subprocess_exec("rm", "-rf", temp_dir)
+async def remove_dir(directory: str) -> None:
+    await asyncio.create_subprocess_exec("rm", "-rf", directory)
 
 
 class CleanupFileResponse(FileResponse):
@@ -58,4 +58,4 @@ class CleanupFileResponse(FileResponse):
         try:
             return await super().prepare(request=request)
         finally:
-            await asyncio.get_event_loop().create_task(_remove_temp_dir(self._temp_dir))
+            await asyncio.get_event_loop().create_task(remove_dir(self._temp_dir))

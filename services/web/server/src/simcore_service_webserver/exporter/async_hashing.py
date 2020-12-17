@@ -43,7 +43,7 @@ async def checksum(file_path: Path, algorithm=Algorithm.SHA256) -> str:
             reason=f"Could not digest with algorithm={algorithm.name} of file={str_file_path}"
         )
 
-    digest: str = decoded_stdout.split()[-1]
+    digest: str = decoded_stdout.strip().split(" ")[-1]
     if len(digest) != algorithm.value:
         raise web.HTTPException(
             reason=(

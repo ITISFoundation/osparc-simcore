@@ -5,11 +5,15 @@ from pathlib import Path
 from collections import deque, namedtuple
 from typing import Deque
 
+import aiofiles
 from aiohttp import web
+from aiohttp.web_request import FileField
 
-from .archiving import zip_folder
+from .archiving import zip_folder, validate_osparc_import_name, unzip_folder
 from .file_downloader import ParallelDownloader
-from .serialize import dumps
+from .serialize import dumps, loads
+from .async_hashing import checksum
+from .importers import SUPPORTED_IMPORTERS_FROM_VERSION, BaseImporter
 
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.storage_handlers import get_file_download_url
@@ -144,5 +148,62 @@ async def study_export(
     return archive_path
 
 
-async def study_import(path: Path) -> None:
-    """ Creates a project from a given exported project """
+async def study_import(
+    temp_dir: str, file_field: FileField, user_id: int, chunk_size: int = 2 ** 16
+) -> None:
+    """ Creates a project from a given exported project"""
+
+    upload_file_name = Path(temp_dir) / "uploaded.zip"
+    # upload and verify checksum
+    original_file_name = file_field.filename
+
+    async with aiofiles.open(upload_file_name, mode="wb") as file_descriptor:
+        while True:
+            chunk = file_field.file.read(chunk_size)
+            if not chunk:
+                break
+
+            await file_descriptor.write(chunk)
+
+    log.info(
+        "original_file_name=%s, upload_file_name=%s",
+        original_file_name,
+        str(upload_file_name),
+    )
+
+    # compute_checksup and check if they match
+    algorithm, digest_from_filename = validate_osparc_import_name(original_file_name)
+    upload_digest = await checksum(file_path=upload_file_name, algorithm=algorithm)
+    if digest_from_filename != upload_digest:
+        raise web.HTTPException(
+            reason=(
+                "Upload error. Digests did not match digest_from_filename="
+                f"{digest_from_filename}, upload_digest={upload_digest}"
+            )
+        )
+
+    unzipped_root_folder = await unzip_folder(upload_file_name)
+    # apply decoding based on format from manifest
+    log.info("Will search in path %s", unzipped_root_folder)
+
+    # dispatch to export version loader
+
+    manifest = unzipped_root_folder / "manifest.yaml"
+
+    if not manifest.is_file():
+        raise web.HTTPException(
+            reason="Expected a manifest.yaml file was not found in project"
+        )
+
+    manifest_data = loads(manifest.read_text())
+    version = manifest_data.get("version", None)
+    if version not in SUPPORTED_IMPORTERS_FROM_VERSION:
+        raise web.HTTPException(
+            reason=f"Version {version} was not found in {SUPPORTED_IMPORTERS_FROM_VERSION.keys()}"
+        )
+
+    importer_cls: BaseImporter = SUPPORTED_IMPORTERS_FROM_VERSION[version]
+    importer = importer_cls(version=version, root_folder=unzipped_root_folder)
+
+    # will start the import process
+    await importer.start_import()
