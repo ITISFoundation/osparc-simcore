@@ -203,8 +203,8 @@ async def get_group_classifiers(request: web.Request):
     classifiers_tree_view = {}
 
     repo = GroupClassifierRepository(request.app)
-    if not await repo.uses_rrids(gid):
-        classifiers_tree_view = await repo.get_validated_bundle(gid)
+    if not await repo.group_uses_scicrunch(gid):
+        classifiers_tree_view = await repo.get_classifiers_from_bundle(gid)
     else:
         classifiers_tree_view = await build_rrids_tree_view(
             request.app, tree_view_mode=request.query.get("tree_view", "std")

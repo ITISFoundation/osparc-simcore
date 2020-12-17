@@ -1,7 +1,11 @@
 """
-    Every group can define classifiers by storing a bundle in the group_classifiers table.
-        - This bundle is a static tree resulting from curation process that is outsourced (e.g. to a github/lab repository)
-
+    - Every group has a set of "official" classifiers and its users tag studies with them
+    - Classifiers can be defined in two ways:
+        1. a static bundle that is stored in group_classifiers.c.bundle
+        2. using research resources from scicrunch.org (see group_classifiers.c.uses_scicrunch )
+    - The API Classifiers model returned in
+        1. is the bundle
+        2. a dynamic tree built from validated RRIDs (in ResearchResourceRepository)
 """
 
 import logging
@@ -10,22 +14,19 @@ from typing import Any, Dict, Optional
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-
-# DATABASE --------
-from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr
+from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr, validator
+from simcore_postgres_database.models.classifiers import group_classifiers
 
 from .constants import APP_DB_ENGINE_KEY
-from .db_models import group_classifiers
-from .scicrunch_api import SciCrunchAPI
-
-# HELPERS FOR API --------------
-from .scicrunch_db import ResearchResourceRepository
+from .scicrunch.scicrunch_api import SciCrunchAPI
+from .scicrunch.scicrunch_db import ResearchResourceRepository
 
 logger = logging.getLogger(__name__)
 
-# API SCHEMAS ---
+# DOMAIN MODELS ---
 
 TreePath = constr(regex=r"[\w:]+")  # Examples 'a::b::c
+MAX_SIZE_SHORT_MSG = 100
 
 
 class ClassifierItem(BaseModel):
@@ -40,6 +41,13 @@ class ClassifierItem(BaseModel):
         example="https://scicrunch.org/resources/Any/search?q=osparc&l=osparc",
     )
 
+    @validator("short_description", pre=True)
+    @classmethod
+    def truncate_to_short(cls, v):
+        if len(v) >= MAX_SIZE_SHORT_MSG:
+            return v[:MAX_SIZE_SHORT_MSG] + "…"
+        return v
+
 
 class Classifiers(BaseModel):
     # meta
@@ -50,7 +58,15 @@ class Classifiers(BaseModel):
     classifiers: Dict[TreePath, ClassifierItem]
 
 
+# DATABASE --------
+
+
 class GroupClassifierRepository:
+    #
+    # TODO: a repo: retrieves engine from app
+    # TODO: a repo: some members acquire and retrieve connection
+    # TODO: a repo: any validation error in a repo is due to corrupt data in db!
+
     def __init__(self, app: web.Application):
         self.engine = app[APP_DB_ENGINE_KEY]
 
@@ -63,7 +79,7 @@ class GroupClassifierRepository:
             )
             return bundle or {}
 
-    async def get_validated_bundle(self, gid: int) -> Dict[str, Any]:
+    async def get_classifiers_from_bundle(self, gid: int) -> Dict[str, Any]:
         bundle = await self.get_bundle(gid)
         if bundle:
             try:
@@ -71,14 +87,15 @@ class GroupClassifierRepository:
                 bundle = Classifiers(**bundle).dict(exclude_unset=True)
             except ValidationError as err:
                 logger.error(
-                    "Fix invalid entry in group_classifiers table for gid=%d: %s. Returning empty bundle.",
+                    "DB corrupt data in 'groups_classifiers' table. "
+                    "Invalid classifier for gid=%d: %s. "
+                    "Returning empty bundle.",
                     gid,
                     err,
                 )
-                bundle = {}
-        return bundle
+        return {}
 
-    async def uses_rrids(self, gid: int) -> bool:
+    async def group_uses_scicrunch(self, gid: int) -> bool:
         async with self.engine.acquire() as conn:
             value: Optional[RowProxy] = await conn.scalar(
                 sa.select([group_classifiers.c.uses_scicrunch]).where(
@@ -88,7 +105,10 @@ class GroupClassifierRepository:
             return bool(value)
 
 
-async def build_rrids_tree_view(app, tree_view_mode="std"):
+# HELPERS FOR API HANDLERS --------------
+
+
+async def build_rrids_tree_view(app, tree_view_mode="std") -> Dict[str, Any]:
     if tree_view_mode != "std":
         raise web.HTTPNotImplemented(
             reason="Currently only 'std' option for the classifiers tree view is implemented"
@@ -102,7 +122,7 @@ async def build_rrids_tree_view(app, tree_view_mode="std"):
         try:
             validated_item = ClassifierItem(
                 classifier=resource.rrid,
-                display_name=resource.name.title().strip(),
+                display_name=resource.name.title(),
                 short_description=resource.description,
                 url=scicrunch.get_rrid_link(resource.rrid),
             )
@@ -115,4 +135,4 @@ async def build_rrids_tree_view(app, tree_view_mode="std"):
                 "Cannot convert RRID into a classifier item. Skipping. Details: %s", err
             )
 
-    return Classifiers.construct(classifiers=flat_tree_view)
+    return Classifiers.construct(classifiers=flat_tree_view).dict(exclude_unset=True)
