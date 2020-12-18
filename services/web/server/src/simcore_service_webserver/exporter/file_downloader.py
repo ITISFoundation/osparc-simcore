@@ -3,6 +3,8 @@ import logging
 from parfive.downloader import Downloader
 from pathlib import Path
 
+from aiofiles import os as aiofiles_os
+
 from .file_response import makedirs
 
 log = logging.getLogger(__name__)
@@ -24,5 +26,6 @@ class ParallelDownloader:
         """starts the download and waits for all files to finish"""
 
         # run this async
-        results = await self.downloader.run_download()
+        wrapped_function = aiofiles_os.wrap(self.downloader.download)
+        results = await wrapped_function()
         log.info("Download results %s", results)
