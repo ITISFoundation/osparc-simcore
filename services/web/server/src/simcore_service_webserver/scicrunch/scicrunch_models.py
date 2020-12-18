@@ -16,9 +16,10 @@ logger = logging.getLogger(__name__)
 
 # webserver API models -----------------------------------------
 class ResearchResource(BaseModel):
-    rrid: constr(
-        regex=STRICT_RRID_PATTERN
-    )  # unique identifier used as classifier, i.e. to tag studies and services
+    rrid: constr(regex=STRICT_RRID_PATTERN) = Field(
+        ...,
+        description="Unique identifier used as classifier, i.e. to tag studies and services",
+    )
     name: str
     description: str
 
@@ -47,12 +48,7 @@ class ResearchResourceAtdB(ResearchResource):
 class FieldItem(BaseModel):
     field_name: str = Field(..., alias="field")
     required: bool
-    # field_type: str = Field(..., alias="type") # text, textarea, resource-types, ...
-    # max_number: str  # convertable to int
     value: Union[str, None, List[Any]] = None
-    # position: int
-    # display: str  # title, descripiotn, url, text, owner-text
-    alt: str  # alternative text
 
 
 class ResourceView(BaseModel):
@@ -60,9 +56,6 @@ class ResourceView(BaseModel):
     version: int
     curation_status: str
     last_curated_version: int
-    # uuid: UUID
-    # NOTE: image_src is a path from https://scicrunch.org/ e.g. https://scicrunch.org/upload/resource-images/18997.png
-    # image_src: Optional[str]
     scicrunch_id: str
 
     @classmethod
@@ -73,8 +66,6 @@ class ResourceView(BaseModel):
     @property
     def is_curated(self) -> bool:
         return self.curation_status.lower() == "curated"
-
-    # TODO: add validator to capture only selected fields
 
     def _get_field(self, fieldname: str):
         for field in self.resource_fields:
@@ -101,7 +92,6 @@ class ResourceView(BaseModel):
 
 class ResourceHit(BaseModel):
     rrid: str = Field(..., alias="rid")
-    # original_id: str
     name: str
 
 
