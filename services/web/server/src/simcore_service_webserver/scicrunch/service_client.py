@@ -91,10 +91,12 @@ class SciCrunchAPI:
             host=self.settings.api_base_url.host,
         )
 
-    # Website links ---------
+        self.portal_site_url = str(self.base_url.with_path("/resources/"))
+        self.new_submission_site_url = str(
+            self.base_url.with_path("/resources/about/resource")
+        )
 
-    def get_portal_link(self) -> str:
-        return str(self.base_url.with_path("/resources/"))
+    # Website links ---------
 
     def get_rrid_link(self, rrid: str) -> str:
         # NOTE: for some reason scicrunch query does not like prefix!
@@ -103,9 +105,6 @@ class SciCrunchAPI:
                 q="undefined", l=rrid.replace("RRID: ", "").strip()
             )
         )
-
-    def get_new_submission_link(self) -> str:
-        return str(self.base_url.with_path("/resources/about/resource"))
 
     # Application instance ---------
 
