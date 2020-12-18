@@ -609,12 +609,16 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     setOutputData: function(outputs) {
-      if (outputs) {
-        for (const outputKey in outputs) {
+      if (outputs){
+        for (const outputKey in this.__outputs) {
           if (!Object.prototype.hasOwnProperty.call(this.__outputs, outputKey)) {
             this.__outputs[outputKey] = {};
           }
-          this.__outputs[outputKey]["value"] = outputs[outputKey];
+          if (!outputs.hasOwnProperty(outputKey)) {
+            this.__outputs[outputKey]["value"] = "";
+          } else {
+            this.__outputs[outputKey]["value"] = outputs[outputKey];
+          }
           this.fireDataEvent("outputChanged", outputKey);
         }
       }
