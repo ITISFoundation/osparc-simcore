@@ -61,11 +61,8 @@ async def _update_project_outputs(
     node_uuid: NodeID,
     outputs: Dict,
 ) -> None:
-    changed_keys: List[str] = list(outputs.keys())
-    if not changed_keys:
-        return
-
-    project = await projects_api.update_project_node_outputs(
+    # the new outputs might be {}, or {key_name: payload}
+    project, changed_keys = await projects_api.update_project_node_outputs(
         app,
         user_id,
         project_uuid,
