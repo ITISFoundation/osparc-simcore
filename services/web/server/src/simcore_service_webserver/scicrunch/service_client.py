@@ -113,21 +113,18 @@ class SciCrunchAPI:
         cls, app: MutableMapping[str, Any], settings: SciCrunchSettings
     ) -> "SciCrunchAPI":
         """ Returns single instance for the application and stores it """
-        obj = cls.get_instance(app)
+        obj = app.get(f"{__name__}.SciCrunchAPI")
         if obj is None:
             session = get_client_session(app)
             app[f"{__name__}.SciCrunchAPI"] = obj = cls(session, settings)
         return obj
 
     @staticmethod
-    def get_instance(
-        app: MutableMapping[str, Any], *, raises=False
-    ) -> Optional["SciCrunchAPI"]:
-        """ Get's application instance """
+    def get_instance(app: MutableMapping[str, Any]) -> Optional["SciCrunchAPI"]:
         obj = app.get(f"{__name__}.SciCrunchAPI")
-        if raises and obj is None:
+        if obj is None:
             raise web.HTTPServiceUnavailable(
-                reason="Link to scicrunch.org services is currently disabled."
+                reason="Services on scicrunch.org are currently disabled"
             )
         return obj
 

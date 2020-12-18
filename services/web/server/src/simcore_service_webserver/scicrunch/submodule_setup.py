@@ -19,6 +19,7 @@ def setup_scicrunch_submodule(
         cfg = SciCrunchSettings()
         api = SciCrunchAPI.acquire_instance(app, cfg)
         assert api == SciCrunchAPI.get_instance(app)  # nosec
+
     except ValidationError as err:
         logger.warning(
             "Failed to setup interface with K-Core. This functionality will not be available: %s",

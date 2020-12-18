@@ -225,7 +225,7 @@ async def get_scicrunch_resource(request: web.Request):
     resource: Optional[ResearchResource] = await repo.get_resource(rrid)
     if not resource:
         # otherwise, request to scicrunch service
-        scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+        scicrunch = SciCrunchAPI.get_instance(request.app)
         scicrunch_resource = await scicrunch.get_resource_fields(rrid)
         resource = scicrunch_resource.convert_to_api_model()
     return resource.dict()
@@ -242,7 +242,7 @@ async def add_scicrunch_resource(request: web.Request):
     resource: Optional[ResearchResource] = await repo.get_resource(rrid)
     if not resource:
         # then request scicrunch service
-        scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+        scicrunch = SciCrunchAPI.get_instance(request.app)
         scicrunch_resource = await scicrunch.get_resource_fields(rrid)
         resource = scicrunch_resource.convert_to_api_model()
 
@@ -258,7 +258,7 @@ async def add_scicrunch_resource(request: web.Request):
 async def search_scicrunch_resources(request: web.Request):
     guess_name: str = request.query["guess_name"]
 
-    scicrunch = SciCrunchAPI.get_instance(request.app, raises=True)
+    scicrunch = SciCrunchAPI.get_instance(request.app)
     hits: ListOfResourceHits = await scicrunch.search_resource(guess_name)
 
     return hits.dict()["__root__"]
