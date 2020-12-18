@@ -51,7 +51,7 @@ multidict==4.7.6          # via aiohttp, yarl
 openapi-core==0.12.0      # via -r requirements/../../../../packages/service-library/requirements/_base.in
 openapi-spec-validator==0.2.9  # via openapi-core
 pamqp==2.3.0              # via aiormq
-parfive==1.0.2            # via -r requirements/_base.in
+parfive==1.1.0            # via -r requirements/_base.in
 passlib==1.7.2            # via -r requirements/_base.in
 prometheus-client==0.9.0  # via -r requirements/../../../../packages/service-library/requirements/_base.in
 prompt-toolkit==3.0.8     # via click-repl
