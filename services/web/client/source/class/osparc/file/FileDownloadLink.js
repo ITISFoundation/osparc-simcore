@@ -58,7 +58,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
 
     extractLabelFromLink: function(downloadLink) {
       // works for sparc.science portal download links
-      // http:www.mydomain.com/my_file.ext?word=blah
+      // http://www.mydomain.com/my_file.ext?word=blah
       // until question mark
       const regex = "(^.*)(?=\\?)";
       const found = downloadLink.match(regex);

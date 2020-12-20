@@ -54,7 +54,8 @@ qx.Class.define("osparc.file.FilePicker", {
   },
 
   statics: {
-    getOutputLabel: function(outputValue) {
+    getOutputLabel: function(outputs) {
+      const outputValue = osparc.file.FilePicker.getOutFileValue(outputs);
       if ("outFile" in outputValue) {
         const outInfo = outputValue["outFile"];
         if ("label" in outInfo) {
