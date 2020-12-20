@@ -50,19 +50,15 @@ qx.Class.define("osparc.file.FileDownloadLink", {
 
   statics: {
     getOutputLabel: function(outputValue) {
-      if ("outFile" in outputValue) {
-        const outInfo = outputValue["outFile"];
-        if ("label" in outInfo) {
-          return outInfo.label;
-        }
-        if ("downloadLink" in outInfo) {
-          return osparc.file.FileDownloadLink.extractLabelFromLink(outInfo.downloadLink);
-        }
+      if ("outFile" in outputValue && "downloadLink" in outputValue["outFile"]) {
+        return osparc.file.FileDownloadLink.extractLabelFromLink(outputValue["outFile"]["downloadLink"]);
       }
       return "";
     },
 
     extractLabelFromLink: function(downloadLink) {
+      // works for sparc.science portal download links
+      // http:www.mydomain.com/my_file.ext?word=blah
       // until question mark
       const regex = "(^.*)(?=\\?)";
       const found = downloadLink.match(regex);
