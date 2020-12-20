@@ -272,16 +272,6 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__outputs;
     },
 
-    getOutputValues: function() {
-      let output = {};
-      for (const outputId in this.__outputs) {
-        if (this.__outputs[outputId].value) {
-          output[outputId] = this.__outputs[outputId].value;
-        }
-      }
-      return output;
-    },
-
     hasChildren: function() {
       const innerNodes = this.getInnerNodes();
       if (innerNodes) {
@@ -1124,7 +1114,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       if (this.isFilePicker()) {
-        nodeEntry.outputs = this.getOutputValues();
+        nodeEntry.outputs = osparc.file.FilePicker.getOutputValues(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       }
       // remove null entries from the payload

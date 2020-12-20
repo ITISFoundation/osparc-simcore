@@ -69,6 +69,16 @@ qx.Class.define("osparc.file.FilePicker", {
         }
       }
       return null;
+    },
+
+    getOutputValues: function(outputs) {
+      let output = {};
+      for (const outputId in outputs) {
+        if (outputs[outputId].value) {
+          output[outputId] = outputs[outputId].value;
+        }
+      }
+      return output;
     }
   },
 
