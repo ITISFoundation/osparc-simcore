@@ -55,24 +55,23 @@ qx.Class.define("osparc.file.FilePicker", {
 
   statics: {
     getOutputLabel: function(outputs) {
-      const outputValue = osparc.file.FilePicker.getOutFileValue(outputs);
-      if ("outFile" in outputValue) {
-        const outInfo = outputValue["outFile"];
-        if ("label" in outInfo) {
-          return outInfo.label;
+      if ("outFile" in outputs && "value" in outputs["outFile"]) {
+        const outFileValue = outputs["outFile"]["value"];
+        if ("label" in outFileValue) {
+          return outFileValue.label;
         }
-        if ("path" in outInfo) {
-          const splitFilename = outInfo.path.split("/");
+        if ("path" in outFileValue) {
+          const splitFilename = outFileValue.path.split("/");
           return splitFilename[splitFilename.length-1];
         }
-        if ("downloadLink" in outInfo) {
-          return osparc.file.FileDownloadLink.getOutputLabel(outputValue);
+        if ("downloadLink" in outFileValue) {
+          return osparc.file.FileDownloadLink.extractLabelFromLink(outFileValue["downloadLink"]);
         }
       }
       return null;
     },
 
-    getOutFileValue: function(outputs) {
+    serializeOutput: function(outputs) {
       let output = {};
       if ("outFile" in outputs && "value" in outputs["outFile"]) {
         output["outFile"] = outputs["outFile"]["value"];

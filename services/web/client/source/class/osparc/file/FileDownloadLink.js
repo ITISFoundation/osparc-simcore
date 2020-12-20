@@ -49,13 +49,6 @@ qx.Class.define("osparc.file.FileDownloadLink", {
   },
 
   statics: {
-    getOutputLabel: function(outputValue) {
-      if ("outFile" in outputValue && "downloadLink" in outputValue["outFile"]) {
-        return osparc.file.FileDownloadLink.extractLabelFromLink(outputValue["outFile"]["downloadLink"]);
-      }
-      return "";
-    },
-
     extractLabelFromLink: function(downloadLink) {
       // works for sparc.science portal download links
       // http://www.mydomain.com/my_file.ext?word=blah
