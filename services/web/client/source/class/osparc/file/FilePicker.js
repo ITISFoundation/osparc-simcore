@@ -71,7 +71,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return null;
     },
 
-    getOutputValues: function(outputs) {
+    getOutFileValue: function(outputs) {
       let output = {};
       if ("outFile" in outputs && "value" in outputs["outFile"]) {
         output["outFile"] = outputs["outFile"]["value"];

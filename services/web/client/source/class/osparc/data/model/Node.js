@@ -1114,7 +1114,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       if (this.isFilePicker()) {
-        nodeEntry.outputs = osparc.file.FilePicker.getOutputValues(this.getOutputs());
+        nodeEntry.outputs = osparc.file.FilePicker.getOutFileValue(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       }
       // remove null entries from the payload
