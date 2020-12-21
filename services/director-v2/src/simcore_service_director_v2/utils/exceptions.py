@@ -11,7 +11,14 @@ class DirectorException(Exception):
 
 
 class ProjectNotFoundError(DirectorException):
-    """Service was not found in swarm"""
+    """Project not found error"""
 
     def __init__(self, project_id: ProjectID):
         super().__init__(f"project {project_id} not found")
+
+
+class PipelineNotFoundError(DirectorException):
+    """Pipeline not found error"""
+
+    def __init__(self, pipeline_id: str):
+        super().__init__(f"pipeline {pipeline_id} not found")
