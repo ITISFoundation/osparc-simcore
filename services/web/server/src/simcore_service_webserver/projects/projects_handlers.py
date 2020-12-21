@@ -27,6 +27,7 @@ from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
 from ..exporter.export_import import study_export, study_import
 from ..exporter.file_response import CleanupFileResponse, get_empty_tmp_dir, remove_dir
+from ..exporter.config import get_max_upload_file_size_gb
 
 ONE_GB: int = 1024 * 1024 * 1024
 
@@ -620,8 +621,8 @@ async def export_project(request: web.Request):
 @login_required
 async def import_project(request: web.Request):
     # bumping this requet's max size
-    UPLOAD_CLIENT_MAX_SIZE = 10 * ONE_GB  # TODO: move to env_var in settings
-    request._client_max_size = UPLOAD_CLIENT_MAX_SIZE
+    # pylint: disable=protected-access
+    request._client_max_size = get_max_upload_file_size_gb(request.app) * ONE_GB
     user_id = request[RQT_USERID_KEY]
 
     post_contents = await request.post()

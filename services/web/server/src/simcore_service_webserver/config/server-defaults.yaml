@@ -65,3 +65,5 @@ tags:
   enabled: True
 publications:
   enabled: True
+exporter:
+  max_upload_file_size_gb: 10

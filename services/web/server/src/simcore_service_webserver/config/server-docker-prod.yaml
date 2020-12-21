@@ -69,3 +69,5 @@ activity:
   prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
   prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
   prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
+exporter:
+  max_upload_file_size_gb: ${WEBSERVER_MAX_UPLOAD_FILE_SIZE_GB}
