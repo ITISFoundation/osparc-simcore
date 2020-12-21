@@ -1,109 +1,17 @@
 import logging
-import datetime
-import json
-from pathlib import Path
-from collections import deque, namedtuple
-from typing import Deque
-
 import aiofiles
+from pathlib import Path
 from aiohttp import web
 from aiohttp.web_request import FileField
-from itertools import chain
 
 from .archiving import zip_folder, validate_osparc_import_name, unzip_folder
-from .file_downloader import ParallelDownloader
-from .serialize import dumps, loads
 from .async_hashing import checksum
-from .importers import SUPPORTED_IMPORTERS_FROM_VERSION, BaseImporter
+from .formatters import validate_manifest, BaseFormatter
 
-from simcore_service_webserver.projects.projects_api import get_project_for_user
-from simcore_service_webserver.storage_handlers import (
-    get_file_download_url,
-    get_project_files_metadata,
-)
-from simcore_service_webserver.utils import format_datetime
+from .formatters import FormatterV1
 
 
 log = logging.getLogger(__name__)
-
-# used in the future, will change if export format changes
-EXPORT_VERSION = "1"
-KEYS_TO_VALIDATE = {"store", "path", "dataset", "label"}
-
-LinkAndPath = namedtuple("LinkAndPath", ["link", "path"])
-
-
-async def download_files(download_links: Deque[LinkAndPath], storage_path: Path):
-    """ Downloads links to files in storage_path """
-    # TODO: use utility
-    parallel_downloader = ParallelDownloader()
-    for link_and_path in download_links:
-        download_path = storage_path / link_and_path.path
-        log.info("Will download %s -> '%s'", link_and_path.link, download_path)
-        await parallel_downloader.append_file(
-            link=link_and_path.link, download_path=download_path
-        )
-
-    await parallel_downloader.download_files()
-
-
-async def generate_directory_contents(
-    app: web.Application, dir_path: Path, project_id: str, user_id: int
-) -> None:
-    manifest_path = dir_path / "manifest.yaml"
-    project_path = dir_path / "project.yaml"
-    storage_path = dir_path / "storage"
-
-    project_data = await get_project_for_user(
-        app=app,
-        project_uuid=project_id,
-        user_id=user_id,
-        include_templates=True,
-        include_state=True,
-    )
-
-    log.info("Project data: %s", project_data)
-
-    download_links: Deque[LinkAndPath] = deque()
-
-    s3_metadata = await get_project_files_metadata(
-        app=app,
-        location_id="0",
-        uuid_filter=project_id,
-        user_id=user_id,
-    )
-    log.info("s3 files metadata %s: ", s3_metadata)
-
-    blackfynn_metadata = await get_project_files_metadata(
-        app=app,
-        location_id="1",
-        uuid_filter=project_id,
-        user_id=user_id,
-    )
-    log.info("blackfynn files metadata %s: ", blackfynn_metadata)
-
-    for file_metadata in chain(s3_metadata, blackfynn_metadata):
-        download_link = await get_file_download_url(
-            app=app,
-            location_id=file_metadata["location_id"],
-            fileId=file_metadata["raw_file_path"],
-            user_id=user_id,
-        )
-        save_path = Path(file_metadata["location_id"]) / file_metadata["raw_file_path"]
-        download_links.append(LinkAndPath(link=download_link, path=str(save_path)))
-
-    await download_files(download_links=download_links, storage_path=storage_path)
-
-    # TODO: maybe move this to a Pydantic model
-    manifest = {
-        "version": EXPORT_VERSION,
-        "creation_date_utc": format_datetime(datetime.datetime.utcnow()),
-    }
-
-    manifest_path.write_text(dumps(manifest))
-    pure_dict_project_data = json.loads(json.dumps(project_data))
-    # TODO: move this to a Pydantic model
-    project_path.write_text(dumps(pure_dict_project_data))
 
 
 # neagu-wkst:9081/v0/projects/d3cfd554-3ed9-11eb-9dd5-02420a0000f6/export?compressed=true
@@ -132,8 +40,10 @@ async def study_export(
     destination = Path(tmp_dir) / project_id
     destination.mkdir(parents=True, exist_ok=True)
 
-    await generate_directory_contents(
-        app=app, dir_path=destination, project_id=project_id, user_id=user_id
+    # The formatter will always be chosen to be the highest availabel version
+    formatter = FormatterV1(root_folder=destination)
+    await formatter.format_export_directory(
+        app=app, project_id=project_id, user_id=user_id
     )
 
     # at this point there is no more temp directory
@@ -160,7 +70,7 @@ async def study_import(
     temp_dir: str, file_field: FileField, user_id: int, chunk_size: int = 2 ** 16
 ) -> None:
     """ Creates a project from a given exported project"""
-
+    # Storing file to disk
     upload_file_name = Path(temp_dir) / "uploaded.zip"
     # upload and verify checksum
     original_file_name = file_field.filename
@@ -191,27 +101,6 @@ async def study_import(
         )
 
     unzipped_root_folder = await unzip_folder(upload_file_name)
-    # apply decoding based on format from manifest
-    log.info("Will search in path %s", unzipped_root_folder)
 
-    # dispatch to export version loader
-
-    manifest = unzipped_root_folder / "manifest.yaml"
-
-    if not manifest.is_file():
-        raise web.HTTPException(
-            reason="Expected a manifest.yaml file was not found in project"
-        )
-
-    manifest_data = loads(manifest.read_text())
-    version = manifest_data.get("version", None)
-    if version not in SUPPORTED_IMPORTERS_FROM_VERSION:
-        raise web.HTTPException(
-            reason=f"Version {version} was not found in {SUPPORTED_IMPORTERS_FROM_VERSION.keys()}"
-        )
-
-    importer_cls: BaseImporter = SUPPORTED_IMPORTERS_FROM_VERSION[version]
-    importer = importer_cls(version=version, root_folder=unzipped_root_folder)
-
-    # will start the import process
-    await importer.start_import()
+    formatter: BaseFormatter = await validate_manifest(unzipped_root_folder)
+    await formatter.validate_and_import_directory(user_id=user_id)
