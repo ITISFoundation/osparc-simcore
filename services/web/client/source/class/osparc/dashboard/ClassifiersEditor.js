@@ -66,7 +66,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
         flex: 1
       });
 
-      const addRRIDClassfierBtn = new osparc.ui.form.FetchButton(this.tr("Add RRID Classifier"));
+      const addRRIDClassfierBtn = new osparc.ui.form.FetchButton(this.tr("Add Classifier"));
       addRRIDClassfierBtn.addListener("execute", () => {
         this.__addRRIDClassfier(textField.getValue(), addRRIDClassfierBtn);
       }, this);
@@ -79,6 +79,9 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       const studyData = this.__studyData;
       const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
       const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
+      osparc.store.Store.getInstance().addListener("changeClassifiers", e => {
+        classifiersTree.recreateTree();
+      }, this);
       this._add(classifiersTree, {
         flex: 1
       });
@@ -106,7 +109,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       osparc.data.Resources.fetch("classifiers", "postRRID", params)
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("RRID classifier successfuly added"), "INFO");
-          this.__classifiersTree.reloadTree();
+          osparc.store.Store.getInstance().getAllClassifiers(true);
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invalid RRID"), "ERROR");
