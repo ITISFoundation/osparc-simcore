@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from pprint import pformat
-from typing import Dict, List
+from typing import Dict
 
 from aiohttp import web
 from aiopg.sa import Engine
