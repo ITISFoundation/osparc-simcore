@@ -60,7 +60,7 @@ def _node_outdated(full_dag_graph: nx.DiGraph, node_id: NodeID) -> bool:
         if output_port is None:
             return True
     # ok so we have outputs, but maybe the inputs are old? let's check recursively
-    for input_port in node["inputs"]:
+    for input_port in node["inputs"].values():
         if isinstance(input_port, PortLink):
             if is_node_dirty(full_dag_graph, input_port.node_uuid):
                 return True
