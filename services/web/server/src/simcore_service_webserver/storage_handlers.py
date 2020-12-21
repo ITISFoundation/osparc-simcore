@@ -2,10 +2,12 @@
 
     Mostly resolves and redirect to storage API
 """
-
+import logging
 from aiohttp import web
 import urllib
 from yarl import URL
+
+from typing import List, Dict, Any
 
 from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_utils import extract_and_validate
@@ -13,6 +15,9 @@ from servicelib.rest_utils import extract_and_validate
 from .login.decorators import login_required
 from .security_api import check_permission
 from .storage_config import get_client_session, get_storage_config
+
+
+log = logging.getLogger(__name__)
 
 
 def _get_base_storage_url(app: web.Application) -> URL:
@@ -125,6 +130,29 @@ async def delete_file(request: web.Request):
     return payload
 
 
+async def get_project_files_metadata(
+    app: web.Application, location_id: str, uuid_filter: str, user_id: int
+) -> List[Dict[str, Any]]:
+    session = get_client_session(app)
+
+    url: URL = (
+        _get_base_storage_url(app) / "locations" / location_id / "files" / "metadata"
+    )
+    params = dict(user_id=user_id, uuid_filter=uuid_filter)
+    async with session.get(url, ssl=False, params=params) as resp:
+        payload = await resp.json()
+        if not isinstance(payload, dict):
+            raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
+        if "data" not in payload:
+            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
+        if not isinstance(payload["data"], list):
+            raise web.HTTPException(
+                reason=f"No list payload received as data: '{payload}'"
+            )
+
+        return payload["data"]
+
+
 async def get_file_download_url(
     app: web.Application, location_id: str, fileId: str, user_id: int
 ) -> str:
@@ -138,10 +166,6 @@ async def get_file_download_url(
         / urllib.parse.quote(fileId, safe="")
     )
     params = dict(user_id=user_id)
-    import logging
-
-    log = logging.getLogger(__name__)
-    log.info("URL: '%s', params=%s", url, params)
     async with session.get(url, ssl=False, params=params) as resp:
         payload = await resp.json()
         if not isinstance(payload, dict):

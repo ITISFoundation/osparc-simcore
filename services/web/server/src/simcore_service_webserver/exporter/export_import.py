@@ -8,6 +8,7 @@ from typing import Deque
 import aiofiles
 from aiohttp import web
 from aiohttp.web_request import FileField
+from itertools import chain
 
 from .archiving import zip_folder, validate_osparc_import_name, unzip_folder
 from .file_downloader import ParallelDownloader
@@ -16,7 +17,10 @@ from .async_hashing import checksum
 from .importers import SUPPORTED_IMPORTERS_FROM_VERSION, BaseImporter
 
 from simcore_service_webserver.projects.projects_api import get_project_for_user
-from simcore_service_webserver.storage_handlers import get_file_download_url
+from simcore_service_webserver.storage_handlers import (
+    get_file_download_url,
+    get_project_files_metadata,
+)
 from simcore_service_webserver.utils import format_datetime
 
 
@@ -62,28 +66,31 @@ async def generate_directory_contents(
 
     download_links: Deque[LinkAndPath] = deque()
 
-    workbench = project_data["workbench"]
-    for node_data in workbench.values():
-        outputs = node_data.get("outputs", {})
-        for output in outputs.values():
-            if not isinstance(output, dict):
-                continue
+    s3_metadata = await get_project_files_metadata(
+        app=app,
+        location_id="0",
+        uuid_filter=project_id,
+        user_id=user_id,
+    )
+    log.info("s3 files metadata %s: ", s3_metadata)
 
-            is_storage_file = KEYS_TO_VALIDATE <= output.keys()
-            if not is_storage_file:
-                log.warning(
-                    "Expected a file from storage, the following format was provided %s",
-                    output,
-                )
-                continue
+    blackfynn_metadata = await get_project_files_metadata(
+        app=app,
+        location_id="1",
+        uuid_filter=project_id,
+        user_id=user_id,
+    )
+    log.info("blackfynn files metadata %s: ", blackfynn_metadata)
 
-            download_link = await get_file_download_url(
-                app=app,
-                location_id=output["store"],
-                fileId=output["path"],
-                user_id=user_id,
-            )
-            download_links.append(LinkAndPath(link=download_link, path=output["path"]))
+    for file_metadata in chain(s3_metadata, blackfynn_metadata):
+        download_link = await get_file_download_url(
+            app=app,
+            location_id=file_metadata["location_id"],
+            fileId=file_metadata["raw_file_path"],
+            user_id=user_id,
+        )
+        save_path = Path(file_metadata["location_id"]) / file_metadata["raw_file_path"]
+        download_links.append(LinkAndPath(link=download_link, path=str(save_path)))
 
     await download_files(download_links=download_links, storage_path=storage_path)
 
@@ -95,6 +102,7 @@ async def generate_directory_contents(
 
     manifest_path.write_text(dumps(manifest))
     pure_dict_project_data = json.loads(json.dumps(project_data))
+    # TODO: move this to a Pydantic model
     project_path.write_text(dumps(pure_dict_project_data))
 
 
