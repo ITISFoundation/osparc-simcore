@@ -34,7 +34,7 @@ from ...utils.computations import (
     is_pipeline_stopped,
 )
 from ...utils.dags import create_dag_graph, create_minimal_graph_based_on_selection
-from ...utils.exceptions import ProjectNotFoundError
+from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
@@ -228,7 +228,7 @@ async def get_computation(
         )
         return task_out
 
-    except ProjectNotFoundError as e:
+    except (ProjectNotFoundError, PipelineNotFoundError) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
     # NOTE: this will be re-used for the prep2go API stuff... don't worry...
