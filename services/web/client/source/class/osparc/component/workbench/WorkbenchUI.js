@@ -54,15 +54,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const inputNodesLayout = this.__inputNodesLayout = this.__createInputOutputNodesLayout(true);
     this._add(inputNodesLayout);
 
-    this.__workbenchLayer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    this._add(this.__workbenchLayer, {
+    const workbenchLayer = this.__workbenchLayer = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+    this._add(workbenchLayer, {
       flex: 1
     });
 
-    const scroll = new qx.ui.container.Scroll();
-    this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-    scroll.add(this.__workbenchLayout);
-    this.__workbenchLayer.add(scroll, {
+    const workbenchLayoutScroll = this.__workbenchLayoutScroll = new qx.ui.container.Scroll();
+    const workbenchLayout = this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+    workbenchLayoutScroll.add(workbenchLayout);
+    workbenchLayer.add(workbenchLayoutScroll, {
       left: 0,
       top: 0,
       right: 0,
@@ -73,8 +73,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     const nodesExposedLayout = this.__outputNodesLayout = this.__createInputOutputNodesLayout(false);
     this._add(nodesExposedLayout);
 
-    this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
-    this.__workbenchLayout.add(this.__desktop, {
+    const desktop = this.__desktop = new qx.ui.window.Desktop(new qx.ui.window.Manager());
+    workbenchLayout.add(desktop, {
       left: 0,
       top: 0,
       right: 0,
@@ -86,10 +86,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       textColor: "workbench-start-hint",
       visibility: "excluded"
     });
-    this.__workbenchLayout.add(this.__startHint);
+    workbenchLayout.add(this.__startHint);
 
     this.__svgWidgetLinks = new osparc.component.workbench.SvgWidget("SvgWidget_Links");
-    this.__desktop.add(this.__svgWidgetLinks, {
+    desktop.add(this.__svgWidgetLinks, {
       left: 0,
       top: 0,
       right: 0,
@@ -170,6 +170,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __inputNodesLayout: null,
     __outputNodesLayout: null,
     __workbenchLayout: null,
+    __workbenchLayoutScroll: null,
     __desktop: null,
     __svgWidgetLinks: null,
     __svgWidgetDrop: null,
@@ -368,7 +369,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("nodeStoppedMoving", () => {
-        this.__updateBounds();
+        this.__updateWorkbenchBounds();
       }, this);
 
       nodeUI.addListener("appear", () => {
@@ -723,7 +724,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return sidePanelWidth;
     },
 
-    __getPointEventPosition: function(pointerEvent, scale = false) {
+    __pointerEventToWorkbenchPos: function(pointerEvent, scale = false) {
       const topOffset = 50;
       const leftOffset = this.__getSidePanelWidth();
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
@@ -756,9 +757,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return;
       }
 
-      const pos = this.__getPointEventPosition(pointerEvent, true);
-      this.__pointerPosX = pos.x;
-      this.__pointerPosY = pos.y;
+      const scaledPos = this.__pointerEventToWorkbenchPos(pointerEvent, true);
+      const scrollX = this.__workbenchLayoutScroll.getScrollX();
+      const scrollY = this.__workbenchLayoutScroll.getScrollY();
+      const scaledScroll = this.__scaleCoordinates(scrollX, scrollY);
+      this.__pointerPosX = scaledPos.x + scaledScroll.x;
+      this.__pointerPosY = scaledPos.y + scaledScroll.y;
 
       let portPos = nodeUI.getEdgePoint(port);
       if (portPos[0] === null) {
@@ -1045,7 +1049,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         height: height + "px"
       });
 
-      this.__updateBounds();
+      this.__updateWorkbenchBounds();
     },
 
     __setZoom: function(el, zoom) {
@@ -1061,7 +1065,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       el.style["transformOrigin"] = oString;
     },
 
-    __updateBounds: function() {
+    __updateWorkbenchBounds: function() {
       const nodeBounds = this.__getNodesBounds();
       if (nodeBounds) {
         // Fit to nodes size
@@ -1140,9 +1144,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-        const winPos = this.__getPointEventPosition(e, false);
-        const srvPos = this.__getPointEventPosition(e, true);
-        const srvCat = this.__createServiceCatalog(winPos, srvPos);
+        const winPos = this.__pointerEventToWorkbenchPos(e, false);
+        const scaledPos = this.__pointerEventToWorkbenchPos(e, true);
+        const srvCat = this.__createServiceCatalog(winPos, scaledPos);
         srvCat.open();
       }, this);
 
