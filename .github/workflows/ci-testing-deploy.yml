@@ -110,8 +110,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_server_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -165,8 +165,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_catalog_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -214,8 +214,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -267,8 +267,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_v2_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -316,8 +316,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_sidecar_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -431,8 +431,9 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
+          ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_postgresdb_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -480,8 +481,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_service_integration_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -529,8 +530,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_servicelib_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -578,8 +579,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_modelslib_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -627,8 +628,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_simcoresdk_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -676,8 +677,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_storage_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -726,8 +727,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_isolated_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -776,8 +777,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_slow_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -826,8 +827,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_medium_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -876,8 +877,8 @@ jobs:
           flags: unittests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_fast_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -971,8 +972,8 @@ jobs:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_webserver_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -1036,8 +1037,8 @@ jobs:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_director-v2_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -1101,8 +1102,8 @@ jobs:
           flags: integrationtests #optional
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_sidecar_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -1166,8 +1167,8 @@ jobs:
           flags: integrationtests
       - name: prepare codeclimate coverage file
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_simcoresdk_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
@@ -1444,8 +1445,8 @@ jobs:
           ls -al all_coverages
       - name: install codeclimate test reporter
         run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter sum-coverage all_coverages/codeclimate.*.json --parts $(ls all_coverages/*.json | wc --lines)
       - name: upload coverages
         run: |
