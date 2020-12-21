@@ -232,6 +232,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     closeEditor: function() {
+      this.__stopAutoSaveTimer();
       return this.getStudy().stopStudy();
     }
   }
