@@ -117,7 +117,7 @@ class InvalidRRID(ScicrunchError):
 
 
 def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> ScicrunchError:
-    # NOTE: error handling designed based on test_scicrunch_service.py
+    # NOTE: error handling designed based on test_scicrunch_service_api.py
     assert 400 <= error_code < 600, error_code  # nosec
 
     custom_error = ScicrunchError("Unexpected error in scicrunch.org")
