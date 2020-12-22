@@ -342,7 +342,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setRunningStatus(nodeData.state);
         }
 
-        if (nodeData.progress) {
+        if ("progress" in nodeData) {
           this.getStatus().setProgress(nodeData.progress);
         }
 
@@ -610,11 +610,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     setOutputData: function(outputs) {
       if (outputs) {
-        for (const outputKey in outputs) {
+        for (const outputKey in this.__outputs) {
           if (!Object.prototype.hasOwnProperty.call(this.__outputs, outputKey)) {
             this.__outputs[outputKey] = {};
           }
-          this.__outputs[outputKey]["value"] = outputs[outputKey];
+          if (Object.prototype.hasOwnProperty.call(outputs, outputKey)) {
+            this.__outputs[outputKey]["value"] = outputs[outputKey];
+          } else {
+            this.__outputs[outputKey]["value"] = "";
+          }
           this.fireDataEvent("outputChanged", outputKey);
         }
       }

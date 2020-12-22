@@ -117,7 +117,9 @@ qx.Class.define("osparc.store.Store", {
     },
     classifiers: {
       check: "Array",
-      init: []
+      init: null,
+      nullable: true,
+      event: "changeClassifiers"
     }
   },
 
@@ -418,7 +420,7 @@ qx.Class.define("osparc.store.Store", {
     getAllClassifiers: function(reload = false) {
       return new Promise((resolve, reject) => {
         const oldClassifiers = this.getClassifiers();
-        if (!reload && oldClassifiers.length) {
+        if (!reload && oldClassifiers !== null) {
           resolve(oldClassifiers);
           return;
         }

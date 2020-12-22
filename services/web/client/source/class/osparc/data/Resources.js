@@ -652,6 +652,9 @@ qx.Class.define("osparc.data.Resources", {
       } catch (err) {
         return null;
       }
+      if (stored === null) {
+        return null;
+      }
       if (typeof stored === "object" && Object.keys(stored).length === 0) {
         return null;
       }

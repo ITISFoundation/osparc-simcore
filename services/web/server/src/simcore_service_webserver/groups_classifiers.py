@@ -93,7 +93,7 @@ class GroupClassifierRepository:
                     gid,
                     err,
                 )
-        return {}
+        return bundle
 
     async def group_uses_scicrunch(self, gid: int) -> bool:
         async with self.engine.acquire() as conn:
