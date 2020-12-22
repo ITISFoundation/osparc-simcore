@@ -446,7 +446,9 @@ qx.Class.define("osparc.store.Store", {
                 classifierss.forEach(({classifiers}) => {
                   if (classifiers) {
                     Object.keys(classifiers).forEach(key => {
-                      allClassifiers.push(classifiers[key]);
+                      const classifier = classifiers[key];
+                      classifier.key = key;
+                      allClassifiers.push(classifier);
                     });
                   }
                 });
