@@ -112,8 +112,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
           osparc.store.Store.getInstance().getAllClassifiers(true);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invalid RRID"), "ERROR");
-          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
         .finally(() => {
           btn.setFetching(false);
