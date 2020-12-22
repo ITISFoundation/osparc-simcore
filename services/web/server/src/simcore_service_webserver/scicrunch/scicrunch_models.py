@@ -32,14 +32,17 @@ RRID_TAG_PATTERN = r"(RRID:)?\s*([^:_\s]+)_(\S+)"
 rrid_capture_re = re.compile(RRID_TAG_PATTERN)
 
 
-def normalize_rrid_tags(rrid_tag: str) -> str:
+def normalize_rrid_tags(rrid_tag: str, *, with_prefix: bool = True) -> str:
     try:
         # validate & parse
         _, source_authority, identifier = rrid_capture_re.search(rrid_tag).groups()
         # format according to norm
-        return f"RRID:{source_authority}_{identifier}"
+        rrid = f"{source_authority}_{identifier}"
+        if with_prefix:
+            rrid = "RRID:" + rrid
+        return rrid
     except AttributeError:
-        raise ValueError(f"Invalid rrid tag {rrid_tag}")
+        raise ValueError(f"'{rrid_tag}' does not match a RRID pattern")
 
 
 # webserver API models -----------------------------------------
@@ -107,13 +110,6 @@ class ResourceView(BaseModel):
 
     def get_resource_url(self):
         return URL(str(self._get_field("Resource URL")))
-
-    def convert_to_api_model(self) -> ResearchResource:
-        return ResearchResource(
-            rrid=self.scicrunch_id,
-            name=self.get_name(),
-            description=self.get_description(),
-        )
 
 
 class ResourceHit(BaseModel):
