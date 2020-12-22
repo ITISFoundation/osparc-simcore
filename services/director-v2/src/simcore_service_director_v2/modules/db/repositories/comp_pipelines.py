@@ -8,6 +8,7 @@ from models_library.projects_state import RunningState
 from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_pipelines import CompPipelineAtDB
+from ....utils.exceptions import PipelineNotFoundError
 from ....utils.logging_utils import log_decorator
 from ..tables import comp_pipeline
 from ._base import BaseRepository
@@ -24,6 +25,8 @@ class CompPipelinesRepository(BaseRepository):
             )
         )
         row: RowProxy = await result.fetchone()
+        if not row:
+            raise PipelineNotFoundError(str(project_id))
         return CompPipelineAtDB.from_orm(row)
 
     @log_decorator(logger=logger)
