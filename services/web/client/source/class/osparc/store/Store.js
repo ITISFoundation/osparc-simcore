@@ -437,14 +437,15 @@ qx.Class.define("osparc.store.Store", {
               classifierPromises.push(this.__getOrgClassifiers(org["gid"]));
             });
             Promise.all(classifierPromises)
-              .then(classifierss => {
-                if (classifierss.length === 0) {
+              .then(orgsClassifiersMD => {
+                if (orgsClassifiersMD.length === 0) {
                   this.setClassifiers(allClassifiers);
                   resolve(allClassifiers);
                   return;
                 }
-                classifierss.forEach(({classifiers}) => {
-                  if (classifiers) {
+                orgsClassifiersMD.forEach(orgClassifiersMD => {
+                  if ("classifiers" in orgClassifiersMD) {
+                    const classifiers = orgClassifiersMD["classifiers"];
                     Object.keys(classifiers).forEach(key => {
                       const classifier = classifiers[key];
                       classifier.key = key;
