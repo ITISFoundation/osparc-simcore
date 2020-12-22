@@ -1072,8 +1072,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const nodesWidth = nodeBounds.maxLeft + osparc.component.workbench.NodeUI.NodeWidth; // a bit more of margin
         const nodesHeight = nodeBounds.maxTop + osparc.component.workbench.NodeUI.NodeHeight; // a bit more of margin
         const scaledNodes = this.__unscaleCoordinates(nodesWidth, nodesHeight);
-        this.__workbenchLayout.setMinWidth(scaledNodes.x);
-        this.__workbenchLayout.setMinHeight(scaledNodes.y);
+        this.__workbenchLayout.set({
+          minWidth: scaledNodes.x,
+          minHeight: scaledNodes.y
+        });
       }
 
       // Fit to screen
