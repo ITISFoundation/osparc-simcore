@@ -1,30 +1,50 @@
 """
-    Client to communicate with scicrunch service API (https://scicrunch.org/api/)
+    Layer to interact with with scicrunch service API (https://scicrunch.org/api/)
+
+    - http client for API requests
+    - Error handling:
+        - translates network errors
+        - translates request error codes
+
 """
 
 import logging
-import re
 from enum import IntEnum
 from http import HTTPStatus
-from typing import Any, List, MutableMapping, Optional
+from typing import Any, Dict, List, MutableMapping, Optional
 
 import aiohttp
 from aiohttp import ClientSession, web
+from aiohttp.web_exceptions import HTTPBadRequest, HTTPPaymentRequired, HTTPUnauthorized
 from pydantic import ValidationError
 from servicelib.client_session import get_client_session
 from yarl import URL
 
-from ._config import RRID_PATTERN, SciCrunchSettings
-from .scicrunch_models import ListOfResourceHits, ResourceView
+from ._config import SciCrunchSettings
+from .scicrunch_models import (
+    ListOfResourceHits,
+    ResourceHit,
+    ResourceView,
+    normalize_rrid_tags,
+)
 
 logger = logging.getLogger(__name__)
 
 
+## RAW REQUESTS  ------
+
+#
+# Free functions with raw request scicrunch.org API
+#    - client request context
+#    - raise_for_status=True -> Raise an aiohttp.ClientResponseError if the response status is 400 or higher
+#    - validates response and prunes using pydantic models
+
+
 async def get_all_versions(
-    rrid: str, client: ClientSession, settings: SciCrunchSettings
-) -> List:
+    unprefixed_rrid: str, client: ClientSession, settings: SciCrunchSettings
+) -> List[Dict[str, Any]]:
     async with client.get(
-        f"{settings.api_base_url}/resource/versions/all/{rrid}",
+        f"{settings.api_base_url}/resource/versions/all/{unprefixed_rrid}",
         params={"key": settings.api_key.get_secret_value()},
         raise_for_status=True,
     ) as resp:
@@ -63,13 +83,59 @@ async def autocomplete_by_name(
         return ListOfResourceHits.parse_obj(body.get("data", []))
 
 
+## ERROR  ------
+
+
+class ScicrunchServiceError(Exception):
+    # service down
+    # requests time-out
+    pass
+
+
+class ScicrunchConfigError(Exception):
+    # wrong token?
+    # wrong formatting?
+    # service API changed?
+    pass
+
+
+def map_to_web_exception(error: aiohttp.ClientResponseError) -> web.HTTPError:
+    # gets here aiohttp.ClientResponseError raisen when the response from scicrunch.org status is 400 or higher
+    assert 400 <= error.status < 600, error.status  # nosec
+
+    # error.request_info
+    # error.status
+    # error.message
+
+    if error.status == HTTPBadRequest.status_code:
+        # problem with our data
+        pass
+
+    elif error.status == HTTPUnauthorized.status_code:
+        # might not have correct cookie?
+        pass
+
+    elif HTTPPaymentRequired.status_code:
+        pass
+
+    elif error.status >= 500:  # scicrunch.org server error
+        web_error = web.HTTPServiceUnavailable(
+            reason=f"scicrunch.org cannot perform our requests: {error.message}"
+        )
+
+    return web_error
+
+
+## THICK CLIENT  ------
+
+
 class ValidationResult(IntEnum):
     UNKNOWN = -1
     INVALID = 0
     VALID = 1
 
 
-class SciCrunchAPI:
+class SciCrunch:
     """Client to communicate with scicrunch.org service
 
     - wraps all calls to scicrunch.org API
@@ -80,8 +146,6 @@ class SciCrunchAPI:
     """
 
     # FIXME: scicrunch timeouts should raise -> Service not avialable with a msg that scicrunch is currently not responding
-
-    RRID_RE = re.compile(RRID_PATTERN)
 
     def __init__(self, client: ClientSession, settings: SciCrunchSettings):
         self.settings = settings
@@ -111,17 +175,17 @@ class SciCrunchAPI:
     @classmethod
     def acquire_instance(
         cls, app: MutableMapping[str, Any], settings: SciCrunchSettings
-    ) -> "SciCrunchAPI":
+    ) -> "SciCrunch":
         """ Returns single instance for the application and stores it """
-        obj = app.get(f"{__name__}.SciCrunchAPI")
+        obj = app.get(f"{__name__}.SciCrunchClient")
         if obj is None:
             session = get_client_session(app)
-            app[f"{__name__}.SciCrunchAPI"] = obj = cls(session, settings)
+            app[f"{__name__}.SciCrunchClient"] = obj = cls(session, settings)
         return obj
 
     @staticmethod
-    def get_instance(app: MutableMapping[str, Any]) -> Optional["SciCrunchAPI"]:
-        obj = app.get(f"{__name__}.SciCrunchAPI")
+    def get_instance(app: MutableMapping[str, Any]) -> Optional["SciCrunch"]:
+        obj = app.get(f"{__name__}.SciCrunchClient")
         if obj is None:
             raise web.HTTPServiceUnavailable(
                 reason="Services on scicrunch.org are currently disabled"
@@ -132,13 +196,12 @@ class SciCrunchAPI:
 
     @classmethod
     def validate_identifier(cls, rrid: str) -> str:
-        match = cls.RRID_RE.match(rrid.strip())
-        if match:
-            rrid = match.group(2)  # WARNING: captures indexing is 1-based
-            assert rrid and isinstance(rrid, str), "Captured {rrid}"  # nosec
-            return rrid
-
-        raise web.HTTPUnprocessableEntity(reason=f"Invalid format for an RRID '{rrid}'")
+        try:
+            return normalize_rrid_tags(rrid)
+        except ValueError:
+            raise web.HTTPUnprocessableEntity(
+                reason=f"Invalid format for an RRID '{rrid}'"
+            )
 
     async def validate_resource(self, rrid: str) -> ValidationResult:
         try:
@@ -168,6 +231,10 @@ class SciCrunchAPI:
             rrid = self.validate_identifier(rrid)
             resource_view = await get_resource_fields(rrid, self.client, self.settings)
             return resource_view
+
+        except aiohttp.ClientResponseError as err:
+            raise map_to_web_exception
+
         except (aiohttp.ClientError, ValidationError):
             logger.debug(
                 "Failed to get fields for resource RRID: %s", rrid, exc_info=True
