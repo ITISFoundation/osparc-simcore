@@ -3,15 +3,43 @@
 """
 
 import logging
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Field, constr, validator
 from yarl import URL
 
-from ._config import STRICT_RRID_PATTERN
-
 logger = logging.getLogger(__name__)
+
+
+# Research Resource Identifiers --------------------------------
+#
+# To ensure they are recognizable, unique, and traceable,
+# identifiers are prefixed with " RRID:",
+# followed by a second tag that indicates the source authority that provided it:
+#
+#   "AB" for the Antibody Registry,
+#   "CVCL" for the Cellosaurus,
+#   "MMRRC" for Mutant Mouse Regional Resource Centers,
+#   "SCR" for the SciCrunch registry of tools
+#
+# SEE https://scicrunch.org/resources
+
+STRICT_RRID_PATTERN = r"^(RRID:)([^_\s]+)_(\S+)$"  # Expected in db labels and models
+
+RRID_TAG_PATTERN = r"(RRID:)?\s*([^:_\s]+)_(\S+)"
+rrid_capture_re = re.compile(RRID_TAG_PATTERN)
+
+
+def normalize_rrid_tags(rrid_tag: str) -> str:
+    try:
+        # validate & parse
+        _, source_authority, identifier = rrid_capture_re.search(rrid_tag).groups()
+        # format according to norm
+        return f"RRID:{source_authority}_{identifier}"
+    except AttributeError:
+        raise ValueError(f"Invalid rrid tag {rrid_tag}")
 
 
 # webserver API models -----------------------------------------
@@ -26,9 +54,7 @@ class ResearchResource(BaseModel):
     @validator("rrid", pre=True)
     @classmethod
     def format_rrid(cls, v):
-        if not v.startswith("RRID:"):
-            return f"RRID: {v}"
-        return v
+        return normalize_rrid_tags(v)
 
     class Config:
         orm_mode = True
