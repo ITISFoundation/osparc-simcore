@@ -43,6 +43,14 @@ pytestmark = pytest.mark.skipif(
 )
 
 # Citations according to https://scicrunch.org/resources -------------------
+"""
+    NOTES:
+
+    - scicrunch API ONLY recognizes RRIDs from SciCrunch registry of tools (i.e. with prefix "SCR")
+    - scicrunch web search handles ALL RRIDs (see below example of citations from other)
+    - scicrunch API does NOT uses 'RRID:' prefix in rrid request parameters
+
+"""
 
 
 def split_citations(citations: List[str]) -> List[Tuple[str, str]]:
