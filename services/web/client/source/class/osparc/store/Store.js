@@ -408,13 +408,13 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    __getOrgClassifiers: function(orgId) {
+    __getOrgClassifiers: function(orgId, useCache = false) {
       const params = {
         url: {
           "gid": orgId
         }
       };
-      return osparc.data.Resources.get("classifiers", params);
+      return osparc.data.Resources.get("classifiers", params, useCache);
     },
 
     getAllClassifiers: function(reload = false) {
@@ -434,7 +434,7 @@ qx.Class.define("osparc.store.Store", {
             }
             const classifierPromises = [];
             orgs.forEach(org => {
-              classifierPromises.push(this.__getOrgClassifiers(org["gid"]));
+              classifierPromises.push(this.__getOrgClassifiers(org["gid"], !reload));
             });
             Promise.all(classifierPromises)
               .then(orgsClassifiersMD => {
