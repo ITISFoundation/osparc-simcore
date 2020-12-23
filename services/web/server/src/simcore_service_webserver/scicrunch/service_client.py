@@ -209,10 +209,11 @@ class SciCrunch:
         except ValueError:
             raise InvalidRRID(rrid)
 
-        # "SCR" for the SciCrunch registry of tools
-        if rrid.startswith("SCR"):
+        if not rrid.startswith("SCR_"):
+            # "SCR" for the SciCrunch registry of tools
             # scicrunch API does not support anything else but tools (see test_scicrunch_services.py)
             raise InvalidRRID(": only 'SCR' from scicrunch registry of tools allowed")
+
         return rrid
 
     async def get_resource_fields(self, rrid: str) -> ResearchResource:

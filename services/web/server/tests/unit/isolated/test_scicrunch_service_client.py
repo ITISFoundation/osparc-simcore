@@ -9,7 +9,6 @@
 import json
 import os
 from pathlib import Path
-from pprint import pprint
 
 import pytest
 from aioresponses.core import aioresponses
@@ -23,13 +22,13 @@ from simcore_service_webserver.scicrunch.submodule_setup import (
 )
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environment):
-    assert mock_env_devel_environment["SCICRUNCH_API_SECRET"] == os.environ.get(
-        "SCICRUNCH_API_SECRET"
+    assert mock_env_devel_environment["SCICRUNCH_API_KEY"] == os.environ.get(
+        "SCICRUNCH_API_KEY"
     )
 
-    API_KEY = os.environ.get("SCICRUNCH_API_SECRET")
+    API_KEY = os.environ.get("SCICRUNCH_API_KEY")
     assert os.environ.get("SCICRUNCH_API_BASE_URL") == "https://scicrunch.org/api/1"
 
     with aioresponses() as mock:
@@ -71,29 +70,7 @@ async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environ
             f"https://scicrunch.org/api/1/resource/versions/all/SCR_018997?key={API_KEY}",
             status=200,
             payload=json.loads(
-                """
-                {
-                    "data": [
-                        {
-                            "version": 2,
-                            "status": "Curated",
-                            "time": 1598984801,
-                            "uid": 34739,
-                            "username": "Edyta Vieth",
-                            "cid": null,
-                        },
-                        {
-                            "version": 1,
-                            "status": "Pending",
-                            "time": 1598898249,
-                            "uid": 43,
-                            "username": "Anita Bandrowski",
-                            "cid": 30,
-                        },
-                    ],
-                    "success": true,
-                }
-                """
+                '{"data":[{"version":2,"status":"Curated","time":1598984801,"uid":34739,"username":"Edyta Vieth","cid":null},{"version":1,"status":"Pending","time":1598898249,"uid":43,"username":"Anita Bandrowski","cid":30}],"success":true}'
             ),
         )
 
@@ -104,7 +81,7 @@ async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environ
 async def fake_app(mock_env_devel_environment, loop):
     # By using .env-devel we ensure all needed variables are at
     # least defined there
-    pprint("app's environment variables", mock_env_devel_environment)
+    print("app's environment variables", format(mock_env_devel_environment))
 
     app = {}
     setup_scicrunch_submodule(app)
@@ -132,3 +109,4 @@ async def test_get_research_resource(fake_app, mock_scicrunch_service_api):
 
     assert resource.rrid == "RRID:SCR_018997"
     assert resource.name == "o²S²PARC"
+    assert "Simulation platform" in resource.description
