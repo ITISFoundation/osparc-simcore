@@ -56,12 +56,14 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       });
       rridLayout.add(logo);
 
-      const linkLabel = new osparc.ui.basic.LinkLabel(this.tr("Provide RRID"), "https://scicrunch.org/resources").set({
+      const linkLabel = new osparc.ui.basic.LinkLabel(this.tr("RRID:"), "https://scicrunch.org/resources").set({
         alignY: "middle"
       });
       rridLayout.add(linkLabel);
 
-      const textField = new qx.ui.form.TextField();
+      const textField = new qx.ui.form.TextField().set({
+        placeholder: "SCR_018997"
+      });
       rridLayout.add(textField, {
         flex: 1
       });
