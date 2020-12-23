@@ -147,19 +147,18 @@ class ProjectFile(BaseLoadingModel):
 
         return uuid_replace_values
 
-    @classmethod
-    def replace_via_serialization(
-        cls, root_dir: Path, project: "ProjectFile", shuffled_data: ShuffledData
+    def new_instance_from_shuffled_data(
+        self, root_dir: Path, shuffled_data: ShuffledData
     ) -> "ProjectFile":
-        serialized_project: str = project.storage_path.serialize(
-            project.dict(exclude={"storage_path"}, by_alias=True)
+        serialized_project: str = self.storage_path.serialize(
+            self.dict(exclude={"storage_path"}, by_alias=True)
         )
 
         for old_uuid, new_uuid in shuffled_data.items():
             serialized_project = serialized_project.replace(old_uuid, new_uuid)
 
-        replaced_dict_data: Dict = project.storage_path.deserialize(serialized_project)
+        replaced_dict_data: Dict = self.storage_path.deserialize(serialized_project)
         replaced_dict_data["storage_path"] = dict(
-            root_dir=root_dir, path_in_root_dir=cls._STORAGE_PATH
+            root_dir=root_dir, path_in_root_dir=self._STORAGE_PATH
         )
-        return cls.parse_obj(replaced_dict_data)
+        return ProjectFile.parse_obj(replaced_dict_data)

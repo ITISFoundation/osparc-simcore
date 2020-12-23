@@ -151,8 +151,8 @@ class FormatterV1(BaseFormatter):
         # replace shuffled_data in project
         # NOTE: there is no reason to write the shuffled data to file
         log.info("Loaded project data:  %s", project_file)
-        shuffled_project_file = ProjectFile.replace_via_serialization(
-            root_dir=self.root_folder, project=project_file, shuffled_data=shuffled_data
+        shuffled_project_file = project_file.new_instance_from_shuffled_data(
+            root_dir=self.root_folder, shuffled_data=shuffled_data
         )
 
         log.info("Shuffled project data: %s", shuffled_project_file)
