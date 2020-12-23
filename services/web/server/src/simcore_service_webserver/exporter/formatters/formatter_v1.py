@@ -24,17 +24,17 @@ log = logging.getLogger(__name__)
 
 
 async def ensure_files_downloaded(download_links: Deque[LinkAndPath2]) -> None:
-    """ Downloads links to files in their designed store_path """
+    """ Downloads links to files in their designed storage_path_to_file """
     # TODO: use utility
     parallel_downloader = ParallelDownloader()
     for link_and_path in download_links:
         log.info(
             "Will download %s -> '%s'",
             link_and_path.download_link,
-            link_and_path.store_path,
+            link_and_path.storage_path_to_file,
         )
         await parallel_downloader.append_file(
-            link=link_and_path.download_link, download_path=link_and_path.store_path
+            link=link_and_path.download_link, download_path=link_and_path.storage_path_to_file
         )
 
     await parallel_downloader.download_files()
@@ -45,7 +45,7 @@ async def ensure_files_downloaded(download_links: Deque[LinkAndPath2]) -> None:
             raise web.HTTPException(
                 reason=(
                     f"Could not download file {link_and_path.download_link} "
-                    f"to {link_and_path.store_path}"
+                    f"to {link_and_path.storage_path_to_file}"
                 )
             )
 
@@ -80,11 +80,11 @@ async def extract_download_links(
             fileId=file_metadata["raw_file_path"],
             user_id=user_id,
         )
-        save_path = Path(file_metadata["location_id"]) / file_metadata["raw_file_path"]
         download_links.append(
             LinkAndPath2(
                 root_dir=dir_path,
-                storage_path_to_file=str(save_path),
+                storage_type=file_metadata["location_id"],
+                relative_path_to_file=file_metadata["raw_file_path"],
                 download_link=download_link,
             )
         )
@@ -115,7 +115,7 @@ async def generate_directory_contents(
     # store manifest on disk
     manifest_params = dict(
         version=version,
-        attachments=[str(x.storage_path_to_file) for x in download_links],
+        attachments=[str(x.relative_path_to_file) for x in download_links],
     )
     await Manifest.model_to_file(root_dir=dir_path, **manifest_params)
     # store project data on disk
@@ -149,9 +149,11 @@ class FormatterV1(BaseFormatter):
         # check all attachments are present
         manifest = await Manifest.model_from_file(root_dir=self.root_folder)
         for attachment in manifest.attachments:
+            storage_path = attachment.split("/")[0]
             link_and_path = LinkAndPath2(
                 root_dir=self.root_folder,
-                storage_path_to_file=attachment,
+                storage_type=storage_path,
+                relative_path_to_file=attachment,
                 download_link="",
             )
             if not link_and_path.is_file():

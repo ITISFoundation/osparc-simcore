@@ -6,6 +6,8 @@ from pydantic import Field, validator, EmailStr, BaseModel
 
 from .base_models import BaseLoadingModel
 
+ShuffledData = Dict[str, str]
+
 
 class LinkAndPath2(BaseModel):
     _FILES_DIRECTORY: str = "storage"  # where all files are stored
@@ -13,7 +15,11 @@ class LinkAndPath2(BaseModel):
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
-    storage_path_to_file: Path = Field(
+    storage_type: str = Field(
+        ...,
+        description="usually 0 or 1 S3 or BlackFynn",
+    )
+    relative_path_to_file: Path = Field(
         ...,
         description="full path to where the file is going to be stored",
     )
@@ -29,7 +35,7 @@ class LinkAndPath2(BaseModel):
             raise ValueError(f"Provided path {str(v)} is not a directory!")
         return v
 
-    @validator("storage_path_to_file")
+    @validator("relative_path_to_file")
     @classmethod
     def _validate_path_in_root_dir(cls, v):
         if not isinstance(v, Path):
@@ -42,11 +48,23 @@ class LinkAndPath2(BaseModel):
     @property
     def store_path(self) -> Path:
         """Returns an absolute path to the file"""
-        return self.root_dir / self._FILES_DIRECTORY / self.storage_path_to_file
+        return Path(self.storage_type) / self.relative_path_to_file
+
+    @property
+    def storage_path_to_file(self) -> Path:
+        return (
+            self.root_dir
+            / self._FILES_DIRECTORY
+            / self.storage_type
+            / self.relative_path_to_file
+        )
 
     async def is_file(self) -> bool:
         """Checks if the file was saved at the given link"""
         return self.store_path.is_file()
+
+    def change_uuids_from_shuffled_data(self, shuffled_data: ShuffledData) -> None:
+        """Change the files's project and workbench node based on provided data"""
 
 
 class Manifest(BaseLoadingModel):
@@ -98,3 +116,11 @@ class Project(BaseLoadingModel):
         ...,
         description="representation all the information required to run and render studies",
     )
+
+    def shuffle_uuids(self) -> ShuffledData:
+        """
+        Changes the project.uuid and all uuids of the nodes in the workbench.
+        Allows for multiple imports of the project.
+
+        returns: new mapping from old to new to be applied to files
+        """
