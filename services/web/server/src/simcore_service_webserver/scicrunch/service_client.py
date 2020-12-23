@@ -155,8 +155,6 @@ class SciCrunch:
         - uses settings
     """
 
-    # FIXME: scicrunch timeouts should raise -> Service not avialable with a msg that scicrunch is currently not responding
-
     def __init__(self, client: ClientSession, settings: SciCrunchSettings):
         self.settings = settings
         self.client = client
@@ -240,6 +238,7 @@ class SciCrunch:
         except (
             client_exceptions.ClientConnectionError,
             client_exceptions.ClientPayloadError,
+            TimeoutError,
         ) as err:
             # https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
             raise ScicrunchServiceError("Failed to connect scicrunch service") from err

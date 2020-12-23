@@ -2,6 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+"""
+    Use this test to emulate situations with scicrunch service API
+
+"""
 import json
 import os
 from pathlib import Path
@@ -10,9 +14,8 @@ from pprint import pprint
 import pytest
 from aioresponses.core import aioresponses
 from servicelib.client_session import get_client_session
-from simcore_service_webserver.scicrunch.service_client import ValidationResult
+from simcore_service_webserver.scicrunch.service_client import SciCrunch
 from simcore_service_webserver.scicrunch.submodule_setup import (
-    SciCrunchAPI,
     setup_scicrunch_submodule,
 )
 
@@ -110,16 +113,52 @@ async def fake_app(mock_env_devel_environment, loop):
     pprint("app's environment variables", mock_env_devel_environment)
 
     app = {}
-    client = get_client_session(app)
+
+    setup_scicrunch_submodule(app)
 
     yield app
+
+    client = get_client_session(app)
     await client.close()
 
 
-@pytest.fixture
-async def scicrunch(fake_app):
-    setup_scicrunch_submodule(fake_app)
-    return SciCrunchAPI.get_instance(fake_app, raises=True)
+def test_setup_scicrunch_submodule(fake_app):
+    # scicruch should be init
+    scicrunch = SciCrunch.get_instance(fake_app)
+    assert scicrunch
+    assert scicrunch.client == get_client_session(fake_app)
 
 
 ## TESTS -------------------------------------------------------
+
+
+async def test_unauntheticated_request_to_scicrunch(fake_app):
+    scicrunch = SciCrunch.get_instance(fake_app)
+    resource = await scicrunch.get_resource_fields(rrid)
+
+
+@pytest.mark.parametrize(
+    "name,rrid",
+    [
+        (None, "SCR_INVALID_XXXXX"),
+        (None, "ANOTHER_INVALID_RRID"),
+    ]
+    + VALID_RRID_SAMPLES,
+)
+async def test_scicrunch_service_rrid_validation(name, rrid, scicrunch):
+
+    validation_result = await scicrunch.validate_rrid(rrid)
+
+    assert validation_result == (
+        ValidationResult.VALID if name else ValidationResult.INVALID
+    ), f"{name} with rrid={rrid} is undefined"
+
+
+@pytest.mark.parametrize(
+    "name,rrid",
+    VALID_RRID_SAMPLES,
+)
+async def test_scicrunch_service_get_rrid_fields(name, rrid, scicrunch):
+    assert name is not None
+    resource = await scicrunch.get_resource_fields(rrid)
+    assert resource.scicrunch_id == rrid
