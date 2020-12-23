@@ -56,12 +56,14 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       });
       rridLayout.add(logo);
 
-      const linkLabel = new osparc.ui.basic.LinkLabel(this.tr("Provide RRID"), "https://scicrunch.org/resources").set({
+      const linkLabel = new osparc.ui.basic.LinkLabel(this.tr("RRID:"), "https://scicrunch.org/resources").set({
         alignY: "middle"
       });
       rridLayout.add(linkLabel);
 
-      const textField = new qx.ui.form.TextField();
+      const textField = new qx.ui.form.TextField().set({
+        placeholder: "SCR_018997"
+      });
       rridLayout.add(textField, {
         flex: 1
       });
@@ -100,6 +102,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     },
 
     __addRRIDClassfier: function(rrid, btn) {
+      rrid = rrid.replace("RRID:", "");
       const params = {
         url: {
           "rrid": rrid
@@ -112,8 +115,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
           osparc.store.Store.getInstance().getAllClassifiers(true);
         })
         .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invalid RRID"), "ERROR");
-          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
         })
         .finally(() => {
           btn.setFetching(false);
