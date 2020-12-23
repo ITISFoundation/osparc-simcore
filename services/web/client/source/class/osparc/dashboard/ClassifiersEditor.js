@@ -100,6 +100,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     },
 
     __addRRIDClassfier: function(rrid, btn) {
+      rrid = rrid.replace("RRID:", "");
       const params = {
         url: {
           "rrid": rrid
