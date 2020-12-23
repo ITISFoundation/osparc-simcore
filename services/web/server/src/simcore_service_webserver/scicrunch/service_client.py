@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 #    - raise_for_status=True -> Raise an aiohttp.ClientResponseError if the response status is 400 or higher
 #    - validates response and prunes using pydantic models
 #
-# SEE test_scicrunch_service.py
+# SEE test_scicrunch_service_api.py
 
 
 async def get_all_versions(
