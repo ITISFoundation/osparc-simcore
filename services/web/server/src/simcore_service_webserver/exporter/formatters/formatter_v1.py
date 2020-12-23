@@ -8,7 +8,7 @@ from pathlib import Path
 from aiohttp import web
 
 from .base_formatter import BaseFormatter
-from .models import Manifest, Project, ShuffledData
+from .models import ManifestFile, ProjectFile, ShuffledData
 
 from ..file_downloader import ParallelDownloader
 
@@ -118,10 +118,10 @@ async def generate_directory_contents(
         version=version,
         attachments=[str(x.store_path) for x in download_links],
     )
-    await Manifest.model_to_file(root_dir=dir_path, **manifest_params)
+    await ManifestFile.model_to_file(root_dir=dir_path, **manifest_params)
     # store project data on disk
     project_params = project_data
-    await Project.model_to_file(root_dir=dir_path, **project_params)
+    await ProjectFile.model_to_file(root_dir=dir_path, **project_params)
 
 
 class FormatterV1(BaseFormatter):
@@ -145,21 +145,21 @@ class FormatterV1(BaseFormatter):
     async def validate_and_import_directory(self, *args, **kwargs):
         user_id: int = kwargs["user_id"]
 
-        project = await Project.model_from_file(root_dir=self.root_folder)
-        shuffled_data: ShuffledData = project.get_shuffled_uuids()
+        project_file = await ProjectFile.model_from_file(root_dir=self.root_folder)
+        shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
 
         # replace shuffled_data in project
         # NOTE: there is no reason to write the shuffled data to file
-        log.info("Loaded project data:  %s", project)
-        shuffled_project = Project.replace_via_serialization(
-            root_dir=self.root_folder, project=project, shuffled_data=shuffled_data
+        log.info("Loaded project data:  %s", project_file)
+        shuffled_project_file = ProjectFile.replace_via_serialization(
+            root_dir=self.root_folder, project=project_file, shuffled_data=shuffled_data
         )
 
-        log.info("Shuffled project data: %s", shuffled_project)
+        log.info("Shuffled project data: %s", shuffled_project_file)
 
         # check all attachments are present
-        manifest = await Manifest.model_from_file(root_dir=self.root_folder)
-        for attachment in manifest.attachments:
+        manifest_file = await ManifestFile.model_from_file(root_dir=self.root_folder)
+        for attachment in manifest_file.attachments:
             attachment_parts = attachment.split("/")
             link_and_path = LinkAndPath2(
                 root_dir=self.root_folder,
@@ -182,4 +182,5 @@ class FormatterV1(BaseFormatter):
                         f"Could not find {link_and_path.download_link} after shuffling data"
                     )
                 )
+        # NOTE: it is not necessary to apply data shuffling to the manifest
         # TODO: import data after shuffling to the project

@@ -81,7 +81,7 @@ class LinkAndPath2(BaseModel):
         await aiofiles.os.rename(current_storage_path_to_file, destination)
 
 
-class Manifest(BaseLoadingModel):
+class ManifestFile(BaseLoadingModel):
     _STORAGE_PATH: str = "manifest.yaml"
 
     version: str = Field(
@@ -107,7 +107,7 @@ class Manifest(BaseLoadingModel):
         return str(v)
 
 
-class Project(BaseLoadingModel):
+class ProjectFile(BaseLoadingModel):
     _STORAGE_PATH: str = "project.yaml"
 
     name: str = Field(..., description="name of the study")
@@ -149,8 +149,8 @@ class Project(BaseLoadingModel):
 
     @classmethod
     def replace_via_serialization(
-        cls, root_dir: Path, project: "Project", shuffled_data: ShuffledData
-    ) -> "Project":
+        cls, root_dir: Path, project: "ProjectFile", shuffled_data: ShuffledData
+    ) -> "ProjectFile":
         serialized_project: str = project.storage_path.serialize(
             project.dict(exclude={"storage_path"}, by_alias=True)
         )
@@ -162,4 +162,4 @@ class Project(BaseLoadingModel):
         replaced_dict_data["storage_path"] = dict(
             root_dir=root_dir, path_in_root_dir=cls._STORAGE_PATH
         )
-        return Project.parse_obj(replaced_dict_data)
+        return cls.parse_obj(replaced_dict_data)
