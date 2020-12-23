@@ -1,6 +1,4 @@
 import logging
-import datetime
-import json
 
 
 from itertools import chain
@@ -10,9 +8,9 @@ from collections import namedtuple
 from pathlib import Path
 from aiohttp import web
 
-from .base import BaseFormatter
+from .base_formatter import BaseFormatter
+from .models import Manifest, Project
 
-from ..serialize import loads, dumps
 from ..file_downloader import ParallelDownloader
 
 from simcore_service_webserver.projects.projects_api import get_project_for_user
@@ -20,7 +18,6 @@ from simcore_service_webserver.storage_handlers import (
     get_file_download_url,
     get_project_files_metadata,
 )
-from simcore_service_webserver.utils import format_datetime
 
 
 log = logging.getLogger(__name__)
@@ -48,9 +45,8 @@ async def download_files(download_links: Deque[LinkAndPath], storage_path: Path)
 
 
 async def generate_directory_contents(
-    app: web.Application, dir_path: Path, project_id: str, user_id: int
+    app: web.Application, dir_path: Path, project_id: str, user_id: int, version: str
 ) -> None:
-    manifest_path = dir_path / "manifest.yaml"
     project_path = dir_path / "project.yaml"
     storage_path = dir_path / "storage"
 
@@ -74,6 +70,8 @@ async def generate_directory_contents(
     )
     log.info("s3 files metadata %s: ", s3_metadata)
 
+    # Still not sure if these are required, when pulling files from blackfynn they end up in S3
+    # I am not sure there is an example where we need to directly export form blackfynn
     blackfynn_metadata = await get_project_files_metadata(
         app=app,
         location_id="1",
@@ -94,16 +92,11 @@ async def generate_directory_contents(
 
     await download_files(download_links=download_links, storage_path=storage_path)
 
-    # TODO: maybe move this to a Pydantic model
-    manifest = {
-        "version": EXPORT_VERSION,
-        "creation_date_utc": format_datetime(datetime.datetime.utcnow()),
-    }
+    manifest_params = dict(version=version)
+    await Manifest.model_to_file(root_dir=dir_path, **manifest_params)
 
-    manifest_path.write_text(dumps(manifest))
-    pure_dict_project_data = json.loads(json.dumps(project_data))
-    # TODO: move this to a Pydantic model
-    project_path.write_text(dumps(pure_dict_project_data))
+    project_params = project_data
+    await Project.model_to_file(root_dir=dir_path, **project_params)
 
 
 class FormatterV1(BaseFormatter):
@@ -117,24 +110,23 @@ class FormatterV1(BaseFormatter):
         user_id: int = kwargs["user_id"]
 
         await generate_directory_contents(
-            app=app, dir_path=self.root_folder, project_id=project_id, user_id=user_id
+            app=app,
+            dir_path=self.root_folder,
+            project_id=project_id,
+            user_id=user_id,
+            version=self.version,
         )
 
     async def validate_and_import_directory(self, *args, **kwargs):
         user_id: int = kwargs["user_id"]
 
-        projects_path = self.root_folder / "project.yaml"
-        storage_path = self.root_folder / "storage"
+        project = await Project.model_from_file(root_dir=self.root_folder)
 
-        if not projects_path.is_file():
-            raise web.HTTPException(
-                reason=f"File {str(projects_path)} was not found in archive"
-            )
+        # validate files as well
 
-        if not storage_path.is_dir():
-            raise web.HTTPException(
-                reason=f"Directory {str(storage_path)} was not found in archive"
-            )
+        log.info("Loaded project data: %s", project)
 
-        project_data = loads(projects_path.read_text())
-        log.info("Loaded project data: %s", project_data)
+
+# TODO: create Pydantic models for:
+#   - directory_storage_files
+# TODO: models must switch uuid for project and nodes
