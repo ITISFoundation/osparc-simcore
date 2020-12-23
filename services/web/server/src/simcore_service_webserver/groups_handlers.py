@@ -207,10 +207,11 @@ async def get_group_classifiers(request: web.Request):
         repo = GroupClassifierRepository(request.app)
         if not await repo.group_uses_scicrunch(gid):
             return await repo.get_classifiers_from_bundle(gid)
-        else:
-            return await build_rrids_tree_view(
-                request.app, tree_view_mode=request.query.get("tree_view", "std")
-            )
+
+        # otherwise, build dynamic tree with RRIDs
+        return await build_rrids_tree_view(
+            request.app, tree_view_mode=request.query.get("tree_view", "std")
+        )
     except ScicrunchError:
         return {}
 

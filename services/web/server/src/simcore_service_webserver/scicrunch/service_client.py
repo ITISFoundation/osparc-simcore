@@ -126,7 +126,7 @@ def map_to_scicrunch_error(rrid: str, error_code: int, message: str) -> Scicrunc
         web_exceptions.HTTPBadRequest.status_code,
         web_exceptions.HTTPNotFound.status_code,
     ):
-        raise InvalidRRID(rrid)
+        custom_error = InvalidRRID(rrid)
 
     elif error_code == web_exceptions.HTTPUnauthorized.status_code:
         # might not have correct cookie?
