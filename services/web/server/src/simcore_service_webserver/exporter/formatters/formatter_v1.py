@@ -8,7 +8,7 @@ from pathlib import Path
 from aiohttp import web
 
 from .base_formatter import BaseFormatter
-from .models import Manifest, Project
+from .models import Manifest, Project, ShuffledData
 
 from ..file_downloader import ParallelDownloader
 
@@ -34,7 +34,8 @@ async def ensure_files_downloaded(download_links: Deque[LinkAndPath2]) -> None:
             link_and_path.storage_path_to_file,
         )
         await parallel_downloader.append_file(
-            link=link_and_path.download_link, download_path=link_and_path.storage_path_to_file
+            link=link_and_path.download_link,
+            download_path=link_and_path.storage_path_to_file,
         )
 
     await parallel_downloader.download_files()
@@ -115,7 +116,7 @@ async def generate_directory_contents(
     # store manifest on disk
     manifest_params = dict(
         version=version,
-        attachments=[str(x.relative_path_to_file) for x in download_links],
+        attachments=[str(x.store_path) for x in download_links],
     )
     await Manifest.model_to_file(root_dir=dir_path, **manifest_params)
     # store project data on disk
@@ -145,27 +146,40 @@ class FormatterV1(BaseFormatter):
         user_id: int = kwargs["user_id"]
 
         project = await Project.model_from_file(root_dir=self.root_folder)
+        shuffled_data: ShuffledData = project.get_shuffled_uuids()
+
+        # replace shuffled_data in project
+        # NOTE: there is no reason to write the shuffled data to file
+        log.info("Loaded project data:  %s", project)
+        shuffled_project = Project.replace_via_serialization(
+            root_dir=self.root_folder, project=project, shuffled_data=shuffled_data
+        )
+
+        log.info("Shuffled project data: %s", shuffled_project)
 
         # check all attachments are present
         manifest = await Manifest.model_from_file(root_dir=self.root_folder)
         for attachment in manifest.attachments:
-            storage_path = attachment.split("/")[0]
+            attachment_parts = attachment.split("/")
             link_and_path = LinkAndPath2(
                 root_dir=self.root_folder,
-                storage_type=storage_path,
-                relative_path_to_file=attachment,
+                storage_type=attachment_parts[0],
+                relative_path_to_file="/".join(attachment_parts[1:]),
                 download_link="",
             )
+            # check file exists
             if not link_and_path.is_file():
                 raise web.HTTPException(
                     reason=(
                         f"Could not find {link_and_path.download_link} in import document"
                     )
                 )
-
-        log.info("Loaded project data: %s", project)
-
-
-# TODO: create Pydantic models for:
-#   - directory_storage_files
-# TODO: models must switch uuid for project and nodes
+            # apply shuffle data which will move the file and check again it exits
+            await link_and_path.apply_shuffled_data(shuffled_data=shuffled_data)
+            if not link_and_path.is_file():
+                raise web.HTTPException(
+                    reason=(
+                        f"Could not find {link_and_path.download_link} after shuffling data"
+                    )
+                )
+        # TODO: import data after shuffling to the project

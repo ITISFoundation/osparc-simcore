@@ -1,10 +1,14 @@
+import uuid
+
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable
 
+import aiofiles
 from pydantic import Field, validator, EmailStr, BaseModel
 
 from .base_models import BaseLoadingModel
+from ..file_response import makedirs
 
 ShuffledData = Dict[str, str]
 
@@ -52,19 +56,29 @@ class LinkAndPath2(BaseModel):
 
     @property
     def storage_path_to_file(self) -> Path:
-        return (
-            self.root_dir
-            / self._FILES_DIRECTORY
-            / self.storage_type
-            / self.relative_path_to_file
-        )
+        return self.root_dir / self._FILES_DIRECTORY / self.store_path
 
     async def is_file(self) -> bool:
         """Checks if the file was saved at the given link"""
-        return self.store_path.is_file()
+        return self.storage_path_to_file.is_file()
 
     def change_uuids_from_shuffled_data(self, shuffled_data: ShuffledData) -> None:
         """Change the files's project and workbench node based on provided data"""
+
+    async def apply_shuffled_data(self, shuffled_data: ShuffledData) -> None:
+        """Will replace paths on disk for the file and change the relative_path_to_file"""
+        current_storage_path_to_file = self.storage_path_to_file
+        relative_path_to_file_str = str(self.relative_path_to_file)
+        for old_uuid, new_uuid in shuffled_data.items():
+            relative_path_to_file_str = relative_path_to_file_str.replace(
+                old_uuid, new_uuid
+            )
+        self.relative_path_to_file = Path(relative_path_to_file_str)
+
+        # finally move file and check
+        destination = self.storage_path_to_file
+        await makedirs(destination.parent, exist_ok=True)
+        await aiofiles.os.rename(current_storage_path_to_file, destination)
 
 
 class Manifest(BaseLoadingModel):
@@ -117,10 +131,35 @@ class Project(BaseLoadingModel):
         description="representation all the information required to run and render studies",
     )
 
-    def shuffle_uuids(self) -> ShuffledData:
+    def get_shuffled_uuids(self) -> ShuffledData:
         """
-        Changes the project.uuid and all uuids of the nodes in the workbench.
-        Allows for multiple imports of the project.
+        Generates new uuid for the project_uuid and workbench nodes.
+        NOTE: this function will not replace them.
 
         returns: new mapping from old to new to be applied to files
         """
+        new_uuid: Callable = lambda: str(uuid.uuid4())
+
+        uuid_replace_values: ShuffledData = {self.uuid: new_uuid()}
+
+        for node in self.workbench.keys():
+            uuid_replace_values[node] = new_uuid()
+
+        return uuid_replace_values
+
+    @classmethod
+    def replace_via_serialization(
+        cls, root_dir: Path, project: "Project", shuffled_data: ShuffledData
+    ) -> "Project":
+        serialized_project: str = project.storage_path.serialize(
+            project.dict(exclude={"storage_path"}, by_alias=True)
+        )
+
+        for old_uuid, new_uuid in shuffled_data.items():
+            serialized_project = serialized_project.replace(old_uuid, new_uuid)
+
+        replaced_dict_data: Dict = project.storage_path.deserialize(serialized_project)
+        replaced_dict_data["storage_path"] = dict(
+            root_dir=root_dir, path_in_root_dir=cls._STORAGE_PATH
+        )
+        return Project.parse_obj(replaced_dict_data)

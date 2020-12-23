@@ -56,15 +56,21 @@ class BaseModelSavePath(BaseModel):
 
     def is_store_path_present(self) -> bool:
         """Used to check if the file is present in the expected location"""
-        return self.path.is_file()
+        return self.path.exists()
+
+    def serialize(self, dict_payload: Dict) -> str:
+        return dumps(dict_payload)
+
+    def deserialize(self, str_payload: str) -> Dict:
+        return loads(str_payload)
 
     async def data_from_file(self) -> Dict:
         async with aiofiles.open(self.path, "r") as input_file:
-            return loads(await input_file.read())
+            return self.deserialize(await input_file.read())
 
-    async def data_to_file(self, payload: str) -> None:
+    async def data_to_file(self, payload: Dict) -> None:
         async with aiofiles.open(self.path, "w") as output_file:
-            await output_file.write(dumps(payload))
+            await output_file.write(self.serialize(payload))
 
 
 class BaseLoadingModel(BaseModel):
@@ -109,7 +115,7 @@ class BaseLoadingModel(BaseModel):
         """Used to generate an existing model from a file"""
         cls.validate_storage_path()
 
-        manifest_obj = cls.parse_obj(
+        model_obj = cls.parse_obj(
             dict(
                 **kwargs,
                 storage_path=dict(
@@ -117,6 +123,6 @@ class BaseLoadingModel(BaseModel):
                 ),
             )
         )
-        to_store = manifest_obj.dict(exclude={"storage_path"}, by_alias=True)
-        await manifest_obj.storage_path.data_to_file(to_store)
-        return manifest_obj
+        to_store = model_obj.dict(exclude={"storage_path"}, by_alias=True)
+        await model_obj.storage_path.data_to_file(to_store)
+        return model_obj
