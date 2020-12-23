@@ -9,7 +9,6 @@
 """
 
 import logging
-from contextlib import suppress
 from typing import Any, Dict, List, MutableMapping, Optional
 
 from aiohttp import ClientSession, client_exceptions, web_exceptions
