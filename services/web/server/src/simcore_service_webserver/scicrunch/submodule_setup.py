@@ -7,7 +7,7 @@ from typing import Any, MutableMapping, Optional
 from pydantic import ValidationError
 
 from ._config import SciCrunchSettings
-from .service_client import SciCrunchAPI
+from .service_client import SciCrunch
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +17,9 @@ def setup_scicrunch_submodule(
 ):
     try:
         cfg = SciCrunchSettings()
-        api = SciCrunchAPI.acquire_instance(app, cfg)
-        assert api == SciCrunchAPI.get_instance(app)  # nosec
+        api = SciCrunch.acquire_instance(app, cfg)
+        assert api == SciCrunch.get_instance(app)  # nosec
+
     except ValidationError as err:
         logger.warning(
             "Failed to setup interface with K-Core. This functionality will not be available: %s",
