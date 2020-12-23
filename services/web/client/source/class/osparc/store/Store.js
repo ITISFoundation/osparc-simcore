@@ -426,10 +426,9 @@ qx.Class.define("osparc.store.Store", {
         }
         osparc.store.Store.getInstance().getGroupsOrganizations()
           .then(orgs => {
-            const allClassifiers = [];
             if (orgs.length === 0) {
-              this.setClassifiers(allClassifiers);
-              resolve(allClassifiers);
+              this.setClassifiers([]);
+              resolve([]);
               return;
             }
             const classifierPromises = [];
@@ -439,10 +438,11 @@ qx.Class.define("osparc.store.Store", {
             Promise.all(classifierPromises)
               .then(orgsClassifiersMD => {
                 if (orgsClassifiersMD.length === 0) {
-                  this.setClassifiers(allClassifiers);
-                  resolve(allClassifiers);
+                  this.setClassifiers([]);
+                  resolve([]);
                   return;
                 }
+                const allClassifiers = [];
                 orgsClassifiersMD.forEach(orgClassifiersMD => {
                   if ("classifiers" in orgClassifiersMD) {
                     const classifiers = orgClassifiersMD["classifiers"];
