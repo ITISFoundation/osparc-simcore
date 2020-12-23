@@ -238,7 +238,9 @@ async def get_scicrunch_resource(request: web.Request):
         raise web.HTTPBadRequest(reason=err.reason) from err
 
     except ScicrunchError as err:
-        raise web.HTTPServiceUnavailable(reason=err.reason) from err
+        user_msg = "Cannot get RRID since scicrunch.org service is not reachable."
+        logger.error("%s -> %s", err, user_msg)
+        raise web.HTTPServiceUnavailable(reason=user_msg) from err
 
 
 #  POST /groups/sparc/classifiers/scicrunch-resources/{rrid}
@@ -265,7 +267,9 @@ async def add_scicrunch_resource(request: web.Request):
         raise web.HTTPBadRequest(reason=err.reason) from err
 
     except ScicrunchError as err:
-        raise web.HTTPServiceUnavailable(reason=err.reason) from err
+        user_msg = "Cannot add RRID since scicrunch.org service is not reachable."
+        logger.error("%s -> %s", err, user_msg)
+        raise web.HTTPServiceUnavailable(reason=user_msg) from err
 
 
 #  GET /groups/sparc/classifiers/scicrunch-resources:search
@@ -281,4 +285,6 @@ async def search_scicrunch_resources(request: web.Request):
         return [hit.dict() for hit in hits]
 
     except ScicrunchError as err:
-        raise web.HTTPServiceUnavailable(reason=err.reason) from err
+        user_msg = "Cannot search since scicrunch.org service is not reachable."
+        logger.error("%s -> %s", err, user_msg)
+        raise web.HTTPServiceUnavailable(reason=user_msg) from err

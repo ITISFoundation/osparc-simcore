@@ -196,9 +196,10 @@ class SciCrunch:
 
     def get_rrid_link(self, rrid: str) -> str:
         # NOTE: for some reason scicrunch query does not like prefix!
+        prefixless_rrid = rrid.replace("RRID:", "").strip()
         return str(
             self.base_url.with_path("/resources/Any/search").with_query(
-                q="undefined", l=rrid.replace("RRID: ", "").strip()
+                q="undefined", l=prefixless_rrid
             )
         )
 
@@ -247,8 +248,6 @@ class SciCrunch:
     async def search_resource(self, name_as: str) -> List[ResourceHit]:
         # Safe: returns empty string if fails!
         # Might be slow and timeout!
-        with suppress(Exception):
-            hits = await autocomplete_by_name(name_as, self.client, self.settings)
-            return hits.__root__
-
-        return []
+        # Might be good to know that scicrunch.org is not reachable and cannot perform search now?
+        hits = await autocomplete_by_name(name_as, self.client, self.settings)
+        return hits.__root__
