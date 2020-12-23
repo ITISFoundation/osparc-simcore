@@ -14,7 +14,10 @@ from pprint import pprint
 import pytest
 from aioresponses.core import aioresponses
 from servicelib.client_session import get_client_session
-from simcore_service_webserver.scicrunch.service_client import SciCrunch
+from simcore_service_webserver.scicrunch.service_client import (
+    ResearchResource,
+    SciCrunch,
+)
 from simcore_service_webserver.scicrunch.submodule_setup import (
     setup_scicrunch_submodule,
 )
@@ -122,6 +125,9 @@ async def fake_app(mock_env_devel_environment, loop):
     await client.close()
 
 
+## TESTS -------------------------------------------------------
+
+
 def test_setup_scicrunch_submodule(fake_app):
     # scicruch should be init
     scicrunch = SciCrunch.get_instance(fake_app)
@@ -129,36 +135,23 @@ def test_setup_scicrunch_submodule(fake_app):
     assert scicrunch.client == get_client_session(fake_app)
 
 
-## TESTS -------------------------------------------------------
-
-
-async def test_unauntheticated_request_to_scicrunch(fake_app):
+async def test_get_research_resource(fake_app, mock_scicrunch_service_api):
     scicrunch = SciCrunch.get_instance(fake_app)
-    resource = await scicrunch.get_resource_fields(rrid)
+    resource: ResearchResource = await scicrunch.get_resource_fields(rrid="SCR_018997")
+
+    assert resource.rrid == "RRID:SCR_018997"
+    assert resource.name == "o²S²PARC"
 
 
-@pytest.mark.parametrize(
-    "name,rrid",
-    [
-        (None, "SCR_INVALID_XXXXX"),
-        (None, "ANOTHER_INVALID_RRID"),
-    ]
-    + VALID_RRID_SAMPLES,
-)
-async def test_scicrunch_service_rrid_validation(name, rrid, scicrunch):
+@pytest.mark.skip(reason="UNDER DEV: test_group_handlers")
+async def test_unauntheticated_request_to_scicrunch(client):
+    # TODO: group handler calls
+    from aiohttp import web_exceptions
 
-    validation_result = await scicrunch.validate_rrid(rrid)
-
-    assert validation_result == (
-        ValidationResult.VALID if name else ValidationResult.INVALID
-    ), f"{name} with rrid={rrid} is undefined"
-
-
-@pytest.mark.parametrize(
-    "name,rrid",
-    VALID_RRID_SAMPLES,
-)
-async def test_scicrunch_service_get_rrid_fields(name, rrid, scicrunch):
-    assert name is not None
-    resource = await scicrunch.get_resource_fields(rrid)
-    assert resource.scicrunch_id == rrid
+    with aioresponses() as mock:
+        # TODO: mock scicrunch returns unauntheticated
+        with pytest.raises(web_exceptions.HTTPBadRequest):
+            resp = await client.post(
+                "/groups/sparc/classifiers/scicrunch-resources/SCR_018997",
+                raise_for_status=True,
+            )

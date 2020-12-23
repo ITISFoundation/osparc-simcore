@@ -57,7 +57,7 @@ class ResearchResource(BaseModel):
     @validator("rrid", pre=True)
     @classmethod
     def format_rrid(cls, v):
-        return normalize_rrid_tags(v)
+        return normalize_rrid_tags(v, with_prefix=True)
 
     class Config:
         orm_mode = True
