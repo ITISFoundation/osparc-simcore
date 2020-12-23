@@ -22,15 +22,6 @@ from simcore_service_webserver.scicrunch.submodule_setup import (
     setup_scicrunch_submodule,
 )
 
-# From https://scicrunch.org/resources
-VALID_RRID_SAMPLES = [
-    ("Antibody", "RRID:AB_90755"),
-    ("Plasmid", "RRID:Addgene_44362"),
-    ("Organism", "RRID:MMRRC_026409-UCD"),
-    ("Cell Line", "RRID:CVCL_0033"),
-    ("Tool", "RRID:SCR_007358"),
-]
-
 
 @pytest.fixture(scope="session")
 async def mock_scicrunch_service_api(fake_data_dir: Path, mock_env_devel_environment):
@@ -116,8 +107,8 @@ async def fake_app(mock_env_devel_environment, loop):
     pprint("app's environment variables", mock_env_devel_environment)
 
     app = {}
-
     setup_scicrunch_submodule(app)
+    assert app
 
     yield app
 
@@ -141,17 +132,3 @@ async def test_get_research_resource(fake_app, mock_scicrunch_service_api):
 
     assert resource.rrid == "RRID:SCR_018997"
     assert resource.name == "o²S²PARC"
-
-
-@pytest.mark.skip(reason="UNDER DEV: test_group_handlers")
-async def test_unauntheticated_request_to_scicrunch(client):
-    # TODO: group handler calls
-    from aiohttp import web_exceptions
-
-    with aioresponses() as mock:
-        # TODO: mock scicrunch returns unauntheticated
-        with pytest.raises(web_exceptions.HTTPBadRequest):
-            resp = await client.post(
-                "/groups/sparc/classifiers/scicrunch-resources/SCR_018997",
-                raise_for_status=True,
-            )
