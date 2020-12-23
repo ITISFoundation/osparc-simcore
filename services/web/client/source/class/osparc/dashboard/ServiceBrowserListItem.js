@@ -173,6 +173,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
         case "subtitle":
           control = new osparc.ui.markdown.Markdown().set({
             font: "text-13",
+            noMargin: true,
             maxHeight: 16
           });
           this._add(control, {
@@ -189,6 +190,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
             column: 2
           });
           break;
+      }
+      if (control) {
+        control.set({
+          anonymous: true
+        });
       }
 
       return control || this.base(arguments, id);

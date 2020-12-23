@@ -272,16 +272,6 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__outputs;
     },
 
-    getOutputValues: function() {
-      let output = {};
-      for (const outputId in this.__outputs) {
-        if (this.__outputs[outputId].value) {
-          output[outputId] = this.__outputs[outputId].value;
-        }
-      }
-      return output;
-    },
-
     hasChildren: function() {
       const innerNodes = this.getInnerNodes();
       if (innerNodes) {
@@ -610,11 +600,15 @@ qx.Class.define("osparc.data.model.Node", {
 
     setOutputData: function(outputs) {
       if (outputs) {
-        for (const outputKey in outputs) {
+        for (const outputKey in this.__outputs) {
           if (!Object.prototype.hasOwnProperty.call(this.__outputs, outputKey)) {
             this.__outputs[outputKey] = {};
           }
-          this.__outputs[outputKey]["value"] = outputs[outputKey];
+          if (Object.prototype.hasOwnProperty.call(outputs, outputKey)) {
+            this.__outputs[outputKey]["value"] = outputs[outputKey];
+          } else {
+            this.__outputs[outputKey]["value"] = "";
+          }
           this.fireDataEvent("outputChanged", outputKey);
         }
       }
@@ -1124,7 +1118,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       if (this.isFilePicker()) {
-        nodeEntry.outputs = this.getOutputValues();
+        nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       }
       // remove null entries from the payload
