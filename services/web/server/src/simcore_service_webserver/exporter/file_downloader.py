@@ -29,3 +29,4 @@ class ParallelDownloader:
         wrapped_function = aiofiles_os.wrap(self.downloader.download)
         results = await wrapped_function()
         log.info("Download results %s", results)
+        # TODO: check if all files have been downloaded

@@ -30,7 +30,9 @@ KEYS_TO_VALIDATE = {"store", "path", "dataset", "label"}
 LinkAndPath = namedtuple("LinkAndPath", ["link", "path"])
 
 
-async def download_files(download_links: Deque[LinkAndPath], storage_path: Path):
+async def ensure_files_downloaded(
+    download_links: Deque[LinkAndPath], storage_path: Path
+):
     """ Downloads links to files in storage_path """
     # TODO: use utility
     parallel_downloader = ParallelDownloader()
@@ -44,22 +46,9 @@ async def download_files(download_links: Deque[LinkAndPath], storage_path: Path)
     await parallel_downloader.download_files()
 
 
-async def generate_directory_contents(
-    app: web.Application, dir_path: Path, project_id: str, user_id: int, version: str
-) -> None:
-    project_path = dir_path / "project.yaml"
-    storage_path = dir_path / "storage"
-
-    project_data = await get_project_for_user(
-        app=app,
-        project_uuid=project_id,
-        user_id=user_id,
-        include_templates=True,
-        include_state=True,
-    )
-
-    log.info("Project data: %s", project_data)
-
+async def extract_download_links(
+    app: web.Application, project_id: str, user_id: int
+) -> Deque[LinkAndPath]:
     download_links: Deque[LinkAndPath] = deque()
 
     s3_metadata = await get_project_files_metadata(
@@ -90,11 +79,37 @@ async def generate_directory_contents(
         save_path = Path(file_metadata["location_id"]) / file_metadata["raw_file_path"]
         download_links.append(LinkAndPath(link=download_link, path=str(save_path)))
 
-    await download_files(download_links=download_links, storage_path=storage_path)
+    return download_links
 
+
+async def generate_directory_contents(
+    app: web.Application, dir_path: Path, project_id: str, user_id: int, version: str
+) -> None:
+    storage_path = dir_path / "storage"
+
+    project_data = await get_project_for_user(
+        app=app,
+        project_uuid=project_id,
+        user_id=user_id,
+        include_templates=True,
+        include_state=True,
+    )
+
+    log.info("Project data: %s", project_data)
+
+    download_links: Deque[LinkAndPath] = await extract_download_links(
+        app=app, project_id=project_id, user_id=user_id
+    )
+
+    # make sure all files from storage services are persisted on disk
+    await ensure_files_downloaded(
+        download_links=download_links, storage_path=storage_path
+    )
+
+    # store manifest on disk
     manifest_params = dict(version=version)
     await Manifest.model_to_file(root_dir=dir_path, **manifest_params)
-
+    # store project data on disk
     project_params = project_data
     await Project.model_to_file(root_dir=dir_path, **project_params)
 
@@ -130,3 +145,4 @@ class FormatterV1(BaseFormatter):
 # TODO: create Pydantic models for:
 #   - directory_storage_files
 # TODO: models must switch uuid for project and nodes
+# TODO: add list of downloaded files to the manifest
