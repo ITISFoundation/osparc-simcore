@@ -21,6 +21,14 @@ ClassifierID = str
 Workbench = Dict[NodeID_AsDictKey, Node]
 
 
+class EmptyHttpUrl(HttpUrl):
+    @classmethod
+    def validate(cls, value: str) -> str:
+        if value == "":
+            return value
+        return super().validate(value)
+
+
 class Project(BaseModel):
     uuid: ProjectID = Field(
         ...,
@@ -40,7 +48,7 @@ class Project(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: HttpUrl = Field(
+    thumbnail: EmptyHttpUrl = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -85,9 +93,7 @@ class Project(BaseModel):
     ui: Optional[StudyUI] = None
 
     # Dev only
-    dev: Optional[Dict] = Field(
-        description="object used for development purposes only"
-    )
+    dev: Optional[Dict] = Field(description="object used for development purposes only")
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
