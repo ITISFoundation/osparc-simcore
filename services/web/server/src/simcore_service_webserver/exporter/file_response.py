@@ -1,5 +1,5 @@
 import asyncio
-import uuid
+import tempfile
 
 from pathlib import Path
 from typing import Union, Optional
@@ -16,7 +16,8 @@ rename = aiofiles_os.wrap(os.rename)  # as in aiofiles.os.py module
 
 
 def _candidate_tmp_dir() -> Path:
-    return Path("/tmp") / str(uuid.uuid4())
+    # pylint: disable=protected-access
+    return Path("/tmp") / next(tempfile._get_candidate_names())
 
 
 async def get_empty_tmp_dir() -> str:
