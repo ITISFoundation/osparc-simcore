@@ -1,12 +1,11 @@
 import uuid
-import json
 
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Callable, Optional
+from typing import Dict, List, Callable, Optional
 
 import aiofiles
-from pydantic import Field, validator, EmailStr, BaseModel, Json
+from pydantic import Field, validator, EmailStr, BaseModel
 
 from .base_models import BaseLoadingModel
 from ..file_response import makedirs
@@ -154,7 +153,7 @@ class ProjectFile(BaseLoadingModel):
         return uuid_replace_values
 
     def new_instance_from_shuffled_data(
-        self, root_dir: Path, shuffled_data: ShuffledData
+        self, shuffled_data: ShuffledData
     ) -> "ProjectFile":
         project_as_string = self.json(exclude={"storage_path"}, by_alias=True)
 

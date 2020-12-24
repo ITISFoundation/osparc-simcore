@@ -1,8 +1,6 @@
 from typing import Dict
 from pathlib import Path
 
-from aiohttp import web
-
 
 from .base_formatter import BaseFormatter
 from .models import ManifestFile

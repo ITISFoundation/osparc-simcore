@@ -1,5 +1,4 @@
 import logging
-import json
 
 from itertools import chain
 from collections import deque
@@ -128,11 +127,6 @@ async def generate_directory_contents(
     await ManifestFile.model_to_file(root_dir=dir_path, **manifest_params)
     # store project data on disk
     project_params = project_data
-    # this data is stored as json formatted string
-    # project_params["ui"] = json.dumps(project_params["ui"])
-    # project_params["dev"] = json.dumps(project_params["dev"])
-    # project_params["workbench"] = json.dumps(project_params["workbench"])
-
     await ProjectFile.model_to_file(root_dir=dir_path, **project_params)
 
 
@@ -192,7 +186,7 @@ class FormatterV1(BaseFormatter):
         # NOTE: there is no reason to write the shuffled data to file
         log.info("Loaded project data:  %s", project_file)
         shuffled_project_file = project_file.new_instance_from_shuffled_data(
-            root_dir=self.root_folder, shuffled_data=shuffled_data
+            shuffled_data=shuffled_data
         )
 
         log.info("Shuffled project data: %s", shuffled_project_file)
@@ -248,8 +242,5 @@ class FormatterV1(BaseFormatter):
             dev=shuffled_project_file.dev,
             workbench=shuffled_project_file.workbench,
             ui=shuffled_project_file.ui,
-            # dev=json.loads(shuffled_project_file.dev),
-            # workbench=json.loads(shuffled_project_file.workbench),
-            # ui=json.loads(shuffled_project_file.ui),
         )
         await add_new_project(app, project, user)
