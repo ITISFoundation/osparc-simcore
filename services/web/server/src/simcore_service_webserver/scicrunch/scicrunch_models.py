@@ -3,31 +3,61 @@
 """
 
 import logging
+import re
 from datetime import datetime
 from typing import Any, Dict, List, Union
 
 from pydantic import BaseModel, Field, constr, validator
 from yarl import URL
 
-from ._config import STRICT_RRID_PATTERN
-
 logger = logging.getLogger(__name__)
+
+
+# Research Resource Identifiers --------------------------------
+#
+# To ensure they are recognizable, unique, and traceable,
+# identifiers are prefixed with " RRID:",
+# followed by a second tag that indicates the source authority that provided it:
+#
+#   "AB" for the Antibody Registry,
+#   "CVCL" for the Cellosaurus,
+#   "MMRRC" for Mutant Mouse Regional Resource Centers,
+#   "SCR" for the SciCrunch registry of tools
+#
+# SEE https://scicrunch.org/resources
+
+STRICT_RRID_PATTERN = r"^(RRID:)([^_\s]+)_(\S+)$"  # Expected in db labels and models
+
+RRID_TAG_PATTERN = r"(RRID:)?\s*([^:_\s]+)_(\S+)"
+rrid_capture_re = re.compile(RRID_TAG_PATTERN)
+
+
+def normalize_rrid_tags(rrid_tag: str, *, with_prefix: bool = True) -> str:
+    try:
+        # validate & parse
+        _, source_authority, identifier = rrid_capture_re.search(rrid_tag).groups()
+        # format according to norm
+        rrid = f"{source_authority}_{identifier}"
+        if with_prefix:
+            rrid = "RRID:" + rrid
+        return rrid
+    except AttributeError:
+        raise ValueError(f"'{rrid_tag}' does not match a RRID pattern")
 
 
 # webserver API models -----------------------------------------
 class ResearchResource(BaseModel):
-    rrid: constr(
-        regex=STRICT_RRID_PATTERN
-    )  # unique identifier used as classifier, i.e. to tag studies and services
+    rrid: constr(regex=STRICT_RRID_PATTERN) = Field(
+        ...,
+        description="Unique identifier used as classifier, i.e. to tag studies and services",
+    )
     name: str
     description: str
 
     @validator("rrid", pre=True)
     @classmethod
     def format_rrid(cls, v):
-        if not v.startswith("RRID:"):
-            return f"RRID: {v}"
-        return v
+        return normalize_rrid_tags(v, with_prefix=True)
 
     class Config:
         orm_mode = True
@@ -47,12 +77,7 @@ class ResearchResourceAtdB(ResearchResource):
 class FieldItem(BaseModel):
     field_name: str = Field(..., alias="field")
     required: bool
-    # field_type: str = Field(..., alias="type") # text, textarea, resource-types, ...
-    # max_number: str  # convertable to int
     value: Union[str, None, List[Any]] = None
-    # position: int
-    # display: str  # title, descripiotn, url, text, owner-text
-    alt: str  # alternative text
 
 
 class ResourceView(BaseModel):
@@ -60,9 +85,6 @@ class ResourceView(BaseModel):
     version: int
     curation_status: str
     last_curated_version: int
-    # uuid: UUID
-    # NOTE: image_src is a path from https://scicrunch.org/ e.g. https://scicrunch.org/upload/resource-images/18997.png
-    # image_src: Optional[str]
     scicrunch_id: str
 
     @classmethod
@@ -73,8 +95,6 @@ class ResourceView(BaseModel):
     @property
     def is_curated(self) -> bool:
         return self.curation_status.lower() == "curated"
-
-    # TODO: add validator to capture only selected fields
 
     def _get_field(self, fieldname: str):
         for field in self.resource_fields:
@@ -91,17 +111,9 @@ class ResourceView(BaseModel):
     def get_resource_url(self):
         return URL(str(self._get_field("Resource URL")))
 
-    def convert_to_api_model(self) -> ResearchResource:
-        return ResearchResource(
-            rrid=self.scicrunch_id,
-            name=self.get_name(),
-            description=self.get_description(),
-        )
-
 
 class ResourceHit(BaseModel):
     rrid: str = Field(..., alias="rid")
-    # original_id: str
     name: str
 
 

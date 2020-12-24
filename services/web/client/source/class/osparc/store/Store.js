@@ -408,13 +408,13 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    __getOrgClassifiers: function(orgId) {
+    __getOrgClassifiers: function(orgId, useCache = false) {
       const params = {
         url: {
           "gid": orgId
         }
       };
-      return osparc.data.Resources.get("classifiers", params);
+      return osparc.data.Resources.get("classifiers", params, useCache);
     },
 
     getAllClassifiers: function(reload = false) {
@@ -426,27 +426,30 @@ qx.Class.define("osparc.store.Store", {
         }
         osparc.store.Store.getInstance().getGroupsOrganizations()
           .then(orgs => {
-            const allClassifiers = [];
             if (orgs.length === 0) {
-              this.setClassifiers(allClassifiers);
-              resolve(allClassifiers);
+              this.setClassifiers([]);
+              resolve([]);
               return;
             }
             const classifierPromises = [];
             orgs.forEach(org => {
-              classifierPromises.push(this.__getOrgClassifiers(org["gid"]));
+              classifierPromises.push(this.__getOrgClassifiers(org["gid"], !reload));
             });
             Promise.all(classifierPromises)
-              .then(classifierss => {
-                if (classifierss.length === 0) {
-                  this.setClassifiers(allClassifiers);
-                  resolve(allClassifiers);
+              .then(orgsClassifiersMD => {
+                if (orgsClassifiersMD.length === 0) {
+                  this.setClassifiers([]);
+                  resolve([]);
                   return;
                 }
-                classifierss.forEach(({classifiers}) => {
-                  if (classifiers) {
+                const allClassifiers = [];
+                orgsClassifiersMD.forEach(orgClassifiersMD => {
+                  if ("classifiers" in orgClassifiersMD) {
+                    const classifiers = orgClassifiersMD["classifiers"];
                     Object.keys(classifiers).forEach(key => {
-                      allClassifiers.push(classifiers[key]);
+                      const classifier = classifiers[key];
+                      classifier.key = key;
+                      allClassifiers.push(classifier);
                     });
                   }
                 });

@@ -4661,10 +4661,10 @@ paths:
       responses:
         '200':
           description: Got information of a valid RRID
-        '404':
-          description: Cannot find a valid research resource for the provided RRID
+        '400':
+          description: Invalid RRID
         '503':
-          description: Underline validation service is not reachable
+          description: scircrunch.org service is not reachable
         default:
           description: Default http error response body
           content:
@@ -4756,8 +4756,10 @@ paths:
       responses:
         '200':
           description: Got information of a valid RRID
-        '422':
+        '400':
           description: Invalid RRID
+        '503':
+          description: scircrunch.org service is not reachable
         default:
           description: Default http error response body
           content:
@@ -4856,6 +4858,8 @@ paths:
       responses:
         '200':
           description: Got information of a valid RRID
+        '503':
+          description: scircrunch.org service is not reachable
         default:
           description: Default http error response body
           content:
