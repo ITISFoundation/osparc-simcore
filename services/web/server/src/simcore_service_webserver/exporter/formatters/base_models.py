@@ -1,24 +1,10 @@
+import json
+
 from pathlib import Path
 from typing import Dict, Any, Union
 
 import aiofiles
-import yaml
-from aiohttp import web
 from pydantic import BaseModel, Field, validator
-
-
-def dumps(data: Dict) -> str:
-    try:
-        return yaml.safe_dump(data)
-    except yaml.YAMLError:
-        web.HTTPException(reason=f"Could not encode into YAML from '{data}'")
-
-
-def loads(string_data: str) -> Dict:
-    try:
-        return yaml.safe_load(string_data)
-    except yaml.YAMLError:
-        web.HTTPException(reason=f"Could not decode YAML from '{string_data}'")
 
 
 class BaseModelSavePath(BaseModel):
@@ -58,19 +44,13 @@ class BaseModelSavePath(BaseModel):
         """Used to check if the file is present in the expected location"""
         return self.path.exists()
 
-    def serialize(self, dict_payload: Dict) -> str:
-        return dumps(dict_payload)
-
-    def deserialize(self, str_payload: str) -> Dict:
-        return loads(str_payload)
-
-    async def data_from_file(self) -> Dict:
+    async def data_from_file(self) -> str:
         async with aiofiles.open(self.path, "r") as input_file:
-            return self.deserialize(await input_file.read())
+            return await input_file.read()
 
-    async def data_to_file(self, payload: Dict) -> None:
+    async def data_to_file(self, payload: str) -> None:
         async with aiofiles.open(self.path, "w") as output_file:
-            await output_file.write(self.serialize(payload))
+            await output_file.write(payload)
 
 
 class BaseLoadingModel(BaseModel):
@@ -79,7 +59,7 @@ class BaseLoadingModel(BaseModel):
     _STORAGE_PATH: Union[str, Path] = ""
 
     storage_path: BaseModelSavePath = Field(
-        ..., description="Where the file is peristed or from where is loaded"
+        None, description="Where the file is peristed or from where is loaded"
     )
 
     @classmethod
@@ -102,13 +82,14 @@ class BaseLoadingModel(BaseModel):
         """Used to validate a model from an existing file"""
         cls.validate_storage_path()
 
-        storage_path_dict = dict(root_dir=root_dir, path_in_root_dir=cls._STORAGE_PATH)
-        storage_path = BaseModelSavePath(**storage_path_dict)
+        storage_path = BaseModelSavePath(
+            root_dir=root_dir, path_in_root_dir=cls._STORAGE_PATH
+        )
 
-        dict_data = await storage_path.data_from_file()
-        dict_data["storage_path"] = storage_path_dict
-
-        return cls.parse_obj(dict_data)
+        stored_data = await storage_path.data_from_file()
+        new_obj = cls.parse_raw(stored_data)
+        new_obj.storage_path = storage_path
+        return new_obj
 
     @classmethod
     async def model_to_file(cls, root_dir: Path, **kwargs: Dict[str, Any]) -> None:
@@ -123,6 +104,6 @@ class BaseLoadingModel(BaseModel):
                 ),
             )
         )
-        to_store = model_obj.dict(exclude={"storage_path"}, by_alias=True)
+        to_store = model_obj.json(exclude={"storage_path"}, by_alias=True)
         await model_obj.storage_path.data_to_file(to_store)
         return model_obj

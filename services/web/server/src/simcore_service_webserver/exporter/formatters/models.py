@@ -1,14 +1,17 @@
 import uuid
+import json
 
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, List, Callable, Optional
 
 import aiofiles
-from pydantic import Field, validator, EmailStr, BaseModel
+from pydantic import Field, validator, EmailStr, BaseModel, Json
 
 from .base_models import BaseLoadingModel
 from ..file_response import makedirs
+from models_library.projects import Workbench
+from models_library.projects_ui import StudyUI
 
 ShuffledData = Dict[str, str]
 
@@ -125,8 +128,11 @@ class ProjectFile(BaseLoadingModel):
     thumbnail: str = Field(
         ..., description="contains a link to an image to be used as thumbnail"
     )
-    ui: Dict[str, Any] = Field(..., description="contains data used to render the UI")
-    workbench: Dict[str, Any] = Field(
+    dev: Optional[Dict] = Field(None, description="used to store dev information")
+    ui: Optional[StudyUI] = Field(
+        None, description="contains data used to render the UI"
+    )
+    workbench: Workbench = Field(
         ...,
         description="representation all the information required to run and render studies",
     )
@@ -150,15 +156,12 @@ class ProjectFile(BaseLoadingModel):
     def new_instance_from_shuffled_data(
         self, root_dir: Path, shuffled_data: ShuffledData
     ) -> "ProjectFile":
-        serialized_project: str = self.storage_path.serialize(
-            self.dict(exclude={"storage_path"}, by_alias=True)
-        )
+        project_as_string = self.json(exclude={"storage_path"}, by_alias=True)
 
         for old_uuid, new_uuid in shuffled_data.items():
-            serialized_project = serialized_project.replace(old_uuid, new_uuid)
+            project_as_string = project_as_string.replace(old_uuid, new_uuid)
 
-        replaced_dict_data: Dict = self.storage_path.deserialize(serialized_project)
-        replaced_dict_data["storage_path"] = dict(
-            root_dir=root_dir, path_in_root_dir=self._STORAGE_PATH
-        )
-        return ProjectFile.parse_obj(replaced_dict_data)
+        new_obj = ProjectFile.parse_raw(project_as_string)
+        new_obj.storage_path = self.storage_path
+
+        return new_obj

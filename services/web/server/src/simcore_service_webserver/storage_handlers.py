@@ -176,3 +176,28 @@ async def get_file_download_url(
             raise web.HTTPException(reason=f"No url found in response: '{payload}'")
 
         return payload["data"]["link"]
+
+
+async def get_file_upload_url(
+    app: web.Application, location_id: str, fileId: str, user_id: int
+) -> str:
+    session = get_client_session(app)
+
+    url: URL = (
+        _get_base_storage_url(app)
+        / "locations"
+        / location_id
+        / "files"
+        / urllib.parse.quote(fileId, safe="")
+    )
+    params = dict(user_id=user_id)
+    async with session.put(url, ssl=False, params=params) as resp:
+        payload = await resp.json()
+        if not isinstance(payload, dict):
+            raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
+        if "data" not in payload:
+            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
+        if "link" not in payload["data"]:
+            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
+
+        return payload["data"]["link"]

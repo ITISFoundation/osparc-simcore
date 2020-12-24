@@ -1,12 +1,13 @@
 import logging
-
+import json
 
 from itertools import chain
 from collections import deque
 from typing import Deque
 from pathlib import Path
-from aiohttp import web
+from aiohttp import web, ClientSession, ClientTimeout
 
+import aiofiles
 from .base_formatter import BaseFormatter
 from .models import ManifestFile, ProjectFile, ShuffledData
 
@@ -16,9 +17,15 @@ from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.storage_handlers import (
     get_file_download_url,
     get_project_files_metadata,
+    get_file_upload_url,
 )
 
 from .models import LinkAndPath2
+
+from simcore_service_webserver.studies_dispatcher._users import UserInfo
+from simcore_service_webserver.studies_dispatcher._projects import add_new_project
+from models_library.projects import AccessRights, Project
+from simcore_service_webserver.utils import now_str
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +49,7 @@ async def ensure_files_downloaded(download_links: Deque[LinkAndPath2]) -> None:
 
     # check all files have been downloaded
     for link_and_path in download_links:
-        if not link_and_path.is_file():
+        if not await link_and_path.is_file():
             raise web.HTTPException(
                 reason=(
                     f"Could not download file {link_and_path.download_link} "
@@ -121,14 +128,46 @@ async def generate_directory_contents(
     await ManifestFile.model_to_file(root_dir=dir_path, **manifest_params)
     # store project data on disk
     project_params = project_data
+    # this data is stored as json formatted string
+    # project_params["ui"] = json.dumps(project_params["ui"])
+    # project_params["dev"] = json.dumps(project_params["dev"])
+    # project_params["workbench"] = json.dumps(project_params["workbench"])
+
     await ProjectFile.model_to_file(root_dir=dir_path, **project_params)
+
+
+async def upload_file_to_storage(
+    app: web.Application,
+    link_and_path: LinkAndPath2,
+    user_id: int,
+    session: ClientSession,
+) -> None:
+    upload_url = await get_file_upload_url(
+        app=app,
+        location_id=str(link_and_path.storage_type),
+        fileId=str(link_and_path.relative_path_to_file),
+        user_id=user_id,
+    )
+    log.info(">>> upload url >>> %s", upload_url)
+
+    async def file_sender(file_name=None):
+        async with aiofiles.open(file_name, "rb") as f:
+            chunk = await f.read(64 * 1024)
+            while chunk:
+                yield chunk
+                chunk = await f.read(64 * 1024)
+
+    data_provider = file_sender(file_name=link_and_path.storage_path_to_file)
+    async with session.post(upload_url, data=data_provider) as resp:
+        upload_result = await resp.text()
+        log.info("Uplaod result: %s", upload_result)
 
 
 class FormatterV1(BaseFormatter):
     def __init__(self, root_folder: Path):
         super().__init__(version="1", root_folder=root_folder)
 
-    async def format_export_directory(self, *args, **kwargs):
+    async def format_export_directory(self, **kwargs):
         # write manifest function
         app: web.Application = kwargs["app"]
         project_id: str = kwargs["project_id"]
@@ -142,8 +181,9 @@ class FormatterV1(BaseFormatter):
             version=self.version,
         )
 
-    async def validate_and_import_directory(self, *args, **kwargs):
-        user_id: int = kwargs["user_id"]
+    async def validate_and_import_directory(self, **kwargs):
+        app: web.Application = kwargs["app"]
+        user: UserInfo = kwargs["user"]
 
         project_file = await ProjectFile.model_from_file(root_dir=self.root_folder)
         shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
@@ -159,28 +199,57 @@ class FormatterV1(BaseFormatter):
 
         # check all attachments are present
         manifest_file = await ManifestFile.model_from_file(root_dir=self.root_folder)
-        for attachment in manifest_file.attachments:
-            attachment_parts = attachment.split("/")
-            link_and_path = LinkAndPath2(
-                root_dir=self.root_folder,
-                storage_type=attachment_parts[0],
-                relative_path_to_file="/".join(attachment_parts[1:]),
-                download_link="",
-            )
-            # check file exists
-            if not link_and_path.is_file():
-                raise web.HTTPException(
-                    reason=(
-                        f"Could not find {link_and_path.download_link} in import document"
-                    )
+
+        async with ClientSession(timeout=ClientTimeout(total=60 * 60)) as session:
+            for attachment in manifest_file.attachments:
+                attachment_parts = attachment.split("/")
+                link_and_path = LinkAndPath2(
+                    root_dir=self.root_folder,
+                    storage_type=attachment_parts[0],
+                    relative_path_to_file="/".join(attachment_parts[1:]),
+                    download_link="",
                 )
-            # apply shuffle data which will move the file and check again it exits
-            await link_and_path.apply_shuffled_data(shuffled_data=shuffled_data)
-            if not link_and_path.is_file():
-                raise web.HTTPException(
-                    reason=(
-                        f"Could not find {link_and_path.download_link} after shuffling data"
+                # check file exists
+                if not await link_and_path.is_file():
+                    raise web.HTTPException(
+                        reason=(
+                            f"Could not find {link_and_path.download_link} in import document"
+                        )
                     )
+                # apply shuffle data which will move the file and check again it exits
+                await link_and_path.apply_shuffled_data(shuffled_data=shuffled_data)
+                if not await link_and_path.is_file():
+                    raise web.HTTPException(
+                        reason=(
+                            f"Could not find {link_and_path.download_link} after shuffling data"
+                        )
+                    )
+
+                await upload_file_to_storage(
+                    app=app,
+                    link_and_path=link_and_path,
+                    user_id=user.id,
+                    session=session,
                 )
+
         # NOTE: it is not necessary to apply data shuffling to the manifest
-        # TODO: import data after shuffling to the project
+        # finally create and add the project
+        project = Project(
+            uuid=shuffled_project_file.uuid,
+            name=shuffled_project_file.name,
+            description=shuffled_project_file.description,
+            thumbnail=shuffled_project_file.thumbnail,
+            prjOwner=user.email,
+            accessRights={
+                user.primary_gid: AccessRights(read=True, write=True, delete=True)
+            },
+            creationDate=now_str(),
+            lastChangeDate=now_str(),
+            dev=shuffled_project_file.dev,
+            workbench=shuffled_project_file.workbench,
+            ui=shuffled_project_file.ui,
+            # dev=json.loads(shuffled_project_file.dev),
+            # workbench=json.loads(shuffled_project_file.workbench),
+            # ui=json.loads(shuffled_project_file.ui),
+        )
+        await add_new_project(app, project, user)

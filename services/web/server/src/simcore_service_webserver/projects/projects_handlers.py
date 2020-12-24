@@ -623,7 +623,6 @@ async def import_project(request: web.Request):
     # bumping this requet's max size
     # pylint: disable=protected-access
     request._client_max_size = get_max_upload_file_size_gb(request.app) * ONE_GB
-    user_id = request[RQT_USERID_KEY]
 
     post_contents = await request.post()
     log.info("POST body %s", post_contents)
@@ -633,7 +632,16 @@ async def import_project(request: web.Request):
         raise web.HTTPException(reason="Expected a file as 'fileName' form parmeter")
 
     temp_dir: str = await get_empty_tmp_dir()
-    await study_import(temp_dir=temp_dir, file_field=file_name_field, user_id=user_id)
+
+    from simcore_service_webserver.studies_dispatcher._users import (
+        UserInfo,
+        acquire_user,
+    )
+
+    user: UserInfo = await acquire_user(request)
+    await study_import(
+        app=request.app, temp_dir=temp_dir, file_field=file_name_field, user=user
+    )
     # await remove_dir(directory=temp_dir)   #TODO: put this back
 
     return web.HTTPOk()

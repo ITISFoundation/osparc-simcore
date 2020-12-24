@@ -9,7 +9,7 @@ from .async_hashing import checksum
 from .formatters import validate_manifest, BaseFormatter
 
 from .formatters import FormatterV1
-
+from simcore_service_webserver.studies_dispatcher._users import UserInfo
 
 log = logging.getLogger(__name__)
 
@@ -32,10 +32,6 @@ async def study_export(
         uncompressed archive: if archive is True and compress is False
         compressed archive: if both archive and compress are True
     """
-    # acquire some random template
-    # so the project model must use a from dict to dict serialization
-    # also this should support options for zipping
-
     # storage area for the project data
     destination = Path(tmp_dir) / project_id
     destination.mkdir(parents=True, exist_ok=True)
@@ -67,7 +63,11 @@ async def study_export(
 
 
 async def study_import(
-    temp_dir: str, file_field: FileField, user_id: int, chunk_size: int = 2 ** 16
+    app: web.Application,
+    temp_dir: str,
+    file_field: FileField,
+    user: UserInfo,
+    chunk_size: int = 2 ** 16,
 ) -> None:
     """ Creates a project from a given exported project"""
     # Storing file to disk
@@ -103,4 +103,4 @@ async def study_import(
     unzipped_root_folder = await unzip_folder(upload_file_name)
 
     formatter: BaseFormatter = await validate_manifest(unzipped_root_folder)
-    await formatter.validate_and_import_directory(user_id=user_id)
+    await formatter.validate_and_import_directory(app=app, user=user)
