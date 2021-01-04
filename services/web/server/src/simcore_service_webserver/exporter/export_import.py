@@ -83,7 +83,7 @@ async def study_import(
 
             await file_descriptor.write(chunk)
 
-    log.info(
+    log.debug(
         "original_file_name=%s, upload_file_name=%s",
         original_file_name,
         str(upload_file_name),

@@ -13,11 +13,12 @@ from aiohttp.abc import AbstractStreamWriter
 
 makedirs = aiofiles_os.wrap(os.makedirs)  # as in aiofiles.os.py module
 rename = aiofiles_os.wrap(os.rename)  # as in aiofiles.os.py module
+path_getsize = aiofiles_os.wrap(os.path.getsize)  # as in aiofiles.os.py module
 
 
 def _candidate_tmp_dir() -> Path:
     # pylint: disable=protected-access
-    return Path("/") / f"tmp{next(tempfile._get_candidate_names())}"
+    return Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
 
 
 async def get_empty_tmp_dir() -> str:

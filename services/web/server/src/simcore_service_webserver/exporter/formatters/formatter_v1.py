@@ -11,6 +11,7 @@ from .base_formatter import BaseFormatter
 from .models import ManifestFile, ProjectFile, ShuffledData
 
 from ..file_downloader import ParallelDownloader
+from ..file_response import path_getsize
 
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.storage_handlers import (
@@ -34,7 +35,7 @@ async def ensure_files_downloaded(download_links: Deque[LinkAndPath2]) -> None:
     # TODO: use utility
     parallel_downloader = ParallelDownloader()
     for link_and_path in download_links:
-        log.info(
+        log.debug(
             "Will download %s -> '%s'",
             link_and_path.download_link,
             link_and_path.storage_path_to_file,
@@ -68,7 +69,7 @@ async def extract_download_links(
         uuid_filter=project_id,
         user_id=user_id,
     )
-    log.info("s3 files metadata %s: ", s3_metadata)
+    log.debug("s3 files metadata %s: ", s3_metadata)
 
     # Still not sure if these are required, when pulling files from blackfynn they end up in S3
     # I am not sure there is an example where we need to directly export form blackfynn
@@ -78,7 +79,7 @@ async def extract_download_links(
         uuid_filter=project_id,
         user_id=user_id,
     )
-    log.info("blackfynn files metadata %s: ", blackfynn_metadata)
+    log.debug("blackfynn files metadata %s: ", blackfynn_metadata)
 
     for file_metadata in chain(s3_metadata, blackfynn_metadata):
         download_link = await get_file_download_url(
@@ -110,7 +111,7 @@ async def generate_directory_contents(
         include_state=True,
     )
 
-    log.info("Project data: %s", project_data)
+    log.debug("Project data: %s", project_data)
 
     download_links: Deque[LinkAndPath2] = await extract_download_links(
         app=app, dir_path=dir_path, project_id=project_id, user_id=user_id
@@ -142,7 +143,7 @@ async def upload_file_to_storage(
         fileId=str(link_and_path.relative_path_to_file),
         user_id=user_id,
     )
-    log.info(">>> upload url >>> %s", upload_url)
+    log.debug(">>> upload url >>> %s", upload_url)
 
     async def file_sender(file_name=None):
         async with aiofiles.open(file_name, "rb") as f:
@@ -152,9 +153,16 @@ async def upload_file_to_storage(
                 chunk = await f.read(64 * 1024)
 
     data_provider = file_sender(file_name=link_and_path.storage_path_to_file)
-    async with session.post(upload_url, data=data_provider) as resp:
+    content_size = await path_getsize(link_and_path.storage_path_to_file)
+    headers = {"Content-Length": str(content_size)}
+    async with session.put(upload_url, data=data_provider, headers=headers) as resp:
         upload_result = await resp.text()
-        log.info("Uplaod result: %s", upload_result)
+        if resp.status != 200:
+            raise web.HTTPException(
+                reason=f"Client replied with status={resp.status} and body '{upload_result}'"
+            )
+
+        log.debug("Upload status=%s, result: '%s'", resp.status, upload_result)
 
 
 class FormatterV1(BaseFormatter):
@@ -184,12 +192,12 @@ class FormatterV1(BaseFormatter):
 
         # replace shuffled_data in project
         # NOTE: there is no reason to write the shuffled data to file
-        log.info("Loaded project data:  %s", project_file)
+        log.debug("Loaded project data:  %s", project_file)
         shuffled_project_file = project_file.new_instance_from_shuffled_data(
             shuffled_data=shuffled_data
         )
 
-        log.info("Shuffled project data: %s", shuffled_project_file)
+        log.debug("Shuffled project data: %s", shuffled_project_file)
 
         # check all attachments are present
         manifest_file = await ManifestFile.model_from_file(root_dir=self.root_folder)
