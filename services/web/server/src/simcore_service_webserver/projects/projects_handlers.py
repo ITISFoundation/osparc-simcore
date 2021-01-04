@@ -642,6 +642,6 @@ async def import_project(request: web.Request):
     await study_import(
         app=request.app, temp_dir=temp_dir, file_field=file_name_field, user=user
     )
-    # await remove_dir(directory=temp_dir)   #TODO: put this back
+    await remove_dir(directory=temp_dir)
 
     return web.HTTPOk()
