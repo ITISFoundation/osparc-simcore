@@ -34,7 +34,7 @@ async def remove_dir(directory: str) -> None:
     await asyncio.create_subprocess_exec("rm", "-rf", directory)
 
 
-class CleanupFileResponse(FileResponse):
+class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
     """After the upload is completed it will schedule a callback"""
 
     def __init__(
