@@ -28,8 +28,8 @@
  *   - StudyEditor
  *
  * <pre class='javascript'>
- *   let layoutManager = new osparc.desktop.MainPage();
- *   this.getRoot().add(layoutManager);
+ *   let mainPage = new osparc.desktop.MainPage();
+ *   this.getRoot().add(mainPage);
  * </pre>
  */
 
@@ -293,6 +293,12 @@ qx.Class.define("osparc.desktop.MainPage", {
         this.__startStudy(startStudyData);
       }, this);
       return studyEditor;
+    },
+
+    closeEditor: function() {
+      if (this.__studyEditor) {
+        this.__studyEditor.closeEditor();
+      }
     }
   }
 });

@@ -19,7 +19,7 @@ from simcore_postgres_database.models.classifiers import group_classifiers
 
 from .constants import APP_DB_ENGINE_KEY
 from .scicrunch.scicrunch_db import ResearchResourceRepository
-from .scicrunch.service_client import SciCrunchAPI
+from .scicrunch.service_client import SciCrunch
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ async def build_rrids_tree_view(app, tree_view_mode="std") -> Dict[str, Any]:
             reason="Currently only 'std' option for the classifiers tree view is implemented"
         )
 
-    scicrunch = SciCrunchAPI.get_instance(app)
+    scicrunch = SciCrunch.get_instance(app)
     repo = ResearchResourceRepository(app)
 
     flat_tree_view = {}
