@@ -103,8 +103,24 @@ class TutorialBase {
   }
 
   async login() {
-    this.__responsesQueue.addResponseListener("projects?type=template");
-    this.__responsesQueue.addResponseListener("catalog/services");
+    const resources = [{
+      name: "Studies",
+      request: "projects?type=user",
+      listThem: false
+    }, {
+      name: "Templates",
+      request: "projects?type=template",
+      listThem: true
+    }, {
+      name: "Services",
+      request: "catalog/services",
+      listThem: false
+    }];
+
+    for (let i=0; i<resources.length; i++) {
+      const resource = resources[i];
+      this.__responsesQueue.addResponseListener(resource.request);
+    }
 
     try {
       await auto.logIn(this.__page, this.__user, this.__pass);
@@ -114,27 +130,22 @@ class TutorialBase {
       throw (err);
     }
 
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
-      const templates = resp["data"];
-      console.log("Templates received:", templates.length);
-      templates.forEach(template => {
-        console.log(" - ", template.name);
-      });
-    }
-    catch (err) {
-      console.error("Templates could not be fetched", err);
-      throw (err);
-    }
-
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
-      const services = resp["data"];
-      console.log("Services received:", services.length);
-    }
-    catch (err) {
-      console.error("Services could not be fetched", err);
-      throw (err);
+    for (let i=0; i<resources.length; i++) {
+      const resource = resources[i];
+      try {
+        const resp = await this.__responsesQueue.waitUntilResponse(resource.request);
+        const respData = resp["data"];
+        console.log(resource.request + " received:", respData.length);
+        if (resource.listThem) {
+          respData.forEach(item => {
+            console.log(" - ", item.name);
+          });
+        }
+      }
+      catch (err) {
+        console.error(resource.request + " could not be fetched", err);
+        throw (err);
+      }
     }
   }
 
