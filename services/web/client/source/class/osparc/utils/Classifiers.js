@@ -32,11 +32,11 @@ qx.Class.define("osparc.utils.Classifiers", {
         };
         osparc.store.Store.getInstance().getAllClassifiers(reload)
           .then(classifiers => {
-            const keys = Object.keys(classifiers);
-            if (keys.length) {
+            const idxs = Object.keys(classifiers);
+            if (idxs.length) {
               // Tree-ify
               const tree = {};
-              keys.forEach(key => this.__buildTree(classifiers, key, classifiers[key].classifier.split("::"), tree));
+              idxs.forEach(idx => this.__buildTree(classifiers, idx, classifiers[idx].key.split("::"), tree));
               rootData.children.push(...this.__virtualTree(tree));
             }
             resolve(rootData);
