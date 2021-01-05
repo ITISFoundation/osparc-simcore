@@ -135,7 +135,7 @@ class TutorialBase {
       try {
         const resp = await this.__responsesQueue.waitUntilResponse(resource.request);
         const respData = resp["data"];
-        console.log(resource.request + " received:", respData.length);
+        console.log(resource.name + " received:", respData.length);
         if (resource.listThem) {
           respData.forEach(item => {
             console.log(" - ", item.name);
@@ -143,7 +143,7 @@ class TutorialBase {
         }
       }
       catch (err) {
-        console.error(resource.request + " could not be fetched", err);
+        console.error(resource.name + " could not be fetched", err);
         throw (err);
       }
     }
