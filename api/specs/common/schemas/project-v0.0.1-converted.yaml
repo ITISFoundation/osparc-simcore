@@ -437,3 +437,7 @@ properties:
         required:
           - locked
           - state
+  quality:
+    type: object
+    title: Quality
+    description: Object containing Quality Assesment related data
