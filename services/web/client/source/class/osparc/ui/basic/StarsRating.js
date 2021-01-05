@@ -87,7 +87,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       let control;
       switch (id) {
         case "stars-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0)).set({
+            paddingTop: 1
+          });
           this._add(control);
           break;
         case "score-text": {
