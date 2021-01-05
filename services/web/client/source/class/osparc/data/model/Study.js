@@ -161,7 +161,7 @@ qx.Class.define("osparc.data.model.Study", {
     quality: {
       check: "Object",
       init: {},
-      nullable: false
+      nullable: true
     }
   },
 
