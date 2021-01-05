@@ -53,7 +53,8 @@ qx.Class.define("osparc.data.model.Study", {
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
       classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
       tags: studyData.tags || [],
-      state: studyData.state || this.getState()
+      state: studyData.state || this.getState(),
+      quality: studyData.quality || this.getQuality()
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
@@ -155,6 +156,12 @@ qx.Class.define("osparc.data.model.Study", {
     state: {
       check: "Object",
       nullable: true
+    },
+
+    quality: {
+      check: "Object",
+      init: {},
+      nullable: false
     }
   },
 
@@ -171,7 +178,8 @@ qx.Class.define("osparc.data.model.Study", {
         creationDate: new Date(),
         lastChangeDate: new Date(),
         workbench: {},
-        tags: []
+        tags: [],
+        quality: {}
       };
     },
 
