@@ -74,7 +74,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     studyDescription: {
       check: "String",
-      apply: "_applyStudyDescription",
       nullable: true
     },
 
@@ -204,20 +203,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         }
-        case "tsr-rating": {
-          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-            toolTipText: this.tr("Ten Simple Rules")
-          });
-          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
-          tsrLayout.add(tsrLabel);
-          control = new osparc.ui.basic.StarsRating();
-          tsrLayout.add(control);
-          this._add(tsrLayout, {
-            left: 0,
-            bottom: 0
-          });
-          break;
-        }
       }
 
       return control || this.base(arguments, id);
@@ -332,18 +317,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    _applyStudyDescription: function(value, old) {
-      /*
-      if (value !== "" && this.isResourceType("template")) {
-        const label = this.getChildControl("description");
-        label.setValue(value);
-      }
-      */
-    },
-
     _applyLastChangeDate: function(value, old) {
       if (value && this.isResourceType("study")) {
-        const label = this.getChildControl("description2");
+        const label = this.getChildControl("subtitle-text");
         let dateStr = null;
         if (value.getDate() === (new Date()).getDate()) {
           dateStr = this.tr("Today");
@@ -359,14 +335,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyOwner: function(value, old) {
       if (this.isResourceType("service") || this.isResourceType("template")) {
-        const label = this.getChildControl("description2");
+        const label = this.getChildControl("subtitle-text");
         label.setValue(value);
       }
     },
 
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
-        const sharedIcon = this.getChildControl("shared");
+        const sharedIcon = this.getChildControl("subtitle-icon");
 
         const store = osparc.store.Store.getInstance();
         Promise.all([

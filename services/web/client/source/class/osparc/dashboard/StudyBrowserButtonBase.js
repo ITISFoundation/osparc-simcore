@@ -55,7 +55,14 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
     PADDING: 10,
-    SPACING: 12
+    SPACING: 12,
+    POS: {
+      TITLE: 0,
+      SUBTITLE: 1,
+      THUMBNAIL: 2,
+      TSR: 3,
+      TAGS: 4
+    }
   },
 
   events: {
@@ -90,57 +97,60 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - osparc.dashboard.StudyBrowserButtonItem.MENU_BTN_WIDTH,
             breakWithinWords: true
           });
-          this._mainLayout.addAt(control, 0);
+          this._mainLayout.addAt(control, this.self().POS.TITLE);
           break;
-        case "description":
-          control = new osparc.ui.markdown.Markdown().set({
-            anonymous: true,
-            font: "text-13",
-            maxHeight: 30
-          });
-          this._mainLayout.addAt(control, 1);
-          break;
-        case "shared-description2":
+        case "subtitle":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6)).set({
             anonymous: true
           });
-          this._mainLayout.addAt(control, 2);
+          this._mainLayout.addAt(control, this.self().POS.SUBTITLE);
           break;
-        case "shared": {
+        case "subtitle-icon": {
           control = new qx.ui.basic.Image();
-          const sharedDescription2Layout = this.getChildControl("shared-description2");
-          sharedDescription2Layout.addAt(control, 0);
+          const sharedDescriptionLayout = this.getChildControl("subtitle");
+          sharedDescriptionLayout.addAt(control, 0);
           break;
         }
-        case "description2": {
+        case "subtitle-text": {
           control = new qx.ui.basic.Label().set({
             anonymous: true,
             font: "text-13",
             allowGrowY: false
           });
-          const sharedDescription2Layout = this.getChildControl("shared-description2");
-          sharedDescription2Layout.addAt(control, 1, {
+          const sharedDescriptionLayout = this.getChildControl("subtitle");
+          sharedDescriptionLayout.addAt(control, 1, {
             flex: 1
           });
           break;
         }
-        case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
-            anonymous: true
-          });
-          this._mainLayout.addAt(control, 3);
-          break;
         case "icon": {
           const maxWidth = this.self().ITEM_WIDTH - 2*this.self().PADDING;
           const image = new osparc.component.widget.Thumbnail(null, maxWidth, 130);
           control = image.getChildControl("image").set({
             anonymous: true
           });
-          this._mainLayout.addAt(image, 4, {
+          this._mainLayout.addAt(image, this.self().POS.THUMBNAIL, {
             flex: 1
           });
           break;
         }
+        case "tsr-rating": {
+          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+            toolTipText: this.tr("Ten Simple Rules")
+          });
+          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
+          tsrLayout.add(tsrLabel);
+          control = new osparc.ui.basic.StarsRating();
+          tsrLayout.add(control);
+          this._mainLayout.addAt(tsrLayout, this.self().POS.TSR);
+          break;
+        }
+        case "tags":
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3)).set({
+            anonymous: true
+          });
+          this._mainLayout.addAt(control, this.self().POS.TAGS);
+          break;
       }
       return control || this.base(arguments, id);
     },

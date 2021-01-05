@@ -38,8 +38,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
       const title = this.getChildControl("title");
       title.setValue(this.tr("Empty Study"));
 
-      const desc1 = this.getChildControl("description");
-      desc1.setValue(this.tr("Start with a empty study").toString());
+      const desc = this.getChildControl("subtitle-text");
+      desc.setValue(this.tr("Start with a empty study").toString());
 
       this.setIcon("@FontAwesome5Solid/plus/60");
     },
@@ -52,7 +52,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
       if (data.text) {
         const checks = [
           this.getChildControl("title").getValue().toString(),
-          this.getChildControl("description").getValue().toString()
+          this.getChildControl("subtitle-text").getValue().toString()
         ];
         if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
