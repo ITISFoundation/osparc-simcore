@@ -2,7 +2,7 @@
     Models a study's project document
 """
 from copy import deepcopy
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl
