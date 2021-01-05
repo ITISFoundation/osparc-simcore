@@ -204,13 +204,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         }
-        case "tsr-rating":
+        case "tsr-rating": {
+          const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+            toolTipText: this.tr("Ten Simple Rules")
+          });
+          const tsrLabel = new qx.ui.basic.Label(this.tr("TSR:"));
+          tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
-          this._add(control, {
+          tsrLayout.add(control);
+          this._add(tsrLayout, {
             left: 0,
             bottom: 0
           });
           break;
+        }
       }
 
       return control || this.base(arguments, id);
