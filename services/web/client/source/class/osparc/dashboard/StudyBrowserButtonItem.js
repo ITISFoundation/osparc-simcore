@@ -105,10 +105,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyTags"
     },
 
-    metadata: {
+    quality: {
       check: "Object",
       nullable: true,
-      apply: "_applyMetadata"
+      apply: "_applyQuality"
     },
 
     state: {
@@ -242,7 +242,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
-      let metadata = null;
+      let quality = null;
       switch (studyData["resourceType"]) {
         case "study":
           uuid = studyData.uuid ? studyData.uuid : uuid;
@@ -261,7 +261,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
-          metadata = studyData.metadata ? studyData.metadata : null;
+          quality = studyData.quality ? studyData.quality : null;
           break;
       }
 
@@ -276,7 +276,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        metadata
+        quality
       });
     },
 
@@ -461,12 +461,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyMetadata: function(metadata) {
-      if (metadata && "tsr" in metadata) {
+    _applyQuality: function(quality) {
+      if (quality && "tsr" in quality) {
         const {
           score,
           maxScore
-        } = osparc.component.metadata.ServiceQuality.computeTSRScore(metadata["tsr"]);
+        } = osparc.component.metadata.ServiceQuality.computeTSRScore(quality["tsr"]);
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
           score,

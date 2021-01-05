@@ -435,7 +435,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
-      if (this.self().isService(studyData) && osparc.data.model.Node.isComputational(studyData) && "metadata" in studyData) {
+      if (this.self().isService(studyData) && osparc.data.model.Node.isComputational(studyData) && "quality" in studyData) {
         const qualityButton = this.__getServiceQualityMenuButton(studyData);
         menu.add(qualityButton);
       }
