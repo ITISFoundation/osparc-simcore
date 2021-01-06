@@ -303,8 +303,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyBtnClkd: function() {
-      const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
-      let title = "New study";
+      const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
+      let title = minStudyData.name;
       const existingTitles = this.__userStudies.map(study => study.name);
       if (existingTitles.includes(title)) {
         let cont = 1;

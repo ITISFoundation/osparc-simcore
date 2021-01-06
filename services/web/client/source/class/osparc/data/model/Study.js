@@ -168,7 +168,7 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   statics: {
-    createMinimumStudyObject: function() {
+    createMyNewStudyObject: function() {
       // TODO: Check if this can be automatically generated from schema
       return {
         uuid: "",
