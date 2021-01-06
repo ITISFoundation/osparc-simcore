@@ -255,7 +255,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           if (serviceKey in services) {
             const service = serviceVersion ? osparc.utils.Services.getFromObject(services, serviceKey, serviceVersion) : osparc.utils.Services.getLatest(services, serviceKey);
             const newUuid = osparc.utils.Utils.uuidv4();
-            const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
+            const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
             minStudyData["name"] = service["name"];
             minStudyData["workbench"] = {};
             minStudyData["workbench"][newUuid] = {
@@ -311,7 +311,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             const msg = osparc.utils.Study.getInaccessibleServicesMsg(inaccessibleServices);
             throw new Error(msg);
           }
-          const minStudyData = osparc.data.model.Study.createMinimumStudyObject();
+          const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
           minStudyData["name"] = templateData.name;
           minStudyData["description"] = templateData.description;
           const params = {
