@@ -423,6 +423,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(moreInfoButton);
       }
 
+      if ("quality" in studyData) {
+        const qualityButton = this.__getQualityMenuButton(studyData);
+        menu.add(qualityButton);
+      }
+
       const classifiersButton = this.__getClassifiersMenuButton(studyData);
       if (classifiersButton) {
         menu.add(classifiersButton);
@@ -471,6 +476,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__createStudyDetailsEditor(studyData, winWidth);
       }, this);
       return moreInfoButton;
+    },
+
+    __getQualityMenuButton: function(studyData) {
+      const studyQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      studyQualityButton.addListener("execute", () => {
+        this.__openServiceQualityEditor(studyData);
+      }, this);
+      return studyQualityButton;
     },
 
     __getClassifiersMenuButton: function(studyData) {
