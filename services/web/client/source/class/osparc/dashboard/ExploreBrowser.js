@@ -440,7 +440,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
 
       if (this.self().isService(studyData) && osparc.data.model.Node.isComputational(studyData) && "quality" in studyData) {
-        const qualityButton = this.__getServiceQualityMenuButton(studyData);
+        const qualityButton = this.__getQualityMenuButton(studyData);
         menu.add(qualityButton);
       }
 
@@ -486,12 +486,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return moreInfoButton;
     },
 
-    __getServiceQualityMenuButton: function(studyData) {
-      const srvQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
-      srvQualityButton.addListener("execute", () => {
-        this.__openServiceQualityEditor(studyData);
+    __getQualityMenuButton: function(studyData) {
+      const qualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      qualityButton.addListener("execute", () => {
+        this.__openQualityEditor(studyData);
       }, this);
-      return srvQualityButton;
+      return qualityButton;
     },
 
     __getClassifiersMenuButton: function(studyData) {
@@ -634,11 +634,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       });
     },
 
-    __openServiceQualityEditor: function(serviceData) {
-      const serviceQualityEditor = new osparc.component.metadata.QualityEditor(serviceData);
-      const title = serviceData.name + " - " + this.tr("Quality Assesment");
-      const win = osparc.ui.window.Window.popUpInWindow(serviceQualityEditor, title, 650, 760);
-      serviceQualityEditor.addListener("updateService", e => {
+    __openQualityEditor: function(resoruceData) {
+      const qualityEditor = new osparc.component.metadata.QualityEditor(resoruceData);
+      const title = resoruceData.name + " - " + this.tr("Quality Assesment");
+      const win = osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
+      qualityEditor.addListener("updateService", e => {
         const newServiceData = e.getData();
         this.__resetServiceItem(newServiceData);
         win.close();
