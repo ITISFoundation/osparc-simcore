@@ -85,13 +85,6 @@ qx.Class.define("osparc.data.model.Study", {
       init: ""
     },
 
-    thumbnail: {
-      check: "String",
-      nullable: true,
-      event: "changeThumbnail",
-      init: ""
-    },
-
     prjOwner: {
       check: "String",
       nullable: false,
@@ -104,14 +97,7 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: false,
       event: "changeAccessRights",
       apply: "__applyAccessRights",
-      init: true
-    },
-
-    readOnly: {
-      check: "Boolean",
-      nullable: false,
-      event: "changeReadOnly",
-      init: true
+      init: osparc.component.export.StudyPermissions.getOwnerAccessRight()
     },
 
     creationDate: {
@@ -128,6 +114,13 @@ qx.Class.define("osparc.data.model.Study", {
       init: new Date()
     },
 
+    thumbnail: {
+      check: "String",
+      nullable: false,
+      event: "changeThumbnail",
+      init: ""
+    },
+
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false
@@ -138,19 +131,21 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: false
     },
 
-    classifiers: {
-      check: "Array",
-      init: []
-    },
-
     tags: {
       check: "Array",
-      init: []
+      init: [],
+      nullable: true
+    },
+
+    classifiers: {
+      check: "Array",
+      init: [],
+      nullable: true
     },
 
     sweeper: {
       check: "osparc.data.model.Sweeper",
-      nullable: false
+      nullable: true
     },
 
     state: {
@@ -162,6 +157,13 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Object",
       init: {},
       nullable: true
+    },
+
+    readOnly: {
+      check: "Boolean",
+      nullable: true,
+      event: "changeReadOnly",
+      init: true
     }
   },
 
