@@ -30,9 +30,6 @@ def upgrade():
     op.alter_column(
         'services_meta_data',
         'metadata',
-        postgresql.JSONB(astext_type=sa.Text()),
-        server_default=sa.text("'{}'::jsonb"),
-        nullable=False,
         new_column_name='quality'
     )
     # ### end Alembic commands ###
@@ -45,9 +42,6 @@ def downgrade():
     op.alter_column(
         'services_meta_data',
         'quality',
-        postgresql.JSONB(astext_type=sa.Text()),
-        server_default=sa.text("'{}'::jsonb"),
-        nullable=False,
         new_column_name='metadata'
     )
     # ### end Alembic commands ###
