@@ -43,21 +43,21 @@ qx.Class.define("osparc.data.model.Study", {
     this.base(arguments);
 
     this.set({
-      uuid: studyData.uuid === undefined ? this.getUuid() : studyData.uuid,
-      name: studyData.name === undefined ? this.getName() : studyData.name,
-      description: studyData.description === undefined ? this.getDescription() : studyData.description,
-      thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
-      prjOwner: studyData.prjOwner === undefined ? this.getPrjOwner() : studyData.prjOwner,
-      accessRights: studyData.accessRights === undefined ? this.getAccessRights() : studyData.accessRights,
+      uuid: studyData.uuid || this.getUuid(),
+      name: studyData.name || this.getName(),
+      description: studyData.description || this.getDescription(),
+      thumbnail: studyData.thumbnail || this.getThumbnail(),
+      prjOwner: studyData.prjOwner || this.getPrjOwner(),
+      accessRights: studyData.accessRights || this.getAccessRights(),
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
-      classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-      tags: studyData.tags || [],
+      classifiers: studyData.classifiers || studyData.getClassifiers(),
+      tags: studyData.tags || this.getTags(),
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality()
     });
 
-    const wbData = studyData.workbench === undefined ? this.getWorkbench() : studyData.workbench;
+    const wbData = studyData.workbench || this.getWorkbench();
     this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
 
