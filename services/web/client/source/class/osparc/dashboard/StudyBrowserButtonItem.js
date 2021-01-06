@@ -227,7 +227,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
-      let quality = null;
       switch (studyData["resourceType"]) {
         case "study":
           uuid = studyData.uuid ? studyData.uuid : uuid;
@@ -246,7 +245,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
-          quality = studyData.quality ? studyData.quality : null;
           break;
       }
 
@@ -261,7 +259,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        quality
+        quality: studyData.quality ? studyData.quality : null
       });
     },
 
