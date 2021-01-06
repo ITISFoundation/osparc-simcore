@@ -257,14 +257,18 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
             const newUuid = osparc.utils.Utils.uuidv4();
             const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
             minStudyData["name"] = service["name"];
-            minStudyData["workbench"] = {};
             minStudyData["workbench"][newUuid] = {
               "key": service["key"],
               "version": service["version"],
-              "label": service["name"],
-              "inputs": {},
-              "inputNodes": [],
-              "thumbnail": "",
+              "label": service["name"]
+            };
+            if (!("ui" in minStudyData)) {
+              minStudyData["ui"] = {};
+            }
+            if (!("workbench" in minStudyData["ui"])) {
+              minStudyData["ui"]["workbench"] = {};
+            }
+            minStudyData["ui"]["workbench"][newUuid] = {
               "position": {
                 "x": 50,
                 "y": 50
