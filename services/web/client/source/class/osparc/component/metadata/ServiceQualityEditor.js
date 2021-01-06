@@ -33,22 +33,22 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (!("metadata" in serviceData)) {
+    if (!("quality" in serviceData)) {
       osparc.component.message.FlashMessenger.logAs(this.tr("Metadata not found"), "ERROR");
       return;
     }
 
     this.__serviceData = serviceData;
-    if (!("tsr" in serviceData["metadata"])) {
-      serviceData["metadata"]["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
+    if (!("tsr" in serviceData["quality"])) {
+      serviceData["quality"]["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
     }
-    if (!("annotations" in serviceData["metadata"])) {
-      serviceData["metadata"]["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
+    if (!("annotations" in serviceData["quality"])) {
+      serviceData["quality"]["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
     }
     this.__copyServiceData = osparc.utils.Utils.deepCloneObject(serviceData);
 
     const schemaUrl = "/resource/form/service-quality.json";
-    const data = serviceData["metadata"];
+    const data = serviceData["quality"];
     const ajvLoader = new qx.util.DynamicScriptLoader([
       "/resource/ajv/ajv-6-11-0.min.js",
       "/resource/object-path/object-path-0-11-4.min.js"
@@ -254,7 +254,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
     },
 
     __populateTSRDataView: function() {
-      const metadataTSR = this.__serviceData["metadata"]["tsr"];
+      const metadataTSR = this.__serviceData["quality"]["tsr"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
         const ruleRating = new osparc.ui.basic.StarsRating();
@@ -301,7 +301,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
     },
 
     __populateTSRDataEdit: function() {
-      const copyMetadataTSR = this.__copyServiceData["metadata"]["tsr"];
+      const copyMetadataTSR = this.__copyServiceData["quality"]["tsr"];
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         nStars: 4,
@@ -408,7 +408,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
 
     __populateAnnotationsData: function() {
       const schemaAnnotations = this.__schema["properties"]["annotations"]["properties"];
-      const copyMetadataAnnotations = this.__copyServiceData["metadata"]["annotations"];
+      const copyMetadataAnnotations = this.__copyServiceData["quality"]["annotations"];
 
       const isEditMode = this.getMode() === "edit";
 
@@ -555,11 +555,11 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
 
     __save: function(btn) {
       const data = {
-        "metadata" : {}
+        "quality" : {}
       };
-      data["metadata"]["tsr"] = this.__copyServiceData["metadata"]["tsr"];
-      data["metadata"]["annotations"] = this.__copyServiceData["metadata"]["annotations"];
-      if (this.__validate(this.__schema, data["metadata"])) {
+      data["quality"]["tsr"] = this.__copyServiceData["quality"]["tsr"];
+      data["quality"]["annotations"] = this.__copyServiceData["quality"]["annotations"];
+      if (this.__validate(this.__schema, data["quality"])) {
         const params = {
           url: osparc.data.Resources.getServiceUrl(
             this.__copyServiceData["key"],
