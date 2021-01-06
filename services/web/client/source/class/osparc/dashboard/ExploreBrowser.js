@@ -635,7 +635,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openServiceQualityEditor: function(serviceData) {
-      const serviceQualityEditor = new osparc.component.metadata.ServiceQualityEditor(serviceData);
+      const serviceQualityEditor = new osparc.component.metadata.QualityEditor(serviceData);
       const title = serviceData.name + " - " + this.tr("Quality Assesment");
       const win = osparc.ui.window.Window.popUpInWindow(serviceQualityEditor, title, 650, 760);
       serviceQualityEditor.addListener("updateService", e => {

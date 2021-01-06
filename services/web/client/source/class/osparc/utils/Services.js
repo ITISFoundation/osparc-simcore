@@ -237,11 +237,8 @@ qx.Class.define("osparc.utils.Services", {
           } else {
             service["category"] = "Unknown";
           }
-          if (!("quality" in service)) {
-            service["quality"] = {};
-          }
-          if (osparc.data.model.Node.isComputational(service) && Object.keys(service["quality"]).length === 0) {
-            service["quality"] = osparc.component.metadata.ServiceQuality.getDefaultQuality();
+          if (osparc.data.model.Node.isComputational(service)) {
+            osparc.component.metadata.Quality.attachQualityToObject(service);
           }
         });
       });
