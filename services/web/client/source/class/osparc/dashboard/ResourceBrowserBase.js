@@ -58,11 +58,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return moreInfoButton;
     },
 
+    _getQualityMenuButton: function(resourceData) {
+      const studyQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      studyQualityButton.addListener("execute", () => {
+        this.__openQualityEditor(resourceData);
+      }, this);
+      return studyQualityButton;
+    },
+
     __openStudyDetailsEditor: function(resourceData, winWidth) {
-      const height = 400;
-      const title = this.tr("Study Details Editor");
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(resourceData, osparc.utils.Resources.isTemplate(resourceData), winWidth);
-      const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, height);
+      const title = this.tr("Study Details Editor");
+      const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, 400);
       studyDetails.addListener("openStudy", () => {
         this._startStudy(resourceData["uuid"]);
         win.close();
@@ -94,6 +101,25 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    __openQualityEditor: function(resourceData) {
+      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
+      const title = resourceData.name + " - " + this.tr("Quality Assesment");
+      const win = osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
+      qualityEditor.addListener("updateStudy", e => {
+        const updateStudyData = e.getData();
+        this._resetStudyItem(updateStudyData);
+        win.close();
+      });
+      qualityEditor.addListener("updateTemplate", e => {
+        const updatedTemplateData = e.getData();
+        this._resetTemplateItem(updatedTemplateData);
+      });
+      qualityEditor.addListener("updateService", e => {
+        const updatedServiceData = e.getData();
+        this._resetServiceItem(updatedServiceData);
+      });
+    },
+
     _startStudy: function(studyId) {
       throw new Error("Abstract method called!");
     },
@@ -107,6 +133,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _reloadTemplate: function(templateId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _resetStudyItem: function(studyData) {
+      throw new Error("Abstract method called!");
+    },
+
+    _resetTemplateItem: function(templateData) {
+      throw new Error("Abstract method called!");
+    },
+
+    _resetServiceItem: function(serviceData) {
       throw new Error("Abstract method called!");
     },
 

@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
-          this.__resetStudyItem(studyData);
+          this._resetStudyItem(studyData);
         })
         .catch(err => {
           console.error(err);
@@ -337,7 +337,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.fireDataEvent("startStudy", data);
     },
 
-    __resetStudyItem: function(studyData) {
+    _resetStudyItem: function(studyData) {
       const userStudiesList = this.__userStudies;
       const index = userStudiesList.findIndex(userStudy => userStudy["uuid"] === studyData["uuid"]);
       if (index === -1) {

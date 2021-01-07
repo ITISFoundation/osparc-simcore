@@ -26,59 +26,19 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param serviceData {Object} Object containing the Service Data
+    * @param resourceData {Object} Object containing the Resource Data
     */
-  construct: function(serviceData) {
+  construct: function(resourceData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (!("quality" in serviceData)) {
-      osparc.component.message.FlashMessenger.logAs(this.tr("Metadata not found"), "ERROR");
-      return;
-    }
-
-    this.__serviceData = serviceData;
-    if (!("tsr" in serviceData["quality"])) {
-      serviceData["quality"]["tsr"] = osparc.component.metadata.Quality.getDefaultQualityTSR();
-    }
-    if (!("annotations" in serviceData["quality"])) {
-      serviceData["quality"]["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
-    }
-    this.__copyServiceData = osparc.utils.Utils.deepCloneObject(serviceData);
-
-    const schemaUrl = "/resource/form/service-quality.json";
-    const data = serviceData["quality"];
-    const ajvLoader = new qx.util.DynamicScriptLoader([
-      "/resource/ajv/ajv-6-11-0.min.js",
-      "/resource/object-path/object-path-0-11-4.min.js"
-    ]);
-    ajvLoader.addListener("ready", () => {
-      this.__ajv = new Ajv();
-      osparc.utils.Utils.fetchJSON(schemaUrl)
-        .then(schema => {
-          if (this.__validate(schema.$schema, schema)) {
-            // If schema is valid
-            if (this.__validate(schema, data)) {
-              // Validate data if present
-              this.__serviceData = serviceData;
-            }
-            return schema;
-          }
-          return null;
-        })
-        .then(this.__render)
-        .catch(err => {
-          console.error(err);
-          this.__render(null);
-        });
-    }, this);
-    ajvLoader.addListener("failed", console.error, this);
-    this.__render = this.__render.bind(this);
-    ajvLoader.start();
+    this.__initResourceData(resourceData);
   },
 
   events: {
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data"
   },
 
@@ -93,11 +53,60 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
   },
 
   members: {
-    __serviceData: null,
-    __copyServiceData: null,
+    __resourceData: null,
+    __copyResourceData: null,
     __schema: null,
     __tsrGrid: null,
     __annotationsGrid: null,
+
+    __initResourceData: function(resourceData) {
+      if (!("quality" in resourceData)) {
+        osparc.component.message.FlashMessenger.logAs(this.tr("Metadata not found"), "ERROR");
+        return;
+      }
+
+      this.__resourceData = resourceData;
+      if (!("tsr" in resourceData["quality"])) {
+        resourceData["quality"]["tsr"] = osparc.component.metadata.Quality.getDefaultQualityTSR();
+      }
+      if (!("annotations" in resourceData["quality"])) {
+        resourceData["quality"]["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
+      }
+      this.__copyResourceData = osparc.utils.Resources.isService(resourceData) ? osparc.utils.Utils.deepCloneObject(resourceData) : osparc.data.model.Study.deepCloneStudyObject(resourceData);
+
+      const schemaUrl = "/resource/form/resource-quality.json";
+      const data = resourceData["quality"];
+      const ajvLoader = new qx.util.DynamicScriptLoader([
+        "/resource/ajv/ajv-6-11-0.min.js",
+        "/resource/object-path/object-path-0-11-4.min.js"
+      ]);
+      ajvLoader.addListener("ready", () => {
+        this.__ajv = new Ajv();
+        osparc.utils.Utils.fetchJSON(schemaUrl)
+          .then(schema => {
+            if (this.__validate(schema.$schema, schema)) {
+              // If schema is valid
+              if (this.__validate(schema, data)) {
+                // Validate data if present
+                this.__resourceData = resourceData;
+              }
+              return schema;
+            }
+            return null;
+          })
+          .then(schema => {
+            this.__render(schema);
+            this.setMode("display");
+          })
+          .catch(err => {
+            console.error(err);
+            this.__render(null);
+          });
+      }, this);
+      ajvLoader.addListener("failed", console.error, this);
+      this.__render = this.__render.bind(this);
+      ajvLoader.start();
+    },
 
     /**
      * Uses Ajv library to validate data against a schema.
@@ -122,6 +131,8 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
     __render: function(schema) {
       if (schema) {
+        this._removeAll();
+
         this.__schema = schema;
         this.__createTSRSection();
         this.__createAnnotationsSection();
@@ -254,7 +265,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRDataView: function() {
-      const metadataTSR = this.__serviceData["quality"]["tsr"];
+      const metadataTSR = this.__resourceData["quality"]["tsr"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
         const ruleRating = new osparc.ui.basic.StarsRating();
@@ -301,7 +312,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRDataEdit: function() {
-      const copyMetadataTSR = this.__copyServiceData["quality"]["tsr"];
+      const copyMetadataTSR = this.__copyResourceData["quality"]["tsr"];
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         nStars: 4,
@@ -408,7 +419,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
     __populateAnnotationsData: function() {
       const schemaAnnotations = this.__schema["properties"]["annotations"]["properties"];
-      const copyMetadataAnnotations = this.__copyServiceData["quality"]["annotations"];
+      const copyMetadataAnnotations = this.__copyResourceData["quality"]["annotations"];
 
       const isEditMode = this.getMode() === "edit";
 
@@ -525,7 +536,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         this.setMode("edit");
       }, this);
 
-      const saveButton = new qx.ui.toolbar.Button(this.tr("Save")).set({
+      const saveButton = new osparc.ui.toolbar.FetchButton(this.tr("Save")).set({
         appearance: "toolbar-md-button"
       });
       this.bind("mode", saveButton, "visibility", {
@@ -557,36 +568,61 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const data = {
         "quality" : {}
       };
-      data["quality"]["tsr"] = this.__copyServiceData["quality"]["tsr"];
-      data["quality"]["annotations"] = this.__copyServiceData["quality"]["annotations"];
+      data["quality"]["tsr"] = this.__copyResourceData["quality"]["tsr"];
+      data["quality"]["annotations"] = this.__copyResourceData["quality"]["annotations"];
       if (this.__validate(this.__schema, data["quality"])) {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(
-            this.__copyServiceData["key"],
-            this.__copyServiceData["version"]
-          ),
-          data: data
-        };
-        osparc.data.Resources.fetch("services", "patch", params)
-          .then(serviceData => {
-            this.fireDataEvent("updateService", serviceData);
-          })
-          .catch(err => {
-            console.error(err);
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the metadata."), "ERROR");
-          })
-          .finally(() => {
-            btn.resetIcon();
-            btn.getChildControl("icon").getContentElement()
-              .removeClass("rotate");
-          });
+        btn.setFetching(true);
+        if (osparc.utils.Resources.isService(this.__copyResourceData)) {
+          const params = {
+            url: osparc.data.Resources.getServiceUrl(
+              this.__copyResourceData["key"],
+              this.__copyResourceData["version"]
+            ),
+            data: data
+          };
+          osparc.data.Resources.fetch("services", "patch", params)
+            .then(serviceData => {
+              this.__initResourceData(serviceData);
+              this.fireDataEvent("updateService", serviceData);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assesment."), "ERROR");
+            })
+            .finally(() => {
+              btn.setFetching(false);
+            });
+        } else {
+          const isTemplate = osparc.utils.Resources.isTemplate(this.__copyResourceData);
+          const params = {
+            url: {
+              projectId: this.__copyResourceData["uuid"]
+            },
+            data: this.__copyResourceData
+          };
+          osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
+            .then(resourceData => {
+              this.__initResourceData(resourceData);
+              this.fireDataEvent(isTemplate ? "updateTemplate" : "updateStudy", resourceData);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assesment."), "ERROR");
+            })
+            .finally(() => {
+              btn.setFetching(false);
+            });
+        }
       }
     },
 
     __isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid && osparc.component.export.ServicePermissions.canGroupWrite(this.__serviceData["access_rights"], myGid)) {
-        return true;
+      if (myGid) {
+        if (osparc.utils.Resources.isService(this.__resourceData)) {
+          return osparc.component.export.ServicePermissions.canGroupWrite(this.__resourceData["access_rights"], myGid);
+        }
+        return osparc.component.export.StudyPermissions.canGroupWrite(this.__resourceData["accessRights"], myGid);
       }
       return false;
     }

@@ -73,7 +73,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       };
       osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
-          this.__resetTemplateItem(studyData);
+          this._resetTemplateItem(studyData);
         })
         .catch(err => {
           console.error(err);
@@ -83,7 +83,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __reloadService: function(serviceKey, serviceVersion, reload) {
       osparc.store.Store.getInstance().getService(serviceKey, serviceVersion, reload)
         .then(serviceData => {
-          this.__resetServiceItem(serviceData);
+          this._resetServiceItem(serviceData);
         })
         .catch(err => {
           console.error(err);
@@ -332,7 +332,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.fireDataEvent("startStudy", data);
     },
 
-    __resetTemplateItem: function(templateData) {
+    _resetTemplateItem: function(templateData) {
       const templatesList = this.__templates;
       const index = templatesList.findIndex(template => template["uuid"] === templateData["uuid"]);
       if (index === -1) {
@@ -354,7 +354,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
-    __resetServiceItem: function(serviceData) {
+    _resetServiceItem: function(serviceData) {
       const servicesList = this.__services;
       const index = servicesList.findIndex(service => service["key"] === serviceData["key"]);
       if (index === -1) {
@@ -421,7 +421,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
 
       if (osparc.utils.Resources.isService(studyData) && osparc.data.model.Node.isComputational(studyData) && "quality" in studyData) {
-        const qualityButton = this.__getQualityMenuButton(studyData);
+        const qualityButton = this._getQualityMenuButton(studyData);
         menu.add(qualityButton);
       }
 
@@ -452,14 +452,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
 
       return menu;
-    },
-
-    __getQualityMenuButton: function(resourceData) {
-      const studyQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
-      studyQualityButton.addListener("execute", () => {
-        this.__openQualityEditor(resourceData);
-      }, this);
-      return studyQualityButton;
     },
 
     __getClassifiersMenuButton: function(studyData) {
@@ -581,18 +573,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       });
       serviceDetailsEditor.addListener("updateService", e => {
         const newServiceData = e.getData();
-        this.__resetServiceItem(newServiceData);
-        win.close();
-      });
-    },
-
-    __openQualityEditor: function(resourceData) {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
-      const title = resourceData.name + " - " + this.tr("Quality Assesment");
-      const win = osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
-      qualityEditor.addListener("updateService", e => {
-        const newServiceData = e.getData();
-        this.__resetServiceItem(newServiceData);
+        this._resetServiceItem(newServiceData);
         win.close();
       });
     },
@@ -603,7 +584,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateService", e => {
         const newServiceData = e.getData();
-        this.__resetServiceItem(newServiceData);
+        this._resetServiceItem(newServiceData);
       });
     },
 
