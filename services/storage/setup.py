@@ -6,9 +6,9 @@ from setuptools import find_packages, setup
 
 here = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-if sys.version_info < (3, 6):
+if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
     raise RuntimeError(
-        "Requires 3.6, got %s. Did you forget to activate virtualenv?"
+        "Requires ~=3.8, got %s. Did you forget to activate virtualenv?"
         % sys.version_info
     )
 
