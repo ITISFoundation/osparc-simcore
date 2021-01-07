@@ -104,11 +104,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     __openQualityEditor: function(resourceData) {
       const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
       const title = resourceData.name + " - " + this.tr("Quality Assesment");
-      const win = osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
+      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
       qualityEditor.addListener("updateStudy", e => {
-        const updateStudyData = e.getData();
-        this._resetStudyItem(updateStudyData);
-        win.close();
+        const updatedStudyData = e.getData();
+        this._resetStudyItem(updatedStudyData);
       });
       qualityEditor.addListener("updateTemplate", e => {
         const updatedTemplateData = e.getData();
