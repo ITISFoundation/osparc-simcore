@@ -48,7 +48,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data",
-    "openStudy": "qx.event.type.Event"
+    "openStudy": "qx.event.type.Event",
+    "openTemplate": "qx.event.type.Event"
   },
 
   properties: {
@@ -99,7 +100,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "toolbar-md-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
-      openButton.addListener("execute", () => this.fireEvent("openStudy"), this);
+      openButton.addListener("execute", () => this.fireEvent(isTemplate ? "openTemplate" : "openStudy"), this);
       buttonsToolbar.add(openButton);
 
       return buttonsToolbar;
