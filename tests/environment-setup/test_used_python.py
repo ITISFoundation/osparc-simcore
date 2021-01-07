@@ -132,11 +132,16 @@ def test_running_python_version(expected_python_version):
     ), f"Expected python {to_str(sys.version_info)} installed, got {to_str(expected_python_version)}"
 
 
-def test_all_pip_have_same_version(expected_pip_version, pip_in_dockerfiles):
+def test_all_images_have_the_same_pip_version(expected_pip_version, pip_in_dockerfiles):
     for dockerfile, pip_version in pip_in_dockerfiles:
-        assert (
-            pip_version == expected_pip_version
-        ), f"Expected pip {expected_pip_version} in {dockerfile}, got {pip_version}"
+        if dockerfile.parent.name in FROZEN_SERVICES:
+            print(
+                "Skipping check on {dockefile} since this service/package development was froozen "
+            )
+        else:
+            assert (
+                pip_version == expected_pip_version
+            ), f"Expected pip {expected_pip_version} in {dockerfile}, got {pip_version}"
 
 
 def test_tooling_pre_commit_config(
