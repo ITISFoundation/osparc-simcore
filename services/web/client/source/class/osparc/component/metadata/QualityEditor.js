@@ -394,8 +394,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             rule.references = newText;
             textEditor.close();
           }, this);
-          textEditor.center();
-          textEditor.open();
+          osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
         }, this);
         this.__tsrGrid.add(button, {
           row,
@@ -446,6 +445,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       let row = 0;
       const certificationBox = new qx.ui.form.SelectBox().set({
+        allowGrowX: false,
         enabled: isEditMode
       });
       schemaAnnotations["certificationStatus"]["enum"].forEach(certStatus => {

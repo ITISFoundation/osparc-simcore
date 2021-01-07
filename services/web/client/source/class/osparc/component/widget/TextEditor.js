@@ -21,28 +21,14 @@
  */
 
 qx.Class.define("osparc.component.widget.TextEditor", {
-  extend: osparc.ui.window.Window,
+  extend: qx.ui.core.Widget,
 
-  construct: function(oldText = "", subtitle = "", winTitle) {
-    this.base(arguments, winTitle || this.tr("Edit text"));
-
-    this.set({
-      appearance: "window-small-cap",
-      layout: new qx.ui.layout.VBox(2),
-      autoDestroy: true,
-      padding: 2,
-      modal: true,
-      showMaximize: false,
-      showMinimize: false,
-      width: 400,
-      height: 300,
-      clickAwayClose: true
-    });
+  construct: function(oldText = "", subtitle = "") {
+    this.base(arguments, new qx.ui.layout.VBox(2));
 
     this.__populateTextArea(oldText);
     this.__addSubtitle(subtitle);
     this.__addButtons();
-    this.__attachEventHandlers();
   },
 
   events: {
@@ -64,7 +50,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
         }
       }, this);
 
-      this.add(textArea, {
+      this._add(textArea, {
         flex: 1
       });
     },
@@ -74,7 +60,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
         const subtitle = new qx.ui.basic.Label(subtitleLabel).set({
           font: "text-12"
         });
-        this.add(subtitle);
+        this._add(subtitle);
       }
     },
 
@@ -97,15 +83,6 @@ qx.Class.define("osparc.component.widget.TextEditor", {
       buttonsLayout.add(save);
 
       this.add(buttonsLayout);
-    },
-
-    __attachEventHandlers: function() {
-      let commandEsc = new qx.ui.command.Command("Esc");
-      commandEsc.addListener("execute", e => {
-        this.close();
-        commandEsc.dispose();
-        commandEsc = null;
-      });
     }
   }
 });
