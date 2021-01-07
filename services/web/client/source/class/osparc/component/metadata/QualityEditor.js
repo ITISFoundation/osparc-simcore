@@ -381,23 +381,23 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           column: 2
         });
 
-        const button = new qx.ui.form.Button("Edit References").set({
+        const button = new qx.ui.form.Button(this.tr("Edit References")).set({
           allowGrowY: false
         });
         button.addListener("execute", () => {
           const title = this.tr("Edit References");
           const subtitle = this.tr("Supports Markdown");
           const textEditor = new osparc.component.widget.TextEditor(rule.references, subtitle, title);
+          const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
           textEditor.addListener("textChanged", e => {
             const newText = e.getData();
             referenceMD.setValue(newText);
             rule.references = newText;
-            textEditor.close();
+            win.close();
           }, this);
           textEditor.addListener("cancel", () => {
-            textEditor.close();
+            win.close();
           }, this);
-          osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
         }, this);
         this.__tsrGrid.add(button, {
           row,
@@ -446,7 +446,6 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       const isEditMode = this.getMode() === "edit";
 
-      let row = 0;
       const certificationBox = new qx.ui.form.SelectBox().set({
         allowGrowX: false,
         enabled: isEditMode
@@ -462,90 +461,46 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         copyMetadataAnnotations.certificationStatus = e.getData()[0].getLabel();
       }, this);
       this.__annotationsGrid.add(certificationBox, {
-        row: row++,
+        row: 0,
         column: 1
       });
 
-      let certificationLink;
-      let purpose;
-      let vandv;
-      let limitations;
-      let documentation;
-      let standards;
-      if (isEditMode) {
-        certificationLink = new qx.ui.form.TextArea(copyMetadataAnnotations.certificationLink).set({
-          minimalLineHeight: 1
+      let row = 1;
+      Object.keys(copyMetadataAnnotations).forEach(annotationKey => {
+        if (annotationKey === "certificationStatus") {
+          return;
+        }
+        const annotationMD = new osparc.ui.markdown.Markdown(copyMetadataAnnotations[annotationKey]);
+        this.__annotationsGrid.add(annotationMD, {
+          row,
+          column: 1
         });
-        certificationLink.addListener("changeValue", e => {
-          copyMetadataAnnotations.certificationLink = e.getData();
-        }, this);
 
-        purpose = new qx.ui.form.TextArea(copyMetadataAnnotations.purpose).set({
-          minimalLineHeight: 1
-        });
-        purpose.addListener("changeValue", e => {
-          copyMetadataAnnotations.purpose = e.getData();
-        }, this);
-
-        vandv = new qx.ui.form.TextArea(copyMetadataAnnotations.vandv).set({
-          minimalLineHeight: 1
-        });
-        vandv.addListener("changeValue", e => {
-          copyMetadataAnnotations.vandv = e.getData();
-        }, this);
-
-        limitations = new qx.ui.form.TextArea(copyMetadataAnnotations.limitations).set({
-          minimalLineHeight: 1
-        });
-        limitations.addListener("changeValue", e => {
-          copyMetadataAnnotations.limitations = e.getData();
-        }, this);
-
-        documentation = new qx.ui.form.TextArea(copyMetadataAnnotations.documentation).set({
-          minimalLineHeight: 1
-        });
-        documentation.addListener("changeValue", e => {
-          copyMetadataAnnotations.documentation = e.getData();
-        }, this);
-
-        standards = new qx.ui.form.TextArea(copyMetadataAnnotations.standards).set({
-          minimalLineHeight: 1
-        });
-        standards.addListener("changeValue", e => {
-          copyMetadataAnnotations.standards = e.getData();
-        }, this);
-      } else {
-        certificationLink = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.certificationLink);
-        purpose = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.purpose);
-        vandv = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.vandv);
-        limitations = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.limitations);
-        documentation = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.documentation);
-        standards = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.standards);
-      }
-
-      this.__annotationsGrid.add(certificationLink, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(purpose, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(vandv, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(limitations, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(documentation, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(standards, {
-        row: row++,
-        column: 1
+        if (isEditMode) {
+          const button = new qx.ui.form.Button(this.tr("Edit Annotations")).set({
+            allowGrowY: false
+          });
+          button.addListener("execute", () => {
+            const title = this.tr("Edit Annotations");
+            const subtitle = this.tr("Supports Markdown");
+            const textEditor = new osparc.component.widget.TextEditor(copyMetadataAnnotations[annotationKey], subtitle, title);
+            const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
+            textEditor.addListener("textChanged", e => {
+              const newText = e.getData();
+              annotationMD.setValue(newText);
+              copyMetadataAnnotations[annotationKey] = newText;
+              win.close();
+            }, this);
+            textEditor.addListener("cancel", () => {
+              win.close();
+            }, this);
+          }, this);
+          this.__annotationsGrid.add(button, {
+            row,
+            column: 2
+          });
+        }
+        row++;
       });
     },
 
