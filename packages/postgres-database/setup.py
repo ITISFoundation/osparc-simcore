@@ -19,7 +19,7 @@ def read_reqs(reqs_path: Path):
 install_requirements = read_reqs(current_dir / "requirements" / "_base.in")
 
 # Strong dependencies
-migration_requirements = read_reqs(current_dir / "requirements" / "_migration.txt")
+migration_requirements = read_reqs(current_dir / "requirements" / "_migration.in")
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
 
 
