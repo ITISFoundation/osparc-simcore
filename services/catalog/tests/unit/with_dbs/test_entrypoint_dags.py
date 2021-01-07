@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict, List
+from typing import Dict
 
 import pytest
 from simcore_service_catalog.meta import api_version
