@@ -6,7 +6,8 @@ setup(
     maintainer="pcrespov, sanderegg",
     description="pytest plugin with fixtures and test helpers for osparc-simcore repo modules",
     py_modules=["pytest_simcore"],
-    python_requires="~=3.8",
+    # WARNING: this is used in frozen services as well
+    python_requires=">=3.6",
     # TODO create partial extensions:
     install_requires=["pytest>=3.5.0"],
     extras_require={
