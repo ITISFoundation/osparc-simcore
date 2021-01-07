@@ -169,6 +169,9 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const grid = new qx.ui.layout.Grid(10, 8);
       grid.setColumnAlign(0, "left", "middle");
       grid.setColumnAlign(1, "left", "middle");
+      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnAlign(3, "left", "middle");
+      grid.setColumnFlex(2, 1);
       this.__tsrGrid = new qx.ui.container.Composite(grid);
       box.add(this.__tsrGrid, {
         flex: 1
@@ -192,6 +195,8 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const grid = new qx.ui.layout.Grid(10, 8);
       grid.setColumnAlign(0, "left", "middle");
       grid.setColumnAlign(1, "left", "middle");
+      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnFlex(1, 1);
       this.__annotationsGrid = new qx.ui.container.Composite(grid);
       box.add(this.__annotationsGrid);
 
@@ -370,15 +375,31 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           column: 1
         });
 
-        const references = new qx.ui.form.TextArea(rule.references).set({
-          minimalLineHeight: 1
-        });
-        references.addListener("changeValue", e => {
-          rule.references = e.getData();
-        }, this);
-        this.__tsrGrid.add(references, {
+        const referenceMD = new osparc.ui.markdown.Markdown(rule.references);
+        this.__tsrGrid.add(referenceMD, {
           row,
           column: 2
+        });
+
+        const button = new qx.ui.form.Button("Edit References").set({
+          allowGrowY: false
+        });
+        button.addListener("execute", () => {
+          const title = this.tr("Edit References");
+          const subtitle = this.tr("Supports Markdown");
+          const textEditor = new osparc.component.widget.TextEditor(rule.references, subtitle, title);
+          textEditor.addListener("textChanged", e => {
+            const newText = e.getData();
+            referenceMD.setValue(newText);
+            rule.references = newText;
+            textEditor.close();
+          }, this);
+          textEditor.center();
+          textEditor.open();
+        }, this);
+        this.__tsrGrid.add(button, {
+          row,
+          column: 3
         });
 
         row++;
