@@ -394,6 +394,9 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             rule.references = newText;
             textEditor.close();
           }, this);
+          textEditor.addListener("cancel", () => {
+            textEditor.close();
+          }, this);
           osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
         }, this);
         this.__tsrGrid.add(button, {

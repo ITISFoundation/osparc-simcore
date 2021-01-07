@@ -24,7 +24,9 @@ qx.Class.define("osparc.component.widget.TextEditor", {
   extend: qx.ui.core.Widget,
 
   construct: function(oldText = "", subtitle = "") {
-    this.base(arguments, new qx.ui.layout.VBox(2));
+    this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(2));
 
     this.__populateTextArea(oldText);
     this.__addSubtitle(subtitle);
@@ -32,7 +34,8 @@ qx.Class.define("osparc.component.widget.TextEditor", {
   },
 
   events: {
-    "textChanged": "qx.event.type.Data"
+    "textChanged": "qx.event.type.Data",
+    "cancel": "qx.event.type.Event"
   },
 
   members: {
@@ -71,7 +74,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
 
       const cancel = new qx.ui.form.Button(this.tr("Cancel"));
       cancel.addListener("execute", e => {
-        this.close();
+        this.fireDataEvent("cancel");
       }, this);
       buttonsLayout.add(cancel);
 
@@ -82,7 +85,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
       }, this);
       buttonsLayout.add(save);
 
-      this.add(buttonsLayout);
+      this._add(buttonsLayout);
     }
   }
 });
