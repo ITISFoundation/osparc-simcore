@@ -42,12 +42,6 @@ _target-inputs += $(shell find ${SERVICES_DIR} -type f -name "_test.in")
 
 $(info Found $(words $(_target-inputs)) inputs)
 
-
-_check_py36_version:
-	# Checking that runs with correct python version
-	@python3 -c "import sys; assert sys.version_info[:2]==(3,6), f'Expected python 3.6, got {sys.version_info}'"
-
-
 touch: ## touches all package requirement inputs
 	# First aligns time-stamps: ensures compiled timestamp is older than target inputs
 	@$(foreach p,${_inputs-all},touch $(p);)
@@ -55,7 +49,7 @@ touch: ## touches all package requirement inputs
 	# Touchs all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
 
-reqs: _check_py36_version ## updates requirements of all package libraries
+reqs: ## updates requirements of all package libraries
 	# Upgrading $(upgrade) requirements
 	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
