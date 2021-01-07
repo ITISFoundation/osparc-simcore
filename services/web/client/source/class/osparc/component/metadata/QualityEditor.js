@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * @asset(form/service-quality.json)
+ * @asset(form/resource-quality.json)
  * @asset(object-path/object-path-0-11-4.min.js)
  * @asset(ajv/ajv-6-11-0.min.js)
  * @ignore(Ajv)
