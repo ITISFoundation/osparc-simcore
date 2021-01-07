@@ -4,6 +4,7 @@ import math
 import time
 
 from typing import List, Awaitable
+from functools import wraps
 
 from aiohttp import ClientSession, ClientTimeout, ClientResponse
 
@@ -11,6 +12,7 @@ log = logging.getLogger()
 
 
 def function_duration(func):
+    @wraps(func)
     async def wrapper(*args, **kwargs):
         start = time.time()
         result = await func(*args, **kwargs)
