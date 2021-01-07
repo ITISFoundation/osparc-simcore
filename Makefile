@@ -17,13 +17,13 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 # Operating system
 ifeq ($(filter Windows_NT,$(OS)),)
 IS_WSL  := $(if $(findstring Microsoft,$(shell uname -a)),WSL,)
+IS_WSL2 := $(if $(findstring -microsoft-,$(shell uname -a)),WSL2,)
 IS_OSX  := $(filter Darwin,$(shell uname -a))
 IS_LINUX:= $(if $(or $(IS_WSL),$(IS_OSX)),,$(filter Linux,$(shell uname -a)))
 endif
 
 IS_WIN  := $(strip $(if $(or $(IS_LINUX),$(IS_OSX),$(IS_WSL)),,$(OS)))
 $(if $(IS_WIN),$(error Windows is not supported in all recipes. Use WSL instead. Follow instructions in README.md),)
-
 
 # VARIABLES ----------------------------------------------
 # TODO: read from docker-compose file instead $(shell find  $(CURDIR)/services -type f -name 'Dockerfile')
@@ -69,6 +69,12 @@ ifeq ($(IS_WSL),WSL)
 ETC_HOSTNAME = $(CURDIR)/.fake_hostname_file
 export ETC_HOSTNAME
 host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
+endif
+
+# NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
+ifeq ($(IS_WSL2),WSL2)
+S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1):9001
+export S3_ENDPOINT
 endif
 
 
@@ -204,48 +210,58 @@ else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
 
+define _show_endpoints
+# The following endpoints are available
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                       - oSparc platform"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public  - Postgres DB"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                       - Portainer"
+endef
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Start compile+watch front-end container [front-end]
-	$(MAKE_C) services/web/client down compile-dev flags=--watch
+	@$(MAKE_C) services/web/client down compile-dev flags=--watch
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
-	$(MAKE_C) services/web/client follow-dev-logs
+	@$(MAKE) .deploy-ops
+	@$(_show_endpoints)
+	@$(MAKE_C) services/web/client follow-dev-logs
 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
-	docker-compose -f $< up --detach $(target)
+	@docker-compose -f $< up --detach $(target)
+	@$(_show_endpoints)
 endif
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-ops
+	@$(_show_endpoints)
 
 up-latest:
 	@export DOCKER_IMAGE_TAG=latest; \
 	$(MAKE) up-version
+	@$(_show_endpoints)
 
 
 .PHONY: down leave
 down: ## Stops and removes stack
 	# Removing stacks in reverse order to creation
-	-$(foreach stack,\
+	-@$(foreach stack,\
 		$(shell docker stack ls --format={{.Name}} | tac),\
 		docker stack rm $(stack);)
 	# Removing client containers (if any)
-	-$(MAKE_C) services/web/client down
+	-@$(MAKE_C) services/web/client down
 	# Removing generated docker compose configurations, i.e. .stack-*
-	-$(shell rm $(wildcard .stack-*))
+	-@rm $(wildcard .stack-*)
 	# Removing local registry if any
-	-$(shell docker rm --force $(local_registry))
+	-@docker rm --force $(local_registry)
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -254,7 +270,7 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 .PHONY: .init-swarm
 .init-swarm:
 	# Ensures swarm is initialized
-	$(if $(SWARM_HOSTS),,docker swarm init)
+	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip))
 
 
 ## DOCKER TAGS  -------------------------------
@@ -418,26 +434,52 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 
 
 local_registry=registry
-.PHONY: local-registry
+get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+.PHONY: local-registry rm-registry
+
+rm-registry: ## remove the registry and changes to host/file
+	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),\
+		echo removing entry in /etc/hosts...;\
+		sudo sed -i "/127.0.0.1 $(local_registry)/d" /etc/hosts,\
+		echo /etc/hosts is already cleaned)
+	@$(if $(shell grep "{\"insecure-registries\": \[\"$(local_registry):5000\"\]}" /etc/docker/daemon.json),\
+		echo removing entry in /etc/docker/daemon.json...;\
+		sudo sed -i '/{"insecure-registries": \["$(local_registry):5000"\]}/d' /etc/docker/daemon.json;,\
+		echo /etc/docker/daemon.json is already cleaned)
+
+
+
+
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
-	# add registry to host file
-	@echo 127.0.0.1 $(local_registry) >> /etc/hosts
-	# allow docker engine to use local insecure registry
-	@echo {\"insecure-registries\": [\"$(local_registry):5000\"]} >> /etc/docker/daemon.json
-	@service docker restart
-	# start registry on port 5000...
-	@docker run --detach \
+	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),,\
+					echo configuring host file to redirect $(local_registry) to 127.0.0.1; \
+					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts;\
+					echo done)
+	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
+					echo configuring docker engine to use insecure local registry...; \
+					sudo echo {\"insecure-registries\": [\"$(local_registry):5000\"]} | sudo tee -a /etc/docker/daemon.json; \
+					echo restarting engine...; \
+					sudo service docker restart;\
+					echo done)
+	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
+					echo starting registry on $(local_registry):5000...; \
+					docker run --detach \
 							--init \
 							--publish 5000:5000 \
 							--volume $(local_registry):/var/lib/registry \
 							--name $(local_registry) \
-							registry:2
-	# set up environment variables to use local registry on port 5000 without any security (take care!)...
+							registry:2)
+
+	# WARNING: environment file .env is now setup to use local registry on port 5000 without any security (take care!)...
 	@echo REGISTRY_AUTH=False >> .env
 	@echo REGISTRY_SSL=False >> .env
-	@echo REGISTRY_URL=$(local_registry):5000 >> .env
+	@echo REGISTRY_PATH=$(local_registry):5000 >> .env
+	@echo REGISTRY_URL=$(get_my_ip):5000 >> .env
 	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
-	# add registry 172.17.0.1 as extra_host to containers that need access to the registry (e.g. director)
+	@echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
+	# local registry set in $(local_registry):5000
+	# images currently in registry:
+	curl --silent $(local_registry):5000/v2/_catalog | jq
 
 
 ## INFO -------------------------------
@@ -445,7 +487,7 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 .PHONY: info info-images info-swarm  info-tools
 info: ## displays setup information
 	# setup info:
-	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WIN)'
+	@echo ' Detected OS          : $(IS_LINUX)$(IS_OSX)$(IS_WSL)$(IS_WSL2)$(IS_WIN)'
 	@echo ' SWARM_STACK_NAME     : ${SWARM_STACK_NAME}'
 	@echo ' DOCKER_REGISTRY      : $(DOCKER_REGISTRY)'
 	@echo ' DOCKER_IMAGE_TAG     : ${DOCKER_IMAGE_TAG}'

@@ -17,8 +17,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *    const serviceInfo = new osparc.component.metadata.ServiceDetails(selectedService);
- *    this.add(serviceInfo);
+ *    const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(studyData, isTemplate, winWidth);
+ *    this.add(studyDetailsEditor);
  * </pre>
  */
 

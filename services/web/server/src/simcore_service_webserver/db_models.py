@@ -11,13 +11,14 @@ from simcore_postgres_database.webserver_models import (
     confirmations,
     group_classifiers,
     groups,
+    products,
     projects,
+    scicrunch_resources,
     study_tags,
     tags,
     tokens,
     user_to_groups,
     users,
-    products
 )
 
 # TODO: roles table that maps every role with allowed tasks e.g. read/write,...??
@@ -38,5 +39,6 @@ __all__ = (
     "api_keys",
     "projects",
     "group_classifiers",
-    "products"
+    "products",
+    "scicrunch_resources",
 )

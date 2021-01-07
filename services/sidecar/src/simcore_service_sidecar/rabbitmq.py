@@ -8,6 +8,7 @@ import aio_pika
 import tenacity
 from models_library.settings.celery import CeleryConfig
 from pydantic import BaseModel  # pylint: disable=no-name-in-module
+from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 
 from . import config
@@ -49,6 +50,7 @@ class RabbitMQ(BaseModel):
         # see https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed
         arbitrary_types_allowed = True
 
+    @log_decorator(logger=log)
     async def connect(self):
         if not self.celery_config:
             self.celery_config = config.CELERY_CONFIG
@@ -81,12 +83,12 @@ class RabbitMQ(BaseModel):
             aio_pika.ExchangeType.FANOUT,
         )
 
+    @log_decorator(logger=log)
     async def close(self):
-        log.debug("Closing channel...")
         await self.channel.close()
-        log.debug("Closing connection...")
         await self.connection.close()
 
+    @log_decorator(logger=log)
     async def _post_message(
         self, exchange: aio_pika.Exchange, data: Dict[str, Union[str, Any]]
     ):

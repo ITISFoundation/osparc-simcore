@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from pprint import pformat
-from typing import Dict, List
+from typing import Dict
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -61,11 +61,8 @@ async def _update_project_outputs(
     node_uuid: NodeID,
     outputs: Dict,
 ) -> None:
-    changed_keys: List[str] = list(outputs.keys())
-    if not changed_keys:
-        return
-
-    project = await projects_api.update_project_node_outputs(
+    # the new outputs might be {}, or {key_name: payload}
+    project, changed_keys = await projects_api.update_project_node_outputs(
         app,
         user_id,
         project_uuid,
@@ -104,11 +101,10 @@ async def listen(app: web.Application):
 
             if not task_changes:
                 log.error("no changes but still triggered: %s", pformat(payload))
+                continue
 
             project_uuid = task_data.get("project_id", None)
             node_uuid = task_data.get("node_id", None)
-            outputs = task_data.get("outputs", {})
-            state = convert_state_from_db(task_data.get("state")).value
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
@@ -118,13 +114,15 @@ async def listen(app: web.Application):
                 the_project_owner = await _get_project_owner(conn, project_uuid)
 
                 if "outputs" in task_changes:
+                    new_outputs = task_data.get("outputs", {})
                     await _update_project_outputs(
-                        app, the_project_owner, project_uuid, node_uuid, outputs
+                        app, the_project_owner, project_uuid, node_uuid, new_outputs
                     )
 
                 if "state" in task_changes:
+                    new_state = convert_state_from_db(task_data["state"]).value
                     await _update_project_state(
-                        app, the_project_owner, project_uuid, node_uuid, state
+                        app, the_project_owner, project_uuid, node_uuid, new_state
                     )
 
             except projects_exceptions.ProjectNotFoundError as exc:

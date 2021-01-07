@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-member
 
-import pytest
+from typing import Dict, Union
 
+import pytest
 from simcore_sdk.node_ports._data_item import DataItem
 from simcore_sdk.node_ports._data_items_list import DataItemsList
 from simcore_sdk.node_ports._item import Item
@@ -14,7 +15,9 @@ from simcore_sdk.node_ports._schema_items_list import SchemaItemsList
 from utils_futures import future_with_result
 
 
-def create_item(key, item_type, item_value):
+def create_item(
+    key: str, item_type: str, item_value: Union[int, float, bool, str, Dict]
+):
     return Item(
         SchemaItem(
             key=key,

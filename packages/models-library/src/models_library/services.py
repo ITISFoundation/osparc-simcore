@@ -4,9 +4,20 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Extra,
+    Field,
+    HttpUrl,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    constr,
+    validator,
+)
 from pydantic.types import PositiveInt
 
 from .basic_regex import VERSION_RE
@@ -150,7 +161,7 @@ class ServiceProperty(BaseModel):
         description="Place the data associated with the named keys in files",
         examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
-    default_value: Optional[Union[str, float, bool, int]] = Field(
+    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
         None, alias="defaultValue", examples=["Dog", True]
     )
 
@@ -286,6 +297,7 @@ class ServiceMetaData(ServiceCommonData):
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
     classifiers: Optional[List[str]]
+    metadata: Dict[str, Any] = {}
 
 
 # Databases models (tables services_meta_data and services_access_rights)

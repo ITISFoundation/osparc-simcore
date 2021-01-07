@@ -11,7 +11,7 @@
 import logging
 from collections import defaultdict
 from pprint import pformat
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
@@ -295,7 +295,18 @@ async def update_project_node_state(
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
+    if project["workbench"][node_id].get("state") == new_state:
+        # nothing to do here
+        return project
     project["workbench"][node_id]["state"] = new_state
+    if RunningState(new_state) in [
+        RunningState.PUBLISHED,
+        RunningState.PENDING,
+        RunningState.STARTED,
+    ]:
+        project["workbench"][node_id]["progress"] = 0
+    elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
+        project["workbench"][node_id]["progress"] = 100
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
     updated_project["state"] = await get_project_state_for_user(
@@ -333,7 +344,7 @@ async def update_project_node_outputs(
     project_id: str,
     node_id: str,
     data: Optional[Dict],
-) -> Dict:
+) -> Tuple[Dict, List[str]]:
     """
     Updates outputs of a given node in a project with 'data'
     """
@@ -352,25 +363,34 @@ async def update_project_node_outputs(
 
     # NOTE: update outputs (not required) if necessary as the UI expects a
     # dataset/label field that is missing
-    outputs: Dict[str, Any] = project["workbench"][node_id].setdefault("outputs", {})
-    outputs.update(data)
+    current_outputs = project["workbench"][node_id].setdefault("outputs", {})
+    new_outputs = data
+    project["workbench"][node_id]["outputs"] = new_outputs
 
-    for output_key in outputs.keys():
-        if not isinstance(outputs[output_key], dict):
+    # find changed keys (the ones that appear or disapppear for sure)
+    changed_keys = list(current_outputs.keys() ^ new_outputs.keys())
+    # now check the ones that are in both object
+    for key in current_outputs.keys() & new_outputs.keys():
+        if current_outputs[key] != new_outputs[key]:
+            changed_keys.append(key)
+
+    # FIXME: this should be reviewed @maiz. how is an output file defined. I think we have several flavours.
+    for output_key in new_outputs.keys():
+        if not isinstance(new_outputs[output_key], dict):
             continue
-        if "path" in outputs[output_key]:
+        if "path" in new_outputs[output_key]:
             # file_id is of type study_id/node_id/file.ext
-            file_id = outputs[output_key]["path"]
+            file_id = new_outputs[output_key]["path"]
             study_id, _, file_ext = file_id.split("/")
-            outputs[output_key]["dataset"] = study_id
-            outputs[output_key]["label"] = file_ext
+            new_outputs[output_key]["dataset"] = study_id
+            new_outputs[output_key]["label"] = file_ext
 
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
     updated_project["state"] = await get_project_state_for_user(
         user_id, project_id, app
     )
-    return updated_project
+    return updated_project, changed_keys
 
 
 async def get_workbench_node_ids_from_project_uuid(

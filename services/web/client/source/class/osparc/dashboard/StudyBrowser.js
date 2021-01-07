@@ -438,7 +438,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(saveAsTemplateButton);
       }
 
-      if (osparc.data.model.Study.hasSlideshow(studyData)) {
+      if (osparc.data.model.Study.hasSlideshow(studyData) && osparc.data.Permissions.getInstance().canDo("study.slides")) {
         const startAsSlideshowButton = this.__getStartAsSlideshowButton(studyData);
         menu.add(startAsSlideshowButton);
       }
@@ -486,7 +486,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateClassifiers", e => {
+      classifiersEditor.addListener("updateResourceClassifiers", e => {
         const studyId = e.getData();
         this.reloadUserStudy(studyId);
       }, this);

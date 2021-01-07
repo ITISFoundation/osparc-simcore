@@ -1,7 +1,6 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
@@ -43,3 +42,4 @@ def setup_studies_dispatcher(app: web.Application) -> bool:
 
     # TODO: add a background task that builds _FILETYPE_TO_VIEWER with viewers
     #       shared with everybody.
+    return True

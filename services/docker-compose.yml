@@ -44,6 +44,7 @@ services:
     init: true
     environment:
       - REGISTRY_URL=${REGISTRY_URL}
+      - REGISTRY_PATH=${REGISTRY_PATH}
       - REGISTRY_AUTH=${REGISTRY_AUTH}
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}

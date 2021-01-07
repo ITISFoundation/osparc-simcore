@@ -107,8 +107,8 @@ async def empty_user_project2(client, empty_project, logged_user):
 
 
 @pytest.fixture(autouse=True)
-async def director_v2_mock(director_v2_subsystem_mock) -> aioresponses:
-    yield director_v2_subsystem_mock
+async def director_v2_mock(director_v2_service_mock) -> aioresponses:
+    yield director_v2_service_mock
 
 
 # ------------------------ UTILS ----------------------------------
@@ -333,7 +333,7 @@ async def test_interactive_services_removed_after_logout(
     client_session_id,
     socketio_client,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
-    director_v2_subsystem_mock: aioresponses,
+    director_v2_service_mock: aioresponses,
 ):
     set_service_deletion_delay(SERVICE_DELETION_DELAY, client.server.app)
     # login - logged_user fixture
