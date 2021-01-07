@@ -61,7 +61,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
-        osparc.component.message.FlashMessenger.logAs(this.tr("Metadata not found"), "ERROR");
+        osparc.component.message.FlashMessenger.logAs(this.tr("Quality Assesment data not found"), "ERROR");
         return;
       }
 
