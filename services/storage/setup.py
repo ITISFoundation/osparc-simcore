@@ -33,7 +33,7 @@ setup_config = dict(
     version="0.2.1",
     description="Service to manage data storage in simcore",
     author="Manuel Guidon (mguidon)",
-    python_requires=">3.6, <3.7",
+    python_requires="~=3.8",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,
