@@ -61,7 +61,7 @@ def test_standard_operations_on_resource(
     assert response.status_code == 200
     got = response.json()
 
-    assert isinstance(got, List)
+    assert isinstance(got, list)
     assert len(got) == 1
 
     # TODO: data_in is not the same as data_out??
