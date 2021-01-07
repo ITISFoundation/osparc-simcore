@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="pytest-simcore",
@@ -6,7 +6,7 @@ setup(
     maintainer="pcrespov, sanderegg",
     description="pytest plugin with fixtures and test helpers for osparc-simcore repo modules",
     py_modules=["pytest_simcore"],
-    python_requires=">=3.6.*",
+    python_requires="~=3.8",
     # TODO create partial extensions:
     install_requires=["pytest>=3.5.0"],
     extras_require={

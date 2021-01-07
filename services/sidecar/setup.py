@@ -47,7 +47,7 @@ setup(
     },
     long_description=readme,
     license="MIT license",
-    python_requires="~=3.6",
+    python_requires="~=3.8",
     packages=find_packages(where="src"),
     package_dir={
         "": "src",
