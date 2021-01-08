@@ -23,13 +23,17 @@
 qx.Class.define("osparc.component.widget.TextEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(oldText = "", subtitle = "") {
+  /**
+    * @param initText {String} Initialization text
+    * @param subtitleText {String} Text to be shown under the text area
+    */
+  construct: function(initText = "", subtitleText = "") {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(2));
 
-    this.__populateTextArea(oldText);
-    this.__addSubtitle(subtitle);
+    this.__populateTextArea(initText);
+    this.__addSubtitle(subtitleText);
     this.__addButtons();
   },
 
@@ -41,9 +45,9 @@ qx.Class.define("osparc.component.widget.TextEditor", {
   members: {
     __textArea: null,
 
-    __populateTextArea: function(oldLabel) {
+    __populateTextArea: function(initText) {
       // Create a text area in which to edit the data
-      const textArea = this.__textArea = new qx.ui.form.TextArea(oldLabel).set({
+      const textArea = this.__textArea = new qx.ui.form.TextArea(initText).set({
         allowGrowX: true
       });
 
@@ -58,9 +62,9 @@ qx.Class.define("osparc.component.widget.TextEditor", {
       });
     },
 
-    __addSubtitle: function(subtitleLabel) {
-      if (subtitleLabel) {
-        const subtitle = new qx.ui.basic.Label(subtitleLabel).set({
+    __addSubtitle: function(subtitleText) {
+      if (subtitleText) {
+        const subtitle = new qx.ui.basic.Label(subtitleText).set({
           font: "text-12"
         });
         this._add(subtitle);
@@ -73,13 +77,13 @@ qx.Class.define("osparc.component.widget.TextEditor", {
       }));
 
       const cancel = new qx.ui.form.Button(this.tr("Cancel"));
-      cancel.addListener("execute", e => {
+      cancel.addListener("execute", () => {
         this.fireDataEvent("cancel");
       }, this);
       buttonsLayout.add(cancel);
 
       const save = new qx.ui.form.Button(this.tr("Accept"));
-      save.addListener("execute", e => {
+      save.addListener("execute", () => {
         const newText = this.__textArea.getValue();
         this.fireDataEvent("textChanged", newText);
       }, this);
