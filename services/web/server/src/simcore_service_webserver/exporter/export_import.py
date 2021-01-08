@@ -14,7 +14,6 @@ from simcore_service_webserver.studies_dispatcher._users import UserInfo
 log = logging.getLogger(__name__)
 
 
-# neagu-wkst:9081/v0/projects/d3cfd554-3ed9-11eb-9dd5-02420a0000f6/export?compressed=true
 async def study_export(
     app: web.Application,
     tmp_dir: str,
