@@ -130,12 +130,9 @@ async def test_engine_when_idle_for_some_time():
 
     # by default docker swarm kills connections that are idle for more than 15 minutes
     await asyncio.sleep(901)
-    # import pdb; pdb.set_trace()
 
     async with engine.acquire() as conn:
         await conn.execute(tbl.insert().values(val="third"))
-
-    # import pdb; pdb.set_trace()
 
 
 async def test_engine_when_pg_not_reachable(loop):
@@ -143,8 +140,10 @@ async def test_engine_when_pg_not_reachable(loop):
         database="db", user="foo", password="foo", host="127.0.0.1", port=123
     )
 
-    with pytest.raises(psycopg2.OperationalError):
+    with pytest.raises(psycopg2.OperationalError) as excinfo:
         await create_pg_engine(dsn)
+
+    assert "could not connect to server" in str(excinfo.value)
 
 
 def test_init_tables(postgres_service_with_fake_data):
