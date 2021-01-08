@@ -315,7 +315,7 @@ async def delete_project(request: web.Request):
                 reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
             )
 
-        await projects_api.delete_project(request, project_uuid, user_id)
+        await projects_api.delete_project(request.app, project_uuid, user_id)
     except ProjectInvalidRightsError as err:
         raise web.HTTPForbidden(
             reason="You do not have sufficient rights to delete this project"
