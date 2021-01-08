@@ -12,7 +12,10 @@ _FORMATTERS_MAPPINGS: Dict[str, BaseFormatter] = {"1": FormatterV1}
 
 
 async def validate_manifest(unzipped_root_folder: Path) -> BaseFormatter:
-    """Checks if the file contains a manifest and will return a formatter based on the version"""
+    """
+    Checks if the file contains a manifest and will return the
+    formatter specified in the manifest's version
+    """
 
     manifest_from_file = await ManifestFile.model_from_file(
         root_dir=unzipped_root_folder
