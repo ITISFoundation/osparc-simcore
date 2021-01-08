@@ -88,10 +88,13 @@ def mock_db_engine(mocker):
 
 
 async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
+    mock_result_row = mocker.patch(
+        "aiopg.sa.result.RowProxy", side_effect=mocker.AsyncMock()
+    )
 
-    mock_result_row = mocker.patch("aiopg.sa.result.RowProxy", spec=True)
-
-    mock_result = mocker.patch("aiopg.sa.result.ResultProxy", spec=True)
+    mock_result = mocker.patch(
+        "aiopg.sa.result.ResultProxy", side_effect=mocker.AsyncMock()
+    )
     mock_result.first.return_value = mock_result_row
 
     db_engine, mock_connection = mock_db_engine(mock_result)

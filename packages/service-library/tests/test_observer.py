@@ -7,8 +7,8 @@ from servicelib.observer import emit, observe
 
 
 async def test_observer(loop, mocker):
-    # register a cb function
-    cb_function = mocker.Mock(return_value=None)
+    # register a couroutine as callback function
+    cb_function = mocker.AsyncMock(return_value=None)
 
     decorated_fct = observe(event="my_test_event")(cb_function)
 
