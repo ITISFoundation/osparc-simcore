@@ -228,7 +228,6 @@ async def storage_subsystem_mock(loop, mocker):
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
         return_value="",
     )
-    mock1.return_value.set_result("")
     return mock, mock1
 
 
