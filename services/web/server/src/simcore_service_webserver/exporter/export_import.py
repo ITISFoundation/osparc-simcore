@@ -68,7 +68,10 @@ async def study_import(
     user: UserInfo,
     chunk_size: int = 2 ** 16,
 ) -> str:
-    """ Creates a project from a given exported project"""
+    """
+    Creates a project from a given exported project and returns
+    the imported project's uuid.
+    """
     # Storing file to disk
     upload_file_name = Path(temp_dir) / "uploaded.zip"
     # upload and verify checksum
