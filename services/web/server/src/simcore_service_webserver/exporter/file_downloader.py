@@ -41,14 +41,7 @@ class ParallelDownloader:
         results = await wrapped_function()
         log.debug("Download results %s", results)
 
-        for downloaded_file in results:
-            if not Path(downloaded_file).exists():
-                raise web.HTTPException(
-                    reason=f"Expected file at path {downloaded_file} after download."
-                )
-
         if len(results) != self.total_files_added:
-            log.warning("Download response %s", results)
             raise web.HTTPException(
                 reason="Not all files were downloaded. Please check the logs above."
             )
