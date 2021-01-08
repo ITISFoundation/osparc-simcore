@@ -1,6 +1,6 @@
 import logging
 from asyncio import CancelledError
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 from aiohttp import web
@@ -47,9 +47,16 @@ async def _request_director_v2(
     session = get_client_session(app)
     try:
         async with session.request(method, url, headers=headers, json=data) as resp:
-            payload: Dict = await resp.json()
             if resp.status >= 400:
+                # in some cases the director answers with plain text
+                payload: Union[Dict, str] = (
+                    await resp.json()
+                    if resp.content_type == "application/json"
+                    else await resp.text()
+                )
                 raise _DirectorServiceError(resp.status, payload)
+
+            payload: Dict = await resp.json()
             return (payload, resp.status)
 
     except (CancelledError, TimeoutError) as err:
@@ -73,8 +80,9 @@ async def create_or_update_pipeline(
         )
         return computation_task_out
 
-    except _DirectorServiceError:
+    except _DirectorServiceError as e:
         log.error("could not create pipeline from project %s", project_id)
+        raise e
 
 
 @log_decorator(logger=log)
