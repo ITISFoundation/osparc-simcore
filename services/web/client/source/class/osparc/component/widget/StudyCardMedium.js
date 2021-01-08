@@ -78,13 +78,43 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     },
 
     __createMenuButton: function() {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
       const menuButton = new qx.ui.form.MenuButton().set({
+        menu,
         width: 25,
         height: 25,
         icon: "@FontAwesome5Solid/ellipsis-v/14",
         focusable: false
       });
+
+      const moreInfoButton = this.__getMoreInfoMenuButton();
+      if (moreInfoButton) {
+        menu.add(moreInfoButton);
+      }
+
+      if (this.getStudy().getQuality()) {
+        const qualityButton = this.__getQualityMenuButton();
+        menu.add(qualityButton);
+      }
+
       return menuButton;
+    },
+
+    __getMoreInfoMenuButton: function() {
+      const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
+      moreInfoButton.addListener("execute", () => {
+      }, this);
+      return moreInfoButton;
+    },
+
+    __getQualityMenuButton: function() {
+      const studyQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      studyQualityButton.addListener("execute", () => {
+      }, this);
+      return studyQualityButton;
     },
 
     __createThumbnailLeftPart: function() {
@@ -153,7 +183,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
 
       const quality = this.__createQuality();
       if (quality) {
-        moreInfo.add(new qx.ui.basic.Label(this.tr("TSR")).set({
+        moreInfo.add(new qx.ui.basic.Label(this.tr("Quality")).set({
           font: "title-12"
         }), {
           row,
@@ -217,7 +247,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       const quality = this.getStudy().getQuality();
       if (quality && "tsr" in quality) {
         const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-          toolTipText: this.tr("Ten Simple Rules")
+          toolTipText: this.tr("Ten Simple Rules score")
         });
         const {
           score,
