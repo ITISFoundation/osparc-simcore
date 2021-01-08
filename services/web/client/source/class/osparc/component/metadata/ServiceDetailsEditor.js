@@ -154,7 +154,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       osparc.utils.Utils.setIdToWidget(thumbnail, "serviceDetailsEditorThumbFld");
       editView.add(thumbnail);
 
-      const saveButton = new osparc.ui.toolbar.Button(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
+      const saveButton = new osparc.ui.toolbar.FetchButton(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
         appearance: "toolbar-md-button"
       });
       osparc.utils.Utils.setIdToWidget(saveButton, "serviceDetailsEditorSaveBtn");
