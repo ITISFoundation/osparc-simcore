@@ -16,14 +16,16 @@ ShuffledData = Dict[str, str]
 
 
 class LinkAndPath2(BaseModel):
-    _FILES_DIRECTORY: str = "storage"  # where all files are stored
+    _FILES_DIRECTORY: str = (
+        "storage"  # where all files are stored in the exported folder
+    )
     root_dir: Path = Field(
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
     storage_type: str = Field(
         ...,
-        description="usually 0 or 1 S3 or BlackFynn",
+        description="usually 0 for S3 or 1 for BlackFynn",
     )
     relative_path_to_file: Path = Field(
         ...,
@@ -64,9 +66,6 @@ class LinkAndPath2(BaseModel):
         """Checks if the file was saved at the given link"""
         return self.storage_path_to_file.is_file()
 
-    def change_uuids_from_shuffled_data(self, shuffled_data: ShuffledData) -> None:
-        """Change the files's project and workbench node based on provided data"""
-
     async def apply_shuffled_data(self, shuffled_data: ShuffledData) -> None:
         """Will replace paths on disk for the file and change the relative_path_to_file"""
         current_storage_path_to_file = self.storage_path_to_file
@@ -77,20 +76,21 @@ class LinkAndPath2(BaseModel):
             )
         self.relative_path_to_file = Path(relative_path_to_file_str)
 
-        # finally move file and check
+        # finally move file to new target path
         destination = self.storage_path_to_file
         await makedirs(destination.parent, exist_ok=True)
         await aiofiles.os.rename(current_storage_path_to_file, destination)
 
 
 class ManifestFile(BaseLoadingModel):
-    _STORAGE_PATH: str = "manifest.json"
+    _RELATIVE_STORAGE_PATH: str = "manifest.json"
 
     version: str = Field(
         ...,
         description=(
-            "Version of the formatter used to export the study. This version should "
-            "be also used for importing the study back"
+            "Version of the formatter used to export the study. This version is "
+            "also used for importing the study back and autodetected. "
+            "WARNING: never change this field's name."
         ),
     )
 
@@ -110,11 +110,11 @@ class ManifestFile(BaseLoadingModel):
 
 
 class ProjectFile(BaseLoadingModel):
-    _STORAGE_PATH: str = "project.json"
+    _RELATIVE_STORAGE_PATH: str = "project.json"
 
     name: str = Field(..., description="name of the study")
     description: str = Field(..., description="study description")
-    uuid: str = Field(..., description="study unique id")
+    uuid: str = Field(..., description="study unique id used in the platform")
     last_change_date: datetime = Field(
         ..., alias="lastChangeDate", description="date when study was last changed"
     )
