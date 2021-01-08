@@ -41,7 +41,7 @@ from utils import get_fake_project
 log = logging.getLogger(__name__)
 
 core_services = ["postgres", "redis", "storage"]
-ops_services = ["minio", "adminer"]
+ops_services = ["minio"]
 
 
 API_VERSION = "v0"

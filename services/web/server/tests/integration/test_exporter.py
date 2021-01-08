@@ -40,7 +40,7 @@ core_services = [
     "postgres",
     "storage",
 ]
-ops_services = ["minio", "adminer"]
+ops_services = ["minio"]
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
