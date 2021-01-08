@@ -19,7 +19,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`)
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server
     networks:
       - default
 
@@ -335,6 +335,15 @@ services:
       placement:
         constraints:
           - node.role == manager
+      labels:
+        # for each service in the stack a new middlaware for rate limiting needs to be registered here
+        # requests = average / period this is how the limits are defined
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.average=1
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.period=1m
+        # a burst is computed over a period of 1 second
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
+        # X-Forwarded-For header extracts second IP from the right, count starts at one
+        - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
     networks:
       - default
       - interactive_services_subnet
