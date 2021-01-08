@@ -84,7 +84,7 @@ class LinkAndPath2(BaseModel):
 
 
 class ManifestFile(BaseLoadingModel):
-    _STORAGE_PATH: str = "manifest.yaml"
+    _STORAGE_PATH: str = "manifest.json"
 
     version: str = Field(
         ...,
@@ -110,7 +110,7 @@ class ManifestFile(BaseLoadingModel):
 
 
 class ProjectFile(BaseLoadingModel):
-    _STORAGE_PATH: str = "project.yaml"
+    _STORAGE_PATH: str = "project.json"
 
     name: str = Field(..., description="name of the study")
     description: str = Field(..., description="study description")
