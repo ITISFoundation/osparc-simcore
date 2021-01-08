@@ -13,12 +13,12 @@ from .utils import rename
 log = logging.getLogger(__name__)
 
 
-def get_random_string(length: int) -> str:
+def get_random_chars(length: int) -> str:
     return pwd.genword(entropy=52, charset="hex")[:length]
 
 
 def get_osparc_export_name(sha256_sum: str, algorithm: Algorithm) -> str:
-    return f"{get_random_string(4)}#{algorithm.name}={sha256_sum}.osparc"
+    return f"{get_random_chars(4)}#{algorithm.name}={sha256_sum}.osparc"
 
 
 def validate_osparc_import_name(file_name: str) -> Tuple[Algorithm, str]:
