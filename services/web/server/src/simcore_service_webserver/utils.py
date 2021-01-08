@@ -27,9 +27,9 @@ def is_osparc_repo_dir(path: Path) -> bool:
 
 
 def search_osparc_repo_dir(max_iter=8):
-    """ Returns path to root repo dir or None
+    """Returns path to root repo dir or None
 
-        NOTE: assumes this file within repo, i.e. only happens in edit mode!
+    NOTE: assumes this file within repo, i.e. only happens in edit mode!
     """
     root_dir = current_dir
     if "services/web/server" in str(root_dir):
@@ -44,7 +44,8 @@ def search_osparc_repo_dir(max_iter=8):
 
 
 def as_list(obj) -> List:
-    if isinstance(obj, Iterable):
+    # TODO: disabled because of bug in  https://github.com/PyCQA/pylint/issues/3507
+    if isinstance(obj, Iterable):  # pylint: disable=typecheck
         return list(obj)
     return [
         obj,
@@ -61,7 +62,7 @@ def gravatar_url(gravatarhash, size=100, default="identicon", rating="g") -> URL
 
 
 def generate_password(length: int = 8, more_secure: bool = False) -> str:
-    """ generate random passord
+    """generate random passord
 
     :param length: password length, defaults to 8
     :type length: int, optional
@@ -134,8 +135,7 @@ def format_datetime(snapshot: datetime) -> str:
 
 
 def now_str() -> str:
-    """ Returns formatted time snapshot in UTC
-    """
+    """Returns formatted time snapshot in UTC"""
     return format_datetime(now())
 
 
@@ -203,11 +203,11 @@ def compose_error_msg(msg: str) -> str:
     return f"{msg}. Please send this message to support@osparc.io [{now_str()}]"
 
 
-
 # -----------------------------------------------
 #
 # FORMATTING
 #
+
 
 def snake_to_camel(subject: str) -> str:
     parts = subject.lower().split("_")
