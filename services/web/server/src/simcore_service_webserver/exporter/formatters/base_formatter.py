@@ -15,6 +15,6 @@ class BaseFormatter:
         and saves all data to the relative path."""
 
     @abstractmethod
-    async def validate_and_import_directory(self, **kwargs):
+    async def validate_and_import_directory(self, **kwargs) -> str:
         """Validates an uploaded unzipped project and will try
         to import all the data inside the platfrom"""

@@ -639,9 +639,9 @@ async def import_project(request: web.Request):
     )
 
     user: UserInfo = await acquire_user(request)
-    await study_import(
+    imported_project_uuid = await study_import(
         app=request.app, temp_dir=temp_dir, file_field=file_name_field, user=user
     )
     await remove_dir(directory=temp_dir)
 
-    return web.HTTPOk()
+    return web.json_response(dict(uuid=imported_project_uuid))

@@ -68,7 +68,7 @@ async def study_import(
     file_field: FileField,
     user: UserInfo,
     chunk_size: int = 2 ** 16,
-) -> None:
+) -> str:
     """ Creates a project from a given exported project"""
     # Storing file to disk
     upload_file_name = Path(temp_dir) / "uploaded.zip"
@@ -103,4 +103,4 @@ async def study_import(
     unzipped_root_folder = await unzip_folder(upload_file_name)
 
     formatter: BaseFormatter = await validate_manifest(unzipped_root_folder)
-    await formatter.validate_and_import_directory(app=app, user=user)
+    return await formatter.validate_and_import_directory(app=app, user=user)

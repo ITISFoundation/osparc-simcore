@@ -183,7 +183,7 @@ class FormatterV1(BaseFormatter):
             version=self.version,
         )
 
-    async def validate_and_import_directory(self, **kwargs):
+    async def validate_and_import_directory(self, **kwargs) -> str:
         app: web.Application = kwargs["app"]
         user: UserInfo = kwargs["user"]
 
@@ -252,3 +252,5 @@ class FormatterV1(BaseFormatter):
             ui=shuffled_project_file.ui,
         )
         await add_new_project(app, project, user)
+
+        return str(project.uuid)
