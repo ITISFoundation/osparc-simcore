@@ -440,4 +440,4 @@ properties:
   quality:
     type: object
     title: Quality
-    description: Object containing Quality Assesment related data
+    description: Object containing Quality Assessment related data

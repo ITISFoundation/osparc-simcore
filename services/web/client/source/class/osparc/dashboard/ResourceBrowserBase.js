@@ -103,7 +103,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     __openQualityEditor: function(resourceData) {
       const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
-      const title = resourceData.name + " - " + this.tr("Quality Assesment");
+      const title = resourceData.name + " - " + this.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
       qualityEditor.addListener("updateStudy", e => {
         const updatedStudyData = e.getData();

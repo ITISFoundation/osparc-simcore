@@ -61,7 +61,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
-        osparc.component.message.FlashMessenger.logAs(this.tr("Quality Assesment data not found"), "ERROR");
+        osparc.component.message.FlashMessenger.logAs(this.tr("Quality Assessment data not found"), "ERROR");
         return;
       }
 
@@ -566,7 +566,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assesment."), "ERROR");
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
             .finally(() => {
               btn.setFetching(false);
@@ -586,7 +586,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             })
             .catch(err => {
               console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assesment."), "ERROR");
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
             })
             .finally(() => {
               btn.setFetching(false);

@@ -2165,7 +2165,7 @@ paths:
                     quality:
                       type: object
                       title: Quality
-                      description: Object containing Quality Assesment related data
+                      description: Object containing Quality Assessment related data
                 destination:
                   title: simcore project
                   description: Description of a simcore project
@@ -2602,7 +2602,7 @@ paths:
                     quality:
                       type: object
                       title: Quality
-                      description: Object containing Quality Assesment related data
+                      description: Object containing Quality Assessment related data
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
@@ -3049,7 +3049,7 @@ paths:
                   quality:
                     type: object
                     title: Quality
-                    description: Object containing Quality Assesment related data
+                    description: Object containing Quality Assessment related data
         default:
           description: Unexpected error
           content:
@@ -3596,7 +3596,7 @@ components:
         quality:
           type: object
           title: Quality
-          description: Object containing Quality Assesment related data
+          description: Object containing Quality Assessment related data
   responses:
     OK_NoContent_204:
       description: 'everything is OK, but there is no content to return'
