@@ -12,7 +12,6 @@ from simcore_sdk.node_ports._item import Item
 from simcore_sdk.node_ports._items_list import ItemsList
 from simcore_sdk.node_ports._schema_item import SchemaItem
 from simcore_sdk.node_ports._schema_items_list import SchemaItemsList
-from utils_futures import future_with_result
 
 
 def create_item(
@@ -90,7 +89,7 @@ def test_access_by_wrong_key():
 
 
 async def test_modifying_items_triggers_cb(mocker):  # pylint: disable=C0103
-    mock_method = mocker.Mock(return_value=future_with_result(""))
+    mock_method = mocker.AsyncMock(return_value="")
 
     itemslist = create_items_list(
         [("1", "integer", 333), ("2", "integer", 333), ("3", "integer", 333)]

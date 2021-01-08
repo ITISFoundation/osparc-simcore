@@ -5,7 +5,7 @@ import asyncio
 import json
 import time
 import unittest.mock as mock
-from asyncio import Future
+import uuid as uuidlib
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from unittest.mock import call
@@ -23,8 +23,7 @@ from models_library.projects_state import (
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import log_client_in
-from pytest_simcore.helpers.utils_mock import future_with_result
+from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
 from servicelib.application import create_safe_application
@@ -104,7 +103,7 @@ def client(
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> Dict:
+def mocks_on_projects_api(mocker, logged_user):
     """
     All projects in this module are UNLOCKED
 
@@ -125,7 +124,7 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
     )
     mocker.patch(
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=future_with_result(state),
+        return_value=state,
     )
 
 
@@ -631,9 +630,7 @@ async def test_close_project(
     # POST /v0/projects/{project_id}:close
     fakes = fake_services(5)
     assert len(fakes) == 5
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result(fakes)
+    mocked_director_subsystem["get_running_interactive_services"].return_value = fakes
 
     # open project
     client_id = client_session_id()
@@ -764,9 +761,8 @@ async def test_project_node_lifetime(
 
     mock_storage_api_delete_data_folders_of_project_node = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project_node",
-        return_value=Future(),
+        return_value="",
     )
-    mock_storage_api_delete_data_folders_of_project_node.return_value.set_result("")
 
     # create a new dynamic node...
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
@@ -795,11 +791,9 @@ async def test_project_node_lifetime(
         mocked_director_subsystem["start_service"].assert_not_called()
 
     # get the node state
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result(
-        [{"service_uuid": node_id, "service_state": "running"}]
-    )
+    mocked_director_subsystem["get_running_interactive_services"].return_value = [
+        {"service_uuid": node_id, "service_state": "running"}
+    ]
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
@@ -810,9 +804,7 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result("")
+    mocked_director_subsystem["get_running_interactive_services"].return_value = ""
 
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
@@ -824,9 +816,9 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "idle"
 
     # delete the node
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result([{"service_uuid": node_id}])
+    mocked_director_subsystem["get_running_interactive_services"].return_value = [
+        {"service_uuid": node_id}
+    ]
     url = client.app.router["delete_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id
     )
