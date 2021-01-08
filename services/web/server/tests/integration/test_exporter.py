@@ -200,6 +200,7 @@ async def test_import_export_import(
     redis_client,
     export_version,
     mock_asyncio_subporcess,
+    simcore_services,
 ):
     """Check that the full import -> export -> import cycle produces the same result in the DB"""
 
