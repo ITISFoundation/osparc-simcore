@@ -1,3 +1,4 @@
+import sys
 import logging
 
 from parfive.downloader import Downloader
@@ -9,9 +10,13 @@ from .file_response import makedirs
 
 log = logging.getLogger(__name__)
 
+if sys.version_info.major == 3 and sys.version_info.minor >= 7:
+    raise RuntimeError("Upgrade parfive version to a newer one")
+
 
 class ParallelDownloader:
     def __init__(self):
+
         self.downloader = Downloader(
             progress=False, file_progress=False, notebook=False, overwrite=True
         )
