@@ -5,7 +5,6 @@
 import json
 import os
 import sys
-from asyncio import Future
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote

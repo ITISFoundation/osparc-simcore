@@ -7,7 +7,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import json
-from asyncio import Future, Task, wait_for
+from asyncio import Task, wait_for
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
@@ -114,9 +114,8 @@ async def storage_subsystem_mock(loop, mocker):
     # mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
     mock1 = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
-        return_value=Future(),
+        return_value="",
     )
-    mock1.return_value.set_result("")
     return mock, mock1
 
 

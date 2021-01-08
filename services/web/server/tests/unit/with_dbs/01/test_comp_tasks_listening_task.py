@@ -23,26 +23,20 @@ from simcore_service_webserver.computation_comp_tasks_listening_task import (
 from sqlalchemy.sql.elements import literal_column
 
 
-def future_with_result(result: Any) -> asyncio.Future:
-    f = Future()
-    f.set_result(result)
-    return f
-
-
 @pytest.fixture
 async def mock_project_subsystem(mocker) -> Dict:
     mocked_project_calls = {
         "_get_project_owner": mocker.patch(
             "simcore_service_webserver.computation_comp_tasks_listening_task._get_project_owner",
-            return_value=future_with_result(""),
+            return_value="",
         ),
         "_update_project_state": mocker.patch(
             "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_state",
-            return_value=future_with_result(""),
+            return_value="",
         ),
         "_update_project_outputs": mocker.patch(
             "simcore_service_webserver.computation_comp_tasks_listening_task._update_project_outputs",
-            return_value=future_with_result(""),
+            return_value="",
         ),
     }
     yield mocked_project_calls

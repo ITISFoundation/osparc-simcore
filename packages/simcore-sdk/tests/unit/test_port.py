@@ -7,7 +7,6 @@
 import re
 import shutil
 import tempfile
-from asyncio import Future
 from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Optional, Type, Union
@@ -159,9 +158,8 @@ def e_tag_fixture() -> str:
 async def mock_upload_file(mocker, e_tag):
     mock = mocker.patch(
         "simcore_sdk.node_ports.filemanager.upload_file",
-        return_value=Future(),
+        return_value=(simcore_store_id(), e_tag),
     )
-    mock.return_value.set_result((simcore_store_id(), e_tag))
     yield mock
 
 

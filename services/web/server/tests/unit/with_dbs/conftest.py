@@ -13,7 +13,6 @@ import json
 import os
 import sys
 import textwrap
-from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional
@@ -33,7 +32,6 @@ from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
-from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
@@ -202,9 +200,8 @@ def disable_static_webserver(monkeypatch) -> None:
 def computational_system_mock(mocker):
     mock_fun = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        return_value=Future(),
+        return_value="",
     )
-    mock_fun.return_value.set_result("")
     return mock_fun
 
 
@@ -229,7 +226,7 @@ async def storage_subsystem_mock(loop, mocker):
     # mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
     mock1 = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
-        return_value=Future(),
+        return_value="",
     )
     mock1.return_value.set_result("")
     return mock, mock1
@@ -239,9 +236,8 @@ async def storage_subsystem_mock(loop, mocker):
 def asyncpg_storage_system_mock(mocker):
     mocked_method = mocker.patch(
         "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
-        return_value=Future(),
+        return_value="",
     )
-    mocked_method.return_value.set_result("")
     return mocked_method
 
 
@@ -250,15 +246,15 @@ def mocked_director_subsystem(mocker):
     mock_director_api = {
         "get_running_interactive_services": mocker.patch(
             "simcore_service_webserver.director.director_api.get_running_interactive_services",
-            return_value=future_with_result(""),
+            return_value="",
         ),
         "start_service": mocker.patch(
             "simcore_service_webserver.director.director_api.start_service",
-            return_value=future_with_result(""),
+            return_value="",
         ),
         "stop_service": mocker.patch(
             "simcore_service_webserver.director.director_api.stop_service",
-            return_value=future_with_result(""),
+            return_value="",
         ),
     }
     return mock_director_api
@@ -269,15 +265,13 @@ async def mocked_director_api(loop, mocker):
     mocks = {}
     mocked_running_services = mocker.patch(
         "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
+        return_value="",
     )
-    mocked_running_services.return_value.set_result("")
     mocks["get_running_interactive_services"] = mocked_running_services
     mocked_stop_service = mocker.patch(
         "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
+        return_value="",
     )
-    mocked_stop_service.return_value.set_result("")
     mocks["stop_service"] = mocked_stop_service
 
     yield mocks
@@ -310,10 +304,7 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_api["get_running_interactive_services"].return_value = Future()
-        mocked_director_api["get_running_interactive_services"].return_value.set_result(
-            services
-        )
+        mocked_director_api["get_running_interactive_services"].return_value = services
         return running_service_dict
 
     return create

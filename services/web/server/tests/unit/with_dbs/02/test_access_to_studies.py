@@ -19,8 +19,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserRole
-from pytest_simcore.helpers.utils_mock import future_with_result
+from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
@@ -200,9 +199,7 @@ def mocks_on_projects_api(mocker) -> None:
     """
     mocker.patch(
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=future_with_result(
-            ProjectLocked(value=False, status=ProjectStatus.CLOSED)
-        ),
+        return_value=ProjectLocked(value=False, status=ProjectStatus.CLOSED),
     )
 
 

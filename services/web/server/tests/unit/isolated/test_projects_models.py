@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import datetime
-from asyncio import Future
 from unittest.mock import MagicMock
 
 import pytest
@@ -75,10 +74,8 @@ class MockAsyncContextManager(MagicMock):
 def mock_db_engine(mocker):
     def create_engine(mock_result):
         mock_connection = mocker.patch("aiopg.sa.SAConnection", spec=True)
-        mock_connection.execute.return_value = Future()
-        mock_connection.execute.return_value.set_result(mock_result)
-        mock_connection.scalar.return_value = Future()
-        mock_connection.scalar.return_value.set_result(mock_result)
+        mock_connection.execute.return_value = mock_result
+        mock_connection.scalar.return_value = mock_result
 
         mock_context_manager = MockAsyncContextManager()
         mock_context_manager.mock_object = mock_connection
@@ -95,8 +92,7 @@ async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
     mock_result_row = mocker.patch("aiopg.sa.result.RowProxy", spec=True)
 
     mock_result = mocker.patch("aiopg.sa.result.ResultProxy", spec=True)
-    mock_result.first.return_value = Future()
-    mock_result.first.return_value.set_result(mock_result_row)
+    mock_result.first.return_value = mock_result_row
 
     db_engine, mock_connection = mock_db_engine(mock_result)
 

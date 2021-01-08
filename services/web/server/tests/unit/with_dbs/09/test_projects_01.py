@@ -110,7 +110,7 @@ def ensure_run_in_sequence_context_is_empty():
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user) -> Dict:
+def mocks_on_projects_api(mocker, logged_user) -> None:
     """
     All projects in this module are UNLOCKED
 
