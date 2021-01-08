@@ -139,6 +139,7 @@ class ProjectFile(BaseLoadingModel):
     def get_shuffled_uuids(self) -> ShuffledData:
         """
         Generates new uuid for the project_uuid and workbench nodes.
+        This is the more portable and secure way for shuffling uuids.
         NOTE: this function will not replace them.
 
         returns: new mapping from old to new to be applied to files
