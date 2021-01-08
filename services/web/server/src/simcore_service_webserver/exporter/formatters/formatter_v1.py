@@ -11,7 +11,7 @@ from .base_formatter import BaseFormatter
 from .models import ManifestFile, ProjectFile, ShuffledData
 
 from ..file_downloader import ParallelDownloader
-from ..file_response import path_getsize
+from ..utils import path_getsize
 
 from simcore_service_webserver.projects.projects_api import (
     get_project_for_user,

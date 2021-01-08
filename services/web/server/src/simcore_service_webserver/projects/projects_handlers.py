@@ -26,7 +26,7 @@ from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
 from ..exporter.export_import import study_export, study_import
-from ..exporter.file_response import CleanupFileResponse, get_empty_tmp_dir, remove_dir
+from ..exporter.utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 from ..exporter.config import get_max_upload_file_size_gb
 
 ONE_GB: int = 1024 * 1024 * 1024

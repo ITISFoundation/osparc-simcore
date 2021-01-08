@@ -1,5 +1,4 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
-import asyncio
 import logging
 import sys
 import re
@@ -9,7 +8,6 @@ from pathlib import Path
 
 import aiopg
 import aioredis
-import aiohttp
 import pytest
 from aioresponses import aioresponses
 from yarl import URL

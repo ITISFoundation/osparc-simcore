@@ -6,7 +6,7 @@ from pathlib import Path
 
 from aiofiles import os as aiofiles_os
 
-from .file_response import makedirs
+from .utils import makedirs
 
 log = logging.getLogger(__name__)
 

@@ -8,7 +8,7 @@ from typing import Tuple
 from passlib import pwd
 
 from .async_hashing import checksum, Algorithm
-from .file_response import rename
+from .utils import rename
 
 log = logging.getLogger(__name__)
 

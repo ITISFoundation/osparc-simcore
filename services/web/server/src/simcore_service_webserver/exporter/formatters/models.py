@@ -8,7 +8,7 @@ import aiofiles
 from pydantic import Field, validator, EmailStr, BaseModel
 
 from .base_models import BaseLoadingModel
-from ..file_response import makedirs
+from ..utils import makedirs
 from models_library.projects import Workbench
 from models_library.projects_ui import StudyUI
 
