@@ -40,7 +40,7 @@ core_services = [
     "postgres",
     "storage",
 ]
-ops_services = ["minio"]
+ops_services = ["minio", "adminer"]
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -217,6 +217,10 @@ async def test_import_export_import(
 
     async with await client.post(url_import, data=data, timeout=10) as import_response:
         assert import_response.status == 200, await import_response.text()
+        reply_data = await import_response.json()
+
+    imported_project_uuid = reply_data["uuid"]
+    # TODO: fetch project and add it
 
     # TODO: this test is not finished and needs to be continued
     assert False
