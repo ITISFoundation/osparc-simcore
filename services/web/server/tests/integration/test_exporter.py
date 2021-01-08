@@ -156,22 +156,52 @@ def get_exported_projects() -> List[Path]:
     return [x for x in exporter_dir.glob("*.osparc")]
 
 
+@pytest.fixture
+async def mock_asyncio_subporcess(mocker):
+    # TODO: The below bug is not allowing me to fully test,
+    # mocking and waiting for an update
+    # https://bugs.python.org/issue35621
+    # this issue was patched in 3.8, no need
+    if sys.version_info.major == 3 and sys.version_info.minor >= 8:
+        raise RuntimeError(
+            "Issue no longer present in this version of python, "
+            "please remote this mock on python >= 3.8"
+        )
+
+    import subprocess
+
+    async def create_subprocess_exec(*command, **extra_params):
+        class MockResponse:
+            def __init__(self, command, **kwargs):
+                self.proc = subprocess.Popen(command, **extra_params)
+
+            async def communicate(self):
+                return self.proc.communicate()
+
+            @property
+            def returncode(self):
+                return self.proc.returncode
+
+        mock_response = MockResponse(command, **extra_params)
+
+        return mock_response
+
+    mocker.patch("asyncio.create_subprocess_exec", side_effect=create_subprocess_exec)
+
+
 ################ end utils
 
 
-@pytest.mark.skip(
-    reason="There is an issue, need python 3.8 to make it work see comments in test body"
-)
 @pytest.mark.parametrize("export_version", get_exported_projects())
 async def test_import_export_import(
-    client, socketio_client, db_engine, redis_client, export_version
+    client,
+    socketio_client,
+    db_engine,
+    redis_client,
+    export_version,
+    mock_asyncio_subporcess,
 ):
     """Check that the full import -> export -> import cycle produces the same result in the DB"""
-
-    # TODO: The below bug is not allowing me to fully test
-    # Already tried to patch the current system module at runtime
-    # withing a wrapper script before calling pytest but it dose not work
-    # https://bugs.python.org/issue35621
 
     logged_user = await login_user(client)
     export_file_name = export_version.name
@@ -182,13 +212,7 @@ async def test_import_export_import(
 
     assert url_import == URL(API_PREFIX + "/projects/import")
 
-    data = aiohttp.FormData()
-    data.add_field(
-        "fileName",
-        open(export_version, "rb"),
-        filename=export_file_name,
-        content_type="application/octest-stream",
-    )
+    data = {"fileName": open(export_version, "rb")}
 
     async with await client.post(url_import, data=data, timeout=10) as import_response:
         assert import_response.status == 200, await import_response.text()
