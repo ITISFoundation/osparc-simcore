@@ -69,9 +69,9 @@ describe('tags testing', () => {
     await waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
     await waitAndClick(page, '[osparc-test-id="preferencesTagsTabBtn"]');
     await waitAndClick(page, '[osparc-test-id="addTagBtn"]');
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type input[type="text"]');
-    await page.keyboard.type(TAG_NAME);
+    await utils.typeInInputElement(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type input[type="text"]', TAG_NAME);
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.form.FetchButton"]');
+    // await utils.takeScreenshot(page, 'scr1')
     // Check tag was added
     await page.waitForFunction(tagName => {
       const el = document.querySelector(
@@ -95,9 +95,11 @@ describe('tags testing', () => {
       '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.component.widget.Thumbnail"]',
       { hidden: true }
     );
+    await utils.sleep(1000);
     // Assign to study
     await waitAndClick(page, '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [osparc-test-id="studyItemMenuButton"]');
     await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
+    // await utils.takeScreenshot(page, 'scr2')
     await waitAndClick(page, '[osparc-test-id="editStudyBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
@@ -114,8 +116,8 @@ describe('tags testing', () => {
     await waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');
     await waitAndClick(page, '[osparc-test-id="preferencesTagsTabBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="qx.ui.form.Button"]');
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] input[type="text"]', 2);
-    await page.keyboard.type(TAG_NAME_2);
+    await utils.clearInput(page, '[qxclass="osparc.component.form.tag.TagItem"] input[type="text"]');
+    await utils.typeInInputElement(page, '[qxclass="osparc.component.form.tag.TagItem"] input[type="text"]', TAG_NAME_2);
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"] [qxclass="osparc.ui.form.FetchButton"]');
     await page.waitForFunction(tagName => {
       const el = document.querySelector(

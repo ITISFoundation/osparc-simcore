@@ -261,10 +261,11 @@ async function waitForValidOutputFile(page) {
   })
 }
 
-function waitAndClick(page, selector, clickCount=1) {
-  return page.waitForSelector(selector, {
+async function waitAndClick(page, id) {
+  await page.waitForSelector(id, {
     timeout: 30000 // default 30s
-  }).then(el => el.click({ clickCount }));
+  })
+  await page.click(id);
 }
 
 async function clearInput(page, selector) {
@@ -351,6 +352,14 @@ function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
   return snapshotUrl
 }
 
+async function typeInInputElement(page, inputSelector, text) {
+  const element = await page.waitForSelector(inputSelector);
+  await element.focus();
+  await page.keyboard.press('Backspace');
+  await page.keyboard.type(text);
+  await page.keyboard.press('Enter');
+}
+
 
 module.exports = {
   getUserAndPass,
@@ -376,5 +385,6 @@ module.exports = {
   extractWorkbenchData,
   parseCommandLineArguments,
   parseCommandLineArgumentsTemplate,
-  getGrayLogSnapshotUrl
+  getGrayLogSnapshotUrl,
+  typeInInputElement
 }
