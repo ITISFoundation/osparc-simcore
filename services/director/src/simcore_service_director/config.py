@@ -63,6 +63,9 @@ REGISTRY_AUTH: bool = strtobool(os.environ.get("REGISTRY_AUTH", "False"))
 REGISTRY_USER: str = os.environ.get("REGISTRY_USER", "")
 REGISTRY_PW: str = os.environ.get("REGISTRY_PW", "")
 REGISTRY_URL: str = os.environ.get("REGISTRY_URL", "")
+REGISTRY_PATH: str = os.environ.get("REGISTRY_PATH", None) or os.environ.get(
+    "REGISTRY_URL", ""
+)  # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine
 REGISTRY_SSL: bool = strtobool(os.environ.get("REGISTRY_SSL", "True"))
 
 EXTRA_HOSTS_SUFFIX: str = os.environ.get("EXTRA_HOSTS_SUFFIX", "undefined")

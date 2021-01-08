@@ -4540,13 +4540,22 @@ paths:
                             field: pasword
                         status: 400
   '/groups/{gid}/classifiers':
-    parameters:
-      - name: gid
-        in: path
-        required: true
-        schema:
-          type: string
     get:
+      parameters:
+        - name: gid
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: tree_view
+          in: query
+          description: Some classifiers (e.g. sparc's) offer different tree views
+          schema:
+            type: string
+            enum:
+              - std
+              - sort
+            default: std
       tags:
         - group
       summary: Gets classifiers bundle for this group
@@ -4554,6 +4563,303 @@ paths:
       responses:
         '200':
           description: got a bundle with all information about classifiers
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/groups/sparc/classifiers/scicrunch-resources/{rrid}':
+    parameters:
+      - name: rrid
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - group
+      summary: 'Returns information on a valid RRID (https://www.force11.org/group/resource-identification-initiative)'
+      operationId: get_scicrunch_resource
+      responses:
+        '200':
+          description: Got information of a valid RRID
+        '400':
+          description: Invalid RRID
+        '503':
+          description: scircrunch.org service is not reachable
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+    post:
+      tags:
+        - group
+      summary: Adds new RRID to classifiers
+      operationId: add_scicrunch_resource
+      responses:
+        '200':
+          description: Got information of a valid RRID
+        '400':
+          description: Invalid RRID
+        '503':
+          description: scircrunch.org service is not reachable
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/groups/sparc/classifiers/scicrunch-resources:search':
+    get:
+      parameters:
+        - name: guess_name
+          in: query
+          required: true
+          schema:
+            type: string
+      tags:
+        - group
+      summary: Returns a list of related resource provided a search name
+      operationId: search_scicrunch_resources
+      responses:
+        '200':
+          description: Got information of a valid RRID
+        '503':
+          description: scircrunch.org service is not reachable
         default:
           description: Default http error response body
           content:

@@ -254,7 +254,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__doStartPipeline();
         })
         .catch(() => {
-          this.getLogger().error(null, "Couldn't run the pipeline: Pipeline failed to save.");
+          this.getLogger().error(null, "Run failed");
           runButton.setFetching(false);
         });
     },
@@ -266,12 +266,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.__requestStartPipeline(secondaryStudyId);
         });
       } else {
-        this.getStudy().getWorkbench().clearProgressData();
-        this.__requestStartPipeline(this.getStudy().getUuid());
+        const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+        if (this.__isSelectionEmpty(selectedNodeUIs)) {
+          this.__requestStartPipeline(this.getStudy().getUuid());
+        } else {
+          const selectedNodeIDs = [];
+          selectedNodeUIs.forEach(nodeUI => {
+            selectedNodeIDs.push(nodeUI.getNodeId());
+          });
+          this.__requestStartPipeline(this.getStudy().getUuid(), selectedNodeIDs);
+        }
       }
     },
 
-    __requestStartPipeline: function(studyId) {
+    __requestStartPipeline: function(studyId, selectedNodeIDs = []) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const runButton = this.__mainPanel.getControls().getStartButton();
@@ -288,9 +296,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         runButton.setFetching(false);
       }, this);
-      req.send();
+      if (selectedNodeIDs.length) {
+        req.setRequestData({
+          "subgraph": selectedNodeIDs
+        });
+        req.send();
+        this.getLogger().info(null, "Starting partial pipeline");
+      } else {
+        req.send();
+        this.getLogger().info(null, "Starting pipeline");
+      }
 
-      this.getLogger().info(null, "Starting pipeline");
       return true;
     },
 
@@ -637,6 +653,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const node = workbench.getNode(nodeId);
           if (node) {
             node.getStatus().setProgress(progress);
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'progress' msg", d);
           }
         }, this);
       }
@@ -652,10 +670,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
             node.setOutputData(nodeData.outputs);
-            if (nodeData.progress) {
-              const progress = Number.parseInt(nodeData.progress);
+            if ("state" in nodeData && node.isComputational()) {
+              node.getStatus().setRunningStatus(nodeData["state"]);
+            }
+            if ("progress" in nodeData) {
+              const progress = Number.parseInt(nodeData["progress"]);
               node.getStatus().setProgress(progress);
             }
+          } else if (osparc.data.Permissions.getInstance().isTester()) {
+            console.log("Ignored ws 'nodeUpdated' msg", d);
           }
         }, this);
       }

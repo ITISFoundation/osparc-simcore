@@ -5,7 +5,7 @@
 """
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import expression, func
 
 from .base import metadata
@@ -45,6 +45,12 @@ services_meta_data = sa.Table(
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
+    ),
+    sa.Column(
+        "metadata",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb")
     ),
     sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
 )

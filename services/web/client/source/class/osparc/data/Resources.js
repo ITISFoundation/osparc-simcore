@@ -348,6 +348,10 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/groups/{gid}/classifiers"
+          },
+          postRRID: {
+            method: "POST",
+            url: statics.API + "/groups/sparc/classifiers/scicrunch-resources/{rrid}"
           }
         }
       },
@@ -646,6 +650,9 @@ qx.Class.define("osparc.data.Resources", {
       try {
         stored = osparc.store.Store.getInstance().get(resource);
       } catch (err) {
+        return null;
+      }
+      if (stored === null) {
         return null;
       }
       if (typeof stored === "object" && Object.keys(stored).length === 0) {

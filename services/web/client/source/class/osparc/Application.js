@@ -30,9 +30,9 @@ qx.Class.define("osparc.Application", {
     qx.locale.MTranslation
   ],
 
-  members:
-  {
+  members: {
     __current: null,
+    __mainPage: null,
 
     /**
      * This method contains the initial application code and gets called
@@ -249,7 +249,8 @@ qx.Class.define("osparc.Application", {
 
     __loadMainPage: function() {
       this.__connectWebSocket();
-      this.__loadView(new osparc.desktop.MainPage());
+      const mainPage = this.__mainPage = new osparc.desktop.MainPage();
+      this.__loadView(mainPage);
     },
 
     __loadNodeViewerPage: function(studyId, viewerNodeId) {
@@ -283,6 +284,9 @@ qx.Class.define("osparc.Application", {
     */
     logout: function() {
       osparc.auth.Manager.getInstance().logout();
+      if (this.__mainPage) {
+        this.__mainPage.closeEditor();
+      }
       this.__restart();
     },
 

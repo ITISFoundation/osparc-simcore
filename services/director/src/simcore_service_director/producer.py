@@ -9,13 +9,12 @@ from enum import Enum
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple
 
+import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
-
-import aiodocker
+from models_library.settings.services_common import ServicesCommonSettings
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.monitor_services import service_started, service_stopped
-from models_library.settings.services_common import ServicesCommonSettings
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
@@ -135,7 +134,7 @@ async def _create_docker_service_params(
     service_name = registry_proxy.get_service_last_names(service_key) + "_" + node_uuid
     log.debug("Converting labels to docker runtime parameters")
     container_spec = {
-        "Image": f"{config.REGISTRY_URL}/{service_key}:{service_tag}",
+        "Image": f"{config.REGISTRY_PATH}/{service_key}:{service_tag}",
         "Env": {
             **config.SERVICES_DEFAULT_ENVS,
             "SIMCORE_USER_ID": user_id,
@@ -179,7 +178,7 @@ async def _create_docker_service_params(
 
     docker_params = {
         "auth": await _create_auth() if config.REGISTRY_AUTH else {},
-        "registry": config.REGISTRY_URL if config.REGISTRY_AUTH else "",
+        "registry": config.REGISTRY_PATH if config.REGISTRY_AUTH else "",
         "name": service_name,
         "task_template": {
             "ContainerSpec": container_spec,
@@ -755,14 +754,13 @@ async def _create_node(
 async def _get_service_key_version_from_docker_service(
     service: Dict,
 ) -> Tuple[str, str]:
-    # docker_image = config.REGISTRY_URL + '/' + service_key + ':' + service_tag
     service_full_name = str(service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
-    if not service_full_name.startswith(config.REGISTRY_URL):
+    if not service_full_name.startswith(config.REGISTRY_PATH):
         raise exceptions.DirectorException(
             msg="Invalid service {}".format(service_full_name)
         )
 
-    service_full_name = service_full_name[len(config.REGISTRY_URL) :].strip("/")
+    service_full_name = service_full_name[len(config.REGISTRY_PATH) :].strip("/")
     return service_full_name.split(":")[0], service_full_name.split(":")[1]
 
 

@@ -42,6 +42,13 @@ qx.Class.define("osparc.component.export.ServicePermissions", {
   },
 
   statics: {
+    canGroupWrite: function(accessRights, GID) {
+      if (GID in accessRights) {
+        return accessRights[GID]["write_access"];
+      }
+      return false;
+    },
+
     getCollaboratorAccessRight: function() {
       return {
         "execute_access": true,
