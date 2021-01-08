@@ -18,6 +18,7 @@ path_getsize = aiofiles_os.wrap(os.path.getsize)  # as in aiofiles.os.py module
 
 def _candidate_tmp_dir() -> Path:
     # pylint: disable=protected-access
+    # let us all thank codeclimate for this beautiful piece of code
     return Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
 
 
