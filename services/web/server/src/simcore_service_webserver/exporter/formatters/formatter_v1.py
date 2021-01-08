@@ -13,7 +13,10 @@ from .models import ManifestFile, ProjectFile, ShuffledData
 from ..file_downloader import ParallelDownloader
 from ..file_response import path_getsize
 
-from simcore_service_webserver.projects.projects_api import get_project_for_user
+from simcore_service_webserver.projects.projects_api import (
+    get_project_for_user,
+    delete_project,
+)
 from simcore_service_webserver.storage_handlers import (
     get_file_download_url,
     get_project_files_metadata,
@@ -251,6 +254,15 @@ class FormatterV1(BaseFormatter):
             workbench=shuffled_project_file.workbench,
             ui=shuffled_project_file.ui,
         )
-        await add_new_project(app, project, user)
+        project_uuid = str(project.uuid)
 
-        return str(project.uuid)
+        try:
+            await add_new_project(app, project, user)
+        except Exception as e:
+            log.warning(
+                "Removing project %s, because there was an error while importing it"
+            )
+            await delete_project(app=app, project_uuid=project_uuid, user_id=user.id)
+            raise e
+
+        return project_uuid
