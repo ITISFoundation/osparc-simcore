@@ -56,16 +56,17 @@ def expected_python_version(osparc_simcore_root_dir: Path) -> Tuple[int, ...]:
 def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
     version = None
     ref_script = osparc_simcore_root_dir / "ci/helpers/ensure_python_pip.bash"
+
     found = re.search(r"PIP_VERSION=([\d\.]+)", ref_script.read_text())
-    if found:
-        version = found.group(1)
+    assert found
+    version = found.group(1)
 
     print(
         str(ref_script.relative_to(osparc_simcore_root_dir)),
         "->",
         version,
     )
-    assert found and version
+    assert version
 
     return version
 
@@ -129,7 +130,7 @@ def test_running_python_version(expected_python_version):
     )
     assert (
         current_version == expected_version
-    ), f"Expected python {to_str(sys.version_info)} installed, got {to_str(expected_python_version)}"
+    ), f"Expected python {to_str(tuple(sys.version_info))} installed, got {to_str(expected_python_version)}"
 
 
 def test_all_images_have_the_same_pip_version(expected_pip_version, pip_in_dockerfiles):
