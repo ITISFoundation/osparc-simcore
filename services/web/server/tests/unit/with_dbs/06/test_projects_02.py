@@ -1,6 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
 import asyncio
 import json
 import time
@@ -103,7 +104,7 @@ def client(
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker, logged_user):
+def mocks_on_projects_api(mocker, logged_user) -> None:
     """
     All projects in this module are UNLOCKED
 
@@ -243,7 +244,7 @@ def assert_replaced(current_project, update_data):
 
 async def _list_projects(
     client,
-    expected: web.Response,
+    expected: web.HTTPException,
     query_parameters: Optional[Dict] = None,
 ) -> List[Dict]:
     # GET /v0/projects
@@ -258,7 +259,7 @@ async def _list_projects(
 
 
 async def _assert_get_same_project(
-    client, project: Dict, expected: web.Response
+    client, project: Dict, expected: web.HTTPException
 ) -> Dict:
     # GET /v0/projects/{project_id}
 
@@ -277,7 +278,7 @@ async def _assert_get_same_project(
 
 async def _new_project(
     client,
-    expected_response: web.Response,
+    expected_response: web.HTTPException,
     logged_user: Dict[str, str],
     primary_group: Dict[str, str],
     *,
@@ -371,7 +372,7 @@ async def _new_project(
 
 
 async def _replace_project(
-    client, project_update: Dict, expected: web.Response
+    client, project_update: Dict, expected: web.HTTPException
 ) -> Dict:
     # PUT /v0/projects/{project_id}
     url = client.app.router["replace_project"].url_for(
@@ -487,7 +488,7 @@ async def _assert_project_state_updated(
         handler.reset_mock()
 
 
-async def _delete_project(client, project: Dict, expected: web.Response) -> None:
+async def _delete_project(client, project: Dict, expected: web.HTTPException) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
     resp = await client.delete(url)
@@ -638,24 +639,34 @@ async def test_close_project(
     resp = await client.post(url, json=client_id)
 
     if resp.status == web.HTTPOk.status_code:
-        calls = [
-            call(client.server.app, user_project["uuid"], logged_user["id"]),
-        ]
-        mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
+        mocked_director_subsystem["get_running_interactive_services"].assert_any_call(
+            client.server.app, logged_user["id"], user_project["uuid"]
+        )
         mocked_director_subsystem["get_running_interactive_services"].reset_mock()
 
     # close project
     url = client.app.router["close_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.no_content)
+
     if resp.status == web.HTTPNoContent.status_code:
+        # These checks are after a fire&forget, so we wait a moment
+        await asyncio.sleep(2)
+
         calls = [
-            call(client.server.app, user_project["uuid"], None),
-            call(client.server.app, user_project["uuid"], logged_user["id"]),
+            # call(client.server.app, user_id=None, project_id=user_project["uuid"]), <-- FIXME: SAN?? I had to comment this. Still valid? Looking at project_handler.py: _close_project_task, it does not seem the case.
+            call(
+                client.server.app,
+                user_id=logged_user["id"],
+                project_id=user_project["uuid"],
+            ),
         ]
-        mocked_director_subsystem["get_running_interactive_services"].has_calls(calls)
+        mocked_director_subsystem["get_running_interactive_services"].assert_has_calls(
+            calls
+        )
+
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
-        mocked_director_subsystem["stop_service"].has_calls(calls)
+        mocked_director_subsystem["stop_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
