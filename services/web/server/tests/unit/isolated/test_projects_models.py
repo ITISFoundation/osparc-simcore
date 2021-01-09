@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import datetime
-from unittest.mock import MagicMock
 
 import pytest
 from simcore_service_webserver.projects.projects_db import (
@@ -56,52 +55,24 @@ def test_convert_to_schema_names(fake_db_dict):
 
 
 @pytest.fixture
-def user_id():
-    return -1
+def mock_pg_engine(mocker):
+    connection = mocker.AsyncMock(name="Connection")
+
+    mc = mocker.Mock(name="ManagedConnection")
+    mc.__aenter__ = mocker.AsyncMock(name="Enter", return_value=connection)
+    mc.__aexit__ = mocker.AsyncMock(name="Exit", return_value=False)
+
+    engine = mocker.Mock(name="Engine")
+    engine.acquire.return_value = mc
+    return engine, connection
 
 
-class MockAsyncContextManager(MagicMock):
-    mock_object = None
+async def test_add_projects(fake_project, mock_pg_engine):
+    engine, connection = mock_pg_engine
 
-    async def __aenter__(self):
-        return self.mock_object
+    db = ProjectDBAPI.init_from_engine(engine)
+    assert await db.add_projects([fake_project], user_id=-1)
 
-    async def __aexit__(self, *args):
-        pass
-
-
-@pytest.fixture
-def mock_db_engine(mocker):
-    def create_engine(mock_result):
-        mock_connection = mocker.patch("aiopg.sa.SAConnection", spec=True)
-        mock_connection.execute.return_value = mock_result
-        mock_connection.scalar.return_value = mock_result
-
-        mock_context_manager = MockAsyncContextManager()
-        mock_context_manager.mock_object = mock_connection
-
-        mock_db_engine = mocker.patch("aiopg.sa.engine.Engine", spec=True)
-        mock_db_engine.acquire.return_value = mock_context_manager
-        return mock_db_engine, mock_connection
-
-    yield create_engine
-
-
-async def test_add_projects(fake_project, user_id, mocker, mock_db_engine):
-    mock_result_row = mocker.patch(
-        "aiopg.sa.result.RowProxy", side_effect=mocker.AsyncMock()
-    )
-
-    mock_result = mocker.patch(
-        "aiopg.sa.result.ResultProxy", side_effect=mocker.AsyncMock()
-    )
-    mock_result.first.return_value = mock_result_row
-
-    db_engine, mock_connection = mock_db_engine(mock_result)
-
-    db = ProjectDBAPI.init_from_engine(db_engine)
-    await db.add_projects([fake_project], user_id=user_id)
-
-    db_engine.acquire.assert_called()
-    mock_connection.scalar.assert_called()
-    mock_connection.execute.assert_called()
+    engine.acquire.assert_called()
+    connection.scalar.assert_called()
+    connection.execute.assert_called_once()
