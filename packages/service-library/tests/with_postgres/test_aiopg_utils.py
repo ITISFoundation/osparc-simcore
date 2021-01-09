@@ -13,6 +13,7 @@ import aiopg.sa
 import psycopg2
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.exc as sa_exceptions
 from aiohttp import web
 from servicelib.aiopg_utils import (
     DatabaseError,
@@ -64,6 +65,7 @@ async def postgres_service_with_fake_data(
 
 def test_dsn_uri_with_query(postgres_service_with_fake_data):
     uri = postgres_service_with_fake_data.to_uri(with_query=True)
+    sa_engine = None
     try:
         sa_engine = sa.create_engine(uri, echo=True, echo_pool=True)
         assert sa_engine.name == "postgresql"
@@ -73,10 +75,12 @@ def test_dsn_uri_with_query(postgres_service_with_fake_data):
         metadata.create_all(sa_engine)
         metadata.drop_all(sa_engine)
 
-    except sa.exc.SQLAlchemyError as ee:
+    except sa_exceptions.SQLAlchemyError as ee:
         pytest.fail(f"Cannot connect with {uri}: {ee}")
+
     finally:
-        sa_engine.dispose()
+        if sa_engine:
+            sa_engine.dispose()
 
 
 async def test_create_pg_engine(postgres_service_with_fake_data):
