@@ -10,7 +10,6 @@ from copy import deepcopy
 from pathlib import Path
 
 import aiopg.sa
-import psycopg2
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exceptions
