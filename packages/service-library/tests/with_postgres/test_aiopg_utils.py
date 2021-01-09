@@ -139,17 +139,6 @@ async def test_engine_when_idle_for_some_time():
         await conn.execute(tbl.insert().values(val="third"))
 
 
-async def test_engine_when_pg_not_reachable(loop):
-    dsn = DataSourceName(
-        database="db", user="foo", password="foo", host="127.0.0.1", port=123
-    )
-
-    with pytest.raises(psycopg2.OperationalError) as excinfo:
-        await create_pg_engine(dsn)
-
-    assert "could not connect to server" in str(excinfo.value)
-
-
 def test_init_tables(postgres_service_with_fake_data):
     dsn = postgres_service_with_fake_data
     init_pg_tables(dsn, metadata)
