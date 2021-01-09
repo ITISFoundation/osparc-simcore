@@ -1,22 +1,21 @@
 # pylint: disable=too-many-arguments
 
 import logging
-import urllib
-from typing import Dict, List, Optional
+import urllib.parse
+from typing import Any, Dict, List, Optional, Tuple
 
-from aiohttp import web
-from yarl import URL
-
+from aiohttp import ClientSession, web
+from models_library.settings.services_common import ServicesCommonSettings
 from servicelib.utils import logged_gather
+from yarl import URL
 
 from . import director_exceptions
 from .config import get_client_session, get_config
-from models_library.settings.services_common import ServicesCommonSettings
 
 log = logging.getLogger(__name__)
 
 
-def _get_director_client(app: web.Application) -> URL:
+def _get_director_client(app: web.Application) -> Tuple[ClientSession, URL]:
     cfg = get_config(app)
 
     # director service API endpoint
@@ -35,7 +34,7 @@ async def get_running_interactive_services(
     app: web.Application,
     user_id: Optional[str] = None,
     project_id: Optional[str] = None,
-) -> List[Dict]:
+) -> List[Dict[str, Any]]:
     session, api_endpoint = _get_director_client(app)
 
     params = {}
@@ -106,7 +105,7 @@ async def stop_services(
     services = await get_running_interactive_services(
         app, user_id=user_id, project_id=project_id
     )
-    stop_tasks = [stop_service(app, service_uuid) for service_uuid in services]
+    stop_tasks = [stop_service(app, s["service_uuid"]) for s in services]
     await logged_gather(*stop_tasks, reraise=False)
 
 
