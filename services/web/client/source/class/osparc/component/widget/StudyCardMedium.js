@@ -166,38 +166,28 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       const grid = new qx.ui.layout.Grid(5, 3);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnFlex(1, 1);
       const moreInfo = new qx.ui.container.Composite(grid).set({
         width: this.self().EXTRA_INFO_WIDTH,
         alignX: "center",
         alignY: "middle"
       });
 
-      const owner = this.__createOwner();
-      const creationDate = this.__createCreationDate();
-      const lastChangeDate = this.__createLastChangeDate();
-      const accessRights = this.__createAccessRights();
-      const quality = this.__createQuality();
       const extraInfo = [
-        [this.tr("Owner"), owner],
-        [this.tr("Creation date"), creationDate],
-        [this.tr("Last modified"), lastChangeDate],
-        [this.tr("Access rights"), accessRights],
-        [this.tr("Quality"), quality]
+        [this.tr("Owner"), this.__createOwner()],
+        [this.tr("Creation date"), this.__createCreationDate()],
+        [this.tr("Last modified"), this.__createLastChangeDate()],
+        [this.tr("Access rights"), this.__createAccessRights()],
+        [this.tr("Quality"), this.__createQuality()]
       ];
       for (let i=0; i<extraInfo.length; i++) {
         if (extraInfo[i][1]) {
-          const label = new qx.ui.basic.Label(extraInfo[i][0]).set({
+          moreInfo.add(new qx.ui.basic.Label(extraInfo[i][0]).set({
             font: "title-12"
-          });
-          moreInfo.add(label, {
+          }), {
             row: i,
             column: 0
           });
 
-          extraInfo[i][1].set({
-            allowGrowX: false
-          });
           moreInfo.add(extraInfo[i][1], {
             row: i,
             column: 1
@@ -220,13 +210,8 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     },
 
     __createCreationDate: function() {
-      // create a date format like "Oct. 19, 2018 11:31 AM"
-      const dateFormat = new qx.util.format.DateFormat(
-        qx.locale.Date.getDateFormat("medium") + " " +
-        qx.locale.Date.getTimeFormat("short")
-      );
       const dateOptions = {
-        converter: date => dateFormat.format(date)
+        converter: date => osparc.utils.Utils.formatDateAndTime(date)
       };
       const creationDate = new qx.ui.basic.Label();
       this.getStudy().bind("creationDate", creationDate, "value", dateOptions);
@@ -234,13 +219,8 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     },
 
     __createLastChangeDate: function() {
-      // create a date format like "Oct. 19, 2018 11:31 AM"
-      const dateFormat = new qx.util.format.DateFormat(
-        qx.locale.Date.getDateFormat("medium") + " " +
-        qx.locale.Date.getTimeFormat("short")
-      );
       const dateOptions = {
-        converter: date => dateFormat.format(date)
+        converter: date => osparc.utils.Utils.formatDateAndTime(date)
       };
       const lastChangeDate = new qx.ui.basic.Label();
       this.getStudy().bind("lastChangeDate", lastChangeDate, "value", dateOptions);
@@ -286,7 +266,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     },
 
     __createThumbnail: function(maxWidth) {
-      const maxHeight = 250;
+      const maxHeight = 150;
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       this.getStudy().bind("thumbnail", img, "source");

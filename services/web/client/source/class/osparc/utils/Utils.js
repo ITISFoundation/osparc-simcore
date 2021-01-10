@@ -60,6 +60,13 @@ qx.Class.define("osparc.utils.Utils", {
       return timeStr;
     },
 
+    /**
+      * @param value {Date Object} Date Object
+      */
+    formatDateAndTime: function(value) {
+      return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
+    },
+
     getNameFromEmail: function(email) {
       return email.split("@")[0];
     },

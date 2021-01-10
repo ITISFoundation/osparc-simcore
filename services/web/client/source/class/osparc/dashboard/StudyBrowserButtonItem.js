@@ -307,9 +307,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     _applyLastChangeDate: function(value, old) {
       if (value && this.isResourceType("study")) {
         const label = this.getChildControl("subtitle-text");
-        const dateStr = osparc.utils.Utils.formatDate(value);
-        const timeStr = osparc.utils.Utils.formatTime(value);
-        label.setValue(dateStr + " " + timeStr);
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
     },
 
