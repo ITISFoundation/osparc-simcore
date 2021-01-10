@@ -19,7 +19,10 @@
 qx.Class.define("osparc.component.widget.StudyCardMedium", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  /**
+    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    */
+  construct: function(study) {
     this.base(arguments);
 
     this.set({
@@ -27,23 +30,39 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       backgroundColor: "background-main"
     });
     this._setLayout(new qx.ui.layout.VBox(3));
+
+    if (study) {
+      if (study instanceof osparc.data.model.Study) {
+        this.setStudy(study);
+      } else {
+        this.setStudyData(study);
+      }
+    }
   },
 
   properties: {
     study: {
       check: "osparc.data.model.Study",
       apply: "__applyStudy",
+      init: null,
       nullable: false
     }
   },
 
   members: {
+    /**
+      * @param studyData {Object} Serialized Study Object
+      */
     setStudyData: function(studyData) {
       const study = new osparc.data.model.Study(studyData, false);
       this.setStudy(study);
     },
 
     __applyStudy: function() {
+      this.__rebuildLayout();
+    },
+
+    __rebuildLayout: function() {
       this._removeAll();
 
       const widgetInitWidth = 350;
@@ -56,7 +75,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       this._add(nameAndMenuButton);
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      hBox.add(this.__createThumbnailLeftPart());
+      hBox.add(this.__extraInfo());
       hBox.add(this.__createThumbnail(widgetInitWidth), {
         flex: 1
       });
@@ -117,11 +136,10 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       return studyQualityButton;
     },
 
-    __createThumbnailLeftPart: function() {
+    __extraInfo: function() {
       const grid = new qx.ui.layout.Grid(5, 3);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnFlex(0, 1);
       grid.setColumnFlex(1, 1);
       const moreInfo = new qx.ui.container.Composite(grid).set({
         maxWidth: 220,
