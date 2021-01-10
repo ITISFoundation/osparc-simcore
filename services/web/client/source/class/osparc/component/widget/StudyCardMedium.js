@@ -155,6 +155,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
+        this.__openStudyDetailsEditor();
       }, this);
       return moreInfoButton;
     },
@@ -348,6 +349,25 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       });
       this.getStudy().bind("description", description, "value");
       return description;
+    },
+
+    __openStudyDetailsEditor: function() {
+      const width = 500;
+      const height = 500;
+      const title = this.tr("Study Details Editor");
+      const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(this.getStudy().serialize(), false, width)
+      studyDetailsEditor.showOpenButton(false);
+      const win = osparc.ui.window.Window.popUpInWindow(studyDetailsEditor, title, width, height);
+      studyDetailsEditor.addListener("updateStudy", e => {
+        const newStudyData = e.getData();
+        this.getStudy().set({
+          name: newStudyData.name,
+          description: newStudyData.description,
+          thumbnail: newStudyData.thumbnail
+        });
+        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", newStudyData.uuid);
+        win.close();
+      });
     }
   }
 });
