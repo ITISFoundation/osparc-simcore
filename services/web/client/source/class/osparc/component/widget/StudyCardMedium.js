@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     this.base(arguments);
 
     this.set({
-      padding: 10,
+      padding: this.self().PADDING,
       backgroundColor: "background-main"
     });
     this._setLayout(new qx.ui.layout.VBox(3));
@@ -57,6 +57,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
   },
 
   statics: {
+    PADDING: 10,
     EXTRA_INFO_WIDTH: 200,
     THUMBNAIL_MIN_WIDTH: 120
   },
@@ -92,16 +93,12 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       this._add(nameAndMenuButton);
 
       const extraInfo = this.__extraInfo();
-      const bounds = this.getBounds();
-      if (bounds === null || this.getSlim() === null || this.getSlim() === false) {
-        let thumbnailWidth = null;
-        if (bounds === null) {
-          thumbnailWidth = 350-this.self().EXTRA_INFO_WIDTH;
-        } else {
-          thumbnailWidth = this.getBounds().width-this.self().EXTRA_INFO_WIDTH;
-        }
-        const thumbnail = this.__createThumbnail(thumbnailWidth);
+      const widgetWidth = this.getBounds() ? this.getBounds() : 350;
+      const thumbnailWidth = widgetWidth - 2*this.self().PADDING - this.self().EXTRA_INFO_WIDTH;
+      const thumbnail = this.__createThumbnail(thumbnailWidth);
+      if (this.getSlim() === null || this.getSlim() === false) {
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          alignX: "center",
           alignY: "middle"
         }));
         hBox.add(extraInfo);
@@ -110,8 +107,6 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
         });
         this._add(hBox);
       } else {
-        const thumbnailWidth = bounds.width-this.self().EXTRA_INFO_WIDTH;
-        const thumbnail = this.__createThumbnail(thumbnailWidth);
         this._add(extraInfo);
         this._add(thumbnail);
       }
