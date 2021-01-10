@@ -122,9 +122,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
         this._add(hBox);
       }
 
-      this._add(this.__createDescription(), {
-        flex: 1
-      });
+      this._add(this.__createDescription());
     },
 
     __createTitle: function() {
