@@ -219,7 +219,12 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
 
     __createOwner: function() {
       const owner = new qx.ui.basic.Label();
-      this.getStudy().bind("prjOwner", owner, "value");
+      this.getStudy().bind("prjOwner", owner, "value", {
+        converter: email => osparc.utils.Utils.getNameFromEmail(email),
+        onUpdate: (source, target) => {
+          target.setToolTipText(source.getPrjOwner());
+        }
+      });
       return owner;
     },
 
