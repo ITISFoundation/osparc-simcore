@@ -49,6 +49,10 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     }
   },
 
+  statics: {
+    EXTRA_INFO_WIDTH: 200,
+  },
+
   members: {
     /**
       * @param studyData {Object} Serialized Study Object
@@ -142,7 +146,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       grid.setColumnAlign(1, "left", "middle");
       grid.setColumnFlex(1, 1);
       const moreInfo = new qx.ui.container.Composite(grid).set({
-        maxWidth: 220,
+        width: this.self().EXTRA_INFO_WIDTH,
         alignY: "middle"
       });
 
