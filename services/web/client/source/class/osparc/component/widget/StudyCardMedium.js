@@ -232,12 +232,19 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     },
 
     __createAccessRights: function() {
-      const accessRights = new qx.ui.basic.Label(this.tr("Collaborator"));
-
-      this.getStudy().addListener("changeAccessRights", e => {
-        console.log("changeAccessRights", e.getData());
-      });
-
+      let permissions = "";
+      const myGID = osparc.auth.Data.getInstance().getGroupId();
+      const ar = this.getStudy().getAccessRights();
+      if (myGID in ar) {
+        if (ar[myGID]["delete"]) {
+          permissions = this.tr("Owner");
+        } else if (ar[myGID]["write"]) {
+          permissions = this.tr("Collaborator");
+        } else if (ar[myGID]["read"]) {
+          permissions = this.tr("Viewer");
+        }
+      }
+      const accessRights = new qx.ui.basic.Label(permissions);
       return accessRights;
     },
 
@@ -298,7 +305,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       const width = 500;
       const height = 500;
       const title = this.tr("Study Details Editor");
-      const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(this.getStudy().serialize(), false, width)
+      const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(this.getStudy().serialize(), false, width);
       studyDetailsEditor.showOpenButton(false);
       const win = osparc.ui.window.Window.popUpInWindow(studyDetailsEditor, title, width, height);
       studyDetailsEditor.addListener("updateStudy", e => {
