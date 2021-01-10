@@ -30,14 +30,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   construct: function() {
     this.base(arguments);
 
-    // create a date format like "Oct. 19, 2018 11:31 AM"
-    this.__dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("medium")
-    );
-    this.__timeFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getTimeFormat("short")
-    );
-
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
@@ -151,9 +143,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   members: {
-    __dateFormat: null,
-    __timeFormat: null,
-
     // overridden
     _createChildControlImpl: function(id) {
       let control;
@@ -318,15 +307,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     _applyLastChangeDate: function(value, old) {
       if (value && this.isResourceType("study")) {
         const label = this.getChildControl("subtitle-text");
-        let dateStr = null;
-        if (value.getDate() === (new Date()).getDate()) {
-          dateStr = this.tr("Today");
-        } else if (value.getDate() === (new Date()).getDate() - 1) {
-          dateStr = this.tr("Yesterday");
-        } else {
-          dateStr = this.__dateFormat.format(value);
-        }
-        const timeStr = this.__timeFormat.format(value);
+        const dateStr = osparc.utils.Utils.formatDate(value);
+        const timeStr = osparc.utils.Utils.formatTime(value);
         label.setValue(dateStr + " " + timeStr);
       }
     },
@@ -554,12 +536,5 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
       return false;
     }
-  },
-
-  destruct : function() {
-    this.__dateFormat.dispose();
-    this.__dateFormat = null;
-    this.__timeFormat.dispose();
-    this.__timeFormat = null;
   }
 });
