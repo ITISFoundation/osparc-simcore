@@ -38,6 +38,10 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
         this.setStudyData(study);
       }
     }
+
+    this.addListenerOnce("appear", () => {
+      this.__rebuildLayout();
+    }, this);
   },
 
   properties: {
