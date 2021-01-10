@@ -46,20 +46,14 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       apply: "__applyStudy",
       init: null,
       nullable: false
-    },
-
-    slim: {
-      check: "Boolean",
-      apply: "__rebuildLayout",
-      init: null,
-      nullable: false
     }
   },
 
   statics: {
     PADDING: 10,
     EXTRA_INFO_WIDTH: 200,
-    THUMBNAIL_MIN_WIDTH: 120
+    THUMBNAIL_MIN_WIDTH: 120,
+    THUMBNAIL_MAX_WIDTH: 200
   },
 
   members: {
@@ -72,15 +66,14 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     },
 
     checkResize: function(bounds) {
-      const slim = bounds.width < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
-      this.setSlim(slim);
+      this.__rebuildLayout(bounds.width);
     },
 
     __applyStudy: function() {
       this.__rebuildLayout();
     },
 
-    __rebuildLayout: function() {
+    __rebuildLayout: function(width) {
       this._removeAll();
 
       const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
@@ -93,10 +86,27 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       this._add(nameAndMenuButton);
 
       const extraInfo = this.__extraInfo();
-      const widgetWidth = this.getBounds() ? this.getBounds().width : 350;
-      const thumbnailWidth = widgetWidth - 2*this.self().PADDING - this.self().EXTRA_INFO_WIDTH;
-      const thumbnail = this.__createThumbnail(thumbnailWidth);
-      if (this.getSlim() === null || this.getSlim() === false) {
+
+      const bounds = this.getBounds();
+      let widgetWidth = null;
+      if (width) {
+        widgetWidth = width;
+      } else if (bounds) {
+        widgetWidth = bounds.width;
+      } else {
+        widgetWidth = 350;
+      }
+      let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
+      const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
+      if (slim) {
+        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
+        const thumbnail = this.__createThumbnail(thumbnailWidth);
+        this._add(extraInfo);
+        this._add(thumbnail);
+      } else {
+        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
+        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
+        const thumbnail = this.__createThumbnail(thumbnailWidth);
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center",
           alignY: "middle"
@@ -106,9 +116,6 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
           flex: 1
         });
         this._add(hBox);
-      } else {
-        this._add(extraInfo);
-        this._add(thumbnail);
       }
 
       this._add(this.__createDescription(), {
@@ -144,11 +151,6 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
         menu.add(moreInfoButton);
       }
 
-      if (this.getStudy().getQuality()) {
-        const qualityButton = this.__getQualityMenuButton();
-        menu.add(qualityButton);
-      }
-
       return menuButton;
     },
 
@@ -158,13 +160,6 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
         this.__openStudyDetailsEditor();
       }, this);
       return moreInfoButton;
-    },
-
-    __getQualityMenuButton: function() {
-      const studyQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
-      studyQualityButton.addListener("execute", () => {
-      }, this);
-      return studyQualityButton;
     },
 
     __extraInfo: function() {
@@ -178,72 +173,36 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
         alignY: "middle"
       });
 
-      let row = 0;
       const owner = this.__createOwner();
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Owner")).set({
-        font: "title-12"
-      }), {
-        row,
-        column: 0
-      });
-      moreInfo.add(owner, {
-        row,
-        column: 1
-      });
-      row++;
-
       const creationDate = this.__createCreationDate();
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Creation date")).set({
-        font: "title-12"
-      }), {
-        row,
-        column: 0
-      });
-      moreInfo.add(creationDate, {
-        row,
-        column: 1
-      });
-      row++;
-
       const lastChangeDate = this.__createLastChangeDate();
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Last modified")).set({
-        font: "title-12"
-      }), {
-        row,
-        column: 0
-      });
-      moreInfo.add(lastChangeDate, {
-        row,
-        column: 1
-      });
-      row++;
-
       const accessRights = this.__createAccessRights();
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Access rights")).set({
-        font: "title-12"
-      }), {
-        row,
-        column: 0
-      });
-      moreInfo.add(accessRights, {
-        row,
-        column: 1
-      });
-      row++;
-
       const quality = this.__createQuality();
-      if (quality) {
-        moreInfo.add(new qx.ui.basic.Label(this.tr("Quality")).set({
-          font: "title-12"
-        }), {
-          row,
-          column: 0
-        });
-        moreInfo.add(quality, {
-          row,
-          column: 1
-        });
-        row++;
+      const extraInfo = [
+        [this.tr("Owner"), owner],
+        [this.tr("Creation date"), creationDate],
+        [this.tr("Last modified"), lastChangeDate],
+        [this.tr("Access rights"), accessRights],
+        [this.tr("Quality"), quality]
+      ];
+      for (let i=0; i<extraInfo.length; i++) {
+        if (extraInfo[i][1]) {
+          const label = new qx.ui.basic.Label(extraInfo[i][0]).set({
+            font: "title-12"
+          });
+          moreInfo.add(label, {
+            row: i,
+            column: 0
+          });
+
+          extraInfo[i][1].set({
+            allowGrowX: false
+          });
+          moreInfo.add(extraInfo[i][1], {
+            row: i,
+            column: 1
+          });
+        }
       }
 
       return moreInfo;
