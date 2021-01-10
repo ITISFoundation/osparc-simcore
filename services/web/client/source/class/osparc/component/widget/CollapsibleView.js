@@ -82,7 +82,7 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     __titleBar: null,
     __titleLabel: null,
     __caret: null,
-    _innerContainer: null,
+    __innerContainer: null,
     __containerHeight: null,
     __layoutFlex: null,
     __minHeight: null,
@@ -148,21 +148,21 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
             });
           }
         }
-        // this._innerContainer.setHeight(collapsed ? 0 : this.__containerHeight);
-        this._innerContainer.setVisibility(collapsed ? "excluded" : "visible");
+        // this.__innerContainer.setHeight(collapsed ? 0 : this.__containerHeight);
+        this.__innerContainer.setVisibility(collapsed ? "excluded" : "visible");
       }
     },
 
     _applyContent: function(content, oldContent) {
-      if (this._innerContainer === null) {
-        this._innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
+      if (this.__innerContainer === null) {
+        this.__innerContainer = new qx.ui.container.Composite(new qx.ui.layout.Grow()).set({
           padding: 0
         });
-        this._addAt(this._innerContainer, 1, {
+        this._addAt(this.__innerContainer, 1, {
           flex: 1
         });
 
-        this._innerContainer.addListener("changeHeight", e => {
+        this.__innerContainer.addListener("changeHeight", e => {
           const height = e.getOldData();
           if (height != 0) {
             this.__containerHeight = height;
@@ -174,9 +174,9 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
         });
       }
 
-      this._innerContainer.removeAll();
-      this._innerContainer.add(content);
-      this._innerContainer.setHeight(this.getCollapsed() ? 0 : this.__containerHeight);
+      this.__innerContainer.removeAll();
+      this.__innerContainer.add(content);
+      this.__innerContainer.setHeight(this.getCollapsed() ? 0 : this.__containerHeight);
 
       if (content) {
         this.__caret.show();
