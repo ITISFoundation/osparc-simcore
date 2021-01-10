@@ -43,7 +43,7 @@ qx.Class.define("osparc.desktop.PanelView", {
     _applyContent: function(content, oldContent) {
       this.base(arguments, content, oldContent);
 
-      this.__innerContainer.set({
+      this._innerContainer.set({
         appearance: "panelview-content"
       });
     }
