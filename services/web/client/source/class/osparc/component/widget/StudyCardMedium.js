@@ -93,7 +93,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       this._add(nameAndMenuButton);
 
       const extraInfo = this.__extraInfo();
-      const widgetWidth = this.getBounds() ? this.getBounds() : 350;
+      const widgetWidth = this.getBounds() ? this.getBounds().width : 350;
       const thumbnailWidth = widgetWidth - 2*this.self().PADDING - this.self().EXTRA_INFO_WIDTH;
       const thumbnail = this.__createThumbnail(thumbnailWidth);
       if (this.getSlim() === null || this.getSlim() === false) {
