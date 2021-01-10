@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     },
 
     checkResize: function(bounds) {
-      const slim = bounds.width < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH;
+      const slim = bounds.width < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
       this.setSlim(slim);
     },
 
@@ -97,7 +97,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       const thumbnailWidth = widgetWidth - 2*this.self().PADDING - this.self().EXTRA_INFO_WIDTH;
       const thumbnail = this.__createThumbnail(thumbnailWidth);
       if (this.getSlim() === null || this.getSlim() === false) {
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center",
           alignY: "middle"
         }));
