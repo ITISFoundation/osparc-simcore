@@ -46,11 +46,19 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       apply: "__applyStudy",
       init: null,
       nullable: false
+    },
+
+    slim: {
+      check: "Boolean",
+      apply: "__rebuildLayout",
+      init: null,
+      nullable: false
     }
   },
 
   statics: {
     EXTRA_INFO_WIDTH: 200,
+    THUMBNAIL_MIN_WIDTH: 120
   },
 
   members: {
@@ -62,6 +70,11 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       this.setStudy(study);
     },
 
+    checkResize: function(bounds) {
+      const slim = bounds.width < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH;
+      this.setSlim(slim);
+    },
+
     __applyStudy: function() {
       this.__rebuildLayout();
     },
@@ -69,21 +82,39 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     __rebuildLayout: function() {
       this._removeAll();
 
-      const widgetInitWidth = 350;
-
-      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignY: "middle"
+      }));
       nameAndMenuButton.add(this.__createTitle(), {
         flex: 1
       });
       nameAndMenuButton.add(this.__createMenuButton());
       this._add(nameAndMenuButton);
 
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      hBox.add(this.__extraInfo());
-      hBox.add(this.__createThumbnail(widgetInitWidth), {
-        flex: 1
-      });
-      this._add(hBox);
+      const extraInfo = this.__extraInfo();
+      const bounds = this.getBounds();
+      if (bounds === null || this.getSlim() === null || this.getSlim() === false) {
+        let thumbnailWidth = null;
+        if (bounds === null) {
+          thumbnailWidth = 350-this.self().EXTRA_INFO_WIDTH;
+        } else {
+          thumbnailWidth = this.getBounds().width-this.self().EXTRA_INFO_WIDTH;
+        }
+        const thumbnail = this.__createThumbnail(thumbnailWidth);
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          alignY: "middle"
+        }));
+        hBox.add(extraInfo);
+        hBox.add(thumbnail, {
+          flex: 1
+        });
+        this._add(hBox);
+      } else {
+        const thumbnailWidth = bounds.width-this.self().EXTRA_INFO_WIDTH;
+        const thumbnail = this.__createThumbnail(thumbnailWidth);
+        this._add(extraInfo);
+        this._add(thumbnail);
+      }
 
       this._add(this.__createDescription(), {
         flex: 1
@@ -147,6 +178,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       grid.setColumnFlex(1, 1);
       const moreInfo = new qx.ui.container.Composite(grid).set({
         width: this.self().EXTRA_INFO_WIDTH,
+        alignX: "center",
         alignY: "middle"
       });
 
@@ -298,8 +330,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       return null;
     },
 
-    __createThumbnail: function(widgetWidth) {
-      const maxWidth = widgetWidth ? (widgetWidth - 220) : 200;
+    __createThumbnail: function(maxWidth) {
       const maxHeight = 250;
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
