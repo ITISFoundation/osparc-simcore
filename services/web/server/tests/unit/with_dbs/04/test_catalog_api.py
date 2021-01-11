@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-
 from copy import deepcopy
 
 import pytest
@@ -50,35 +49,33 @@ def client(loop, app_cfg, aiohttp_client, postgres_db):
 
 
 @pytest.fixture
-def mock_api_client_session(client, mocker):
-    get_client_session = mocker.patch(
-        "simcore_service_webserver.catalog_client.get_client_session"
+def patch_app_client_session(client, mocker):
+    async def create_200_empty_response(*args, **kwargs):
+        # Mocks aiohttp.ClientResponse
+        # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse
+        resp = mocker.MagicMock(name="SuccessfulEmptyResponse")
+
+        resp.json = mocker.AsyncMock(return_value={})
+
+        p = mocker.PropertyMock(return_value=200)
+        type(resp).status = p
+        return resp
+
+    context_mock = mocker.Mock(name="Session Context Manager")
+    context_mock.__aenter__ = mocker.AsyncMock(
+        name="QueryResponse", side_effect=create_200_empty_response
     )
-
-    class MockClientSession(mocker.MagicMock):
-        async def __aenter__(self):
-            # Mocks aiohttp.ClientResponse
-            # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse
-            resp = mocker.Mock()
-
-            resp.json.return_value = {}
-
-            resp.status = 200
-            return resp
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            pass
+    context_mock.__aexit__ = mocker.AsyncMock(name="Exit", return_value=False)
 
     client_session = mocker.Mock()
+    client_session.get.return_value = context_mock
+    client_session.post.return_value = context_mock
+    client_session.request.return_value = context_mock
 
-    context_mock = mocker.Mock(return_value=MockClientSession())
-    client_session.get = context_mock
-    client_session.post = context_mock
-    client_session.request = context_mock
-
-    get_client_session.return_value = client_session
-
-    yield context_mock
+    mocker.patch(
+        "simcore_service_webserver.catalog.get_client_session",
+        return_value=client_session,
+    )
 
 
 # TODO: with different user roles, i.e. access rights
@@ -92,7 +89,7 @@ def mock_api_client_session(client, mocker):
     ],
 )
 async def test_dag_entrypoints(
-    client, logged_user, api_version_prefix, mock_api_client_session, expected
+    client, logged_user, api_version_prefix, patch_app_client_session, expected
 ):
     vx = api_version_prefix
 
