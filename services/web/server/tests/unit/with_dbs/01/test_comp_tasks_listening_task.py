@@ -42,16 +42,16 @@ async def mock_project_subsystem(mocker) -> Dict:
     yield mocked_project_calls
 
 
-async def test_mock_project_api(loop, mock_project_subsystem: Dict):
+async def test_mock_project_api(loop, mock_project_subsystem: Dict, mocker):
     from simcore_service_webserver.computation_comp_tasks_listening_task import (
         _get_project_owner,
         _update_project_outputs,
         _update_project_state,
     )
 
-    assert isinstance(_get_project_owner, MagicMock)
-    assert isinstance(_update_project_state, MagicMock)
-    assert isinstance(_update_project_outputs, MagicMock)
+    assert isinstance(_get_project_owner, mocker.AsyncMock)
+    assert isinstance(_update_project_state, mocker.AsyncMock)
+    assert isinstance(_update_project_outputs, mocker.AsyncMock)
 
 
 @pytest.fixture
