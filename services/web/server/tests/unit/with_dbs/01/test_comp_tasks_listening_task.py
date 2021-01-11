@@ -72,13 +72,13 @@ async def comp_task_listening_task(
 @pytest.mark.parametrize(
     "update_values, expected_calls",
     [
-        # pytest.param(
-        #     {
-        #         "outputs": {"some new stuff": "it is new"},
-        #     },
-        #     ["_get_project_owner", "_update_project_outputs"],
-        #     id="new output shall trigger",
-        # ),
+        pytest.param(
+            {
+                "outputs": {"some new stuff": "it is new"},
+            },
+            ["_get_project_owner", "_update_project_outputs"],
+            id="new output shall trigger",
+        ),
         pytest.param(
             {"state": StateType.ABORTED},
             ["_get_project_owner", "_update_project_state"],
@@ -122,10 +122,11 @@ async def test_listen_comp_tasks_task(
             .where(comp_tasks.c.task_id == task["task_id"])
         )
 
-        # tests whether calls executed
+        # tests whether listener gets hooked calls executed
         for call_name, mocked_call in mock_project_subsystem.items():
             if call_name in expected_calls:
-                for attempt in tenacity.Retrying(
+                # async.sleep if and retry if not called
+                async for attempt in tenacity.AsyncRetrying(
                     wait=tenacity.wait_fixed(1),
                     stop=tenacity.stop_after_delay(10),
                     retry=tenacity.retry_if_exception_type(AssertionError),
@@ -133,7 +134,6 @@ async def test_listen_comp_tasks_task(
                     reraise=True,
                 ):
                     with attempt:
-                        print(call_name)
                         mocked_call.assert_awaited()
             else:
                 mocked_call.assert_not_called()
