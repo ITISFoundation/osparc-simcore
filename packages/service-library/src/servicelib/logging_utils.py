@@ -9,6 +9,8 @@ from asyncio import iscoroutinefunction
 from inspect import getframeinfo, stack
 from typing import Callable, Dict, Optional
 
+from celery.app.log import Logging
+
 log = logging.getLogger(__name__)
 
 
@@ -76,7 +78,7 @@ def config_all_loggers():
 
 def set_logging_handler(
     logger: logging.Logger,
-    formatter_base=None,
+    formatter_base: Optional[Logging] = None,
     formatting: Optional[str] = None,
 ) -> None:
     if not formatting:
