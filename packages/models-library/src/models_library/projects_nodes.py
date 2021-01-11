@@ -17,7 +17,7 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import SERVICE_KEY_RE, PROPERTY_KEY_RE
+from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
 
 InputTypes = Union[
     int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink, DownloadLink
@@ -104,14 +104,14 @@ class Node(BaseModel):
 
     @validator("thumbnail", pre=True)
     @classmethod
-    def convert_empty_str_to_none(v):
+    def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
             return None
         return v
 
     @validator("state", pre=True)
     @classmethod
-    def convert_old_enum_name(v):
+    def convert_old_enum_name(cls, v):
         if v == "FAILURE":
             return RunningState.FAILED
         return v

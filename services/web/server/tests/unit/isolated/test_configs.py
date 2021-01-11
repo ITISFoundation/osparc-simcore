@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Dict, List
 
 import pytest
-
 from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import is_setup_function
@@ -34,12 +33,12 @@ def app_config_schema():
 
 @pytest.fixture(scope="session")
 def service_webserver_environ(
-    services_docker_compose_file, env_devel_config, osparc_simcore_root_dir
+    services_docker_compose_file, env_devel_dict, osparc_simcore_root_dir
 ):
-    """ Creates a dict with the environment variables
-        inside of a webserver container
+    """Creates a dict with the environment variables
+    inside of a webserver container
     """
-    host_environ = env_devel_config.copy()
+    host_environ = env_devel_dict.copy()
     image_environ = {
         "SIMCORE_WEB_OUTDIR": "home/scu/services/web/client",  # defined in Dockerfile
         "OSPARC_SIMCORE_REPO_ROOTDIR": str(
@@ -61,7 +60,7 @@ def service_webserver_environ(
 @pytest.fixture(scope="session")
 def app_submodules_with_setup_funs(package_dir) -> List:
     """
-        subsystem = all modules in package with a setup function
+    subsystem = all modules in package with a setup function
     """
 
     def is_py_module(path: Path) -> bool:

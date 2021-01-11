@@ -17,9 +17,7 @@ def setup_director(app: FastAPI) -> None:
 
     # init client-api
     logger.debug("Setup director at %s...", settings.base_url)
-    app.state.director_api = DirectorApi(
-        base_url=settings.base_url, vtag=app.state.settings.director.vtag
-    )
+    app.state.director_api = DirectorApi(base_url=settings.base_url, app=app)
 
     # does NOT communicate with director service
 
@@ -97,9 +95,11 @@ class DirectorApi:
     SEE services/catalog/src/simcore_service_catalog/api/dependencies/director.py
     """
 
-    def __init__(self, base_url: str, vtag: str):
-        self.client = AsyncClient(base_url=base_url)
-        self.vtag = vtag
+    def __init__(self, base_url: str, app: FastAPI):
+        self.client = AsyncClient(
+            base_url=base_url, timeout=app.state.settings.client_request.total_timeout
+        )
+        self.vtag = app.state.settings.director.vtag
 
     # OPERATIONS
     # TODO: policy to retry if NetworkError/timeout?
@@ -107,7 +107,8 @@ class DirectorApi:
 
     @safe_request
     async def get(self, path: str) -> Optional[Dict]:
-        return await self.client.get(path)
+        # temp solution: default timeout increased to 20"
+        return await self.client.get(path, timeout=20.0)
 
     @safe_request
     async def put(self, path: str, body: Dict) -> Optional[Dict]:

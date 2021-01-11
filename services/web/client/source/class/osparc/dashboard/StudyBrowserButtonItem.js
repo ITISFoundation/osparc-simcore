@@ -105,6 +105,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyTags"
     },
 
+    metadata: {
+      check: "Object",
+      nullable: true,
+      apply: "_applyMetadata"
+    },
+
     state: {
       check: "Object",
       nullable: false,
@@ -139,7 +145,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
     TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/14",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/50",
     PERM_READ: "@FontAwesome5Solid/eye/16",
     PERM_WRITE: "@FontAwesome5Solid/edit/16",
     PERM_EXECUTE: "@FontAwesome5Solid/crown/16"
@@ -198,6 +204,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         }
+        case "tsr-rating":
+          control = new osparc.ui.basic.StarsRating();
+          this._add(control, {
+            left: 0,
+            bottom: 0
+          });
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -222,24 +235,26 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
+      let metadata = null;
       switch (studyData["resourceType"]) {
         case "study":
-          uuid = studyData.uuid;
-          owner = studyData.prjOwner;
-          accessRights = studyData.accessRights;
+          uuid = studyData.uuid ? studyData.uuid : uuid;
+          owner = studyData.prjOwner ? studyData.prjOwner : owner;
+          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().STUDY_ICON;
           break;
         case "template":
-          uuid = studyData.uuid;
-          owner = studyData.prjOwner;
-          accessRights = studyData.accessRights;
+          uuid = studyData.uuid ? studyData.uuid : uuid;
+          owner = studyData.prjOwner ? studyData.prjOwner : owner;
+          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().TEMPLATE_ICON;
           break;
         case "service":
-          uuid = studyData.key;
-          owner = studyData.owner;
-          accessRights = studyData.access_rights;
+          uuid = studyData.key ? studyData.key : uuid;
+          owner = studyData.owner ? studyData.owner : owner;
+          accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
+          metadata = studyData.metadata ? studyData.metadata : null;
           break;
       }
 
@@ -253,7 +268,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
-        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : []
+        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
+        metadata
       });
     },
 
@@ -363,8 +379,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 
-        if (this.isResourceType("study") || this.isResourceType("template")) {
-          this._applyStudyPermissions(value);
+        if (this.isResourceType("study")) {
+          this.__setStudyPermissions(value);
         }
       }
     },
@@ -438,7 +454,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyStudyPermissions: function(accessRights) {
+    _applyMetadata: function(metadata) {
+      if (metadata && "tsr" in metadata) {
+        const {
+          score,
+          maxScore
+        } = osparc.component.metadata.ServiceQuality.computeTSRScore(metadata["tsr"]);
+        const tsrRating = this.getChildControl("tsr-rating");
+        tsrRating.set({
+          score,
+          maxScore,
+          nStars: 4,
+          showScore: true
+        });
+      }
+    },
+
+    __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const studyPerm = osparc.component.export.StudyPermissions;
       const image = this.getChildControl("permission-icon");

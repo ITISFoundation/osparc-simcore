@@ -25,10 +25,7 @@ from pydantic import BaseSettings, Field, SecretStr
 from servicelib import application_keys
 from servicelib.tracing import TracingSettings
 
-# IMPORTANT: lowest level module
-#   I order to avoid cyclic dependences, please
-#   DO NOT IMPORT ANYTHING from . (except for __version__)
-from .__version__ import version
+from .meta import version
 
 log = logging.getLogger(__name__)
 

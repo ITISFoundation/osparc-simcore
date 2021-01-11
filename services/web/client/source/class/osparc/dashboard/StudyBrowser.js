@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __reloadUserStudy: function(studyId) {
+    reloadUserStudy: function(studyId) {
       const params = {
         url: {
           "projectId": studyId
@@ -105,17 +105,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        osparc.data.Resources.get("studies", null, false)
-          .then(studies => {
-            this.__resetStudyList(studies);
-            this.resetSelection();
-          })
-          .catch(err => {
-            console.error(err);
-          });
-      } else {
-        this.__resetStudyList([]);
+        return new Promise((resolve, reject) => {
+          osparc.data.Resources.get("studies", null, false)
+            .then(studies => {
+              this.__resetStudyList(studies);
+              this.resetSelection();
+              resolve(studies);
+            })
+            .catch(err => {
+              console.error(err);
+              reject(err);
+            });
+        });
       }
+      this.__resetStudyList([]);
+      return null;
     },
 
     __initResources: function() {
@@ -261,9 +265,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __studyStateReceived: function(studyId, state) {
+      console.log("study state:", studyId, state);
       const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
       if (studyItem) {
         studyItem.setState(state);
+      } else {
+        console.log(studyId, "card not found");
       }
 
       osparc.store.Store.getInstance().setStudyState(studyId, state);
@@ -431,7 +438,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(saveAsTemplateButton);
       }
 
-      if (osparc.data.model.Study.hasSlideshow(studyData)) {
+      if (osparc.data.model.Study.hasSlideshow(studyData) && osparc.data.Permissions.getInstance().canDo("study.slides")) {
         const startAsSlideshowButton = this.__getStartAsSlideshowButton(studyData);
         menu.add(startAsSlideshowButton);
       }
@@ -479,9 +486,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateClassifiers", e => {
+      classifiersEditor.addListener("updateResourceClassifiers", e => {
         const studyId = e.getData();
-        this.__reloadUserStudy(studyId);
+        this.reloadUserStudy(studyId);
       }, this);
     },
 
@@ -493,7 +500,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
         permissionsView.addListener("updateStudy", e => {
           const studyId = e.getData();
-          this.__reloadUserStudy(studyId);
+          this.reloadUserStudy(studyId);
         }, this);
       }, this);
       return permissionsButton;
@@ -581,7 +588,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(studyData, false, winWidth);
       studyDetails.addListener("updateStudy", e => {
         const newStudyData = e.getData();
-        this.__reloadUserStudy(newStudyData.uuid);
+        this.reloadUserStudy(newStudyData.uuid);
       });
       studyDetails.addListener("openStudy", () => {
         this.__startStudy(studyData["uuid"]);

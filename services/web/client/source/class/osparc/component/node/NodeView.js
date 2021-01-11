@@ -89,15 +89,10 @@ qx.Class.define("osparc.component.node.NodeView", {
       const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
       const src = iFrame.getSource();
-      if (src === null || src === "about:blank") {
-        this._iFrameLayout.add(loadingPage, {
-          flex: 1
-        });
-      } else {
-        this._iFrameLayout.add(iFrame, {
-          flex: 1
-        });
-      }
+      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+      this._iFrameLayout.add(iFrameView, {
+        flex: 1
+      });
     },
 
     _addIFrame: function() {
@@ -147,6 +142,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       if (node.isContainer()) {
         console.error("Only non-group nodes are supported");
       }
+      this.base(arguments, node);
     }
   }
 });

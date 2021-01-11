@@ -82,19 +82,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         children.push(nodeInTree);
       }
       return children;
-    },
-
-    areSlidesEnabled: function() {
-      return new Promise((resolve, reject) => {
-        osparc.utils.LibVersions.getPlatformName()
-          .then(platformName => {
-            if (["dev", "master"].includes(platformName)) {
-              resolve(true);
-            } else {
-              resolve(false);
-            }
-          });
-      });
     }
   },
 
@@ -224,12 +211,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __populateToolbar: function() {
-      this.self().areSlidesEnabled()
-        .then(areSlidesEnabled => {
-          const study = this.getStudy();
-          const isOwner = osparc.data.model.Study.isOwner(study);
-          this.__editSlidesButton.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
-        });
+      const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
+      const study = this.getStudy();
+      const isOwner = osparc.data.model.Study.isOwner(study);
+      this.__editSlidesButton.setVisibility(areSlidesEnabled && isOwner ? "visible" : "excluded");
     },
 
     populateTree: function() {

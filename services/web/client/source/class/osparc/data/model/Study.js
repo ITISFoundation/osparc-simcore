@@ -52,7 +52,8 @@ qx.Class.define("osparc.data.model.Study", {
       creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
       lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
       classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-      tags: studyData.tags || []
+      tags: studyData.tags || [],
+      state: studyData.state || this.getState()
     });
 
     const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
@@ -60,7 +61,6 @@ qx.Class.define("osparc.data.model.Study", {
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
 
     this.setSweeper(new osparc.data.model.Sweeper(studyData));
-    this.setState(studyData.state);
   },
 
   properties: {
@@ -257,17 +257,8 @@ qx.Class.define("osparc.data.model.Study", {
       return osparc.data.Resources.fetch("studies", "open", params);
     },
 
-    closeStudy: function() {
+    stopStudy: function() {
       this.removeIFrames();
-
-      const params = {
-        url: {
-          projectId: this.getUuid()
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      osparc.data.Resources.fetch("studies", "close", params)
-        .catch(err => console.error(err));
     },
 
     removeIFrames: function() {

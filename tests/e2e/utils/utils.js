@@ -1,4 +1,5 @@
 const pathLib = require('path');
+const URL = require('url').URL;
 
 const SCREENSHOTS_DIR = "../screenshots/";
 
@@ -27,6 +28,25 @@ function parseCommandLineArguments(args) {
   }
 }
 
+function parseCommandLineArgumentsTemplate(args) {
+  // node $template.js [url] [template_uuid] [--demo]
+
+  if (args.length < 2) {
+    console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [--demo]');
+    process.exit(1);
+  }
+
+  const urlPrefix = args[0];
+  const templateUuid = args[1];
+  const enableDemoMode = args.includes("--demo");
+
+  return {
+    urlPrefix,
+    templateUuid,
+    enableDemoMode
+  }
+}
+
 function getUserAndPass(args) {
   const userPass = {
     user: null,
@@ -46,9 +66,9 @@ function getUserAndPass(args) {
   return userPass;
 }
 
-function  __getRandUserAndPass() {
+function __getRandUserAndPass() {
   const randUser = Math.random().toString(36).substring(7);
-  const user = 'puppeteer_'+randUser+'@itis.testing';
+  const user = 'puppeteer_' + randUser + '@itis.testing';
   const pass = Math.random().toString(36).substring(7);
   return {
     user,
@@ -69,7 +89,7 @@ async function getNodeTreeItemIDs(page) {
     const treeRoot = document.querySelector(selector);
     if (treeRoot.parentElement) {
       const tree = treeRoot.parentElement;
-      for (let i=1; i<tree.children.length; i++) {
+      for (let i = 1; i < tree.children.length; i++) {
         const child = tree.children[i];
         children.push(child.getAttribute("osparc-test-id"));
       }
@@ -85,7 +105,7 @@ async function getFileTreeItemIDs(page, rootName) {
     const treeRoot = document.querySelector(selector);
     if (treeRoot.parentElement) {
       const tree = treeRoot.parentElement;
-      for (let i=1; i<tree.children.length; i++) {
+      for (let i = 1; i < tree.children.length; i++) {
         const child = tree.children[i];
         children.push(child.getAttribute("osparc-test-id"));
       }
@@ -111,12 +131,20 @@ async function getVisibleChildrenIDs(page, parentSelector) {
   return childrenIDs;
 }
 
+async function getStyle(page, selector) {
+  const style = await page.evaluate((selector) => {
+    const node = document.querySelector(selector);
+    return JSON.parse(JSON.stringify(getComputedStyle(node)));
+  }, selector);
+  return style;
+}
+
 async function fetchReq(endpoint) {
   const responseEnv = await page.evaluate(
     // NOTE: without the following comment it fails here with some weird message
     /* istanbul ignore next */
     async (url, apiVersion, endpoint) => {
-      const response = await fetch(url+apiVersion+endpoint);
+      const response = await fetch(url + apiVersion + endpoint);
       return await response.json();
     }, url, apiVersion, endpoint);
   return responseEnv;
@@ -136,7 +164,7 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
   const resp = await page.evaluate(async (host, endpoint, apiVersion) => {
-    const url = host+apiVersion+endpoint;
+    const url = host + apiVersion + endpoint;
     console.log("makeRequest", url);
     const resp = await fetch(url);
     const jsonResp = await resp.json();
@@ -169,7 +197,7 @@ async function waitForResponse(page, url) {
 }
 
 async function isServiceReady(page, studyId, nodeId) {
-  const endPoint = "/projects/" + studyId +"/nodes/" + nodeId;
+  const endPoint = "/projects/" + studyId + "/nodes/" + nodeId;
   console.log("-- Is service ready", endPoint);
   const resp = await makeRequest(page, endPoint);
 
@@ -184,7 +212,7 @@ async function isServiceReady(page, studyId, nodeId) {
 }
 
 async function isStudyDone(page, studyId) {
-  const endPoint = "/projects/" + studyId +"/state";
+  const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Is study done", endPoint);
   const resp = await makeRequest(page, endPoint);
 
@@ -197,6 +225,16 @@ async function isStudyDone(page, studyId) {
   return stopListening.includes(pipelineStatus);
 }
 
+async function isStudyUnlocked(page, studyId) {
+  const endPoint = "/projects/" + studyId + "/state";
+  console.log("-- Is study closed", endPoint);
+  const resp = await makeRequest(page, endPoint);
+
+  const studyLocked = resp["locked"]["value"];
+  console.log("Study Lock Status:", studyId, studyLocked);
+  return !studyLocked;
+}
+
 async function waitForValidOutputFile(page) {
   return new Promise((resolve, reject) => {
     page.on("response", function callback(resp) {
@@ -204,7 +242,7 @@ async function waitForValidOutputFile(page) {
       if (header['content-type'] === "binary/octet-stream") {
         resp.text().then(
           b => {
-            if (b>=0 && b<=10) {
+            if (b >= 0 && b <= 10) {
               page.removeListener("response", callback)
               resolve(b)
             }
@@ -268,7 +306,7 @@ async function takeScreenshot(page, captureName = "") {
       quality: 15
     })
   }
-  catch(err) {
+  catch (err) {
     console.error("Error taking screenshot", err);
   }
 }
@@ -285,12 +323,43 @@ function extractWorkbenchData(data) {
   return workbenchData;
 }
 
+function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
+  let snapshotUrl = null;
+
+  // WARNING: This mappings might change
+  const table = {
+    "staging.osparc.io": "https://monitoring.staging.osparc.io/graylog/",
+    "osparc.io": "https://monitoring.osparc.io/graylog/",
+    "osparc-master.speag.com": "https://monitoring.osparc-master.speag.com/graylog/",
+    "osparc-staging.speag.com": "https://monitoring.osparc.speag.com/graylog/",
+    "osparc.speag.com": "https://monitoring.osparc.speag.com/graylog/",
+  };
+
+  const {
+    hostname
+  } = new URL(targetUrl)
+  const monitoringBaseUrl = table[hostname] || null;
+
+  if (monitoringBaseUrl) {
+    const now_millisecs = Date.now();
+    const from = encodeURIComponent(new Date(now_millisecs - since_secs * 1000).toISOString());
+    const to = encodeURIComponent(new Date(now_millisecs).toISOString());
+
+    const searchQuery = "image_name%3Aitisfoundation%2A"; // image_name:itisfoundation*
+    snapshotUrl = `${monitoringBaseUrl}search?q=${searchQuery}&rangetype=absolute&from=${from}&to=${to}`;
+  }
+
+  return snapshotUrl
+}
+
+
 module.exports = {
   getUserAndPass,
   getDomain,
   getNodeTreeItemIDs,
   getFileTreeItemIDs,
   getVisibleChildrenIDs,
+  getStyle,
   fetchReq,
   makeRequest,
   emptyField,
@@ -298,6 +367,7 @@ module.exports = {
   waitForResponse,
   isServiceReady,
   isStudyDone,
+  isStudyUnlocked,
   waitForValidOutputFile,
   waitAndClick,
   clearInput,
@@ -305,5 +375,7 @@ module.exports = {
   createScreenshotsDir,
   takeScreenshot,
   extractWorkbenchData,
-  parseCommandLineArguments
+  parseCommandLineArguments,
+  parseCommandLineArgumentsTemplate,
+  getGrayLogSnapshotUrl
 }

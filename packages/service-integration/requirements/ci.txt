@@ -1,0 +1,17 @@
+# Shortcut to install all packages for the contigous integration (CI) of 'service-integration'
+#
+# - As ci.txt but w/ tests
+#
+# Usage:
+#   pip install -r requirements/ci.txt
+#
+
+# installs base + tests requirements
+-r _base.txt
+-r _test.txt
+
+../models-library/
+../pytest-simcore/
+
+# current module
+.

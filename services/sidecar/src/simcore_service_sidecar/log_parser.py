@@ -10,6 +10,7 @@ import aiofiles
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerError
 from aiofile import AIOFile, Writer
+from servicelib.logging_utils import log_decorator
 
 from . import exceptions
 
@@ -59,6 +60,7 @@ async def parse_line(line: str) -> Tuple[LogType, str]:
         return (LogType.LOG, f"[task] {line}")
 
 
+@log_decorator(logger=log)
 async def monitor_logs_task(
     mon_log_file_or_container: Union[Path, DockerContainer],
     log_cb: Awaitable[Callable[[LogType, str], None]],
@@ -66,10 +68,8 @@ async def monitor_logs_task(
 ) -> None:
     try:
         if isinstance(mon_log_file_or_container, Path):
-            log.debug("start monitoring log in %s", mon_log_file_or_container)
             await _monitor_log_file(mon_log_file_or_container, log_cb)
         elif isinstance(mon_log_file_or_container, DockerContainer):
-            log.debug("start monitoring docker logs of %s", mon_log_file_or_container)
             await _monitor_docker_container(
                 mon_log_file_or_container, log_cb, out_log_file
             )
@@ -77,10 +77,10 @@ async def monitor_logs_task(
             raise exceptions.SidecarException("Invalid log type")
 
     except asyncio.CancelledError:
-        # user cancels
-        log.debug("stop monitoring logs in")
+        pass
 
 
+@log_decorator(logger=log)
 async def _monitor_docker_container(
     container: DockerContainer,
     log_cb: Awaitable[Callable[[LogType, str], None]],
@@ -110,6 +110,7 @@ async def _monitor_docker_container(
             log_file.unlink()
 
 
+@log_decorator(logger=log)
 async def _monitor_log_file(
     log_file, log_cb: Awaitable[Callable[[LogType, str], None]]
 ) -> None:
@@ -122,7 +123,6 @@ async def _monitor_log_file(
             if not line:
                 asyncio.sleep(1)
                 continue
-            log.debug("log monitoring: found log %s", line)
             log_type, parsed_line = await parse_line(line)
 
             await log_cb(log_type, parsed_line)

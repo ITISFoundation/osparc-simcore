@@ -21,8 +21,13 @@ qx.Class.define("osparc.component.filter.ClassifiersFilter", {
   members: {
     __tree: null,
 
-    __createClassifiersTree: function(checkedClassifiers) {
-      osparc.utils.Classifiers.getClassifiersAsTree()
+    recreateTree: function() {
+      const checkedClassifiers = this.getCheckedClassifierIDs();
+      this.__createClassifiersTree(checkedClassifiers);
+    },
+
+    __createClassifiersTree: function(checkedClassifiers, reload = false) {
+      osparc.utils.Classifiers.getClassifiersAsTree(reload)
         .then(classifiers => {
           if (classifiers && classifiers.children.length) {
             this.__tree = new osparc.ui.tree.CheckboxTree(classifiers);

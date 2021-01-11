@@ -17,6 +17,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
 
     if (node.isFilePicker()) {
       this.__setupFilepicker();
+    } else if (node.isComputational()) {
+      this.__setupComputational();
     } else {
       this.__setupInteractive();
     }
@@ -50,6 +52,70 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         const regex = new RegExp(className.trim(), "g");
         element.setAttribute("class", currentClass.replace(regex, ""));
       }
+    },
+
+    __setupComputational: function() {
+      this.__node.getStatus().bind("runningStatus", this.__label, "value", {
+        converter: state => {
+          if (state) {
+            this.show();
+            if (state === "STARTED") {
+              state = "Running";
+            }
+            return qx.lang.String.firstUp(state.toLowerCase());
+          }
+          this.exclude();
+          return null;
+        }
+      });
+
+      this.__node.getStatus().bind("runningStatus", this.__icon, "source", {
+        converter: state => {
+          switch (state) {
+            case "SUCCESS":
+              return "@FontAwesome5Solid/check/12";
+            case "FAILED":
+            case "ABORTED":
+              return "@FontAwesome5Solid/exclamation-circle/12";
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+            case "RETRY":
+              return "@FontAwesome5Solid/circle-notch/12";
+            case "UNKNOWN":
+            case "NOT_STARTED":
+            default:
+              return "";
+          }
+        },
+        onUpdate: (source, target) => {
+          target.show();
+          const state = source.getRunningStatus();
+          switch (state) {
+            case "SUCCESS":
+              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor("ready-green");
+              return;
+            case "FAILED":
+            case "ABORTED":
+              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor("failed-red");
+              return;
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+            case "RETRY":
+              this.__addClass(this.__icon.getContentElement(), "rotate");
+              target.resetTextColor();
+              return;
+            case "UNKNOWN":
+            case "NOT_STARTED":
+            default:
+              target.exclude();
+              return;
+          }
+        }
+      });
     },
 
     __setupInteractive: function() {
@@ -127,7 +193,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__node.getStatus().bind("progress", this.__label, "value", {
         converter: progress => {
           if (progress === 100) {
-            return osparc.file.FilePicker.getOutputLabel(node.getOutputValues());
+            return osparc.file.FilePicker.getOutputLabel(node.getOutputs());
           }
           return this.tr("Select a file");
         }

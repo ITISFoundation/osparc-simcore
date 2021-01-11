@@ -3,6 +3,7 @@ import logging
 from typing import Callable, List, Optional
 
 import click
+from servicelib.logging_utils import log_decorator
 
 from .celery_task_utils import cancel_task
 from .config import SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S
@@ -32,30 +33,29 @@ def main(
         log.exception("Uncaught exception")
 
 
+@log_decorator(logger=log, level=logging.INFO)
 async def perdiodicaly_check_if_aborted(is_aborted_cb: Callable[[], bool]) -> None:
-    log.info("Starting periodic check of task abortion...")
-    while await asyncio.sleep(SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S, result=True):
-        if is_aborted_cb():
-            log.info("Task was aborted. Cancelling...")
-            asyncio.get_event_loop().call_soon(cancel_task(run_sidecar))
+    try:
+        while await asyncio.sleep(
+            SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S, result=True
+        ):
+            if is_aborted_cb():
+                log.info("Task was aborted. Cancelling...")
+                asyncio.get_event_loop().call_soon(cancel_task(run_sidecar))
+    except asyncio.CancelledError:
+        pass
 
 
+@log_decorator(logger=log, level=logging.INFO)
 async def run_sidecar(
     job_id: str,
     user_id: str,
     project_id: str,
     node_id: Optional[str] = None,
     is_aborted_cb: Optional[Callable[[], bool]] = None,
+    retry: int = 1,
+    max_retries: int = 1,
 ) -> Optional[List[str]]:
-
-    log.info(
-        "STARTING task %s processing for user %s, project %s, node %s",
-        job_id,
-        user_id,
-        project_id,
-        node_id,
-    )
-
     abortion_task = (
         asyncio.get_event_loop().create_task(
             perdiodicaly_check_if_aborted(is_aborted_cb)
@@ -64,20 +64,18 @@ async def run_sidecar(
         else None
     )
     try:
-        async with DBContextManager() as db_engine:
-            async with RabbitMQ() as rabbit_mq:
-                next_task_nodes: Optional[List[str]] = await inspect(
-                    db_engine, rabbit_mq, job_id, user_id, project_id, node_id=node_id
-                )
-                log.info(
-                    "COMPLETED task %s processing for user %s, project %s, node %s",
-                    job_id,
-                    user_id,
-                    project_id,
-                    node_id,
-                )
-                return next_task_nodes
-    except asyncio.CancelledError:
+        async with DBContextManager() as db_engine, RabbitMQ() as rabbit_mq:
+            next_task_nodes: Optional[List[str]] = await inspect(
+                db_engine,
+                rabbit_mq,
+                job_id,
+                user_id,
+                project_id,
+                node_id=node_id,
+                retry=retry,
+                max_retries=max_retries,
+            )
+            return next_task_nodes
+    finally:
         if abortion_task:
             abortion_task.cancel()
-        raise

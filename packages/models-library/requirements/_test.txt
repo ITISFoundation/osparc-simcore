@@ -4,32 +4,28 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.2            # via pytest-aiohttp
+aiohttp==3.7.3            # via pytest-aiohttp
 astroid==2.4.2            # via pylint
 async-timeout==3.0.1      # via aiohttp
 attrs==20.3.0             # via aiohttp, pytest
-certifi==2020.11.8        # via requests
+certifi==2020.12.5        # via requests
 chardet==3.0.4            # via aiohttp, requests
 coverage==5.3             # via -r requirements/_test.in, coveralls, pytest-cov
-coveralls==2.1.2          # via -r requirements/_test.in
-dataclasses==0.7          # via -r requirements/_base.txt, pydantic
-dnspython==2.0.0          # via -r requirements/_base.txt, email-validator
+coveralls==2.2.0          # via -r requirements/_test.in
 docopt==0.6.2             # via coveralls
-email-validator==1.1.2    # via -r requirements/_base.txt, pydantic
 icdiff==1.9.1             # via pytest-icdiff
 idna-ssl==1.1.0           # via aiohttp
-idna==2.10                # via -r requirements/_base.txt, email-validator, idna-ssl, requests, yarl
-importlib-metadata==2.0.0  # via pluggy, pytest
+idna==2.10                # via -c requirements/_base.txt, idna-ssl, requests, yarl
+importlib-metadata==3.1.1  # via pluggy, pytest
 iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
-multidict==5.0.0          # via aiohttp, yarl
-packaging==20.4           # via pytest, pytest-sugar
+multidict==5.1.0          # via aiohttp, yarl
+packaging==20.7           # via pytest, pytest-sugar
 pluggy==0.13.1            # via pytest
 pprintpp==0.4.0           # via pytest-icdiff
 py==1.9.0                 # via pytest
-pydantic[email]==1.7.2    # via -r requirements/_base.txt
 pylint==2.6.0             # via -r requirements/_test.in
 pyparsing==2.4.7          # via packaging
 pytest-aiohttp==0.3.0     # via -r requirements/_test.in
@@ -40,13 +36,13 @@ pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar
-requests==2.24.0          # via coveralls
-six==1.15.0               # via astroid, packaging
+requests==2.25.0          # via coveralls
+six==1.15.0               # via astroid
 termcolor==1.1.0          # via pytest-sugar
 toml==0.10.2              # via pylint, pytest
 typed-ast==1.4.1          # via astroid
 typing-extensions==3.7.4.3  # via aiohttp, yarl
-urllib3==1.25.11          # via requests
+urllib3==1.26.2           # via -c requirements/../../../requirements/constraints.txt, requests
 wrapt==1.12.1             # via astroid
-yarl==1.6.2               # via aiohttp
+yarl==1.6.3               # via aiohttp
 zipp==3.4.0               # via importlib-metadata

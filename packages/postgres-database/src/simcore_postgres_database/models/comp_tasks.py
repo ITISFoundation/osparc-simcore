@@ -33,7 +33,10 @@ comp_tasks = sa.Table(
     sa.Column("outputs", sa.JSON),
     sa.Column("image", sa.JSON),
     sa.Column(
-        "state", sa.Enum(StateType), nullable=False, server_default=StateType.NOT_STARTED.value
+        "state",
+        sa.Enum(StateType),
+        nullable=False,
+        server_default=StateType.NOT_STARTED.value,
     ),
     # utc timestamps for submission/start/end
     sa.Column("submit", sa.DateTime),
@@ -55,8 +58,7 @@ DROP TRIGGER IF EXISTS {DB_TRIGGER_NAME} on comp_tasks;
 CREATE TRIGGER {DB_TRIGGER_NAME}
 AFTER UPDATE OF outputs,state ON comp_tasks
     FOR EACH ROW
-    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state)
-        AND NEW.node_class <> 'FRONTEND')
+    WHEN ((OLD.outputs::jsonb IS DISTINCT FROM NEW.outputs::jsonb OR OLD.state IS DISTINCT FROM NEW.state))
     EXECUTE PROCEDURE {DB_PROCEDURE_NAME}();
 """
 )
@@ -69,6 +71,7 @@ CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
     DECLARE
         record RECORD;
         payload JSON;
+        changes JSONB;
     BEGIN
         IF (TG_OP = 'DELETE') THEN
             record = OLD;
@@ -76,7 +79,12 @@ CREATE OR REPLACE FUNCTION {DB_PROCEDURE_NAME}() RETURNS TRIGGER AS $$
             record = NEW;
         END IF;
 
+        SELECT jsonb_agg(pre.key ORDER BY pre.key) INTO changes
+        FROM jsonb_each(to_jsonb(OLD)) AS pre, jsonb_each(to_jsonb(NEW)) AS post
+        WHERE pre.key = post.key AND pre.value IS DISTINCT FROM post.value;
+
         payload = json_build_object('table', TG_TABLE_NAME,
+                                    'changes', changes,
                                     'action', TG_OP,
                                     'data', row_to_json(record));
 

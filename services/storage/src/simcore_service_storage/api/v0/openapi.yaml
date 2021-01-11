@@ -1886,6 +1886,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -1948,6 +1950,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -1973,7 +1977,9 @@ paths:
                                 - nodeUuid1
                                 - nodeUuid2
                             parent:
-                              type: string
+                              type:
+                                - 'null'
+                                - string
                               format: uuid
                               description: Parent's (group-nodes') node ID s.
                               example:
@@ -2313,6 +2319,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -2375,6 +2383,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -2400,7 +2410,9 @@ paths:
                                 - nodeUuid1
                                 - nodeUuid2
                             parent:
-                              type: string
+                              type:
+                                - 'null'
+                                - string
                               format: uuid
                               description: Parent's (group-nodes') node ID s.
                               example:
@@ -2750,6 +2762,8 @@ paths:
                                         type: string
                                       label:
                                         type: string
+                                      eTag:
+                                        type: string
                                   - type: object
                                     additionalProperties: false
                                     required:
@@ -2812,6 +2826,8 @@ paths:
                                         type: string
                                       label:
                                         type: string
+                                      eTag:
+                                        type: string
                                   - type: object
                                     additionalProperties: false
                                     required:
@@ -2837,7 +2853,9 @@ paths:
                               - nodeUuid1
                               - nodeUuid2
                           parent:
-                            type: string
+                            type:
+                              - 'null'
+                              - string
                             format: uuid
                             description: Parent's (group-nodes') node ID s.
                             example:
@@ -3287,6 +3305,8 @@ components:
                               type: string
                             label:
                               type: string
+                            eTag:
+                              type: string
                         - type: object
                           additionalProperties: false
                           required:
@@ -3349,6 +3369,8 @@ components:
                               type: string
                             label:
                               type: string
+                            eTag:
+                              type: string
                         - type: object
                           additionalProperties: false
                           required:
@@ -3374,7 +3396,9 @@ components:
                     - nodeUuid1
                     - nodeUuid2
                 parent:
-                  type: string
+                  type:
+                    - 'null'
+                    - string
                   format: uuid
                   description: Parent's (group-nodes') node ID s.
                   example:

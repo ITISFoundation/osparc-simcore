@@ -13,12 +13,11 @@ import logging
 import sys
 from asyncio import Future
 from pathlib import Path
-from typing import Dict
+from typing import Any, Callable, Dict, Iterable
 
 import pytest
-
-from simcore_service_webserver.resources import resources
 from pytest_simcore.helpers.utils_projects import empty_project_data
+from simcore_service_webserver.resources import resources
 
 ## current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -34,14 +33,14 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
-def here():
+def here() -> Path:
     cdir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
     assert cdir == current_dir, "Somebody changing current_dir?"
     return cdir
 
 
 @pytest.fixture(scope="session")
-def fake_static_dir(fake_data_dir: Path) -> Dict:
+def fake_static_dir(fake_data_dir: Path) -> Path:
     return fake_data_dir / "static"
 
 
@@ -51,7 +50,7 @@ def api_version_prefix() -> str:
 
 
 @pytest.fixture
-def empty_project():
+def empty_project() -> Callable:
     def factory():
         return empty_project_data()
 
@@ -68,13 +67,13 @@ def project_schema_file(api_version_prefix) -> Path:
 
 
 @pytest.fixture
-def activity_data(fake_data_dir: Path) -> Dict:
+def activity_data(fake_data_dir: Path) -> Iterable[Dict[str, Any]]:
     with (fake_data_dir / "test_activity_data.json").open() as fp:
         yield json.load(fp)
 
 
 @pytest.fixture
-def test_tags_data(fake_data_dir: Path) -> Dict:
+def test_tags_data(fake_data_dir: Path) -> Iterable[Dict[str, Any]]:
     with (fake_data_dir / "test_tags_data.json").open() as fp:
         yield json.load(fp).get("added_tags")
 

@@ -166,6 +166,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.nodestree.uuid.read",
           "study.filestree.uuid.read",
           "study.logger.debug.read",
+          "study.slides",
           "statics.read"
         ],
         "admin": []
@@ -221,6 +222,10 @@ qx.Class.define("osparc.data.Permissions", {
         osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
       }
       return canDo;
+    },
+
+    isTester: function() {
+      return this.__userRole === "tester";
     }
   }
 });

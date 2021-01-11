@@ -11,7 +11,7 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: requirements _check_venv_active ## install app in development/production or CI mode
+install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
 	# installing in $(subst install-,,$@) mode
 	pip-sync requirements/$(subst install-,,$@).txt
 
@@ -67,6 +67,7 @@ setup-prod: guard-POSTGRES_DATA_VOLUME install-dev up-prod ## sets up a database
 
 .PHONY: setup-commit
 setup-commit: install-dev up-pg ## sets up a database to create a new commit into migration history
+	sleep 2
 	# discovering
 	sc-pg --help
 	sc-pg discover -u test -p test -d test

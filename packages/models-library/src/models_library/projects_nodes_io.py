@@ -9,14 +9,14 @@ from pydantic import AnyUrl, BaseModel, Extra, Field, constr
 
 from .services import PROPERTY_KEY_RE
 
-
 NodeID = UUID
 
 # Pydantic does not support exporting a jsonschema with Dict keys being something else than a str
 # this is a regex for having uuids of type: 8-4-4-4-12 digits
-NodeID_AsDictKey = constr(
-    regex=r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+UUID_REGEX = (
+    r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
 )
+NodeID_AsDictKey = constr(regex=UUID_REGEX)
 
 
 class PortLink(BaseModel):
@@ -53,11 +53,17 @@ class BaseFileLink(BaseModel):
     )
     path: str = Field(
         ...,
+        regex=r"^.+$",
         description="The path to the file in the storage provider domain",
         example=[
             "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
             "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
         ],
+    )
+    e_tag: Optional[str] = Field(
+        None,
+        description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+        alias="eTag",
     )
 
     class Config:

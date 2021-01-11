@@ -7,9 +7,11 @@
 #
 
 # installs base + tests requirements
+-r _base.txt
 -r _test.txt
 
 # installs this repo's packages
+../../packages/models-library
 ../../packages/pytest-simcore/
 ../../packages/postgres-database/
 

@@ -76,7 +76,7 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
 
 @pytest.fixture
-async def director_v2_subsystem_mock() -> aioresponses:
+async def director_v2_service_mock() -> aioresponses:
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
@@ -103,9 +103,9 @@ async def director_v2_subsystem_mock() -> aioresponses:
 
 @pytest.fixture(autouse=True)
 async def auto_mock_director_v2(
-    director_v2_subsystem_mock: aioresponses,
+    director_v2_service_mock: aioresponses,
 ) -> aioresponses:
-    return director_v2_subsystem_mock
+    return director_v2_service_mock
 
 
 @pytest.fixture

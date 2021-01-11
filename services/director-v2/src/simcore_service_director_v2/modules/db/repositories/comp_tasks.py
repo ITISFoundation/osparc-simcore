@@ -1,10 +1,11 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 import sqlalchemy as sa
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import (
     Author,
@@ -17,6 +18,7 @@ from sqlalchemy.dialects.postgresql import insert
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.domains.projects import ProjectAtDB
 from ....models.schemas.services import NodeRequirement, ServiceExtras
+from ....utils.async_utils import run_sequentially_in_context
 from ....utils.computations import to_node_class
 from ....utils.logging_utils import log_decorator
 from ...director_v0 import DirectorV0Client
@@ -27,30 +29,32 @@ logger = logging.getLogger(__name__)
 
 
 @log_decorator(logger=logger)
-def _get_fake_service_details(service: ServiceKeyVersion) -> ServiceDockerData:
+def _get_fake_service_details(
+    service: ServiceKeyVersion,
+) -> Optional[ServiceDockerData]:
+
     if "file-picker" in service.key:
         file_picker_outputs = {
             "outFile": {
-                "label": "the output",
+                "label": "File",
                 "displayOrder": 0,
-                "description": "a file",
+                "description": "Chosen File",
                 "type": "data:*/*",
             }
         }
-        file_picker_type = ServiceType.FRONTEND
         return ServiceDockerData(
             **service.dict(),
-            name="file-picker",
-            description="file-picks",
+            name="File Picker",
+            description="File Picker",
             authors=[
-                Author(name="ITIS", email="itis@support.com", affiliation="IT'IS")
+                Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
             ],
-            contact="itis@support.com",
+            contact="maiz@itis.swiss",
             inputs={},
             outputs=file_picker_outputs,
-            type=file_picker_type,
+            type=ServiceType.FRONTEND,
         )
-    raise ValueError("")
+    return None
 
 
 class CompTasksRepository(BaseRepository):
@@ -71,19 +75,23 @@ class CompTasksRepository(BaseRepository):
 
         return tasks
 
-    @log_decorator(logger=logger)
-    async def upsert_tasks_from_project(
-        self, project: ProjectAtDB, director_client: DirectorV0Client, publish: bool
+    # pylint: disable=unused-argument
+    @run_sequentially_in_context(target_args=["str_project_uuid"])
+    async def _sequentially_upsert_tasks_from_project(
+        self,
+        project: ProjectAtDB,
+        director_client: DirectorV0Client,
+        published_nodes: List[NodeID],
+        str_project_uuid: str,
     ) -> None:
         # start by removing the old tasks if they exist
         await self.connection.execute(
             sa.delete(comp_tasks).where(comp_tasks.c.project_id == str(project.uuid))
         )
         # create the tasks
-        workbench = project.workbench
-        internal_id = 1
-        for node_id in workbench:
-            node: Node = workbench[node_id]
+
+        for internal_id, node_id in enumerate(project.workbench, 1):
+            node: Node = project.workbench[node_id]
 
             service_key_version = ServiceKeyVersion(
                 key=node.key,
@@ -101,6 +109,9 @@ class CompTasksRepository(BaseRepository):
                 node_extras: ServiceExtras = await director_client.get_service_extras(
                     service_key_version
                 )
+            if not node_details:
+                continue
+
             requires_mpi = False
             requires_gpu = False
             if node_extras:
@@ -113,7 +124,6 @@ class CompTasksRepository(BaseRepository):
                 requires_mpi=requires_mpi,
             )
 
-            comp_state = RunningState.PUBLISHED if publish else RunningState.NOT_STARTED
             task_db = CompTaskAtDB(
                 project_id=project.uuid,
                 node_id=node_id,
@@ -124,19 +134,45 @@ class CompTasksRepository(BaseRepository):
                 outputs=node.outputs,
                 image=image,
                 submit=datetime.utcnow(),
-                state=comp_state
-                if node_class == NodeClass.COMPUTATIONAL
-                else RunningState.NOT_STARTED,
+                state=(
+                    RunningState.PUBLISHED
+                    if node_id in published_nodes
+                    and node_class == NodeClass.COMPUTATIONAL
+                    else RunningState.NOT_STARTED
+                ),
                 internal_id=internal_id,
                 node_class=node_class,
             )
-            internal_id = internal_id + 1
 
             await self.connection.execute(
                 insert(comp_tasks).values(
                     **task_db.dict(by_alias=True, exclude_unset=True)
                 )
             )
+
+    @log_decorator(logger=logger)
+    async def upsert_tasks_from_project(
+        self,
+        project: ProjectAtDB,
+        director_client: DirectorV0Client,
+        published_nodes: List[NodeID],
+    ) -> None:
+
+        # only used by the decorator on the "_sequentially_upsert_tasks_from_project"
+        str_project_uuid: str = str(project.uuid)
+
+        # It is guaranteed that in the context of this application  no 2 updates
+        # will run in parallel.
+        #
+        # If we need to scale this service or the same comp_task entry is used in
+        # a different service an implementation of "therun_sequentially_in_context"
+        # based on redis queues needs to be put in place.
+        await self._sequentially_upsert_tasks_from_project(
+            project=project,
+            director_client=director_client,
+            published_nodes=published_nodes,
+            str_project_uuid=str_project_uuid,
+        )
 
     @log_decorator(logger=logger)
     async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:

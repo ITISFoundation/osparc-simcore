@@ -372,8 +372,15 @@ async def remove_guest_user_with_all_its_resources(
         logger.debug("User is not GUEST, skipping cleanup")
         return
 
-    await remove_all_projects_for_user(app=app, user_id=user_id)
-    await remove_user(app=app, user_id=user_id)
+    try:
+        await remove_all_projects_for_user(app=app, user_id=user_id)
+        await remove_user(app=app, user_id=user_id)
+    except Exception as e:  # pylint: disable=broad-except
+        logger.warning("%s", e)
+        logger.warning(
+            "Could not remove GUEST with id=%s. Check the logs above for details",
+            user_id,
+        )
 
 
 async def remove_all_projects_for_user(app: web.Application, user_id: int) -> None:

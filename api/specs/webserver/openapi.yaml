@@ -119,6 +119,13 @@ paths:
   /groups/{gid}/classifiers:
     $ref: "./openapi-groups.yaml#/paths/~1groups~1{gid}~1classifiers"
 
+  /groups/sparc/classifiers/scicrunch-resources/{rrid}:
+    $ref: "./openapi-groups.yaml#/paths/~1groups~1sparc~1classifiers~1scicrunch-resources~1{rrid}"
+
+  /groups/sparc/classifiers/scicrunch-resources:search:
+    $ref: "./openapi-groups.yaml#/paths/~1groups~1sparc~1classifiers~1scicrunch-resources:search"
+
+
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:

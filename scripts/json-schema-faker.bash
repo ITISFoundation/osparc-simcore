@@ -33,7 +33,7 @@ FROM node:12.18.2
 COPY ./generate.js /app/generate.js
 WORKDIR /app
 RUN npm install \
-  json-schema-faker@0.5.0-rcv.29 \
+  json-schema-faker@0.5.0-rcv.30 \
   jsonfile@6.1.0 && \
   npm list --depth=0
 

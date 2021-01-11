@@ -129,11 +129,11 @@ qx.Class.define("osparc.desktop.ControlsBar", {
 
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
-        this.__updateRunButtons(study);
+        this.__updateRunButtonsStatus(study);
       });
     },
 
-    __updateRunButtons: function(study) {
+    __updateRunButtonsStatus: function(study) {
       if (study) {
         const startButton = this.__startButton;
         const stopButton = this.__stopButton;
@@ -224,14 +224,21 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       return button;
     },
 
-    __updateGroupButtonsVisibility: function(msg) {
+    __workbenchSelectionChanged: function(msg) {
       const selectedNodes = msg.getData();
       this.__groupButton.setVisibility(selectedNodes.length ? "visible" : "excluded");
       this.__ungroupButton.setVisibility((selectedNodes.length === 1 && selectedNodes[0].isContainer()) ? "visible" : "excluded");
+      if (!this.__startButton.isFetching()) {
+        if (selectedNodes.length) {
+          this.__startButton.setLabel(this.tr("Run selection"));
+        } else {
+          this.__startButton.setLabel(this.tr("Run"));
+        }
+      }
     },
 
     __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__updateGroupButtonsVisibility, this);
+      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__workbenchSelectionChanged, this);
     }
   }
 });

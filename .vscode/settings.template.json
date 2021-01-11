@@ -10,7 +10,8 @@
     "Dockerfile*": "dockerfile",
     "**/requirements/*.txt": "pip-requirements",
     "**/requirements/*.in": "pip-requirements",
-    "*Makefile": "makefile"
+    "*Makefile": "makefile",
+    "*.cwl": "yaml"
   },
   "files.eol": "\n",
   "files.exclude": {
@@ -27,15 +28,18 @@
     "./packages/postgres-database/src",
     "./packages/pytest-simcore/src",
     "./packages/s3wrapper/src",
+    "./packages/service-integration/src",
     "./packages/service-library/src",
     "./packages/simcore-sdk/src",
     "./services/api-server/src",
+    "./services/api-server/tests/unit",
     "./services/catalog/src",
     "./services/director/src",
     "./services/director-v2/src",
     "./services/sidecar/src",
     "./services/storage/src",
-    "./services/web/server/src"
+    "./services/web/server/src",
+    "./services/web/server/tests/unit/with_dbs/slow"
   ],
   "python.linting.pylintEnabled": true,
   "python.linting.enabled": true,
@@ -46,14 +50,14 @@
   "[makefile]": {
     "editor.insertSpaces": false
   },
-  "python.testing.pyTestEnabled": true,
+  "python.testing.pytestEnabled": true,
   "autoDocstring.docstringFormat": "sphinx",
   "hadolint.hadolintPath": "${workspaceFolder}/scripts/hadolint.bash",
   "shellcheck.executablePath": "${workspaceFolder}/scripts/shellcheck.bash",
   "shellcheck.run": "onSave",
   "shellcheck.enableQuickFix": true,
   "python.formatting.provider": "black",
-  "python.sortImports.path": "${VIRTUAL_ENV}/bin/isort",
+  "python.sortImports.path": "${workspaceFolder}/.venv/bin/isort",
   "python.sortImports.args": [
     "--settings-path=${workspaceFolder}/.isort.cfg"
   ]

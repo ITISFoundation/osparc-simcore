@@ -6,11 +6,8 @@ import logging
 
 from aiohttp import web
 from celery import Celery
-
 from models_library.projects_state import RunningState
-from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.models.comp_pipeline import StateType
-
 
 from .computation_config import ComputationSettings
 from .computation_config import get_settings as get_computation_settings
@@ -44,6 +41,5 @@ DB_TO_RUNNING_STATE = {
 }
 
 
-@log_decorator(logger=log)
 def convert_state_from_db(db_state: StateType) -> RunningState:
     return RunningState(DB_TO_RUNNING_STATE[StateType(db_state)])

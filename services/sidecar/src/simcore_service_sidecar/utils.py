@@ -1,13 +1,14 @@
 import asyncio
 import logging
 import uuid
-from typing import Awaitable, List
+from typing import Awaitable, List, Optional
 
 import aiodocker
 import networkx as nx
 from aiodocker.volumes import DockerVolume
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.sidecar_models import StateType, comp_tasks
 from sqlalchemy import and_
 
@@ -24,17 +25,17 @@ def wrap_async_call(fct: Awaitable):
 
 def find_entry_point(g: nx.DiGraph) -> List:
     result = []
-    for node in g.nodes:
+    for node in g.nodes():
         if len(list(g.predecessors(node))) == 0:
             result.append(node)
     return result
 
 
+@log_decorator(logger=logger)
 async def is_node_ready(
     task: RowProxy,
     graph: nx.DiGraph,
     db_connection: SAConnection,
-    _logger: logging.Logger,
 ) -> bool:
     query = comp_tasks.select().where(
         and_(
@@ -45,12 +46,12 @@ async def is_node_ready(
     result = await db_connection.execute(query)
     tasks = await result.fetchall()
 
-    _logger.debug("TASK %s ready? Checking ..", task.internal_id)
+    logger.debug("TASK %s ready? Checking ..", task.internal_id)
     for dep_task in tasks:
         job_id = dep_task.job_id
         if not job_id:
             return False
-        _logger.debug(
+        logger.debug(
             "TASK %s DEPENDS ON %s with stat %s",
             task.internal_id,
             dep_task.internal_id,
@@ -58,27 +59,19 @@ async def is_node_ready(
         )
         if not dep_task.state == StateType.SUCCESS:
             return False
-    _logger.debug("TASK %s is ready", task.internal_id)
     return True
 
 
-def execution_graph(pipeline: RowProxy) -> nx.DiGraph:
+def execution_graph(pipeline: RowProxy) -> Optional[nx.DiGraph]:
     d = pipeline.dag_adjacency_list
-    G = nx.DiGraph()
-
-    for node in d.keys():
-        nodes = d[node]
-        if len(nodes) == 0:
-            G.add_node(node)
-            continue
-        G.add_edges_from([(node, n) for n in nodes])
-    return G
+    return nx.from_dict_of_lists(d, create_using=nx.DiGraph)
 
 
 def is_gpu_node() -> bool:
     """Returns True if this node has support to GPU,
     meaning that the `VRAM` label was added to it."""
 
+    @log_decorator(logger=logger, level=logging.INFO)
     async def async_is_gpu_node() -> bool:
         async with aiodocker.Docker() as docker:
             spec_config = {
@@ -109,7 +102,6 @@ def is_gpu_node() -> bool:
             return False
 
     has_gpu = wrap_async_call(async_is_gpu_node())
-    logger.info("Node gpus support result %s", has_gpu)
     return has_gpu
 
 
@@ -133,6 +125,7 @@ def start_as_mpi_node() -> bool:
     return is_mpi_node
 
 
+@log_decorator(logger=logger)
 async def get_volume_mount_point(volume_name: str) -> str:
     try:
         async with aiodocker.Docker() as docker_client:

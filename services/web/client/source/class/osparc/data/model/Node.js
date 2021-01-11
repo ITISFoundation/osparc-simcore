@@ -33,7 +33,6 @@
  *   let node = new osparc.data.model.Node(key, version, uuid);
  *   node.populateNodeData(nodeData);
  *   node.giveUniqueName();
- *   node.addDynamicButtons();
  *   node.startDynamicService();
  * </pre>
  */
@@ -158,11 +157,6 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
-    retrieveIFrameButton: {
-      check: "qx.ui.form.Button",
-      init: null
-    },
-
     status: {
       check: "osparc.data.model.NodeStatus",
       nullable: false
@@ -278,16 +272,6 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__outputs;
     },
 
-    getOutputValues: function() {
-      let output = {};
-      for (const outputId in this.__outputs) {
-        if (this.__outputs[outputId].value) {
-          output[outputId] = this.__outputs[outputId].value;
-        }
-      }
-      return output;
-    },
-
     hasChildren: function() {
       const innerNodes = this.getInnerNodes();
       if (innerNodes) {
@@ -344,7 +328,11 @@ qx.Class.define("osparc.data.model.Node", {
 
         this.populateInputOutputData(nodeData);
 
-        if (nodeData.progress) {
+        if (nodeData.state) {
+          this.getStatus().setRunningStatus(nodeData.state);
+        }
+
+        if ("progress" in nodeData) {
           this.getStatus().setProgress(nodeData.progress);
         }
 
@@ -368,8 +356,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     populateNodeUIData: function(nodeUIData) {
       if ("position" in nodeUIData) {
-        const pos = nodeUIData.position;
-        this.setPosition(pos.x, pos.y);
+        this.setPosition(nodeUIData.position);
       }
     },
 
@@ -400,8 +387,6 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     startInBackend: function() {
-      this.addDynamicButtons();
-
       // create the node in the backend here
       const key = this.getKey();
       const version = this.getVersion();
@@ -501,7 +486,7 @@ qx.Class.define("osparc.data.model.Node", {
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
         const portId = linkFieldModified.portId;
-        this.__retrieveInputs(portId);
+        this.callRetrieveInputs(portId);
       }, this);
     },
 
@@ -606,15 +591,24 @@ qx.Class.define("osparc.data.model.Node", {
         this.getPropsForm().setAccessLevel(inputAccess);
         this.getPropsFormEditor().setAccessLevel(inputAccess);
       }
+
+      const study = osparc.store.Store.getInstance().getCurrentStudy();
+      if (study && study.isReadOnly() && this.getPropsForm()) {
+        this.getPropsForm().setEnabled(false);
+      }
     },
 
     setOutputData: function(outputs) {
       if (outputs) {
-        for (const outputKey in outputs) {
+        for (const outputKey in this.__outputs) {
           if (!Object.prototype.hasOwnProperty.call(this.__outputs, outputKey)) {
             this.__outputs[outputKey] = {};
           }
-          this.__outputs[outputKey]["value"] = outputs[outputKey];
+          if (Object.prototype.hasOwnProperty.call(outputs, outputKey)) {
+            this.__outputs[outputKey]["value"] = outputs[outputKey];
+          } else {
+            this.__outputs[outputKey]["value"] = "";
+          }
           this.fireDataEvent("outputChanged", outputKey);
         }
       }
@@ -634,7 +628,7 @@ qx.Class.define("osparc.data.model.Node", {
             this.__createAutoPortConnection(inputNode, innerNode);
           }
         }
-        this.__retrieveInputs();
+        this.callRetrieveInputs();
       }
     },
 
@@ -816,7 +810,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    __retrieveInputs: function(portKey) {
+    callRetrieveInputs: function(portKey) {
       if (this.isContainer()) {
         const innerNodes = Object.values(this.getInnerNodes());
         for (let i=0; i<innerNodes.length; i++) {
@@ -892,29 +886,6 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
       }
-    },
-
-    addDynamicButtons: function() {
-      if (this.isDynamic() && this.isRealService()) {
-        this.__addRetrieveButton();
-      }
-      if (this.isContainer()) {
-        const innerNodes = Object.values(this.getInnerNodes());
-        if (innerNodes.some(innerNode => innerNode.isDynamic())) {
-          this.__addRetrieveButton();
-          this.getRetrieveIFrameButton().setEnabled(true);
-        }
-      }
-    },
-
-    __addRetrieveButton: function() {
-      const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
-      osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
-      retrieveBtn.addListener("execute", e => {
-        this.__retrieveInputs();
-      }, this);
-      retrieveBtn.setEnabled(false);
-      this.setRetrieveIFrameButton(retrieveBtn);
     },
 
     startDynamicService: function() {
@@ -1068,7 +1039,6 @@ qx.Class.define("osparc.data.model.Node", {
       };
       this.fireDataEvent("showInLogger", msgData);
 
-      this.getRetrieveIFrameButton().setEnabled(true);
       this.getStatus().setProgress(100);
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
@@ -1079,7 +1049,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.__restartIFrame();
       }, this, waitFor);
 
-      this.__retrieveInputs();
+      this.callRetrieveInputs();
     },
 
     __removeInnerNodes: function() {
@@ -1113,7 +1083,11 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setPosition: function(x, y) {
+    setPosition: function(pos) {
+      const {
+        x,
+        y
+      } = pos;
       // keep positions positive
       this.__posX = parseInt(x) < 0 ? 0 : parseInt(x);
       this.__posY = parseInt(y) < 0 ? 0 : parseInt(y);
@@ -1144,7 +1118,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       if (this.isFilePicker()) {
-        nodeEntry.outputs = this.getOutputValues();
+        nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       }
       // remove null entries from the payload

@@ -6,12 +6,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
+from servicelib.application_keys import APP_DB_ENGINE_KEY
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
 
-from servicelib.application_keys import APP_DB_ENGINE_KEY
-
-from .db_models import GroupType, group_classifiers, groups, user_to_groups, users
+from .db_models import GroupType, groups, user_to_groups, users
 from .groups_exceptions import (
     GroupNotFoundError,
     GroupsException,
@@ -154,6 +153,7 @@ async def update_user_group(
 
 async def delete_user_group(app: web.Application, user_id: int, gid: int) -> None:
     engine = app[APP_DB_ENGINE_KEY]
+
     async with engine.acquire() as conn:
         group = await _get_user_group(conn, user_id, gid)
         check_group_permissions(group, user_id, gid, "delete")
@@ -187,6 +187,7 @@ async def list_users_in_group(
 
 async def auto_add_user_to_groups(app: web.Application, user_id: int) -> None:
     user: Dict = await get_user(app, user_id)
+
     # auto add user to the groups with the right rules
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
@@ -223,7 +224,7 @@ async def add_user_in_group(
     access_rights: Optional[Dict[str, bool]] = None,
 ) -> None:
     """
-        adds new_user (either by id or email) in group (with gid) owned by user_id
+    adds new_user (either by id or email) in group (with gid) owned by user_id
     """
     if not new_user_id and not new_user_email:
         # TODO: I would return ValueError here since is a problem with the arguments
@@ -297,6 +298,7 @@ async def update_user_in_group(
     new_values_for_user_in_group: Dict,
 ) -> Dict[str, str]:
     engine = app[APP_DB_ENGINE_KEY]
+
     async with engine.acquire() as conn:
         # first check if the group exists
         group: RowProxy = await _get_user_group(conn, user_id, gid)
@@ -346,21 +348,9 @@ async def delete_user_in_group(
         )
 
 
-async def get_group_classifier(app: web.Application, gid: int) -> Dict:
-    engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        bundle = await conn.scalar(
-            sa.select([group_classifiers.c.bundle]).where(
-                group_classifiers.c.gid == gid
-            )
-        )
-        return bundle or {}
-
-
 async def get_group_from_gid(app: web.Application, gid: int) -> Dict:
     engine = app[APP_DB_ENGINE_KEY]
+
     async with engine.acquire() as conn:
-        group = await conn.execute(
-            sa.select([groups]).where(groups.c.gid == gid)
-        )
+        group = await conn.execute(sa.select([groups]).where(groups.c.gid == gid))
         return await group.fetchone()

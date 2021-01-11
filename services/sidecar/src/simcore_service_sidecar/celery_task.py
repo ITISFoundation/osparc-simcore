@@ -1,16 +1,16 @@
+import logging
 from asyncio import CancelledError
 from pprint import pformat
 from typing import Optional
 
 from celery import Celery, states
 
-from .celery_log_setup import get_task_logger
 from .cli import run_sidecar
 from .config import CPU_QUEUE_NAME, GPU_QUEUE_NAME, MPI_QUEUE_NAME
 from .core import task_required_resources
 from .utils import wrap_async_call
 
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 def entrypoint(
@@ -25,10 +25,12 @@ def _shared_task_dispatch(
     celery_request, app: Celery, user_id: str, project_id: str, node_id: Optional[str]
 ) -> None:
     log.info(
-        "Run sidecar for user %s, project %s, node %s",
+        "Run sidecar for user %s, project %s, node %s retry [%s/%s]",
         user_id,
         project_id,
         node_id,
+        celery_request.request.retries,
+        celery_request.max_retries,
     )
     try:
         next_task_nodes = wrap_async_call(
@@ -38,6 +40,8 @@ def _shared_task_dispatch(
                 project_id,
                 node_id,
                 celery_request.is_aborted,
+                retry=celery_request.request.retries,
+                max_retries=celery_request.max_retries,
             )
         )
     except CancelledError:
