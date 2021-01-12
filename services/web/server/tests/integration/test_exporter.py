@@ -1,18 +1,20 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
+import cgi
 import logging
 import sys
-import re
+import tempfile
+from contextlib import contextmanager
 from copy import deepcopy
-from typing import Dict, List
 from pathlib import Path
+from typing import Dict, List
 
+import aiofiles
+import aiohttp
 import aiopg
 import aioredis
 import pytest
-from aioresponses import aioresponses
-from yarl import URL
-from models_library.projects_state import RunningState
 from models_library.settings.redis import RedisConfig
+from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
@@ -27,6 +29,7 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
+from yarl import URL
 
 log = logging.getLogger(__name__)
 
@@ -46,6 +49,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
+# store only lowercase "v1", "v2", etc...
 SUPPORTED_EXPORTER_VERSIONS = {"v1"}
 
 
@@ -74,36 +78,33 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
 
 @pytest.fixture
-async def director_v2_service_mock() -> aioresponses:
-    """uses aioresponses to mock all calls of an aiohttpclient
-    WARNING: any request done through the client will go through aioresponses. It is
-    unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
-    Other than that it seems to behave nicely
-    """
-    PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
-    get_computation_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$"
-    )
-    delete_computation_pattern = get_computation_pattern
-    # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
-    # I think this is due to some conflict between these non-pytest-simcore fixtures and the loop fixture being defined at different locations?? not sure..
-    # anyway I think this should disappear once the garbage collector moves to its own micro-service
-    with aioresponses(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        mock.get(
-            get_computation_pattern,
-            status=202,
-            payload={"state": str(RunningState.NOT_STARTED.value)},
-            repeat=True,
-        )
-        mock.delete(delete_computation_pattern, status=204, repeat=True)
-        yield mock
+async def monkey_patch_aiohttp_request_url() -> None:
+    old_request = aiohttp.ClientSession._request
 
+    async def new_request(*args, **kwargs):
+        assert len(args) == 3
 
-@pytest.fixture(autouse=True)
-async def auto_mock_director_v2(
-    director_v2_service_mock: aioresponses,
-) -> aioresponses:
-    return director_v2_service_mock
+        url = args[2]
+        if isinstance(url, str):
+            url = URL(url)
+
+        if url.host == "director-v2":
+            from pytest_simcore.helpers.utils_docker import get_service_published_port
+
+            log.debug("MOCKING _request [before] url=%s", url)
+            new_port = int(get_service_published_port("director-v2", 8000))
+            url = url.with_host("172.17.0.1").with_port(new_port)
+            log.debug("MOCKING _request [after] url=%s kwargs=%s", url, str(kwargs))
+
+            args = args[0], args[1], url
+
+        return await old_request(*args, **kwargs)
+
+    aiohttp.ClientSession._request = new_request
+
+    yield
+
+    aiohttp.ClientSession._request = old_request
 
 
 @pytest.fixture
@@ -187,38 +188,99 @@ async def mock_asyncio_subporcess(mocker):
     mocker.patch("asyncio.create_subprocess_exec", side_effect=create_subprocess_exec)
 
 
+@pytest.fixture(scope="session")
+def push_services_to_registry(
+    docker_registry: str, node_meta_schema: Dict
+) -> Dict[str, str]:
+    """Adds a itisfoundation/sleeper in docker registry"""
+    return _pull_push_service(
+        "itisfoundation/sleeper", "2.0.2", docker_registry, node_meta_schema
+    )
+
+
+@contextmanager
+def assemble_tmp_file_path(file_name: str) -> Path:
+    # pylint: disable=protected-access
+    # let us all thank codeclimate for this beautiful piece of code
+    tmp_store_dir = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
+    tmp_store_dir.mkdir(parents=True, exist_ok=True)
+    file_path = tmp_store_dir / file_name
+
+    try:
+        yield file_path
+    finally:
+        file_path.unlink()
+        tmp_store_dir.rmdir()
+
+
 ################ end utils
+
+
+async def import_study_from_file(client, file_path: Path) -> str:
+    url_import = client.app.router["import_project"].url_for()
+    assert url_import == URL(API_PREFIX + "/projects/import")
+
+    data = {"fileName": open(file_path, mode="rb")}
+    async with await client.post(url_import, data=data, timeout=10) as import_response:
+        assert import_response.status == 200, await import_response.text()
+        reply_data = await import_response.json()
+
+    imported_project_uuid = reply_data["uuid"]
+    return imported_project_uuid
 
 
 @pytest.mark.parametrize("export_version", get_exported_projects())
 async def test_import_export_import(
     client,
+    push_services_to_registry,
     socketio_client,
     db_engine,
     redis_client,
     export_version,
     mock_asyncio_subporcess,
     simcore_services,
+    monkey_patch_aiohttp_request_url,
 ):
     """Check that the full import -> export -> import cycle produces the same result in the DB"""
 
     logged_user = await login_user(client)
     export_file_name = export_version.name
     version_from_name = export_file_name.split("#")[0]
-    assert version_from_name in SUPPORTED_EXPORTER_VERSIONS
 
-    url_import = client.app.router["import_project"].url_for()
+    assert_error = (
+        f"The '{version_from_name}' version' is not present in the supported versions: "
+        f"{SUPPORTED_EXPORTER_VERSIONS}. If it's a new version please remember to add it."
+    )
+    assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
 
-    assert url_import == URL(API_PREFIX + "/projects/import")
+    imported_project_uuid = await import_study_from_file(client, export_version)
 
-    data = {"fileName": open(export_version, "rb")}
+    # export newly imported project
+    url_export = client.app.router["export_project"].url_for(
+        project_id=imported_project_uuid
+    )
+    assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}/export")
+    async with await client.get(url_export, timeout=10) as export_response:
+        assert export_response.status == 200, await export_response.text()
 
-    async with await client.post(url_import, data=data, timeout=10) as import_response:
-        assert import_response.status == 200, await import_response.text()
-        reply_data = await import_response.json()
+        content_disposition_header = export_response.headers["Content-Disposition"]
+        file_to_download_name = cgi.parse_header(content_disposition_header)[1][
+            "filename"
+        ]
+        assert file_to_download_name.endswith(".osparc")
 
-    imported_project_uuid = reply_data["uuid"]
-    # TODO: fetch project and add it
+        with assemble_tmp_file_path(file_to_download_name) as downloaded_file_path:
+            async with aiofiles.open(downloaded_file_path, mode="wb") as f:
+                await f.write(await export_response.read())
+                log.info("output_path %s", downloaded_file_path)
 
-    # TODO: this test is not finished and needs to be continued
+            reimported_project_uuid = await import_study_from_file(
+                client, downloaded_file_path
+            )
+
+    # TODO: download again
+
+    # TODO: save to a file and import it back once again when done!
     assert False
+
+    # TODO: also remember to provide uncompressed versions of the project
