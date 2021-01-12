@@ -29,6 +29,13 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    getEditButton: function() {
+      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+        allowGrowY: false
+      });
+      return button;
+    },
+
     /**
       * @param value {Date Object} Date Object
       */

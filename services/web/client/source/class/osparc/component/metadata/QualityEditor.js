@@ -381,9 +381,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           column: 2
         });
 
-        const button = new qx.ui.form.Button(this.tr("Edit References")).set({
-          allowGrowY: false
-        });
+        const button = osparc.utils.Utils.getEditButton();
         button.addListener("execute", () => {
           const title = this.tr("Edit References");
           const subtitle = this.tr("Supports Markdown");
@@ -477,9 +475,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         });
 
         if (isEditMode) {
-          const button = new qx.ui.form.Button(this.tr("Edit Annotations")).set({
-            allowGrowY: false
-          });
+          const button = osparc.utils.Utils.getEditButton();
           button.addListener("execute", () => {
             const title = this.tr("Edit Annotations");
             const subtitle = this.tr("Supports Markdown");
