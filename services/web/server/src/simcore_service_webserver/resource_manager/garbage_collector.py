@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import asyncpg.exceptions
 import psycopg2
 from aiohttp import web
-from aiopg.sa.result import RowProxy
+from aiopg.sa.results import RowProxy
 from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 
@@ -448,7 +448,6 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
             user_id,
         )
         return
-
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
