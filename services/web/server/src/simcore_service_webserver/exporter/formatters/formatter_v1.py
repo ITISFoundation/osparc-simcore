@@ -1,34 +1,30 @@
 import logging
-
-from itertools import chain
+import traceback
 from collections import deque
-from typing import Deque
+from itertools import chain
 from pathlib import Path
-from aiohttp import web, ClientSession, ClientTimeout
+from typing import Deque
 
 import aiofiles
-from .base_formatter import BaseFormatter
-from .models import ManifestFile, ProjectFile, ShuffledData
-
-from ..file_downloader import ParallelDownloader
-from ..utils import path_getsize
-
+from aiohttp import ClientSession, ClientTimeout, web
+from models_library.projects import AccessRights, Project
 from simcore_service_webserver.projects.projects_api import (
-    get_project_for_user,
     delete_project,
+    get_project_for_user,
 )
 from simcore_service_webserver.storage_handlers import (
     get_file_download_url,
-    get_project_files_metadata,
     get_file_upload_url,
+    get_project_files_metadata,
 )
-
-from .models import LinkAndPath2
-
-from simcore_service_webserver.studies_dispatcher._users import UserInfo
 from simcore_service_webserver.studies_dispatcher._projects import add_new_project
-from models_library.projects import AccessRights, Project
+from simcore_service_webserver.studies_dispatcher._users import UserInfo
 from simcore_service_webserver.utils import now_str
+
+from ..file_downloader import ParallelDownloader
+from ..utils import path_getsize
+from .base_formatter import BaseFormatter
+from .models import LinkAndPath2, ManifestFile, ProjectFile, ShuffledData
 
 UPLOAD_HTTP_TIMEOUT = 60 * 60  # 1 hour
 
@@ -242,6 +238,9 @@ async def import_files_and_validate_project(
     try:
         await add_new_project(app, project, user)
     except Exception as e:
+        log.warning(
+            "The below error occurred during import\n%s", traceback.format_exc()
+        )
         log.warning(
             "Removing project %s, because there was an error while importing it."
         )
