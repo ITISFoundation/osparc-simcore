@@ -97,7 +97,7 @@ def docker_compose_file(default_app_cfg):
 
 
 @pytest.fixture(scope="function")
-def app_cfg(default_app_cfg, aiohttp_unused_port):
+def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict:
     """Can be overriden in any test module to configure
     the app accordingly
     """
@@ -164,7 +164,7 @@ def client(
 
 
 @pytest.fixture
-def disable_static_webserver(monkeypatch) -> None:
+def disable_static_webserver(monkeypatch) -> Callable:
     """
     Disables the static-webserver module.
     Avoids fecthing and caching index.html pages
@@ -338,10 +338,12 @@ def postgres_service(docker_services, postgres_dsn):
 def postgres_db(
     postgres_dsn: Dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:
+    # Overrides packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db to reduce scope
     url = postgres_service
 
     # Configures db and initializes tables
-    pg_cli.discover.callback(**postgres_dsn)
+    kwargs = postgres_dsn.copy()
+    pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
