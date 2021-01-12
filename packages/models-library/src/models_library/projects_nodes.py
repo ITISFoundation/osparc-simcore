@@ -9,12 +9,11 @@ from pydantic import (
     Extra,
     Field,
     HttpUrl,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
     constr,
     validator,
-    StrictBool,
-    StrictInt,
-    StrictFloat,
-    StrictStr,
 )
 
 from .basic_regex import VERSION_RE
@@ -34,7 +33,7 @@ InputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
-    StrictStr,
+    str,
     PortLink,
     SimCoreFileLink,
     DatCoreFileLink,
@@ -44,7 +43,7 @@ OutputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
-    StrictStr,
+    str,
     SimCoreFileLink,
     DatCoreFileLink,
     DownloadLink,
