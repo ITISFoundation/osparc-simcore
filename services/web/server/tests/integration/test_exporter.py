@@ -1,12 +1,13 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
 import cgi
+import json
 import logging
 import sys
 import tempfile
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Set
 
 import aiofiles
 import aiohttp
@@ -18,6 +19,7 @@ from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.application import create_safe_application
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
@@ -49,8 +51,10 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
-# store only lowercase "v1", "v2", etc...
-SUPPORTED_EXPORTER_VERSIONS = {"v1"}
+# store only lowercase "v1", "v2", ... and "v1_compressed", "v2_compressed", ...
+SUPPORTED_EXPORTER_VERSIONS = {"v1", "v1_compressed"}
+
+KEYS_TO_IGNORE_FROM_COMPARISON = {"id", "uuid", "creation_date", "last_change_date"}
 
 
 @pytest.fixture
@@ -213,6 +217,56 @@ def assemble_tmp_file_path(file_name: str) -> Path:
         tmp_store_dir.rmdir()
 
 
+async def query_project_from_db(
+    db_engine: aiopg.sa.Engine, project_uuid: str
+) -> Dict[str, Any]:
+    async with db_engine.acquire() as conn:
+        project_result = await conn.execute(
+            projects.select().where(projects.c.uuid == project_uuid)
+        )
+        project = await project_result.first()
+        assert project is not None
+        return dict(project)
+
+
+def replace_uuids_with_sequences(project: Dict[str, Any]) -> Dict[str, Any]:
+    workbench = project["workbench"]
+    ui = project["ui"]
+
+    # extract keys in correct order based on node names to have an accurate comparison
+    node_uuid_service_label_dict = {key: workbench[key]["label"] for key in workbench}
+    # sort by node label name and store node key
+    sorted_node_uuid_service_label_dict = [
+        k
+        for k, v in sorted(
+            node_uuid_service_label_dict.items(), key=lambda item: item[1]
+        )
+    ]
+    # map node key to a sequential value
+    remapping_dict = {
+        key: f"uuid_seq_{i}"
+        for i, key in enumerate(sorted_node_uuid_service_label_dict + [project["uuid"]])
+    }
+
+    str_workbench = json.dumps(workbench)
+    str_ui = json.dumps(ui)
+    for search_key, replace_key in remapping_dict.items():
+        str_workbench = str_workbench.replace(search_key, replace_key)
+        str_ui = str_ui.replace(search_key, replace_key)
+
+    project["workbench"] = json.loads(str_workbench)
+    project["ui"] = json.loads(str_ui)
+
+    return project
+
+
+def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, Any]:
+    result = deepcopy(dict_data)
+    for key in keys:
+        result.pop(key, None)
+    return result
+
+
 ################ end utils
 
 
@@ -243,7 +297,7 @@ async def test_import_export_import(
 ):
     """Check that the full import -> export -> import cycle produces the same result in the DB"""
 
-    logged_user = await login_user(client)
+    _ = await login_user(client)
     export_file_name = export_version.name
     version_from_name = export_file_name.split("#")[0]
 
@@ -278,9 +332,15 @@ async def test_import_export_import(
                 client, downloaded_file_path
             )
 
-    # TODO: download again
+    imported_project = await query_project_from_db(db_engine, imported_project_uuid)
+    reimported_project = await query_project_from_db(db_engine, reimported_project_uuid)
 
-    # TODO: save to a file and import it back once again when done!
-    assert False
+    # uuids are changed each time the project is imported, need to normalize them
+    normalized_imported_project = replace_uuids_with_sequences(imported_project)
+    normalized_reimported_project = replace_uuids_with_sequences(reimported_project)
 
-    # TODO: also remember to provide uncompressed versions of the project
+    assert dict_without_keys(
+        normalized_imported_project, KEYS_TO_IGNORE_FROM_COMPARISON
+    ) == dict_without_keys(
+        normalized_reimported_project, KEYS_TO_IGNORE_FROM_COMPARISON
+    )
