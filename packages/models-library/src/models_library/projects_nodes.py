@@ -4,7 +4,17 @@
 
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    HttpUrl,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    constr,
+    validator,
+)
 
 from .basic_regex import VERSION_RE
 from .projects_access import AccessEnum
@@ -20,10 +30,23 @@ from .projects_state import RunningState
 from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
 
 InputTypes = Union[
-    int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink, DownloadLink
+    StrictBool,
+    StrictInt,
+    StrictFloat,
+    str,
+    PortLink,
+    SimCoreFileLink,
+    DatCoreFileLink,
+    DownloadLink,
 ]
 OutputTypes = Union[
-    int, bool, str, float, SimCoreFileLink, DatCoreFileLink, DownloadLink
+    StrictBool,
+    StrictInt,
+    StrictFloat,
+    str,
+    SimCoreFileLink,
+    DatCoreFileLink,
+    DownloadLink,
 ]
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
