@@ -1,9 +1,8 @@
 import asyncio
 import logging
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
-import aiohttp
 from passlib import pwd
 
 from .async_hashing import Algorithm, checksum
@@ -58,6 +57,23 @@ def search_for_unzipped_path(search_path: Path) -> Path:
     return search_path / found_dirs[0]
 
 
+async def _wrap_create_subprocess_exec(
+    command_args: List[str], cwd_path: Path, fail_message: str
+) -> None:
+    proc = await asyncio.create_subprocess_exec(
+        *command_args,
+        cwd=str(cwd_path),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+
+    if proc.returncode != 0:
+        log.warning("STDOUT: %s", stdout.decode())
+        log.warning("STDERR: %s", stderr.decode())
+        raise ExporterException(fail_message)
+
+
 async def zip_folder(project_id: str, input_path: Path, no_compression=False) -> Path:
     """Zips a folder and returns the path to the new archive"""
 
@@ -77,18 +93,11 @@ async def zip_folder(project_id: str, input_path: Path, no_compression=False) ->
     if no_compression:
         command_args.remove("-0")
 
-    proc = await asyncio.create_subprocess_exec(
-        *command_args,
-        cwd=str(input_path.parent),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+    await _wrap_create_subprocess_exec(
+        command_args=command_args,
+        cwd_path=input_path.parent,
+        fail_message=f"Could not create archive {str(zip_file)}",
     )
-    stdout, stderr = await proc.communicate()
-
-    if proc.returncode != 0:
-        log.warning("STDOUT: %s", stdout.decode())
-        log.warning("STDERR: %s", stderr.decode())
-        raise ExporterException(f"Could not create archive {str(zip_file)}")
 
     # compute checksum and rename
     sha256_sum = await checksum(file_path=zip_file, algorithm=Algorithm.SHA256)
@@ -105,17 +114,10 @@ async def zip_folder(project_id: str, input_path: Path, no_compression=False) ->
 async def unzip_folder(input_path: Path) -> Path:
     command_args = ["unzip", str(input_path), "-d", str(input_path.parent)]
 
-    proc = await asyncio.create_subprocess_exec(
-        *command_args,
-        cwd=str(input_path.parent),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+    await _wrap_create_subprocess_exec(
+        command_args=command_args,
+        cwd_path=input_path.parent,
+        fail_message=f"Could not decompress {str(input_path)}",
     )
-    stdout, stderr = await proc.communicate()
-
-    if proc.returncode != 0:
-        log.warning("STDOUT: %s", stdout.decode())
-        log.warning("STDERR: %s", stderr.decode())
-        raise ExporterException(f"Could not decompress {str(input_path)}")
 
     return search_for_unzipped_path(input_path.parent)
