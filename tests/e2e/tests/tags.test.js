@@ -50,6 +50,7 @@ describe('tags testing', () => {
         '[qxclass="osparc.desktop.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"] [qxclass="qx.ui.basic.Label"]'
       ).innerText === studyName;
     }, {}, STUDY_NAME);
+    await utils.takeScreenshot(page, 'study_name');
     await waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
   }, ourTimeout * 2);
 
@@ -78,6 +79,7 @@ describe('tags testing', () => {
       );
       return el && el.innerText === tagName;
     }, {}, TAG_NAME);
+    await utils.takeScreenshot(page, 'add_tag');
     // Close properties
     await waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
   }, ourTimeout);
@@ -98,6 +100,7 @@ describe('tags testing', () => {
     // Assign to study
     await waitAndClick(page, '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [osparc-test-id="studyItemMenuButton"]');
     await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
+    await utils.takeScreenshot(page, 'assign_tag');
     await waitAndClick(page, '[osparc-test-id="editStudyBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
