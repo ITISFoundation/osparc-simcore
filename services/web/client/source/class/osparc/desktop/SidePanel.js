@@ -68,6 +68,10 @@ qx.Class.define("osparc.desktop.SidePanel", {
     }
   },
 
+  events: {
+    "panelResized": "qx.event.type.Data"
+  },
+
   members: {
     __savedWidth: null,
     __savedMinWidth: null,
@@ -194,6 +198,10 @@ qx.Class.define("osparc.desktop.SidePanel", {
               this.__setDecorators();
             }
           });
+      }, this);
+
+      this.addListener("resize", e => {
+        this.fireDataEvent("panelResized", e.getData());
       }, this);
     }
   }
