@@ -69,5 +69,11 @@ projects = sa.Table(
         server_default="{}",
     ),
     sa.Column("dev", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
+    sa.Column(
+        "quality",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb")
+    ),
     sa.Column("published", sa.Boolean, nullable=False, default=False),
 )

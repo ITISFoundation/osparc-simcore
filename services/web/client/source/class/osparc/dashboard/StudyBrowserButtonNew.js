@@ -38,8 +38,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
       const title = this.getChildControl("title");
       title.setValue(this.tr("Empty Study"));
 
-      const desc1 = this.getChildControl("description");
-      desc1.setValue(this.tr("Start with a empty study").toString());
+      const desc = this.getChildControl("subtitle-text");
+      desc.setValue(this.tr("Start with a empty study").toString());
 
       this.setIcon("@FontAwesome5Solid/plus/60");
     },
