@@ -11,7 +11,7 @@
     "jest-puppeteer": "^4.4.0",
     "log-timestamp": "^0.3.0",
     "log4js": "^6.3.0",
-    "puppeteer": "^2.0.0"
+    "puppeteer": "^5.5.0"
   },
   "devDependencies": {},
   "scripts": {
