@@ -154,16 +154,12 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
       osparc.utils.Utils.setIdToWidget(thumbnail, "serviceDetailsEditorThumbFld");
       editView.add(thumbnail);
 
-      const saveButton = new qx.ui.toolbar.Button(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
+      const saveButton = new osparc.ui.toolbar.FetchButton(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
         appearance: "toolbar-md-button"
       });
       osparc.utils.Utils.setIdToWidget(saveButton, "serviceDetailsEditorSaveBtn");
       saveButton.addListener("execute", e => {
-        const btn = e.getTarget();
-        btn.setIcon("@FontAwesome5Solid/circle-notch/16");
-        btn.getChildControl("icon").getContentElement()
-          .addClass("rotate");
-        this.__saveService(btn);
+        this.__saveService(saveButton);
       }, this);
       const cancelButton = new qx.ui.toolbar.Button(this.tr("Cancel")).set({
         appearance: "toolbar-md-button",
@@ -189,6 +185,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
         ),
         data: data
       };
+      btn.setFetching(true);
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
           this.fireDataEvent("updateService", serviceData);
@@ -198,9 +195,7 @@ qx.Class.define("osparc.component.metadata.ServiceDetailsEditor", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         })
         .finally(() => {
-          btn.resetIcon();
-          btn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
+          btn.setFetching(false);
         });
     },
 

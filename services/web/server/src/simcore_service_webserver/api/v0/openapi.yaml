@@ -6522,6 +6522,10 @@ paths:
                                   required:
                                     - locked
                                     - state
+                            quality:
+                              type: object
+                              title: Quality
+                              description: Object containing Quality Assessment related data
                         - type: object
                           properties:
                             state:
@@ -7086,6 +7090,10 @@ paths:
                       required:
                         - locked
                         - state
+                quality:
+                  type: object
+                  title: Quality
+                  description: Object containing Quality Assessment related data
       responses:
         '201':
           description: project created
@@ -7530,6 +7538,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:
@@ -8092,6 +8104,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:
@@ -8660,6 +8676,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:
@@ -9219,6 +9239,10 @@ paths:
                       required:
                         - locked
                         - state
+                quality:
+                  type: object
+                  title: Quality
+                  description: Object containing Quality Assessment related data
       responses:
         '200':
           description: got detailed project
@@ -9663,6 +9687,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:
@@ -10247,6 +10275,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:
@@ -12322,6 +12354,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:
@@ -12883,6 +12919,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:

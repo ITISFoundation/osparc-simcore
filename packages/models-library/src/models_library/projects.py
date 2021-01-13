@@ -77,7 +77,7 @@ class Project(BaseModel):
         examples=["some:id:to:a:classifier"],
     )
 
-    # Pipeline of nodes ( SEE projects_nodes.py)
+    # Pipeline of nodes (SEE projects_nodes.py)
     workbench: Workbench = ...
 
     # Project state (SEE projects_state.py)
@@ -85,6 +85,9 @@ class Project(BaseModel):
 
     # UI front-end setup (SEE projects_ui.py)
     ui: Optional[StudyUI] = None
+
+    # Quality
+    quality: Dict[str, Any] = {}
 
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
