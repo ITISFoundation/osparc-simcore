@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.study.Export", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(studyId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(5));
