@@ -91,6 +91,12 @@ class Node(BaseModel):
     input_access: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs", alias="inputAccess"
     )
+    inputs_hash: Optional[str] = Field(
+        None,
+        description="the hex digest of the resolved inputs hash at the time when the last outputs were generated",
+        examples=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
+        alias="inputsHash",
+    )
     input_nodes: Optional[List[NodeID]] = Field(
         default_factory=list,
         description="node IDs of where the node is connected to",
