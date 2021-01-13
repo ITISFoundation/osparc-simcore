@@ -1,24 +1,22 @@
 import uuid
-
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Callable, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import aiofiles
-from pydantic import Field, validator, EmailStr, BaseModel
-
-from .base_models import BaseLoadingModel
-from ..utils import makedirs
 from models_library.projects import Workbench
 from models_library.projects_ui import StudyUI
+from pydantic import BaseModel, EmailStr, Field, validator
+
+from ..utils import makedirs
+from .base_models import BaseLoadingModel
 
 ShuffledData = Dict[str, str]
 
 
 class LinkAndPath2(BaseModel):
-    _FILES_DIRECTORY: str = (
-        "storage"  # where all files are stored in the exported folder
-    )
+    # where all files are stored in the exported folder
+    _FILES_DIRECTORY: Union[str, Path] = "storage"
     root_dir: Path = Field(
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
