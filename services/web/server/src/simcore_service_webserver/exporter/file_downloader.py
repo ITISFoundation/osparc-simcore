@@ -36,7 +36,7 @@ class ParallelDownloader:
     async def download_files(self):
         """starts the download and waits for all files to finish"""
 
-        # run this async, newer versions do not require this trick
+        # run this async, parfive will support aiofiles in the future as stated above
         wrapped_function = aiofiles_os.wrap(self.downloader.download)
         results = await wrapped_function()
         log.debug("Download results %s", results)
