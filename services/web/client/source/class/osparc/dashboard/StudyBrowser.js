@@ -248,7 +248,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const importButton = new qx.ui.form.Button(this.tr("Import"));
       importButton.addListener("execute", () => {
         const importStudy = new osparc.component.study.Import();
-        osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 200);
+        osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
         importStudy.addListener("studyImported", e => {
           const studyId = e.getData();
           this.reloadUserStudy(studyId);
@@ -449,6 +449,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       menu.add(studyServicesButton);
 
       const exportButton = this.__getExportMenuButton(studyData);
+      const exportButton = this.__getExportMenuButton(item, studyData);
       menu.add(exportButton);
 
       const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
