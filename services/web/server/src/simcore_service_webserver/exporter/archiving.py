@@ -60,13 +60,16 @@ def search_for_unzipped_path(search_path: Path) -> Path:
 async def _wrap_create_subprocess_exec(
     command_args: List[str], cwd_path: Path, fail_message: str
 ) -> None:
-    proc = await asyncio.create_subprocess_exec(
-        *command_args,
-        cwd=str(cwd_path),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, stderr = await proc.communicate()
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *command_args,
+            cwd=str(cwd_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+    except FileNotFoundError:
+        raise ExporterException(f"Could not change directory to '{cwd_path}'")
 
     if proc.returncode != 0:
         log.warning("STDOUT: %s", stdout.decode())
