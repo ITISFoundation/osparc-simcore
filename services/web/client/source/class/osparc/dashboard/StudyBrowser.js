@@ -448,6 +448,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
+      const exportButton = this.__getExportMenuButton(studyData);
+      menu.add(exportButton);
+
       const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && canCreateTemplate) {
@@ -531,6 +534,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 400, 100);
       }, this);
       return studyServicesButton;
+    },
+
+    __getExportMenuButton: function(studyData) {
+      const exportButton = new qx.ui.menu.Button(this.tr("Export"));
+      exportButton.addListener("execute", () => {
+        const exportStudy = new osparc.component.study.Export(studyData.uuid);
+        osparc.ui.window.Window.popUpInWindow(exportStudy, this.tr("Export Study"), 400, 200);
+      }, this);
+      return exportButton;
     },
 
     __getSaveAsTemplateMenuButton: function(studyData) {
