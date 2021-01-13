@@ -102,8 +102,8 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         return;
       }
       const subtitle = this.getChildControl("contact");
-      const isOwner = osparc.component.export.Permissions.canDelete(value);
-      const isCollaborator = osparc.component.export.Permissions.canWrite(value);
+      const isOwner = osparc.component.permissions.Permissions.canDelete(value);
+      const isCollaborator = osparc.component.permissions.Permissions.canWrite(value);
       if (isOwner) {
         subtitle.setValue(this.tr("Owner"));
       } else if (isCollaborator) {
@@ -160,8 +160,8 @@ qx.Class.define("osparc.dashboard.CollaboratorListItem", {
         });
       });
 
-      if (!osparc.component.export.Permissions.canDelete(accessRights)) {
-        if (osparc.component.export.Permissions.canWrite(accessRights)) {
+      if (!osparc.component.permissions.Permissions.canDelete(accessRights)) {
+        if (osparc.component.permissions.Permissions.canWrite(accessRights)) {
           // collaborator
           if (this.getCollabType() === 2) {
             menu.add(makeOwnerButton);

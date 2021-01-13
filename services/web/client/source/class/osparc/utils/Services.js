@@ -192,7 +192,7 @@ qx.Class.define("osparc.utils.Services", {
           }
         },
         "access_rights": {
-          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+          "1": osparc.component.permissions.PermissionsService.getCollaboratorAccessRight()
         }
       };
     },
@@ -213,7 +213,7 @@ qx.Class.define("osparc.utils.Services", {
         inputs: {},
         outputs: {},
         "access_rights": {
-          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
+          "1": osparc.component.permissions.PermissionsService.getCollaboratorAccessRight()
         }
       };
     },

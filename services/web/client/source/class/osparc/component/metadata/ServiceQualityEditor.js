@@ -585,7 +585,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
 
     __isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid && osparc.component.export.ServicePermissions.canGroupWrite(this.__serviceData["access_rights"], myGid)) {
+      if (myGid && osparc.component.permissions.PermissionsService.canGroupWrite(this.__serviceData["access_rights"], myGid)) {
         return true;
       }
       return false;

@@ -642,7 +642,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openServicePermissions: function(serviceData) {
-      const permissionsView = new osparc.component.export.ServicePermissions(serviceData);
+      const permissionsView = new osparc.component.permissions.PermissionsService(serviceData);
       const title = this.tr("Available to");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateService", e => {
@@ -652,7 +652,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openTemplatePermissions: function(studyData) {
-      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+      const permissionsView = new osparc.component.permissions.PermissionsStudy(studyData);
       const title = this.tr("Available to");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateStudy", e => {
@@ -675,7 +675,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.export.StudyPermissions.removeCollaborator(studyData, myGid);
+        osparc.component.permissions.PermissionsStudy.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch("templates", "put", params);
       } else {

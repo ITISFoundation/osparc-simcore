@@ -217,7 +217,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
-      return osparc.component.export.StudyPermissions.canGroupExecute(aceessRights, myGid);
+      return osparc.component.permissions.PermissionsStudy.canGroupExecute(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
@@ -240,7 +240,7 @@ qx.Class.define("osparc.data.model.Study", {
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
-        const canIWrite = osparc.component.export.StudyPermissions.canGroupWrite(value, myGid);
+        const canIWrite = osparc.component.permissions.PermissionsStudy.canGroupWrite(value, myGid);
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);

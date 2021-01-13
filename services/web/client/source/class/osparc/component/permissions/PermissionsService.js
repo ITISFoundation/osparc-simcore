@@ -24,8 +24,8 @@
  *   - Remove collaborators
  */
 
-qx.Class.define("osparc.component.export.ServicePermissions", {
-  extend: osparc.component.export.Permissions,
+qx.Class.define("osparc.component.permissions.PermissionsService", {
+  extend: osparc.component.permissions.Permissions,
 
   /**
     * @param serviceData {Object} Object containing the Service Data

@@ -23,7 +23,7 @@
  * - Everyone
  */
 
-qx.Class.define("osparc.component.export.ShareWith", {
+qx.Class.define("osparc.component.permissions.ShareWith", {
   extend: qx.ui.groupbox.GroupBox,
 
   construct: function(header) {
