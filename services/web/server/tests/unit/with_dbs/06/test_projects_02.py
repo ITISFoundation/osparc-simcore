@@ -787,7 +787,7 @@ async def test_project_node_lifetime(
         assert data["service_state"] == "running"
 
     # get the NOT dynamic node state
-    mocked_director_api["get_running_interactive_services"].return_value = ""
+    mocked_director_api["get_running_interactive_services"].return_value = []
 
     url = client.app.router["get_node"].url_for(
         project_id=user_project["uuid"], node_id=node_id_2
