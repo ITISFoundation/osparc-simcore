@@ -256,6 +256,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const file = e.getData();
 
           const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
+          placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
           placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
           this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 

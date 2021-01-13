@@ -78,18 +78,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonImporting", {
     _shouldApplyFilter: function(data) {
       if (data.text) {
         const checks = [
-          this.getChildControl("title").getValue().toString(),
-          this.getChildControl("subtitle-text").getValue().toString()
+          this.getChildControl("title").getValue().toString()
         ];
         if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
           return true;
         }
-      }
-      if (data.tags && data.tags.length) {
-        return true;
-      }
-      if (data.classifiers && data.classifiers.length) {
-        return true;
       }
       return false;
     }
