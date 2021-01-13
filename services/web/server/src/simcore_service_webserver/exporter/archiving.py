@@ -1,13 +1,13 @@
 import asyncio
-from pathlib import Path
-import aiohttp
 import logging
-
+from pathlib import Path
 from typing import Tuple
 
+import aiohttp
 from passlib import pwd
 
-from .async_hashing import checksum, Algorithm
+from .async_hashing import Algorithm, checksum
+from .exceptions import ExporterException
 from .utils import rename
 
 log = logging.getLogger(__name__)
@@ -25,21 +25,21 @@ def validate_osparc_import_name(file_name: str) -> Tuple[Algorithm, str]:
     """returns: sha256 from file signature if present or raises an error"""
     # sample: 0a3a#SHA256=02d03b65911aae7662a8fa5fa4847d0b8f722a022d95b37b4a02960ff736853a.osparc
     if not file_name.endswith(".osparc"):
-        raise aiohttp.web.HTTPException(
-            reason=f"Provided file name must haave .osparc extension file_name={file_name}"
+        raise ExporterException(
+            f"Provided file name must haave .osparc extension file_name={file_name}"
         )
 
     parts = file_name.replace(".osparc", "").split("#")
     if len(parts) != 2:
-        raise aiohttp.web.HTTPException(
-            reason=f"Could not find a digest in provided file_name={file_name}"
+        raise ExporterException(
+            f"Could not find a digest in provided file_name={file_name}"
         )
     digest = parts[1]
 
     digest_parts = digest.split("=")
     if len(digest_parts) != 2:
-        raise aiohttp.web.HTTPException(
-            reason=f"Could not find a valid digest in provided file_name={file_name}"
+        raise ExporterException(
+            f"Could not find a valid digest in provided file_name={file_name}"
         )
     algorithm, digest_sum = Algorithm[digest_parts[0]], digest_parts[1]
     return algorithm, digest_sum
@@ -52,8 +52,8 @@ def search_for_unzipped_path(search_path: Path) -> Path:
             found_dirs.append(path)
 
     if len(found_dirs) != 1:
-        raise aiohttp.web.HTTPException(
-            reason=f"unexpected number of directories after unzipping {found_dirs}"
+        raise ExporterException(
+            f"unexpected number of directories after unzipping {found_dirs}"
         )
     return search_path / found_dirs[0]
 
@@ -63,8 +63,8 @@ async def zip_folder(project_id: str, input_path: Path, no_compression=False) ->
 
     zip_file = Path(input_path.parent) / f"{project_id}.zip"
     if zip_file.is_file():
-        raise aiohttp.web.HTTPException(
-            reason=f"Cannot archive because file already exists '{str(zip_file)}'"
+        raise ExporterException(
+            f"Cannot archive because file already exists '{str(zip_file)}'"
         )
 
     command_args = [
@@ -88,9 +88,7 @@ async def zip_folder(project_id: str, input_path: Path, no_compression=False) ->
     if proc.returncode != 0:
         log.warning("STDOUT: %s", stdout.decode())
         log.warning("STDERR: %s", stderr.decode())
-        raise aiohttp.web.HTTPException(
-            reason=f"Could not create archive {str(zip_file)}"
-        )
+        raise ExporterException(f"Could not create archive {str(zip_file)}")
 
     # compute checksum and rename
     sha256_sum = await checksum(file_path=zip_file, algorithm=Algorithm.SHA256)
@@ -118,8 +116,6 @@ async def unzip_folder(input_path: Path) -> Path:
     if proc.returncode != 0:
         log.warning("STDOUT: %s", stdout.decode())
         log.warning("STDERR: %s", stderr.decode())
-        raise aiohttp.web.HTTPException(
-            reason=f"Could not decompress {str(input_path)}"
-        )
+        raise ExporterException(f"Could not decompress {str(input_path)}")
 
     return search_for_unzipped_path(input_path.parent)

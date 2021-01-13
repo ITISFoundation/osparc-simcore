@@ -1,15 +1,15 @@
 import logging
-import aiofiles
 from pathlib import Path
+
+import aiofiles
 from aiohttp import web
 from aiohttp.web_request import FileField
-
-from .archiving import zip_folder, validate_osparc_import_name, unzip_folder
-from .async_hashing import checksum
-from .formatters import validate_manifest, BaseFormatter
-
-from .formatters import FormatterV1
 from simcore_service_webserver.studies_dispatcher._users import UserInfo
+
+from .archiving import unzip_folder, validate_osparc_import_name, zip_folder
+from .async_hashing import checksum
+from .exceptions import ExporterException
+from .formatters import BaseFormatter, FormatterV1, validate_manifest
 
 log = logging.getLogger(__name__)
 
@@ -95,11 +95,9 @@ async def study_import(
     algorithm, digest_from_filename = validate_osparc_import_name(original_file_name)
     upload_digest = await checksum(file_path=upload_file_name, algorithm=algorithm)
     if digest_from_filename != upload_digest:
-        raise web.HTTPException(
-            reason=(
-                "Upload error. Digests did not match digest_from_filename="
-                f"{digest_from_filename}, upload_digest={upload_digest}"
-            )
+        raise ExporterException(
+            "Upload error. Digests did not match digest_from_filename="
+            f"{digest_from_filename}, upload_digest={upload_digest}"
         )
 
     unzipped_root_folder = await unzip_folder(upload_file_name)

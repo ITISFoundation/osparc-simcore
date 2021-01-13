@@ -1,12 +1,12 @@
-import sys
 import logging
-
-from aiohttp import web
-from parfive.downloader import Downloader
+import sys
 from pathlib import Path
 
 from aiofiles import os as aiofiles_os
+from aiohttp import web
+from parfive.downloader import Downloader
 
+from .exceptions import ExporterException
 from .utils import makedirs
 
 log = logging.getLogger(__name__)
@@ -42,6 +42,6 @@ class ParallelDownloader:
         log.debug("Download results %s", results)
 
         if len(results) != self.total_files_added:
-            raise web.HTTPException(
-                reason="Not all files were downloaded. Please check the logs above."
+            raise ExporterException(
+                "Not all files were downloaded. Please check the logs above."
             )

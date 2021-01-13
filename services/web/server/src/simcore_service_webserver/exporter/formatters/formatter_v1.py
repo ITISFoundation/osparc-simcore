@@ -12,6 +12,7 @@ from simcore_service_webserver.projects.projects_api import (
     delete_project,
     get_project_for_user,
 )
+from simcore_service_webserver.projects.projects_exceptions import ProjectsException
 from simcore_service_webserver.storage_handlers import (
     get_file_download_url,
     get_file_upload_url,
@@ -21,6 +22,7 @@ from simcore_service_webserver.studies_dispatcher._projects import add_new_proje
 from simcore_service_webserver.studies_dispatcher._users import UserInfo
 from simcore_service_webserver.utils import now_str
 
+from ..exceptions import ExporterException
 from ..file_downloader import ParallelDownloader
 from ..utils import path_getsize
 from .base_formatter import BaseFormatter
@@ -50,11 +52,9 @@ async def download_all_files_from_storage(download_links: Deque[LinkAndPath2]) -
     # check all files have been downloaded
     for link_and_path in download_links:
         if not await link_and_path.is_file():
-            raise web.HTTPException(
-                reason=(
-                    f"Could not download file {link_and_path.download_link} "
-                    f"to {link_and_path.storage_path_to_file}"
-                )
+            raise ExporterException(
+                f"Could not download file {link_and_path.download_link} "
+                f"to {link_and_path.storage_path_to_file}"
             )
 
 
@@ -103,13 +103,16 @@ async def extract_download_links(
 async def generate_directory_contents(
     app: web.Application, root_folder: Path, project_id: str, user_id: int, version: str
 ) -> None:
-    project_data = await get_project_for_user(
-        app=app,
-        project_uuid=project_id,
-        user_id=user_id,
-        include_templates=True,
-        include_state=True,
-    )
+    try:
+        project_data = await get_project_for_user(
+            app=app,
+            project_uuid=project_id,
+            user_id=user_id,
+            include_templates=True,
+            include_state=True,
+        )
+    except ProjectsException as e:
+        raise ExporterException(f"Could not find project {project_id}") from e
 
     log.debug("Project data: %s", project_data)
 
@@ -158,8 +161,8 @@ async def upload_file_to_storage(
     async with session.put(upload_url, data=data_provider, headers=headers) as resp:
         upload_result = await resp.text()
         if resp.status != 200:
-            raise web.HTTPException(
-                reason=f"Client replied with status={resp.status} and body '{upload_result}'"
+            raise ExporterException(
+                f"Client replied with status={resp.status} and body '{upload_result}'"
             )
 
         log.debug("Upload status=%s, result: '%s'", resp.status, upload_result)
@@ -196,18 +199,14 @@ async def import_files_and_validate_project(
             )
             # check file exists
             if not await link_and_path.is_file():
-                raise web.HTTPException(
-                    reason=(
-                        f"Could not find {link_and_path.storage_path_to_file} in import document"
-                    )
+                raise ExporterException(
+                    f"Could not find {link_and_path.storage_path_to_file} in import document"
                 )
             # apply shuffle data which will move the file and check again it exits
             await link_and_path.apply_shuffled_data(shuffled_data=shuffled_data)
             if not await link_and_path.is_file():
-                raise web.HTTPException(
-                    reason=(
-                        f"Could not find {link_and_path.storage_path_to_file} after shuffling data"
-                    )
+                raise ExporterException(
+                    f"Could not find {link_and_path.storage_path_to_file} after shuffling data"
                 )
 
             await upload_file_to_storage(
@@ -244,7 +243,13 @@ async def import_files_and_validate_project(
         log.warning(
             "Removing project %s, because there was an error while importing it."
         )
-        await delete_project(app=app, project_uuid=project_uuid, user_id=user.id)
+        try:
+            await delete_project(app=app, project_uuid=project_uuid, user_id=user.id)
+        except ProjectsException as e:
+            # no need to raise an error here
+            log.exception(
+                "Could not find project %s while trying to revert actions", project_uuid
+            )
         raise e
 
     return project_uuid
