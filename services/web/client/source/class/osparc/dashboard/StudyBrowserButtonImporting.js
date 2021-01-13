@@ -23,6 +23,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonImporting", {
     this.base(arguments);
 
     this.__buildLayout();
+
+    this.addListener("changeValue", this.__itemSelected, this);
   },
 
   members: {
@@ -62,6 +64,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonImporting", {
 
     isLocked: function() {
       return true;
+    },
+
+    __itemSelected: function() {
+      console.log("Do you want to cancel the task");
+      this.setValue(false);
     },
 
     _onToggleChange: function() {

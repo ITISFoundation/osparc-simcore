@@ -420,7 +420,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
           this.__userStudyContainer.remove(userStudyItem);
         }
-      };
+      }
       this.self().sortStudyList(userStudiesList);
       userStudiesList.forEach(userStudy => {
         userStudy["resourceType"] = "study";
