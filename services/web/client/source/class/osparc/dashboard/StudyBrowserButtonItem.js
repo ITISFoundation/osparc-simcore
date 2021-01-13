@@ -177,6 +177,25 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             left: 0
           });
           break;
+        case "importing": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+            alignX: "center",
+            alignY: "middle"
+          }));
+          const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/file-import/70");
+          control.add(icon, {
+            flex: 1
+          });
+          const label = new qx.ui.basic.Label(this.tr("Importing..."));
+          control.add(label);
+          this._add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
+          break;
+        }
         case "exporting": {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
             alignX: "center",
@@ -507,13 +526,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    __setExporting: function(exporting) {
+    setExporting: function(exporting) {
       this.__enableCard(!exporting);
 
       const icon = this.getChildControl("exporting");
       icon.set({
         opacity: 1.0,
         visibility: exporting ? "visible" : "excluded"
+      });
+    },
+
+    setImporting: function(importing) {
+      this.__enableCard(!importing);
+
+      const icon = this.getChildControl("importing");
+      icon.set({
+        opacity: 1.0,
+        visibility: importing ? "visible" : "excluded"
       });
     },
 

@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.study.Import", {
   },
 
   members: {
-    __sendFile: function(formData, btn) {
+    __sendFile: function(formData) {
       const request = {
         method: "POST"
       };

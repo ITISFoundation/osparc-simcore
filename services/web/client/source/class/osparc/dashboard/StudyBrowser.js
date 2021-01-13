@@ -251,6 +251,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
         importStudy.addListener("requestReady", e => {
           win.close();
+
+          const placeholderStudy = new osparc.data.model.Study({
+            uuid: "placeholder",
+            name: "Importing study"
+          });
+          const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonItem().set({
+            resourceData: placeholderStudy,
+            resourceType: "study"
+          });
+          placeholderStudyCard.setImporting(true);
+          this.__userStudyContainer.add(placeholderStudyCard);
+
           const request = e.getData();
           const xhr = new XMLHttpRequest();
           xhr.setRequestHeader("Content-Type", "application/json");
@@ -258,7 +270,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           xhr.upload.addEventListener("progress", ep => {
             if (e.lengthComputable) {
               const percentComplete = ep.loaded / ep.total * 100;
-              progressBar.setValue(percentComplete);
+              // progressBar.setValue(percentComplete);
               this.getNode().getStatus().setProgress(percentComplete === 100 ? 99 : percentComplete);
             } else {
               console.log("Unable to compute progress information since the total size is unknown");
@@ -562,7 +574,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const exportButton = new qx.ui.menu.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
         console.log("export");
-        item.__setExporting(true);
+        item.setExporting(true);
       }, this);
       return exportButton;
     },
