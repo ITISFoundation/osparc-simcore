@@ -3,9 +3,8 @@ import logging
 import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
-from tenacity import Retrying, before_log, stop_after_attempt, wait_random
-
 from servicelib.application_keys import APP_CONFIG_KEY
+from tenacity import Retrying, after_log, stop_after_attempt, wait_random
 
 from .config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
@@ -21,7 +20,7 @@ DSN = "redis://{host}:{port}"
 retry_upon_init_policy = dict(
     stop=stop_after_attempt(3),
     wait=wait_random(min=1, max=2),
-    before=before_log(log, logging.WARNING),
+    after=after_log(log, logging.WARNING),
 )
 
 
@@ -33,7 +32,9 @@ async def redis_client(app: web.Application):
     client = None
     for attempt in Retrying(**retry_upon_init_policy):
         with attempt:
-            client: aioredis.Redis = await aioredis.create_redis_pool(url, encoding="utf-8")
+            client: aioredis.Redis = await aioredis.create_redis_pool(
+                url, encoding="utf-8"
+            )
     # create lock manager
     lock_manager = Aioredlock([url])
 
