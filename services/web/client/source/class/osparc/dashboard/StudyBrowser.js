@@ -252,17 +252,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         importStudy.addListener("requestReady", e => {
           win.close();
 
-          /*
-          const placeholderStudy = osparc.data.model.Study.createMyNewStudyObject();
-          placeholderStudy["uuid"] = "placeholder";
-          placeholderStudy["name"] = "Importing study";
-          placeholderStudy["resourceType"] = "study";
-          const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonItem().set({
-            resourceData: placeholderStudy
-          });
-          placeholderStudyCard.setImporting(true);
-          */
           const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
+          placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
           this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 
           const request = e.getData();
@@ -270,8 +261,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           req.upload.addEventListener("progress", ep => {
             if (e.lengthComputable) {
               const percentComplete = ep.loaded / ep.total * 100;
-              // progressBar.setValue(percentComplete);
-              this.getNode().getStatus().setProgress(percentComplete === 100 ? 99 : percentComplete);
+              placeholderStudyCard.getProgressBar().setValue(percentComplete);
             } else {
               console.log("Unable to compute progress information since the total size is unknown");
             }
@@ -279,22 +269,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           req.onload = () => {
             if (req.status == 200) {
               console.log(req.response);
+              placeholderStudyCard.setStateLabel(this.tr("Processing study"));
+              placeholderStudyCard.getProgressBar().exclude();
             } else {
               console.log(req.response);
             }
           };
           req.send(request.body);
-          /*
-          fetch("/v0/projects:import", request)
-            .then(resp => {
-              if (resp.ok) {
-                osparc.component.message.FlashMessenger.logAs("Study successfuly uploaded. Processing data...", "INFO");
-                this.fireEvent("studyImported");
-              } else {
-                osparc.component.message.FlashMessenger.logAs(`A problem occured: ${resp.statusText}`, "ERROR");
-              }
-            });
-          */
         }, this);
       }, this);
       return importButton;

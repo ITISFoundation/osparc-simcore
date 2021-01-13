@@ -26,11 +26,22 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonImporting", {
   },
 
   members: {
+    __stateLabel: null,
+    __porgressBar: null,
+
     __buildLayout: function() {
       const title = this.getChildControl("title");
       title.setValue(this.tr("Importing Study..."));
 
-      this.setIcon("@FontAwesome5Solid/file-import/60");
+      this.setIcon("@FontAwesome5Solid/file-import/70");
+
+      const stateLabel = this.__stateLabel = new qx.ui.basic.Label();
+      this._mainLayout.add(stateLabel);
+
+      const progressBar = this.__porgressBar = new qx.ui.indicator.ProgressBar().set({
+        height: 10
+      });
+      this._mainLayout.add(progressBar);
 
       this.set({
         cursor: "not-allowed"
@@ -41,11 +52,19 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonImporting", {
       });
     },
 
+    setStateLabel: function(stateLabel) {
+      return this.__stateLabel.setValue(stateLabel);
+    },
+
+    getProgressBar: function() {
+      return this.__porgressBar;
+    },
+
     isLocked: function() {
       return true;
     },
 
-    _onToggleChange: function(e) {
+    _onToggleChange: function() {
       this.setValue(false);
     },
 
