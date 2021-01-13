@@ -355,9 +355,7 @@ function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
 async function typeInInputElement(page, inputSelector, text) {
   const element = await page.waitForSelector(inputSelector);
   await element.focus();
-  await page.keyboard.press('Backspace');
-  await page.keyboard.type(text);
-  await page.keyboard.press('Enter');
+  await page.keyboard.type(text, { delay: 100 });
 }
 
 

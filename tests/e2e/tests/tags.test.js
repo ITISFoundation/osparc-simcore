@@ -100,7 +100,6 @@ describe('tags testing', () => {
   }, ourTimeout);
 
   test('assign tag and reflect changes', async () => {
-    await utils.sleep(1000);
     await page.waitForSelector(
       '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.component.widget.Thumbnail"]',
       { hidden: true }
@@ -111,7 +110,7 @@ describe('tags testing', () => {
       await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
     } catch (error) {
       console.error(error);
-      await utils.takeScreenshot(page, 'assign_tag');
+      await utils.takeScreenshot(page, 'open_edit');
     }
     await waitAndClick(page, '[osparc-test-id="editStudyBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
