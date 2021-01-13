@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import logging
 from asyncio import sleep
 from copy import deepcopy
 from typing import Callable
@@ -30,10 +31,27 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
+from tenacity import (
+    AsyncRetrying,
+    after_log,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
+
+logger = logging.getLogger(__name__)
+
 
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
+CHECK_BACKGROUND_RETRY_POLICY = dict(
+    stop=stop_after_attempt(2),
+    wait=wait_fixed(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL),
+    retry=retry_if_exception_type(AssertionError),
+    after=after_log(logger, logging.INFO),
+    reraise=True,
+)
 
 
 @pytest.fixture
@@ -336,11 +354,15 @@ async def test_interactive_services_removed_after_logout(
     r = await client.post(logout_url, json={"client_session_id": client_session_id1})
     assert r.url_obj.path == logout_url.path
     await assert_status(r, web.HTTPOk)
-    # ensure sufficient time is wasted here
-    await sleep(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL + 1)
-    # assert dynamic service is removed
-    calls = [call(client.server.app, service["service_uuid"])]
-    mocked_director_api["stop_service"].assert_has_calls(calls)
+
+    # check result perfomed by background task
+    async for attempt in AsyncRetrying(**CHECK_BACKGROUND_RETRY_POLICY):
+        with attempt:
+            print(".")
+            # assert dynamic service is removed
+            mocked_director_api["stop_service"].assert_awaited_with(
+                client.server.app, service["service_uuid"]
+            )
 
 
 @pytest.mark.parametrize(
