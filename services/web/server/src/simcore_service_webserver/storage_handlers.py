@@ -3,19 +3,18 @@
     Mostly resolves and redirect to storage API
 """
 import logging
-from aiohttp import web
 import urllib
-from yarl import URL
+from typing import Any, Dict, List, Optional, Tuple
 
-from typing import List, Dict, Any
-
+from aiohttp import web
 from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.rest_responses import unwrap_envelope
 from servicelib.rest_utils import extract_and_validate
+from yarl import URL
 
 from .login.decorators import login_required
 from .security_api import check_permission
 from .storage_config import get_client_session, get_storage_config
-
 
 log = logging.getLogger(__name__)
 
@@ -61,6 +60,27 @@ async def _request_storage(request: web.Request, method: str):
     async with session.request(method.upper(), url, ssl=False, json=body) as resp:
         payload = await resp.json()
         return payload
+
+
+async def safe_unwrap(resp: web.Response) -> Tuple[Optional[Dict], Optional[Dict]]:
+    if resp.status != 200:
+        body = await resp.text()
+        raise web.HTTPException(reason=f"Unexpected response: '{body}'")
+
+    payload = await resp.json()
+    if not isinstance(payload, dict):
+        raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
+
+    data, error = unwrap_envelope(payload)
+
+    return data, error
+
+
+def extract_link(data: Optional[Dict]) -> str:
+    if data is None or "link" not in data:
+        raise web.HTTPException(reason=f"No url found in response: '{data}'")
+
+    return data["link"]
 
 
 # ---------------------------------------------------------------------
@@ -140,17 +160,16 @@ async def get_project_files_metadata(
     )
     params = dict(user_id=user_id, uuid_filter=uuid_filter)
     async with session.get(url, ssl=False, params=params) as resp:
-        payload = await resp.json()
-        if not isinstance(payload, dict):
-            raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
-        if "data" not in payload:
-            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
-        if not isinstance(payload["data"], list):
+        data, _ = await safe_unwrap(resp)
+
+        if data is None:
+            raise web.HTTPException(reason=f"No url found in response: '{data}'")
+        if not isinstance(data, list):
             raise web.HTTPException(
-                reason=f"No list payload received as data: '{payload}'"
+                reason=f"No list payload received as data: '{data}'"
             )
 
-        return payload["data"]
+        return data
 
 
 async def get_file_download_url(
@@ -167,15 +186,8 @@ async def get_file_download_url(
     )
     params = dict(user_id=user_id)
     async with session.get(url, ssl=False, params=params) as resp:
-        payload = await resp.json()
-        if not isinstance(payload, dict):
-            raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
-        if "data" not in payload:
-            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
-        if "link" not in payload["data"]:
-            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
-
-        return payload["data"]["link"]
+        data, _ = await safe_unwrap(resp)
+        return extract_link(data)
 
 
 async def get_file_upload_url(
@@ -192,12 +204,5 @@ async def get_file_upload_url(
     )
     params = dict(user_id=user_id)
     async with session.put(url, ssl=False, params=params) as resp:
-        payload = await resp.json()
-        if not isinstance(payload, dict):
-            raise web.HTTPException(reason=f"Did not receive a dict: '{payload}'")
-        if "data" not in payload:
-            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
-        if "link" not in payload["data"]:
-            raise web.HTTPException(reason=f"No url found in response: '{payload}'")
-
-        return payload["data"]["link"]
+        data, _ = await safe_unwrap(resp)
+        return extract_link(data)
