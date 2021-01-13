@@ -30,6 +30,7 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
                 key=node.key,
                 version=node.version,
                 inputs=node.inputs,
+                inputs_hash=node.inputs_hash,
                 outputs=node.outputs,
             )
             for input_node_id in node.input_nodes:
@@ -48,6 +49,7 @@ def mark_node_dirty(graph: nx.DiGraph, node_id: NodeID):
 
 
 def is_node_dirty(graph: nx.DiGraph, node_id: NodeID) -> bool:
+    # FIXME: this fails if the node we check is not a computational one!!!
     return graph.nodes()[str(node_id)].get("dirty", False)
 
 
