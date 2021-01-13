@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import traceback
 from collections import deque
@@ -189,6 +190,7 @@ async def import_files_and_validate_project(
     # check all attachments are present
     client_timeout = ClientTimeout(total=UPLOAD_HTTP_TIMEOUT, connect=5, sock_connect=5)
     async with ClientSession(timeout=client_timeout) as session:
+        run_in_parallel = deque()
         for attachment in manifest_file.attachments:
             attachment_parts = attachment.split("/")
             link_and_path = LinkAndPath2(
@@ -209,12 +211,15 @@ async def import_files_and_validate_project(
                     f"Could not find {link_and_path.storage_path_to_file} after shuffling data"
                 )
 
-            await upload_file_to_storage(
-                app=app,
-                link_and_path=link_and_path,
-                user_id=user.id,
-                session=session,
+            run_in_parallel.append(
+                upload_file_to_storage(
+                    app=app,
+                    link_and_path=link_and_path,
+                    user_id=user.id,
+                    session=session,
+                )
             )
+        await asyncio.gather(*run_in_parallel)
 
     # finally create and add the project
     project = Project(
