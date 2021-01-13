@@ -45,7 +45,7 @@ async def study_export(
         # returns the path to the temporary directory containing the study data
         return destination
 
-    if archive and compress is False:
+    if archive is True and compress is False:
         archive_path = await zip_folder(
             project_id=project_id, input_path=destination, no_compression=True
         )
