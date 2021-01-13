@@ -160,7 +160,7 @@ def get_exported_projects() -> List[Path]:
 
 
 @pytest.fixture
-async def mock_asyncio_subporcess(mocker):
+async def monkey_patch_asyncio_subporcess(mocker):
     # TODO: The below bug is not allowing me to fully test,
     # mocking and waiting for an update
     # https://bugs.python.org/issue35621
@@ -292,7 +292,7 @@ async def test_import_export_import(
     db_engine,
     redis_client,
     export_version,
-    mock_asyncio_subporcess,
+    monkey_patch_asyncio_subporcess,
     simcore_services,
     monkey_patch_aiohttp_request_url,
 ):

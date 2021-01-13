@@ -52,7 +52,7 @@ def search_for_unzipped_path(search_path: Path) -> Path:
 
     if len(found_dirs) != 1:
         raise ExporterException(
-            f"unexpected number of directories after unzipping {found_dirs}"
+            f"Unexpected number of directories after unzipping {[str(x) for x in found_dirs]}"
         )
     return search_path / found_dirs[0]
 
