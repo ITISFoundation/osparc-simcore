@@ -46,7 +46,7 @@ def setup_garbage_collector(app: web.Application):
         # on_startup
         # create a background task to collect garbage periodically
         loop = asyncio.get_event_loop()
-        cgp_task = loop.create_task(collect_garbage_periodically(app))
+        _gc_task = loop.create_task(collect_garbage_periodically(app))
 
         yield
 
@@ -54,8 +54,8 @@ def setup_garbage_collector(app: web.Application):
         # controlled cancelation of the gc tas
         with suppress(asyncio.CancelledError):
             logger.info("Stopping garbage collector...")
-            cgp_task.cancel()
-            await cgp_task
+            _gc_task.cancel()
+            await _gc_task
 
     app.cleanup_ctx.append(_setup_background_task)
 
