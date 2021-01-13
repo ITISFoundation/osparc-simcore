@@ -6,6 +6,6 @@ module.exports = {
   globals: {
     url: "http://127.0.0.1:9081/",
     apiVersion: 'v0/',
-    ourTimeout: 20000,
+    ourTimeout: 40000,
   }
 }
