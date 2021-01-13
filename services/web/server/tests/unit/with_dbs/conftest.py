@@ -241,39 +241,24 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-def mocked_director_subsystem(mocker):
-    mock_director_api = {
-        "get_running_interactive_services": mocker.patch(
-            "simcore_service_webserver.director.director_api.get_running_interactive_services",
-            return_value="",
-        ),
-        "start_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.start_service",
-            return_value="",
-        ),
-        "stop_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.stop_service",
-            return_value="",
-        ),
-    }
-    return mock_director_api
-
-
-@pytest.fixture
 async def mocked_director_api(loop, mocker):
+    # NOTE: patches are done at 'simcore_service_webserver.director.director_api'
+    #
+    #  Read carefully "where to patch" in https://docs.python.org/3/library/unittest.mock.html#id6
+    #
     mocks = {}
-    mocked_running_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value="",
-    )
-    mocks["get_running_interactive_services"] = mocked_running_services
-    mocked_stop_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value="",
-    )
-    mocks["stop_service"] = mocked_stop_service
+    for func_name, fake_return in [
+        ("get_running_interactive_services", []),
+        ("start_service", []),
+        ("stop_service", None),
+    ]:
+        mocks[func_name] = mocker.patch(
+            f"simcore_service_webserver.director.director_api.{func_name}",
+            return_value=fake_return,
+            name=f"{__name__}.mocked_director_api::director_api.{func_name}",
+        )
 
-    yield mocks
+    return mocks
 
 
 @pytest.fixture
