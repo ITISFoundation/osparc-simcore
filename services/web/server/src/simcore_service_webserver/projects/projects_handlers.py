@@ -25,7 +25,14 @@ from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
 
-from ..exporter import config, export_import, utils  # noqa isort:skip
+from ..exporter.utils import (  # noqa isort:skip
+    CleanupFileResponse,
+    get_empty_tmp_dir,
+    remove_dir,
+)
+
+from ..exporter.config import get_max_upload_file_size_gb  # noqa isort:skip
+from ..exporter.export_import import study_export, study_import  # noqa isort:skip
 
 ONE_GB: int = 1024 * 1024 * 1024
 
@@ -591,9 +598,9 @@ async def export_project(request: web.Request):
     log.info(project_uuid)
     log.info("Is compressed %s", compressed)
 
-    temp_dir: str = await utils.get_empty_tmp_dir()
+    temp_dir: str = await get_empty_tmp_dir()
 
-    file_to_download = await export_import.study_export(
+    file_to_download = await study_export(
         app=request.app,
         tmp_dir=temp_dir,
         project_id=project_uuid,
@@ -609,7 +616,7 @@ async def export_project(request: web.Request):
     headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
     log.info("Will download file %s", file_to_download)
 
-    return utils.CleanupFileResponse(
+    return CleanupFileResponse(
         temp_dir=temp_dir, path=file_to_download, headers=headers
     )
 
@@ -618,7 +625,7 @@ async def export_project(request: web.Request):
 async def import_project(request: web.Request):
     # bumping this requet's max size
     # pylint: disable=protected-access
-    request._client_max_size = config.get_max_upload_file_size_gb(request.app) * ONE_GB
+    request._client_max_size = get_max_upload_file_size_gb(request.app) * ONE_GB
 
     post_contents = await request.post()
     log.info("POST body %s", post_contents)
@@ -627,7 +634,7 @@ async def import_project(request: web.Request):
     if file_name_field is None:
         raise web.HTTPException(reason="Expected a file as 'fileName' form parmeter")
 
-    temp_dir: str = await utils.get_empty_tmp_dir()
+    temp_dir: str = await get_empty_tmp_dir()
 
     from simcore_service_webserver.studies_dispatcher._users import (
         UserInfo,
@@ -635,9 +642,9 @@ async def import_project(request: web.Request):
     )
 
     user: UserInfo = await acquire_user(request)
-    imported_project_uuid = await export_import.study_import(
+    imported_project_uuid = await study_import(
         app=request.app, temp_dir=temp_dir, file_field=file_name_field, user=user
     )
-    await utils.remove_dir(directory=temp_dir)
+    await remove_dir(directory=temp_dir)
 
     return web.json_response(dict(uuid=imported_project_uuid))
