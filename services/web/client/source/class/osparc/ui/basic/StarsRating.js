@@ -87,7 +87,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       let control;
       switch (id) {
         case "stars-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0)).set({
+            paddingTop: 1
+          });
           this._add(control);
           break;
         case "score-text": {
@@ -100,6 +102,10 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    isEditMode() {
+      return this.getMode() === "edit";
     },
 
     __checkValues: function() {
@@ -142,7 +148,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       }
 
       const emptyStars = maxStars - fullStars - halfStar;
-      if (this.getShowEmptyStars() || this.getMode() === "edit") {
+      if (this.getShowEmptyStars() || this.isEditMode()) {
         for (let i=0; i<emptyStars; i++) {
           const star = this.__getStarImage(this.self().StarEmpty, currentScore);
           starsLayout.add(star);
@@ -156,7 +162,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
 
     __getStarImage: function(imageUrl, currentScore) {
       const star = new qx.ui.basic.Image(imageUrl);
-      if (this.getMode() === "edit" && currentScore !== undefined) {
+      if (this.isEditMode() && currentScore !== undefined) {
         star.addListener("tap", e => {
           this.__updateScore(currentScore);
         }, this);
