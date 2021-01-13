@@ -99,7 +99,6 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       });
       this._add(this.__colorPicker());
       this._add(this.__tagItemEditButtons());
-      this.setBackgroundColor("background-main-lighter");
     },
     __renderDisplayMode: function() {
       const tagContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
