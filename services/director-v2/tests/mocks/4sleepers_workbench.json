@@ -1,11 +1,8 @@
 {
   "8902d36c-bc65-5b0d-848f-88aed72d7849": {
-    "key": "simcore/services/comp/itis/sleeper",
+    "key": "simcore/services/frontend/file-picker",
     "version": "1.0.0",
-    "label": "sleeper 0",
-    "inputs": {
-      "in_2": 2
-    }
+    "label": "file-picker"
   },
   "3a710d8b-565c-5f46-870b-b45ebe195fc7": {
     "key": "simcore/services/comp/itis/sleeper",

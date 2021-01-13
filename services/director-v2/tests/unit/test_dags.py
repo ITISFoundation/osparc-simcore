@@ -14,6 +14,7 @@ import pytest
 from models_library.projects import Workbench
 from models_library.projects_nodes import Node
 from simcore_service_director_v2.utils.dags import (
+    create_complete_dag_graph,
     create_dag_graph,
     create_minimal_graph_based_on_selection,
 )
@@ -54,26 +55,20 @@ def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
         ),
         pytest.param(
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # sleeper 0
+                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # file-picker
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7",  # sleeper 1
             },
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849": [
-                    "3a710d8b-565c-5f46-870b-b45ebe195fc7"
-                ],
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7": [],
             },
             id="nodes 0 and 1",
         ),
         pytest.param(
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # sleeper 0
+                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # file-picker
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef",  # sleeper 2
             },
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849": [
-                    "3a710d8b-565c-5f46-870b-b45ebe195fc7"
-                ],
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
                     "415fefd1-d08b-53c1-adb0-16bed3a687ef"
                 ],
@@ -83,15 +78,11 @@ def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
         ),
         pytest.param(
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # sleeper 0
+                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # file-picker
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef",  # sleeper 2
                 "6ede1209-b459-5735-91fc-761aa584808d",  # sleeper 4
             },
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849": [
-                    "3a710d8b-565c-5f46-870b-b45ebe195fc7",
-                    "e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
-                ],
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
                     "415fefd1-d08b-53c1-adb0-16bed3a687ef"
                 ],
@@ -108,7 +99,7 @@ def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
     ],
 )
 def test_create_minimal_graph(workbench: Workbench, subgraph: Set[str], exp_dag):
-    full_dag_graph: nx.DiGraph = create_dag_graph(workbench)
+    full_dag_graph: nx.DiGraph = create_complete_dag_graph(workbench)
     reduced_dag: nx.DiGraph = create_minimal_graph_based_on_selection(
         full_dag_graph, subgraph
     )

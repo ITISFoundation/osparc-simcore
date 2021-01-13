@@ -20,10 +20,31 @@ def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
 
 
 @log_decorator(logger=logger)
+def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
+    dag_graph = nx.DiGraph()
+    for node_id, node in workbench.items():
+        dag_graph.add_node(
+            node_id,
+            name=node.label,
+            key=node.key,
+            version=node.version,
+            inputs=node.inputs,
+            inputs_hash=node.inputs_hash,
+            outputs=node.outputs,
+        )
+        for input_node_id in node.input_nodes:
+            predecessor_node = workbench.get(str(input_node_id))
+            if predecessor_node:
+                dag_graph.add_edge(str(input_node_id), node_id)
+
+    return dag_graph
+
+
+@log_decorator(logger=logger)
 def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
-        if to_node_class(node.key) == NodeClass.COMPUTATIONAL:
+        if _node_computational(node.key):
             dag_graph.add_node(
                 node_id,
                 name=node.label,
@@ -35,10 +56,7 @@ def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
             )
             for input_node_id in node.input_nodes:
                 predecessor_node = workbench.get(str(input_node_id))
-                if (
-                    predecessor_node
-                    and to_node_class(predecessor_node.key) == NodeClass.COMPUTATIONAL
-                ):
+                if predecessor_node and _node_computational(predecessor_node.key):
                     dag_graph.add_edge(str(input_node_id), node_id)
 
     return dag_graph
@@ -51,6 +69,10 @@ def mark_node_dirty(graph: nx.DiGraph, node_id: NodeID):
 def is_node_dirty(graph: nx.DiGraph, node_id: NodeID) -> bool:
     # FIXME: this fails if the node we check is not a computational one!!!
     return graph.nodes()[str(node_id)].get("dirty", False)
+
+
+def _node_computational(node_key: str) -> bool:
+    return to_node_class(node_key) == NodeClass.COMPUTATIONAL
 
 
 def _node_outdated(full_dag_graph: nx.DiGraph, node_id: NodeID) -> bool:
@@ -92,6 +114,7 @@ def create_minimal_graph_based_on_selection(
                 n
                 for n in nx.bfs_tree(full_dag_graph, str(node), reverse=True)
                 if is_node_dirty(full_dag_graph, n)
+                and _node_computational(full_dag_graph.nodes()[n]["key"])
             )
         )
 

@@ -33,7 +33,11 @@ from ...utils.computations import (
     is_pipeline_running,
     is_pipeline_stopped,
 )
-from ...utils.dags import create_dag_graph, create_minimal_graph_based_on_selection
+from ...utils.dags import (
+    create_complete_dag_graph,
+    create_dag_graph,
+    create_minimal_graph_based_on_selection,
+)
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
 from ..dependencies.database import get_repository
@@ -113,6 +117,8 @@ async def create_computation(
                 detail=f"Projet {job.project_id} already started, current state is {pipeline_state}",
             )
 
+        # create the complete DAG graph
+        complete_dag_graph = create_complete_dag_graph(project.workbench)
         # create the computational DAG
         dag_graph = create_dag_graph(project.workbench)
         # validate DAG
@@ -123,7 +129,9 @@ async def create_computation(
             )
         # get a subgraph if needed
         if job.subgraph:
-            dag_graph = create_minimal_graph_based_on_selection(dag_graph, job.subgraph)
+            dag_graph = create_minimal_graph_based_on_selection(
+                complete_dag_graph, job.subgraph
+            )
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
