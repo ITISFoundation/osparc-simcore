@@ -215,6 +215,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
 
+      const importStudyButton = this.__createImportButton();
+      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
+      studiesTitleContainer.add(importStudyButton);
+
       // Delete Studies Button
       const studiesDeleteButton = this.__createDeleteButton(false);
       studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
@@ -243,6 +247,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => {
           this.__startStudy(studyData["uuid"]);
         });
+    },
+
+    __createImportButton: function() {
+      const importButton = new qx.ui.form.Button(this.tr("Import"));
+      importButton.addListener("execute", () => {
+        const importStudy = new osparc.component.study.Import();
+        osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 200);
+        importStudy.addListener("studyImported", e => {
+          const studyId = e.getData();
+          this.reloadUserStudy(studyId);
+        }, this);
+      }, this);
+      return importButton;
     },
 
     __createDeleteButton: function() {
