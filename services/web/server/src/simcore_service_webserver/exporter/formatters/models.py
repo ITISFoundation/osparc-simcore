@@ -1,12 +1,11 @@
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Union
 
 import aiofiles
-from models_library.projects import Workbench
-from models_library.projects_ui import StudyUI
-from pydantic import BaseModel, EmailStr, Field, validator
+from models_library.projects import Project
+from pydantic import BaseModel, Field, validator
 
 from ..utils import makedirs
 from .base_models import BaseLoadingModel
@@ -107,32 +106,8 @@ class ManifestFile(BaseLoadingModel):
         return str(v)
 
 
-class ProjectFile(BaseLoadingModel):
+class ProjectFile(BaseLoadingModel, Project):
     _RELATIVE_STORAGE_PATH: str = "project.json"
-
-    name: str = Field(..., description="name of the study")
-    description: str = Field(..., description="study description")
-    uuid: str = Field(..., description="study unique id used in the platform")
-    last_change_date: datetime = Field(
-        ..., alias="lastChangeDate", description="date when study was last changed"
-    )
-    creation_date: datetime = Field(
-        ..., alias="creationDate", description="date when study was created"
-    )
-    project_owner: EmailStr = Field(
-        ..., alias="prjOwner", description="email of the owner of the study"
-    )
-    thumbnail: str = Field(
-        ..., description="contains a link to an image to be used as thumbnail"
-    )
-    dev: Optional[Dict] = Field(None, description="used to store dev information")
-    ui: Optional[StudyUI] = Field(
-        None, description="contains data used to render the UI"
-    )
-    workbench: Workbench = Field(
-        ...,
-        description="representation all the information required to run and render studies",
-    )
 
     def get_shuffled_uuids(self) -> ShuffledData:
         """
@@ -144,7 +119,7 @@ class ProjectFile(BaseLoadingModel):
         """
         new_uuid: Callable = lambda: str(uuid.uuid4())
 
-        uuid_replace_values: ShuffledData = {self.uuid: new_uuid()}
+        uuid_replace_values: ShuffledData = {str(self.uuid): new_uuid()}
 
         for node in self.workbench.keys():
             uuid_replace_values[node] = new_uuid()
