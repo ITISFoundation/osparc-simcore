@@ -30,14 +30,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   construct: function() {
     this.base(arguments);
 
-    // create a date format like "Oct. 19, 2018 11:31 AM"
-    this.__dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("medium")
-    );
-    this.__timeFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getTimeFormat("short")
-    );
-
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
@@ -74,7 +66,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     studyDescription: {
       check: "String",
-      apply: "_applyStudyDescription",
       nullable: true
     },
 
@@ -105,10 +96,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyTags"
     },
 
-    metadata: {
+    quality: {
       check: "Object",
       nullable: true,
-      apply: "_applyMetadata"
+      apply: "_applyQuality"
     },
 
     state: {
@@ -152,9 +143,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   },
 
   members: {
-    __dateFormat: null,
-    __timeFormat: null,
-
     // overridden
     _createChildControlImpl: function(id) {
       let control;
@@ -204,13 +192,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           });
           break;
         }
-        case "tsr-rating":
-          control = new osparc.ui.basic.StarsRating();
-          this._add(control, {
-            left: 0,
-            bottom: 0
-          });
-          break;
       }
 
       return control || this.base(arguments, id);
@@ -235,7 +216,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
-      let metadata = null;
       switch (studyData["resourceType"]) {
         case "study":
           uuid = studyData.uuid ? studyData.uuid : uuid;
@@ -254,7 +234,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
           owner = studyData.owner ? studyData.owner : owner;
           accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
-          metadata = studyData.metadata ? studyData.metadata : null;
           break;
       }
 
@@ -269,7 +248,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        metadata
+        quality: studyData.quality ? studyData.quality : null
       });
     },
 
@@ -325,41 +304,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    _applyStudyDescription: function(value, old) {
-      /*
-      if (value !== "" && this.isResourceType("template")) {
-        const label = this.getChildControl("description");
-        label.setValue(value);
-      }
-      */
-    },
-
     _applyLastChangeDate: function(value, old) {
       if (value && this.isResourceType("study")) {
-        const label = this.getChildControl("description2");
-        let dateStr = null;
-        if (value.getDate() === (new Date()).getDate()) {
-          dateStr = this.tr("Today");
-        } else if (value.getDate() === (new Date()).getDate() - 1) {
-          dateStr = this.tr("Yesterday");
-        } else {
-          dateStr = this.__dateFormat.format(value);
-        }
-        const timeStr = this.__timeFormat.format(value);
-        label.setValue(dateStr + " " + timeStr);
+        const label = this.getChildControl("subtitle-text");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
     },
 
     _applyOwner: function(value, old) {
       if (this.isResourceType("service") || this.isResourceType("template")) {
-        const label = this.getChildControl("description2");
+        const label = this.getChildControl("subtitle-text");
         label.setValue(value);
       }
     },
 
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
-        const sharedIcon = this.getChildControl("shared");
+        const sharedIcon = this.getChildControl("subtitle-icon");
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
@@ -454,12 +415,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyMetadata: function(metadata) {
-      if (metadata && "tsr" in metadata) {
+    _applyQuality: function(quality) {
+      if (quality && "tsr" in quality) {
         const {
           score,
           maxScore
-        } = osparc.component.metadata.ServiceQuality.computeTSRScore(metadata["tsr"]);
+        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
           score,
@@ -573,12 +534,5 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
       return false;
     }
-  },
-
-  destruct : function() {
-    this.__dateFormat.dispose();
-    this.__dateFormat = null;
-    this.__timeFormat.dispose();
-    this.__timeFormat = null;
   }
 });

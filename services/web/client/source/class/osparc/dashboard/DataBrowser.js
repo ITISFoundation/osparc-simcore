@@ -31,28 +31,20 @@
  */
 
 qx.Class.define("osparc.dashboard.DataBrowser", {
-  extend: qx.ui.core.Widget,
-
-  construct: function() {
-    this.base(arguments);
-
-    const prjBrowserLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(prjBrowserLayout);
-
-    this.__createDataManagerLayout();
-
-    this.addListener("appear", () => {
-      this.__initResources(null);
-    }, this);
-  },
+  extend: osparc.dashboard.ResourceBrowserBase,
 
   members: {
     __filesTree: null,
     __selectedFileLayout: null,
     __pieChart: null,
 
-    __initResources: function(locationId) {
-      this.__filesTree.populateTree(locationId);
+    // overriden
+    _initResources: function() {
+      this.__createDataManagerLayout();
+
+      this.addListener("appear", () => {
+        this.__filesTree.populateTree(null);
+      }, this);
     },
 
     __createDataManagerLayout: function() {

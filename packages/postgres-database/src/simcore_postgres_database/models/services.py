@@ -47,7 +47,7 @@ services_meta_data = sa.Table(
         onupdate=func.now(),  # this will auto-update on modification
     ),
     sa.Column(
-        "metadata",
+        "quality",
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb")

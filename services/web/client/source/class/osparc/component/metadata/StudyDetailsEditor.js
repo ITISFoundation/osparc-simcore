@@ -48,7 +48,8 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data",
-    "openStudy": "qx.event.type.Event"
+    "openStudy": "qx.event.type.Event",
+    "openTemplate": "qx.event.type.Event"
   },
 
   properties: {
@@ -99,7 +100,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         appearance: "toolbar-md-button"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "openStudyBtn");
-      openButton.addListener("execute", () => this.fireEvent("openStudy"), this);
+      openButton.addListener("execute", () => this.fireEvent(isTemplate ? "openTemplate" : "openStudy"), this);
       buttonsToolbar.add(openButton);
 
       return buttonsToolbar;
@@ -154,16 +155,12 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         editView.add(this.__tagsSection());
       }
 
-      const saveButton = new qx.ui.toolbar.Button(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
+      const saveButton = new osparc.ui.toolbar.FetchButton(this.tr("Save"), "@FontAwesome5Solid/save/16").set({
         appearance: "toolbar-md-button"
       });
       osparc.utils.Utils.setIdToWidget(saveButton, "studyDetailsEditorSaveBtn");
       saveButton.addListener("execute", e => {
-        const btn = e.getTarget();
-        btn.setIcon("@FontAwesome5Solid/circle-notch/16");
-        btn.getChildControl("icon").getContentElement()
-          .addClass("rotate");
-        this.__saveStudy(isTemplate, btn);
+        this.__saveStudy(isTemplate, saveButton);
       }, this);
       const cancelButton = new qx.ui.toolbar.Button(this.tr("Cancel")).set({
         appearance: "toolbar-md-button",
@@ -234,20 +231,18 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
         },
         data
       };
+      btn.setFetching(true);
       osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
         .then(studyData => {
-          btn.resetIcon();
-          btn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
           this.setMode("display");
           this.fireDataEvent(isTemplate ? "updateTemplate" : "updateStudy", studyData);
         })
         .catch(err => {
-          btn.resetIcon();
-          btn.getChildControl("icon").getContentElement()
-            .removeClass("rotate");
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+        })
+        .finally(() => {
+          btn.setFetching(true);
         });
     },
 
