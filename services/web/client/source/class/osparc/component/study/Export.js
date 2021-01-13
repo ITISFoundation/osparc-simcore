@@ -16,11 +16,14 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.study.Export", {
-  extend: qx.ui.core.Widget,
+  extend: qx.core.Object,
 
-  construct: function(studyId) {
+  construct: function(study) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this.study = study;
+
+    const exporter = osparc.component.study.Exporter.getInstance();
+    exporter.addExport(this);
   }
 });
