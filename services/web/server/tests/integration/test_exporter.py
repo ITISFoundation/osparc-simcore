@@ -278,8 +278,9 @@ async def import_study_from_file(client, file_path: Path) -> str:
     async with await client.post(url_import, data=data, timeout=10) as import_response:
         assert import_response.status == 200, await import_response.text()
         reply_data = await import_response.json()
+        assert reply_data.get("data") is not None
 
-    imported_project_uuid = reply_data["uuid"]
+    imported_project_uuid = reply_data["data"]["uuid"]
     return imported_project_uuid
 
 

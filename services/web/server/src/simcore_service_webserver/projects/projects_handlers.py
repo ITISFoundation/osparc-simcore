@@ -629,6 +629,7 @@ async def import_project(request: web.Request):
 
     post_contents = await request.post()
     log.info("POST body %s", post_contents)
+    user_id = request[RQT_USERID_KEY]
     file_name_field: FileField = post_contents.get("fileName", None)
 
     if file_name_field is None:
@@ -636,15 +637,9 @@ async def import_project(request: web.Request):
 
     temp_dir: str = await get_empty_tmp_dir()
 
-    from simcore_service_webserver.studies_dispatcher._users import (
-        UserInfo,
-        acquire_user,
-    )
-
-    user: UserInfo = await acquire_user(request)
     imported_project_uuid = await study_import(
-        app=request.app, temp_dir=temp_dir, file_field=file_name_field, user=user
+        app=request.app, temp_dir=temp_dir, file_field=file_name_field, user_id=user_id
     )
     await remove_dir(directory=temp_dir)
 
-    return web.json_response(dict(uuid=imported_project_uuid))
+    return dict(uuid=imported_project_uuid)
