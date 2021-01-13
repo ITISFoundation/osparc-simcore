@@ -40,6 +40,8 @@ class Project(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
+    # NOTE: str is necessary because HttpUrl will not accept and empty string and the
+    # frontend sometimes sends this empty string, which is removed by the validator
     thumbnail: Union[str, HttpUrl] = Field(
         ...,
         description="url of the project thumbnail",
