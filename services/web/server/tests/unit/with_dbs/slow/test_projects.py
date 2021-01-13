@@ -328,6 +328,7 @@ async def _new_project(
             "classifiers": [],
             "ui": {},
             "dev": {},
+            "quality": {}
         }
         if project:
             project_data.update(project)

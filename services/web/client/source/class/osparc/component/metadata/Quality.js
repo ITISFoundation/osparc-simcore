@@ -15,10 +15,19 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.metadata.ServiceQuality", {
+qx.Class.define("osparc.component.metadata.Quality", {
   type: "static",
 
   statics: {
+    attachQualityToObject: function(obj) {
+      if (!("quality" in obj)) {
+        obj["quality"] = {};
+      }
+      if (Object.keys(obj["quality"]).length === 0) {
+        obj["quality"] = osparc.component.metadata.Quality.getDefaultQuality();
+      }
+    },
+
     getConformanceLevel: function() {
       const conformanceLevel = {
         "l00": {
@@ -62,7 +71,7 @@ domain and the intended context of use",
 
     findConformanceLevel: function(level) {
       let confLevel = null;
-      const conformanceLevels = osparc.component.metadata.ServiceQuality.getConformanceLevel();
+      const conformanceLevels = osparc.component.metadata.Quality.getConformanceLevel();
       Object.values(conformanceLevels).forEach(conformanceLevel => {
         if (conformanceLevel.level === level) {
           confLevel = conformanceLevel;
@@ -73,8 +82,8 @@ domain and the intended context of use",
 
     getDefaultQuality: function() {
       const defaultQuality = {};
-      defaultQuality["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
-      defaultQuality["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
+      defaultQuality["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
+      defaultQuality["tsr"] = osparc.component.metadata.Quality.getDefaultQualityTSR();
       return defaultQuality;
     },
 

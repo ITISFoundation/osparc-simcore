@@ -427,8 +427,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
 
-      const extraView = this.__extraView = new osparc.component.metadata.StudyInfo();
-      extraView.setStudy(study);
+      const extraView = this.__extraView = new osparc.component.widget.StudyCardMedium(study);
+      this.__sidePanel.addListener("panelResized", e => {
+        const bounds = e.getData();
+        extraView.checkResize(bounds);
+      }, this);
       this.__sidePanel.addOrReplaceAt(new osparc.desktop.PanelView(this.tr("Study information"), extraView), 1, {
         flex: 1
       });

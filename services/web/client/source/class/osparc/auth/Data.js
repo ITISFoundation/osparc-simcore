@@ -83,7 +83,7 @@ qx.Class.define("osparc.auth.Data", {
     getUserName: function() {
       const email = osparc.auth.Data.getInstance().getEmail();
       if (email) {
-        return email.split("@")[0];
+        return osparc.utils.Utils.getNameFromEmail(email);
       }
       return "user";
     }
