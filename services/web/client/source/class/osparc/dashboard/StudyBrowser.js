@@ -252,22 +252,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         importStudy.addListener("requestReady", e => {
           win.close();
 
-          const placeholderStudy = new osparc.data.model.Study({
-            uuid: "placeholder",
-            name: "Importing study"
-          });
+          /*
+          const placeholderStudy = osparc.data.model.Study.createMyNewStudyObject();
+          placeholderStudy["uuid"] = "placeholder";
+          placeholderStudy["name"] = "Importing study";
+          placeholderStudy["resourceType"] = "study";
           const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonItem().set({
-            resourceData: placeholderStudy,
-            resourceType: "study"
+            resourceData: placeholderStudy
           });
           placeholderStudyCard.setImporting(true);
-          this.__userStudyContainer.add(placeholderStudyCard);
+          */
+          const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
+          this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 
           const request = e.getData();
-          const xhr = new XMLHttpRequest();
-          xhr.setRequestHeader("Content-Type", "application/json");
-          xhr.open("POST", "/v0/projects:import", true);
-          xhr.upload.addEventListener("progress", ep => {
+          const req = new osparc.io.request.ApiRequest("/projects:import", "POST");
+          req.upload.addEventListener("progress", ep => {
             if (e.lengthComputable) {
               const percentComplete = ep.loaded / ep.total * 100;
               // progressBar.setValue(percentComplete);
@@ -276,14 +276,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               console.log("Unable to compute progress information since the total size is unknown");
             }
           }, false);
-          xhr.onload = () => {
-            if (xhr.status == 200) {
-              console.log(xhr.response);
+          req.onload = () => {
+            if (req.status == 200) {
+              console.log(req.response);
             } else {
-              console.log(xhr.response);
+              console.log(req.response);
             }
           };
-          xhr.send(request.body);
+          req.send(request.body);
           /*
           fetch("/v0/projects:import", request)
             .then(resp => {
