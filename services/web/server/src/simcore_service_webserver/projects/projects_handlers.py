@@ -9,13 +9,15 @@ import aioredlock
 from aiohttp import web
 from aiohttp.web_request import FileField
 from jsonschema import ValidationError
-
-from models_library.projects_state import ProjectState
 from models_library.basic_types import StringBool
+from models_library.projects_state import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
+from ..exporter.config import get_max_upload_file_size_gb
+from ..exporter.export_import import study_export, study_import
+from ..exporter.utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
@@ -25,9 +27,6 @@ from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
-from ..exporter.export_import import study_export, study_import
-from ..exporter.utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
-from ..exporter.config import get_max_upload_file_size_gb
 
 ONE_GB: int = 1024 * 1024 * 1024
 
@@ -608,8 +607,6 @@ async def export_project(request: web.Request):
     if not file_to_download.is_file():
         raise web.HTTPError(reason="Must provide a file to download")
 
-    # continue tomorrow to have the file download with sha256sum added to the header in order to check the file
-    # TODO: put the SHA256 header here for checksums?
     headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
     log.info("Will download file %s", file_to_download)
 
