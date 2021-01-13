@@ -10,8 +10,8 @@ describe('tags testing', () => {
   } = utils.getUserAndPass();
 
   const STUDY_NAME = 'study_tag_test';
-  const TAG_NAME = 'tag_tag_test';
-  const TAG_NAME_2 = 'tag_tag_test_2';
+  const TAG_NAME = 'tag_test';
+  const TAG_NAME_2 = 'tag_test_2';
   let studyId = null;
   let tagId = null;
 
@@ -71,7 +71,6 @@ describe('tags testing', () => {
     await waitAndClick(page, '[osparc-test-id="addTagBtn"]');
     await utils.typeInInputElement(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type input[type="text"]', TAG_NAME);
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.form.FetchButton"]');
-    // await utils.takeScreenshot(page, 'scr1')
     // Check tag was added
     await page.waitForFunction(tagName => {
       const el = document.querySelector(
@@ -99,7 +98,6 @@ describe('tags testing', () => {
     // Assign to study
     await waitAndClick(page, '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [osparc-test-id="studyItemMenuButton"]');
     await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
-    // await utils.takeScreenshot(page, 'scr2')
     await waitAndClick(page, '[osparc-test-id="editStudyBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
