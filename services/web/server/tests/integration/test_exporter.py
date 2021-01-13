@@ -272,7 +272,7 @@ def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, An
 
 async def import_study_from_file(client, file_path: Path) -> str:
     url_import = client.app.router["import_project"].url_for()
-    assert url_import == URL(API_PREFIX + "/projects/import")
+    assert url_import == URL(API_PREFIX + "/projects:import")
 
     data = {"fileName": open(file_path, mode="rb")}
     async with await client.post(url_import, data=data, timeout=10) as import_response:
