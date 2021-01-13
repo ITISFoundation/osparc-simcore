@@ -24,7 +24,7 @@
  *   - Remove collaborators
  */
 
-qx.Class.define("osparc.component.permissions.PermissionsService", {
+qx.Class.define("osparc.component.permissions.Service", {
   extend: osparc.component.permissions.Permissions,
 
   /**

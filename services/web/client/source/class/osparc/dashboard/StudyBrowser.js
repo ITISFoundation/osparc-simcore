@@ -506,7 +506,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getPermissionsMenuButton: function(studyData) {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
-        const permissionsView = new osparc.component.permissions.PermissionsStudy(studyData);
+        const permissionsView = new osparc.component.permissions.Study(studyData);
         const title = this.tr("Share with Collaborators and Organizations");
         osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
         permissionsView.addListener("updateStudy", e => {
@@ -622,7 +622,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.permissions.PermissionsStudy.removeCollaborator(studyData, myGid);
+        osparc.component.permissions.Study.removeCollaborator(studyData, myGid);
         const params = {
           url: {
             projectId: studyData.uuid
