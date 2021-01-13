@@ -448,7 +448,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
-      const exportButton = this.__getExportMenuButton(studyData);
       const exportButton = this.__getExportMenuButton(item, studyData);
       menu.add(exportButton);
 
@@ -529,6 +528,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getExportMenuButton: function(studyData) {
+    __getExportMenuButton: function(item, studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
         const exportStudy = new osparc.component.study.Export(studyData);
