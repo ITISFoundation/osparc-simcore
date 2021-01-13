@@ -43,46 +43,21 @@ qx.Class.define("osparc.component.study.Import", {
       allowGrowX: false
     });
     importBtn.addListener("execute", () => {
-      if (fileInput.getFile()) {
-        const formData = {
-          files: []
-        };
-        formData.files.push(fileInput.getFile());
-        this.__sendFile(formData);
+      const file = fileInput.getFile();
+      if (file) {
+        const size = file.size;
+        const maxSize = 10; // 10 GB
+        if (size > maxSize * 1024 * 1024 * 1024) {
+          osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+          return;
+        }
+        this.fireDataEvent("fileReady", file);
       }
     }, this);
     this._add(importBtn);
   },
 
   events: {
-    "requestReady": "qx.event.type.Data"
-  },
-
-  members: {
-    __sendFile: function(formData) {
-      const request = {
-        method: "POST"
-      };
-      const headers = new Headers();
-      headers.append("Accept", "application/json");
-      request.headers = headers;
-
-      const body = new FormData();
-      body.append("metadata", new Blob([JSON.stringify(formData.json)], {
-        type: "application/json"
-      }));
-      if (formData.files && formData.files.length) {
-        const size = formData.files[0].size;
-        const maxSize = 10; // 10 GB
-        if (size > maxSize * 1024 * 1024 * 1024) {
-          osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
-          return;
-        }
-        body.append("attachment", formData.files[0], formData.files[0].name);
-      }
-      request.body = body;
-
-      this.fireDataEvent("requestReady", request);
-    }
+    "fileReady": "qx.event.type.Data"
   }
 });

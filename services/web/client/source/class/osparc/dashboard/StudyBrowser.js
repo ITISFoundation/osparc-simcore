@@ -249,15 +249,36 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       importButton.addListener("execute", () => {
         const importStudy = new osparc.component.study.Import();
         const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
-        importStudy.addListener("requestReady", e => {
+        importStudy.addListener("fileReady", e => {
           win.close();
+
+          const file = e.getData();
 
           const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
           placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
           this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 
-          const request = e.getData();
-          const req = new osparc.io.request.ApiRequest("/projects:import", "POST");
+          const xhr = new XMLHttpRequest();
+          xhr.upload.addEventListener("progress", ep => {
+            if (e.lengthComputable) {
+              const percentComplete = ep.loaded / ep.total * 100;
+              placeholderStudyCard.getProgressBar().setValue(percentComplete);
+            } else {
+              console.log("Unable to compute progress information since the total size is unknown");
+            }
+          }, false);
+          xhr.onload = () => {
+            console.log(xhr.response);
+            if (xhr.status == 200) {
+              placeholderStudyCard.setStateLabel(this.tr("Processing study"));
+              placeholderStudyCard.getProgressBar().exclude();
+            }
+          };
+          xhr.open("POST", "/v0/projects:import", true);
+          xhr.send(file);
+          /*
+          const file = e.getData();
+          const req = new osparc.io.file.ApiRequest("/projects:import", "POST");
           req.upload.addEventListener("progress", ep => {
             if (e.lengthComputable) {
               const percentComplete = ep.loaded / ep.total * 100;
@@ -275,7 +296,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               console.log(req.response);
             }
           };
-          req.send(request.body);
+          req.send(file.body);
+          */
         }, this);
       }, this);
       return importButton;
