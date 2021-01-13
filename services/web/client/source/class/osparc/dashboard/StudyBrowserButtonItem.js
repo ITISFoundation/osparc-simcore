@@ -115,12 +115,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyLocked"
     },
 
-    lockedBy: {
-      check: "String",
-      nullable: true,
-      apply: "_applyLockedBy"
-    },
-
     multiSelectionMode: {
       check: "Boolean",
       init: false,
