@@ -90,7 +90,7 @@ async def study_import(
         str(upload_file_name),
     )
 
-    # compute_checksup and check if they match
+    # compute checksum and check if they match
     algorithm, digest_from_filename = validate_osparc_import_name(original_file_name)
     upload_digest = await checksum(file_path=upload_file_name, algorithm=algorithm)
     if digest_from_filename != upload_digest:
