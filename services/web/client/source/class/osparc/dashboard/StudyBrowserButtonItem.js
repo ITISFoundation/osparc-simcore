@@ -450,25 +450,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (locked) {
         this.setLocked(state["locked"]["value"]);
         const owner = state["locked"]["owner"];
-        this.setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
+        this.__setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
       } else {
         this.setLocked(false);
-        this.setLockedBy(null);
       }
     },
 
-    _applyLocked: function(locked) {
+    __enableCard: function(enabled) {
       this.set({
-        cursor: locked ? "not-allowed" : "pointer"
+        cursor: enabled ? "pointer" : "not-allowed"
       });
 
       this._getChildren().forEach(item => {
-        item.setOpacity(locked ? 0.4 : 1.0);
+        item.setOpacity(enabled ? 1.0 : 0.4);
       });
-
-      const lock = this.getChildControl("lock");
-      lock.setOpacity(1.0);
-      lock.setVisibility(locked ? "visible" : "excluded");
 
       [
         "tick-selected",
@@ -477,13 +472,24 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.set({
-          enabled: !locked
+          enabled
         });
       });
     },
 
-    _applyLockedBy: function(lockedBy) {
-      this.set({
+    _applyLocked: function(locked) {
+      this.__enableCard(!locked);
+
+      const lock = this.getChildControl("lock");
+      lock.set({
+        opacity: 1.0,
+        visibility: locked ? "visible" : "excluded"
+      });
+    },
+
+    __setLockedBy: function(lockedBy) {
+      const lock = this.getChildControl("lock");
+      lock.set({
         toolTipText: lockedBy ? (lockedBy + this.tr(" is using it")) : null
       });
     },
