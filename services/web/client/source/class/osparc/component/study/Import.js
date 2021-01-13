@@ -79,10 +79,10 @@ qx.Class.define("osparc.component.study.Import", {
       })
         .then(resp => {
           if (resp.ok) {
-            osparc.component.message.FlashMessenger.logAs("Your data was sent to our curation team. We will get back to you shortly.", "INFO");
-            // addServiceWindow.close();
+            osparc.component.message.FlashMessenger.logAs("Study successfuly uploaded. Processing data...", "INFO");
+            this.fireEvent("studyImported");
           } else {
-            osparc.component.message.FlashMessenger.logAs(`A problem occured while processing your data: ${resp.statusText}`, "ERROR");
+            osparc.component.message.FlashMessenger.logAs(`A problem occured: ${resp.statusText}`, "ERROR");
           }
         })
         .finally(() => btn.setFetching(false));
