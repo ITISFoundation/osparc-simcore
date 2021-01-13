@@ -205,6 +205,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createUserStudiesLayout: function() {
       const userStudyContainer = this.__userStudyContainer = this.__createStudyListLayout();
+      userStudyContainer.add(this.__createNewStudyButton());
       osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
@@ -413,8 +414,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _resetStudiesList: function(userStudiesList) {
       this.__userStudies = userStudiesList;
-      this.__userStudyContainer.removeAll();
-      this.__userStudyContainer.add(this.__createNewStudyButton());
+      const userStudyItems = this.__userStudyContainer.getChildren();
+      for (let i=userStudyItems.length-1; i>=0; i--) {
+        const userStudyItem = userStudyItems[i];
+        if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
+          this.__userStudyContainer.remove(userStudyItem);
+        }
+      };
       this.self().sortStudyList(userStudiesList);
       userStudiesList.forEach(userStudy => {
         userStudy["resourceType"] = "study";
