@@ -1,5 +1,7 @@
 // node isolve.js [url] [user] [password] [--demo]
 
+// https://itisfoundation.github.io/osparc-manual-z43/#/Tutorials/GeneralTutorial
+
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
 
