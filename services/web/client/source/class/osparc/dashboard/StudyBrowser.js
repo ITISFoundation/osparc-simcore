@@ -248,10 +248,41 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const importButton = new qx.ui.form.Button(this.tr("Import"));
       importButton.addListener("execute", () => {
         const importStudy = new osparc.component.study.Import();
-        osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
-        importStudy.addListener("studyImported", e => {
-          const studyId = e.getData();
-          this.reloadUserStudy(studyId);
+        const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
+        importStudy.addListener("requestReady", e => {
+          win.close();
+          const request = e.getData();
+          const xhr = new XMLHttpRequest();
+          xhr.setRequestHeader("Content-Type", "application/json");
+          xhr.open("POST", "/v0/projects:import", true);
+          xhr.upload.addEventListener("progress", ep => {
+            if (e.lengthComputable) {
+              const percentComplete = ep.loaded / ep.total * 100;
+              progressBar.setValue(percentComplete);
+              this.getNode().getStatus().setProgress(percentComplete === 100 ? 99 : percentComplete);
+            } else {
+              console.log("Unable to compute progress information since the total size is unknown");
+            }
+          }, false);
+          xhr.onload = () => {
+            if (xhr.status == 200) {
+              console.log(xhr.response);
+            } else {
+              console.log(xhr.response);
+            }
+          };
+          xhr.send(request.body);
+          /*
+          fetch("/v0/projects:import", request)
+            .then(resp => {
+              if (resp.ok) {
+                osparc.component.message.FlashMessenger.logAs("Study successfuly uploaded. Processing data...", "INFO");
+                this.fireEvent("studyImported");
+              } else {
+                osparc.component.message.FlashMessenger.logAs(`A problem occured: ${resp.statusText}`, "ERROR");
+              }
+            });
+          */
         }, this);
       }, this);
       return importButton;

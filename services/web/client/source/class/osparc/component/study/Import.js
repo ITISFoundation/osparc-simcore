@@ -15,6 +15,10 @@
 
 ************************************************************************ */
 
+/**
+ * @ignore(Headers)
+ */
+
 qx.Class.define("osparc.component.study.Import", {
   extend: qx.ui.core.Widget,
 
@@ -34,7 +38,7 @@ qx.Class.define("osparc.component.study.Import", {
     const fileInput = new osparc.ui.form.FileInput(extensions, multiple);
     this._add(fileInput);
 
-    const importBtn = new osparc.ui.form.FetchButton(this.tr("Import")).set({
+    const importBtn = new qx.ui.form.Button(this.tr("Import")).set({
       alignX: "right",
       allowGrowX: false
     });
@@ -44,20 +48,25 @@ qx.Class.define("osparc.component.study.Import", {
           files: []
         };
         formData.files.push(fileInput.getFile());
-        this.__sendFile(formData, importBtn);
+        this.__sendFile(formData);
       }
     }, this);
     this._add(importBtn);
   },
 
   events: {
-    "studyImported": "qx.event.type.Data"
+    "requestReady": "qx.event.type.Data"
   },
 
   members: {
     __sendFile: function(formData, btn) {
+      const request = {
+        method: "POST"
+      };
       const headers = new Headers();
       headers.append("Accept", "application/json");
+      request.headers = headers;
+
       const body = new FormData();
       body.append("metadata", new Blob([JSON.stringify(formData.json)], {
         type: "application/json"
@@ -71,21 +80,9 @@ qx.Class.define("osparc.component.study.Import", {
         }
         body.append("attachment", formData.files[0], formData.files[0].name);
       }
-      btn.setFetching(true);
-      fetch("/v0/prjects:import", {
-        method: "POST",
-        headers,
-        body
-      })
-        .then(resp => {
-          if (resp.ok) {
-            osparc.component.message.FlashMessenger.logAs("Study successfuly uploaded. Processing data...", "INFO");
-            this.fireEvent("studyImported");
-          } else {
-            osparc.component.message.FlashMessenger.logAs(`A problem occured: ${resp.statusText}`, "ERROR");
-          }
-        })
-        .finally(() => btn.setFetching(false));
+      request.body = body;
+
+      this.fireDataEvent("requestReady", request);
     }
   }
 });
