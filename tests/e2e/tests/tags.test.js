@@ -45,12 +45,16 @@ describe('tags testing', () => {
     await waitAndClick(page, '[qxclass="osparc.desktop.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"]');
     await page.keyboard.type(STUDY_NAME);
     await page.keyboard.press('Enter');
-    await page.waitForFunction(studyName => {
-      return document.querySelector(
-        '[qxclass="osparc.desktop.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"] [qxclass="qx.ui.basic.Label"]'
-      ).innerText === studyName;
-    }, {}, STUDY_NAME);
-    await utils.takeScreenshot(page, 'study_name');
+    try {
+      await page.waitForFunction(studyName => {
+        return document.querySelector(
+          '[qxclass="osparc.desktop.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"] [qxclass="qx.ui.basic.Label"]'
+        ).innerText === studyName;
+      }, {}, STUDY_NAME);
+    } catch (error) {
+      console.error(error);
+      await utils.takeScreenshot(page, 'study_name');
+    }
     await waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
   }, ourTimeout * 2);
 
@@ -73,13 +77,17 @@ describe('tags testing', () => {
     await utils.typeInInputElement(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type input[type="text"]', TAG_NAME);
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.form.FetchButton"]');
     // Check tag was added
-    await page.waitForFunction(tagName => {
-      const el = document.querySelector(
-        '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.basic.Tag"]'
-      );
-      return el && el.innerText === tagName;
-    }, {}, TAG_NAME);
-    await utils.takeScreenshot(page, 'add_tag');
+    try {
+      await page.waitForFunction(tagName => {
+        const el = document.querySelector(
+          '[qxclass="osparc.component.form.tag.TagItem"]:last-of-type [qxclass="osparc.ui.basic.Tag"]'
+        );
+        return el && el.innerText === tagName;
+      }, {}, TAG_NAME);
+    } catch (error) {
+      console.error(error);
+      await utils.takeScreenshot(page, 'add_tag');
+    }
     // Close properties
     await waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
   }, ourTimeout);
@@ -92,15 +100,19 @@ describe('tags testing', () => {
   }, ourTimeout);
 
   test('assign tag and reflect changes', async () => {
+    await utils.sleep(1000);
     await page.waitForSelector(
       '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] > [qxclass="osparc.component.widget.Thumbnail"]',
       { hidden: true }
     );
-    await utils.sleep(1000);
     // Assign to study
     await waitAndClick(page, '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [osparc-test-id="studyItemMenuButton"]');
-    await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
-    await utils.takeScreenshot(page, 'assign_tag');
+    try {
+      await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
+    } catch (error) {
+      console.error(error);
+      await utils.takeScreenshot(page, 'assign_tag');
+    }
     await waitAndClick(page, '[osparc-test-id="editStudyBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
