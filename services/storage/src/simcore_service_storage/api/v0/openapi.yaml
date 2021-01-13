@@ -1913,6 +1913,11 @@ paths:
                                   default: ReadAndWrite
                                   example:
                                     - ReadOnly
+                            inputsHash:
+                              description: the hex digest of the resolved inputs hash at the time when the last outputs were generated
+                              type: string
+                              example:
+                                - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                             inputNodes:
                               type: array
                               items:
@@ -2350,6 +2355,11 @@ paths:
                                   default: ReadAndWrite
                                   example:
                                     - ReadOnly
+                            inputsHash:
+                              description: the hex digest of the resolved inputs hash at the time when the last outputs were generated
+                              type: string
+                              example:
+                                - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                             inputNodes:
                               type: array
                               items:
@@ -2797,6 +2807,11 @@ paths:
                                 default: ReadAndWrite
                                 example:
                                   - ReadOnly
+                          inputsHash:
+                            description: the hex digest of the resolved inputs hash at the time when the last outputs were generated
+                            type: string
+                            example:
+                              - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                           inputNodes:
                             type: array
                             items:
@@ -3344,6 +3359,11 @@ components:
                       default: ReadAndWrite
                       example:
                         - ReadOnly
+                inputsHash:
+                  description: the hex digest of the resolved inputs hash at the time when the last outputs were generated
+                  type: string
+                  example:
+                    - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                 inputNodes:
                   type: array
                   items:
