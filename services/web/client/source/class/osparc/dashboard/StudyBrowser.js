@@ -325,14 +325,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __studyStateReceived: function(studyId, state) {
-      console.log("study state:", studyId, state);
       const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
       if (studyItem) {
         studyItem.setState(state);
-      } else {
-        console.log(studyId, "card not found");
       }
-
       osparc.store.Store.getInstance().setStudyState(studyId, state);
     },
 
@@ -357,7 +353,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         if (osparc.auth.Manager.getInstance().isLoggedIn()) {
-          this._resetStudiesList(osparc.store.Store.getInstance().getStudies());
+          this.reloadUserStudies();
         }
       }, this);
     },

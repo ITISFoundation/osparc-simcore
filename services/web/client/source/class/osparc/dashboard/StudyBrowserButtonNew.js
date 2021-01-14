@@ -49,15 +49,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonNew", {
     },
 
     _shouldApplyFilter: function(data) {
-      if (data.text) {
-        const checks = [
-          this.getChildControl("title").getValue().toString(),
-          this.getChildControl("subtitle-text").getValue().toString()
-        ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(data.text)).length == 0) {
-          return true;
-        }
-      }
+      return false;
+    },
+
+    _shouldReactToFilter: function(data) {
       return false;
     }
   }
