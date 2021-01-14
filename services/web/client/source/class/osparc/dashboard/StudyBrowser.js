@@ -664,6 +664,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    __exportStudy: function(studyData) {
+      const params = {
+        url: {
+          projectId: studyData["uuid"]
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      return osparc.data.Resources.fetch("studies", "export", params);
+    },
+
     __updateDeleteStudiesButton: function(studiesDeleteButton) {
       const nSelected = this.__userStudyContainer.getSelection().length;
       if (nSelected) {
