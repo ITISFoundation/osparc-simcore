@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.task.Export", {
+qx.Class.define("osparc.component.task.Import", {
   extend: osparc.component.task.Task,
 
   construct: function(study) {
@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.task.Export", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/file-export/12");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/file-import/12");
           this._add(control);
           break;
       }
@@ -44,14 +44,14 @@ qx.Class.define("osparc.component.task.Export", {
       this.getChildControl("icon");
 
       const label = this.getChildControl("label");
-      label.setValue(this.tr("Exporting: ") + this.__study.name);
+      label.setValue(this.tr("Importing: ") + this.__study.name);
 
       this.getChildControl("stop");
     },
 
     // overridden
     _stopTask: function() {
-      console.log("Stop exporting", this.__study.name);
+      console.log("Stop importing", this.__study.name);
       const tasks = osparc.component.task.Tasks.getInstance();
       tasks.removeTask(this);
     }

@@ -28,7 +28,7 @@ qx.Class.define("osparc.component.task.Task", {
 
     this.set({
       height: 30,
-      maxWidth: 200,
+      maxWidth: 250,
       backgroundColor: "material-button-background"
     });
   },
@@ -37,19 +37,17 @@ qx.Class.define("osparc.component.task.Task", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "icon-status":
+        case "icon":
           control = new osparc.ui.form.FetchButton();
           this._add(control);
           break;
         case "label":
-          control = new qx.ui.basic.Label().set({
-            allowGrowX: false
-          });
+          control = new qx.ui.basic.Label();
           this._add(control, {
             flex: 1
           });
           break;
-        case "icon-stop":
+        case "stop":
           control = new qx.ui.basic.Image("@MaterialIcons/close/16").set({
             cursor: "pointer"
           });
