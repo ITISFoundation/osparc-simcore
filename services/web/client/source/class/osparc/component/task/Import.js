@@ -18,10 +18,8 @@
 qx.Class.define("osparc.component.task.Import", {
   extend: osparc.component.task.Task,
 
-  construct: function(study) {
+  construct: function() {
     this.base(arguments);
-
-    this.__study = study;
 
     this.__builyLayout();
   },
@@ -50,14 +48,14 @@ qx.Class.define("osparc.component.task.Import", {
       this.getChildControl("icon");
 
       const label = this.getChildControl("label");
-      label.setValue(this.tr("Importing: ") + this.__study.name);
+      label.setValue(this.tr("Importing Study"));
 
       this.getChildControl("stop");
     },
 
     // overridden
     _stopTask: function() {
-      console.log("Stop importing", this.__study.name);
+      console.log("Stop importing");
       const tasks = osparc.component.task.Tasks.getInstance();
       tasks.removeTask(this);
     }

@@ -253,6 +253,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         importStudy.addListener("fileReady", e => {
           win.close();
 
+          const importTask = new osparc.component.task.Import();
+          const tasks = osparc.component.task.Tasks.getInstance();
+          tasks.addTask(importTask);
+          const text = this.tr("Importing process started and added to the background tasks");
+          osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+
           const file = e.getData();
 
           const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
@@ -582,6 +588,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const exportTask = new osparc.component.task.Export(studyData);
         const tasks = osparc.component.task.Tasks.getInstance();
         tasks.addTask(exportTask);
+        const text = this.tr("Exporting process started and added to the background tasks");
+        osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+        this.__exportStudy(studyData);
         // item.setExporting(true);
       }, this);
       return exportButton;
