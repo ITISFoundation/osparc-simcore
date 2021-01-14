@@ -4,14 +4,13 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 from aiohttp import web
-from pydantic.types import PositiveInt
-from yarl import URL
-
 from models_library.projects_state import RunningState
+from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from yarl import URL
 
 from .director_v2_settings import (
     CONFIG_SECTION_NAME,
@@ -80,9 +79,8 @@ async def create_or_update_pipeline(
         )
         return computation_task_out
 
-    except _DirectorServiceError as e:
+    except _DirectorServiceError:
         log.error("could not create pipeline from project %s", project_id)
-        raise e
 
 
 @log_decorator(logger=log)
