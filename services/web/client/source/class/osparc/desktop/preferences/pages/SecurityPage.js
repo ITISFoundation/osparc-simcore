@@ -220,7 +220,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       ));
       box.add(label);
 
-      const linkBtn = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), "https://app.blackfynn.io");
+      const linkBtn = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), null, "https://app.blackfynn.io");
       box.add(linkBtn);
 
       const tokensList = this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
