@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.task.Export", {
-  extend: qx.core.Object,
+  extend: osparc.component.task.Task,
 
   construct: function(study) {
     this.base(arguments);

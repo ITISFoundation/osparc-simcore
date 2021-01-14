@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.component.task.Task", {
-  extend: qx.core.Object,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base(arguments);
@@ -27,7 +27,8 @@ qx.Class.define("osparc.component.task.Task", {
     this._setLayout(layout);
 
     this.set({
-      height: 30
+      height: 30,
+      backgroundColor: "material-button-background"
     });
   },
 
@@ -40,7 +41,10 @@ qx.Class.define("osparc.component.task.Task", {
           this._add(control);
           break;
         case "label":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            allowGrowX: false,
+            maxWidth: 200
+          });
           this._add(control, {
             flex: 1
           });
