@@ -175,7 +175,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       });
 
       const extraInfo = [
-        [this.tr("Owner"), this.__createOwner()],
+        [this.tr("Author"), this.__createOwner()],
         [this.tr("Creation date"), this.__createCreationDate()],
         [this.tr("Last modified"), this.__createLastChangeDate()],
         [this.tr("Access rights"), this.__createAccessRights()],

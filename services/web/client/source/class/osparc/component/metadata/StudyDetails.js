@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.metadata.StudyDetails", {
       this.getStudy().bind("lastChangeDate", lastChangeDate, "value", dateOptions);
       this.getStudy().bind("prjOwner", owner, "value");
 
-      moreInfo.add(new qx.ui.basic.Label(this.tr("Owner")).set({
+      moreInfo.add(new qx.ui.basic.Label(this.tr("Author")).set({
         font: "title-12"
       }), {
         row: 0,
