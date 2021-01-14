@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import shutil
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any, Callable, Tuple
 
