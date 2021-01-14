@@ -34,7 +34,7 @@ def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
             key=node.key,
             version=node.version,
             inputs=node.inputs,
-            inputs_hash=node.inputs_hash,
+            run_hash=node.run_hash,
             outputs=node.outputs,
         )
         for input_node_id in node.input_nodes:
@@ -57,7 +57,7 @@ def create_complete_computational_dag_graph(workbench: Workbench) -> nx.DiGraph:
                 key=node.key,
                 version=node.version,
                 inputs=node.inputs,
-                inputs_hash=node.inputs_hash,
+                run_hash=node.run_hash,
                 outputs=node.outputs,
             )
             for input_node_id in node.input_nodes:
@@ -126,7 +126,7 @@ def _node_outdated(
             return True
     # ok so we have outputs, but maybe the inputs are old? let's compute the node hash and compare with the saved one
     computed_hash = _compute_node_hash(nodes_data_view, node_id)
-    return computed_hash != node["inputs_hash"]
+    return computed_hash != node["run_hash"]
 
 
 @log_decorator(logger=logger)

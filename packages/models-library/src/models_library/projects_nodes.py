@@ -83,19 +83,20 @@ class Node(BaseModel):
         example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
-    # INPUT PORTS ---
+    # RUN HASH
+    run_hash: Optional[str] = Field(
+        None,
+        description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+        examples=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
+        alias="runHash",
+    )
 
+    # INPUT PORTS ---
     inputs: Optional[Inputs] = Field(
         default_factory=dict, description="values of input properties"
     )
     input_access: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs", alias="inputAccess"
-    )
-    inputs_hash: Optional[str] = Field(
-        None,
-        description="the hex digest of the resolved inputs hash at the time when the last outputs were generated",
-        examples=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
-        alias="inputsHash",
     )
     input_nodes: Optional[List[NodeID]] = Field(
         default_factory=list,
