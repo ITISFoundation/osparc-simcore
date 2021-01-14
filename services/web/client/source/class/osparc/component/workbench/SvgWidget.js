@@ -45,9 +45,11 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       qx.bom.element.Attribute.set(el, "id", svgLayerId);
       const svgWrapper = new osparc.wrapper.Svg();
       svgWrapper.addListener("svgLibReady", () => {
-        this.__canvas = svgWrapper.createEmptyCanvas(svgLayerId);
-        this.setReady(true);
-        this.fireDataEvent("SvgWidgetReady", true);
+        if (this.__canvas === null) {
+          this.__canvas = svgWrapper.createEmptyCanvas(svgLayerId);
+          this.setReady(true);
+          this.fireDataEvent("SvgWidgetReady", true);
+        }
       });
       svgWrapper.init();
     });

@@ -36,9 +36,11 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
       qx.bom.element.Attribute.set(el, "id", randomID);
       const svgWrapper = new osparc.wrapper.Svg();
       svgWrapper.addListener("svgLibReady", () => {
-        this.__canvas = svgWrapper.createEmptyCanvas(randomID);
-        this.setReady(true);
-        this.fireDataEvent("SvgWidgetReady", true);
+        if (this.__canvas === null) {
+          this.__canvas = svgWrapper.createEmptyCanvas(randomID);
+          this.setReady(true);
+          this.fireDataEvent("SvgWidgetReady", true);
+        }
       });
       svgWrapper.init();
     });
