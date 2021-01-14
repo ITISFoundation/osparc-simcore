@@ -590,6 +590,7 @@ async def remove_tag(request: web.Request):
 
 
 @login_required
+@permission_required("project.export")
 async def export_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
@@ -622,6 +623,7 @@ async def export_project(request: web.Request):
 
 
 @login_required
+@permission_required("project.import")
 async def import_project(request: web.Request):
     # bumping this requet's max size
     # pylint: disable=protected-access
