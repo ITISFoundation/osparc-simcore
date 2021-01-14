@@ -1,3 +1,5 @@
+import hashlib
+import json
 import logging
 from copy import deepcopy
 from typing import Dict, List, Set
@@ -6,6 +8,7 @@ import networkx as nx
 from models_library.projects import Workbench
 from models_library.projects_nodes import Inputs, NodeID, Outputs
 from models_library.projects_nodes_io import PortLink
+from pydantic.main import BaseModel
 
 from .computations import NodeClass, to_node_class
 from .logging_utils import log_decorator
@@ -83,15 +86,32 @@ def _node_computational(node_key: str) -> bool:
 
 
 def _compute_node_hash(
-    nodes_data_view: nx.classes.reportviews.NodeDataView,
-    node_inputs: Inputs,
-    node_outputs: Outputs,
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> str:
+    node_inputs = nodes_data_view[str(node_id)]["inputs"]
+    node_outputs = nodes_data_view[str(node_id)]["outputs"]
     # resolve the port links if any
-    resolved_inputs = deepcopy(node_inputs)
+    resolved_inputs = {}
     for input_key, input_value in node_inputs.items():
         if isinstance(input_value, PortLink):
-            pass
+            # let's resolve the entry
+            previous_node = nodes_data_view[str(input_value.node_uuid)]
+            previous_node_outputs = previous_node.get("outputs", {})
+            resolved_inputs[input_key] = previous_node_outputs.get(input_value.output)
+        else:
+            resolved_inputs[input_key] = input_value
+
+    io_payload = {"inputs": resolved_inputs, "outputs": node_outputs}
+
+    class PydanticEncoder(json.JSONEncoder):
+        def default(self, o):
+            if isinstance(o, BaseModel):
+                return o.json()
+            return json.JSONEncoder.default(self, o)
+
+    block_string = json.dumps(io_payload, cls=PydanticEncoder).encode("utf-8")
+    raw_hash = hashlib.sha256(block_string)
+    return raw_hash.hexdigest()
 
 
 def _node_outdated(
@@ -104,19 +124,9 @@ def _node_outdated(
     for output_port in node["outputs"]:
         if output_port is None:
             return True
-    # ok so we have outputs, but maybe the inputs are old? let's check recursively
-    # node_hash = _compute_node_hash(node["inputs"], node["outputs"])
-    # return True if node_hash != node["hash"] else False
-    for input_port in node["inputs"].values():
-        if isinstance(input_port, PortLink):
-            if is_node_dirty(nodes_data_view, input_port.node_uuid):
-                return True
-        else:
-            # FIXME: here we should check if the current inputs are the ones used to generate the current outputs
-            # this could be done by saving the inputs as metadata together with the outputs (see blockchain)
-            # we should compare the current inputs with the inputs used for generating the current outputs!!!
-            pass
-    return False
+    # ok so we have outputs, but maybe the inputs are old? let's compute the node hash and compare with the saved one
+    computed_hash = _compute_node_hash(nodes_data_view, node_id)
+    return computed_hash != node["inputs_hash"]
 
 
 @log_decorator(logger=logger)
