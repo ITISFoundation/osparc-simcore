@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Union
 
 import aiofiles
 from models_library.projects import Project
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, DirectoryPath, Field, validator
 
 from ..utils import makedirs
 from .base_models import BaseLoadingModel
@@ -16,7 +16,7 @@ ShuffledData = Dict[str, str]
 class LinkAndPath2(BaseModel):
     # where all files are stored in the exported folder
     _FILES_DIRECTORY: Union[str, Path] = "storage"
-    root_dir: Path = Field(
+    root_dir: DirectoryPath = Field(
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
@@ -30,15 +30,6 @@ class LinkAndPath2(BaseModel):
     )
 
     download_link: str = Field(..., description="Link from where to download the file")
-
-    @validator("root_dir")
-    @classmethod
-    def _validate_root_dir(cls, v):
-        if not isinstance(v, Path):
-            v = Path(v)
-        if not v.is_dir():
-            raise ValueError(f"Provided path {str(v)} is not a directory!")
-        return v
 
     @validator("relative_path_to_file")
     @classmethod
