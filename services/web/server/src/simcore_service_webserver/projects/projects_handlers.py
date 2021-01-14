@@ -9,7 +9,6 @@ import aioredlock
 from aiohttp import web
 from aiohttp.web_request import FileField
 from jsonschema import ValidationError
-from models_library.basic_types import StringBool
 from models_library.projects_state import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
@@ -602,14 +601,9 @@ async def export_project(request: web.Request):
     - The `/tmp/SOME_TMP_DIR/uuid/` is zipped producing the archive to be downloaded
     in this path `/tmp/SOME_TMP_DIR/some_name#SHA256=SOME_HASH.osparc`
     - When the request finishes, for any reason (HTTO_OK, HTTP_ERROR, etc...), the
-    `/tmp/SOME_TMP_DIR/` si removed from the disk.
-    """
+    `/tmp/SOME_TMP_DIR/` si removed from the disk."""
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
-    compressed = StringBool.parse(request.query.get("compressed"))
-
-    log.info(project_uuid)
-    log.info("Is compressed %s", compressed)
 
     temp_dir: str = await get_empty_tmp_dir()
 
@@ -620,7 +614,6 @@ async def export_project(request: web.Request):
             project_id=project_uuid,
             user_id=user_id,
             archive=True,
-            compress=compressed,
         )
         log.info("File to download '%s'", file_to_download)
 

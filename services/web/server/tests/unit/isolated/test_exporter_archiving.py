@@ -155,9 +155,7 @@ def test_validate_osparc_file_name_too_many_shasums():
 
 async def test_error_during_compression(temp_dir, project_uuid):
     with pytest.raises(ExporterException) as exc_info:
-        await zip_folder(
-            project_id=project_uuid, input_path=temp_dir, no_compression=False
-        )
+        await zip_folder(project_id=project_uuid, input_path=temp_dir)
 
     assert exc_info.type is ExporterException
     assert (
@@ -177,11 +175,7 @@ async def test_error_during_decompression():
 async def test_archive_already_exists(temp_dir, project_uuid):
     tmp_dir_to_compress = temp_dir_with_existing_archive(temp_dir, project_uuid)
     with pytest.raises(ExporterException) as exc_info:
-        await zip_folder(
-            project_id=project_uuid,
-            input_path=tmp_dir_to_compress,
-            no_compression=False,
-        )
+        await zip_folder(project_id=project_uuid, input_path=tmp_dir_to_compress)
 
     assert exc_info.type is ExporterException
     assert (
@@ -199,9 +193,7 @@ async def test_zip_unzip_folder(
     data_before_compression = file_in_archive.read_text()
 
     archive_path = await zip_folder(
-        project_id=project_uuid,
-        input_path=tmp_dir_to_compress,
-        no_compression=no_compresion,
+        project_id=project_uuid, input_path=tmp_dir_to_compress
     )
 
     str_archive_path = str(archive_path)
@@ -226,9 +218,7 @@ async def test_unzip_found_too_many_project_targets(
     )
 
     archive_path = await zip_folder(
-        project_id=project_uuid,
-        input_path=tmp_dir_to_compress,
-        no_compression=False,
+        project_id=project_uuid, input_path=tmp_dir_to_compress
     )
 
     str_archive_path = str(archive_path)

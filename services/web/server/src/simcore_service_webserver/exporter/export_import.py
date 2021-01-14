@@ -19,16 +19,12 @@ async def study_export(
     project_id: str,
     user_id: int,
     archive: bool = False,
-    compress: bool = False,
 ) -> Path:
     """
     Generates a folder with all the data necessary for exporting a project.
-    If compress is True, an archive will always be produced.
+    If archive is True, an archive will always be produced.
 
-    returns:
-        directory: if both archive and compress are False
-        uncompressed archive: if archive is True and compress is False
-        compressed archive: if both archive and compress are True
+    returns: directory if both archive is True else a compressed archive is returned
     """
     # storage area for the project data
     destination = Path(tmp_dir) / project_id
@@ -40,21 +36,12 @@ async def study_export(
         app=app, project_id=project_id, user_id=user_id
     )
 
-    if archive is False and compress is False:
+    if archive is False:
         # returns the path to the temporary directory containing the study data
         return destination
 
-    if archive is True and compress is False:
-        archive_path = await zip_folder(
-            project_id=project_id, input_path=destination, no_compression=True
-        )
-        return archive_path
-
     # an archive is always produced when compression is active
-    # compress is always True in this situation
-    archive_path = await zip_folder(
-        project_id=project_id, input_path=destination, no_compression=False
-    )
+    archive_path = await zip_folder(project_id=project_id, input_path=destination)
 
     return archive_path
 

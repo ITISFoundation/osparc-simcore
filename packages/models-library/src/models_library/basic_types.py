@@ -1,24 +1,12 @@
 from enum import Enum
 
-from pydantic import conint, constr, confloat, BaseModel, error_wrappers
+from pydantic import confloat, conint, constr
 
 PortInt = conint(gt=0, lt=65535)
 
 VersionTag = constr(regex=r"^v\d$")
 
 NonNegativeFloat = confloat(ge=0)  # NOTE: = 0.0 + PositiveFloat
-
-
-class StringBool(BaseModel):
-    __root__: bool
-
-    @classmethod
-    def parse(cls, str_bool: str) -> bool:
-        try:
-            value = StringBool.parse_obj(str_bool)
-            return value.__root__
-        except error_wrappers.ValidationError:
-            return False
 
 
 class LogLevel(str, Enum):

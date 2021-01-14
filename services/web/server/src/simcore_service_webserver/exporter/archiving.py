@@ -64,7 +64,7 @@ async def run_in_process_pool(function: Callable, *args: Tuple[Any]) -> Any:
         return await asyncio.get_event_loop().run_in_executor(pool, function, *args)
 
 
-async def zip_folder(project_id: str, input_path: Path, no_compression=False) -> Path:
+async def zip_folder(project_id: str, input_path: Path) -> Path:
     """Zips a folder and returns the path to the new archive"""
 
     zip_file = Path(input_path.parent) / f"{project_id}.zip"
