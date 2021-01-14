@@ -72,7 +72,9 @@ async def import_project_handler(request_tup: Tuple[web.Request]):
     file_name_field: FileField = post_contents.get("fileName", None)
 
     if file_name_field is None:
-        raise web.HTTPException(reason="Expected a file as 'fileName' form parmeter")
+        raise web.HTTPBadRequest(reason="Expected a file as 'fileName' form parmeter")
+    if not isinstance(file_name_field, FileField):
+        raise web.HTTPBadRequest(reason="Please select a file")
 
     temp_dir: str = await get_empty_tmp_dir()
 
