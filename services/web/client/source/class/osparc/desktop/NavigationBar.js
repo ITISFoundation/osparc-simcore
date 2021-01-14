@@ -153,6 +153,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         flex: 1
       });
 
+      this.getChildControl("tasks-button");
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
@@ -221,6 +222,11 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           this._add(control, {
             flex: 1
           });
+          break;
+        }
+        case "tasks-button": {
+          control = new osparc.component.task.TasksButton();
+          this._add(control);
           break;
         }
         case "manual":

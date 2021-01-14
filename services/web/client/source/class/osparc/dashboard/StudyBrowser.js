@@ -583,8 +583,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getExportMenuButton: function(item, studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
-        console.log("export");
-        item.setExporting(true);
+        const exportTask = new osparc.component.task.Export(studyData);
+        const tasks = osparc.component.task.Tasks.getInstance();
+        tasks.addTask(exportTask);
+        // item.setExporting(true);
       }, this);
       return exportButton;
     },
