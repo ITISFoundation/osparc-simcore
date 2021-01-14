@@ -1,15 +1,13 @@
 import asyncio
-import tempfile
-
-from pathlib import Path
-from typing import Union, Optional
-
 import os
-from aiofiles import os as aiofiles_os
+import tempfile
+from pathlib import Path
+from typing import Optional, Union
 
-from aiohttp.web import FileResponse
-from aiohttp.typedefs import LooseHeaders
+from aiofiles import os as aiofiles_os
 from aiohttp.abc import AbstractStreamWriter
+from aiohttp.typedefs import LooseHeaders
+from aiohttp.web import FileResponse
 
 makedirs = aiofiles_os.wrap(os.makedirs)  # as in aiofiles.os.py module
 rename = aiofiles_os.wrap(os.rename)  # as in aiofiles.os.py module
@@ -37,7 +35,10 @@ async def remove_dir(directory: str) -> None:
 
 
 class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
-    """After the upload is completed it will schedule a callback"""
+    """
+    After the FileResponse finishes a callback to remove the
+    tmp directory where the export data was stored is scheduled and ran.
+    """
 
     def __init__(
         self,
