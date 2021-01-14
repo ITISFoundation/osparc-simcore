@@ -35,7 +35,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonImporting", {
       const title = this.getChildControl("title");
       title.setValue(this.tr("Importing Study..."));
 
-      this.setIcon("@FontAwesome5Solid/file-import/70");
+      // this.setIcon("@FontAwesome5Solid/file-import/70");
+      this.setIcon("@FontAwesome5Solid/cloud-upload-alt/70");
 
       const stateLabel = this.__stateLabel = new qx.ui.basic.Label();
       this._mainLayout.add(stateLabel);
