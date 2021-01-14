@@ -592,18 +592,17 @@ async def remove_tag(request: web.Request):
 @login_required
 @permission_required("project.export")
 async def export_project(request: web.Request):
-    """
-    Exporting multiple studies in parallel is fully supported. How the process works:
-        - each time an export request is created a new temporary
-        directory is generated `/tmp/SOME_TMP_DIR/`
-        - inside this directory a new directory is generated with the uuid of the
-        project `/tmp/SOME_TMP_DIR/uuid/`.
-        - All contents from the project are written inside the `/tmp/SOME_TMP_DIR/uuid/`
-        directory (serialized data and storage files).
-        - The `/tmp/SOME_TMP_DIR/uuid/` is zipped producing the archive to be downloaded
-        in this path `/tmp/SOME_TMP_DIR/some_name#SHA256=SOME_HASH.osparc`
-        - When the request finishes, for any reason (HTTO_OK, HTTP_ERROR, etc...), the
-        `/tmp/SOME_TMP_DIR/` si removed from the disk.
+    """Exporting multiple studies in parallel is fully supported. How the process works:
+    - each time an export request is created a new temporary
+    directory is generated `/tmp/SOME_TMP_DIR/`
+    - inside this directory a new directory is generated with the uuid of the
+    project `/tmp/SOME_TMP_DIR/uuid/`.
+    - All contents from the project are written inside the `/tmp/SOME_TMP_DIR/uuid/`
+    directory (serialized data and storage files).
+    - The `/tmp/SOME_TMP_DIR/uuid/` is zipped producing the archive to be downloaded
+    in this path `/tmp/SOME_TMP_DIR/some_name#SHA256=SOME_HASH.osparc`
+    - When the request finishes, for any reason (HTTO_OK, HTTP_ERROR, etc...), the
+    `/tmp/SOME_TMP_DIR/` si removed from the disk.
     """
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
