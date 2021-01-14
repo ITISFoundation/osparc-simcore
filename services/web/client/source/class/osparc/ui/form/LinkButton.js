@@ -29,13 +29,14 @@
  */
 
 qx.Class.define("osparc.ui.form.LinkButton", {
-  extend: qx.ui.form.Button,
+  extend: osparc.ui.form.FetchButton,
 
   /**
     * @param label {String} Label to use
     * @param url {String} Url to point to
+    * @param height {Integer?12} Height of the link icon
   */
-  construct: function(label, icon, url) {
+  construct: function(label, url, height = 12) {
     this.base(arguments, label);
 
     this.set({
@@ -44,11 +45,7 @@ qx.Class.define("osparc.ui.form.LinkButton", {
     });
 
     if (url) {
-      if (icon) {
-        this.setIcon(icon);
-      } else {
-        this.setIcon("@FontAwesome5Solid/external-link-alt/12");
-      }
+      this.setIcon("@FontAwesome5Solid/external-link-alt/" + height);
       this.addListener("execute", () => {
         window.open(url);
       }, this);
