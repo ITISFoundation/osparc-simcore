@@ -55,6 +55,28 @@ def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
         ),
         pytest.param(
             {
+                "8902d36c-bc65-5b0d-848f-88aed72d7849",
+                "3a710d8b-565c-5f46-870b-b45ebe195fc7",
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef",
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
+                "6ede1209-b459-5735-91fc-761aa584808d",
+            },
+            {
+                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
+                    "415fefd1-d08b-53c1-adb0-16bed3a687ef"
+                ],
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "6ede1209-b459-5735-91fc-761aa584808d": [],
+            },
+            id="all nodes",
+        ),
+        pytest.param(
+            {
                 "8902d36c-bc65-5b0d-848f-88aed72d7849",  # file-picker
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7",  # sleeper 1
             },
