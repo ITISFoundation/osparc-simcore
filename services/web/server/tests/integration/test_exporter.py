@@ -51,8 +51,8 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
-# store only lowercase "v1", "v2", ... and "v1_compressed", "v2_compressed", ...
-SUPPORTED_EXPORTER_VERSIONS = {"v1", "v1_compressed"}
+# store only lowercase "v1", "v2", etc...
+SUPPORTED_EXPORTER_VERSIONS = {"v1"}
 
 KEYS_TO_IGNORE_FROM_COMPARISON = {"id", "uuid", "creation_date", "last_change_date"}
 
