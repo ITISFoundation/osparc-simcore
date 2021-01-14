@@ -160,8 +160,10 @@ async def test_error_during_compression(temp_dir, project_uuid):
         )
 
     assert exc_info.type is ExporterException
-    expected_acrhive_path = f"/tmp/{project_uuid}.zip"
-    assert exc_info.value.args[0] == f"Could not create archive {expected_acrhive_path}"
+    assert (
+        exc_info.value.args[0]
+        == f"[Errno 2] No such file or directory: '{project_uuid}'"
+    )
 
 
 async def test_error_during_decompression():
@@ -169,7 +171,7 @@ async def test_error_during_decompression():
         await unzip_folder(Path("/i/do/not/exist"))
 
     assert exc_info.type is ExporterException
-    assert exc_info.value.args[0] == "Could not change directory to '/i/do/not'"
+    assert exc_info.value.args[0] == "/i/do/not/exist is not a zip file"
 
 
 async def test_archive_already_exists(temp_dir, project_uuid):
