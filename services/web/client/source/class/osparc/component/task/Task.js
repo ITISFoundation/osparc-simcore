@@ -56,6 +56,7 @@ qx.Class.define("osparc.component.task.Task", {
           control.addListener("tap", () => {
             this._stopTask();
           }, this);
+          this._add(control);
           break;
       }
       return control || this.base(arguments, id);

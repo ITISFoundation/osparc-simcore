@@ -24,6 +24,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
     this._setLayout(new qx.ui.layout.Canvas());
 
     this.set({
+      width: 30,
       alignX: "center",
       cursor: "pointer"
     });
