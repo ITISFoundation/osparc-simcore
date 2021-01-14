@@ -159,7 +159,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        this.__openStudyDetailsEditor();
+        this.__openStudyCardLarge();
       }, this);
       return moreInfoButton;
     },
@@ -299,7 +299,7 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       return description;
     },
 
-    __openStudyDetailsEditor: function() {
+    __openStudyCardLarge: function() {
       const width = 500;
       const height = 500;
       const title = this.tr("Study Details Editor");
