@@ -601,21 +601,27 @@ async def export_project(request: web.Request):
 
     temp_dir: str = await get_empty_tmp_dir()
 
-    file_to_download = await study_export(
-        app=request.app,
-        tmp_dir=temp_dir,
-        project_id=project_uuid,
-        user_id=user_id,
-        archive=True,
-        compress=compressed,
-    )
-    log.info("File to download '%s'", file_to_download)
+    try:
+        file_to_download = await study_export(
+            app=request.app,
+            tmp_dir=temp_dir,
+            project_id=project_uuid,
+            user_id=user_id,
+            archive=True,
+            compress=compressed,
+        )
+        log.info("File to download '%s'", file_to_download)
 
-    if not file_to_download.is_file():
-        raise web.HTTPError(reason="Must provide a file to download")
+        if not file_to_download.is_file():
+            raise web.HTTPError(
+                reason=f"Must provide a file to download, not {str(file_to_download)}"
+            )
+    except Exception as e:
+        # make sure all errors are trapped and the directory where the file is sotred is removed
+        await remove_dir(temp_dir)
+        raise e
 
     headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
-    log.info("Will download file %s", file_to_download)
 
     return CleanupFileResponse(
         temp_dir=temp_dir, path=file_to_download, headers=headers
