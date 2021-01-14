@@ -21,6 +21,7 @@ def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
 
 @log_decorator(logger=logger)
 def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
+    """creates a complete graph out of the project workbench"""
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
         dag_graph.add_node(
@@ -41,7 +42,8 @@ def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
 
 
 @log_decorator(logger=logger)
-def create_dag_graph(workbench: Workbench) -> nx.DiGraph:
+def create_complete_computational_dag_graph(workbench: Workbench) -> nx.DiGraph:
+    """creates a graph containing only computational nodes"""
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
         if _node_computational(node.key):
@@ -97,7 +99,7 @@ def _node_outdated(full_dag_graph: nx.DiGraph, node_id: NodeID) -> bool:
 
 
 @log_decorator(logger=logger)
-def create_minimal_graph_based_on_selection(
+def create_minimal_computational_graph_based_on_selection(
     full_dag_graph: nx.DiGraph, selected_nodes: List[NodeID]
 ) -> nx.DiGraph:
     selected_nodes_str = [str(n) for n in selected_nodes]

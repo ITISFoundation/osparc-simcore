@@ -14,9 +14,9 @@ import pytest
 from models_library.projects import Workbench
 from models_library.projects_nodes import Node
 from simcore_service_director_v2.utils.dags import (
+    create_complete_computational_dag_graph,
     create_complete_dag_graph,
-    create_dag_graph,
-    create_minimal_graph_based_on_selection,
+    create_minimal_computational_graph_based_on_selection,
 )
 
 
@@ -41,7 +41,7 @@ def sleepers_workbench_adjacency(sleepers_workbench_adjacency_file: Path) -> Dic
 
 
 def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
-    dag: nx.DiGraph = create_dag_graph(workbench)
+    dag: nx.DiGraph = create_complete_computational_dag_graph(workbench)
     assert nx.to_dict_of_lists(dag) == sleepers_workbench_adjacency
 
 
@@ -100,7 +100,7 @@ def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
 )
 def test_create_minimal_graph(workbench: Workbench, subgraph: Set[str], exp_dag):
     full_dag_graph: nx.DiGraph = create_complete_dag_graph(workbench)
-    reduced_dag: nx.DiGraph = create_minimal_graph_based_on_selection(
+    reduced_dag: nx.DiGraph = create_minimal_computational_graph_based_on_selection(
         full_dag_graph, subgraph
     )
     assert nx.to_dict_of_lists(reduced_dag) == exp_dag

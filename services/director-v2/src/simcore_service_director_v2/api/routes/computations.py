@@ -34,9 +34,9 @@ from ...utils.computations import (
     is_pipeline_stopped,
 )
 from ...utils.dags import (
+    create_complete_computational_dag_graph,
     create_complete_dag_graph,
-    create_dag_graph,
-    create_minimal_graph_based_on_selection,
+    create_minimal_computational_graph_based_on_selection,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import CeleryClient, get_celery_client
@@ -120,7 +120,7 @@ async def create_computation(
         # create the complete DAG graph
         complete_dag_graph = create_complete_dag_graph(project.workbench)
         # create the computational DAG
-        dag_graph = create_dag_graph(project.workbench)
+        dag_graph = create_complete_computational_dag_graph(project.workbench)
         # validate DAG
         if not nx.is_directed_acyclic_graph(dag_graph):
             raise HTTPException(
@@ -129,7 +129,7 @@ async def create_computation(
             )
         # get a subgraph if needed
         if job.subgraph:
-            dag_graph = create_minimal_graph_based_on_selection(
+            dag_graph = create_minimal_computational_graph_based_on_selection(
                 complete_dag_graph, job.subgraph
             )
 
