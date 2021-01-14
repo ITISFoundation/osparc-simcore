@@ -29,9 +29,6 @@ qx.Class.define("osparc.component.task.TasksButton", {
       cursor: "pointer"
     });
 
-    this._createChildControlImpl("icon");
-    this._createChildControlImpl("number");
-
     const tasks = osparc.component.task.Tasks.getInstance();
     tasks.getTasks().addListener("change", () => {
       this.__updateTasksButton();
@@ -44,9 +41,6 @@ qx.Class.define("osparc.component.task.TasksButton", {
   },
 
   members: {
-    __icon: null,
-    __nTasks: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
