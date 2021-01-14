@@ -41,7 +41,7 @@ qx.Class.define("osparc.component.task.Tasks", {
 
     addTask: function(task) {
       this.__tasks.push(task);
-      this.__tasksContainer.add(task);
+      this.__tasksContainer.addAt(task, 0);
     },
 
     removeTask: function(task) {

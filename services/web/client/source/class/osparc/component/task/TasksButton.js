@@ -30,7 +30,11 @@ qx.Class.define("osparc.component.task.TasksButton", {
     });
 
     const tasks = osparc.component.task.Tasks.getInstance();
-    tasks.getTasks().addListener("change", () => {
+    tasks.getTasks().addListener("change", e => {
+      const data = e.getData();
+      if (data.type === "add") {
+        this.__showTasks();
+      }
       this.__updateTasksButton();
     }, this);
     this.__updateTasksButton();
