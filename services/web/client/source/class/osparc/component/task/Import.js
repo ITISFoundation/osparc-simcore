@@ -33,7 +33,13 @@ qx.Class.define("osparc.component.task.Import", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/file-import/12");
+          // control = new qx.ui.basic.Image("@FontAwesome5Solid/file-import/14");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/cloud-upload-alt/14").set({
+            alignY: "middle",
+            alignX: "center",
+            paddingLeft: 3,
+            width: 25
+          });
           this._add(control);
           break;
       }

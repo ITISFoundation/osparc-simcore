@@ -33,7 +33,13 @@ qx.Class.define("osparc.component.task.Export", {
       let control;
       switch (id) {
         case "icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/file-export/12");
+          // control = new qx.ui.basic.Image("@FontAwesome5Solid/file-export/14");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/cloud-download-alt/14").set({
+            alignY: "middle",
+            alignX: "center",
+            paddingLeft: 3,
+            width: 25
+          });
           this._add(control);
           break;
       }
