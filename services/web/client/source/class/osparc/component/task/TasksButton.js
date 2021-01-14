@@ -95,7 +95,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
     __showTasks: function() {
       const bounds = this.getBounds();
       const tasks = osparc.component.task.Tasks.getInstance();
-      tasks.setTasksContainerPosition(bounds.left, 50);
+      tasks.setTasksContainerPosition(bounds.left, 53);
       tasks.getTasksContainer().show();
     },
 

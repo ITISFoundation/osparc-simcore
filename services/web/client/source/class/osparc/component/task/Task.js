@@ -38,17 +38,24 @@ qx.Class.define("osparc.component.task.Task", {
       let control;
       switch (id) {
         case "icon":
-          control = new osparc.ui.form.FetchButton();
+          control = new osparc.ui.form.FetchButton().set({
+            width: 25
+          });
           this._add(control);
           break;
         case "label":
-          control = new qx.ui.basic.Label();
+          control = new qx.ui.basic.Label().set({
+            allowGrowX: true
+          });
           this._add(control, {
             flex: 1
           });
           break;
         case "stop":
           control = new qx.ui.basic.Image("@MaterialIcons/close/16").set({
+            alignY: "middle",
+            alignX: "center",
+            width: 25,
             cursor: "pointer"
           });
           control.addListener("tap", () => {
