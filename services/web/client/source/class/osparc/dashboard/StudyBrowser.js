@@ -503,7 +503,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
-      const exportButton = this.__getExportMenuButton(item, studyData);
+      const exportButton = this.__getExportMenuButton(studyData);
       menu.add(exportButton);
 
       const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
@@ -582,16 +582,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return studyServicesButton;
     },
 
-    __getExportMenuButton: function(item, studyData) {
+    __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
-        const exportTask = new osparc.component.task.Export(studyData);
-        const tasks = osparc.component.task.Tasks.getInstance();
-        tasks.addTask(exportTask);
-        const text = this.tr("Exporting process started and added to the background tasks");
-        osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-        this.__exportStudy(studyData);
-        // item.setExporting(true);
+        this.__exportStudy(studyData)
+          .then(() => {
+            const text = this.tr("Exporting process started and added to the background tasks");
+            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+            const exportTask = new osparc.component.task.Export(studyData);
+            const tasks = osparc.component.task.Tasks.getInstance();
+            tasks.addTask(exportTask);
+          })
+          .catch(err => {
+            console.error(err);
+            osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
+          });
       }, this);
       return exportButton;
     },
@@ -668,8 +673,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const params = {
         url: {
           projectId: studyData["uuid"]
-        },
-        data: osparc.utils.Utils.getClientSessionID()
+        }
       };
       return osparc.data.Resources.fetch("studies", "export", params);
     },
