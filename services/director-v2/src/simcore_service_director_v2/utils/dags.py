@@ -1,9 +1,10 @@
 import logging
-from typing import List, Set
+from copy import deepcopy
+from typing import Dict, List, Set
 
 import networkx as nx
 from models_library.projects import Workbench
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes import Inputs, NodeID, Outputs
 from models_library.projects_nodes_io import PortLink
 
 from .computations import NodeClass, to_node_class
@@ -64,21 +65,39 @@ def create_complete_computational_dag_graph(workbench: Workbench) -> nx.DiGraph:
     return dag_graph
 
 
-def mark_node_dirty(graph: nx.DiGraph, node_id: NodeID):
-    graph.nodes()[str(node_id)]["dirty"] = True
+def mark_node_dirty(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+):
+    nodes_data_view[str(node_id)]["dirty"] = True
 
 
-def is_node_dirty(graph: nx.DiGraph, node_id: NodeID) -> bool:
+def is_node_dirty(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+) -> bool:
     # FIXME: this fails if the node we check is not a computational one!!!
-    return graph.nodes()[str(node_id)].get("dirty", False)
+    return nodes_data_view[str(node_id)].get("dirty", False)
 
 
 def _node_computational(node_key: str) -> bool:
     return to_node_class(node_key) == NodeClass.COMPUTATIONAL
 
 
-def _node_outdated(full_dag_graph: nx.DiGraph, node_id: NodeID) -> bool:
-    node = full_dag_graph.nodes(data=True)[str(node_id)]
+def _compute_node_hash(
+    nodes_data_view: nx.classes.reportviews.NodeDataView,
+    node_inputs: Inputs,
+    node_outputs: Outputs,
+) -> str:
+    # resolve the port links if any
+    resolved_inputs = deepcopy(node_inputs)
+    for input_key, input_value in node_inputs.items():
+        if isinstance(input_value, PortLink):
+            pass
+
+
+def _node_outdated(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+) -> bool:
+    node = nodes_data_view[str(node_id)]
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
         return True
@@ -86,9 +105,11 @@ def _node_outdated(full_dag_graph: nx.DiGraph, node_id: NodeID) -> bool:
         if output_port is None:
             return True
     # ok so we have outputs, but maybe the inputs are old? let's check recursively
+    # node_hash = _compute_node_hash(node["inputs"], node["outputs"])
+    # return True if node_hash != node["hash"] else False
     for input_port in node["inputs"].values():
         if isinstance(input_port, PortLink):
-            if is_node_dirty(full_dag_graph, input_port.node_uuid):
+            if is_node_dirty(nodes_data_view, input_port.node_uuid):
                 return True
         else:
             # FIXME: here we should check if the current inputs are the ones used to generate the current outputs
@@ -102,11 +123,13 @@ def _node_outdated(full_dag_graph: nx.DiGraph, node_id: NodeID) -> bool:
 def create_minimal_computational_graph_based_on_selection(
     full_dag_graph: nx.DiGraph, selected_nodes: List[NodeID]
 ) -> nx.DiGraph:
+    nodes_data_view: nx.classes.reportviews.NodeDataView = full_dag_graph.nodes.data()
     selected_nodes_str = [str(n) for n in selected_nodes]
-    # first pass, set the dirty attribute on the graph
+
+    # first pass, find the nodes that are dirty (outdated)
     for node in nx.topological_sort(full_dag_graph):
-        if node in selected_nodes_str or _node_outdated(full_dag_graph, node):
-            mark_node_dirty(full_dag_graph, node)
+        if node in selected_nodes_str or _node_outdated(nodes_data_view, node):
+            mark_node_dirty(nodes_data_view, node)
 
     # now we want all the outdated nodes that are in the tree from the selected nodes
     minimal_selection_nodes: Set[NodeID] = set()
@@ -115,8 +138,8 @@ def create_minimal_computational_graph_based_on_selection(
             set(
                 n
                 for n in nx.bfs_tree(full_dag_graph, str(node), reverse=True)
-                if is_node_dirty(full_dag_graph, n)
-                and _node_computational(full_dag_graph.nodes()[n]["key"])
+                if is_node_dirty(nodes_data_view, n)
+                and _node_computational(nodes_data_view[n]["key"])
             )
         )
 
