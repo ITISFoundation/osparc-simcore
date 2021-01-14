@@ -8,6 +8,7 @@ from aiohttp.web_request import FileField
 
 from ..login.decorators import RQT_USERID_KEY
 from .config import get_max_upload_file_size_gb
+from .exceptions import ExporterException
 from .export_import import study_export, study_import
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 
@@ -45,8 +46,8 @@ async def export_project_handler(request_tup: Tuple[web.Request]):
         log.info("File to download '%s'", file_to_download)
 
         if not file_to_download.is_file():
-            raise web.HTTPError(
-                reason=f"Must provide a file to download, not {str(file_to_download)}"
+            raise ExporterException(
+                f"Must provide a file to download, not {str(file_to_download)}"
             )
     except Exception as e:
         # make sure all errors are trapped and the directory where the file is sotred is removed
@@ -72,9 +73,9 @@ async def import_project_handler(request_tup: Tuple[web.Request]):
     file_name_field: FileField = post_contents.get("fileName", None)
 
     if file_name_field is None:
-        raise web.HTTPBadRequest(reason="Expected a file as 'fileName' form parmeter")
+        raise ExporterException("Expected a file as 'fileName' form parmeter")
     if not isinstance(file_name_field, FileField):
-        raise web.HTTPBadRequest(reason="Please select a file")
+        raise ExporterException("Please select a file")
 
     temp_dir: str = await get_empty_tmp_dir()
 
