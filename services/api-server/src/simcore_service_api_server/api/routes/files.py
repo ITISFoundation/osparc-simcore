@@ -3,10 +3,10 @@ import hashlib
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import List
-from uuid import UUID
+from typing import List, Tuple
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 
 from ..._meta import api_vtag
@@ -16,25 +16,52 @@ from ..dependencies.services import get_api_client
 
 current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 
+
+class FAKE:
+    base_dir = Path("./ignore")
+    files: List[Tuple[FileUploaded, Path]] = []
+
+    @classmethod
+    async def get(cls, hash):
+        for m, p in cls.files:
+            if m.hash == hash:
+                return m, p
+        raise KeyError()
+
+    @classmethod
+    async def save(cls, metadata, file):
+        cls.base_dir.mkdir(exist_ok=True)
+
+        path = cls.base_dir / f"{metadata.hash[:5]}-{metadata.filename}"
+        await file.seek(0)
+        data = await file.read()
+        path.write_bytes(data)
+
+        if not any(m.hash == metadata.hash for m, _ in cls.files):
+            cls.files.append((metadata, path))
+
+
+## ----------------------------------------------------------
 router = APIRouter()
 
 
 @router.get("")
 async def list_files(
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
     """ Lists all user's files """
     # TODO: this is just a ping with retries
-    await storage_client.get("/")
+    # await storage_client.get("/")
 
     # TODO: pagination
-    raise NotImplementedError()
+    # raise NotImplementedError()
+    return [metadata for metadata, _ in FAKE.files]
 
 
 @router.post(":upload", response_model=FileUploaded)
 async def upload_single_file(
     file: UploadFile = File(...),
-    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
     # TODO: every file uploaded is sent to S3 and a link is returned
     # TODO: every session has a folder. A session is defined by the access token
@@ -43,11 +70,15 @@ async def upload_single_file(
     # TODO: this is just a ping with retries
     ## await storage_client.get("/")
 
-    return FileUploaded(
+    metadata = FileUploaded(
         filename=file.filename,
         content_type=file.content_type,
         hash=await eval_sha256_hash(file),
+        # TODO: FileResponse automatically computes etag. See how is done
     )
+
+    await FAKE.save(metadata, file)
+    return metadata
 
 
 @router.post(":upload-multiple", response_model=List[FileUploaded])
@@ -56,28 +87,34 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
     # TODO: every session has a folder. A session is defined by the access token
     #
     async def go(file):
-        return FileUploaded(
+        metadata = FileUploaded(
             filename=file.filename,
             content_type=file.content_type,
             hash=await eval_sha256_hash(file),
         )
+        await FAKE.save(metadata, file)
+        return metadata
 
     uploaded = await asyncio.gather(*[go(f) for f in files])
     return uploaded
 
 
-_CONTENT = dedent(
-    f"""
-    <body>
-    <form action="/{api_vtag}/files:upload" enctype="multipart/form-data" method="post">
-    <input name="files" type="file" multiple>
-    <input type="submit">
-    </form>
-    </body>
-    """
-)
+@router.get("/{file_id}:download")
+async def download_file(file_id: str):
+    # TODO: hash or UUID? Ideally like container ids
+    try:
+        metadata, file_path = await FAKE.get(file_id)
+    except KeyError as err:
+        raise HTTPException(status.HTTP_404_NOT_FOUND) from err
+
+    return FileResponse(
+        str(file_path),
+        media_type=metadata.content_type,
+        filename=metadata.filename,
+    )
 
 
+### HELPERS -----
 @router.get("/upload-multiple-view")
 async def files_upload_multiple_view():
     """Web form to upload files at http://localhost:8000/v0/files/upload-form-view
@@ -85,7 +122,18 @@ async def files_upload_multiple_view():
     Overcomes limitation of Swagger UI view
     NOTE: As of 2020-10-07, Swagger UI doesn't support multiple file uploads in the same form field
     """
-    return HTMLResponse(content=_CONTENT)
+    return HTMLResponse(
+        content=dedent(
+            f"""
+        <body>
+        <form action="/{api_vtag}/files:upload" enctype="multipart/form-data" method="post">
+        <input name="files" type="file" multiple>
+        <input type="submit">
+        </form>
+        </body>
+        """
+        )
+    )
 
 
 async def eval_sha256_hash(file: UploadFile):
@@ -101,14 +149,3 @@ async def eval_sha256_hash(file: UploadFile):
             break
         sha256_hash.update(chunk)
     return sha256_hash.hexdigest()
-
-
-@router.get("/{file_id}:download")
-async def download_file(file_id: UUID):
-    file_path: Path = current_file  # FIXME: tmp returns current file
-    return FileResponse(
-        str(file_path),
-        media_type="application/octet-stream",
-        filename=file_path.name,
-        stat_result=file_path.stat(),
-    )
