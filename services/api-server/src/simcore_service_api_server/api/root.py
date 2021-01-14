@@ -1,12 +1,17 @@
 from fastapi import APIRouter
 
-from .routes import health, meta, users, solvers, files
+from ..core.settings import AppSettings
+from .routes import files, health, meta, solvers, users
 
-router = APIRouter()
-router.include_router(health.router)
 
-# API
-router.include_router(meta.router, tags=["meta"], prefix="/meta")
-router.include_router(users.router, tags=["users"], prefix="/me")
-router.include_router(files.router, tags=["files"], prefix="/files")
-router.include_router(solvers.router, tags=["solvers"], prefix="/solvers")
+def create_router(settings: AppSettings):
+    router = APIRouter()
+    router.include_router(health.router)
+
+    # API
+    router.include_router(meta.router, tags=["meta"], prefix="/meta")
+    router.include_router(users.router, tags=["users"], prefix="/me")
+    if settings.beta_features_enabled:
+        router.include_router(files.router, tags=["files"], prefix="/files")
+        router.include_router(solvers.router, tags=["solvers"], prefix="/solvers")
+    return router

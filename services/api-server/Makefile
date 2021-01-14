@@ -98,7 +98,8 @@ comma := ,
 client:
 	# cloning $(GIT_USER_ID)/$(GIT_REPO_ID) -> $@
 	git clone git@github.com:$(GIT_USER_ID)/$(GIT_REPO_ID).git $@
-	cd client; git checkout -b "upgrade-${APP_VERSION}"
+	# TODO: if fails, add -b
+	cd client; git checkout "upgrade-${APP_VERSION}"
 
 
 python-client: client openapi.json ## runs python client generator

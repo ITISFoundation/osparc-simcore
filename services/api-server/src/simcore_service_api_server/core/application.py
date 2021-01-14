@@ -12,7 +12,7 @@ from ..api.errors.http_error import (
     make_http_error_handler_for_exception,
 )
 from ..api.errors.validation_error import http422_error_handler
-from ..api.root import router as api_router
+from ..api.root import create_router
 from ..api.routes.health import router as health_router
 from ..modules import catalog, director, remote_debug, storage, webserver
 from .events import create_start_app_handler, create_stop_app_handler
@@ -91,6 +91,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.add_route("/doc", redoc_html, name="redoc_html", include_in_schema=False)
 
     # api under /v*
+    api_router = create_router(settings)
     app.include_router(api_router, prefix=f"/{api_vtag}")
 
     use_route_names_as_operation_ids(app)

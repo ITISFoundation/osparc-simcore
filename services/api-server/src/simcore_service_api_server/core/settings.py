@@ -2,10 +2,9 @@ import logging
 from enum import Enum
 from typing import Optional
 
+from models_library.settings.http_clients import ClientRequestSettings
 from pydantic import BaseSettings, Field, SecretStr, validator
 from yarl import URL
-
-from models_library.settings.http_clients import ClientRequestSettings
 
 
 class BootModeEnum(str, Enum):
@@ -50,6 +49,7 @@ class CatalogSettings(BaseServiceSettings):
 
 class StorageSettings(BaseServiceSettings):
     host: str = "storage"
+
     class Config(_CommonConfig):
         env_prefix = "STORAGE_"
 
@@ -60,6 +60,7 @@ class DirectorSettings(BaseServiceSettings):
 
     class Config(_CommonConfig):
         env_prefix = "DIRECTOR2_"
+
 
 class PostgresSettings(BaseSettings):
     enabled: bool = Field(
@@ -102,7 +103,7 @@ class AppSettings(BaseSettings):
             client_request=ClientRequestSettings(),
             catalog=CatalogSettings(),
             storage=StorageSettings(),
-            director=DirectorSettings()
+            director=DirectorSettings(),
         )
 
     # pylint: disable=no-self-use
@@ -143,6 +144,7 @@ class AppSettings(BaseSettings):
 
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
     remote_debug_port: int = 3000
+    beta_features_enabled: bool = Field(False, env="SERVER_API_BETA_FEATURES_ENABLED")
 
     class Config(_CommonConfig):
         env_prefix = ""
