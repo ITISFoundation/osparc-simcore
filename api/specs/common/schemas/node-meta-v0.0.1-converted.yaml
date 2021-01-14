@@ -16,7 +16,7 @@ properties:
   key:
     type: string
     description: distinctive name for the node based on the docker registry path
-    pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+    pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$
     example: simcore/services/comp/itis/sleeper
   integration-version:
     type: string
@@ -40,7 +40,7 @@ properties:
     example: computational
   name:
     type: string
-    description: 'short, human readable name for the node'
+    description: short, human readable name for the node
     example: Fast Counter
   thumbnail:
     type: string
@@ -108,7 +108,7 @@ properties:
     type: object
     description: definition of the inputs of this node
     x-patternProperties:
-      '^[-_a-zA-Z0-9]+$':
+      ^[-_a-zA-Z0-9]+$:
         type: object
         description: all the input configurable for this service
         additionalProperties: false
@@ -144,23 +144,23 @@ properties:
             example:
               - number
               - boolean
-              - 'data:*/*'
-              - 'data:text/*'
-              - 'data:[image/jpeg,image/png]'
-              - 'data:application/json'
+              - data:*/*
+              - data:text/*
+              - data:[image/jpeg,image/png]
+              - data:application/json
               - >-
                 data:application/json;schema=https://my-schema/not/really/schema.json
-              - 'data:application/vnd.ms-excel'
-              - 'data:text/plain'
-              - 'data:application/hdf5'
-              - 'data:application/edu.ucdavis@ceclancy.xyz'
+              - data:application/vnd.ms-excel
+              - data:text/plain
+              - data:application/hdf5
+              - data:application/edu.ucdavis@ceclancy.xyz
           fileToKeyMap:
             description: Place the data associated with the named keys in files
             type: object
             patternProperties:
               .+:
                 type: string
-                pattern: '^[-_a-zA-Z0-9]+$'
+                pattern: ^[-_a-zA-Z0-9]+$
             example:
               - dir/input1.txt: key_1
                 dir33/input2.txt: key2
@@ -231,7 +231,7 @@ properties:
     type: object
     description: definition of the outputs of this node
     x-patternProperties:
-      '^[-_a-zA-Z0-9]+$':
+      ^[-_a-zA-Z0-9]+$:
         type: object
         description: all the output produced by this node
         additionalProperties: false
@@ -259,17 +259,17 @@ properties:
               - Age in seconds since 1970
           type:
             type: string
-            pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
+            pattern: ^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$
             description: data type expected on this output
             example:
               - number
               - integer
               - boolean
               - string
-              - 'data:application/json'
+              - data:application/json
               - 'data:application/vnd.ms-excel '
-              - 'data:text/plain'
-              - 'data:application/hdf5'
+              - data:text/plain
+              - data:application/hdf5
           fileToKeyMap:
             description: >-
               Place the data stored in the named files and store it in the
@@ -278,7 +278,7 @@ properties:
             patternProperties:
               .+:
                 type: string
-                pattern: '^[-_a-zA-Z0-9]+$'
+                pattern: ^[-_a-zA-Z0-9]+$
             example:
               - dir/input1.txt: key_1
                 dir33/input2.txt: key2
