@@ -20,53 +20,32 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    * @param studyData {Object} Serialized Study Object
     */
-  construct: function(study) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this.set({
       padding: this.self().PADDING
     });
-    this._setLayout(new qx.ui.layout.VBox(3));
+    this._setLayout(new qx.ui.layout.VBox(5));
 
-    if (study) {
-      if (study instanceof osparc.data.model.Study) {
-        this.setStudy(study);
-      } else {
-        this.setStudyData(study);
-      }
-    }
+    this.__studyData = studyData;
 
     this.addListenerOnce("appear", () => {
       this.__rebuildLayout();
     }, this);
   },
 
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      apply: "__applyStudy",
-      init: null,
-      nullable: false
-    }
-  },
-
   statics: {
     PADDING: 5,
-    EXTRA_INFO_WIDTH: 250,
+    EXTRA_INFO_WIDTH: 230,
     THUMBNAIL_MIN_WIDTH: 150,
-    THUMBNAIL_MAX_WIDTH: 250
+    THUMBNAIL_MAX_WIDTH: 200
   },
 
   members: {
-    /**
-      * @param studyData {Object} Serialized Study Object
-      */
-    setStudyData: function(studyData) {
-      const study = new osparc.data.model.Study(studyData, false);
-      this.setStudy(study);
-    },
+    __studyData: null,
 
     checkResize: function(bounds) {
       this.__rebuildLayout(bounds.width);
@@ -77,7 +56,7 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
     },
 
     __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.getStudy());
+      return osparc.data.model.Study.isOwner(this.__studyData);
     },
 
     __rebuildLayout: function(width) {
@@ -107,7 +86,7 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
       } else if (bounds) {
         widgetWidth = bounds.width;
       } else {
-        widgetWidth = 350;
+        widgetWidth = 500;
       }
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
@@ -135,20 +114,17 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
     },
 
     __createTitle: function() {
-      const title = new qx.ui.basic.Label().set({
+      const title = new qx.ui.basic.Label(this.__studyData["name"]).set({
         font: "title-16",
-        allowStretchX: true,
-        rich: true
+        allowStretchX: true
       });
-      this.getStudy().bind("name", title, "value");
       return title;
     },
 
     __extraInfo: function() {
-      const grid = new qx.ui.layout.Grid(5, 3);
+      const grid = new qx.ui.layout.Grid(6, 3);
       grid.setColumnAlign(0, "right", "middle");
       grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnFlex(2, 0);
       const moreInfo = new qx.ui.container.Composite(grid).set({
         width: this.self().EXTRA_INFO_WIDTH,
         alignX: "center",
@@ -156,6 +132,7 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
       });
 
       const extraInfo = [
+        [this.tr("uuid"), this.__createUuid(), null],
         [this.tr("Author"), this.__createOwner(), null],
         [this.tr("Creation date"), this.__createCreationDate(), null],
         [this.tr("Last modified"), this.__createLastChangeDate(), null],
@@ -192,39 +169,38 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
       return moreInfo;
     },
 
+    __createUuid: function() {
+      const uuid = new qx.ui.basic.Label(this.__studyData["uuid"]).set({
+        maxWidth: 120,
+        tooltTipText: this.__studyData["uuid"]
+      });
+      return uuid;
+    },
+
     __createOwner: function() {
-      const owner = new qx.ui.basic.Label();
-      this.getStudy().bind("prjOwner", owner, "value", {
-        converter: email => osparc.utils.Utils.getNameFromEmail(email),
-        onUpdate: (source, target) => {
-          target.setToolTipText(source.getPrjOwner());
-        }
+      const owner = new qx.ui.basic.Label().set({
+        value: osparc.utils.Utils.getNameFromEmail(this.__studyData["prjOwner"]),
+        toolTipText: this.__studyData["prjOwner"]
       });
       return owner;
     },
 
     __createCreationDate: function() {
-      const dateOptions = {
-        converter: date => osparc.utils.Utils.formatDateAndTime(date)
-      };
-      const creationDate = new qx.ui.basic.Label();
-      this.getStudy().bind("creationDate", creationDate, "value", dateOptions);
+      const date = osparc.utils.Utils.formatDateAndTime(new Date(this.__studyData["creationDate"]));
+      const creationDate = new qx.ui.basic.Label(date);
       return creationDate;
     },
 
     __createLastChangeDate: function() {
-      const dateOptions = {
-        converter: date => osparc.utils.Utils.formatDateAndTime(date)
-      };
-      const lastChangeDate = new qx.ui.basic.Label();
-      this.getStudy().bind("lastChangeDate", lastChangeDate, "value", dateOptions);
+      const date = osparc.utils.Utils.formatDateAndTime(new Date(this.__studyData["lastChangeDate"]));
+      const lastChangeDate = new qx.ui.basic.Label(date);
       return lastChangeDate;
     },
 
     __createAccessRights: function() {
       let permissions = "";
       const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = this.getStudy().getAccessRights();
+      const ar = this.__studyData["accessRights"];
       if (myGID in ar) {
         if (ar[myGID]["delete"]) {
           permissions = this.tr("Owner");
@@ -239,7 +215,7 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
     },
 
     __createQuality: function() {
-      const quality = this.getStudy().getQuality();
+      const quality = this.__studyData["quality"];
       if (quality && "tsr" in quality) {
         const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
           toolTipText: this.tr("Ten Simple Rules score")
@@ -257,27 +233,18 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
         });
         tsrLayout.add(tsrRating);
 
-        this.getStudy().addListener("changeQuality", e => {
-          console.log("changeQuality", e.getData());
-        });
-
         return tsrLayout;
       }
       return null;
     },
 
     __createThumbnail: function(maxWidth) {
-      const maxHeight = 150;
+      const maxHeight = 160;
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
-      this.getStudy().bind("thumbnail", img, "source");
-      this.getStudy().bind("thumbnail", img, "visibility", {
-        converter: thumbnail => {
-          if (thumbnail) {
-            return "visible";
-          }
-          return "excluded";
-        }
+      img.set({
+        source: this.__studyData["thumbnail"],
+        visibility: this.__studyData["thumbnail"] ? "visible" : "excluded"
       });
       return image;
     },
@@ -285,9 +252,9 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
     __createDescription: function() {
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: false,
-        maxHeight: 300
+        maxHeight: 300,
+        value: this.__studyData["description"]
       });
-      this.getStudy().bind("description", description, "value");
       return description;
     },
 
@@ -296,8 +263,7 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
     },
 
     __openAccessRightsEditor: function() {
-      const studyData = this.getStudy().serialize();
-      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+      const permissionsView = new osparc.component.export.StudyPermissions(this.__studyData);
       const title = this.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateStudy", e => {
@@ -307,9 +273,8 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
     },
 
     __openQualityEditor: function() {
-      const studyData = this.getStudy().serialize();
-      const qualityEditor = new osparc.component.metadata.QualityEditor(studyData);
-      const title = this.getStudy().getName() + " - " + this.tr("Quality Assessment");
+      const qualityEditor = new osparc.component.metadata.QualityEditor(this.__studyData);
+      const title = this.__studyData["name"] + " - " + this.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
       qualityEditor.addListener("updateStudy", e => {
         const updatedStudyData = e.getData();
