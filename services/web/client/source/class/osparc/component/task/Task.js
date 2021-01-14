@@ -21,13 +21,14 @@ qx.Class.define("osparc.component.task.Task", {
   construct: function() {
     this.base(arguments);
 
-    const layout = new qx.ui.layout.HBox(10).set({
+    const layout = new qx.ui.layout.HBox(5).set({
       alignY: "middle"
     });
     this._setLayout(layout);
 
     this.set({
       height: 30,
+      maxWidth: 200,
       backgroundColor: "material-button-background"
     });
   },
@@ -42,8 +43,7 @@ qx.Class.define("osparc.component.task.Task", {
           break;
         case "label":
           control = new qx.ui.basic.Label().set({
-            allowGrowX: false,
-            maxWidth: 200
+            allowGrowX: false
           });
           this._add(control, {
             flex: 1

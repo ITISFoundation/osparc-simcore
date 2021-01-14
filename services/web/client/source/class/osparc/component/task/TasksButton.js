@@ -67,7 +67,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
             font: "text-12"
           });
           this._add(control, {
-            top: 3,
+            bottom: 3,
             right: 0
           });
           break;

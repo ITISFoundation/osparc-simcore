@@ -23,7 +23,7 @@ qx.Class.define("osparc.component.task.Tasks", {
     this.base(arguments);
     this.__tasks = new qx.data.Array();
 
-    const tasksContainer = this.__tasksContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+    const tasksContainer = this.__tasksContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(3)).set({
       zIndex: 110000,
       visibility: "excluded"
     });
