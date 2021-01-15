@@ -11,7 +11,7 @@
 qx.Class.define("osparc.component.form.tag.TagManager", {
   extend: osparc.ui.window.SingletonWindow,
   construct: function(selectedTags, attachment, resourceName, resourceId) {
-    this.base(arguments, "tagManager", this.tr("Apply tags to this element"));
+    this.base(arguments, "tagManager", this.tr("Apply Tags"));
     this.set({
       layout: new qx.ui.layout.VBox(),
       allowMinimize: false,
