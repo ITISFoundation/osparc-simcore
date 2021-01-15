@@ -52,22 +52,21 @@ class Nodeports(BaseModel):
 
     @property
     async def run_hash(self) -> str:
-
         # resolve the port links if any
-        io_payload = {"inputs": {}, "outputs": {}}
-        for port_key, port_value in (await self.inputs).items():
-            if isinstance(port_value.value, PortLink):
-                # resolve the entry
-                other_nodeports = await self._node_ports_creator_cb(
-                    port_value.value.node_uuid
-                )
-                io_payload["inputs"][port_key] = (await other_nodeports.outputs)[
-                    port_value.value.output
-                ].value
-            else:
-                io_payload["inputs"][port_key] = port_value.value
-        for port_key, port_value in (await self.outputs).items():
-            io_payload["outputs"][port_key] = port_value.value
+        io_payload = {}
+        for port_type in ["inputs", "outputs"]:
+            io_payload[port_type] = {}
+            for port_key, port in (await getattr(self, port_type)).items()
+                if isinstance(port.value, PortLink):
+                    # in case of a port link we do resolve the entry so we have the real value for the hashing
+                    linked_nodeports = await self._node_ports_creator_cb(
+                        port.value.node_uuid
+                    )
+                    io_payload[port_type][port_key] = (await linked_nodeports.outputs)[
+                        port.value.output
+                    ].value
+                else:
+                    io_payload[port_type][port_key] = port.value
 
         block_string = json.dumps(io_payload).encode("utf-8")
         raw_hash = hashlib.sha256(block_string)
