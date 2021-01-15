@@ -113,7 +113,7 @@ describe('tags testing', () => {
     );
     // Assign to study
     await waitAndClick(page, '[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [osparc-test-id="studyItemMenuButton"]');
-    await waitAndClick(page, '[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"]) > div:nth-child(2)');
+    await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagManager"] > .qx-workbench-small-cap-captionbar [qxclass="qx.ui.form.Button"]');

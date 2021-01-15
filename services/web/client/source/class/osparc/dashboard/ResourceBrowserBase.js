@@ -47,6 +47,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _getMoreInfoMenuButton: function(resourceData) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
+      osparc.utils.Utils.setIdToWidget(moreInfoButton, "moreInfoBtn");
       moreInfoButton.addListener("execute", () => {
         if (osparc.utils.Resources.isService(resourceData)) {
           this._openServiceDetailsEditor(resourceData);
