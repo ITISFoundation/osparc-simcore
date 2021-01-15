@@ -31,12 +31,16 @@ qx.Class.define("osparc.studycard.Large", {
     this._setLayout(new qx.ui.layout.VBox(5));
 
     if (studyData && studyData instanceof Object) {
-      this.__studyData = studyData;
+      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
     }
 
     this.addListenerOnce("appear", () => {
       this.__rebuildLayout();
     }, this);
+  },
+
+  events: {
+    "updateStudy": "qx.event.type.Data"
   },
 
   statics: {
@@ -53,8 +57,11 @@ qx.Class.define("osparc.studycard.Large", {
       this.__rebuildLayout(bounds.width);
     },
 
-    __applyStudy: function() {
-      this.__rebuildLayout();
+    __setUpdatedData: function(studyData) {
+      if (studyData && studyData instanceof Object) {
+        this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+        this.__rebuildLayout();
+      }
     },
 
     __isOwner: function() {
@@ -130,8 +137,8 @@ qx.Class.define("osparc.studycard.Large", {
         [this.tr("Author"), this.__createOwner(), null],
         [this.tr("Creation date"), this.__createCreationDate(), null],
         [this.tr("Last modified"), this.__createLastChangeDate(), null],
-        [this.tr("Access rights"), this.__createAccessRights(), this.__openAccessRightsEditor],
-        [this.tr("Quality"), this.__createQuality(), this.__openQualityEditor]
+        [this.tr("Access rights"), this.__createAccessRights(), this.__openAccessRights],
+        [this.tr("Quality"), this.__createQuality(), this.__openQuality]
       ];
       for (let i=0; i<extraInfo.length; i++) {
         if (extraInfo[i][1]) {
@@ -147,8 +154,8 @@ qx.Class.define("osparc.studycard.Large", {
             column: 1
           });
 
-          if (extraInfo[i][2] && this.__isOwner()) {
-            const editTitleBtn = osparc.utils.Utils.getEditButton();
+          if (extraInfo[i][2]) {
+            const editTitleBtn = osparc.utils.Utils.getViewButton();
             editTitleBtn.addListener("execute", () => {
               extraInfo[i][2].call(this);
             }, this);
@@ -205,43 +212,75 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openTitleEditor: function() {
-
+      const title = this.tr("Edit Title");
+      const newTitleName = new osparc.component.widget.Renamer(this.__studyData["name"], null, title);
+      newTitleName.addListener("labelChanged", e => {
+        newTitleName.close();
+        const newLabel = e.getData()["newLabel"];
+        this.__studyData["name"] = newLabel;
+        this.__updateStudy(this.__studyData);
+      }, this);
+      newTitleName.center();
+      newTitleName.open();
     },
 
-    __openAccessRightsEditor: function() {
-      const permissionsView = new osparc.component.export.StudyPermissions(this.__studyData);
-      const title = this.tr("Share with Collaborators and Organizations");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
-      permissionsView.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        this._reloadStudy(studyId);
+    __openAccessRights: function() {
+      const permissionsView = osparc.studycard.Utils.openAccessRights(this.__studyData);
+      permissionsView.addListener("updateStudy", () => {
+        this.__rebuildLayout();
       }, this);
     },
 
-    __openQualityEditor: function() {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(this.__studyData);
-      const title = this.__studyData["name"] + " - " + this.tr("Quality Assessment");
-      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
-      qualityEditor.addListener("updateStudy", e => {
-        const updatedStudyData = e.getData();
-        this._resetStudyItem(updatedStudyData);
+    __openQuality: function() {
+      const qualityEditor = osparc.studycard.Utils.openQuality(this.__studyData);
+      qualityEditor.addListener("updateStudy", () => {
+        this.__rebuildLayout();
       });
-      qualityEditor.addListener("updateTemplate", e => {
-        const updatedTemplateData = e.getData();
-        this._resetTemplateItem(updatedTemplateData);
-      });
-      qualityEditor.addListener("updateService", e => {
-        const updatedServiceData = e.getData();
-        this._resetServiceItem(updatedServiceData);
+      qualityEditor.addListener("updateTemplate", () => {
+        this.__rebuildLayout();
       });
     },
 
     __openThumbnailEditor: function() {
-
+      const title = this.tr("Edit Thumbnail");
+      const newParamName = new osparc.component.widget.Renamer(this.__studyData["thumbnail"], null, title);
+      newParamName.addListener("labelChanged", e => {
+        const newThumbnail = e.getData()["newLabel"];
+        console.log(newThumbnail);
+      }, this);
     },
 
     __openDescriptionEditor: function() {
+      const title = this.tr("Edit Description");
+      const subtitle = this.tr("Supports Markdown");
+      const textEditor = new osparc.component.widget.TextEditor(this.__studyData["description"], subtitle, title);
+      const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
+      textEditor.addListener("textChanged", e => {
+        const newDescription = e.getData();
+        console.log(newDescription);
+      }, this);
+      textEditor.addListener("cancel", () => {
+        win.close();
+      }, this);
+    },
 
+    __updateStudy: function() {
+      const params = {
+        url: {
+          projectId: this.__studyData["uuid"]
+        },
+        data: this.__studyData
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(studyData => {
+          this.fireDataEvent("updateStudy", studyData);
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
+          this.__setUpdatedData(studyData);
+        })
+        .catch(err => {
+          console.error(err);
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
+        });
     }
   }
 });

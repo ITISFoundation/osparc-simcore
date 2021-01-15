@@ -161,11 +161,11 @@ qx.Class.define("osparc.studycard.Medium", {
       });
 
       const extraInfo = [
-        [this.tr("Author"), this.__createOwner()],
-        [this.tr("Creation date"), this.__createCreationDate()],
-        [this.tr("Last modified"), this.__createLastChangeDate()],
-        [this.tr("Access rights"), this.__createAccessRights()],
-        [this.tr("Quality"), this.__createQuality()]
+        [this.tr("Author"), this.__createOwner(), null],
+        [this.tr("Creation date"), this.__createCreationDate(), null],
+        [this.tr("Last modified"), this.__createLastChangeDate(), null],
+        [this.tr("Access rights"), this.__createAccessRights(), this.__openAccessRights],
+        [this.tr("Quality"), this.__createQuality(), this.__openQuality]
       ];
       for (let i=0; i<extraInfo.length; i++) {
         if (extraInfo[i][1]) {
@@ -180,6 +180,17 @@ qx.Class.define("osparc.studycard.Medium", {
             row: i,
             column: 1
           });
+
+          if (extraInfo[i][2]) {
+            const editTitleBtn = osparc.utils.Utils.getViewButton();
+            editTitleBtn.addListener("execute", () => {
+              extraInfo[i][2].call(this);
+            }, this);
+            moreInfo.add(editTitleBtn, {
+              row: i,
+              column: 2
+            });
+          }
         }
       }
 
@@ -220,23 +231,24 @@ qx.Class.define("osparc.studycard.Medium", {
       return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
     },
 
+    __openAccessRights: function() {
+      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
+      permissionsView.addListener("updateStudy", e => {
+        const studyId = e.getData();
+        this._reloadStudy(studyId);
+      }, this);
+    },
+
+    __openQuality: function() {
+      osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+    },
+
     __openStudyCardLarge: function() {
       const width = 500;
       const height = 500;
-      const title = this.tr("Study Details Editor");
-      const studyDetailsEditor = new osparc.component.metadata.StudyDetailsEditor(this.getStudy().serialize(), false, width);
-      studyDetailsEditor.showOpenButton(false);
-      const win = osparc.ui.window.Window.popUpInWindow(studyDetailsEditor, title, width, height);
-      studyDetailsEditor.addListener("updateStudy", e => {
-        const newStudyData = e.getData();
-        this.getStudy().set({
-          name: newStudyData.name,
-          description: newStudyData.description,
-          thumbnail: newStudyData.thumbnail
-        });
-        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", newStudyData.uuid);
-        win.close();
-      });
+      const title = this.tr("Study Details");
+      const studyDetails = new osparc.studycard.Large(this.getStudy().serialize());
+      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     }
   }
 });

@@ -68,7 +68,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     __openStudyDetailsEditor: function(resourceData, winWidth) {
       const studyDetails = new osparc.studycard.Large(resourceData);
-      const title = this.tr("Study Details Editor");
+      const title = this.tr("Study Details");
       const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, 500);
       /*
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(resourceData, osparc.utils.Resources.isTemplate(resourceData), winWidth);
@@ -86,7 +86,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       studyDetails.addListener("updateStudy", e => {
         const updatedStudyData = e.getData();
         this._reloadStudy(updatedStudyData.uuid);
-        win.close();
       });
       studyDetails.addListener("updateTemplate", e => {
         const updatedTemplateData = e.getData();

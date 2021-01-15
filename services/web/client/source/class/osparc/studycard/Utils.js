@@ -201,6 +201,26 @@ qx.Class.define("osparc.studycard.Utils", {
         description.setValue(study["description"]);
       }
       return description;
+    },
+
+    /**
+      * @param studyData {Object} Serialized Study Object
+      */
+    openAccessRights: function(studyData) {
+      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+      const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      return permissionsView;
+    },
+
+    /**
+      * @param studyData {Object} Serialized Study Object
+      */
+    openQuality: function(studyData) {
+      const qualityEditor = new osparc.component.metadata.QualityEditor(studyData);
+      const title = studyData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
+      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
+      return qualityEditor;
     }
   }
 });
