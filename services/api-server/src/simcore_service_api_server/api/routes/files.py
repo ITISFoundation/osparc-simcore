@@ -1,9 +1,7 @@
 import asyncio
 import hashlib
-import sys
-from pathlib import Path
 from textwrap import dedent
-from typing import List, Tuple
+from typing import List
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.exceptions import HTTPException
@@ -13,35 +11,8 @@ from ..._meta import api_vtag
 from ...models.schemas.files import FileUploaded
 from ...modules.storage import StorageApi
 from ..dependencies.services import get_api_client
+from .files_fake import FAKE
 
-current_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
-
-
-class FAKE:
-    base_dir = Path("./ignore")
-    files: List[Tuple[FileUploaded, Path]] = []
-
-    @classmethod
-    async def get(cls, hash):
-        for m, p in cls.files:
-            if m.hash == hash:
-                return m, p
-        raise KeyError()
-
-    @classmethod
-    async def save(cls, metadata, file):
-        cls.base_dir.mkdir(exist_ok=True)
-
-        path = cls.base_dir / f"{metadata.hash[:5]}-{metadata.filename}"
-        await file.seek(0)
-        data = await file.read()
-        path.write_bytes(data)
-
-        if not any(m.hash == metadata.hash for m, _ in cls.files):
-            cls.files.append((metadata, path))
-
-
-## ----------------------------------------------------------
 router = APIRouter()
 
 
@@ -114,7 +85,9 @@ async def download_file(file_id: str):
     )
 
 
-### HELPERS -----
+### HELPERS ------------------------------
+
+
 @router.get("/upload-multiple-view")
 async def files_upload_multiple_view():
     """Web form to upload files at http://localhost:8000/v0/files/upload-form-view
@@ -144,6 +117,7 @@ async def eval_sha256_hash(file: UploadFile):
     CHUNK_BYTES = 4 * 1024  # 4K blocks
 
     while True:
+        await file.seek(0)
         chunk = await file.read(CHUNK_BYTES)
         if not chunk:
             break
