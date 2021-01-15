@@ -104,6 +104,14 @@ SIMCORE_SERVICES_PREFIX: str = os.environ.get(
     "SIMCORE_SERVICES_PREFIX", "simcore/services"
 )
 
+# required, used by the director to start a specific version of the service sidecar
+SERVICE_SIDECAR_IMAGE: str = os.environ["SERVICE_SIDECAR_IMAGE"]
+
+# optional, only used for development, mounts the source of the service sidecar
+DEV_SIMCORE_SERVICE_SIDECAR_PATH: str = os.environ.get(
+    "DEV_SIMCORE_SERVICE_SIDECAR_PATH", None
+)
+
 # monitoring
 # NOTE: keep disabled for unit-testing otherwise mocks will not hold
 MONITORING_ENABLED: bool = strtobool(os.environ.get("MONITORING_ENABLED", "False"))
