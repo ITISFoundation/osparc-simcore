@@ -3,7 +3,6 @@ import logging
 import uuid as uuidlib
 from operator import attrgetter
 from typing import Callable, Dict, List, Optional
-from urllib.request import pathname2url
 from uuid import UUID
 
 import packaging.version
@@ -25,24 +24,93 @@ from ...models.schemas.solvers import (
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client
+from .solvers_fake import FAKE
 
+# from urllib.request import pathname2url
 # from fastapi.responses import RedirectResponse
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-## SOLVERS ------------
+## SOLVERS -----------------------------------------------------------------------------------------
 
 
 @router.get("", response_model=List[Solver])
 async def list_solvers(
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+    _catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """
     Returns a list of the latest version of each solver
     """
+    latest_solvers = [
+        Solver(
+            solver_url=url_for(
+                "get_solver_by_id",
+                solver_id=data["uuid"],
+            ),
+            **data,
+        )
+        for data in FAKE.solvers
+    ]
+
+    return sorted(latest_solvers, key=attrgetter("name"))
+
+
+@router.get("/{solver_name:path}/{version}", response_model=Solver)
+async def get_solver_by_name_and_version(
+    solver_name: SolverImageName,
+    version: str,
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    try:
+        if version == LATEST_VERSION:
+            data = FAKE.get_latest(solver_name)
+        else:
+            data = FAKE.get2(solver_name, version)
+
+    except KeyError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
+
+    return Solver(
+        solver_url=url_for(
+            "get_solver_by_id",
+            solver_id=data["uuid"],
+        ),
+        **data,
+    )
+
+    # catalog get / key:latest
+    # raise NotImplementedError(f"GET {solver_name}:{version}")
+    # raise NotImplementedError(f"GET latest {solver_name}")
+
+
+@router.get("/{solver_id}", response_model=Solver)
+async def get_solver_by_id(
+    solver_id: UUID,
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    try:
+        data = FAKE.get(str(solver_id))
+        return Solver(
+            solver_url=url_for(
+                "get_solver_by_id",
+                solver_id=data["uuid"],
+            ),
+            **data,
+        )
+    except KeyError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
+
+    # catalog get /image_id
+    # raise NotImplementedError(f"GET solver {solver_id}")
+
+
+async def _list_solvers_impl(
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
     # TODO: pagination
     # TODO: deduce user
     # filter and format as in docker listings ??
@@ -79,11 +147,11 @@ async def list_solvers(
                         maintainer=service["contact"],
                         version=service["version"],
                         description=service.get("description"),
-                        #solver_url=url_for(
+                        # solver_url=url_for(
                         #    "get_solver_by_name_and_version",
                         #    solver_name=pathname2url(service_key),
                         #    version=service["version"],
-                        #),
+                        # ),
                         solver_url=url_for(
                             "get_solver_by_id",
                             solver_id=image_uuid,
@@ -109,26 +177,9 @@ async def list_solvers(
     return sorted(latest_solvers.values(), key=attrgetter("name"))
 
 
-@router.get("/{solver_name:path}/{version}", response_model=Solver)
-async def get_solver_by_name_and_version(solver_name: SolverImageName, version: str):
-    if version == LATEST_VERSION:
-        return await get_solver_latest_version_by_name(solver_name)
-
-    raise NotImplementedError(f"GET {solver_name}:{version}")
-
-
-async def get_solver_latest_version_by_name(solver_name: SolverImageName):
-    # catalog get / key:latest
-    raise NotImplementedError(f"GET latest {solver_name}")
-
-
-@router.get("/{solver_id}", response_model=Solver)
-async def get_solver_by_id(solver_id: UUID):
-    # catalog get /image_id
-    raise NotImplementedError(f"GET solver {solver_id}")
-
-
 ## JOBS ---------------
+
+
 @router.get("/{solver_id}/jobs")
 async def list_jobs(solver_id: UUID):
     """ List of all jobs (could be finished) by user of a given solver """
