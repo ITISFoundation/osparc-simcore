@@ -333,6 +333,7 @@ qx.Class.define("osparc.studycard.Large", {
         const newDescription = e.getData();
         this.__studyData["description"] = newDescription;
         this.__updateStudy(this.__studyData);
+        win.close();
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
