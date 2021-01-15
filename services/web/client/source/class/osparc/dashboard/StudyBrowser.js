@@ -411,6 +411,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(moreInfoButton);
       }
 
+      const shareStudyButton = this.__getPermissionsMenuButton(studyData);
+      menu.add(shareStudyButton);
+
       if ("quality" in studyData) {
         const qualityButton = this._getQualityMenuButton(studyData);
         menu.add(qualityButton);
@@ -420,9 +423,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (classifiersButton) {
         menu.add(classifiersButton);
       }
-
-      const shareStudyButton = this.__getPermissionsMenuButton(studyData);
-      menu.add(shareStudyButton);
 
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
@@ -457,6 +457,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return selectButton;
     },
 
+    __getPermissionsMenuButton: function(studyData) {
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      permissionsButton.addListener("execute", () => {
+        const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+        const title = this.tr("Share with Collaborators and Organizations");
+        osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+        permissionsView.addListener("updateStudy", e => {
+          const studyId = e.getData();
+          this._reloadStudy(studyId);
+        }, this);
+      }, this);
+      return permissionsButton;
+    },
+
     __getClassifiersMenuButton: function(studyData) {
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
         return null;
@@ -477,20 +491,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const studyId = e.getData();
         this._reloadStudy(studyId);
       }, this);
-    },
-
-    __getPermissionsMenuButton: function(studyData) {
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
-      permissionsButton.addListener("execute", () => {
-        const permissionsView = new osparc.component.export.StudyPermissions(studyData);
-        const title = this.tr("Share with Collaborators and Organizations");
-        osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
-        permissionsView.addListener("updateStudy", e => {
-          const studyId = e.getData();
-          this._reloadStudy(studyId);
-        }, this);
-      }, this);
-      return permissionsButton;
     },
 
     __getStudyServicesMenuButton: function(studyData) {

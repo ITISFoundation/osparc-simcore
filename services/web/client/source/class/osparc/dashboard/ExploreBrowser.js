@@ -420,6 +420,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         menu.add(moreInfoButton);
       }
 
+      const permissionsButton = this.__getPermissionsMenuButton(studyData);
+      if (permissionsButton) {
+        menu.add(permissionsButton);
+      }
+
       if (osparc.utils.Resources.isService(studyData) && osparc.data.model.Node.isComputational(studyData) && "quality" in studyData) {
         const qualityButton = this._getQualityMenuButton(studyData);
         menu.add(qualityButton);
@@ -428,11 +433,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const classifiersButton = this.__getClassifiersMenuButton(studyData);
       if (classifiersButton) {
         menu.add(classifiersButton);
-      }
-
-      const permissionsButton = this.__getPermissionsMenuButton(studyData);
-      if (permissionsButton) {
-        menu.add(permissionsButton);
       }
 
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
@@ -452,6 +452,23 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }
 
       return menu;
+    },
+
+    __getPermissionsMenuButton: function(studyData) {
+      const isCurrentUserOwner = this.__isUserOwner(studyData);
+      if (!isCurrentUserOwner) {
+        return null;
+      }
+
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      permissionsButton.addListener("execute", () => {
+        if (osparc.utils.Resources.isTemplate(studyData)) {
+          this.__openTemplatePermissions(studyData);
+        } else if (osparc.utils.Resources.isService(studyData)) {
+          this.__openServicePermissions(studyData);
+        }
+      }, this);
+      return permissionsButton;
     },
 
     __getClassifiersMenuButton: function(studyData) {
@@ -484,23 +501,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           this.__reloadService(serviceKey, studyData.version);
         }
       }, this);
-    },
-
-    __getPermissionsMenuButton: function(studyData) {
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
-      if (!isCurrentUserOwner) {
-        return null;
-      }
-
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
-      permissionsButton.addListener("execute", () => {
-        if (osparc.utils.Resources.isTemplate(studyData)) {
-          this.__openTemplatePermissions(studyData);
-        } else if (osparc.utils.Resources.isService(studyData)) {
-          this.__openServicePermissions(studyData);
-        }
-      }, this);
-      return permissionsButton;
     },
 
     __getStudyServicesMenuButton: function(studyData) {
