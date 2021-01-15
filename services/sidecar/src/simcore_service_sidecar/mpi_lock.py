@@ -116,25 +116,12 @@ async def acquire_and_extend_lock_worker(
         await asyncio.sleep(sleep_interval)
 
 
-def process_worker(queue: multiprocessing.Queue, cpu_count: int):
-    logger.error("Starting background process for mpi lock result")
+def process_worker(queue: multiprocessing.Queue, cpu_count: int) -> None:
+    logger.info("Starting background process for mpi lock result")
     asyncio.get_event_loop().run_until_complete(
         acquire_and_extend_lock_worker(queue, cpu_count)
     )
-
-
-def acquire_multiprocessing_lock(cpu_count: int) -> bool:
-    reply_queue = multiprocessing.Queue()
-    process = multiprocessing.Process(
-        target=process_worker, args=(reply_queue, cpu_count), daemon=True
-    )
-    process.start()
-
-    response = reply_queue.get()
-    if not isinstance(response, bool):
-        raise ValueError(f"Expected a boolean response got {type(response)} {response}")
-
-    return response
+    logger.info("Background asyncio task finished. Background process will despawn.")
 
 
 def acquire_mpi_lock(cpu_count: int) -> bool:
@@ -143,5 +130,14 @@ def acquire_mpi_lock(cpu_count: int) -> bool:
     Will try to acquire a distributed shared lock.
     This operation will last up to 2 x config.REDLOCK_REFRESH_INTERVAL_SECONDS
     """
-    was_acquired = acquire_multiprocessing_lock(cpu_count)
-    return was_acquired
+    reply_queue = multiprocessing.Queue()
+    multiprocessing.Process(
+        target=process_worker, args=(reply_queue, cpu_count), daemon=True
+    ).start()
+
+    response = reply_queue.get()
+    if not isinstance(response, bool):
+        logger.error("Expected a boolean response got %s %s", type(response), response)
+        return False
+
+    return response
