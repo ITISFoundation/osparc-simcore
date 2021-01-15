@@ -78,7 +78,12 @@ async def dump(nodeports: Nodeports) -> None:
     )
 
     # convert to DB
-    port_cfg = {"schema": {"inputs": {}, "outputs": {}}, "inputs": {}, "outputs": {}}
+    port_cfg = {
+        "schema": {"inputs": {}, "outputs": {}},
+        "inputs": {},
+        "outputs": {},
+        "run_hash": await nodeports.run_hash(),
+    }
     for port_type in ["inputs", "outputs"]:
         for port_key, port_values in _nodeports_cfg[port_type].items():
             # schemas

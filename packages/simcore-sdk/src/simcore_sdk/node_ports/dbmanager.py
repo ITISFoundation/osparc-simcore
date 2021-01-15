@@ -112,6 +112,9 @@ class DBManager:
                         schema=node_configuration["schema"],
                         inputs=node_configuration["inputs"],
                         outputs=node_configuration["outputs"],
+                        run_hash=node_configuration["run_hash"]
+                        if "run_hash" in node_configuration
+                        else None,
                     )
                 )
 
