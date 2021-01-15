@@ -321,8 +321,12 @@ qx.Class.define("osparc.studycard.Large", {
 
     __openTagsEditor: function() {
       const tagManager = new osparc.component.form.tag.TagManager(this.__studyData["tags"], null, "study", this.__studyData["uuid"]);
+      tagManager.addListener("changeSelected", e => {
+        this.__studyData["tags"] = e.getData().selected;
+        this.__rebuildLayout();
+        this.fireDataEvent("updateTags", this.__studyData["uuid"]);
+      }, this);
       tagManager.addListener("close", () => {
-        this.__updateStudy(this.__studyData);
         this.fireDataEvent("updateTags", this.__studyData["uuid"]);
       }, this);
     },
