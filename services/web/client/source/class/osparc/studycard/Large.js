@@ -86,20 +86,9 @@ qx.Class.define("osparc.studycard.Large", {
     __rebuildLayout: function(width) {
       this._removeAll();
 
-      const nameAndMenuButton = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        alignY: "middle"
-      }));
-      nameAndMenuButton.add(this.__createTitle(), {
-        flex: 1
-      });
-      if (this.__isOwner()) {
-        const editTitleBtn = osparc.utils.Utils.getEditButton();
-        editTitleBtn.addListener("execute", () => {
-          this.__openTitleEditor();
-        }, this);
-        nameAndMenuButton.add(editTitleBtn);
-      }
-      this._add(nameAndMenuButton);
+      const title = this.__createTitle();
+      const titleLayout = this.__createViewWithEdit(title, this.__openTitleEditor);
+      this._add(titleLayout);
 
       const extraInfo = this.__extraInfo();
 
@@ -155,39 +144,38 @@ qx.Class.define("osparc.studycard.Large", {
         this._add(hBox);
       }
 
-      this._add(this.__createDescription());
+      const description = this.__createDescription();
+      const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
+      this._add(descriptionLayout);
 
-      const tags = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      const tags = this.__createTags();
+      const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
+      if (this.__isOwner()) {
+        osparc.utils.Utils.setIdToWidget(tagsLayout.getChildren()[1], "editStudyEditTagsBtn");
+      }
+      this._add(tagsLayout);
+
+      const classifiers = this.__createClassifiers();
+      const classifiersLayout = this.__createViewWithEdit(classifiers, this.__openClassifiersEditor);
+      this._add(classifiersLayout);
+    },
+
+    __createViewWithEdit: function(view, cb) {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
-      tags.add(this.__createTags(), {
+      layout.add(view, {
         flex: 1
       });
       if (this.__isOwner()) {
-        const editTagsBtn = osparc.utils.Utils.getEditButton();
-        osparc.utils.Utils.setIdToWidget(editTagsBtn, "editStudyEditTagsBtn");
-        editTagsBtn.addListener("execute", () => {
-          this.__openTagsEditor();
+        const editBtn = osparc.utils.Utils.getEditButton();
+        editBtn.addListener("execute", () => {
+          cb.call(this);
         }, this);
-        tags.add(editTagsBtn);
-      }
-      this._add(tags);
-
-      const classifiers = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-        alignY: "middle"
-      }));
-      classifiers.add(this.__createClassifiers(), {
-        flex: 1
-      });
-      if (this.__isOwner()) {
-        const editClassifiersBtn = osparc.utils.Utils.getEditButton();
-        editClassifiersBtn.addListener("execute", () => {
-          this.__openClassifiersEditor();
-        }, this);
-        classifiers.add(editClassifiersBtn);
+        layout.add(editBtn);
       }
 
-      this._add(classifiers);
+      return layout;
     },
 
     __extraInfo: function() {
