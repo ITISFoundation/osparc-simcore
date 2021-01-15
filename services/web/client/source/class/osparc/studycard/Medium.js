@@ -50,10 +50,10 @@ qx.Class.define("osparc.studycard.Medium", {
   },
 
   statics: {
-    PADDING: 10,
-    EXTRA_INFO_WIDTH: 200,
-    THUMBNAIL_MIN_WIDTH: 120,
-    THUMBNAIL_MAX_WIDTH: 200
+    PADDING: 5,
+    EXTRA_INFO_WIDTH: 220,
+    THUMBNAIL_MIN_WIDTH: 110,
+    THUMBNAIL_MAX_WIDTH: 180
   },
 
   members: {
@@ -156,6 +156,7 @@ qx.Class.define("osparc.studycard.Medium", {
       grid.setColumnAlign(1, "left", "middle");
       const moreInfo = new qx.ui.container.Composite(grid).set({
         width: this.self().EXTRA_INFO_WIDTH,
+        allowGrowX: false,
         alignX: "center",
         alignY: "middle"
       });
