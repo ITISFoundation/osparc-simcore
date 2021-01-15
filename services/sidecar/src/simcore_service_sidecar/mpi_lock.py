@@ -73,24 +73,34 @@ async def acquire_and_extend_lock_worker(
     def is_locked_factory() -> bool:
         return lock_manager.is_locked(resource_name)
 
-    is_lock_free, _ = await retry_for_result(
-        result_validator=lambda x: x is False,
-        coroutine_factory=is_locked_factory,
-    )
+    try:
+        is_lock_free, _ = await retry_for_result(
+            result_validator=lambda x: x is False,
+            coroutine_factory=is_locked_factory,
+        )
+    except Exception as e:  # pylint: disable=broad-except
+        logger.exception(str(e))
+        reply_queue.put(False)
+        return
 
     if not is_lock_free:
         # it was not possible to acquire the lock
         reply_queue.put(False)
-        return False
+        return
 
     def try_to_acquire_lock_factory() -> bool:
         return try_to_acquire_lock(lock_manager, resource_name)
 
     # lock is free try to acquire and start background extention
-    managed_to_acquire_lock, lock = await retry_for_result(
-        result_validator=lambda x: type(x) == Lock,
-        coroutine_factory=try_to_acquire_lock_factory,
-    )
+    try:
+        managed_to_acquire_lock, lock = await retry_for_result(
+            result_validator=lambda x: type(x) == Lock,
+            coroutine_factory=try_to_acquire_lock_factory,
+        )
+    except Exception as e:  # pylint: disable=broad-except
+        logger.exception(str(e))
+        reply_queue.put(False)
+        return
 
     reply_queue.put(managed_to_acquire_lock)
     if not managed_to_acquire_lock:
@@ -103,9 +113,6 @@ async def acquire_and_extend_lock_worker(
     )
     while True:
         await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
-
-        logger.error("sleep before extention")
-
         await asyncio.sleep(sleep_interval)
 
 
