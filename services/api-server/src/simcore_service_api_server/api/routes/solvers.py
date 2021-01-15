@@ -2,7 +2,7 @@ import functools
 import logging
 import uuid as uuidlib
 from operator import attrgetter
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List
 from uuid import UUID
 
 import packaging.version
@@ -10,17 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 from starlette import status
 
-from ...models.schemas.solvers import (
-    LATEST_VERSION,
-    Job,
-    JobInput,
-    JobOutput,
-    JobState,
-    KeyIdentifier,
-    Solver,
-    SolverImageName,
-    SolverOutput,
-)
+from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverImageName
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client

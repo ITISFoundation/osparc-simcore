@@ -40,14 +40,16 @@ class FAKE:
     def get2(cls, name, version):
         try:
             return next(
-                s for s in cls.solvers if s["name"] == name and s["version"] == version
+                s
+                for s in cls.solvers
+                if s["name"].endswith(name) and s["version"] == version
             )
         except StopIteration as err:
             raise KeyError() from err
 
     @classmethod
     def get_all(cls, name):
-        return [s for s in cls.solvers if s["name"] == name]
+        return [s for s in cls.solvers if s["name"].endswith(name)]
 
     @classmethod
     def get_latest(cls, name):
