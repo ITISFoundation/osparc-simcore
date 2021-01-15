@@ -115,8 +115,8 @@ class CompTasksRepository(BaseRepository):
             requires_mpi = False
             requires_gpu = False
             if node_extras:
-                requires_gpu = node_extras.node_requirements == NodeRequirement.GPU
-                requires_mpi = node_extras.node_requirements == NodeRequirement.MPI
+                requires_gpu = NodeRequirement.GPU in node_extras.node_requirements
+                requires_mpi = NodeRequirement.MPI in node_extras.node_requirements
             image = Image(
                 name=service_key_version.key,
                 tag=service_key_version.version,
