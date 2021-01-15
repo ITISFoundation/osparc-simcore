@@ -40,7 +40,8 @@ qx.Class.define("osparc.studycard.Large", {
   },
 
   events: {
-    "updateStudy": "qx.event.type.Data"
+    "updateStudy": "qx.event.type.Data",
+    "updateTags": "qx.event.type.Data"
   },
 
   statics: {
@@ -97,18 +98,19 @@ qx.Class.define("osparc.studycard.Large", {
       }
       const bounds = this.getBounds();
       let widgetWidth = null;
+      const offset = 30;
       if (width) {
-        widgetWidth = width;
+        widgetWidth = width - offset;
       } else if (bounds) {
-        widgetWidth = bounds.width;
+        widgetWidth = bounds.width - offset;
       } else {
-        widgetWidth = 470;
+        widgetWidth = 500 - offset;
       }
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
       if (slim) {
         this._add(extraInfo);
-        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
+        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth);
         if (editThumbnailBtn) {
           const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
@@ -127,8 +129,8 @@ qx.Class.define("osparc.studycard.Large", {
           alignX: "center"
         }));
         hBox.add(extraInfo);
-        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH - 20;
-        thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
+        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
+        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth);
         hBox.add(thumbnail, {
           flex: 1
@@ -266,18 +268,22 @@ qx.Class.define("osparc.studycard.Large", {
 
     __openAccessRights: function() {
       const permissionsView = osparc.studycard.Utils.openAccessRights(this.__studyData);
-      permissionsView.addListener("updateStudy", () => {
+      permissionsView.addListener("updateStudy", e => {
+        this.fireDataEvent("updateStudy", e.getData());
         this.__rebuildLayout();
       }, this);
     },
 
     __openQuality: function() {
       const qualityEditor = osparc.studycard.Utils.openQuality(this.__studyData);
-      qualityEditor.addListener("updateStudy", () => {
-        this.__rebuildLayout();
-      });
-      qualityEditor.addListener("updateTemplate", () => {
-        this.__rebuildLayout();
+      [
+        "updateStudy",
+        "updateTemplate"
+      ].forEach(event => {
+        qualityEditor.addListener(event, e => {
+          this.fireDataEvent("updateStudy", e.getData());
+          this.__rebuildLayout();
+        });
       });
     },
 
@@ -305,7 +311,8 @@ qx.Class.define("osparc.studycard.Large", {
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         const newDescription = e.getData();
-        console.log(newDescription);
+        this.__studyData["description"] = newDescription;
+        this.__updateStudy(this.__studyData);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();

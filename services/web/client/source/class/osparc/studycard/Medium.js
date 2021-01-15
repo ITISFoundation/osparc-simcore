@@ -99,19 +99,18 @@ qx.Class.define("osparc.studycard.Medium", {
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
       if (slim) {
+        this._add(extraInfo);
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth);
-        this._add(extraInfo);
         this._add(thumbnail);
       } else {
+        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+          alignX: "center"
+        }));
+        hBox.add(extraInfo);
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth);
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center",
-          alignY: "middle"
-        }));
-        hBox.add(extraInfo);
         hBox.add(thumbnail, {
           flex: 1
         });
