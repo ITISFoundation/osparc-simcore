@@ -6,12 +6,8 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_routing import (
-    iter_path_operations,
-    map_handlers_with_operations,
-)
+from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
 
 from ..rest_config import APP_OPENAPI_SPECS_KEY
 from .config import APP_DIRECTOR_API_KEY, assert_valid_config
@@ -36,7 +32,7 @@ def setup_director(app: web.Application, *, disable_login=False):
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
-    _ , settings = assert_valid_config(app)
+    _, settings = assert_valid_config(app)
     # ---------------------------------------------
 
     # director service API base url, e.g. http://director:8081/v0
@@ -61,6 +57,3 @@ def setup_director(app: web.Application, *, disable_login=False):
         handlers_dict, filter(include_path, iter_path_operations(specs)), strict=True
     )
     app.router.add_routes(routes)
-
-
-__all__ = "setup_director"

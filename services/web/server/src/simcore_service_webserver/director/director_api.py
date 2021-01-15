@@ -4,22 +4,19 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import ClientSession, web
 from models_library.settings.services_common import ServicesCommonSettings
+from servicelib.client_session import get_client_session
 from servicelib.utils import logged_gather
 from yarl import URL
 
 from . import director_exceptions
-from .config import get_client_session, get_config
+from .config import get_config
 
 log = logging.getLogger(__name__)
 
 
 def _get_director_client(app: web.Application) -> Tuple[ClientSession, URL]:
-    cfg = get_config(app)
+    cfg: Dict[str, Any] = get_config(app)
 
-    # director service API endpoint
-    # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
-    # Use director.
-    # TODO: this is also in app[APP_DIRECTOR_API_KEY] upon startup
     api_endpoint = URL.build(
         scheme="http", host=cfg["host"], port=cfg["port"]
     ).with_path(cfg["version"])
