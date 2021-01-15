@@ -304,9 +304,7 @@ async def test_get_value_from_previous_node(
         prev_node_outputs=[("output_123", item_type, item_value)],
         inputs=[("in_15", item_type, node_link("output_123"))],
     )
-    import pdb
 
-    pdb.set_trace()
     PORTS = await node_ports_v2.ports()
 
     await check_config_valid(PORTS, config_dict)
