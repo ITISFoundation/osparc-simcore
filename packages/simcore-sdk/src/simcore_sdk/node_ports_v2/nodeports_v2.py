@@ -1,7 +1,10 @@
+import hashlib
+import json
 import logging
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Type
 
+from models_library.projects_nodes_io import PortLink
 from pydantic import BaseModel, Field
 
 from ..node_ports.dbmanager import DBManager
@@ -46,6 +49,52 @@ class Nodeports(BaseModel):
         if self.auto_update:
             await self._auto_update_from_db()
         return self.internal_outputs
+
+    @property
+    async def run_hash(self) -> str:
+        import pdb
+
+        pdb.set_trace()
+        # resolve the port links if any
+        io_payload = {"inputs": {}, "outputs": {}}
+        for port_key, port_value in (await self.inputs).items():
+            if isinstance(port_value.value, PortLink):
+                # resolve the entry
+                other_nodeports = await self._node_ports_creator_cb(
+                    port_value.value.node_uuid
+                )
+                io_payload["inputs"][port_key] = (await other_nodeports.outputs)[
+                    port_value.value.output
+                ].value
+            else:
+                io_payload["inputs"][port_key] = port_value.value
+        for port_key, port_value in (await self.outputs).items():
+            io_payload["outputs"][port_key] = port_value.value
+
+        # for input_key, input_value in (await self.inputs).items():
+        #     if isinstance(input_value, PortLink):
+        #         # let's resolve the entry
+        #         previous_node = nodes_data_view[str(input_value.node_uuid)]
+        #         previous_node_outputs = previous_node.get("outputs", {})
+        #         resolved_inputs[input_key] = previous_node_outputs.get(
+        #             input_value.output
+        #         )
+        #     else:
+        #         resolved_inputs[input_key] = input_value
+
+        block_string = json.dumps(io_payload).encode("utf-8")
+        raw_hash = hashlib.sha256(block_string)
+        return raw_hash.hexdigest()
+
+        # class PydanticEncoder(json.JSONEncoder):
+        #     def default(self, o):
+        #         if isinstance(o, BaseModel):
+        #             return o.json()
+        #         return json.JSONEncoder.default(self, o)
+
+        # block_string = json.dumps(io_payload, cls=PydanticEncoder).encode("utf-8")
+        # raw_hash = hashlib.sha256(block_string)
+        # return raw_hash.hexdigest()
 
     async def get(self, item_key: str) -> ItemConcreteValue:
         try:
