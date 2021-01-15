@@ -203,6 +203,29 @@ qx.Class.define("osparc.studycard.Utils", {
       return description;
     },
 
+    createTags: function(studyData) {
+      const tagSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+
+      tagSection.add(new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
+        font: "title-12"
+      }));
+
+      tagSection.add(this.createTagsContainer(studyData));
+      return tagSection;
+    },
+
+    createTagsContainer: function(studyData) {
+      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      tagsContainer.setMarginTop(5);
+      osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id))
+        .forEach(selectedTag => {
+          tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
+        });
+      return tagsContainer;
+    },
+
     /**
       * @param studyData {Object} Serialized Study Object
       */
