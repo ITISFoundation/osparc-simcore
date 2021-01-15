@@ -63,7 +63,23 @@ async def try_to_acquire_lock(
     return None
 
 
-async def acquire_and_extend_lock_worker(
+async def wrapped_acquire_and_extend_lock_worker(
+    reply_queue: multiprocessing.Queue, cpu_count: int
+) -> None:
+    try:
+        # if the lock is acquired the above function will block here
+        await acquire_and_extend_lock_forever(reply_queue, cpu_count)
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("An exception ocurred while trying to acquire the mpi lock")
+        reply_queue.put(False)
+    finally:
+        # if the acquire_and_extend_lock_forever function returns
+        # the lock was not acquired, need to make sure the acquire_mpi_lock
+        # always has a result to avoid issues
+        reply_queue.put(False)
+
+
+async def acquire_and_extend_lock_forever(
     reply_queue: multiprocessing.Queue, cpu_count: int
 ) -> None:
     resource_name = f"aioredlock:mpi_lock:{cpu_count}"
@@ -73,34 +89,23 @@ async def acquire_and_extend_lock_worker(
     def is_locked_factory() -> bool:
         return lock_manager.is_locked(resource_name)
 
-    try:
-        is_lock_free, _ = await retry_for_result(
-            result_validator=lambda x: x is False,
-            coroutine_factory=is_locked_factory,
-        )
-    except Exception as e:  # pylint: disable=broad-except
-        logger.exception(str(e))
-        reply_queue.put(False)
-        return
+    is_lock_free, _ = await retry_for_result(
+        result_validator=lambda x: x is False,
+        coroutine_factory=is_locked_factory,
+    )
 
     if not is_lock_free:
         # it was not possible to acquire the lock
-        reply_queue.put(False)
         return
 
     def try_to_acquire_lock_factory() -> bool:
         return try_to_acquire_lock(lock_manager, resource_name)
 
     # lock is free try to acquire and start background extention
-    try:
-        managed_to_acquire_lock, lock = await retry_for_result(
-            result_validator=lambda x: type(x) == Lock,
-            coroutine_factory=try_to_acquire_lock_factory,
-        )
-    except Exception as e:  # pylint: disable=broad-except
-        logger.exception(str(e))
-        reply_queue.put(False)
-        return
+    managed_to_acquire_lock, lock = await retry_for_result(
+        result_validator=lambda x: type(x) == Lock,
+        coroutine_factory=try_to_acquire_lock_factory,
+    )
 
     reply_queue.put(managed_to_acquire_lock)
     if not managed_to_acquire_lock:
@@ -108,9 +113,7 @@ async def acquire_and_extend_lock_worker(
         return
 
     sleep_interval = 0.9 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
-    logger.info(
-        "Starting background lock extention at %s seconds interval", sleep_interval
-    )
+    logger.info("Starting lock extention at %s seconds interval", sleep_interval)
     while True:
         await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
         await asyncio.sleep(sleep_interval)
@@ -119,7 +122,7 @@ async def acquire_and_extend_lock_worker(
 def process_worker(queue: multiprocessing.Queue, cpu_count: int) -> None:
     logger.info("Starting background process for mpi lock result")
     asyncio.get_event_loop().run_until_complete(
-        acquire_and_extend_lock_worker(queue, cpu_count)
+        wrapped_acquire_and_extend_lock_worker(queue, cpu_count)
     )
     logger.info("Background asyncio task finished. Background process will despawn.")
 
