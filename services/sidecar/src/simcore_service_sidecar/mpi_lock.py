@@ -12,12 +12,18 @@ How it works:
 import asyncio
 import datetime
 import logging
-from threading import Thread
+import multiprocessing
+import os
 from typing import Any, Callable, Optional, Tuple
 
 from aioredlock import Aioredlock, Lock, LockError
 
 from . import config
+
+# ptsv cause issues with ProcessPoolExecutor
+# SEE: https://github.com/microsoft/ptvsd/issues/1443
+if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":
+    multiprocessing.set_start_method("spawn", True)
 
 logger = logging.getLogger(__name__)
 
@@ -43,27 +49,6 @@ async def retry_for_result(
     return False, None
 
 
-def start_background_lock_extender(
-    lock_manager: Aioredlock, lock: Lock, loop: asyncio.BaseEventLoop
-) -> None:
-    """Will periodically extend the duration of the lock"""
-
-    async def extender_worker(lock_manager: Aioredlock):
-        sleep_interval = 0.9 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
-        while True:
-            await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
-
-            await asyncio.sleep(sleep_interval)
-
-    loop.run_until_complete(extender_worker(lock_manager))
-
-
-def thread_worker(
-    lock_manager: Aioredlock, lock: Lock, loop: asyncio.BaseEventLoop
-) -> None:
-    start_background_lock_extender(lock_manager, lock, loop)
-
-
 async def try_to_acquire_lock(
     lock_manager: Aioredlock, resource_name: str
 ) -> Optional[Tuple[bool, Lock]]:
@@ -78,12 +63,14 @@ async def try_to_acquire_lock(
     return None
 
 
-async def acquire_lock(cpu_count: int) -> bool:
+async def acquire_and_extend_lock_worker(
+    reply_queue: multiprocessing.Queue, cpu_count: int
+) -> None:
     resource_name = f"aioredlock:mpi_lock:{cpu_count}"
     lock_manager = Aioredlock([config.CELERY_CONFIG.redis.dsn])
     logger.info("Will try to acquire an mpi_lock")
 
-    def is_locked_factory():
+    def is_locked_factory() -> bool:
         return lock_manager.is_locked(resource_name)
 
     is_lock_free, _ = await retry_for_result(
@@ -93,9 +80,10 @@ async def acquire_lock(cpu_count: int) -> bool:
 
     if not is_lock_free:
         # it was not possible to acquire the lock
+        reply_queue.put(False)
         return False
 
-    def try_to_acquire_lock_factory():
+    def try_to_acquire_lock_factory() -> bool:
         return try_to_acquire_lock(lock_manager, resource_name)
 
     # lock is free try to acquire and start background extention
@@ -104,19 +92,42 @@ async def acquire_lock(cpu_count: int) -> bool:
         coroutine_factory=try_to_acquire_lock_factory,
     )
 
-    if managed_to_acquire_lock:
-        Thread(
-            target=thread_worker,
-            args=(
-                lock_manager,
-                lock,
-                asyncio.get_event_loop(),
-            ),
-            daemon=True,
-        ).start()
+    reply_queue.put(managed_to_acquire_lock)
+    if not managed_to_acquire_lock:
+        logger.info("No locking extention is required, skipping")
+        return
 
-    logger.info("mpi_lock acquisition result %s", managed_to_acquire_lock)
-    return managed_to_acquire_lock
+    sleep_interval = 0.9 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
+    logger.info(
+        "Starting background lock extention at %s seconds interval", sleep_interval
+    )
+    while True:
+        await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
+
+        logger.error("sleep before extention")
+
+        await asyncio.sleep(sleep_interval)
+
+
+def process_worker(queue: multiprocessing.Queue, cpu_count: int):
+    logger.error("Starting background process for mpi lock result")
+    asyncio.get_event_loop().run_until_complete(
+        acquire_and_extend_lock_worker(queue, cpu_count)
+    )
+
+
+def acquire_multiprocessing_lock(cpu_count: int) -> bool:
+    reply_queue = multiprocessing.Queue()
+    process = multiprocessing.Process(
+        target=process_worker, args=(reply_queue, cpu_count), daemon=True
+    )
+    process.start()
+
+    response = reply_queue.get()
+    if not isinstance(response, bool):
+        raise ValueError(f"Expected a boolean response got {type(response)} {response}")
+
+    return response
 
 
 def acquire_mpi_lock(cpu_count: int) -> bool:
@@ -125,7 +136,5 @@ def acquire_mpi_lock(cpu_count: int) -> bool:
     Will try to acquire a distributed shared lock.
     This operation will last up to 2 x config.REDLOCK_REFRESH_INTERVAL_SECONDS
     """
-    from .utils import wrap_async_call
-
-    was_acquired = wrap_async_call(acquire_lock(cpu_count))
+    was_acquired = acquire_multiprocessing_lock(cpu_count)
     return was_acquired
