@@ -65,6 +65,20 @@ qx.Class.define("osparc.studycard.Large", {
       }
     },
 
+    __updateFromCacheAndNotify: function(studyId) {
+      const params = {
+        url: {
+          "projectId": studyId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params, studyId, true)
+        .then(studyData => {
+          this.fireDataEvent("updateStudy", studyData);
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
+          this.__setUpdatedData(studyData);
+        });
+    },
+
     __isOwner: function() {
       return osparc.data.model.Study.isOwner(this.__studyData);
     },
@@ -289,8 +303,7 @@ qx.Class.define("osparc.studycard.Large", {
     __openAccessRights: function() {
       const permissionsView = osparc.studycard.Utils.openAccessRights(this.__studyData);
       permissionsView.addListener("updateStudy", e => {
-        this.fireDataEvent("updateStudy", e.getData());
-        this.__rebuildLayout();
+        this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
       }, this);
     },
 
@@ -301,8 +314,7 @@ qx.Class.define("osparc.studycard.Large", {
         "updateTemplate"
       ].forEach(event => {
         qualityEditor.addListener(event, e => {
-          this.fireDataEvent("updateStudy", e.getData());
-          this.__rebuildLayout();
+          this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
         });
       });
     },
@@ -355,9 +367,8 @@ qx.Class.define("osparc.studycard.Large", {
       const classifiersEditor = new osparc.dashboard.ClassifiersEditor(this.__studyData);
       const title = this.tr("Classifiers");
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateResourceClassifiers", e => {
-        this.__rebuildLayout();
-        this.fireDataEvent("updateTags", this.__studyData["uuid"]);
+      classifiersEditor.addListener("updateResourceClassifiers", () => {
+        this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
       }, this);
     },
 
