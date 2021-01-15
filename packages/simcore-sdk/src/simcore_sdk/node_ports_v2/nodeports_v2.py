@@ -56,7 +56,7 @@ class Nodeports(BaseModel):
         io_payload = {}
         for port_type in ["inputs", "outputs"]:
             io_payload[port_type] = {}
-            for port_key, port in (await getattr(self, port_type)).items()
+            for port_key, port in (await getattr(self, port_type)).items():
                 if isinstance(port.value, PortLink):
                     # in case of a port link we do resolve the entry so we have the real value for the hashing
                     linked_nodeports = await self._node_ports_creator_cb(
