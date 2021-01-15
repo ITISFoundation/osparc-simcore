@@ -171,7 +171,7 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
 
     __createUuid: function() {
       const uuid = new qx.ui.basic.Label(this.__studyData["uuid"]).set({
-        maxWidth: 120,
+        maxWidth: 150,
         toolTipText: this.__studyData["uuid"]
       });
       return uuid;

@@ -51,7 +51,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         if (osparc.utils.Resources.isService(resourceData)) {
           this._openServiceDetailsEditor(resourceData);
         } else {
-          const winWidth = 400;
+          const winWidth = 500;
           this.__openStudyDetailsEditor(resourceData, winWidth);
         }
       }, this);
@@ -67,9 +67,14 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     __openStudyDetailsEditor: function(resourceData, winWidth) {
+      const studyDetails = new osparc.component.widget.StudyCardLarge(resourceData);
+      const title = this.tr("Study Details Editor");
+      const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, 500);
+      /*
       const studyDetails = new osparc.component.metadata.StudyDetailsEditor(resourceData, osparc.utils.Resources.isTemplate(resourceData), winWidth);
       const title = this.tr("Study Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, 400);
+      */
       studyDetails.addListener("openStudy", () => {
         this._startStudy(resourceData["uuid"]);
         win.close();
