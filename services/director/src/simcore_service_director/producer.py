@@ -761,7 +761,7 @@ async def _create_node(
             node_base_path,
             inter_docker_network_id,
         )
-        log.debug("Result of service start %s", service_meta_data)
+        log.debug("Result of service start %s", sidecar_service_meta_data)
         containers_meta_data.append(service_meta_data)
 
     return containers_meta_data
@@ -1104,7 +1104,7 @@ async def start_dynamic_sidecar_with_service(
             "Error while starting service: {}".format(str(service_start_result))
         )
 
-    # TODO: this service dose not need to be exposed as it is just internal, what needs to be exposed is the one from the container which itself spawns 
+    # TODO: this service dose not need to be exposed as it is just internal, what needs to be exposed is the one from the container which itself spawns
     sidecar_service_meta_data = await _dyn_service_sidecar_assembly(
         node_uuid=node_uuid,
         io_simcore_zone=io_simcore_zone,
