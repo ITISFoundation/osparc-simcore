@@ -168,19 +168,12 @@ qx.Class.define("osparc.studycard.Utils", {
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       if (study instanceof osparc.data.model.Study) {
-        study.bind("thumbnail", img, "source");
-        study.bind("thumbnail", img, "visibility", {
-          converter: thumbnail => {
-            if (thumbnail) {
-              return "visible";
-            }
-            return "excluded";
-          }
+        study.bind("thumbnail", img, "source", {
+          converter: thumbnail => thumbnail === "" ? osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON : thumbnail
         });
       } else {
         img.set({
-          source: study["thumbnail"],
-          visibility: study["thumbnail"] ? "visible" : "excluded"
+          source: study["thumbnail"] === "" ? osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON : study["thumbnail"]
         });
       }
       return image;
