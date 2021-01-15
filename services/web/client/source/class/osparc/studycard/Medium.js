@@ -144,7 +144,7 @@ qx.Class.define("osparc.studycard.Medium", {
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        this.__openStudyCardLarge();
+        this.__openStudyDetails();
       }, this);
       return moreInfoButton;
     },
@@ -243,11 +243,11 @@ qx.Class.define("osparc.studycard.Medium", {
       osparc.studycard.Utils.openQuality(this.getStudy().serialize());
     },
 
-    __openStudyCardLarge: function() {
+    __openStudyDetails: function() {
+      const studyDetails = new osparc.studycard.Large(this.getStudy().serialize());
+      const title = this.tr("Study Details");
       const width = 500;
       const height = 500;
-      const title = this.tr("Study Details");
-      const studyDetails = new osparc.studycard.Large(this.getStudy().serialize());
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     }
   }
