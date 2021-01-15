@@ -1,6 +1,6 @@
 import logging
 from asyncio import CancelledError
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID
 
 from aiohttp import web
@@ -61,7 +61,7 @@ async def _request_director_v2(
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> Dict:
+) -> Optional[Dict[str, Any]]:
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
@@ -123,10 +123,19 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
     user_id = request[RQT_USERID_KEY]
     project_id = request.match_info.get("project_id", None)
+    subgraph: Set[str] = set()
+    if request.can_read_body:
+        body = await request.json()
+        subgraph = body.get("subgraph")
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
     log.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
-    body = {"user_id": user_id, "project_id": project_id, "start_pipeline": True}
+    body = {
+        "user_id": user_id,
+        "project_id": project_id,
+        "start_pipeline": True,
+        "subgraph": list(subgraph),  # sets are not natively json serializable
+    }
 
     # request to director-v2
     try:
@@ -173,6 +182,29 @@ async def stop_pipeline(request: web.Request) -> web.Response:
     except _DirectorServiceError as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
+        )
+
+
+@log_decorator(logger=log)
+async def request_retrieve_dyn_service(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> None:
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = URL(
+        f"{director2_settings.endpoint}/dynamic_services/{service_uuid}:retrieve"
+    )
+    body = {"port_keys": port_keys}
+
+    try:
+        # request to director-v2
+        await _request_director_v2(app, "POST", backend_url, data=body)
+    except _DirectorServiceError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
+            service_uuid,
+            port_keys,
+            exc.status,
+            exc.reason,
         )
 
 

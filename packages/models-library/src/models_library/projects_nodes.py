@@ -4,7 +4,17 @@
 
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, Field, HttpUrl, constr, validator
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    HttpUrl,
+    StrictBool,
+    StrictFloat,
+    StrictInt,
+    constr,
+    validator,
+)
 
 from .basic_regex import VERSION_RE
 from .projects_access import AccessEnum
@@ -17,13 +27,26 @@ from .projects_nodes_io import (
 )
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
-from .services import SERVICE_KEY_RE, PROPERTY_KEY_RE
+from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
 
 InputTypes = Union[
-    int, bool, str, float, PortLink, SimCoreFileLink, DatCoreFileLink, DownloadLink
+    StrictBool,
+    StrictInt,
+    StrictFloat,
+    str,
+    PortLink,
+    SimCoreFileLink,
+    DatCoreFileLink,
+    DownloadLink,
 ]
 OutputTypes = Union[
-    int, bool, str, float, SimCoreFileLink, DatCoreFileLink, DownloadLink
+    StrictBool,
+    StrictInt,
+    StrictFloat,
+    str,
+    SimCoreFileLink,
+    DatCoreFileLink,
+    DownloadLink,
 ]
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
@@ -104,14 +127,14 @@ class Node(BaseModel):
 
     @validator("thumbnail", pre=True)
     @classmethod
-    def convert_empty_str_to_none(v):
+    def convert_empty_str_to_none(cls, v):
         if isinstance(v, str) and v == "":
             return None
         return v
 
     @validator("state", pre=True)
     @classmethod
-    def convert_old_enum_name(v):
+    def convert_old_enum_name(cls, v):
         if v == "FAILURE":
             return RunningState.FAILED
         return v

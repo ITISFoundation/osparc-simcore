@@ -1,6 +1,6 @@
 {
   "accessRights": {},
-  "uuid": "template-uuid-6257-a462-d7bf73b76c0c",
+  "uuid": "de2578c5-431e-6257-a462-d7bf73b76c0c",
   "name": "fake-project-name",
   "description": "anim sint pariatur do dolore",
   "prjOwner": "dolore ad do consectetur",
@@ -69,5 +69,6 @@
     }
   },
   "ui": {},
+  "quality": {},
   "dev": {}
 }

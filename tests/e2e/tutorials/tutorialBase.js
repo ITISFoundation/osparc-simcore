@@ -6,7 +6,7 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, templateName, user, pass, newUser, enableDemoMode=false) {
+  constructor(url, templateName, user, pass, newUser, enableDemoMode = false) {
     this.__demo = enableDemoMode;
     this.__templateName = templateName;
 
@@ -28,12 +28,12 @@ class TutorialBase {
     try {
       utils.createScreenshotsDir();
     }
-    catch(err) {
+    catch (err) {
       console.error("Error creating screenshots directory", err);
-      throw(err);
+      throw (err);
     }
 
-    this.__interval = setInterval(async() => {
+    this.__interval = setInterval(async () => {
       await this.takeScreenshot();
     }, 2000);
   }
@@ -55,9 +55,9 @@ class TutorialBase {
     try {
       await this.__page.goto(this.__url);
     }
-    catch(err) {
+    catch (err) {
       console.error(this.__url, "can't be reached", err);
-      throw(err);
+      throw (err);
     }
     const domain = utils.getDomain(this.__url);
     await this.takeScreenshot("landingPage_" + domain);
@@ -73,9 +73,9 @@ class TutorialBase {
         await this.login();
       }
     }
-    catch(err) {
+    catch (err) {
       console.error("Error starting", err);
-      throw(err);
+      throw (err);
     }
   }
 
@@ -87,9 +87,9 @@ class TutorialBase {
       await this.__goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
     }
-    catch(err) {
+    catch (err) {
       console.error(this.__templateName, "could not be started", err);
-      throw(err);
+      throw (err);
     }
     return resp;
   }
@@ -103,38 +103,49 @@ class TutorialBase {
   }
 
   async login() {
-    this.__responsesQueue.addResponseListener("projects?type=template");
-    this.__responsesQueue.addResponseListener("catalog/services");
+    const resources = [{
+      name: "Studies",
+      request: "projects?type=user",
+      listThem: false
+    }, {
+      name: "Templates",
+      request: "projects?type=template",
+      listThem: true
+    }, {
+      name: "Services",
+      request: "catalog/services",
+      listThem: false
+    }];
+
+    for (let i=0; i<resources.length; i++) {
+      const resource = resources[i];
+      this.__responsesQueue.addResponseListener(resource.request);
+    }
 
     try {
       await auto.logIn(this.__page, this.__user, this.__pass);
     }
-    catch(err) {
+    catch (err) {
       console.error("Failed logging in", err);
-      throw(err);
+      throw (err);
     }
 
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("projects?type=template");
-      const templates = resp["data"];
-      console.log("Templates received:", templates.length);
-      templates.forEach(template => {
-        console.log(" - ", template.name);
-      });
-    }
-    catch(err) {
-      console.error("Templates could not be fetched", err);
-      throw(err);
-    }
-
-    try {
-      const resp = await this.__responsesQueue.waitUntilResponse("catalog/services");
-      const services = resp["data"];
-      console.log("Services received:", services.length);
-    }
-    catch(err) {
-      console.error("Services could not be fetched", err);
-      throw(err);
+    for (let i=0; i<resources.length; i++) {
+      const resource = resources[i];
+      try {
+        const resp = await this.__responsesQueue.waitUntilResponse(resource.request);
+        const respData = resp["data"];
+        console.log(resource.name + " received:", respData.length);
+        if (resource.listThem) {
+          respData.forEach(item => {
+            console.log(" - ", item.name);
+          });
+        }
+      }
+      catch (err) {
+        console.error(resource.name + " could not be fetched", err);
+        throw (err);
+      }
     }
   }
 
@@ -144,7 +155,7 @@ class TutorialBase {
     try {
       resp = await this.__responsesQueue.waitUntilResponse("open");
     }
-    catch(err) {
+    catch (err) {
       console.error(this.__templateName, "could not be started", err);
     }
     return resp;
@@ -161,9 +172,9 @@ class TutorialBase {
       await this.__responsesQueue.waitUntilResponse("projects?from_template=");
       resp = await this.__responsesQueue.waitUntilResponse("open");
     }
-    catch(err) {
+    catch (err) {
       console.error(`"${this.__templateName}" template could not be started:\n`, err);
-      throw(err);
+      throw (err);
     }
     await this.__page.waitFor(waitFor);
     await this.takeScreenshot("dashboardOpenFirstTemplate_after");
@@ -179,9 +190,9 @@ class TutorialBase {
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
       resp = await this.__responsesQueue.waitUntilResponse("open");
     }
-    catch(err) {
+    catch (err) {
       console.error(`"${this.__templateName}" service could not be started:\n`, err);
-      throw(err);
+      throw (err);
     }
     await this.__page.waitFor(waitFor);
     await this.takeScreenshot("dashboardOpenFirstService_after");
@@ -194,8 +205,8 @@ class TutorialBase {
     }
 
     const start = new Date().getTime();
-    while ((new Date().getTime())-start < timeout) {
-      for (let i = nodeIds.length-1; i>=0; i--) {
+    while ((new Date().getTime()) - start < timeout) {
+      for (let i = nodeIds.length - 1; i >= 0; i--) {
         const nodeId = nodeIds[i];
         if (await utils.isServiceReady(this.__page, studyId, nodeId)) {
           nodeIds.splice(i, 1);
@@ -203,25 +214,37 @@ class TutorialBase {
       }
       await utils.sleep(2500);
       if (nodeIds.length === 0) {
-        console.log("Services ready in", ((new Date().getTime())-start)/1000);
+        console.log("Services ready in", ((new Date().getTime()) - start) / 1000);
         // after the service is responsive we need to wait a bit until the iframe is rendered
         await utils.sleep(3000);
         return;
       }
     }
-    console.log("Timeout reached waiting for services", ((new Date().getTime())-start)/1000);
+    console.log("Timeout reached waiting for services", ((new Date().getTime()) - start) / 1000);
     return;
   }
 
   async waitForStudyRun(studyId, timeout = 60000) {
     const start = new Date().getTime();
-    while ((new Date().getTime())-start < timeout) {
+    while ((new Date().getTime()) - start < timeout) {
       await utils.sleep(5000);
       if (await utils.isStudyDone(this.__page, studyId)) {
         return;
       }
     }
-    console.log("Timeout reached waiting for study run", ((new Date().getTime())-start)/1000);
+    console.log("Timeout reached waiting for study run", ((new Date().getTime()) - start) / 1000);
+    return;
+  }
+
+  async waitForStudyUnlocked(studyId, timeout = 10000) {
+    const start = new Date().getTime();
+    while ((new Date().getTime()) - start < timeout) {
+      await utils.sleep(timeout / 10);
+      if (await utils.isStudyUnlocked(this.__page, studyId)) {
+        return;
+      }
+    }
+    console.log("Timeout reached waiting for study unlock", ((new Date().getTime()) - start) / 1000);
     return;
   }
 
@@ -258,9 +281,9 @@ class TutorialBase {
     try {
       await this.__responsesQueue.waitUntilResponse("storage/locations/0/files/metadata?uuid_filter=" + nodeId);
     }
-    catch(err) {
+    catch (err) {
       console.error(err);
-      throw(err);
+      throw (err);
     }
   }
 
@@ -282,11 +305,27 @@ class TutorialBase {
     try {
       await auto.checkDataProducedByNode(this.__page, expecedNFiles);
     }
-    catch(err) {
+    catch (err) {
       console.error("Failed checking Data Produced By Node", err);
-      throw(err);
+      throw (err);
     }
     await this.takeScreenshot("checkResults_after");
+  }
+
+  async toDashboard() {
+    await this.takeScreenshot("toDashboard_before");
+    this.__responsesQueue.addResponseListener("projects");
+    this.__responsesQueue.addResponseListener(":close");
+    try {
+      await auto.toDashboard(this.__page);
+      await this.__responsesQueue.waitUntilResponse("projects");
+      await this.__responsesQueue.waitUntilResponse(":close");
+    }
+    catch (err) {
+      console.error("Failed going to dashboard study", err);
+      throw (err);
+    }
+    await this.takeScreenshot("toDashboard_after");
   }
 
   async closeStudy() {
@@ -296,23 +335,30 @@ class TutorialBase {
       await auto.toDashboard(this.__page);
       await this.__responsesQueue.waitUntilResponse(":close");
     }
-    catch(err) {
+    catch (err) {
       console.error("Failed closing study", err);
-      throw(err);
+      throw (err);
     }
     await this.takeScreenshot("closeStudy_after");
   }
 
-  async removeStudy() {
+  async removeStudy(studyId) {
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
-      // wait for projects to be loaded
-      await utils.sleep(2000);
-      await auto.deleteFirstStudy(this.__page, this.__templateName);
+      // await this.waitForStudyUnlocked(studyId);
+      const nTries = 3;
+      for (let i = 0; i < nTries; i++) {
+        const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
+        if (cardUnlocked) {
+          break;
+        }
+        console.log(studyId, "study card still locked");
+        await utils.sleep(3000);
+      }
     }
-    catch(err) {
+    catch (err) {
       console.error("Failed deleting study", err);
-      throw(err);
+      throw (err);
     }
     await this.takeScreenshot("deleteFirstStudy_after");
   }
@@ -331,9 +377,16 @@ class TutorialBase {
   }
 
   async takeScreenshot(screenshotTitle) {
+    // Generates an URL that points to the backend logs at this time
+    const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
+    if (snapshotUrl) {
+      console.log("Backend Snapshot: ", snapshotUrl)
+    }
+
     if (this.__demo) {
       return;
     }
+
     let title = this.__templateName;
     if (screenshotTitle) {
       title += '_' + screenshotTitle;

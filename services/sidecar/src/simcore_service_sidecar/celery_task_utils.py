@@ -1,10 +1,9 @@
 import asyncio
+import logging
 from pprint import pformat
 from typing import Callable
 
-from .celery_log_setup import get_task_logger
-
-log = get_task_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 def on_task_failure_handler(

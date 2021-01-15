@@ -1,3 +1,4 @@
+-c ../../requirements/constraints.txt
 
 # testing
 coverage

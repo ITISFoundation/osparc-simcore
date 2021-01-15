@@ -6,19 +6,19 @@ import json
 import time
 from asyncio import sleep
 from typing import Any, Callable, Dict, Tuple
+from unittest.mock import call
 from uuid import uuid4
 
 import aio_pika
 import pytest
 import sqlalchemy as sa
-from mock import call
 from models_library.settings.rabbit import RabbitConfig
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
-from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
@@ -188,7 +188,7 @@ async def _wait_until(pred: Callable, timeout: int):
     ],
 )
 async def test_rabbit_websocket_computation(
-    director_v2_subsystem_mock,
+    director_v2_service_mock,
     mock_orphaned_services,
     logged_user,
     user_project,

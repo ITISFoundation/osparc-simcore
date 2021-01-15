@@ -1886,6 +1886,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -1948,6 +1950,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -1973,7 +1977,9 @@ paths:
                                 - nodeUuid1
                                 - nodeUuid2
                             parent:
-                              type: string
+                              type:
+                                - 'null'
+                                - string
                               format: uuid
                               description: Parent's (group-nodes') node ID s.
                               example:
@@ -2156,6 +2162,10 @@ paths:
                           required:
                             - locked
                             - state
+                    quality:
+                      type: object
+                      title: Quality
+                      description: Object containing Quality Assessment related data
                 destination:
                   title: simcore project
                   description: Description of a simcore project
@@ -2313,6 +2323,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -2375,6 +2387,8 @@ paths:
                                           type: string
                                         label:
                                           type: string
+                                        eTag:
+                                          type: string
                                     - type: object
                                       additionalProperties: false
                                       required:
@@ -2400,7 +2414,9 @@ paths:
                                 - nodeUuid1
                                 - nodeUuid2
                             parent:
-                              type: string
+                              type:
+                                - 'null'
+                                - string
                               format: uuid
                               description: Parent's (group-nodes') node ID s.
                               example:
@@ -2583,6 +2599,10 @@ paths:
                           required:
                             - locked
                             - state
+                    quality:
+                      type: object
+                      title: Quality
+                      description: Object containing Quality Assessment related data
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
@@ -2750,6 +2770,8 @@ paths:
                                         type: string
                                       label:
                                         type: string
+                                      eTag:
+                                        type: string
                                   - type: object
                                     additionalProperties: false
                                     required:
@@ -2812,6 +2834,8 @@ paths:
                                         type: string
                                       label:
                                         type: string
+                                      eTag:
+                                        type: string
                                   - type: object
                                     additionalProperties: false
                                     required:
@@ -2837,7 +2861,9 @@ paths:
                               - nodeUuid1
                               - nodeUuid2
                           parent:
-                            type: string
+                            type:
+                              - 'null'
+                              - string
                             format: uuid
                             description: Parent's (group-nodes') node ID s.
                             example:
@@ -3020,6 +3046,10 @@ paths:
                         required:
                           - locked
                           - state
+                  quality:
+                    type: object
+                    title: Quality
+                    description: Object containing Quality Assessment related data
         default:
           description: Unexpected error
           content:
@@ -3287,6 +3317,8 @@ components:
                               type: string
                             label:
                               type: string
+                            eTag:
+                              type: string
                         - type: object
                           additionalProperties: false
                           required:
@@ -3349,6 +3381,8 @@ components:
                               type: string
                             label:
                               type: string
+                            eTag:
+                              type: string
                         - type: object
                           additionalProperties: false
                           required:
@@ -3374,7 +3408,9 @@ components:
                     - nodeUuid1
                     - nodeUuid2
                 parent:
-                  type: string
+                  type:
+                    - 'null'
+                    - string
                   format: uuid
                   description: Parent's (group-nodes') node ID s.
                   example:
@@ -3557,6 +3593,10 @@ components:
               required:
                 - locked
                 - state
+        quality:
+          type: object
+          title: Quality
+          description: Object containing Quality Assessment related data
   responses:
     OK_NoContent_204:
       description: 'everything is OK, but there is no content to return'

@@ -3,18 +3,10 @@
 # pylint:disable=redefined-outer-name
 
 
-import faker
 import pytest
-
 from models_library.projects_state import RunningState
 from simcore_postgres_database.models.comp_pipeline import StateType
-from simcore_service_webserver.computation_api import (
-    convert_state_from_db,
-)
-
-fake = faker.Faker()
-
-NodeID = str
+from simcore_service_webserver.computation_api import convert_state_from_db
 
 
 @pytest.mark.parametrize(

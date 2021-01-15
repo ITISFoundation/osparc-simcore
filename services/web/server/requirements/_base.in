@@ -1,12 +1,13 @@
 #
 # Specifies third-party dependencies for 'services/web/server/src'
 #
-
+-c ../../../../requirements/constraints.txt
 # NOTE: These input-requirements under packages are tested using latest updates
 -r ../../../../packages/models-library/requirements/_base.in
 -r ../../../../packages/postgres-database/requirements/_base.in
 -r ../../../../packages/service-library/requirements/_base.in
 
+aiohttp==3.6.3 ## Issue in https://github.com/ITISFoundation/osparc-simcore/issues/2008
 
 aio-pika
 aiohttp_jinja2

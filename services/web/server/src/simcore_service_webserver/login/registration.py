@@ -6,7 +6,7 @@
 import json
 import logging
 from pprint import pformat
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import web
 from yarl import URL
@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 
 async def check_registration(
-    email: str, password: str, confirm: str, db: AsyncpgStorage
+    email: str, password: str, confirm: Optional[str], db: AsyncpgStorage
 ):
     # email : required & formats
     # password: required & secure[min length, ...]
@@ -67,7 +67,7 @@ async def check_registration(
 
 
 async def create_invitation(host: Dict, guest: str, db: AsyncpgStorage):
-    """ Creates an invitation token for a guest to register in the platform
+    """Creates an invitation token for a guest to register in the platform
 
         Creates and injects an invitation token in the confirmation table associated
         to the host user
@@ -84,7 +84,7 @@ async def create_invitation(host: Dict, guest: str, db: AsyncpgStorage):
     return confirmation
 
 
-async def check_invitation(invitation: str, db: AsyncpgStorage):
+async def check_invitation(invitation: Optional[str], db: AsyncpgStorage):
     confirmation = None
     if invitation:
         confirmation = await validate_confirmation_code(invitation, db)

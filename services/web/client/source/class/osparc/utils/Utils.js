@@ -29,6 +29,55 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    getEditButton: function() {
+      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
+        allowGrowY: false
+      });
+      return button;
+    },
+
+    /**
+      * @param value {Date Object} Date Object
+      */
+    formatDate: function(value) {
+      // create a date format like "Oct. 19, 2018 11:31 AM"
+      const dateFormat = new qx.util.format.DateFormat(
+        qx.locale.Date.getDateFormat("medium")
+      );
+
+      let dateStr = null;
+      if (value.getDate() === (new Date()).getDate()) {
+        dateStr = qx.locale.Manager.tr("Today");
+      } else if (value.getDate() === (new Date()).getDate() - 1) {
+        dateStr = qx.locale.Manager.tr("Yesterday");
+      } else {
+        dateStr = dateFormat.format(value);
+      }
+      return dateStr;
+    },
+
+    /**
+      * @param value {Date Object} Date Object
+      */
+    formatTime: function(value) {
+      const timeFormat = new qx.util.format.DateFormat(
+        qx.locale.Date.getTimeFormat("short")
+      );
+      const timeStr = timeFormat.format(value);
+      return timeStr;
+    },
+
+    /**
+      * @param value {Date Object} Date Object
+      */
+    formatDateAndTime: function(value) {
+      return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
+    },
+
+    getNameFromEmail: function(email) {
+      return email.split("@")[0];
+    },
+
     uuidv4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));

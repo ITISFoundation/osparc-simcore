@@ -1,0 +1,157 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Resource Quality",
+    "type": "object",
+    "definitions": {
+        "tenSimpleRule": {
+            "type": "object",
+            "title": "Ten Simple Rule",
+            "required": [
+                "level", 
+                "references"
+            ],
+            "properties": {
+                "level": {
+                    "title": "Conformance Level",
+                    "type": "integer",
+                    "default": 0,
+                    "minimum": 0,
+                    "maximum": 4
+                },
+                "references": {
+                    "title": "References",
+                    "type": "string",
+                    "default": ""
+                }
+            }
+        }
+    },
+    "properties": {
+        "tsr": {
+            "type": "object",
+            "title": "Ten Simple Rules",
+            "required": [
+                "r01",
+                "r02",
+                "r03",
+                "r04",
+                "r05",
+                "r06",
+                "r07",
+                "r08",
+                "r09",
+                "r10"
+            ],
+            "properties": {
+                "r01": {
+                  "title": "R1 - Define context clearly",
+                  "description": "Develop and document the subject, purpose, and intended use(s) of the model or simulation.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r02": {
+                  "title": "R2 - Use appropriate data",
+                  "description": "Employ relevant and traceable information in the development or operation of a model or simulation.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r03": {
+                  "title": "R3 - Evaluate within context",
+                  "description": "Verification, validation, uncertainty quantification, and sensitivity analysis of the model or simulation are accomplished with respect to the reality of interest and intended use(s) of the model or simulation.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r04": {
+                  "title": "R4 - List limitations explicitly",
+                  "description": "Restrictions, constraints, or qualifications for or on the use of the model or simulation are available for consideration by the users or customers of a model or simulation.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r05": {
+                  "title": "R5 - Use version control",
+                  "description": "Implement a system to trace the time history of M&S activities including delineation of contributors' efforts.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r06": {
+                  "title": "R6 - Document adequately",
+                  "description": "Maintain up-to-date informative record of all M&S activities, including simulation code, model mark-up, scope and intended use of M&S activities, as well as users' and developers' guides.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r07": {
+                  "title": "R7 - Disseminate broadly",
+                  "description": "Publish all components of M&S activities, including simulation software, models, simulation scenarios and results.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r08": {
+                  "title": "R8 - Get independent reviews",
+                  "description": "Have the M&S activity reviewed by nonpartisan third-party users and developers.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r09": {
+                  "title": "R9 - Test competing implementations",
+                  "description": "Use contrasting M&S execution strategies to check the conclusions of the different execution strategies against each other.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                },
+                "r10": {
+                  "title": "R10 - Conform to standards",
+                  "description": "Adopt and promote generally applicable and discipline specific operating procedures, guidelines, and regulations accepted as best practices.",
+                  "$ref": "#/definitions/tenSimpleRule"
+                }
+            }
+        },
+        "annotations": {
+            "type": "object",
+            "title": "Annotations",
+            "required": [
+                "certificationStatus", 
+                "certificationLink",
+                "purpose",
+                "vandv",
+                "limitations",
+                "documentation",
+                "standards"
+            ],
+            "properties": {
+                "certificationStatus": {
+                  "title": "Certification status",
+                  "description": "",
+                  "type": "string",
+                  "default": "Uncertified",
+                  "enum": ["Uncertified", "Independently reviewed", "Regulatory grade"]
+                },
+                "certificationLink": {
+                  "title": "Certification link",
+                  "description": "",
+                  "type": "string",
+                  "default": ""
+                },
+                "purpose": {
+                  "title": "Intended purpose/context",
+                  "description": "Description of the field of application and associated research initiatives (if any)",
+                  "type": "string",
+                  "default": ""
+                },
+                "vandv": {
+                  "title": "Verification & Validation",
+                  "description": "Description of verification and validation testing performed for the model and/or code submitted, or a link to these tests",
+                  "type": "string",
+                  "default": ""
+                },
+                "limitations": {
+                  "title": "Known limitations",
+                  "description": "",
+                  "type": "string",
+                  "default": ""
+                },
+                "documentation": {
+                  "title": "Documentation",
+                  "description": "Link to documentation to use this service",
+                  "type": "string",
+                  "default": ""
+                },
+                "standards": {
+                  "title": "Relevant standards",
+                  "description": "List or links of any data management, coding, experimental, or other standards implemented",
+                  "type": "string",
+                  "default": ""
+                }
+            }
+        }
+    }
+}

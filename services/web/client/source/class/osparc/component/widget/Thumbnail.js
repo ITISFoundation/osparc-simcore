@@ -90,7 +90,10 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       let control;
       switch (id) {
         case "image":
-          control = new qx.ui.basic.Image();
+          control = new qx.ui.basic.Image().set({
+            alignX: "center",
+            alignY: "middle"
+          });
           this._add(control, {
             row: 1,
             column: 1

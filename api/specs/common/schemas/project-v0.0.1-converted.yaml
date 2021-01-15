@@ -159,6 +159,8 @@ properties:
                         type: string
                       label:
                         type: string
+                      eTag:
+                        type: string
                   - type: object
                     additionalProperties: false
                     required:
@@ -221,6 +223,8 @@ properties:
                         type: string
                       label:
                         type: string
+                      eTag:
+                        type: string
                   - type: object
                     additionalProperties: false
                     required:
@@ -246,7 +250,9 @@ properties:
               - nodeUuid1
               - nodeUuid2
           parent:
-            type: string
+            type:
+              - 'null'
+              - string
             format: uuid
             description: Parent's (group-nodes') node ID s.
             example:
@@ -431,3 +437,7 @@ properties:
         required:
           - locked
           - state
+  quality:
+    type: object
+    title: Quality
+    description: Object containing Quality Assessment related data

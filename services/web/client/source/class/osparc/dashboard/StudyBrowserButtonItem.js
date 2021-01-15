@@ -30,14 +30,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
   construct: function() {
     this.base(arguments);
 
-    // create a date format like "Oct. 19, 2018 11:31 AM"
-    this.__dateFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getDateFormat("medium")
-    );
-    this.__timeFormat = new qx.util.format.DateFormat(
-      qx.locale.Date.getTimeFormat("short")
-    );
-
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
@@ -74,7 +66,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     studyDescription: {
       check: "String",
-      apply: "_applyStudyDescription",
       nullable: true
     },
 
@@ -103,6 +94,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     tags: {
       check: "Array",
       apply: "_applyTags"
+    },
+
+    quality: {
+      check: "Object",
+      nullable: true,
+      apply: "_applyQuality"
     },
 
     state: {
@@ -139,16 +136,13 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/50",
     TEMPLATE_ICON: "@FontAwesome5Solid/copy/50",
-    SERVICE_ICON: "@FontAwesome5Solid/paw/14",
+    SERVICE_ICON: "@FontAwesome5Solid/paw/50",
     PERM_READ: "@FontAwesome5Solid/eye/16",
     PERM_WRITE: "@FontAwesome5Solid/edit/16",
     PERM_EXECUTE: "@FontAwesome5Solid/crown/16"
   },
 
   members: {
-    __dateFormat: null,
-    __timeFormat: null,
-
     // overridden
     _createChildControlImpl: function(id) {
       let control;
@@ -224,21 +218,21 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       let accessRights = {};
       switch (studyData["resourceType"]) {
         case "study":
-          uuid = studyData.uuid;
-          owner = studyData.prjOwner;
-          accessRights = studyData.accessRights;
+          uuid = studyData.uuid ? studyData.uuid : uuid;
+          owner = studyData.prjOwner ? studyData.prjOwner : owner;
+          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().STUDY_ICON;
           break;
         case "template":
-          uuid = studyData.uuid;
-          owner = studyData.prjOwner;
-          accessRights = studyData.accessRights;
+          uuid = studyData.uuid ? studyData.uuid : uuid;
+          owner = studyData.prjOwner ? studyData.prjOwner : owner;
+          accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().TEMPLATE_ICON;
           break;
         case "service":
-          uuid = studyData.key;
-          owner = studyData.owner;
-          accessRights = studyData.access_rights;
+          uuid = studyData.key ? studyData.key : uuid;
+          owner = studyData.owner ? studyData.owner : owner;
+          accessRights = studyData.access_rights ? studyData.access_rights : accessRights;
           defaultThumbnail = this.self().SERVICE_ICON;
           break;
       }
@@ -253,7 +247,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : null,
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
-        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : []
+        classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
+        quality: studyData.quality ? studyData.quality : null
       });
     },
 
@@ -309,41 +304,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       });
     },
 
-    _applyStudyDescription: function(value, old) {
-      /*
-      if (value !== "" && this.isResourceType("template")) {
-        const label = this.getChildControl("description");
-        label.setValue(value);
-      }
-      */
-    },
-
     _applyLastChangeDate: function(value, old) {
       if (value && this.isResourceType("study")) {
-        const label = this.getChildControl("description2");
-        let dateStr = null;
-        if (value.getDate() === (new Date()).getDate()) {
-          dateStr = this.tr("Today");
-        } else if (value.getDate() === (new Date()).getDate() - 1) {
-          dateStr = this.tr("Yesterday");
-        } else {
-          dateStr = this.__dateFormat.format(value);
-        }
-        const timeStr = this.__timeFormat.format(value);
-        label.setValue(dateStr + " " + timeStr);
+        const label = this.getChildControl("subtitle-text");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
     },
 
     _applyOwner: function(value, old) {
       if (this.isResourceType("service") || this.isResourceType("template")) {
-        const label = this.getChildControl("description2");
+        const label = this.getChildControl("subtitle-text");
         label.setValue(value);
       }
     },
 
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
-        const sharedIcon = this.getChildControl("shared");
+        const sharedIcon = this.getChildControl("subtitle-icon");
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
@@ -363,8 +340,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             this.__setSharedIcon(sharedIcon, value, groups);
           });
 
-        if (this.isResourceType("study") || this.isResourceType("template")) {
-          this._applyStudyPermissions(value);
+        if (this.isResourceType("study")) {
+          this.__setStudyPermissions(value);
         }
       }
     },
@@ -438,7 +415,23 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
     },
 
-    _applyStudyPermissions: function(accessRights) {
+    _applyQuality: function(quality) {
+      if (quality && "tsr" in quality) {
+        const {
+          score,
+          maxScore
+        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
+        const tsrRating = this.getChildControl("tsr-rating");
+        tsrRating.set({
+          score,
+          maxScore,
+          nStars: 4,
+          showScore: true
+        });
+      }
+    },
+
+    __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
       const studyPerm = osparc.component.export.StudyPermissions;
       const image = this.getChildControl("permission-icon");
@@ -541,12 +534,5 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       }
       return false;
     }
-  },
-
-  destruct : function() {
-    this.__dateFormat.dispose();
-    this.__dateFormat = null;
-    this.__timeFormat.dispose();
-    this.__timeFormat = null;
   }
 });

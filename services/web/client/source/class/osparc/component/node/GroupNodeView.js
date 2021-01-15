@@ -187,6 +187,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       if (!node.isContainer()) {
         console.error("Only group nodes are supported");
       }
+      this.base(arguments, node);
     }
   }
 });

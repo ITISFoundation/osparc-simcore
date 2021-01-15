@@ -74,11 +74,19 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       check: "osparc.data.model.Node",
       nullable: false
     },
+
+    scale: {
+      check: "Number",
+      event: "changeScale",
+      nullable: false
+    },
+
     thumbnail: {
       check: "String",
       nullable: true,
       apply: "_applyThumbnail"
     },
+
     appearance: {
       init: "window-small-cap",
       refine: true
@@ -90,7 +98,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     "edgeDragOver": "qx.event.type.Data",
     "edgeDrop": "qx.event.type.Data",
     "edgeDragEnd": "qx.event.type.Data",
-    "nodeMoving": "qx.event.type.Event"
+    "nodeMoving": "qx.event.type.Event",
+    "nodeStoppedMoving": "qx.event.type.Event"
   },
 
   statics: {
@@ -170,10 +179,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
-      if (node.isDynamic()) {
-        const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
-        this.__chipContainer.add(nodeStatus);
-      }
+
+      const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
+      this.__chipContainer.add(nodeStatus);
     },
 
     populateNodeLayout: function() {
@@ -292,14 +300,54 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return bounds;
     },
 
-    // override qx.ui.window.Window "move" event listener
+    __scaleCoordinates: function(x, y) {
+      return {
+        x: parseInt(x / this.getScale()),
+        y: parseInt(y / this.getScale())
+      };
+    },
+
+    // override qx.ui.core.MMovable
     _onMovePointerMove: function(e) {
-      this.base(arguments, e);
-      if (e.getPropagationStopped() === true) {
-        const cBounds = this.getCurrentBounds();
-        this.getNode().setPosition(cBounds.left, cBounds.top);
-        this.fireEvent("nodeMoving");
+      // Only react when dragging is active
+      if (!this.hasState("move")) {
+        return;
       }
+      const sideBarWidth = this.__dragRange.left;
+      const navigationBarHeight = this.__dragRange.top;
+      const native = e.getNativeEvent();
+      const x = native.clientX + this.__dragLeft - sideBarWidth;
+      const y = native.clientY + this.__dragTop - navigationBarHeight;
+      const coords = this.__scaleCoordinates(x, y);
+      const insets = this.getLayoutParent().getInsets();
+      this.setDomPosition(coords.x - (insets.left || 0), coords.y - (insets.top || 0));
+      e.stopPropagation();
+
+      this.getNode().setPosition(coords);
+      this.fireEvent("nodeMoving");
+    },
+
+    // override qx.ui.core.MMovable
+    _onMovePointerUp : function(e) {
+      if (this.hasListener("roll")) {
+        this.removeListener("roll", this._onMoveRoll, this);
+      }
+
+      // Only react when dragging is active
+      if (!this.hasState("move")) {
+        return;
+      }
+
+      this._onMovePointerMove(e);
+
+      this.fireEvent("nodeStoppedMoving");
+
+      // Remove drag state
+      this.removeState("move");
+
+      this.releaseCapture();
+
+      e.stopPropagation();
     },
 
     _applyThumbnail: function(thumbnail, oldThumbnail) {

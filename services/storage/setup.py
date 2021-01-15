@@ -14,14 +14,16 @@ if sys.version_info < (3, 6):
 
 
 def read_reqs(reqs_path: Path):
-    return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+    return re.findall(
+        r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
+    )
 
 
 install_requirements = read_reqs(here / "requirements" / "_base.txt") + [
     "s3wrapper==0.1.0",
     "simcore-postgres-database",
     "simcore-service-library",
-    "simcore-models-library"
+    "simcore-models-library",
 ]
 
 test_requirements = read_reqs(here / "requirements" / "_test.txt")
@@ -56,9 +58,7 @@ setup_config = dict(
 
 
 def main():
-    """ Execute the setup commands
-
-    """
+    """Execute the setup commands"""
     setup(**setup_config)
     return 0  # syccessful termination
 

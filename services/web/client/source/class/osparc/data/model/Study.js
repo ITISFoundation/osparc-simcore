@@ -43,31 +43,32 @@ qx.Class.define("osparc.data.model.Study", {
     this.base(arguments);
 
     this.set({
-      uuid: studyData.uuid === undefined ? this.getUuid() : studyData.uuid,
-      name: studyData.name === undefined ? this.getName() : studyData.name,
-      description: studyData.description === undefined ? this.getDescription() : studyData.description,
-      thumbnail: studyData.thumbnail === undefined ? this.getThumbnail() : studyData.thumbnail,
-      prjOwner: studyData.prjOwner === undefined ? osparc.auth.Data.getInstance().getUserName() : studyData.prjOwner,
-      accessRights: studyData.accessRights === undefined ? this.getAccessRights() : studyData.accessRights,
-      creationDate: studyData.creationDate === undefined ? this.getCreationDate() : new Date(studyData.creationDate),
-      lastChangeDate: studyData.lastChangeDate === undefined ? this.getLastChangeDate() : new Date(studyData.lastChangeDate),
-      classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-      tags: studyData.tags || []
+      uuid: studyData.uuid || this.getUuid(),
+      name: studyData.name || this.getName(),
+      description: studyData.description || this.getDescription(),
+      thumbnail: studyData.thumbnail || this.getThumbnail(),
+      prjOwner: studyData.prjOwner || this.getPrjOwner(),
+      accessRights: studyData.accessRights || this.getAccessRights(),
+      creationDate: studyData.creationDate ? new Date(studyData.creationDate) : this.getCreationDate(),
+      lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : this.getLastChangeDate(),
+      classifiers: studyData.classifiers || studyData.getClassifiers(),
+      tags: studyData.tags || this.getTags(),
+      state: studyData.state || this.getState(),
+      quality: studyData.quality || this.getQuality()
     });
 
-    const wbData = studyData.workbench === undefined ? {} : studyData.workbench;
+    const wbData = studyData.workbench || this.getWorkbench();
     this.setWorkbench(new osparc.data.model.Workbench(wbData, studyData.ui));
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
 
     this.setSweeper(new osparc.data.model.Sweeper(studyData));
-    this.setState(studyData.state);
   },
 
   properties: {
     uuid: {
       check: "String",
       nullable: false,
-      init: osparc.utils.Utils.uuidv4()
+      init: ""
     },
 
     name: {
@@ -84,13 +85,6 @@ qx.Class.define("osparc.data.model.Study", {
       init: ""
     },
 
-    thumbnail: {
-      check: "String",
-      nullable: true,
-      event: "changeThumbnail",
-      init: ""
-    },
-
     prjOwner: {
       check: "String",
       nullable: false,
@@ -103,14 +97,7 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: false,
       event: "changeAccessRights",
       apply: "__applyAccessRights",
-      init: true
-    },
-
-    readOnly: {
-      check: "Boolean",
-      nullable: false,
-      event: "changeReadOnly",
-      init: true
+      init: {}
     },
 
     creationDate: {
@@ -127,52 +114,75 @@ qx.Class.define("osparc.data.model.Study", {
       init: new Date()
     },
 
+    thumbnail: {
+      check: "String",
+      nullable: false,
+      event: "changeThumbnail",
+      init: ""
+    },
+
     workbench: {
       check: "osparc.data.model.Workbench",
-      nullable: false
+      nullable: false,
+      init: {}
     },
 
     ui: {
       check: "osparc.data.model.StudyUI",
-      nullable: false
-    },
-
-    classifiers: {
-      check: "Array",
-      init: []
+      nullable: true
     },
 
     tags: {
       check: "Array",
-      init: []
+      init: [],
+      nullable: true
+    },
+
+    classifiers: {
+      check: "Array",
+      init: [],
+      nullable: true
     },
 
     sweeper: {
       check: "osparc.data.model.Sweeper",
-      nullable: false
+      nullable: true
     },
 
     state: {
       check: "Object",
       nullable: true
+    },
+
+    quality: {
+      check: "Object",
+      init: {},
+      nullable: true
+    },
+
+    readOnly: {
+      check: "Boolean",
+      nullable: true,
+      event: "changeReadOnly",
+      init: true
     }
   },
 
   statics: {
-    createMinimumStudyObject: function() {
-      // TODO: Check if this can be automatically generated from schema
-      return {
-        uuid: "",
-        name: "",
-        description: "",
-        thumbnail: "",
-        prjOwner: "",
-        accessRights: {},
-        creationDate: new Date(),
-        lastChangeDate: new Date(),
-        workbench: {},
-        tags: []
-      };
+    createMyNewStudyObject: function() {
+      let myNewStudyObject = {};
+      const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
+      for (let key in props) {
+        const prop = props[key];
+        if (!prop.nullable) {
+          if (typeof prop.init === "object") {
+            myNewStudyObject[key] = osparc.utils.Utils.deepCloneObject(prop.init);
+          } else {
+            myNewStudyObject[key] = prop.init;
+          }
+        }
+      }
+      return myNewStudyObject;
     },
 
     updateStudy: function(params) {
@@ -257,17 +267,8 @@ qx.Class.define("osparc.data.model.Study", {
       return osparc.data.Resources.fetch("studies", "open", params);
     },
 
-    closeStudy: function() {
+    stopStudy: function() {
       this.removeIFrames();
-
-      const params = {
-        url: {
-          projectId: this.getUuid()
-        },
-        data: osparc.utils.Utils.getClientSessionID()
-      };
-      osparc.data.Resources.fetch("studies", "close", params)
-        .catch(err => console.error(err));
     },
 
     removeIFrames: function() {

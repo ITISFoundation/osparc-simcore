@@ -1,9 +1,8 @@
 """ setup logging formatters to fit logspout's multiline pattern "^(ERROR|WARNING|INFO|DEBUG|CRITICAL)[:]"
 
-    NOTE: import to connect signals!
-
     SEE https://github.com/ITISFoundation/osparc-ops/blob/master/services/graylog/docker-compose.yml#L113
 """
+
 # NOTES:
 #  https://docs.celeryproject.org/en/latest/userguide/signals.html#setup-logging
 #  https://www.distributedpython.com/2018/08/28/celery-logging/
@@ -11,7 +10,11 @@
 from celery.app.log import TaskFormatter
 from celery.signals import after_setup_logger, after_setup_task_logger
 from celery.utils.log import get_task_logger
-from servicelib.logging_utils import CustomFormatter, set_logging_handler
+from servicelib.logging_utils import (
+    CustomFormatter,
+    set_logging_handler,
+    config_all_loggers,
+)
 
 
 @after_setup_logger.connect
@@ -27,6 +30,7 @@ class TaskColoredFormatter(TaskFormatter, CustomFormatter):
 @after_setup_task_logger.connect
 def setup_task_logger(logger, *_args, **_kwargs):
     """ Customizes task loggers """
+
     set_logging_handler(
         logger,
         formatter_base=TaskColoredFormatter,
@@ -34,8 +38,6 @@ def setup_task_logger(logger, *_args, **_kwargs):
     )
 
 
-# TODO: configure via command line or config file. Add in config.yaml
+config_all_loggers()
 log = get_task_logger(__name__)
 log.info("Setting up loggers")
-
-__all__ = ["get_task_logger"]

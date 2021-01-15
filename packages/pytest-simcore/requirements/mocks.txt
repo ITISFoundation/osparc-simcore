@@ -1,0 +1,6 @@
+#
+# Include this libraries for mocking
+#
+
+pytest-mock
+faker

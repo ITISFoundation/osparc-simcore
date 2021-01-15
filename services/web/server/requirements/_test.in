@@ -1,16 +1,14 @@
 #
-# Specifies dependencies required to run 'services/web/server/test'
-#  both for unit and integration tests!!
+# Specifies dependencies required to run 'services/web/server/test' both for unit and integration tests!!
 #
-
-# frozen specs
--r _base.txt
-
-# 'services/web/server/tests/unit' dependencies
+-c ../../../../requirements/constraints.txt
+# Adds base AS CONSTRAINT specs, not requirement.
+#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
+#
+-c _base.txt
 
 # testing
 coverage
-mock
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov

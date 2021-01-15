@@ -3,16 +3,14 @@ import logging
 
 import attr
 from aiohttp import web
-
 from servicelib.rest_utils import extract_and_validate
 
-from . import __version__
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
+from .meta import __version__
 from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 log = logging.getLogger(__name__)
-
 
 
 async def check_health(request: web.Request):

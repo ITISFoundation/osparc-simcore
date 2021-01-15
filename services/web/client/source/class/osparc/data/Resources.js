@@ -69,7 +69,7 @@ qx.Class.define("osparc.data.Resources", {
        * STUDIES
        */
       "studies": {
-        useCache: false,
+        useCache: true,
         idField: "uuid",
         endpoints: {
           get: {
@@ -77,6 +77,7 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects?type=user"
           },
           getOne: {
+            useCache: false,
             method: "GET",
             url: statics.API + "/projects/{projectId}"
           },
@@ -86,12 +87,10 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/active?client_session_id={tabId}"
           },
           open: {
-            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{projectId}:open"
           },
           close: {
-            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{projectId}:close"
           },
@@ -110,15 +109,13 @@ qx.Class.define("osparc.data.Resources", {
           },
           put: {
             method: "PUT",
-            url: statics.API + "/projects/{projectId}",
-            useCache: true
+            url: statics.API + "/projects/{projectId}"
           },
           delete: {
             method: "DELETE",
             url: statics.API + "/projects/{projectId}"
           },
           addNode: {
-            useCache: false,
             method: "POST",
             url: statics.API + "/projects/{projectId}/nodes"
           },
@@ -128,7 +125,6 @@ qx.Class.define("osparc.data.Resources", {
             url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
           },
           deleteNode: {
-            useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{projectId}/nodes/{nodeId}"
           },
@@ -348,6 +344,10 @@ qx.Class.define("osparc.data.Resources", {
           get: {
             method: "GET",
             url: statics.API + "/groups/{gid}/classifiers"
+          },
+          postRRID: {
+            method: "POST",
+            url: statics.API + "/groups/sparc/classifiers/scicrunch-resources/{rrid}"
           }
         }
       },
@@ -648,6 +648,9 @@ qx.Class.define("osparc.data.Resources", {
       } catch (err) {
         return null;
       }
+      if (stored === null) {
+        return null;
+      }
       if (typeof stored === "object" && Object.keys(stored).length === 0) {
         return null;
       }
@@ -691,7 +694,6 @@ qx.Class.define("osparc.data.Resources", {
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
     },
-
     getServiceUrl: function(serviceKey, serviceVersion) {
       return {
         "serviceKey": encodeURIComponent(serviceKey),

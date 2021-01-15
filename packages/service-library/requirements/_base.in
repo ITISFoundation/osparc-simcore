@@ -1,15 +1,13 @@
 #
 # Specifies third-party dependencies for 'service-library'
 #
+-c ../../../requirements/constraints.txt
 
-sqlalchemy>=1.3.3        # https://nvd.nist.gov/vuln/detail/CVE-2019-7164
-pyyaml>=5.3              # Vulnerable
-psycopg2-binary          # enforces binary version - http://initd.org/psycopg/docs/install.html#binary-install-from-pypi
 openapi-core==0.12.0     # frozen until https://github.com/ITISFoundation/osparc-simcore/pull/1396 is CLOSED
 lazy-object-proxy~=1.4.3 # cannot upgrade due to contraints in openapi-core
-aiozipkin==0.7.1         # breaking changes with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases)
 
 aiohttp
+aiozipkin
 aiopg[sa]
 ujson
 werkzeug
@@ -20,3 +18,6 @@ attrs
 trafaret
 aiodebug
 pydantic
+sqlalchemy
+psycopg2-binary
+pyyaml

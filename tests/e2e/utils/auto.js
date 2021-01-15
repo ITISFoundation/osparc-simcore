@@ -37,9 +37,9 @@ async function logIn(page, user, pass) {
 async function logOut(page) {
   console.log("Logging out");
 
-  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
+  await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
 }
 
 async function dashboardAbout(page) {
@@ -249,9 +249,14 @@ async function deleteFirstStudy(page, studyName) {
     studyCardId = children[1];
   }
   const firstChildId = '[osparc-test-id="' + studyCardId + '"]';
+  const studyCardStyle = await utils.getStyle(page, firstChildId);
+  if (studyCardStyle.cursor === "not-allowed") {
+    return false;
+  }
   await utils.waitAndClick(page, firstChildId + ' > [osparc-test-id="studyItemMenuButton"]');
   await utils.waitAndClick(page, '[osparc-test-id="studyItemMenuDelete"]');
   await utils.waitAndClick(page, '[osparc-test-id="confirmDeleteStudyBtn"]');
+  return true;
 }
 
 async function openNode(page, pos) {
