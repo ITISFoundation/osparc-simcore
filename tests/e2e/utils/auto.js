@@ -92,28 +92,6 @@ async function dashboardStudyBrowser(page) {
   }
 }
 
-async function dashboardEditFristStudyThumbnail(page) {
-  console.log("Editing thumbnail")
-
-  await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
-
-  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="userStudiesList"]');
-  if (children.length === 0) {
-    console.log("Editing thumbnail: no study found")
-    return
-  }
-  const firstChildId = '[osparc-test-id="' + children[0] + '"]'
-  await utils.waitAndClick(page, firstChildId)
-  await utils.waitAndClick(page, '[osparc-test-id="editStudyBtn"]')
-
-  await page.waitForSelector('[osparc-test-id="studyDetailsEditorThumbFld"]')
-  await utils.emptyField(page, '[osparc-test-id="studyDetailsEditorThumbFld"]')
-  await page.click('[osparc-test-id="studyDetailsEditorThumbFld"]')
-  await page.type('[osparc-test-id="studyDetailsEditorThumbFld"]', 'https://i.ytimg.com/vi/Oj3aB_wMtno/hqdefault.jpg')
-
-  await utils.waitAndClick(page, '[osparc-test-id="studyDetailsEditorSaveBtn"]')
-}
-
 async function dashboardNewStudy(page) {
   console.log("Creating New Study");
 
@@ -364,7 +342,6 @@ module.exports = {
   dashboardDiscoverBrowser,
   dashboardDataBrowser,
   dashboardStudyBrowser,
-  dashboardEditFristStudyThumbnail,
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
   dashboardOpenFirstService,
