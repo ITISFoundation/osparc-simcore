@@ -203,27 +203,50 @@ qx.Class.define("osparc.studycard.Utils", {
       return description;
     },
 
+    /**
+      * @param studyData {Object} Serialized Study Object
+      */
     createTags: function(studyData) {
-      const tagSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+      const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
       }));
 
-      tagSection.add(new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
         font: "title-12"
-      }));
+      });
+      tagsLayout.add(label);
 
-      tagSection.add(this.createTagsContainer(studyData));
-      return tagSection;
-    },
-
-    createTagsContainer: function(studyData) {
       const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       tagsContainer.setMarginTop(5);
       osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id))
         .forEach(selectedTag => {
           tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
         });
-      return tagsContainer;
+      tagsLayout.add(tagsContainer);
+
+      return tagsLayout;
+    },
+
+    /**
+      * @param studyData {Object} Serialized Study Object
+      */
+    createClassifiers: function(studyData) {
+      const classfiersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Classifiers")).set({
+        font: "title-12"
+      });
+      classfiersLayout.add(label);
+
+      const classifiersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      studyData["classifiers"].forEach(classifier => {
+        classifiersContainer.add(new qx.ui.basic.Label(classifier));
+      });
+      classfiersLayout.add(classifiersContainer);
+
+      return classfiersLayout;
     },
 
     /**

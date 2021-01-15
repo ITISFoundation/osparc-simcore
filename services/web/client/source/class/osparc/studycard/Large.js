@@ -158,6 +158,22 @@ qx.Class.define("osparc.studycard.Large", {
         tags.add(editTagsBtn);
       }
       this._add(tags);
+
+      const classifiers = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+        alignY: "middle"
+      }));
+      classifiers.add(this.__createClassifiers(), {
+        flex: 1
+      });
+      if (this.__isOwner()) {
+        const editClassifiersBtn = osparc.utils.Utils.getEditButton();
+        editClassifiersBtn.addListener("execute", () => {
+          this.__openClassifiersEditor();
+        }, this);
+        classifiers.add(editClassifiersBtn);
+      }
+
+      this._add(classifiers);
     },
 
     __extraInfo: function() {
@@ -253,6 +269,10 @@ qx.Class.define("osparc.studycard.Large", {
       return osparc.studycard.Utils.createTags(this.__studyData);
     },
 
+    __createClassifiers: function() {
+      return osparc.studycard.Utils.createClassifiers(this.__studyData);
+    },
+
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
       const titleEditor = new osparc.component.widget.Renamer(this.__studyData["name"], null, title);
@@ -327,6 +347,16 @@ qx.Class.define("osparc.studycard.Large", {
         this.fireDataEvent("updateTags", this.__studyData["uuid"]);
       }, this);
       tagManager.addListener("close", () => {
+        this.fireDataEvent("updateTags", this.__studyData["uuid"]);
+      }, this);
+    },
+
+    __openClassifiersEditor: function() {
+      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(this.__studyData);
+      const title = this.tr("Classifiers");
+      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
+      classifiersEditor.addListener("updateResourceClassifiers", e => {
+        this.__rebuildLayout();
         this.fireDataEvent("updateTags", this.__studyData["uuid"]);
       }, this);
     },
