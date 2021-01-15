@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.component.widget.StudyCardMedium", {
+qx.Class.define("osparc.studycard.Medium", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -31,12 +31,8 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
     });
     this._setLayout(new qx.ui.layout.VBox(3));
 
-    if (study) {
-      if (study instanceof osparc.data.model.Study) {
-        this.setStudy(study);
-      } else {
-        this.setStudyData(study);
-      }
+    if (study && study instanceof osparc.data.model.Study) {
+      this.setStudy(study);
     }
 
     this.addListenerOnce("appear", () => {
@@ -125,16 +121,6 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       this._add(this.__createDescription());
     },
 
-    __createTitle: function() {
-      const title = new qx.ui.basic.Label().set({
-        font: "title-14",
-        allowStretchX: true,
-        rich: true
-      });
-      this.getStudy().bind("name", title, "value");
-      return title;
-    },
-
     __createMenuButton: function() {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
@@ -200,103 +186,38 @@ qx.Class.define("osparc.component.widget.StudyCardMedium", {
       return moreInfo;
     },
 
+    __createTitle: function() {
+      return osparc.studycard.Utils.createTitle(this.getStudy());
+    },
+
     __createOwner: function() {
-      const owner = new qx.ui.basic.Label();
-      this.getStudy().bind("prjOwner", owner, "value", {
-        converter: email => osparc.utils.Utils.getNameFromEmail(email),
-        onUpdate: (source, target) => {
-          target.setToolTipText(source.getPrjOwner());
-        }
-      });
-      return owner;
+      return osparc.studycard.Utils.createOwner(this.getStudy());
     },
 
     __createCreationDate: function() {
-      const dateOptions = {
-        converter: date => osparc.utils.Utils.formatDateAndTime(date)
-      };
-      const creationDate = new qx.ui.basic.Label();
-      this.getStudy().bind("creationDate", creationDate, "value", dateOptions);
-      return creationDate;
+      return osparc.studycard.Utils.createCreationDate(this.getStudy());
     },
 
     __createLastChangeDate: function() {
-      const dateOptions = {
-        converter: date => osparc.utils.Utils.formatDateAndTime(date)
-      };
-      const lastChangeDate = new qx.ui.basic.Label();
-      this.getStudy().bind("lastChangeDate", lastChangeDate, "value", dateOptions);
-      return lastChangeDate;
+      return osparc.studycard.Utils.createLastChangeDate(this.getStudy());
     },
 
     __createAccessRights: function() {
-      let permissions = "";
-      const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = this.getStudy().getAccessRights();
-      if (myGID in ar) {
-        if (ar[myGID]["delete"]) {
-          permissions = this.tr("Owner");
-        } else if (ar[myGID]["write"]) {
-          permissions = this.tr("Collaborator");
-        } else if (ar[myGID]["read"]) {
-          permissions = this.tr("Viewer");
-        }
-      }
-      const accessRights = new qx.ui.basic.Label(permissions);
-      return accessRights;
+      return osparc.studycard.Utils.createAccessRights(this.getStudy());
     },
 
     __createQuality: function() {
-      const quality = this.getStudy().getQuality();
-      if (quality && "tsr" in quality) {
-        const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-          toolTipText: this.tr("Ten Simple Rules score")
-        });
-        const {
-          score,
-          maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
-        const tsrRating = new osparc.ui.basic.StarsRating();
-        tsrRating.set({
-          score,
-          maxScore,
-          nStars: 4,
-          showScore: true
-        });
-        tsrLayout.add(tsrRating);
-
-        this.getStudy().addListener("changeQuality", e => {
-          console.log("changeQuality", e.getData());
-        });
-
-        return tsrLayout;
-      }
-      return null;
+      return osparc.studycard.Utils.createQuality(this.getStudy());
     },
 
     __createThumbnail: function(maxWidth) {
       const maxHeight = 150;
-      const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
-      const img = image.getChildControl("image");
-      this.getStudy().bind("thumbnail", img, "source");
-      this.getStudy().bind("thumbnail", img, "visibility", {
-        converter: thumbnail => {
-          if (thumbnail) {
-            return "visible";
-          }
-          return "excluded";
-        }
-      });
-      return image;
+      return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
     __createDescription: function() {
-      const description = new osparc.ui.markdown.Markdown().set({
-        noMargin: false,
-        maxHeight: 300
-      });
-      this.getStudy().bind("description", description, "value");
-      return description;
+      const maxHeight = 300;
+      return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
     },
 
     __openStudyCardLarge: function() {

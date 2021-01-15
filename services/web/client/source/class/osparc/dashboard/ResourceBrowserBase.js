@@ -67,7 +67,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     __openStudyDetailsEditor: function(resourceData, winWidth) {
-      const studyDetails = new osparc.component.widget.StudyCardLarge(resourceData);
+      const studyDetails = new osparc.studycard.Large(resourceData);
       const title = this.tr("Study Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, 500);
       /*

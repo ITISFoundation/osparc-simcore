@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.component.widget.StudyCardLarge", {
+qx.Class.define("osparc.studycard.Large", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -30,7 +30,9 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
     });
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__studyData = studyData;
+    if (studyData && studyData instanceof Object) {
+      this.__studyData = studyData;
+    }
 
     this.addListenerOnce("appear", () => {
       this.__rebuildLayout();
@@ -113,14 +115,6 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
       this._add(this.__createDescription());
     },
 
-    __createTitle: function() {
-      const title = new qx.ui.basic.Label(this.__studyData["name"]).set({
-        font: "title-16",
-        allowStretchX: true
-      });
-      return title;
-    },
-
     __extraInfo: function() {
       const grid = new qx.ui.layout.Grid(6, 3);
       grid.setColumnAlign(0, "right", "middle");
@@ -169,93 +163,45 @@ qx.Class.define("osparc.component.widget.StudyCardLarge", {
       return moreInfo;
     },
 
-    __createUuid: function() {
-      const uuid = new qx.ui.basic.Label(this.__studyData["uuid"]).set({
-        maxWidth: 150,
-        toolTipText: this.__studyData["uuid"]
+    __createTitle: function() {
+      const title = osparc.studycard.Utils.createTitle(this.__studyData).set({
+        font: "title-16"
       });
-      return uuid;
+      return title;
+    },
+
+    __createUuid: function() {
+      return osparc.studycard.Utils.createUuid(this.__studyData);
     },
 
     __createOwner: function() {
-      const owner = new qx.ui.basic.Label().set({
-        value: osparc.utils.Utils.getNameFromEmail(this.__studyData["prjOwner"]),
-        toolTipText: this.__studyData["prjOwner"]
-      });
-      return owner;
+      return osparc.studycard.Utils.createOwner(this.__studyData);
     },
 
     __createCreationDate: function() {
-      const date = osparc.utils.Utils.formatDateAndTime(new Date(this.__studyData["creationDate"]));
-      const creationDate = new qx.ui.basic.Label(date);
-      return creationDate;
+      return osparc.studycard.Utils.createCreationDate(this.__studyData);
     },
 
     __createLastChangeDate: function() {
-      const date = osparc.utils.Utils.formatDateAndTime(new Date(this.__studyData["lastChangeDate"]));
-      const lastChangeDate = new qx.ui.basic.Label(date);
-      return lastChangeDate;
+      return osparc.studycard.Utils.createLastChangeDate(this.__studyData);
     },
 
     __createAccessRights: function() {
-      let permissions = "";
-      const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = this.__studyData["accessRights"];
-      if (myGID in ar) {
-        if (ar[myGID]["delete"]) {
-          permissions = this.tr("Owner");
-        } else if (ar[myGID]["write"]) {
-          permissions = this.tr("Collaborator");
-        } else if (ar[myGID]["read"]) {
-          permissions = this.tr("Viewer");
-        }
-      }
-      const accessRights = new qx.ui.basic.Label(permissions);
-      return accessRights;
+      return osparc.studycard.Utils.createAccessRights(this.__studyData);
     },
 
     __createQuality: function() {
-      const quality = this.__studyData["quality"];
-      if (quality && "tsr" in quality) {
-        const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-          toolTipText: this.tr("Ten Simple Rules score")
-        });
-        const {
-          score,
-          maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
-        const tsrRating = new osparc.ui.basic.StarsRating();
-        tsrRating.set({
-          score,
-          maxScore,
-          nStars: 4,
-          showScore: true
-        });
-        tsrLayout.add(tsrRating);
-
-        return tsrLayout;
-      }
-      return null;
+      return osparc.studycard.Utils.createQuality(this.__studyData);
     },
 
     __createThumbnail: function(maxWidth) {
       const maxHeight = 160;
-      const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
-      const img = image.getChildControl("image");
-      img.set({
-        source: this.__studyData["thumbnail"],
-        visibility: this.__studyData["thumbnail"] ? "visible" : "excluded"
-      });
-      return image;
+      return osparc.studycard.Utils.createThumbnail(this.__studyData, maxWidth, maxHeight);
     },
 
     __createDescription: function() {
-      const description = new osparc.ui.markdown.Markdown().set({
-        noMargin: false,
-        maxHeight: 300,
-        value: this.__studyData["description"]
-      });
-      return description;
+      const maxHeight = 400;
+      return osparc.studycard.Utils.createDescription(this.__studyData, maxHeight);
     },
 
     __openTitleEditor: function() {
