@@ -83,6 +83,10 @@ class CompTaskAtDB(BaseModel):
     node_schema: NodeSchema = Field(..., alias="schema")
     inputs: Optional[Inputs] = Field(..., description="the inputs payload")
     outputs: Optional[Outputs] = Field({}, description="the outputs payload")
+    run_hash: Optional[str] = Field(
+        None,
+        description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+    )
     image: Image
     submit: datetime
     start: Optional[datetime]
