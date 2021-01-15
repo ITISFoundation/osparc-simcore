@@ -16,69 +16,29 @@
 ************************************************************************ */
 
 /**
- * @asset(form/service-quality.json)
+ * @asset(form/resource-quality.json)
  * @asset(object-path/object-path-0-11-4.min.js)
  * @asset(ajv/ajv-6-11-0.min.js)
  * @ignore(Ajv)
  */
 
-qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
+qx.Class.define("osparc.component.metadata.QualityEditor", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param serviceData {Object} Object containing the Service Data
+    * @param resourceData {Object} Object containing the Resource Data
     */
-  construct: function(serviceData) {
+  construct: function(resourceData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (!("metadata" in serviceData)) {
-      osparc.component.message.FlashMessenger.logAs(this.tr("Metadata not found"), "ERROR");
-      return;
-    }
-
-    this.__serviceData = serviceData;
-    if (!("tsr" in serviceData["metadata"])) {
-      serviceData["metadata"]["tsr"] = osparc.component.metadata.ServiceQuality.getDefaultQualityTSR();
-    }
-    if (!("annotations" in serviceData["metadata"])) {
-      serviceData["metadata"]["annotations"] = osparc.component.metadata.ServiceQuality.getDefaultQualityAnnotations();
-    }
-    this.__copyServiceData = osparc.utils.Utils.deepCloneObject(serviceData);
-
-    const schemaUrl = "/resource/form/service-quality.json";
-    const data = serviceData["metadata"];
-    const ajvLoader = new qx.util.DynamicScriptLoader([
-      "/resource/ajv/ajv-6-11-0.min.js",
-      "/resource/object-path/object-path-0-11-4.min.js"
-    ]);
-    ajvLoader.addListener("ready", () => {
-      this.__ajv = new Ajv();
-      osparc.utils.Utils.fetchJSON(schemaUrl)
-        .then(schema => {
-          if (this.__validate(schema.$schema, schema)) {
-            // If schema is valid
-            if (this.__validate(schema, data)) {
-              // Validate data if present
-              this.__serviceData = serviceData;
-            }
-            return schema;
-          }
-          return null;
-        })
-        .then(this.__render)
-        .catch(err => {
-          console.error(err);
-          this.__render(null);
-        });
-    }, this);
-    ajvLoader.addListener("failed", console.error, this);
-    this.__render = this.__render.bind(this);
-    ajvLoader.start();
+    this.__initResourceData(resourceData);
   },
 
   events: {
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data"
   },
 
@@ -93,11 +53,60 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
   },
 
   members: {
-    __serviceData: null,
-    __copyServiceData: null,
+    __resourceData: null,
+    __copyResourceData: null,
     __schema: null,
     __tsrGrid: null,
     __annotationsGrid: null,
+
+    __initResourceData: function(resourceData) {
+      if (!("quality" in resourceData)) {
+        osparc.component.message.FlashMessenger.logAs(this.tr("Quality Assessment data not found"), "ERROR");
+        return;
+      }
+
+      this.__resourceData = resourceData;
+      if (!("tsr" in resourceData["quality"])) {
+        resourceData["quality"]["tsr"] = osparc.component.metadata.Quality.getDefaultQualityTSR();
+      }
+      if (!("annotations" in resourceData["quality"])) {
+        resourceData["quality"]["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
+      }
+      this.__copyResourceData = osparc.utils.Resources.isService(resourceData) ? osparc.utils.Utils.deepCloneObject(resourceData) : osparc.data.model.Study.deepCloneStudyObject(resourceData);
+
+      const schemaUrl = "/resource/form/resource-quality.json";
+      const data = resourceData["quality"];
+      const ajvLoader = new qx.util.DynamicScriptLoader([
+        "/resource/ajv/ajv-6-11-0.min.js",
+        "/resource/object-path/object-path-0-11-4.min.js"
+      ]);
+      ajvLoader.addListener("ready", () => {
+        this.__ajv = new Ajv();
+        osparc.utils.Utils.fetchJSON(schemaUrl)
+          .then(schema => {
+            if (this.__validate(schema.$schema, schema)) {
+              // If schema is valid
+              if (this.__validate(schema, data)) {
+                // Validate data if present
+                this.__resourceData = resourceData;
+              }
+              return schema;
+            }
+            return null;
+          })
+          .then(schema => {
+            this.__render(schema);
+            this.setMode("display");
+          })
+          .catch(err => {
+            console.error(err);
+            this.__render(null);
+          });
+      }, this);
+      ajvLoader.addListener("failed", console.error, this);
+      this.__render = this.__render.bind(this);
+      ajvLoader.start();
+    },
 
     /**
      * Uses Ajv library to validate data against a schema.
@@ -122,6 +131,8 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
 
     __render: function(schema) {
       if (schema) {
+        this._removeAll();
+
         this.__schema = schema;
         this.__createTSRSection();
         this.__createAnnotationsSection();
@@ -158,6 +169,9 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
       const grid = new qx.ui.layout.Grid(10, 8);
       grid.setColumnAlign(0, "left", "middle");
       grid.setColumnAlign(1, "left", "middle");
+      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnAlign(3, "left", "middle");
+      grid.setColumnFlex(2, 1);
       this.__tsrGrid = new qx.ui.container.Composite(grid);
       box.add(this.__tsrGrid, {
         flex: 1
@@ -181,6 +195,8 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
       const grid = new qx.ui.layout.Grid(10, 8);
       grid.setColumnAlign(0, "left", "middle");
       grid.setColumnAlign(1, "left", "middle");
+      grid.setColumnAlign(2, "left", "middle");
+      grid.setColumnFlex(1, 1);
       this.__annotationsGrid = new qx.ui.container.Composite(grid);
       box.add(this.__annotationsGrid);
 
@@ -254,7 +270,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
     },
 
     __populateTSRDataView: function() {
-      const metadataTSR = this.__serviceData["metadata"]["tsr"];
+      const metadataTSR = this.__resourceData["quality"]["tsr"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
         const ruleRating = new osparc.ui.basic.StarsRating();
@@ -264,7 +280,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
           nStars: 4,
           marginTop: 5
         });
-        const confLevel = osparc.component.metadata.ServiceQuality.findConformanceLevel(rule.level);
+        const confLevel = osparc.component.metadata.Quality.findConformanceLevel(rule.level);
         const hint = confLevel.title + "<br>" + confLevel.description;
         const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
           hintPosition: "left"
@@ -285,7 +301,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
       const {
         score,
         maxScore
-      } = osparc.component.metadata.ServiceQuality.computeTSRScore(metadataTSR);
+      } = osparc.component.metadata.Quality.computeTSRScore(metadataTSR);
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         score,
@@ -301,7 +317,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
     },
 
     __populateTSRDataEdit: function() {
-      const copyMetadataTSR = this.__copyServiceData["metadata"]["tsr"];
+      const copyMetadataTSR = this.__copyResourceData["quality"]["tsr"];
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         nStars: 4,
@@ -313,7 +329,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
         const {
           score,
           maxScore
-        } = osparc.component.metadata.ServiceQuality.computeTSRScore(copyMetadataTSR);
+        } = osparc.component.metadata.Quality.computeTSRScore(copyMetadataTSR);
 
         tsrRating.set({
           score,
@@ -344,7 +360,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
             updateLevel(rule.level);
             updateTSRScore();
           }, this);
-          const confLevel = osparc.component.metadata.ServiceQuality.findConformanceLevel(value);
+          const confLevel = osparc.component.metadata.Quality.findConformanceLevel(value);
           const hint = confLevel.title + "<br>" + confLevel.description;
           const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
             hintPosition: "left"
@@ -359,15 +375,31 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
           column: 1
         });
 
-        const references = new qx.ui.form.TextArea(rule.references).set({
-          minimalLineHeight: 1
-        });
-        references.addListener("changeValue", e => {
-          rule.references = e.getData();
-        }, this);
-        this.__tsrGrid.add(references, {
+        const referenceMD = new osparc.ui.markdown.Markdown(rule.references);
+        this.__tsrGrid.add(referenceMD, {
           row,
           column: 2
+        });
+
+        const button = osparc.utils.Utils.getEditButton();
+        button.addListener("execute", () => {
+          const title = this.tr("Edit References");
+          const subtitle = this.tr("Supports Markdown");
+          const textEditor = new osparc.component.widget.TextEditor(rule.references, subtitle, title);
+          const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
+          textEditor.addListener("textChanged", e => {
+            const newText = e.getData();
+            referenceMD.setValue(newText);
+            rule.references = newText;
+            win.close();
+          }, this);
+          textEditor.addListener("cancel", () => {
+            win.close();
+          }, this);
+        }, this);
+        this.__tsrGrid.add(button, {
+          row,
+          column: 3
         });
 
         row++;
@@ -408,12 +440,12 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
 
     __populateAnnotationsData: function() {
       const schemaAnnotations = this.__schema["properties"]["annotations"]["properties"];
-      const copyMetadataAnnotations = this.__copyServiceData["metadata"]["annotations"];
+      const copyMetadataAnnotations = this.__copyResourceData["quality"]["annotations"];
 
       const isEditMode = this.getMode() === "edit";
 
-      let row = 0;
       const certificationBox = new qx.ui.form.SelectBox().set({
+        allowGrowX: false,
         enabled: isEditMode
       });
       schemaAnnotations["certificationStatus"]["enum"].forEach(certStatus => {
@@ -427,90 +459,44 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
         copyMetadataAnnotations.certificationStatus = e.getData()[0].getLabel();
       }, this);
       this.__annotationsGrid.add(certificationBox, {
-        row: row++,
+        row: 0,
         column: 1
       });
 
-      let certificationLink;
-      let purpose;
-      let vandv;
-      let limitations;
-      let documentation;
-      let standards;
-      if (isEditMode) {
-        certificationLink = new qx.ui.form.TextArea(copyMetadataAnnotations.certificationLink).set({
-          minimalLineHeight: 1
+      let row = 1;
+      Object.keys(copyMetadataAnnotations).forEach(annotationKey => {
+        if (annotationKey === "certificationStatus") {
+          return;
+        }
+        const annotationMD = new osparc.ui.markdown.Markdown(copyMetadataAnnotations[annotationKey]);
+        this.__annotationsGrid.add(annotationMD, {
+          row,
+          column: 1
         });
-        certificationLink.addListener("changeValue", e => {
-          copyMetadataAnnotations.certificationLink = e.getData();
-        }, this);
 
-        purpose = new qx.ui.form.TextArea(copyMetadataAnnotations.purpose).set({
-          minimalLineHeight: 1
-        });
-        purpose.addListener("changeValue", e => {
-          copyMetadataAnnotations.purpose = e.getData();
-        }, this);
-
-        vandv = new qx.ui.form.TextArea(copyMetadataAnnotations.vandv).set({
-          minimalLineHeight: 1
-        });
-        vandv.addListener("changeValue", e => {
-          copyMetadataAnnotations.vandv = e.getData();
-        }, this);
-
-        limitations = new qx.ui.form.TextArea(copyMetadataAnnotations.limitations).set({
-          minimalLineHeight: 1
-        });
-        limitations.addListener("changeValue", e => {
-          copyMetadataAnnotations.limitations = e.getData();
-        }, this);
-
-        documentation = new qx.ui.form.TextArea(copyMetadataAnnotations.documentation).set({
-          minimalLineHeight: 1
-        });
-        documentation.addListener("changeValue", e => {
-          copyMetadataAnnotations.documentation = e.getData();
-        }, this);
-
-        standards = new qx.ui.form.TextArea(copyMetadataAnnotations.standards).set({
-          minimalLineHeight: 1
-        });
-        standards.addListener("changeValue", e => {
-          copyMetadataAnnotations.standards = e.getData();
-        }, this);
-      } else {
-        certificationLink = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.certificationLink);
-        purpose = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.purpose);
-        vandv = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.vandv);
-        limitations = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.limitations);
-        documentation = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.documentation);
-        standards = new osparc.ui.markdown.Markdown(copyMetadataAnnotations.standards);
-      }
-
-      this.__annotationsGrid.add(certificationLink, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(purpose, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(vandv, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(limitations, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(documentation, {
-        row: row++,
-        column: 1
-      });
-      this.__annotationsGrid.add(standards, {
-        row: row++,
-        column: 1
+        if (isEditMode) {
+          const button = osparc.utils.Utils.getEditButton();
+          button.addListener("execute", () => {
+            const title = this.tr("Edit Annotations");
+            const subtitle = this.tr("Supports Markdown");
+            const textEditor = new osparc.component.widget.TextEditor(copyMetadataAnnotations[annotationKey], subtitle, title);
+            const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
+            textEditor.addListener("textChanged", e => {
+              const newText = e.getData();
+              annotationMD.setValue(newText);
+              copyMetadataAnnotations[annotationKey] = newText;
+              win.close();
+            }, this);
+            textEditor.addListener("cancel", () => {
+              win.close();
+            }, this);
+          }, this);
+          this.__annotationsGrid.add(button, {
+            row,
+            column: 2
+          });
+        }
+        row++;
       });
     },
 
@@ -525,7 +511,7 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
         this.setMode("edit");
       }, this);
 
-      const saveButton = new qx.ui.toolbar.Button(this.tr("Save")).set({
+      const saveButton = new osparc.ui.toolbar.FetchButton(this.tr("Save")).set({
         appearance: "toolbar-md-button"
       });
       this.bind("mode", saveButton, "visibility", {
@@ -555,38 +541,63 @@ qx.Class.define("osparc.component.metadata.ServiceQualityEditor", {
 
     __save: function(btn) {
       const data = {
-        "metadata" : {}
+        "quality" : {}
       };
-      data["metadata"]["tsr"] = this.__copyServiceData["metadata"]["tsr"];
-      data["metadata"]["annotations"] = this.__copyServiceData["metadata"]["annotations"];
-      if (this.__validate(this.__schema, data["metadata"])) {
-        const params = {
-          url: osparc.data.Resources.getServiceUrl(
-            this.__copyServiceData["key"],
-            this.__copyServiceData["version"]
-          ),
-          data: data
-        };
-        osparc.data.Resources.fetch("services", "patch", params)
-          .then(serviceData => {
-            this.fireDataEvent("updateService", serviceData);
-          })
-          .catch(err => {
-            console.error(err);
-            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the metadata."), "ERROR");
-          })
-          .finally(() => {
-            btn.resetIcon();
-            btn.getChildControl("icon").getContentElement()
-              .removeClass("rotate");
-          });
+      data["quality"]["tsr"] = this.__copyResourceData["quality"]["tsr"];
+      data["quality"]["annotations"] = this.__copyResourceData["quality"]["annotations"];
+      if (this.__validate(this.__schema, data["quality"])) {
+        btn.setFetching(true);
+        if (osparc.utils.Resources.isService(this.__copyResourceData)) {
+          const params = {
+            url: osparc.data.Resources.getServiceUrl(
+              this.__copyResourceData["key"],
+              this.__copyResourceData["version"]
+            ),
+            data: data
+          };
+          osparc.data.Resources.fetch("services", "patch", params)
+            .then(serviceData => {
+              this.__initResourceData(serviceData);
+              this.fireDataEvent("updateService", serviceData);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+            })
+            .finally(() => {
+              btn.setFetching(false);
+            });
+        } else {
+          const isTemplate = osparc.utils.Resources.isTemplate(this.__copyResourceData);
+          const params = {
+            url: {
+              projectId: this.__copyResourceData["uuid"]
+            },
+            data: this.__copyResourceData
+          };
+          osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
+            .then(resourceData => {
+              this.__initResourceData(resourceData);
+              this.fireDataEvent(isTemplate ? "updateTemplate" : "updateStudy", resourceData);
+            })
+            .catch(err => {
+              console.error(err);
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the Quality Assessment."), "ERROR");
+            })
+            .finally(() => {
+              btn.setFetching(false);
+            });
+        }
       }
     },
 
     __isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      if (myGid && osparc.component.export.ServicePermissions.canGroupWrite(this.__serviceData["access_rights"], myGid)) {
-        return true;
+      if (myGid) {
+        if (osparc.utils.Resources.isService(this.__resourceData)) {
+          return osparc.component.export.ServicePermissions.canGroupWrite(this.__resourceData["access_rights"], myGid);
+        }
+        return osparc.component.export.StudyPermissions.canGroupWrite(this.__resourceData["accessRights"], myGid);
       }
       return false;
     }

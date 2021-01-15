@@ -37,9 +37,9 @@ async function logIn(page, user, pass) {
 async function logOut(page) {
   console.log("Logging out");
 
-  await page.waitForSelector('[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
   await utils.waitAndClick(page, '[osparc-test-id="userMenuLogoutBtn"]');
+  await page.waitForSelector('[osparc-test-id="loginSubmitBtn"]');
 }
 
 async function dashboardAbout(page) {

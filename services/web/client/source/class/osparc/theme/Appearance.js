@@ -185,15 +185,20 @@ qx.Theme.define("osparc.theme.Appearance", {
     },
     "panelview/title": {
       style: state => ({
-        font: "title-14"
+        font: "title-14",
+        cursor: "pointer"
+      })
+    },
+    "panelview/caret": {
+      style: state => ({
+        cursor: "pointer"
       })
     },
     "panelview-titlebar": {
       style: state => ({
         height: 24,
         padding: [0, 5],
-        alignY: "middle",
-        cursor: "pointer"
+        alignY: "middle"
       })
     },
     "panelview-content": {
