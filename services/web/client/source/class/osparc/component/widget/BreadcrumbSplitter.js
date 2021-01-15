@@ -34,15 +34,15 @@ qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
       const randomID = Math.random().toString(36).substring(7);
       const el = this.getContentElement().getDomElement();
       qx.bom.element.Attribute.set(el, "id", randomID);
-      const svgWrapper = new osparc.wrapper.Svg();
-      svgWrapper.addListener("svgLibReady", () => {
-        if (this.__canvas === null) {
-          this.__canvas = svgWrapper.createEmptyCanvas(randomID);
-          this.setReady(true);
-          this.fireDataEvent("SvgWidgetReady", true);
-        }
-      });
-      svgWrapper.init();
+      const svgWrapper = osparc.wrapper.Svg.getInstance();
+      svgWrapper.init()
+        .then(() => {
+          if (this.__canvas === null) {
+            this.__canvas = svgWrapper.createEmptyCanvas(randomID);
+            this.setReady(true);
+            this.fireDataEvent("SvgWidgetReady", true);
+          }
+        }, this);
     });
   },
 
