@@ -106,6 +106,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
         osparc.data.Resources.get("templates")
           .then(templates => {
+            templates.forEach(template => {
+              osparc.component.metadata.Quality.attachQualityToObject(template);
+            });
             this._resetTemplatesList(templates);
           })
           .catch(err => {
