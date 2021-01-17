@@ -367,7 +367,7 @@ async def update_project_node_outputs(
     # dataset/label field that is missing
     current_outputs = project["workbench"][node_id].setdefault("outputs", {})
     project["workbench"][node_id]["outputs"] = new_outputs
-    project["workbench"][node_id]["run_hash"] = new_run_hash
+    project["workbench"][node_id]["runHash"] = new_run_hash
 
     # find changed keys (the ones that appear or disapppear for sure)
     changed_keys = list(current_outputs.keys() ^ new_outputs.keys())
