@@ -293,31 +293,22 @@
         }
       }
     },
-    "/v0/solvers/{solver_name}/{version}": {
+    "/v0/solvers/{solver_id}": {
       "get": {
         "tags": [
           "solvers"
         ],
-        "summary": "Get Solver By Name And Version",
-        "operationId": "get_solver_by_name_and_version",
+        "summary": "Get Solver By Id",
+        "operationId": "get_solver_by_id",
         "parameters": [
           {
             "required": true,
             "schema": {
-              "title": "Solver Name",
-              "pattern": "^(simcore)/(services)/(comp)(/[^\\s/]+)+$",
-              "type": "string"
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
             },
-            "name": "solver_name",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Version",
-              "type": "string"
-            },
-            "name": "version",
+            "name": "solver_id",
             "in": "path"
           }
         ],
@@ -345,22 +336,31 @@
         }
       }
     },
-    "/v0/solvers/{solver_id}": {
+    "/v0/solvers/{solver_name}/{version}": {
       "get": {
         "tags": [
           "solvers"
         ],
-        "summary": "Get Solver By Id",
-        "operationId": "get_solver_by_id",
+        "summary": "Get Solver By Name And Version",
+        "operationId": "get_solver_by_name_and_version",
         "parameters": [
           {
             "required": true,
             "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
+              "title": "Solver Name",
+              "pattern": "^(simcore)/(services)/(comp)(/[^\\s/]+)+$",
+              "type": "string"
             },
-            "name": "solver_id",
+            "name": "solver_name",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "string"
+            },
+            "name": "version",
             "in": "path"
           }
         ],
@@ -428,9 +428,7 @@
             }
           }
         }
-      }
-    },
-    "/v0/solvers/{solver_id}/jobs": {
+      },
       "post": {
         "tags": [
           "solvers"
@@ -488,10 +486,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/": {
+    "/v0/jobs": {
       "get": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "List All Jobs",
         "description": "List of all jobs created by user ",
@@ -508,10 +506,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/{job_id}": {
+    "/v0/jobs/{job_id}": {
       "get": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "Get Job",
         "operationId": "get_job",
@@ -551,10 +549,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/{job_id}:start": {
+    "/v0/jobs/{job_id}:start": {
       "post": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "Start Job",
         "operationId": "start_job",
@@ -594,10 +592,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/{job_id}:run": {
+    "/v0/jobs/{job_id}:run": {
       "post": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "Run Job",
         "description": "create + start job in a single call ",
@@ -639,10 +637,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/{job_id}:stop": {
+    "/v0/jobs/{job_id}:stop": {
       "post": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "Stop Job",
         "operationId": "stop_job",
@@ -682,10 +680,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/{job_id}:inspect": {
+    "/v0/jobs/{job_id}:inspect": {
       "post": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "Inspect Job",
         "operationId": "inspect_job",
@@ -725,10 +723,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/{job_id}/outputs": {
+    "/v0/jobs/{job_id}/outputs": {
       "get": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "List Job Outputs",
         "operationId": "list_job_outputs",
@@ -750,7 +748,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Job Outputs V0 Solvers Jobs  Job Id  Outputs Get",
+                  "title": "Response List Job Outputs V0 Jobs  Job Id  Outputs Get",
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/JobOutput"
@@ -772,10 +770,10 @@
         }
       }
     },
-    "/v0/solvers/jobs/{job_id}/outputs/{output_key}": {
+    "/v0/jobs/{job_id}/outputs/{output_key}": {
       "get": {
         "tags": [
-          "solvers"
+          "jobs"
         ],
         "summary": "Get Job Output",
         "operationId": "get_job_output",

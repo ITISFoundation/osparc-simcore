@@ -113,11 +113,13 @@ async def eval_sha256_hash(file: UploadFile):
     # TODO: adaptive chunks depending on file size
     # SEE: https://stackoverflow.com/questions/17731660/hashlib-optimal-size-of-chunks-to-be-used-in-md5-update
 
-    sha256_hash = hashlib.sha256()
     CHUNK_BYTES = 4 * 1024  # 4K blocks
 
+    # TODO: put a limit in size to upload!
+    sha256_hash = hashlib.sha256()
+
+    await file.seek(0)
     while True:
-        await file.seek(0)
         chunk = await file.read(CHUNK_BYTES)
         if not chunk:
             break

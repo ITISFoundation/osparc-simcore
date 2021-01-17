@@ -14,6 +14,6 @@ def create_router(settings: AppSettings):
     if settings.beta_features_enabled:
         router.include_router(files.router, tags=["files"], prefix="/files")
         router.include_router(solvers.router, tags=["solvers"], prefix="/solvers")
-        router.include_router(jobs.router, tags=["solvers"], prefix="/solvers")
+        router.include_router(jobs.router, tags=["jobs"], prefix="/jobs")
 
     return router

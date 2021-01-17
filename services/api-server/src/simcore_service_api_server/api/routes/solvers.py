@@ -48,6 +48,27 @@ async def list_solvers(
     return sorted(latest_solvers, key=attrgetter("name"))
 
 
+@router.get("/{solver_id}", response_model=Solver)
+async def get_solver_by_id(
+    solver_id: UUID,
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    try:
+        data = FAKE.get(str(solver_id))
+        return Solver(
+            solver_url=url_for(
+                "get_solver_by_id",
+                solver_id=data["uuid"],
+            ),
+            **data,
+        )
+    except KeyError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
+
+    # catalog get /image_id
+    # raise NotImplementedError(f"GET solver {solver_id}")
+
+
 @router.get("/{solver_name:path}/{version}", response_model=Solver)
 async def get_solver_by_name_and_version(
     solver_name: SolverImageName,
@@ -74,27 +95,6 @@ async def get_solver_by_name_and_version(
     # catalog get / key:latest
     # raise NotImplementedError(f"GET {solver_name}:{version}")
     # raise NotImplementedError(f"GET latest {solver_name}")
-
-
-@router.get("/{solver_id}", response_model=Solver)
-async def get_solver_by_id(
-    solver_id: UUID,
-    url_for: Callable = Depends(get_reverse_url_mapper),
-):
-    try:
-        data = FAKE.get(str(solver_id))
-        return Solver(
-            solver_url=url_for(
-                "get_solver_by_id",
-                solver_id=data["uuid"],
-            ),
-            **data,
-        )
-    except KeyError as err:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
-
-    # catalog get /image_id
-    # raise NotImplementedError(f"GET solver {solver_id}")
 
 
 async def _list_solvers_impl(

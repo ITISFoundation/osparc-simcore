@@ -3,18 +3,19 @@ import hashlib
 import logging
 import uuid as uuidlib
 from datetime import datetime
-from typing import Callable, Dict, List, Optional
+from typing import Callable, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import ValidationError
 from starlette import status
 
 from ...models.schemas.solvers import Job, JobInput, JobOutput, JobState, KeyIdentifier
 from ..dependencies.application import get_reverse_url_mapper
 from .jobs_faker import FAKE
+from .solvers import router as solvers_router
 
 logger = logging.getLogger(__name__)
+
 
 router = APIRouter()
 
@@ -25,7 +26,7 @@ router = APIRouter()
 #
 
 
-@router.get("/{solver_id}/jobs/")
+@solvers_router.get("/{solver_id}/jobs/")
 async def list_jobs(
     solver_id: UUID,
     url_for: Callable = Depends(get_reverse_url_mapper),
@@ -49,7 +50,7 @@ async def list_jobs(
 
 
 # pylint: disable=dangerous-default-value
-@router.post("/{solver_id}/jobs", response_model=Job)
+@solvers_router.post("/{solver_id}/jobs/", response_model=Job)
 async def create_job(
     solver_id: UUID,
     inputs: List[JobInput] = [],
@@ -66,8 +67,11 @@ async def create_job(
         " ".join(input.json() for input in inputs).encode("utf-8")
     ).hexdigest()
 
+    # TODO: check if job exists already?? Do not consider date??
+    job_id = compose_job_id(solver_id, sha, datetime.utcnow())
+
     job = dict(
-        job_id=compose_job_id(solver_id, sha, datetime.utcnow()),
+        job_id=str(job_id),
         inputs_sha=sha,
         solver_id=str(solver_id),
     )
@@ -84,7 +88,7 @@ async def create_job(
     )
 
 
-@router.get("/jobs/")
+@router.get("")
 async def list_all_jobs(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -105,7 +109,7 @@ async def list_all_jobs(
     ]
 
 
-@router.get("/jobs/{job_id}", response_model=Job)
+@router.get("/{job_id}", response_model=Job)
 async def get_job(
     job_id: UUID,
     url_for: Callable = Depends(get_reverse_url_mapper),
@@ -130,33 +134,33 @@ async def get_job(
         return found
 
 
-@router.post("/jobs/{job_id}:start", response_model=JobState)
+@router.post("/{job_id}:start", response_model=JobState)
 async def start_job(job_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/jobs/{job_id}:run", response_model=Job)
+@router.post("/{job_id}:run", response_model=Job)
 async def run_job(inputs: Optional[List[JobInput]] = None):
     """ create + start job in a single call """
     raise NotImplementedError()
 
 
-@router.post("/jobs/{job_id}:stop", response_model=Job)
+@router.post("/{job_id}:stop", response_model=Job)
 async def stop_job(job_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/jobs/{job_id}:inspect", response_model=JobState)
+@router.post("/{job_id}:inspect", response_model=JobState)
 async def inspect_job(solver_id: UUID):
     raise NotImplementedError()
 
 
-@router.get("/jobs/{job_id}/outputs", response_model=List[JobOutput])
+@router.get("/{job_id}/outputs", response_model=List[JobOutput])
 async def list_job_outputs(job_id: UUID):
     raise NotImplementedError()
 
 
-@router.get("/jobs/{job_id}/outputs/{output_key}", response_model=JobOutput)
+@router.get("/{job_id}/outputs/{output_key}", response_model=JobOutput)
 async def get_job_output(job_id: UUID, output_key: KeyIdentifier):
     raise NotImplementedError()
 
@@ -170,4 +174,4 @@ NAMESPACE_JOB_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 def compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
     # FIXME: this is a temporary solution. Should be image id
 
-    return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}")
+    return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
