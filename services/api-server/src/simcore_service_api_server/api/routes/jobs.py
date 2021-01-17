@@ -1,7 +1,8 @@
 import functools
+import hashlib
 import logging
 import uuid as uuidlib
-from operator import attrgetter
+from datetime import datetime
 from typing import Callable, Dict, List, Optional
 from uuid import UUID
 
@@ -9,21 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import ValidationError
 from starlette import status
 
-from ...models.schemas.solvers import (
-    LATEST_VERSION,
-    Job,
-    JobInput,
-    JobOutput,
-    JobState,
-    KeyIdentifier,
-    Solver,
-    SolverImageName,
-    SolverOutput,
-)
-from ...modules.catalog import CatalogApi
+from ...models.schemas.solvers import Job, JobInput, JobOutput, JobState, KeyIdentifier
 from ..dependencies.application import get_reverse_url_mapper
-from ..dependencies.services import get_api_client
-from .solvers_fake import FAKE
+from .jobs_faker import FAKE
 
 logger = logging.getLogger(__name__)
 
@@ -31,70 +20,154 @@ router = APIRouter()
 
 
 ## JOBS ---------------
+#
+# - Similar to docker container's API design (container = job and image = solver)
+#
 
 
-@router.get("/{solver_id}/jobs")
-async def list_jobs(solver_id: UUID):
-    """ List of all jobs (could be finished) by user of a given solver """
+@router.get("/{solver_id}/jobs/")
+async def list_jobs(
+    solver_id: UUID,
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    """ List of all jobs with a given solver """
     # TODO: add pagination
     # similar to ps = process status
-    raise NotImplementedError()
+    return [
+        Job(
+            solver_url=url_for(
+                "get_solver_by_id",
+                solver_id=job["solver_id"],
+            ),
+            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
+            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
+            **job,
+        )
+        for job in FAKE.user_jobs
+        if job["solver_id"] == str(solver_id)
+    ]
 
 
+# pylint: disable=dangerous-default-value
 @router.post("/{solver_id}/jobs", response_model=Job)
-async def create_job(solver_id: UUID, inputs: Optional[List[JobInput]] = None):
-    """ Jobs a solver with given inputs """
+async def create_job(
+    solver_id: UUID,
+    inputs: List[JobInput] = [],
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    """Creates a job for a solver with given inputs.
+
+    NOTE: This operation does **not** start the job
+    """
 
     # TODO: validate inputs against solver specs
     # TODO: create a unique identifier of job based on solver_id and inputs
-    return Job()
+    sha = hashlib.sha256(
+        " ".join(input.json() for input in inputs).encode("utf-8")
+    ).hexdigest()
+
+    job = dict(
+        job_id=compose_job_id(solver_id, sha, datetime.utcnow()),
+        inputs_sha=sha,
+        solver_id=str(solver_id),
+    )
+    FAKE.user_jobs.append(job)
+
+    return Job(
+        solver_url=url_for(
+            "get_solver_by_id",
+            solver_id=job["solver_id"],
+        ),
+        inspect_url=url_for("inspect_job", job_id=job["job_id"]),
+        outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
+        **job,
+    )
 
 
-@router.get("/{solver_id}/jobs/{job_id}", response_model=Job)
-async def get_job(solver_id: UUID, job_id: UUID):
+@router.get("/jobs/")
+async def list_all_jobs(
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    """ List of all jobs created by user """
+    # TODO: add pagination
+    # similar to ps = process status
+    return [
+        Job(
+            solver_url=url_for(
+                "get_solver_by_id",
+                solver_id=job["solver_id"],
+            ),
+            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
+            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
+            **job,
+        )
+        for job in FAKE.user_jobs
+    ]
+
+
+@router.get("/jobs/{job_id}", response_model=Job)
+async def get_job(
+    job_id: UUID,
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    try:
+        found = next(
+            Job(
+                solver_url=url_for(
+                    "get_solver_by_id",
+                    solver_id=job["solver_id"],
+                ),
+                inspect_url=url_for("inspect_job", job_id=job["job_id"]),
+                outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
+                **job,
+            )
+            for job in FAKE.user_jobs
+            if job["job_id"] == str(job_id)
+        )
+    except StopIteration as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
+    else:
+        return found
+
+
+@router.post("/jobs/{job_id}:start", response_model=JobState)
+async def start_job(job_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs/{job_id}:start", response_model=Job)
-async def start_job(solver_id: UUID, job_id: UUID):
-    raise NotImplementedError()
-
-
-@router.post("/{solver_id}/jobs/{job_id}:run", response_model=Job)
-async def run_job(solver_id: UUID, inputs: Optional[List[JobInput]] = None):
+@router.post("/jobs/{job_id}:run", response_model=Job)
+async def run_job(inputs: Optional[List[JobInput]] = None):
     """ create + start job in a single call """
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs/{job_id}:stop", response_model=Job)
-async def stop_job(solver_id: UUID, job_id: UUID):
+@router.post("/jobs/{job_id}:stop", response_model=Job)
+async def stop_job(job_id: UUID):
     raise NotImplementedError()
 
 
-@router.post("/{solver_id}/jobs/{job_id}:inspect", response_model=JobState)
+@router.post("/jobs/{job_id}:inspect", response_model=JobState)
 async def inspect_job(solver_id: UUID):
     raise NotImplementedError()
 
 
-@router.get("/{solver_id}/jobs/{job_id}/outputs", response_model=List[JobOutput])
-async def list_job_outputs(solver_id: UUID, job_id: UUID):
+@router.get("/jobs/{job_id}/outputs", response_model=List[JobOutput])
+async def list_job_outputs(job_id: UUID):
     raise NotImplementedError()
 
 
-@router.get(
-    "/{solver_id}/jobs/{job_id}/outputs/{output_key}", response_model=SolverOutput
-)
-async def get_job_output(solver_id: UUID, job_id: UUID, output_key: KeyIdentifier):
+@router.get("/jobs/{job_id}/outputs/{output_key}", response_model=JobOutput)
+async def get_job_output(job_id: UUID, output_key: KeyIdentifier):
     raise NotImplementedError()
 
 
 # HELPERS ----
 
-NAMESPACE_SOLVER_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
+NAMESPACE_JOB_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
 
 @functools.lru_cache()
-def compose_solver_id(solver_key: SolverImageName, version: str) -> UUID:
+def compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
     # FIXME: this is a temporary solution. Should be image id
 
-    return uuidlib.uuid3(NAMESPACE_SOLVER_KEY, f"{solver_key}:{version}")
+    return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}")
