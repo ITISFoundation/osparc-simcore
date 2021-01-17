@@ -388,13 +388,13 @@
         }
       }
     },
-    "/v0/solvers/{solver_id}/jobs": {
+    "/v0/solvers/{solver_id}/jobs/": {
       "get": {
         "tags": [
           "solvers"
         ],
         "summary": "List Jobs",
-        "description": "List of all jobs (could be finished) by user of a given solver ",
+        "description": "List of all jobs with a given solver ",
         "operationId": "list_jobs",
         "parameters": [
           {
@@ -428,13 +428,15 @@
             }
           }
         }
-      },
+      }
+    },
+    "/v0/solvers/{solver_id}/jobs": {
       "post": {
         "tags": [
           "solvers"
         ],
         "summary": "Create Job",
-        "description": "Jobs a solver with given inputs ",
+        "description": "Creates a job for a solver with given inputs.\n\nNOTE: This operation does **not** start the job",
         "operationId": "create_job",
         "parameters": [
           {
@@ -456,7 +458,8 @@
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/JobInput"
-                }
+                },
+                "default": []
               }
             }
           }
@@ -485,7 +488,27 @@
         }
       }
     },
-    "/v0/solvers/{solver_id}/jobs/{job_id}": {
+    "/v0/solvers/jobs/": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List All Jobs",
+        "description": "List of all jobs created by user ",
+        "operationId": "list_all_jobs",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/jobs/{job_id}": {
       "get": {
         "tags": [
           "solvers"
@@ -496,16 +519,6 @@
           {
             "required": true,
             "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
               "title": "Job Id",
               "type": "string",
               "format": "uuid"
@@ -538,7 +551,7 @@
         }
       }
     },
-    "/v0/solvers/{solver_id}/jobs/{job_id}:start": {
+    "/v0/solvers/jobs/{job_id}:start": {
       "post": {
         "tags": [
           "solvers"
@@ -549,174 +562,11 @@
           {
             "required": true,
             "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
               "title": "Job Id",
               "type": "string",
               "format": "uuid"
             },
             "name": "job_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Job"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/solvers/{solver_id}/jobs/{job_id}:run": {
-      "post": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Run Job",
-        "description": "create + start job in a single call ",
-        "operationId": "run_job",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "Inputs",
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/JobInput"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Job"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/solvers/{solver_id}/jobs/{job_id}:stop": {
-      "post": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Stop Job",
-        "operationId": "stop_job",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Job Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "job_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Job"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/solvers/{solver_id}/jobs/{job_id}:inspect": {
-      "post": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Inspect Job",
-        "operationId": "inspect_job",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
             "in": "path"
           }
         ],
@@ -744,24 +594,59 @@
         }
       }
     },
-    "/v0/solvers/{solver_id}/jobs/{job_id}/outputs": {
-      "get": {
+    "/v0/solvers/jobs/{job_id}:run": {
+      "post": {
         "tags": [
           "solvers"
         ],
-        "summary": "List Job Outputs",
-        "operationId": "list_job_outputs",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
-            "in": "path"
+        "summary": "Run Job",
+        "description": "create + start job in a single call ",
+        "operationId": "run_job",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Inputs",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/JobInput"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
           },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/jobs/{job_id}:stop": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Stop Job",
+        "operationId": "stop_job",
+        "parameters": [
           {
             "required": true,
             "schema": {
@@ -779,7 +664,93 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Job Outputs V0 Solvers  Solver Id  Jobs  Job Id  Outputs Get",
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/jobs/{job_id}:inspect": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Inspect Job",
+        "operationId": "inspect_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/jobs/{job_id}/outputs": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "List Job Outputs",
+        "operationId": "list_job_outputs",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "job_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Job Outputs V0 Solvers Jobs  Job Id  Outputs Get",
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/JobOutput"
@@ -801,7 +772,7 @@
         }
       }
     },
-    "/v0/solvers/{solver_id}/jobs/{job_id}/outputs/{output_key}": {
+    "/v0/solvers/jobs/{job_id}/outputs/{output_key}": {
       "get": {
         "tags": [
           "solvers"
@@ -809,16 +780,6 @@
         "summary": "Get Job Output",
         "operationId": "get_job_output",
         "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
-            "in": "path"
-          },
           {
             "required": true,
             "schema": {
@@ -846,7 +807,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SolverOutput"
+                  "$ref": "#/components/schemas/JobOutput"
                 }
               }
             }
@@ -971,8 +932,10 @@
         "required": [
           "job_id",
           "inputs_sha",
-          "status_url",
-          "results_url"
+          "solver_id",
+          "solver_url",
+          "inspect_url",
+          "outputs_url"
         ],
         "type": "object",
         "properties": {
@@ -985,15 +948,27 @@
             "title": "Inputs Sha",
             "type": "string"
           },
-          "status_url": {
-            "title": "Status Url",
+          "solver_id": {
+            "title": "Solver Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "solver_url": {
+            "title": "Solver Url",
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
             "format": "uri"
           },
-          "results_url": {
-            "title": "Results Url",
+          "inspect_url": {
+            "title": "Inspect Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
+          },
+          "outputs_url": {
+            "title": "Outputs Url",
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
@@ -1004,23 +979,26 @@
       "JobInput": {
         "title": "JobInput",
         "required": [
-          "key",
-          "content_type"
+          "name"
         ],
         "type": "object",
         "properties": {
-          "key": {
-            "title": "Key",
+          "name": {
+            "title": "Name",
             "minLength": 3,
-            "type": "string"
+            "type": "string",
+            "description": "Name given to the input/output in solver specs (see solver metadata.yml)"
           },
-          "content_type": {
-            "title": "Content Type",
-            "type": "string"
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "Data type expected on this input/ouput"
           },
           "title": {
             "title": "Title",
-            "type": "string"
+            "type": "string",
+            "description": "Short human readable name to identify input/output"
           },
           "value": {
             "title": "Value",
@@ -1035,36 +1013,40 @@
                 "type": "integer"
               }
             ]
-          },
-          "value_url": {
-            "title": "Value Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "format": "uri"
           }
+        },
+        "example": {
+          "name": "T",
+          "content_type": "number",
+          "title": "Temperature",
+          "value": "33"
         }
       },
       "JobOutput": {
         "title": "JobOutput",
         "required": [
-          "content_type",
-          "key"
+          "name",
+          "status",
+          "value"
         ],
         "type": "object",
         "properties": {
-          "content_type": {
-            "title": "Content Type",
-            "type": "string"
-          },
-          "key": {
-            "title": "Key",
+          "name": {
+            "title": "Name",
             "minLength": 3,
-            "type": "string"
+            "type": "string",
+            "description": "Name given to the input/output in solver specs (see solver metadata.yml)"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "Data type expected on this input/ouput"
           },
           "title": {
             "title": "Title",
-            "type": "string"
+            "type": "string",
+            "description": "Short human readable name to identify input/output"
           },
           "status": {
             "allOf": [
@@ -1072,45 +1054,53 @@
                 "$ref": "#/components/schemas/TaskStates"
               }
             ],
-            "default": "undefined"
+            "description": "State towards completion of this output"
           },
           "value": {
             "title": "Value",
             "anyOf": [
               {
+                "type": "number"
+              },
+              {
                 "type": "string"
               },
               {
                 "type": "integer"
-              },
-              {
-                "type": "number"
               }
-            ]
-          },
-          "value_url": {
-            "title": "Value Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
-            "format": "uri"
+            ],
+            "description": "Result value in this output"
           }
+        },
+        "example": {
+          "name": "SAR",
+          "content_type": "data:application/hdf5",
+          "title": "SAR field output file",
+          "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a"
         }
       },
       "JobState": {
         "title": "JobState",
         "required": [
-          "started_at"
+          "status",
+          "submitted_at"
         ],
         "type": "object",
         "properties": {
           "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TaskStates"
-              }
-            ],
-            "default": "undefined"
+            "$ref": "#/components/schemas/TaskStates"
+          },
+          "progress": {
+            "title": "Progress",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "type": "integer",
+            "default": 0
+          },
+          "submitted_at": {
+            "title": "Submitted At",
+            "type": "string",
+            "format": "date-time"
           },
           "started_at": {
             "title": "Started At",
@@ -1128,9 +1118,7 @@
         "title": "Meta",
         "required": [
           "name",
-          "version",
-          "docs_url",
-          "docs_dev_url"
+          "version"
         ],
         "type": "object",
         "properties": {
@@ -1157,14 +1145,16 @@
             "maxLength": 65536,
             "minLength": 1,
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "default": "https://docs.osparc.io"
           },
           "docs_dev_url": {
             "title": "Docs Dev Url",
             "maxLength": 65536,
             "minLength": 1,
             "type": "string",
-            "format": "uri"
+            "format": "uri",
+            "default": "https://api.osparc.io/dev/docs"
           }
         },
         "example": {
@@ -1293,35 +1283,12 @@
         },
         "description": "A released solver with a specific version\n\nThis version might have human-readable alias (e.g. latest) or\nhierarchical version tags (e.g. 3, 3.2)"
       },
-      "SolverOutput": {
-        "title": "SolverOutput",
-        "required": [
-          "content_type",
-          "key"
-        ],
-        "type": "object",
-        "properties": {
-          "content_type": {
-            "title": "Content Type",
-            "type": "string"
-          },
-          "key": {
-            "title": "Key",
-            "minLength": 3,
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        }
-      },
       "TaskStates": {
         "title": "TaskStates",
         "enum": [
           "undefined",
           "pending",
-          "jobning",
+          "running",
           "success",
           "failed"
         ],
