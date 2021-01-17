@@ -93,13 +93,7 @@ qx.Class.define("osparc.studycard.Large", {
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
 
-      let editThumbnailBtn = null;
-      if (this.__isOwner()) {
-        editThumbnailBtn = osparc.utils.Utils.getEditButton();
-        editThumbnailBtn.addListener("execute", () => {
-          this.__openThumbnailEditor();
-        }, this);
-      }
+
       const bounds = this.getBounds();
       let widgetWidth = null;
       const offset = 30;
@@ -117,18 +111,8 @@ qx.Class.define("osparc.studycard.Large", {
         this._add(extraInfoLayout);
         thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        if (editThumbnailBtn) {
-          const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-            alignX: "center"
-          }));
-          hBox.add(thumbnail, {
-            flex: 1
-          });
-          hBox.add(editThumbnailBtn);
-          this._add(hBox);
-        } else {
-          this._add(thumbnail);
-        }
+        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+        this._add(thumbnailLayout);
       } else {
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center"
@@ -137,18 +121,18 @@ qx.Class.define("osparc.studycard.Large", {
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
         thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        hBox.add(thumbnail, {
+        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+        hBox.add(thumbnailLayout, {
           flex: 1
         });
-        if (editThumbnailBtn) {
-          hBox.add(editThumbnailBtn);
-        }
         this._add(hBox);
       }
 
-      const description = this.__createDescription();
-      const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
-      this._add(descriptionLayout);
+      if (this.__studyData["description"] || this.__isOwner()) {
+        const description = this.__createDescription();
+        const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
+        this._add(descriptionLayout);
+      }
 
       if (this.__studyData["tags"] || this.__isOwner()) {
         const tags = this.__createTags();

@@ -199,6 +199,15 @@ qx.Class.define("osparc.studycard.Utils", {
       * @param maxHeight {Number} description's maxHeight
       */
     createDescription: function(study, maxHeight) {
+      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
+        font: "title-12"
+      });
+      descriptionLayout.add(label);
+
       const description = new osparc.ui.markdown.Markdown().set({
         noMargin: false,
         maxHeight: maxHeight
@@ -208,7 +217,9 @@ qx.Class.define("osparc.studycard.Utils", {
       } else {
         description.setValue(study["description"]);
       }
-      return description;
+      descriptionLayout.add(description);
+
+      return descriptionLayout;
     },
 
     /**
