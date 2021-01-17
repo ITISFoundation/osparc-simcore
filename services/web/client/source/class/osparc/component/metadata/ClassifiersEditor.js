@@ -18,13 +18,13 @@
 qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyData, isStudy = true) {
+  construct: function(studyData) {
     this.base(arguments);
 
-    if (isStudy) {
-      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
-    } else {
+    if (osparc.utils.Resources.isService(studyData)) {
       this.__studyData = osparc.utils.Utils.deepCloneObject(studyData);
+    } else {
+      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
     }
 
     this._setLayout(new qx.ui.layout.VBox(10));
