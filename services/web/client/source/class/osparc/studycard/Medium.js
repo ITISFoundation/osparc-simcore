@@ -29,7 +29,7 @@ qx.Class.define("osparc.studycard.Medium", {
       padding: this.self().PADDING,
       backgroundColor: "background-main"
     });
-    this._setLayout(new qx.ui.layout.VBox(3));
+    this._setLayout(new qx.ui.layout.VBox(4));
 
     if (study && study instanceof osparc.data.model.Study) {
       this.setStudy(study);

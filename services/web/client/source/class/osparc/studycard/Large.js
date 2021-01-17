@@ -28,7 +28,7 @@ qx.Class.define("osparc.studycard.Large", {
     this.set({
       padding: this.self().PADDING
     });
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(6));
 
     if (studyData && studyData instanceof Object) {
       this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -134,7 +134,7 @@ qx.Class.define("osparc.studycard.Large", {
         this._add(descriptionLayout);
       }
 
-      if (this.__studyData["tags"] || this.__isOwner()) {
+      if (this.__studyData["tags"].length || this.__isOwner()) {
         const tags = this.__createTags();
         const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
         if (this.__isOwner()) {

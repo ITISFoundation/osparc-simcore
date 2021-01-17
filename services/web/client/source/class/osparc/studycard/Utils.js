@@ -209,7 +209,7 @@ qx.Class.define("osparc.studycard.Utils", {
       descriptionLayout.add(label);
 
       const description = new osparc.ui.markdown.Markdown().set({
-        noMargin: false,
+        noMargin: true,
         maxHeight: maxHeight
       });
       if (study instanceof osparc.data.model.Study) {
