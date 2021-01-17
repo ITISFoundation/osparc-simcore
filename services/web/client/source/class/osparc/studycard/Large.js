@@ -91,6 +91,7 @@ qx.Class.define("osparc.studycard.Large", {
       this._add(titleLayout);
 
       const extraInfo = this.__extraInfo();
+      const extraInfoLayout = this.__createExtraInfo(extraInfo);
 
       let editThumbnailBtn = null;
       if (this.__isOwner()) {
@@ -110,11 +111,12 @@ qx.Class.define("osparc.studycard.Large", {
         widgetWidth = 500 - offset;
       }
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
+      const maxThumbnailHeight = extraInfo.length*20;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
       if (slim) {
-        this._add(extraInfo);
+        this._add(extraInfoLayout);
         thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth);
+        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
         if (editThumbnailBtn) {
           const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignX: "center"
@@ -131,10 +133,10 @@ qx.Class.define("osparc.studycard.Large", {
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center"
         }));
-        hBox.add(extraInfo);
+        hBox.add(extraInfoLayout);
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
         thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth);
+        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
         hBox.add(thumbnail, {
           flex: 1
         });
@@ -226,7 +228,10 @@ qx.Class.define("osparc.studycard.Large", {
           }
         });
       }
+      return extraInfo;
+    },
 
+    __createExtraInfo: function(extraInfo) {
       const moreInfo = osparc.studycard.Utils.createExtraInfo(extraInfo).set({
         width: this.self().EXTRA_INFO_WIDTH
       });

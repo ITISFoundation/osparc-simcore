@@ -86,31 +86,34 @@ qx.Class.define("osparc.studycard.Medium", {
       this._add(nameAndMenuButton);
 
       const extraInfo = this.__extraInfo();
+      const extraInfoLayout = this.__createExtraInfo(extraInfo);
 
       const bounds = this.getBounds();
       let widgetWidth = null;
+      const offset = 10;
       if (width) {
-        widgetWidth = width;
+        widgetWidth = width - offset;
       } else if (bounds) {
-        widgetWidth = bounds.width;
+        widgetWidth = bounds.width - offset;
       } else {
-        widgetWidth = 350;
+        widgetWidth = 350 - offset;
       }
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
+      const maxThumbnailHeight = extraInfo.length*20;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING;
       if (slim) {
-        this._add(extraInfo);
+        this._add(extraInfoLayout);
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth);
+        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
         this._add(thumbnail);
       } else {
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center"
         }));
-        hBox.add(extraInfo);
+        hBox.add(extraInfoLayout);
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth);
+        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
         hBox.add(thumbnail, {
           flex: 1
         });
@@ -179,7 +182,10 @@ qx.Class.define("osparc.studycard.Medium", {
           ctx: this
         }
       }];
+      return extraInfo;
+    },
 
+    __createExtraInfo: function(extraInfo) {
       const moreInfo = osparc.studycard.Utils.createExtraInfo(extraInfo).set({
         width: this.self().EXTRA_INFO_WIDTH
       });
