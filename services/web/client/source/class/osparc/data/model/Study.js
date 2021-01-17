@@ -182,6 +182,7 @@ qx.Class.define("osparc.data.model.Study", {
           }
         }
       }
+      osparc.component.metadata.Quality.attachQualityToObject(myNewStudyObject);
       return myNewStudyObject;
     },
 
