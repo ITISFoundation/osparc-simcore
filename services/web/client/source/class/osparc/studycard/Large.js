@@ -295,18 +295,17 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openClassifiers: function() {
+      const title = this.tr("Classifiers");
+      let classifiers = null;
       if (this.__isOwner()) {
-        const classifiersEditor = new osparc.component.metadata.ClassifiersEditor(this.__studyData);
-        const title = this.tr("Classifiers");
-        osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-        classifiersEditor.addListener("updateResourceClassifiers", () => {
+        classifiers = new osparc.component.metadata.ClassifiersEditor(this.__studyData);
+        classifiers.addListener("updateResourceClassifiers", () => {
           this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
         }, this);
       } else {
-        const classifiersEditor = new osparc.component.metadata.ClassifiersViewer(this.__studyData);
-        const title = this.tr("Classifiers");
-        osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
+        classifiers = new osparc.component.metadata.ClassifiersViewer(this.__studyData);
       }
+      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __openQuality: function() {

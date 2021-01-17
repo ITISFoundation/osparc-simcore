@@ -484,13 +484,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __openClassifiers: function(studyData) {
-      const classifiersEditor = new osparc.component.metadata.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
-      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateResourceClassifiers", e => {
-        const studyId = e.getData();
-        this._reloadStudy(studyId);
-      }, this);
+      let classifiers = null;
+      if (this.__isOwner()) {
+        classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
+        classifiers.addListener("updateResourceClassifiers", e => {
+          const studyId = e.getData();
+          this._reloadStudy(studyId);
+        }, this);
+      } else {
+        classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
+      }
+      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __getStudyServicesMenuButton: function(studyData) {

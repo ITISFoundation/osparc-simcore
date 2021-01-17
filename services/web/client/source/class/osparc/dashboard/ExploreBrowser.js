@@ -475,11 +475,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __getClassifiersMenuButton: function(studyData) {
-      const isCurrentUserOwner = this.__isUserOwner(studyData);
-      if (!isCurrentUserOwner) {
-        return null;
-      }
-
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
         return null;
       }
@@ -492,18 +487,24 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openClassifiers: function(studyData) {
-      const classifiersEditor = new osparc.component.metadata.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
-      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateResourceClassifiers", e => {
-        if (osparc.utils.Resources.isTemplate(studyData)) {
-          const studyId = e.getData();
-          this._reloadTemplate(studyId);
-        } else if (osparc.utils.Resources.isService(studyData)) {
-          const serviceKey = e.getData();
-          this.__reloadService(serviceKey, studyData.version);
-        }
-      }, this);
+      let classifiers = null;
+      if (this.__isOwner()) {
+        classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
+        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
+        classifiers.addListener("updateResourceClassifiers", e => {
+          if (osparc.utils.Resources.isTemplate(studyData)) {
+            const studyId = e.getData();
+            this._reloadTemplate(studyId);
+          } else if (osparc.utils.Resources.isService(studyData)) {
+            const serviceKey = e.getData();
+            this.__reloadService(serviceKey, studyData.version);
+          }
+        }, this);
+      } else {
+        classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
+      }
+      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __getStudyServicesMenuButton: function(studyData) {
