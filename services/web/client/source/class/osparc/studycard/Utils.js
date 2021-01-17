@@ -242,6 +242,44 @@ qx.Class.define("osparc.studycard.Utils", {
       return classfiersLayout;
     },
 
+    createExtraInfo: function(extraInfos) {
+      const grid = new qx.ui.layout.Grid(5, 3);
+      grid.setColumnAlign(0, "right", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      const moreInfo = new qx.ui.container.Composite(grid).set({
+        allowGrowX: false,
+        alignX: "center",
+        alignY: "middle"
+      });
+
+      for (let i=0; i<extraInfos.length; i++) {
+        const extraInfo = extraInfos[i];
+        moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
+          font: "title-12"
+        }), {
+          row: i,
+          column: 0
+        });
+
+        moreInfo.add(extraInfo.view, {
+          row: i,
+          column: 1
+        });
+
+        if (extraInfo.action) {
+          extraInfo.action.button.addListener("execute", () => {
+            extraInfo.action.callback.call(extraInfo.action.ctx);
+          }, this);
+          moreInfo.add(extraInfo.action.button, {
+            row: i,
+            column: 2
+          });
+        }
+      }
+
+      return moreInfo;
+    },
+
     /**
       * @param studyData {Object} Serialized Study Object
       */

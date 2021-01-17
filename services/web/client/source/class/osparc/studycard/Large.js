@@ -179,49 +179,51 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __extraInfo: function() {
-      const grid = new qx.ui.layout.Grid(6, 3);
-      grid.setColumnAlign(0, "right", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      const moreInfo = new qx.ui.container.Composite(grid).set({
-        width: this.self().EXTRA_INFO_WIDTH,
-        alignX: "center",
-        alignY: "middle"
-      });
-
-      const extraInfo = [
-        [this.tr("uuid"), this.__createUuid(), null],
-        [this.tr("Author"), this.__createOwner(), null],
-        [this.tr("Creation date"), this.__createCreationDate(), null],
-        [this.tr("Last modified"), this.__createLastChangeDate(), null],
-        [this.tr("Access rights"), this.__createAccessRights(), this.__openAccessRights],
-        [this.tr("Quality"), this.__createQuality(), this.__openQuality]
-      ];
-      for (let i=0; i<extraInfo.length; i++) {
-        if (extraInfo[i][1]) {
-          moreInfo.add(new qx.ui.basic.Label(extraInfo[i][0]).set({
-            font: "title-12"
-          }), {
-            row: i,
-            column: 0
-          });
-
-          moreInfo.add(extraInfo[i][1], {
-            row: i,
-            column: 1
-          });
-
-          if (extraInfo[i][2]) {
-            const editTitleBtn = osparc.utils.Utils.getViewButton();
-            editTitleBtn.addListener("execute", () => {
-              extraInfo[i][2].call(this);
-            }, this);
-            moreInfo.add(editTitleBtn, {
-              row: i,
-              column: 2
-            });
-          }
+      const extraInfo = [{
+        label: this.tr("Author"),
+        view: this.__createOwner(),
+        action: null
+      }, {
+        label: this.tr("Creation Date"),
+        view: this.__createCreationDate(),
+        action: null
+      }, {
+        label: this.tr("Last Modified"),
+        view: this.__createLastChangeDate(),
+        action: null
+      }, {
+        label: this.tr("Access Rights"),
+        view: this.__createAccessRights(),
+        action: {
+          button: osparc.utils.Utils.getViewButton(),
+          callback: this.__openAccessRights,
+          ctx: this
         }
+      }, {
+        label: this.tr("Quality"),
+        view: this.__createQuality(),
+        action: {
+          button: osparc.utils.Utils.getViewButton(),
+          callback: this.__openQuality,
+          ctx: this
+        }
+      }];
+
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        extraInfo.unshift({
+          label: this.tr("UUID"),
+          view: this.__createUuid(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyUuidToClipboard,
+            ctx: this
+          }
+        });
       }
+
+      const moreInfo = osparc.studycard.Utils.createExtraInfo(extraInfo).set({
+        width: this.self().EXTRA_INFO_WIDTH
+      });
 
       return moreInfo;
     },
@@ -286,6 +288,10 @@ qx.Class.define("osparc.studycard.Large", {
       }, this);
       titleEditor.center();
       titleEditor.open();
+    },
+
+    __copyUuidToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.__studyData["uuid"]);
     },
 
     __openAccessRights: function() {

@@ -47,6 +47,15 @@ qx.Class.define("osparc.utils.Utils", {
       return button;
     },
 
+    getCopyButton: function() {
+      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+        allowGrowY: false,
+        padding: 3,
+        maxWidth: 20
+      });
+      return button;
+    },
+
     /**
       * @param value {Date Object} Date Object
       */
