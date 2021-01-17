@@ -343,19 +343,21 @@ async def update_project_node_outputs(
     user_id: int,
     project_id: str,
     node_id: str,
-    data: Optional[Dict],
+    new_outputs: Optional[Dict],
+    new_run_hash: Optional[str],
 ) -> Tuple[Dict, List[str]]:
     """
     Updates outputs of a given node in a project with 'data'
     """
     log.debug(
-        "updating node %s outputs in project %s for user %s with %s",
+        "updating node %s outputs in project %s for user %s with %s: run_hash [%s]",
         node_id,
         project_id,
         user_id,
-        pformat(data),
+        pformat(new_outputs),
+        new_run_hash,
     )
-    data: Dict[str, Any] = data or {}
+    new_outputs: Dict[str, Any] = new_outputs or {}
     project = await get_project_for_user(app, project_id, user_id)
 
     if not node_id in project["workbench"]:
@@ -364,8 +366,8 @@ async def update_project_node_outputs(
     # NOTE: update outputs (not required) if necessary as the UI expects a
     # dataset/label field that is missing
     current_outputs = project["workbench"][node_id].setdefault("outputs", {})
-    new_outputs = data
     project["workbench"][node_id]["outputs"] = new_outputs
+    project["workbench"][node_id]["run_hash"] = new_run_hash
 
     # find changed keys (the ones that appear or disapppear for sure)
     changed_keys = list(current_outputs.keys() ^ new_outputs.keys())
