@@ -148,16 +148,14 @@ qx.Class.define("osparc.studycard.Large", {
       const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
       this._add(descriptionLayout);
 
-      const tags = this.__createTags();
-      const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
-      if (this.__isOwner()) {
-        osparc.utils.Utils.setIdToWidget(tagsLayout.getChildren()[1], "editStudyEditTagsBtn");
+      if (this.__studyData["tags"] || this.__isOwner()) {
+        const tags = this.__createTags();
+        const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
+        if (this.__isOwner()) {
+          osparc.utils.Utils.setIdToWidget(tagsLayout.getChildren()[1], "editStudyEditTagsBtn");
+        }
+        this._add(tagsLayout);
       }
-      this._add(tagsLayout);
-
-      const classifiers = this.__createClassifiers();
-      const classifiersLayout = this.__createViewWithEdit(classifiers, this.__openClassifiersEditor);
-      this._add(classifiersLayout);
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -197,6 +195,14 @@ qx.Class.define("osparc.studycard.Large", {
         action: {
           button: osparc.utils.Utils.getViewButton(),
           callback: this.__openAccessRights,
+          ctx: this
+        }
+      }, {
+        label: this.tr("Classifiers"),
+        view: this.__createClassifiers(),
+        action: {
+          button: osparc.utils.Utils.getViewButton(),
+          callback: this.__openClassifiersEditor,
           ctx: this
         }
       }, {
@@ -255,6 +261,10 @@ qx.Class.define("osparc.studycard.Large", {
       return osparc.studycard.Utils.createAccessRights(this.__studyData);
     },
 
+    __createClassifiers: function() {
+      return osparc.studycard.Utils.createClassifiers(this.__studyData);
+    },
+
     __createQuality: function() {
       return osparc.studycard.Utils.createQuality(this.__studyData);
     },
@@ -271,10 +281,6 @@ qx.Class.define("osparc.studycard.Large", {
 
     __createTags: function() {
       return osparc.studycard.Utils.createTags(this.__studyData);
-    },
-
-    __createClassifiers: function() {
-      return osparc.studycard.Utils.createClassifiers(this.__studyData);
     },
 
     __openTitleEditor: function() {
@@ -297,6 +303,15 @@ qx.Class.define("osparc.studycard.Large", {
     __openAccessRights: function() {
       const permissionsView = osparc.studycard.Utils.openAccessRights(this.__studyData);
       permissionsView.addListener("updateStudy", e => {
+        this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
+      }, this);
+    },
+
+    __openClassifiersEditor: function() {
+      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(this.__studyData);
+      const title = this.tr("Classifiers");
+      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
+      classifiersEditor.addListener("updateResourceClassifiers", () => {
         this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
       }, this);
     },
@@ -355,15 +370,6 @@ qx.Class.define("osparc.studycard.Large", {
       }, this);
       tagManager.addListener("close", () => {
         this.fireDataEvent("updateTags", this.__studyData["uuid"]);
-      }, this);
-    },
-
-    __openClassifiersEditor: function() {
-      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(this.__studyData);
-      const title = this.tr("Classifiers");
-      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateResourceClassifiers", () => {
-        this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
       }, this);
     },
 

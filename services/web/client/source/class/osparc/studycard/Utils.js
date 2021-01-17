@@ -134,6 +134,21 @@ qx.Class.define("osparc.studycard.Utils", {
     /**
       * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
       */
+    createClassifiers: function(study) {
+      const nClassifiers = new qx.ui.basic.Label();
+      if (study instanceof osparc.data.model.Study) {
+        study.bind("classifiers", nClassifiers, "value", {
+          converter: classifiers => `(${classifiers.length})`
+        });
+      } else {
+        nClassifiers.setValue(`(${study["classifiers"].length})`);
+      }
+      return nClassifiers;
+    },
+
+    /**
+      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      */
     createQuality: function(study) {
       const quality = (study instanceof osparc.data.model.Study) ? study.getQuality() : study["quality"];
       if (quality && "tsr" in quality) {
@@ -218,28 +233,6 @@ qx.Class.define("osparc.studycard.Utils", {
       tagsLayout.add(tagsContainer);
 
       return tagsLayout;
-    },
-
-    /**
-      * @param studyData {Object} Serialized Study Object
-      */
-    createClassifiers: function(studyData) {
-      const classfiersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Classifiers")).set({
-        font: "title-12"
-      });
-      classfiersLayout.add(label);
-
-      const classifiersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      studyData["classifiers"].forEach(classifier => {
-        classifiersContainer.add(new qx.ui.basic.Label(classifier));
-      });
-      classfiersLayout.add(classifiersContainer);
-
-      return classfiersLayout;
     },
 
     createExtraInfo: function(extraInfos) {
