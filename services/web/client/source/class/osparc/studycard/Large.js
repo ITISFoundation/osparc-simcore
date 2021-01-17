@@ -187,7 +187,7 @@ qx.Class.define("osparc.studycard.Large", {
         view: this.__createClassifiers(),
         action: {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openClassifiersEditor,
+          callback: this.__openClassifiers,
           ctx: this
         }
       }, {
@@ -294,8 +294,8 @@ qx.Class.define("osparc.studycard.Large", {
       }, this);
     },
 
-    __openClassifiersEditor: function() {
-      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(this.__studyData);
+    __openClassifiers: function() {
+      const classifiersEditor = new osparc.component.metadata.ClassifiersEditor(this.__studyData);
       const title = this.tr("Classifiers");
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
       classifiersEditor.addListener("updateResourceClassifiers", () => {

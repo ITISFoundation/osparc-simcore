@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.ClassifiersEditor", {
+qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
   extend: qx.ui.core.Widget,
 
   construct: function(studyData, isStudy = true) {

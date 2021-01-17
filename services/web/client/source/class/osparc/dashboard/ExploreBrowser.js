@@ -492,7 +492,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openClassifiers: function(studyData) {
-      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData, osparc.utils.Resources.isTemplate(studyData));
+      const classifiersEditor = new osparc.component.metadata.ClassifiersEditor(studyData, osparc.utils.Resources.isTemplate(studyData));
       const title = this.tr("Classifiers");
       osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
       classifiersEditor.addListener("updateResourceClassifiers", e => {
