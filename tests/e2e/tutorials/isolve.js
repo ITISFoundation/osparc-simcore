@@ -14,7 +14,7 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const templateName = "isolve";
+const templateName = "isolve-gpu";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
@@ -26,12 +26,17 @@ async function runTutorial() {
     const studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
-    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    console.log(workbenchData);
-    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], 20000);
+    // Some time for loading the workbench
+    await tutorial.waitFor(5000);
 
-    // Wait for some time
-    await tutorial.waitFor(12000);
+    await tutorial.runPipeline(studyId, 60000);
+    console.log('Checking isolve results:');
+    await tutorial.openNodeFiles(1);
+    const outFiles = [
+      "output.h5",
+      "log.tgz"
+    ];
+    await tutorial.checkResults(outFiles.length);
 
     await tutorial.toDashboard();
 
