@@ -189,6 +189,7 @@ qx.Class.define("osparc.component.metadata.StudyDetailsEditor", {
       const editButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
         appearance: "link-button"
       });
+      osparc.utils.Utils.setIdToWidget(editButton, "editStudyEditTagsBtn");
       editButton.addListener("execute", () => {
         const tagManager = new osparc.component.form.tag.TagManager(this.__studyData.tags, editButton, "study", this.__studyData.uuid);
         tagManager.addListener("changeSelected", evt => {
