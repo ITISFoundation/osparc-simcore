@@ -16,8 +16,8 @@ class Meta(BaseModel):
     released: Optional[Dict[str, VersionStr]] = Field(
         None, description="Maps every route's path tag with a released version"
     )
-    docs_url: AnyHttpUrl
-    docs_dev_url: AnyHttpUrl
+    docs_url: AnyHttpUrl = "https://docs.osparc.io"
+    docs_dev_url: AnyHttpUrl = "https://api.osparc.io/dev/docs"
 
     class Config:
         schema_extra = {

@@ -4,7 +4,7 @@ from enum import Enum
 from typing import List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Field, HttpUrl, confloat, constr
+from pydantic import BaseModel, Field, HttpUrl, conint, constr
 
 LATEST_VERSION = "latest"
 KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+$"  # NOTE: needs to end with / !!
@@ -70,46 +70,81 @@ class Solver(BaseModel):
 class Job(BaseModel):
     job_id: UUID
     inputs_sha: str
-    status_url: HttpUrl
-    results_url: HttpUrl
+    solver_id: UUID
+
+    # hyperlinks
+    solver_url: HttpUrl
+    inspect_url: HttpUrl
+    outputs_url: HttpUrl
 
 
 # TODO: these need to be in sync with celery task states
 class TaskStates(str, Enum):
     UNDEFINED = "undefined"
     PENDING = "pending"
-    JOBNING = "jobning"
+    RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
 
 
 class JobState(BaseModel):
-    status: TaskStates = TaskStates.UNDEFINED
-    progress: int = confloat(ge=0, le=100)
-    started_at: datetime
-    stopped_at: Union[datetime, None] = None
+    status: TaskStates
+    progress: conint(ge=0, le=100) = 0
+    submitted_at: datetime
+    started_at: Optional[datetime] = None
+    stopped_at: Optional[datetime] = None
 
 
-class SolverInput(BaseModel):
-    key: KeyIdentifier
-    content_type: str
-    title: Optional[str] = None
+class SolverPort(BaseModel):
+    name: KeyIdentifier = Field(
+        ...,
+        description="Name given to the input/output in solver specs (see solver metadata.yml)",
+    )
+
+    # TODO: define more specifically
+    #   - api/specs/common/schemas/node-meta-v0.0.1.json
+    #   - http://www.iana.org/assignments/media-types/media-types.xhtml
+    type: constr(
+        strict=True,
+        regex=r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$",
+    ) = Field(None, description="Data type expected on this input/ouput")
+
+    title: Optional[str] = Field(
+        None, description="Short human readable name to identify input/output"
+    )
 
 
-class JobInput(SolverInput):
-    value: Union[float, str, int, None] = None
-    value_url: Optional[HttpUrl] = None
+class JobInput(SolverPort):
+    value: Union[float, str, int, HttpUrl, None] = None
 
     # TODO: validate one or the other but not both
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "T",
+                "content_type": "number",
+                "title": "Temperature",
+                "value": "33",
+            }
+        }
 
-class SolverOutput(BaseModel):
-    content_type: str
-    key: KeyIdentifier
-    title: Optional[str] = None
 
+class JobOutput(SolverPort):
+    status: TaskStates = Field(
+        ..., description="State towards completion of this output"
+    )
+    value: Union[float, str, int, HttpUrl, None] = Field(
+        ..., description="Result value in this output"
+    )
 
-class JobOutput(SolverOutput):
-    status: TaskStates = TaskStates.UNDEFINED  # every output can
-    value: Optional[Union[float, str, int]] = None
-    value_url: Optional[HttpUrl] = None
+    # TODO: ???
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "SAR",
+                "content_type": "data:application/hdf5",
+                "title": "SAR field output file",
+                "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
+            }
+        }
