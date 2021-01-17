@@ -70,8 +70,8 @@ class Nodeports(BaseModel):
                 # ensure we do not get pydantic types for hashing here
                 if isinstance(payload, BaseModel):
                     payload = payload.dict(by_alias=True, exclude_unset=True)
-
-                io_payload[port_type][port_key] = payload
+                if payload is not None:
+                    io_payload[port_type][port_key] = payload
 
         log.debug("io_payload generated is %s", pformat(io_payload))
         block_string = json.dumps(io_payload).encode("utf-8")

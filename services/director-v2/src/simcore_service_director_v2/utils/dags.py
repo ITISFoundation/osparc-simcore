@@ -93,20 +93,21 @@ def _compute_node_hash(
     # resolve the port links if any
     resolved_inputs = {}
     for input_key, input_value in node_inputs.items():
+        payload = input_value
         if isinstance(input_value, PortLink):
             # let's resolve the entry
             previous_node = nodes_data_view[str(input_value.node_uuid)]
             previous_node_outputs = previous_node.get("outputs", {})
-            resolved_inputs[input_key] = previous_node_outputs.get(input_value.output)
-        else:
-            resolved_inputs[input_key] = input_value
+            payload = previous_node_outputs.get(input_value.output)
+        if payload is not None:
+            resolved_inputs[input_key] = payload
 
     io_payload = {"inputs": resolved_inputs, "outputs": node_outputs}
 
     class PydanticEncoder(json.JSONEncoder):
         def default(self, o):
             if isinstance(o, BaseModel):
-                return o.json()
+                return o.dict(by_alias=True, exclude_unset=True)
             return json.JSONEncoder.default(self, o)
 
     block_string = json.dumps(io_payload, cls=PydanticEncoder).encode("utf-8")
@@ -124,7 +125,12 @@ def _node_outdated(
     for output_port in node["outputs"]:
         if output_port is None:
             return True
-    # ok so we have outputs, but maybe the inputs are old? let's compute the node hash and compare with the saved one
+    # check if the previous node (if any) are dirty... in which case this one is too
+    for input_port in node["inputs"].values():
+        if isinstance(input_port, PortLink):
+            if is_node_dirty(nodes_data_view, input_port.node_uuid):
+                return True
+    # maybe our inputs changed? let's compute the node hash and compare with the saved one
     computed_hash = _compute_node_hash(nodes_data_view, node_id)
     return computed_hash != node["run_hash"]
 
@@ -138,7 +144,11 @@ def create_minimal_computational_graph_based_on_selection(
 
     # first pass, find the nodes that are dirty (outdated)
     for node in nx.topological_sort(full_dag_graph):
-        if node in selected_nodes_str or _node_outdated(nodes_data_view, node):
+        if (
+            node in selected_nodes_str
+            or _node_outdated(nodes_data_view, node)
+            and _node_computational(nodes_data_view[node]["key"])
+        ):
             mark_node_dirty(nodes_data_view, node)
 
     # now we want all the outdated nodes that are in the tree from the selected nodes
