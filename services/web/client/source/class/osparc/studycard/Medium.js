@@ -211,8 +211,7 @@ qx.Class.define("osparc.studycard.Medium", {
       return osparc.studycard.Utils.createQuality(this.getStudy());
     },
 
-    __createThumbnail: function(maxWidth) {
-      const maxHeight = 150;
+    __createThumbnail: function(maxWidth, maxHeight = 150) {
       return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
