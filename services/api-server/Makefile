@@ -28,7 +28,8 @@ run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for 
 	# start app (under $<)
 	uvicorn simcore_service_api_server.__main__:the_app \
 		--reload --reload-dir $(SRC_DIR) \
-		--port=8000 --host=0.0.0.0
+		--port=8000 --host=0.0.0.0 \
+		--log-level debug
 
 
 .PHONY: db-tables
