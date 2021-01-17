@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 from pathlib import Path
+from pprint import pformat
 from typing import Any, Callable, Coroutine, Type
 
 from models_library.projects_nodes_io import PortLink
@@ -52,24 +53,31 @@ class Nodeports(BaseModel):
 
     @property
     async def run_hash(self) -> str:
-        # resolve the port links if any
+        log.debug("Getting run_hash")
+        # resolve the port links if any and get only the payload
         io_payload = {}
         for port_type in ["inputs", "outputs"]:
             io_payload[port_type] = {}
-            for port_key, port in (await getattr(self, port_type)).items():
+            for port_key, port in (getattr(self, f"internal_{port_type}")).items():
+                payload = port.value
                 if isinstance(port.value, PortLink):
                     # in case of a port link we do resolve the entry so we have the real value for the hashing
                     linked_nodeports = await self._node_ports_creator_cb(
                         port.value.node_uuid
                     )
-                    io_payload[port_type][port_key] = (await linked_nodeports.outputs)[
-                        port.value.output
-                    ].value
-                else:
-                    io_payload[port_type][port_key] = port.value
+                    payload = (await linked_nodeports.outputs)[port.value.output].value
 
+                # ensure we do not get pydantic types for hashing here
+                if isinstance(payload, BaseModel):
+                    payload = payload.dict(by_alias=True, exclude_unset=True)
+
+                io_payload[port_type][port_key] = payload
+
+        log.debug("io_payload generated is %s", pformat(io_payload))
         block_string = json.dumps(io_payload).encode("utf-8")
+        log.debug("block string generated is %s", block_string)
         raw_hash = hashlib.sha256(block_string)
+        log.debug("generated hash %s", raw_hash)
         return raw_hash.hexdigest()
 
     async def get(self, item_key: str) -> ItemConcreteValue:
