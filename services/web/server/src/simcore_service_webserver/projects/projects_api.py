@@ -376,17 +376,6 @@ async def update_project_node_outputs(
         if current_outputs[key] != new_outputs[key]:
             changed_keys.append(key)
 
-    # FIXME: this should be reviewed @maiz. how is an output file defined. I think we have several flavours.
-    for output_key in new_outputs.keys():
-        if not isinstance(new_outputs[output_key], dict):
-            continue
-        if "path" in new_outputs[output_key]:
-            # file_id is of type study_id/node_id/file.ext
-            file_id = new_outputs[output_key]["path"]
-            study_id, _, file_ext = file_id.split("/")
-            new_outputs[output_key]["dataset"] = study_id
-            new_outputs[output_key]["label"] = file_ext
-
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
     updated_project["state"] = await get_project_state_for_user(
