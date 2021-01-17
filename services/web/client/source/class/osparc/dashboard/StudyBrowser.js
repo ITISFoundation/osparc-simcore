@@ -306,6 +306,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       minStudyData["name"] = title;
       minStudyData["description"] = "";
+      osparc.component.metadata.Quality.attachQualityToObject(minStudyData);
       this.__createStudy(minStudyData, null);
     },
 
