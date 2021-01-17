@@ -258,6 +258,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
                 "y": 50
               }
             };
+            osparc.component.metadata.Quality.attachQualityToObject(minStudyData);
             store.getInaccessibleServices(minStudyData)
               .then(inaccessibleServices => {
                 if (inaccessibleServices.length) {
@@ -311,6 +312,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           osparc.data.Resources.fetch("studies", "postFromTemplate", params)
             .then(studyData => {
               this._hideLoadingPage();
+              osparc.component.metadata.Quality.attachQualityToObject(studyData);
               this.__startStudy(studyData["uuid"]);
             })
             .catch(err => {
