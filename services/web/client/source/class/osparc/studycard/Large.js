@@ -57,10 +57,6 @@ qx.Class.define("osparc.studycard.Large", {
   members: {
     __studyData: null,
 
-    checkResize: function(bounds) {
-      this.__rebuildLayout(bounds.width);
-    },
-
     __setUpdatedData: function(studyData) {
       if (studyData && studyData instanceof Object) {
         this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
