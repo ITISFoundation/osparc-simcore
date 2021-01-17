@@ -11,7 +11,7 @@ from ..._meta import api_vtag
 from ...models.schemas.files import FileUploaded
 from ...modules.storage import StorageApi
 from ..dependencies.services import get_api_client
-from .files_fake import FAKE
+from .files_faker import FAKE
 
 router = APIRouter()
 

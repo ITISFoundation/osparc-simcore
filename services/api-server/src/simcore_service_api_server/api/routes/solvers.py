@@ -14,7 +14,7 @@ from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverImageName
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client
-from .solvers_fake import FAKE
+from .solvers_faker import FAKE
 
 # from urllib.request import pathname2url
 # from fastapi.responses import RedirectResponse
