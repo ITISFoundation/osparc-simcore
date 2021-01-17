@@ -185,11 +185,11 @@ qx.Class.define("osparc.studycard.Large", {
       }, {
         label: this.tr("Classifiers"),
         view: this.__createClassifiers(),
-        action: {
+        action: (this.__studyData["classifiers"].length || this.__isOwner()) ? {
           button: osparc.utils.Utils.getViewButton(),
           callback: this.__openClassifiers,
           ctx: this
-        }
+        } : null
       }, {
         label: this.tr("Quality"),
         view: this.__createQuality(),
@@ -295,12 +295,18 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openClassifiers: function() {
-      const classifiersEditor = new osparc.component.metadata.ClassifiersEditor(this.__studyData);
-      const title = this.tr("Classifiers");
-      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateResourceClassifiers", () => {
-        this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
-      }, this);
+      if (this.__isOwner()) {
+        const classifiersEditor = new osparc.component.metadata.ClassifiersEditor(this.__studyData);
+        const title = this.tr("Classifiers");
+        osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
+        classifiersEditor.addListener("updateResourceClassifiers", () => {
+          this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
+        }, this);
+      } else {
+        const classifiersEditor = new osparc.component.metadata.ClassifiersViewer(this.__studyData);
+        const title = this.tr("Classifiers");
+        osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
+      }
     },
 
     __openQuality: function() {
