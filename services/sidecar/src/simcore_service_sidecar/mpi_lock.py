@@ -14,9 +14,8 @@ import datetime
 import logging
 import multiprocessing
 import os
-from typing import Any, Callable, Optional, Tuple
 
-from aioredlock import Aioredlock, Lock, LockError
+from aioredlock import Aioredlock, LockError
 
 from . import config
 
@@ -28,50 +27,12 @@ if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":  # pragma: no cover
 logger = logging.getLogger(__name__)
 
 
-async def _retry_for_result(
-    result_validator: Callable[[Any], Any], coroutine_factory: Callable
-) -> Tuple[bool, Any]:
-    """
-    Will execute the given callback until the expected result is reached.
-    Between each retry it will wait 1/5 of REDLOCK_REFRESH_INTERVAL_SECONDS
-    """
-    sleep_interval = config.REDLOCK_REFRESH_INTERVAL_SECONDS / 5.0
-    elapsed = 0.0
-    start = datetime.datetime.utcnow()
-
-    while elapsed < config.REDLOCK_REFRESH_INTERVAL_SECONDS:
-        result = await coroutine_factory()
-        if result_validator(result):
-            return True, result
-        await asyncio.sleep(sleep_interval)
-        elapsed = (datetime.datetime.utcnow() - start).total_seconds()
-
-    return False, None
-
-
-async def _try_to_acquire_lock(
-    lock_manager: Aioredlock, resource_name: str
-) -> Optional[Tuple[bool, Lock]]:
-    # Try to acquire the lock:
-    try:
-        return await lock_manager.lock(
-            resource_name, lock_timeout=config.REDLOCK_REFRESH_INTERVAL_SECONDS
-        )
-    except LockError:
-        pass
-
-    return None
-
-
 async def _wrapped_acquire_and_extend_lock_worker(
     reply_queue: multiprocessing.Queue, cpu_count: int
 ) -> None:
     try:
         # if the lock is acquired the above function will block here
         await _acquire_and_extend_lock_forever(reply_queue, cpu_count)
-    except Exception:  # pylint: disable=broad-except
-        logger.exception("An exception ocurred while trying to acquire the mpi lock")
-        reply_queue.put(False)
     finally:
         # if the _acquire_and_extend_lock_forever function returns
         # the lock was not acquired, need to make sure the acquire_mpi_lock
@@ -79,6 +40,7 @@ async def _wrapped_acquire_and_extend_lock_worker(
         reply_queue.put(False)
 
 
+# trap lock_error
 async def _acquire_and_extend_lock_forever(
     reply_queue: multiprocessing.Queue, cpu_count: int
 ) -> None:
@@ -86,36 +48,40 @@ async def _acquire_and_extend_lock_forever(
     lock_manager = Aioredlock([config.CELERY_CONFIG.redis.dsn])
     logger.info("Will try to acquire an mpi_lock")
 
-    def is_locked_factory() -> bool:
-        return lock_manager.is_locked(resource_name)
+    sleep_interval = config.REDLOCK_REFRESH_INTERVAL_SECONDS / 5.0
+    elapsed = 0.0
+    start = datetime.datetime.utcnow()
 
-    is_lock_free, _ = await _retry_for_result(
-        result_validator=lambda x: x is False,
-        coroutine_factory=is_locked_factory,
-    )
+    lock = None
 
-    if not is_lock_free:
-        # it was not possible to acquire the lock
+    while elapsed < config.REDLOCK_REFRESH_INTERVAL_SECONDS:
+        try:
+            lock = await lock_manager.lock(
+                resource_name, lock_timeout=config.REDLOCK_REFRESH_INTERVAL_SECONDS
+            )
+            if lock.valid:
+                break
+        except LockError:
+            pass
+
+        await asyncio.sleep(sleep_interval)
+        elapsed = (datetime.datetime.utcnow() - start).total_seconds()
+
+    if lock is None or not lock.valid:
+        # lock is invalid no need to keep the background process alive
         return
 
-    def try_to_acquire_lock_factory() -> bool:
-        return _try_to_acquire_lock(lock_manager, resource_name)
-
-    # lock is free try to acquire and start background extention
-    managed_to_acquire_lock, lock = await _retry_for_result(
-        result_validator=lambda x: type(x) == Lock,
-        coroutine_factory=try_to_acquire_lock_factory,
-    )
-
-    reply_queue.put(managed_to_acquire_lock)
-    if not managed_to_acquire_lock:
-        logger.info("No locking extention is required, skipping")
-        return
+    # result of lock acquisition
+    reply_queue.put(lock.valid)
 
     sleep_interval = 0.9 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
     logger.info("Starting lock extention at %s seconds interval", sleep_interval)
     while True:
-        await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
+        try:
+            await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
+        except LockError:
+            logger.warning("There was an error trying to extend the lock")
+
         await asyncio.sleep(sleep_interval)
 
 
