@@ -3,15 +3,9 @@
 # pylint:disable=no-name-in-module
 """
     Tests services/web/server/src/simcore_service_webserver/director/director_api.py which ...
-    - is a ubmodule part of the 'director' app module at the webserver
+    - is a submodule part of the 'director' app module at the webserver
     - provides function interface that simplifies requests to the 'director service'
     - NOTE: was deprecated and  shall use instead 'director-v2' service
-
-
-    - Tests that all requests to director's API comply with openapi specs at api/specs/director/openapi.yaml
-        - paths are correct
-        - i/o are correct
-    - Any changes in the director API interface should make this test fail
 
 """
 import json
@@ -46,7 +40,7 @@ def director_openapi_dir(osparc_simcore_root_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def director_openapi_specs(director_openapi_dir: Path) -> Dict[str, Any]:
-    openapi_path = director_openapi_dir / "openapi.yml"
+    openapi_path = director_openapi_dir / "openapi.yaml"
     openapi_specs = yaml.safe_load(openapi_path.read_text())
     return openapi_specs
 
@@ -86,6 +80,10 @@ def registry_service_model_schema(osparc_simcore_root_dir: Path) -> Dict:
 
 @pytest.fixture(scope="session")
 def model_fake_factory(random_json_from_schema: Callable) -> Callable:
+    """
+    Adapter to create fake data instances of a mo
+    """
+
     def _create(schema: Dict, **override_attrs):
         model_instance = random_json_from_schema(json.dumps(schema))
         model_instance.update(override_attrs)
@@ -124,9 +122,6 @@ def project_nodes():
             ":"
         ),
     ].copy()
-
-
-# -------------------
 
 
 @pytest.fixture
@@ -344,8 +339,20 @@ def test_director_openapi_specs(director_openapi_specs):
     # do it so we resign ourselves to doing it by hand
     #
     assert "get" in director_openapi_specs["paths"]["/running_interactive_services"]
-    assert "delete" in director_openapi_specs["paths"]["/running_interactive_services"]
     assert "post" in director_openapi_specs["paths"]["/running_interactive_services"]
+
+    assert (
+        "delete"
+        in director_openapi_specs["paths"][
+            "/running_interactive_services/{service_uuid}"
+        ]
+    )
+    assert (
+        "get"
+        in director_openapi_specs["paths"][
+            "/running_interactive_services/{service_uuid}"
+        ]
+    )
 
 
 async def test_director_workflow(
