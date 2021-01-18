@@ -59,8 +59,10 @@ qx.Class.define("osparc.dashboard.SideSearch", {
         marginLeft: -12,
         marginTop: -5
       });
-      osparc.store.Store.getInstance().addListener("changeClassifiers", e => {
-        classifier.recreateTree();
+      osparc.store.Store.getInstance().addListener("changeClassifiers", () => {
+        if (osparc.auth.Manager.getInstance().isLoggedIn()) {
+          classifier.recreateTree();
+        }
       }, this);
       this._add(classifier, {
         flex: 1
