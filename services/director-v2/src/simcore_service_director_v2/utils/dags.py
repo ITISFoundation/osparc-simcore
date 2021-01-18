@@ -1,14 +1,11 @@
-import hashlib
-import json
 import logging
-from copy import deepcopy
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 
 import networkx as nx
 from models_library.projects import Workbench
-from models_library.projects_nodes import Inputs, NodeID, Outputs
+from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import PortLink
-from pydantic.main import BaseModel
+from models_library.utils.nodes import compute_node_hash
 
 from .computations import NodeClass, to_node_class
 from .logging_utils import log_decorator
@@ -85,36 +82,6 @@ def _node_computational(node_key: str) -> bool:
     return to_node_class(node_key) == NodeClass.COMPUTATIONAL
 
 
-def _compute_node_hash(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> str:
-    node_inputs = nodes_data_view[str(node_id)]["inputs"]
-    node_outputs = nodes_data_view[str(node_id)]["outputs"]
-    # resolve the port links if any
-    resolved_inputs = {}
-    for input_key, input_value in node_inputs.items():
-        payload = input_value
-        if isinstance(input_value, PortLink):
-            # let's resolve the entry
-            previous_node = nodes_data_view[str(input_value.node_uuid)]
-            previous_node_outputs = previous_node.get("outputs", {})
-            payload = previous_node_outputs.get(input_value.output)
-        if payload is not None:
-            resolved_inputs[input_key] = payload
-
-    io_payload = {"inputs": resolved_inputs, "outputs": node_outputs}
-
-    class PydanticEncoder(json.JSONEncoder):
-        def default(self, o):
-            if isinstance(o, BaseModel):
-                return o.dict(by_alias=True, exclude_unset=True)
-            return json.JSONEncoder.default(self, o)
-
-    block_string = json.dumps(io_payload, cls=PydanticEncoder).encode("utf-8")
-    raw_hash = hashlib.sha256(block_string)
-    return raw_hash.hexdigest()
-
-
 def _node_outdated(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
@@ -131,7 +98,10 @@ def _node_outdated(
             if is_node_dirty(nodes_data_view, input_port.node_uuid):
                 return True
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    computed_hash = _compute_node_hash(nodes_data_view, node_id)
+    def other_node_cb(node_id: NodeID) -> Dict[str, Any]:
+        return nodes_data_view[str(node_id)]
+
+    computed_hash = compute_node_hash(node, other_node_cb)
     return computed_hash != node["run_hash"]
 
 

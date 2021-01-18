@@ -312,8 +312,6 @@ async def test_get_value_from_previous_node(
     assert isinstance(input_value, item_pytype)
     assert await (await PORTS.inputs)["in_15"].get() == item_value
 
-    assert await PORTS.run_hash
-
 
 @pytest.mark.parametrize(
     "item_type, item_value, item_pytype",

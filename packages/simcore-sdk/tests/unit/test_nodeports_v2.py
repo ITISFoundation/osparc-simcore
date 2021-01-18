@@ -67,8 +67,6 @@ async def test_nodeports_auto_updates(
     node_outputs = await node_ports.outputs
     assert node_outputs == updated_outputs if auto_update else original_outputs
 
-    assert await node_ports.run_hash
-
 
 async def test_node_ports_accessors(
     mock_db_manager: Callable,

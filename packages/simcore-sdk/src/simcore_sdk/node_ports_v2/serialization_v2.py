@@ -1,9 +1,12 @@
+import asyncio
 import json
 import logging
 from pprint import pformat
 from typing import Any, Dict, Set
 
 from aiopg.sa.result import RowProxy
+from models_library.projects_nodes import NodeID
+from models_library.utils.nodes import compute_node_hash
 
 from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import InvalidProtocolError
@@ -77,12 +80,28 @@ async def dump(nodeports: Nodeports) -> None:
         exclude_unset=True,
     )
 
+    node_io = {
+        "inputs": nodeports.internal_inputs,
+        "outputs": nodeports.internal_outputs,
+    }
+
+    def other_node_io_cb(node_id: NodeID) -> Dict[str, Any]:
+        other_nodeport = asyncio.get_event_loop().run_until_complete(
+            load(nodeports.db_manager, node_id)
+        )
+        return {
+            "inputs": other_nodeport.internal_inputs,
+            "outputs": other_nodeport.internal_outputs,
+        }
+
+    run_hash = compute_node_hash(node_io, other_node_io_cb)
+
     # convert to DB
     port_cfg = {
         "schema": {"inputs": {}, "outputs": {}},
         "inputs": {},
         "outputs": {},
-        "run_hash": await nodeports.run_hash,
+        "run_hash": run_hash,
     }
     for port_type in ["inputs", "outputs"]:
         for port_key, port_values in _nodeports_cfg[port_type].items():
