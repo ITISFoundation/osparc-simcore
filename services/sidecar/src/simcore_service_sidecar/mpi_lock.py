@@ -63,7 +63,7 @@ async def _try_to_acquire_lock(
     return None
 
 
-async def wrapped_acquire_and_extend_lock_worker(
+async def _wrapped_acquire_and_extend_lock_worker(
     reply_queue: multiprocessing.Queue, cpu_count: int
 ) -> None:
     try:
@@ -122,7 +122,7 @@ async def _acquire_and_extend_lock_forever(
 def _process_worker(queue: multiprocessing.Queue, cpu_count: int) -> None:
     logger.info("Starting background process for mpi lock result")
     asyncio.get_event_loop().run_until_complete(
-        wrapped_acquire_and_extend_lock_worker(queue, cpu_count)
+        _wrapped_acquire_and_extend_lock_worker(queue, cpu_count)
     )
     logger.info("Background asyncio task finished. Background process will despawn.")
 
