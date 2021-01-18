@@ -15,11 +15,9 @@
 
 ************************************************************************ */
 
-// based on CheckboxTree.js
-// ToDo convert this Class into a Mixin
-
 qx.Class.define("osparc.ui.tree.ClassifiersTree", {
   extend: qx.ui.tree.VirtualTree,
+
   construct: function(data) {
     this.base(arguments, this.__createModel(data), "label", "children", "open");
     this.set({
@@ -29,8 +27,7 @@ qx.Class.define("osparc.ui.tree.ClassifiersTree", {
         },
         bindItem: function(controller, item, id) {
           controller.bindDefaultProperties(item, id);
-          controller.bindProperty("description", "description", null, item, id);
-          controller.bindProperty("url", "url", null, item, id);
+          osparc.ui.tree.MHintInTree.bindHintProps(controller, item, id);
         },
         configureItem: function(item) {
           item.setSelectable(false);
