@@ -18,6 +18,8 @@ pytest_plugins = [
     "pytest_simcore.rabbit_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.minio_service",
+    "pytest_simcore.simcore_services",
+    "pytest_simcore.redis_service",
     "pytest_simcore.simcore_storage_service",
 ]
 log = logging.getLogger(__name__)
