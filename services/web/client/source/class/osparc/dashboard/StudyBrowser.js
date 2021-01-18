@@ -99,9 +99,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return new Promise((resolve, reject) => {
           osparc.data.Resources.get("studies", null, false)
             .then(studies => {
-              studies.forEach(study => {
-                osparc.component.metadata.Quality.attachQualityToObject(study);
-              });
               this._resetStudiesList(studies);
               this.resetSelection();
               resolve(studies);
@@ -306,7 +303,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       minStudyData["name"] = title;
       minStudyData["description"] = "";
-      osparc.component.metadata.Quality.attachQualityToObject(minStudyData);
       this.__createStudy(minStudyData, null);
     },
 
