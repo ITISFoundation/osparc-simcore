@@ -24,7 +24,11 @@ qx.Class.define("osparc.utils.Classifiers", {
   type: "static",
 
   statics: {
-    getClassifiersAsTree: function(reload = false) {
+    /**
+      * @param reload {Boolean} Whether Classifiers need to be reloaded
+      * @param filtered {Array} Only the Classifiers included in this array will be added to the tree
+      */
+    getClassifiersAsTree: function(reload = false, filtered = null) {
       return new Promise((resolve, reject) => {
         const rootData = {
           label: "root",
@@ -36,7 +40,12 @@ qx.Class.define("osparc.utils.Classifiers", {
             if (idxs.length) {
               // Tree-ify
               const tree = {};
-              idxs.forEach(idx => this.__buildTree(classifiers, idx, classifiers[idx].key.split("::"), tree));
+              idxs.forEach(idx => {
+                const classifier = classifiers[idx];
+                if (filtered === null || filtered.includes(classifier["classifier"])) {
+                  this.__buildTree(classifiers, idx, classifier["key"].split("::"), tree);
+                }
+              }, this);
               rootData.children.push(...this.__virtualTree(tree));
             }
             resolve(rootData);
