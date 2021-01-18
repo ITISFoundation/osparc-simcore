@@ -34,7 +34,6 @@ from ...utils.computations import (
     is_pipeline_stopped,
 )
 from ...utils.dags import (
-    create_complete_computational_dag_graph,
     create_complete_dag_graph,
     create_minimal_computational_graph_based_on_selection,
 )
@@ -119,18 +118,23 @@ async def create_computation(
 
         # create the complete DAG graph
         complete_dag_graph = create_complete_dag_graph(project.workbench)
-        # create the computational DAG
-        dag_graph = create_complete_computational_dag_graph(project.workbench)
+        # find the minimal viable graph to be run
+        dag_graph = await create_minimal_computational_graph_based_on_selection(
+            complete_dag_graph, job.subgraph or [], job.force_restart
+        )
+
         # validate DAG
         if not nx.is_directed_acyclic_graph(dag_graph):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Project {job.project_id} is not a valid directed acyclic graph!",
             )
-        # get a subgraph if needed
-        if job.subgraph:
-            dag_graph = await create_minimal_computational_graph_based_on_selection(
-                complete_dag_graph, job.subgraph
+
+        if not dag_graph.nodes():
+            # there is nothing else to be run here, so we are done
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Project {job.project_id} has no computational services",
             )
 
         # ok so put the tasks in the db
@@ -144,11 +148,6 @@ async def create_computation(
         )
 
         if job.start_pipeline:
-            if not dag_graph.nodes():
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Project {job.project_id} has no computational services",
-                )
             # trigger celery
             task = celery_client.send_computation_task(job.user_id, job.project_id)
             background_tasks.add_task(background_on_message, task)

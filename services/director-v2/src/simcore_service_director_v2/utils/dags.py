@@ -13,11 +13,43 @@ from .logging_utils import log_decorator
 logger = logging.getLogger(__file__)
 
 
-@log_decorator(logger=logger)
-def find_entrypoints(graph: nx.DiGraph) -> List[NodeID]:
-    entrypoints = [n for n in graph.nodes if not list(graph.predecessors(n))]
-    logger.debug("the entrypoints of the graph are %s", entrypoints)
-    return entrypoints
+def _mark_node_dirty(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+):
+    nodes_data_view[str(node_id)]["dirty"] = True
+
+
+def _is_node_dirty(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+) -> bool:
+    return nodes_data_view[str(node_id)].get("dirty", False)
+
+
+def _node_computational(node_key: str) -> bool:
+    return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+
+
+async def _node_outdated(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+) -> bool:
+    node = nodes_data_view[str(node_id)]
+    # if the node has no output it is outdated for sure
+    if not node["outputs"]:
+        return True
+    for output_port in node["outputs"]:
+        if output_port is None:
+            return True
+    # check if the previous node (if any) are dirty... in which case this one is too
+    for input_port in node["inputs"].values():
+        if isinstance(input_port, PortLink):
+            if _is_node_dirty(nodes_data_view, input_port.node_uuid):
+                return True
+    # maybe our inputs changed? let's compute the node hash and compare with the saved one
+    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+        return nodes_data_view[str(node_id)]
+
+    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
+    return computed_hash != node["run_hash"]
 
 
 @log_decorator(logger=logger)
@@ -43,95 +75,51 @@ def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
 
 
 @log_decorator(logger=logger)
-def create_complete_computational_dag_graph(workbench: Workbench) -> nx.DiGraph:
-    """creates a graph containing only computational nodes"""
-    dag_graph = nx.DiGraph()
-    for node_id, node in workbench.items():
-        if _node_computational(node.key):
-            dag_graph.add_node(
-                node_id,
-                name=node.label,
-                key=node.key,
-                version=node.version,
-                inputs=node.inputs,
-                run_hash=node.run_hash,
-                outputs=node.outputs,
-            )
-            for input_node_id in node.input_nodes:
-                predecessor_node = workbench.get(str(input_node_id))
-                if predecessor_node and _node_computational(predecessor_node.key):
-                    dag_graph.add_edge(str(input_node_id), node_id)
-
-    return dag_graph
-
-
-def mark_node_dirty(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-):
-    nodes_data_view[str(node_id)]["dirty"] = True
-
-
-def is_node_dirty(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
-    # FIXME: this fails if the node we check is not a computational one!!!
-    return nodes_data_view[str(node_id)].get("dirty", False)
-
-
-def _node_computational(node_key: str) -> bool:
-    return to_node_class(node_key) == NodeClass.COMPUTATIONAL
-
-
-async def _node_outdated(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
-    node = nodes_data_view[str(node_id)]
-    # if the node has no output it is outdated for sure
-    if not node["outputs"]:
-        return True
-    for output_port in node["outputs"]:
-        if output_port is None:
-            return True
-    # check if the previous node (if any) are dirty... in which case this one is too
-    for input_port in node["inputs"].values():
-        if isinstance(input_port, PortLink):
-            if is_node_dirty(nodes_data_view, input_port.node_uuid):
-                return True
-    # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
-        return nodes_data_view[str(node_id)]
-
-    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
-    return computed_hash != node["run_hash"]
-
-
-@log_decorator(logger=logger)
 async def create_minimal_computational_graph_based_on_selection(
-    full_dag_graph: nx.DiGraph, selected_nodes: List[NodeID]
+    full_dag_graph: nx.DiGraph, selected_nodes: List[NodeID], force_restart: bool
 ) -> nx.DiGraph:
     nodes_data_view: nx.classes.reportviews.NodeDataView = full_dag_graph.nodes.data()
     selected_nodes_str = [str(n) for n in selected_nodes]
 
     # first pass, find the nodes that are dirty (outdated)
     for node in nx.topological_sort(full_dag_graph):
-        if (
-            node in selected_nodes_str
-            or await _node_outdated(nodes_data_view, node)
-            and _node_computational(nodes_data_view[node]["key"])
+        if node in selected_nodes_str or (
+            _node_computational(nodes_data_view[node]["key"])
+            and await _node_outdated(nodes_data_view, node)
         ):
-            mark_node_dirty(nodes_data_view, node)
+            _mark_node_dirty(nodes_data_view, node)
 
-    # now we want all the outdated nodes that are in the tree from the selected nodes
     minimal_selection_nodes: Set[NodeID] = set()
-    for node in selected_nodes:
+    if not selected_nodes and force_restart:
+        # we do want to re-run everything
         minimal_selection_nodes.update(
-            set(
+            {
                 n
-                for n in nx.bfs_tree(full_dag_graph, str(node), reverse=True)
-                if is_node_dirty(nodes_data_view, n)
-                and _node_computational(nodes_data_view[n]["key"])
-            )
+                for n, _ in nodes_data_view
+                if _node_computational(nodes_data_view[n]["key"])
+            }
         )
+    elif not selected_nodes:
+        # only run the outdated nodes and their descendants
+        minimal_selection_nodes.update(
+            {
+                n
+                for n, _ in nodes_data_view
+                if _node_computational(nodes_data_view[n]["key"])
+                and _is_node_dirty(nodes_data_view, n)
+            }
+        )
+    else:
+        # now we want all the outdated nodes that are in the tree from the selected nodes
+        for node in selected_nodes:
+            minimal_selection_nodes.update(
+                set(
+                    n
+                    for n in nx.bfs_tree(full_dag_graph, str(node), reverse=True)
+                    if _node_computational(nodes_data_view[n]["key"])
+                    and (force_restart or _is_node_dirty(nodes_data_view, n))
+                )
+            )
 
     return full_dag_graph.subgraph(minimal_selection_nodes)
 

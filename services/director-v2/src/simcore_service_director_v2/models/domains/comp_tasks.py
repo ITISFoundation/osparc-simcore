@@ -27,6 +27,9 @@ class ComputationTaskCreate(BaseModel):
         None,
         description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
     )
+    force_restart: Optional[bool] = Field(
+        False, description="if True will force re-running all dependent nodes"
+    )
 
 
 class ComputationTaskStop(BaseModel):

@@ -5,12 +5,13 @@ import json
 # pylint:disable=redefined-outer-name
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import dotenv
 import pytest
 import simcore_service_director_v2
 from fastapi import FastAPI
+from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 from starlette.testclient import TestClient
@@ -92,12 +93,44 @@ def mocks_dir(tests_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def sleepers_workbench_file(mocks_dir: Path) -> Path:
-    file_path = mocks_dir / "4sleepers_workbench.json"
+def fake_workbench_file(mocks_dir: Path) -> Path:
+    file_path = mocks_dir / "fake_workbench.json"
     assert file_path.exists()
     return file_path
 
 
 @pytest.fixture(scope="session")
-def sleepers_workbench(sleepers_workbench_file: Path) -> Dict:
-    return json.loads(sleepers_workbench_file.read_text())
+def fake_workbench(fake_workbench_file: Path) -> Workbench:
+    workbench_dict = json.loads(fake_workbench_file.read_text())
+    workbench = {}
+    for node_id, node_data in workbench_dict.items():
+        workbench[node_id] = Node.parse_obj(node_data)
+    return workbench
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_computational_adjacency_file(mocks_dir: Path) -> Path:
+    file_path = mocks_dir / "fake_workbench_computational_adjacency_list.json"
+    assert file_path.exists()
+    return file_path
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_adjacency(
+    fake_workbench_computational_adjacency_file: Path,
+) -> Dict[str, Any]:
+    return json.loads(fake_workbench_computational_adjacency_file.read_text())
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_complete_adjacency_file(mocks_dir: Path) -> Path:
+    file_path = mocks_dir / "fake_workbench_complete_adj_list.json"
+    assert file_path.exists()
+    return file_path
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_complete_adjacency(
+    fake_workbench_complete_adjacency_file: Path,
+) -> Dict[str, Any]:
+    return json.loads(fake_workbench_complete_adjacency_file.read_text())
