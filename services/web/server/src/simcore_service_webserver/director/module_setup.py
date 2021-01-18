@@ -21,13 +21,12 @@ logger = logging.getLogger(__name__)
     depends=[],
     logger=logger,
 )
-def setup_director(app: web.Application, *, disable_login=False):
-    """Sets up director's subsystem
+def setup_director(
+    app: web.Application, *, disable_login: bool = False, disable_routes: bool = False
+):
+    """Sets up director's app module
 
-    :param app: main application
-    :type app: web.Application
-    :param disable_login: disabled auth requirements for subsystem's rest (for debugging), defaults to False
-    :param disable_login: bool, optional
+    disable_* options are for testing purpuses
     """
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
@@ -39,21 +38,24 @@ def setup_director(app: web.Application, *, disable_login=False):
     app[APP_DIRECTOR_API_KEY] = str(settings.url)
 
     # setup routes ------------
-    specs = app[APP_OPENAPI_SPECS_KEY]
+    if not disable_routes:
+        specs = app[APP_OPENAPI_SPECS_KEY]
 
-    def include_path(tup_object):
-        _method, path, _operation_id, _tags = tup_object
-        return any(tail in path for tail in ["/running_interactive_services"])
+        def include_path(tup_object):
+            _method, path, _operation_id, _tags = tup_object
+            return any(tail in path for tail in ["/running_interactive_services"])
 
-    handlers_dict = {}
+        handlers_dict = {}
 
-    # Disables login_required decorator for testing purposes
-    if disable_login:
-        for name, hnds in handlers_dict.items():
-            if hasattr(hnds, "__wrapped__"):
-                handlers_dict[name] = hnds.__wrapped__
+        # Disables login_required decorator for testing purposes
+        if disable_login:
+            for name, hnds in handlers_dict.items():
+                if hasattr(hnds, "__wrapped__"):
+                    handlers_dict[name] = hnds.__wrapped__
 
-    routes = map_handlers_with_operations(
-        handlers_dict, filter(include_path, iter_path_operations(specs)), strict=True
-    )
-    app.router.add_routes(routes)
+        routes = map_handlers_with_operations(
+            handlers_dict,
+            filter(include_path, iter_path_operations(specs)),
+            strict=True,
+        )
+        app.router.add_routes(routes)

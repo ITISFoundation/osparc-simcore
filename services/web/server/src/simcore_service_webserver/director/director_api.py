@@ -1,3 +1,8 @@
+"""
+    Facade to DIRECTOR service:
+        - collection of functions to perform requests to the DIRECTOR services
+"""
+
 import logging
 import urllib.parse
 from typing import Any, Dict, List, Optional, Tuple
@@ -100,8 +105,11 @@ async def stop_services(
     services = await get_running_interactive_services(
         app, user_id=user_id, project_id=project_id
     )
+
     stop_tasks = [stop_service(app, s["service_uuid"]) for s in services]
-    await logged_gather(*stop_tasks, reraise=False)
+
+    # FIXME: if stop_service is cancelled, it will and is running stop_tasks, it will never cancel!
+    await logged_gather(*stop_tasks, reraise=True)
 
 
 async def get_service_by_key_version(
