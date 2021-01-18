@@ -262,7 +262,7 @@ qx.Class.define("osparc.store.Store", {
         const params = {
           url: osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
         };
-        osparc.data.Resources.getOne("services", params, !reload)
+        osparc.data.Resources.getOne("services", params, null, !reload)
           .then(serviceData => {
             resolve(serviceData);
           });

@@ -356,19 +356,26 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __createManualMenuBtn: function() {
       const manuals = [];
       if (this.__serverStatics && this.__serverStatics.manualMainUrl) {
-        manuals.push([this.tr("User manual"), this.__serverStatics.manualMainUrl]);
+        manuals.push({
+          label: this.tr("User Manual"),
+          icon: "@FontAwesome5Solid/book/22",
+          url: this.__serverStatics.manualMainUrl
+        });
       }
 
       if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraUrl) {
-        manuals.push([this.tr("Z43 manual"), this.__serverStatics.manualExtraUrl]);
+        manuals.push({
+          label: this.tr("Z43 Manual"),
+          icon: "@FontAwesome5Solid/book-medical/22",
+          url: this.__serverStatics.manualExtraUrl
+        });
       }
 
       let control = new qx.ui.core.Widget();
       if (manuals.length === 1) {
         const manual = manuals[0];
-        control = new osparc.ui.form.LinkButton(manual[0], manual[1]).set({
-          appearance: "link-button",
-          font: "text-14"
+        control = new osparc.ui.form.LinkButton(null, manual.icon, manual.url).set({
+          toolTipText: manual.label
         });
       } else if (manuals.length > 1) {
         const menu = new qx.ui.menu.Menu().set({
@@ -376,14 +383,16 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         });
 
         manuals.forEach(manual => {
-          const manualBtn = new qx.ui.menu.Button(manual[0]);
+          const manualBtn = new qx.ui.menu.Button(manual.label);
           manualBtn.addListener("execute", () => {
-            window.open(manual[1]);
+            window.open(manual.url);
           }, this);
           menu.add(manualBtn);
         });
 
-        control = new qx.ui.form.MenuButton(this.tr("Manuals"), null, menu);
+        control = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/book/22", menu).set({
+          toolTipText: this.tr("Manuals")
+        });
       }
       return control;
     },
@@ -411,7 +420,9 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       });
       menu.add(feedbackAnonBtn);
 
-      const feedbackBtn = new qx.ui.form.MenuButton(this.tr("Give us feedback"), null, menu);
+      const feedbackBtn = new qx.ui.form.MenuButton(null, "@FontAwesome5Solid/comments/22", menu).set({
+        toolTipText: this.tr("Give us feedback")
+      });
       return feedbackBtn;
     },
 
