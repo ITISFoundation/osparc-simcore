@@ -99,9 +99,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return new Promise((resolve, reject) => {
           osparc.data.Resources.get("studies", null, false)
             .then(studies => {
-              studies.forEach(study => {
-                osparc.component.metadata.Quality.attachQualityToObject(study);
-              });
               this._resetStudiesList(studies);
               this.resetSelection();
               resolve(studies);
@@ -411,6 +408,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(moreInfoButton);
       }
 
+      const shareStudyButton = this.__getPermissionsMenuButton(studyData);
+      menu.add(shareStudyButton);
+
       if ("quality" in studyData) {
         const qualityButton = this._getQualityMenuButton(studyData);
         menu.add(qualityButton);
@@ -420,9 +420,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (classifiersButton) {
         menu.add(classifiersButton);
       }
-
-      const shareStudyButton = this.__getPermissionsMenuButton(studyData);
-      menu.add(shareStudyButton);
 
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
@@ -457,6 +454,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return selectButton;
     },
 
+    __getPermissionsMenuButton: function(studyData) {
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      permissionsButton.addListener("execute", () => {
+        const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+        const title = this.tr("Share with Collaborators and Organizations");
+        osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+        permissionsView.addListener("updateStudy", e => {
+          const studyId = e.getData();
+          this._reloadStudy(studyId);
+        }, this);
+      }, this);
+      return permissionsButton;
+    },
+
     __getClassifiersMenuButton: function(studyData) {
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
         return null;
@@ -470,27 +481,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __openClassifiers: function(studyData) {
-      const classifiersEditor = new osparc.dashboard.ClassifiersEditor(studyData);
       const title = this.tr("Classifiers");
-      osparc.ui.window.Window.popUpInWindow(classifiersEditor, title, 400, 400);
-      classifiersEditor.addListener("updateResourceClassifiers", e => {
-        const studyId = e.getData();
-        this._reloadStudy(studyId);
-      }, this);
-    },
-
-    __getPermissionsMenuButton: function(studyData) {
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
-      permissionsButton.addListener("execute", () => {
-        const permissionsView = new osparc.component.export.StudyPermissions(studyData);
-        const title = this.tr("Share with Collaborators and Organizations");
-        osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
-        permissionsView.addListener("updateStudy", e => {
+      let classifiers = null;
+      if (osparc.data.model.Study.isOwner(studyData)) {
+        classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
+        classifiers.addListener("updateResourceClassifiers", e => {
           const studyId = e.getData();
           this._reloadStudy(studyId);
         }, this);
-      }, this);
-      return permissionsButton;
+      } else {
+        classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
+      }
+      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __getStudyServicesMenuButton: function(studyData) {

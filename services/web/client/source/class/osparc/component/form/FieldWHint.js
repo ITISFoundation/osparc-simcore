@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.form.FieldWHint", {
           control.getContentElement().addClass("hint-button");
           this._add(control, {
             right: 0,
-            top: 5
+            top: 3
           });
           break;
       }
@@ -93,12 +93,12 @@ qx.Class.define("osparc.component.form.FieldWHint", {
       if (value === "left") {
         this._add(this.__infoButton, {
           left: 0,
-          top: 5
+          top: 3
         });
       } else {
         this._add(this.__infoButton, {
           right: 0,
-          top: 5
+          top: 3
         });
       }
     },
