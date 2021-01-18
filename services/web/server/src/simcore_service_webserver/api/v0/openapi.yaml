@@ -5828,6 +5828,10 @@ paths:
             schema:
               type: object
               properties:
+                force_restart:
+                  type: boolean
+                  default: false
+                  description: if true will force re-running all dependent nodes
                 subgraph:
                   description: The node uuids selected for running a partial pipeline
                   type: array
