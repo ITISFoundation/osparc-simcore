@@ -38,13 +38,16 @@ qx.Class.define("osparc.component.metadata.ClassifiersViewer", {
       const selectedClassifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
       osparc.utils.Classifiers.getClassifiersAsTree(false, selectedClassifiers)
         .then(classifiers => {
+          this._removeAll();
+          let control = null;
           if (classifiers && classifiers.children.length) {
-            const tree = new osparc.ui.tree.ClassifiersTree(classifiers);
-            this._removeAll();
-            this._add(tree, {
-              flex: 1
-            });
+            control = new osparc.ui.tree.ClassifiersTree(classifiers);
+          } else {
+            control = new qx.ui.basic.Label(this.tr("No Classifiers assigned"));
           }
+          this._add(control, {
+            flex: 1
+          });
         });
     }
   }
