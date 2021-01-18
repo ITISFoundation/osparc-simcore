@@ -82,7 +82,7 @@ def _node_computational(node_key: str) -> bool:
     return to_node_class(node_key) == NodeClass.COMPUTATIONAL
 
 
-def _node_outdated(
+async def _node_outdated(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = nodes_data_view[str(node_id)]
@@ -98,15 +98,15 @@ def _node_outdated(
             if is_node_dirty(nodes_data_view, input_port.node_uuid):
                 return True
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    def other_node_cb(node_id: NodeID) -> Dict[str, Any]:
+    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
         return nodes_data_view[str(node_id)]
 
-    computed_hash = compute_node_hash(node, other_node_cb)
+    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
     return computed_hash != node["run_hash"]
 
 
 @log_decorator(logger=logger)
-def create_minimal_computational_graph_based_on_selection(
+async def create_minimal_computational_graph_based_on_selection(
     full_dag_graph: nx.DiGraph, selected_nodes: List[NodeID]
 ) -> nx.DiGraph:
     nodes_data_view: nx.classes.reportviews.NodeDataView = full_dag_graph.nodes.data()
@@ -116,7 +116,7 @@ def create_minimal_computational_graph_based_on_selection(
     for node in nx.topological_sort(full_dag_graph):
         if (
             node in selected_nodes_str
-            or _node_outdated(nodes_data_view, node)
+            or await _node_outdated(nodes_data_view, node)
             and _node_computational(nodes_data_view[node]["key"])
         ):
             mark_node_dirty(nodes_data_view, node)

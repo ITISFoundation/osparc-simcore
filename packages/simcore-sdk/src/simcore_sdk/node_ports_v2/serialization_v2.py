@@ -80,21 +80,24 @@ async def dump(nodeports: Nodeports) -> None:
         exclude_unset=True,
     )
 
-    node_io = {
-        "inputs": nodeports.internal_inputs,
-        "outputs": nodeports.internal_outputs,
-    }
-
-    def other_node_io_cb(node_id: NodeID) -> Dict[str, Any]:
-        other_nodeport = asyncio.get_event_loop().run_until_complete(
-            load(nodeports.db_manager, node_id)
+    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+        ports = (
+            nodeports
+            if str(node_id) == nodeports.node_uuid
+            else await load(nodeports.db_manager, str(node_id))
         )
+
         return {
-            "inputs": other_nodeport.internal_inputs,
-            "outputs": other_nodeport.internal_outputs,
+            "inputs": {
+                port_key: port.value for port_key, port in ports.internal_inputs.items()
+            },
+            "outputs": {
+                port_key: port.value
+                for port_key, port in ports.internal_outputs.items()
+            },
         }
 
-    run_hash = compute_node_hash(node_io, other_node_io_cb)
+    run_hash = await compute_node_hash(nodeports.node_uuid, get_node_io_payload_cb)
 
     # convert to DB
     port_cfg = {

@@ -120,9 +120,11 @@ def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
         ),
     ],
 )
-def test_create_minimal_graph(workbench: Workbench, subgraph: Set[str], exp_dag):
+async def test_create_minimal_graph(workbench: Workbench, subgraph: Set[str], exp_dag):
     full_dag_graph: nx.DiGraph = create_complete_dag_graph(workbench)
-    reduced_dag: nx.DiGraph = create_minimal_computational_graph_based_on_selection(
-        full_dag_graph, subgraph
+    reduced_dag: nx.DiGraph = (
+        await create_minimal_computational_graph_based_on_selection(
+            full_dag_graph, subgraph
+        )
     )
     assert nx.to_dict_of_lists(reduced_dag) == exp_dag

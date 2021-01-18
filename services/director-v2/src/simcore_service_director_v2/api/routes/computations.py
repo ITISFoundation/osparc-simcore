@@ -129,7 +129,7 @@ async def create_computation(
             )
         # get a subgraph if needed
         if job.subgraph:
-            dag_graph = create_minimal_computational_graph_based_on_selection(
+            dag_graph = await create_minimal_computational_graph_based_on_selection(
                 complete_dag_graph, job.subgraph
             )
 
