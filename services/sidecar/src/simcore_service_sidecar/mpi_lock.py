@@ -20,7 +20,7 @@ from aioredlock import Aioredlock, Lock, LockError
 
 from . import config
 
-# ptsv cause issues with ProcessPoolExecutor
+# ptsv cause issues with multiprocessing
 # SEE: https://github.com/microsoft/ptvsd/issues/1443
 if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":
     multiprocessing.set_start_method("spawn", True)
