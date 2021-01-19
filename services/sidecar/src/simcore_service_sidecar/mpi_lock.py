@@ -1,15 +1,12 @@
 """
 Try to acquire a lock on the MPI resource.
 
-Due to pour non async implementation aioredlock will be used
+Due to pour non async implementation aioredlock will be used.
+All configuration si specified upfront
 
-How it works:
 
-- Try to acquire a lock the lock in a tight loop for about X seconds.
-- If it works start continues  to update the expiration every X second.
 """
 import asyncio
-import datetime
 import logging
 import multiprocessing
 import os
@@ -44,44 +41,52 @@ async def _acquire_and_extend_lock_forever(
     reply_queue: multiprocessing.Queue, cpu_count: int
 ) -> None:
     resource_name = f"aioredlock:mpi_lock:{cpu_count}"
-    lock_manager = Aioredlock([config.CELERY_CONFIG.redis.dsn])
-    logger.info("Will try to acquire an mpi_lock")
+    endpoint = [
+        {
+            "host": config.CELERY_CONFIG.redis.host,
+            "port": config.CELERY_CONFIG.redis.port,
+            "db": int(config.CELERY_CONFIG.redis.db),
+        }
+    ]
 
-    sleep_interval = config.REDLOCK_REFRESH_INTERVAL_SECONDS / 5.0
-    elapsed = 0.0
-    start = datetime.datetime.utcnow()
+    logger.info("Will try to acquire an mpi_lock on %s", resource_name)
+    logger.info("Connecting to %s", endpoint)
+    lock_manager = Aioredlock(
+        redis_connections=endpoint,
+        retry_count=5,
+        internal_lock_timeout=config.REDLOCK_REFRESH_INTERVAL_SECONDS,
+    )
 
-    lock = None
-
-    while elapsed < config.REDLOCK_REFRESH_INTERVAL_SECONDS:
-        try:
-            lock = await lock_manager.lock(
-                resource_name, lock_timeout=config.REDLOCK_REFRESH_INTERVAL_SECONDS
-            )
-            if lock.valid:
-                break
-        except LockError:
-            pass
-
-        await asyncio.sleep(sleep_interval)
-        elapsed = (datetime.datetime.utcnow() - start).total_seconds()
-
-    if lock is None or not lock.valid:
-        # lock is invalid no need to keep the background process alive
+    # Try to acquire the lock, it will retry it 5 times with
+    # a wait between 0.1 and 0.3 seconds between each try
+    # if the lock is not acquire a LockError is raised
+    try:
+        lock = await lock_manager.lock(resource_name)
+    except LockError:
+        logger.warning("Could not acquire lock on resource %s", resource_name)
+        await lock_manager.destroy()
         return
 
-    # result of lock acquisition
-    reply_queue.put(lock.valid)
+    # the lock was successfully acquired, put the result in the queue
+    reply_queue.put(True)
 
+    # continue renewing the lock at regular intervals
     sleep_interval = 0.9 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
     logger.info("Starting lock extention at %s seconds interval", sleep_interval)
-    while True:
-        try:
-            await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
-        except LockError:
-            logger.warning("There was an error trying to extend the lock")
 
-        await asyncio.sleep(sleep_interval)
+    try:
+        while True:
+            try:
+                await lock_manager.extend(lock)
+            except LockError:
+                logger.warning(
+                    "There was an error trying to extend the lock %s", resource_name
+                )
+
+            await asyncio.sleep(sleep_interval)
+    finally:
+        # in case some other error occurs recycle all connections to redis
+        await lock_manager.destroy()
 
 
 def _process_worker(queue: multiprocessing.Queue, cpu_count: int) -> None:
