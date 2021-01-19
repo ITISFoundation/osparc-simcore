@@ -67,8 +67,9 @@ async def run_in_process_pool(function: Callable, *args: Tuple[Any]) -> Any:
         # making sure this error gets propagated correctly
         raise
     except Exception as e:
-        log.exception(e)
-        raise ExporterException(str(e)) from e
+        reason = str(e)
+        log.warning("During %s call there was an error: %s", function.__name__, reason)
+        raise ExporterException(reason) from e
 
 
 async def zip_folder(project_id: str, input_path: Path) -> Path:
