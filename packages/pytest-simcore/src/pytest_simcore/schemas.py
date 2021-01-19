@@ -4,7 +4,7 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Callable, Dict, Iterable
+from typing import Any, Callable, Dict, Iterable
 
 import pytest
 
@@ -54,9 +54,11 @@ def json_faker_script(script_dir: Path) -> Path:
 
 @pytest.fixture(scope="session")
 def random_json_from_schema(
-    json_faker_script: Path, tmp_path_factory: Path
-) -> Iterable[Callable]:
-    def _generator(json_schema: str) -> Dict:
+    json_faker_script: Path, tmp_path_factory
+) -> Iterable[Callable[[str], Dict[str, Any]]]:
+    # tmp_path_factory fixture: https://docs.pytest.org/en/stable/tmpdir.html
+
+    def _generator(json_schema: str) -> Dict[str, Any]:
         tmp_path = tmp_path_factory.mktemp(__name__)
         schema_path = tmp_path / "schema.json"
 

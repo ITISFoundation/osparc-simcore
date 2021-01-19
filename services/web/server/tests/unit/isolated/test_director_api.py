@@ -314,25 +314,6 @@ def app_mock():
     return app
 
 
-@pytest.mark.skip(reason="dev")
-async def test_aioresponse_mocks(mock_director_service):
-    # NOTE: keep this to tune mock_director_service fixture
-
-    for match in mock_director_service._matches.values():
-        print(
-            match.method,
-            match.url_or_pattern,
-        )
-
-    async with ClientSession() as session:
-        async with session.get(
-            # "http://director:8000/v0/running_interactive_services"
-            "http://director:8001/v0/running_interactive_services?project_id=dc7d6847-a3b7-4905-bbfb-777e3bd433c8&user_id=1"
-        ) as resp:
-            assert resp.status == 200
-            print(await resp.json())
-
-
 def test_director_openapi_specs(director_openapi_specs):
     #
     # At this point in time we cannot afford a more sophisticated way to
