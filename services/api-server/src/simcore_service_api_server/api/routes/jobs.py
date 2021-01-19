@@ -1,9 +1,6 @@
-import functools
-import hashlib
 import logging
-import uuid as uuidlib
-from datetime import datetime
-from typing import Callable, List, Optional
+from contextlib import contextmanager
+from typing import Callable, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,7 +8,7 @@ from starlette import status
 
 from ...models.schemas.solvers import Job, JobInput, JobOutput, JobState, KeyIdentifier
 from ..dependencies.application import get_reverse_url_mapper
-from .jobs_faker import FAKE
+from .jobs_faker import the_fake_impl
 from .solvers import router as solvers_router
 
 logger = logging.getLogger(__name__)
@@ -44,8 +41,7 @@ async def list_jobs(
             outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
             **job,
         )
-        for job in FAKE.user_jobs
-        if job["solver_id"] == str(solver_id)
+        for job in the_fake_impl.iter_jobs(solver_id)
     ]
 
 
@@ -63,19 +59,8 @@ async def create_job(
 
     # TODO: validate inputs against solver specs
     # TODO: create a unique identifier of job based on solver_id and inputs
-    sha = hashlib.sha256(
-        " ".join(input.json() for input in inputs).encode("utf-8")
-    ).hexdigest()
 
-    # TODO: check if job exists already?? Do not consider date??
-    job_id = compose_job_id(solver_id, sha, datetime.utcnow())
-
-    job = dict(
-        job_id=str(job_id),
-        inputs_sha=sha,
-        solver_id=str(solver_id),
-    )
-    FAKE.user_jobs.append(job)
+    job = the_fake_impl.create_job(solver_id, inputs)
 
     return Job(
         solver_url=url_for(
@@ -88,13 +73,24 @@ async def create_job(
     )
 
 
+@solvers_router.post("/{solver_id}/jobs:run", response_model=JobState)
+async def run_job(
+    solver_id: UUID,
+    inputs: List[JobInput] = [],
+):
+    """ create + start job in a single call """
+    job = the_fake_impl.create_job(solver_id, inputs)
+    job_state = the_fake_impl.start_job(job["job_id"])
+    return job_state
+
+
 @router.get("")
 async def list_all_jobs(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ List of all jobs created by user """
-    # TODO: add pagination
-    # similar to ps = process status
+    # TODO: add pagination and filtering (e.g. all active jobs etc)
+    # similar docker ps -a
     return [
         Job(
             solver_url=url_for(
@@ -105,7 +101,7 @@ async def list_all_jobs(
             outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
             **job,
         )
-        for job in FAKE.user_jobs
+        for job in the_fake_impl.iter_jobs()
     ]
 
 
@@ -114,64 +110,72 @@ async def get_job(
     job_id: UUID,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    try:
-        found = next(
-            Job(
-                solver_url=url_for(
-                    "get_solver_by_id",
-                    solver_id=job["solver_id"],
-                ),
-                inspect_url=url_for("inspect_job", job_id=job["job_id"]),
-                outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
-                **job,
-            )
-            for job in FAKE.user_jobs
-            if job["job_id"] == str(job_id)
+    with errors_mapper():
+
+        job = the_fake_impl.job_info[job_id]
+        return Job(
+            solver_url=url_for(
+                "get_solver_by_id",
+                solver_id=job["solver_id"],
+            ),
+            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
+            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
+            **job,
         )
-    except StopIteration as err:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
-    else:
-        return found
 
 
 @router.post("/{job_id}:start", response_model=JobState)
 async def start_job(job_id: UUID):
-    raise NotImplementedError()
-
-
-@router.post("/{job_id}:run", response_model=Job)
-async def run_job(inputs: Optional[List[JobInput]] = None):
-    """ create + start job in a single call """
-    raise NotImplementedError()
+    with errors_mapper():
+        job_state = the_fake_impl.start_job(job_id)
+        return job_state
 
 
 @router.post("/{job_id}:stop", response_model=Job)
-async def stop_job(job_id: UUID):
-    raise NotImplementedError()
+async def stop_job(
+    job_id: UUID,
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    with errors_mapper():
+        job = the_fake_impl.stop_job(job_id)
+        return Job(
+            solver_url=url_for(
+                "get_solver_by_id",
+                solver_id=job["solver_id"],
+            ),
+            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
+            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
+            **job,
+        )
 
 
 @router.post("/{job_id}:inspect", response_model=JobState)
-async def inspect_job(solver_id: UUID):
-    raise NotImplementedError()
+async def inspect_job(job_id: UUID):
+    with errors_mapper():
+        state = the_fake_impl.job_states[job_id]
+        return state
 
 
 @router.get("/{job_id}/outputs", response_model=List[JobOutput])
 async def list_job_outputs(job_id: UUID):
-    raise NotImplementedError()
+    with errors_mapper():
+        outputs = the_fake_impl.job_outputs[job_id]
+        return outputs
 
 
-@router.get("/{job_id}/outputs/{output_key}", response_model=JobOutput)
-async def get_job_output(job_id: UUID, output_key: KeyIdentifier):
-    raise NotImplementedError()
+@router.get("/{job_id}/outputs/{output_name}", response_model=JobOutput)
+async def get_job_output(job_id: UUID, output_name: KeyIdentifier):
+    with errors_mapper((KeyError, StopIteration)):
+        outputs = the_fake_impl.job_outputs[job_id]
+        return next(output for output in outputs if output.name == output_name)
 
 
-# HELPERS ----
-
-NAMESPACE_JOB_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
+# HELPERS ------------
 
 
-@functools.lru_cache()
-def compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
-    # FIXME: this is a temporary solution. Should be image id
-
-    return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
+@contextmanager
+def errors_mapper(to_not_found=KeyError):
+    try:
+        yield
+    except to_not_found as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err

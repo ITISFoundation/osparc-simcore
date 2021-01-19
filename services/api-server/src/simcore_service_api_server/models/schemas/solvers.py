@@ -91,8 +91,13 @@ class JobState(BaseModel):
     status: TaskStates
     progress: conint(ge=0, le=100) = 0
     submitted_at: datetime
-    started_at: Optional[datetime] = None
-    stopped_at: Optional[datetime] = None
+    started_at: Optional[datetime] = Field(
+        None, description="Time snapshot at which the solver starts the simulation"
+    )
+    stopped_at: Optional[datetime] = Field(
+        None,
+        description="Time snapshot at which the solver finished or killed the simulation",
+    )
 
 
 class SolverPort(BaseModel):
