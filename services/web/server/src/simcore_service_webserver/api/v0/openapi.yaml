@@ -10535,7 +10535,7 @@ paths:
         required: false
         schema:
           type: boolean
-    get:
+    post:
       tags:
         - project
       summary: creates an archive of the project and downloads it
