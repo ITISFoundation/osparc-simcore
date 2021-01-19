@@ -60,8 +60,12 @@ def search_for_unzipped_path(search_path: Path) -> Path:
 
 
 async def run_in_process_pool(function: Callable, *args: Tuple[Any]) -> Any:
-    with ProcessPoolExecutor(max_workers=1) as pool:
-        return await asyncio.get_event_loop().run_in_executor(pool, function, *args)
+    try:
+        with ProcessPoolExecutor(max_workers=1) as pool:
+            return await asyncio.get_event_loop().run_in_executor(pool, function, *args)
+    except Exception as e:
+        log.exception(e)
+        raise ExporterException(str(e)) from e
 
 
 async def zip_folder(project_id: str, input_path: Path) -> Path:
@@ -73,17 +77,13 @@ async def zip_folder(project_id: str, input_path: Path) -> Path:
             f"Cannot archive because file already exists '{str(zip_file)}'"
         )
 
-    try:
-        await run_in_process_pool(
-            shutil.make_archive,  # callable
-            Path(input_path.parent) / project_id,  # base_name
-            "zip",  # format
-            input_path.parent,  # root_dir
-            project_id,  # base_dir
-        )
-    except Exception as e:
-        log.exception(e)
-        raise ExporterException(str(e)) from e
+    await run_in_process_pool(
+        shutil.make_archive,  # callable
+        Path(input_path.parent) / project_id,  # base_name
+        "zip",  # format
+        input_path.parent,  # root_dir
+        project_id,  # base_dir
+    )
 
     # compute checksum and rename
     sha256_sum = await checksum(file_path=zip_file, algorithm=Algorithm.SHA256)
@@ -98,15 +98,10 @@ async def zip_folder(project_id: str, input_path: Path) -> Path:
 
 
 async def unzip_folder(input_path: Path) -> Path:
-    try:
-        await run_in_process_pool(
-            shutil.unpack_archive,  # callable
-            str(input_path),  # filename
-            str(input_path.parent),  # extract_dir
-            "zip",  # format
-        )
-    except Exception as e:
-        log.exception(e)
-        raise ExporterException(str(e)) from e
-
+    await run_in_process_pool(
+        shutil.unpack_archive,  # callable
+        str(input_path),  # filename
+        str(input_path.parent),  # extract_dir
+        "zip",  # format
+    )
     return search_for_unzipped_path(input_path.parent)
