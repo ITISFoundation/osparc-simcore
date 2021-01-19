@@ -11,7 +11,7 @@ from ..._meta import api_vtag
 from ...models.schemas.files import FileUploaded
 from ...modules.storage import StorageApi
 from ..dependencies.services import get_api_client
-from .files_faker import FAKE
+from .files_faker import the_fake_impl
 
 router = APIRouter()
 
@@ -26,7 +26,7 @@ async def list_files(
 
     # TODO: pagination
     # raise NotImplementedError()
-    return [metadata for metadata, _ in FAKE.files]
+    return [metadata for metadata, _ in the_fake_impl.files]
 
 
 @router.post(":upload", response_model=FileUploaded)
@@ -48,7 +48,7 @@ async def upload_single_file(
         # TODO: FileResponse automatically computes etag. See how is done
     )
 
-    await FAKE.save(metadata, file)
+    await the_fake_impl.save(metadata, file)
     return metadata
 
 
@@ -63,7 +63,7 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
             content_type=file.content_type,
             hash=await eval_sha256_hash(file),
         )
-        await FAKE.save(metadata, file)
+        await the_fake_impl.save(metadata, file)
         return metadata
 
     uploaded = await asyncio.gather(*[go(f) for f in files])
@@ -74,7 +74,7 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
 async def download_file(file_id: str):
     # TODO: hash or UUID? Ideally like container ids
     try:
-        metadata, file_path = await FAKE.get(file_id)
+        metadata, file_path = await the_fake_impl.get(file_id)
     except KeyError as err:
         raise HTTPException(status.HTTP_404_NOT_FOUND) from err
 
