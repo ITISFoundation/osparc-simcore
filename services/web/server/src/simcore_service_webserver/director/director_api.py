@@ -1,28 +1,27 @@
-# pylint: disable=too-many-arguments
+"""
+    Facade to DIRECTOR service:
+        - collection of functions to perform requests to the DIRECTOR services
+"""
 
 import logging
-import urllib
-from typing import Dict, List, Optional
+import urllib.parse
+from typing import Any, Dict, List, Optional, Tuple
 
-from aiohttp import web
+from aiohttp import ClientSession, web
+from models_library.settings.services_common import ServicesCommonSettings
+from servicelib.client_session import get_client_session
+from servicelib.utils import logged_gather
 from yarl import URL
 
-from servicelib.utils import logged_gather
-
 from . import director_exceptions
-from .config import get_client_session, get_config
-from models_library.settings.services_common import ServicesCommonSettings
+from .config import get_config
 
 log = logging.getLogger(__name__)
 
 
-def _get_director_client(app: web.Application) -> URL:
-    cfg = get_config(app)
+def _get_director_client(app: web.Application) -> Tuple[ClientSession, URL]:
+    cfg: Dict[str, Any] = get_config(app)
 
-    # director service API endpoint
-    # TODO: service API endpoint could be deduced and checked upon setup (e.g. health check on startup)
-    # Use director.
-    # TODO: this is also in app[APP_DIRECTOR_API_KEY] upon startup
     api_endpoint = URL.build(
         scheme="http", host=cfg["host"], port=cfg["port"]
     ).with_path(cfg["version"])
@@ -35,7 +34,7 @@ async def get_running_interactive_services(
     app: web.Application,
     user_id: Optional[str] = None,
     project_id: Optional[str] = None,
-) -> List[Dict]:
+) -> List[Dict[str, Any]]:
     session, api_endpoint = _get_director_client(app)
 
     params = {}
@@ -106,8 +105,11 @@ async def stop_services(
     services = await get_running_interactive_services(
         app, user_id=user_id, project_id=project_id
     )
-    stop_tasks = [stop_service(app, service_uuid) for service_uuid in services]
-    await logged_gather(*stop_tasks, reraise=False)
+
+    stop_tasks = [stop_service(app, s["service_uuid"]) for s in services]
+
+    # FIXME: if stop_service is cancelled, it will and is running stop_tasks, it will never cancel!
+    await logged_gather(*stop_tasks, reraise=True)
 
 
 async def get_service_by_key_version(
