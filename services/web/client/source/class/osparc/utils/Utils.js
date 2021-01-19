@@ -31,7 +31,27 @@ qx.Class.define("osparc.utils.Utils", {
   statics: {
     getEditButton: function() {
       const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
-        allowGrowY: false
+        allowGrowY: false,
+        padding: 3,
+        maxWidth: 20
+      });
+      return button;
+    },
+
+    getViewButton: function() {
+      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/eye/12").set({
+        allowGrowY: false,
+        padding: 3,
+        maxWidth: 20
+      });
+      return button;
+    },
+
+    getCopyButton: function() {
+      const button = new qx.ui.form.Button(null, "@FontAwesome5Solid/copy/12").set({
+        allowGrowY: false,
+        padding: 3,
+        maxWidth: 20
       });
       return button;
     },

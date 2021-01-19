@@ -15,16 +15,16 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.dashboard.ClassifiersEditor", {
+qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(studyData, isStudy = true) {
+  construct: function(studyData) {
     this.base(arguments);
 
-    if (isStudy) {
-      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
-    } else {
+    if (osparc.utils.Resources.isService(studyData)) {
       this.__studyData = osparc.utils.Utils.deepCloneObject(studyData);
+    } else {
+      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
     }
 
     this._setLayout(new qx.ui.layout.VBox(10));
@@ -40,13 +40,34 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
     __studyData: null,
     __classifiersTree: null,
 
-    __buildLayout: function() {
-      this.__addRRIDSection();
-      this.__addClassifiersTree();
-      this.__addButtons();
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "rrid": {
+          control = this.__createRRIDSection();
+          break;
+        }
+        case "classifiers": {
+          control = this.__createClassifiersTree();
+          break;
+        }
+        case "buttons": {
+          control = this.__createButtons();
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
     },
 
-    __addRRIDSection: function() {
+    __buildLayout: function() {
+      this._add(this.getChildControl("rrid"));
+      this._add(this.getChildControl("classifiers"), {
+        flex: 1
+      });
+      this._add(this.getChildControl("buttons"));
+    },
+
+    __createRRIDSection: function() {
       const rridLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
 
       const logo = new qx.ui.basic.Image("osparc/rrid-logo.png").set({
@@ -74,22 +95,20 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
       }, this);
       rridLayout.add(addRRIDClassfierBtn);
 
-      this._add(rridLayout);
+      return rridLayout;
     },
 
-    __addClassifiersTree: function() {
+    __createClassifiersTree: function() {
       const studyData = this.__studyData;
       const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
       const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
       osparc.store.Store.getInstance().addListener("changeClassifiers", e => {
         classifiersTree.recreateTree();
       }, this);
-      this._add(classifiersTree, {
-        flex: 1
-      });
+      return classifiersTree;
     },
 
-    __addButtons: function() {
+    __createButtons: function() {
       const buttons = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
         alignX: "right"
       }));
@@ -98,7 +117,7 @@ qx.Class.define("osparc.dashboard.ClassifiersEditor", {
         this.__saveClassifiers(saveBtn);
       }, this);
       buttons.add(saveBtn);
-      this._add(buttons);
+      return buttons;
     },
 
     __addRRIDClassfier: function(rrid, btn) {

@@ -10,6 +10,7 @@
  */
 qx.Class.define("osparc.ui.tree.CheckboxTree", {
   extend: qx.ui.tree.VirtualTree,
+
   construct: function(data) {
     this.base(arguments, this.__createModel(data), "label", "children", "open");
     const tree = this;
@@ -20,10 +21,9 @@ qx.Class.define("osparc.ui.tree.CheckboxTree", {
         },
         bindItem: function(controller, item, id) {
           controller.bindDefaultProperties(item, id);
-          controller.bindProperty("description", "description", null, item, id);
-          controller.bindProperty("url", "url", null, item, id);
           controller.bindProperty("checked", "checked", null, item, id);
           controller.bindPropertyReverse("checked", "checked", null, item, id);
+          osparc.ui.tree.MHintInTree.bindHintProps(controller, item, id);
         },
         configureItem: function(item) {
           item.addListener("checkboxClicked", () => tree.fireDataEvent("checkedChanged", tree.getChecked()));
