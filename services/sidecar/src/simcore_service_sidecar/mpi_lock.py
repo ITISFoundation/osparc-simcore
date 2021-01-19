@@ -6,8 +6,7 @@ Due to pour non async implementation aioredlock will be used
 How it works:
 
 - Try to acquire a lock the lock in a tight loop for about X seconds.
-- If it works start a task which updates the expiration every X second is spawned.
-- Ensures sleeper can be started as MPI sleeper again.
+- If it works start continues  to update the expiration every X second.
 """
 import asyncio
 import datetime
@@ -19,7 +18,7 @@ from aioredlock import Aioredlock, LockError
 
 from . import config
 
-# ptsv cause issues with multiprocessing
+# ptsvd cause issues with multiprocessing
 # SEE: https://github.com/microsoft/ptvsd/issues/1443
 if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":  # pragma: no cover
     multiprocessing.set_start_method("spawn", True)
