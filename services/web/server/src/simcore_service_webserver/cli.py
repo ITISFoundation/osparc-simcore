@@ -26,7 +26,7 @@ from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
 from .utils import search_osparc_repo_dir
 
-# ptsv cause issues with ProcessPoolExecutor
+# ptsvd cause issues with ProcessPoolExecutor
 # SEE: https://github.com/microsoft/ptvsd/issues/1443
 if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":
     import multiprocessing
