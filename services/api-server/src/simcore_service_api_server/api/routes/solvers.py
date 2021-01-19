@@ -14,7 +14,7 @@ from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverImageName
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client
-from .solvers_faker import FAKE
+from .solvers_faker import the_fake_impl
 
 # from urllib.request import pathname2url
 # from fastapi.responses import RedirectResponse
@@ -42,7 +42,7 @@ async def list_solvers(
             ),
             **data,
         )
-        for data in FAKE.solvers
+        for data in the_fake_impl.solvers
     ]
 
     return sorted(latest_solvers, key=attrgetter("name"))
@@ -54,7 +54,7 @@ async def get_solver_by_id(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     try:
-        data = FAKE.get(str(solver_id))
+        data = the_fake_impl.get(str(solver_id))
         return Solver(
             solver_url=url_for(
                 "get_solver_by_id",
@@ -77,9 +77,9 @@ async def get_solver_by_name_and_version(
 ):
     try:
         if version == LATEST_VERSION:
-            data = FAKE.get_latest(solver_name)
+            data = the_fake_impl.get_latest(solver_name)
         else:
-            data = FAKE.get2(solver_name, version)
+            data = the_fake_impl.get2(solver_name, version)
 
     except KeyError as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err

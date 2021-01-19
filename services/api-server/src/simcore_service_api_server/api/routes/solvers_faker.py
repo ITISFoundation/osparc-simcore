@@ -1,7 +1,10 @@
+from dataclasses import dataclass
+
 import packaging.version
 
 
-class FAKE:
+@dataclass
+class SolversFaker:
     solvers = [
         {
             "uuid": "3197d0df-1506-351c-86f9-a93783c5c306",
@@ -29,31 +32,30 @@ class FAKE:
         },
     ]
 
-    @classmethod
-    def get(cls, uuid):
-        for s in cls.solvers:
+    def get(self, uuid):
+        for s in self.solvers:
             if s["uuid"] == uuid:
                 return s
         raise KeyError()
 
-    @classmethod
-    def get2(cls, name, version):
+    def get2(self, name, version):
         try:
             return next(
                 s
-                for s in cls.solvers
+                for s in self.solvers
                 if s["name"].endswith(name) and s["version"] == version
             )
         except StopIteration as err:
             raise KeyError() from err
 
-    @classmethod
-    def get_all(cls, name):
-        return [s for s in cls.solvers if s["name"].endswith(name)]
+    def get_all(self, name):
+        return [s for s in self.solvers if s["name"].endswith(name)]
 
-    @classmethod
-    def get_latest(cls, name):
-        _all = cls.get_all(name)
+    def get_latest(self, name):
+        _all = self.get_all(name)
         if not _all:
             raise KeyError()
         return sorted(_all, key=lambda s: packaging.version.parse(s["version"]))[-1]
+
+
+the_fake_impl = SolversFaker()
