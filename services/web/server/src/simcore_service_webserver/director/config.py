@@ -6,17 +6,16 @@
 from typing import Dict, Optional, Tuple
 
 import trafaret as T
-from aiohttp import ClientSession
 from aiohttp.web import Application
-from pydantic import AnyHttpUrl, BaseSettings, Field, validator
-
 from models_library.basic_types import PortInt, VersionTag
-from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
+from pydantic import AnyHttpUrl, BaseSettings, Field, validator
+from servicelib.application_keys import APP_CONFIG_KEY
 
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
 CONFIG_SECTION_NAME = "director"
 
+# TODO: deprecate trafaret schema
 schema = T.Dict(
     {
         T.Key("enabled", default=True, optional=True): T.Bool(),
@@ -27,7 +26,7 @@ schema = T.Dict(
         T.Key("port", default=8001): T.ToInt(),
         T.Key("version", default="v0"): T.Regexp(
             regexp=r"^v\d+"
-        ),  # storage API version basepath
+        ),  # director API version basepath
     }
 )
 
@@ -57,10 +56,6 @@ class DirectorSettings(BaseSettings):
 
 def get_config(app: Application) -> Dict:
     return app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
-
-def get_client_session(app: Application) -> ClientSession:
-    return app[APP_CLIENT_SESSION_KEY]
 
 
 def assert_valid_config(app: Application) -> Tuple[Dict, DirectorSettings]:
