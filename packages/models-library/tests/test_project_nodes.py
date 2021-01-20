@@ -32,6 +32,27 @@ def test_create_minimal_node(minimal_node_data_sample: Dict[str, Any]):
     assert node.dict(exclude_unset=True) == minimal_node_data_sample
 
 
+def test_create_minimal_node_with_new_data_type(
+    minimal_node_data_sample: Dict[str, Any]
+):
+    old_node_data = minimal_node_data_sample
+    # found some old data with this aspect
+    old_node_data.update(
+        {
+            "thumbnail": "https://www.google.com/imgres?imgurl=https%3A%2F%2Fregtechassociation.org%2Fwp-content%2Fuploads%2F2018%2F10%2FStandards-stock-image-1400x650.jpg&imgrefurl=https%3A%2F%2Fregtechassociation.org%2Fnews%2Firta-launches-new-open-standard-principles-for-regtech-firms-in-support-of-key-initiatives-for-2018-19%2Fstandards-stock-image-1400x650%2F&tbnid=se_y-TktvwvEMM&vet=12ahUKEwjmsNDs66ruAhWEtqQKHSLRBT8QMygBegUIARCEAQ..i&docid=UiHvpBPeE3G8KM&w=1400&h=650&q=standard%20image&ved=2ahUKEwjmsNDs66ruAhWEtqQKHSLRBT8QMygBegUIARCEAQ",
+            "state": "FAILED",
+        }
+    )
+
+    node = Node(**old_node_data)
+    assert (
+        node.thumbnail
+        == "https://www.google.com/imgres?imgurl=https%3A%2F%2Fregtechassociation.org%2Fwp-content%2Fuploads%2F2018%2F10%2FStandards-stock-image-1400x650.jpg&imgrefurl=https%3A%2F%2Fregtechassociation.org%2Fnews%2Firta-launches-new-open-standard-principles-for-regtech-firms-in-support-of-key-initiatives-for-2018-19%2Fstandards-stock-image-1400x650%2F&tbnid=se_y-TktvwvEMM&vet=12ahUKEwjmsNDs66ruAhWEtqQKHSLRBT8QMygBegUIARCEAQ..i&docid=UiHvpBPeE3G8KM&w=1400&h=650&q=standard%20image&ved=2ahUKEwjmsNDs66ruAhWEtqQKHSLRBT8QMygBegUIARCEAQ"
+    )
+
+    assert node.state == RunningState.FAILED
+
+
 def test_backwards_compatibility_node_data(minimal_node_data_sample: Dict[str, Any]):
     old_node_data = minimal_node_data_sample
     # found some old data with this aspect
