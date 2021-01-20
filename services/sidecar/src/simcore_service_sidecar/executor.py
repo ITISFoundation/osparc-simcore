@@ -159,7 +159,7 @@ class Executor:
             )
             # check if the file is a zip, in that case extract all if the service does not expect a zip file
             if zipfile.is_zipfile(final_path) and (
-                str(port.type) != "data:application/zip"
+                str(port.property_type) != "data:application/zip"
             ):
                 with zipfile.ZipFile(final_path, "r") as zip_obj:
                     zip_obj.extractall(final_path.parents[0])
