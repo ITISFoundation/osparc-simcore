@@ -55,5 +55,6 @@
       "store": "z43-s3",
       "path": "/simcore/outputControllerOut.dat"
     }
-  }
+  },
+  "runHash": "08e7efdeaffd57d453ab458bffdedb8bfbbca0cb2312772a555044162b3c2e59"
 }
