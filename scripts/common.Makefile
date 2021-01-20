@@ -83,6 +83,12 @@ inf%: ## displays basic info
 	@echo ' NOW_TIMESTAMP    : ${NOW_TIMESTAMP}'
 	@echo ' VCS_URL          : ${VCS_URL}'
 	@echo ' VCS_REF          : ${VCS_REF}'
+	# dev tools version
+	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
+	@echo ' jq     : $(shell jq --version)'
+	@echo ' awk    : $(shell awk -W version 2>&1 | head -n 1)'
+	@echo ' node   : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
+	@echo ' python : $(shell python3 --version)'
 	# installed in .venv
 	@pip list
 	# package
