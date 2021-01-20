@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
+qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -123,7 +123,7 @@ qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
 
         this._add(thisBtn);
 
-        const breadcrumbSplitter = new osparc.component.widget.BreadcrumbSplitter(16, 32).set({
+        const breadcrumbSplitter = new osparc.navigation.BreadcrumbSplitter(16, 32).set({
           shape,
           marginLeft: -1,
           marginRight: -1

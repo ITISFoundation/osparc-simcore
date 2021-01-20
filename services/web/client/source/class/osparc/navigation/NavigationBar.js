@@ -31,12 +31,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let navBar = new osparc.desktop.NavigationBar();
+ *   let navBar = new osparc.navigation.NavigationBar();
  *   this.getRoot().add(navBar);
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.NavigationBar", {
+qx.Class.define("osparc.navigation.NavigationBar", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -213,7 +213,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           break;
         case "gm-breadcrumb-navigation": {
           control = new qx.ui.container.Scroll();
-          const breadcrumbNavigation = this.__navNodes = new osparc.component.widget.BreadcrumbNavigation();
+          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbNavigation();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);

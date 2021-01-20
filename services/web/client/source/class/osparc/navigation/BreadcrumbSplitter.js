@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.component.widget.BreadcrumbSplitter", {
+qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
   extend: qx.ui.core.Widget,
 
   construct: function(w, h) {
