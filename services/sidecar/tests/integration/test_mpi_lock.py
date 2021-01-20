@@ -3,40 +3,48 @@
 import multiprocessing
 from collections import Counter
 
+import pytest
+from simcore_service_sidecar import mpi_lock
+
 core_services = ["redis"]
 
 
-async def test_mpi_locking(loop, simcore_services, redis_service, mocker) -> None:
-    ## mocker.patch("mpi_lock.config") -> redis_service.
+@pytest.fixture
+def redis_service_config(redis_service) -> None:
+    old_config = mpi_lock.config.CELERY_CONFIG.redis
+    mpi_lock.config.CELERY_CONFIG.redis = redis_service
 
-    from simcore_service_sidecar import mpi_lock
+    yield
 
+    mpi_lock.config.CELERY_CONFIG.redis = old_config
+
+
+async def test_mpi_locking(loop, simcore_services, redis_service_config) -> None:
     cpu_count = 2
 
     assert mpi_lock.acquire_mpi_lock(cpu_count) is True
     assert mpi_lock.acquire_mpi_lock(cpu_count) is False
 
 
-async def test_multiple_parallel_locking(loop, simcore_services, redis_service) -> None:
-    from simcore_service_sidecar import mpi_lock
-
-    cpu_count = 3
-
+@pytest.mark.parametrize("process_count, cpu_count", [(10, 3), (100, 4), (1, 5)])
+async def test_multiple_parallel_locking(
+    loop, simcore_services, redis_service_config, process_count, cpu_count
+) -> None:
     def worker(reply_queue: multiprocessing.Queue, cpu_count: int) -> None:
         mpi_lock_acquisition = mpi_lock.acquire_mpi_lock(cpu_count)
         reply_queue.put(mpi_lock_acquisition)
 
     reply_queue = multiprocessing.Queue()
 
-    for _ in range(10):
+    for _ in range(process_count):
         multiprocessing.Process(target=worker, args=(reply_queue, cpu_count)).start()
 
     results = []
-    for _ in range(10):
+    for _ in range(process_count):
         results.append(reply_queue.get())
 
-    assert len(results) == 10
+    assert len(results) == process_count
 
     results = Counter(results)
     assert results[True] == 1
-    assert results[False] == 9
+    assert results[False] == process_count - 1
