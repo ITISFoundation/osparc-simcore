@@ -148,7 +148,6 @@ def test_schema_sections(app_config_schema, app_subsystems):
     section_names = [metadata["config_section"] for metadata in app_subsystems] + [
         "version",
         "main",
-        "exporter",  # TODO: this is also a special case?
     ]
 
     for section in app_config_schema.keys:
