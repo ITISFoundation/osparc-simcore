@@ -28,9 +28,14 @@ qx.Mixin.define("osparc.ui.mixin.FetchButton", {
         if (isFetching !== old) {
           this.setIcon(this.__icon);
         }
-        this.getChildControl("icon").getContentElement().removeClass("rotate");
+        if (this.getChildControl("icon")) {
+          this.getChildControl("icon").getContentElement().removeClass("rotate");
+        }
       }
-      this.setEnabled(!isFetching);
+      // Might have been destroyed already
+      if (this.getLayoutParent()) {
+        this.setEnabled(!isFetching);
+      }
     }
   }
 });
