@@ -486,6 +486,64 @@
         }
       }
     },
+    "/v0/solvers/{solver_id}/jobs:run": {
+      "post": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Run Job",
+        "description": "create + start job in a single call ",
+        "operationId": "run_job",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Id",
+              "type": "string",
+              "format": "uuid"
+            },
+            "name": "solver_id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Inputs",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/JobInput"
+                },
+                "default": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/jobs": {
       "get": {
         "tags": [
@@ -592,51 +650,6 @@
         }
       }
     },
-    "/v0/jobs/{job_id}:run": {
-      "post": {
-        "tags": [
-          "jobs"
-        ],
-        "summary": "Run Job",
-        "description": "create + start job in a single call ",
-        "operationId": "run_job",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "Inputs",
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/JobInput"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Job"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v0/jobs/{job_id}:stop": {
       "post": {
         "tags": [
@@ -691,12 +704,12 @@
           {
             "required": true,
             "schema": {
-              "title": "Solver Id",
+              "title": "Job Id",
               "type": "string",
               "format": "uuid"
             },
-            "name": "solver_id",
-            "in": "query"
+            "name": "job_id",
+            "in": "path"
           }
         ],
         "responses": {
@@ -770,7 +783,7 @@
         }
       }
     },
-    "/v0/jobs/{job_id}/outputs/{output_key}": {
+    "/v0/jobs/{job_id}/outputs/{output_name}": {
       "get": {
         "tags": [
           "jobs"
@@ -791,11 +804,11 @@
           {
             "required": true,
             "schema": {
-              "title": "Output Key",
+              "title": "Output Name",
               "minLength": 3,
               "type": "string"
             },
-            "name": "output_key",
+            "name": "output_name",
             "in": "path"
           }
         ],
@@ -1103,11 +1116,13 @@
           "started_at": {
             "title": "Started At",
             "type": "string",
+            "description": "Time snapshot at which the solver starts the simulation",
             "format": "date-time"
           },
           "stopped_at": {
             "title": "Stopped At",
             "type": "string",
+            "description": "Time snapshot at which the solver finished or killed the simulation",
             "format": "date-time"
           }
         }

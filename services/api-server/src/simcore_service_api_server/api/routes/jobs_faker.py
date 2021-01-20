@@ -3,7 +3,7 @@ import functools
 import hashlib
 import random
 import uuid as uuidlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
@@ -11,12 +11,8 @@ from uuid import UUID
 from faker import Faker
 
 from ...models.schemas.solvers import JobInput, JobOutput, JobState, TaskStates
-from . import solvers_faker
 
 fake = Faker()
-opencor = solvers_faker.FAKE.solvers[0]
-isolve_old = solvers_faker.FAKE.solvers[1]
-isolve_latest = solvers_faker.FAKE.solvers[2]
 
 
 @dataclass
@@ -26,12 +22,14 @@ class JobsFaker:
     # TODO: preload JobsFaker configuration emulating a particular scenario (e.g. all jobs failed, ...)
     #
 
-    job_info: Dict[UUID, Dict[str, Any]] = {}  # solver_id, inputs_sha, job_id
+    job_info: Dict[UUID, Dict[str, Any]] = field(
+        default_factory=dict
+    )  # solver_id, inputs_sha, job_id
 
-    job_states: Dict[UUID, JobState] = {}
-    job_inputs: Dict[UUID, List[JobInput]] = {}
-    job_tasks: Dict[UUID, asyncio.Future] = {}
-    job_outputs: Dict[UUID, List[JobOutput]] = {}
+    job_states: Dict[UUID, JobState] = field(default_factory=dict)
+    job_inputs: Dict[UUID, List[JobInput]] = field(default_factory=dict)
+    job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
+    job_outputs: Dict[UUID, List[JobOutput]] = field(default_factory=dict)
 
     def iter_jobs(self, solver_id: Optional[UUID] = None):
         if solver_id:

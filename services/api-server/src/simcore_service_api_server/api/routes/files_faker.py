@@ -16,8 +16,8 @@ for d in tmp_dir.parent.glob(f"{tmp_prefix}*"):
 
 @dataclass
 class FilesFaker:
-    base_dir = tmp_dir
-    files: List[Tuple[FileUploaded, Path]] = []
+    base_dir: Path
+    files: List[Tuple[FileUploaded, Path]]
 
     async def get(self, checksum: str):
         for m, p in self.files:
@@ -37,4 +37,4 @@ class FilesFaker:
             self.files.append((metadata, path))
 
 
-the_fake_impl = FilesFaker()
+the_fake_impl = FilesFaker(base_dir=tmp_dir, files=[])
