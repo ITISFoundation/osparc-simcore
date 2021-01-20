@@ -113,7 +113,8 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
           }
         }, this);
         if (nsUILabel.getValue()) {
-        btn.setToolTipText(`${node.getLabel()} - ${nsUILabel.getValue()}`);
+          btn.setToolTipText(`${node.getLabel()} - ${nsUILabel.getValue()}`);
+        }
       }
       return btn;
     },
