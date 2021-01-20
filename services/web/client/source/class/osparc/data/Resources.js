@@ -567,6 +567,16 @@ qx.Class.define("osparc.data.Resources", {
           const endpointDef = resourceDefinition.endpoints[endpoint];
           const data = endpointDef.isJsonFile ? response : response.data;
           const useCache = ("useCache" in endpointDef) ? endpointDef.useCache : resourceDefinition.useCache;
+          // OM: Temporary solution until the quality object is better defined
+          if (data && endpoint.includes("get") && ["studies", "templates"].includes(resource)) {
+            if (Array.isArray(data)) {
+              data.forEach(std => {
+                osparc.component.metadata.Quality.attachQualityToObject(std);
+              });
+            } else {
+              osparc.component.metadata.Quality.attachQualityToObject(data);
+            }
+          }
           if (useCache) {
             if (endpoint.includes("delete")) {
               this.__removeCached(resource, deleteId);

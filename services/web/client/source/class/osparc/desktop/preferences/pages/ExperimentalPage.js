@@ -62,7 +62,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ExperimentalPage", {
       ));
       box.add(label);
 
-      const linkBtn = new osparc.ui.form.LinkButton(this.tr("To qx-osparc-theme"), "https://github.com/ITISFoundation/qx-osparc-theme");
+      const linkBtn = new osparc.ui.form.LinkButton(this.tr("To qx-osparc-theme"), null, "https://github.com/ITISFoundation/qx-osparc-theme");
       box.add(linkBtn);
 
       const select = new qx.ui.form.SelectBox("Theme");

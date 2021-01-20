@@ -82,7 +82,7 @@ qx.Class.define("osparc.component.widget.TextEditor", {
       }, this);
       buttonsLayout.add(cancel);
 
-      const save = new qx.ui.form.Button(this.tr("Accept"));
+      const save = new qx.ui.form.Button(this.tr("Save"));
       save.addListener("execute", () => {
         const newText = this.__textArea.getValue();
         this.fireDataEvent("textChanged", newText);

@@ -427,7 +427,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
 
-      const extraView = this.__extraView = new osparc.component.widget.StudyCardMedium(study);
+      const extraView = this.__extraView = new osparc.studycard.Medium(study);
       this.__sidePanel.addListener("panelResized", e => {
         const bounds = e.getData();
         extraView.checkResize(bounds);
