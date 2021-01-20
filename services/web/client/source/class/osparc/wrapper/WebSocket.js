@@ -251,12 +251,7 @@ qx.Class.define("osparc.wrapper.WebSocket", {
     },
 
     slotExists: function(name) {
-      for (let i = 0; i < this.__name.length; ++i) {
-        if (this.__name[i] === name) {
-          return true;
-        }
-      }
-      return false;
+      return this.__name && this.__name.includes(name);
     },
 
     removeSlot: function(name) {
