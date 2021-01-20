@@ -19,32 +19,38 @@ async def compute_node_hash(
     # resolve the port links if any and get only the payload
     node_payload = deepcopy(await get_node_io_payload_cb(node_id))
     assert all(k in node_payload for k in ["inputs", "outputs"])  # nosec
+    assert all(k in ["inputs", "outputs"] for k in node_payload.keys())  # nosec
 
-    block_payload = {}
+    resolved_payload = {}
+
     for port_type in ["inputs", "outputs"]:
-        port_type_payload = node_payload.get(port_type)
-        block_payload[port_type] = port_type_payload
+        port_type_payloads = node_payload.get(port_type)
         # the payload might be None
-        if port_type_payload:
-            for port_key, port_value in port_type_payload.items():
-                payload = port_value
-                if isinstance(port_value, PortLink):
-                    # in case of a port link we do resolve the entry so we have the real value for the hashing
-                    previous_node = await get_node_io_payload_cb(port_value.node_uuid)
-                    previous_node_outputs = previous_node.get("outputs", {})
-                    payload = previous_node_outputs.get(port_value.output)
+        resolved_payload[port_type] = None
+        if port_type_payloads is None:
+            continue
 
-                # ensure we do not get pydantic types for hashing here, only jsoneable stuff
-                if isinstance(payload, BaseModel):
-                    payload = payload.dict(by_alias=True, exclude_unset=True)
+        resolved_payload[port_type] = {}
+        # we have a payload, let's resolve and make is jsoneable
+        for port_key, port_value in port_type_payloads.items():
+            payload = port_value
+            if isinstance(port_value, PortLink):
+                # in case of a port link we do resolve the entry so we have the real value for the hashing
+                previous_node = await get_node_io_payload_cb(port_value.node_uuid)
+                previous_node_outputs = previous_node.get("outputs", {})
+                payload = previous_node_outputs.get(port_value.output)
 
-                # if there is no payload do not add it
-                if payload is not None:
-                    block_payload[port_type][port_key] = payload
+            # ensure we do not get pydantic types for hashing here, only jsoneable stuff
+            if isinstance(payload, BaseModel):
+                payload = payload.dict(by_alias=True, exclude_unset=True)
+
+            # remove the payload if it is null and it was resolved
+            if payload is not None:
+                resolved_payload[port_type][port_key] = payload
 
     # now create the hash
-    logger.debug("io_payload generated is %s", pformat(block_payload))
-    block_string = json.dumps(block_payload, sort_keys=True).encode("utf-8")
+    logger.debug("io_payload generated is %s", pformat(resolved_payload))
+    block_string = json.dumps(resolved_payload, sort_keys=True).encode("utf-8")
     logger.debug("block string generated is %s", block_string)
     raw_hash = hashlib.sha256(block_string)
     logger.debug("generated hash %s", raw_hash)
