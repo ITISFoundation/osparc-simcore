@@ -209,13 +209,13 @@ def test_run_partial_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    fake_workbench: Dict,
     subgraph_elements: List[int],
     exp_pipeline_dag_adj_list_1st_run: Dict[str, List[str]],
     exp_pipeline_dag_adj_list_2nd_run: Dict[str, List[str]],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -298,10 +298,10 @@ def test_run_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    fake_workbench: Dict,
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -340,10 +340,10 @@ def test_abort_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    fake_workbench: Dict,
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -410,10 +410,10 @@ def test_update_and_delete_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    fake_workbench: Dict,
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench)
     response = client.post(
         COMPUTATION_URL,
         json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},
