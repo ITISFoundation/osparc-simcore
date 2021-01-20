@@ -106,6 +106,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __studyTitle: null,
     __navNodes: null,
     __navNodesLayout: null,
+    __prevNextBtns: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -148,6 +149,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       }, this);
 
       this.__navNodesLayout = this.getChildControl("gm-breadcrumb-navigation");
+      this.__prevNextBtns = this.getChildControl("gm-prev-next-btns");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -223,6 +225,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           break;
         }
+        case "gm-prev-next-btns": {
+          control = new osparc.navigation.PrevNextButtons();
+          control.addListener("nodeSelected", e => {
+            this.fireDataEvent("nodeSelected", e.getData());
+          }, this);
+          this._add(control);
+          break;
+        }
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
@@ -286,6 +296,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       this.__navNodes.populateButtons(nodeIds, "arrow");
+      this.__prevNextBtns.populateButtons(nodeIds);
     },
 
     _applyPageContext: function(newCtxt) {
@@ -297,18 +308,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.__resetSlideCtrlBtnsVis(false);
           this.__studyTitle.exclude();
           this.__navNodesLayout.exclude();
+          this.__prevNextBtns.exclude();
           break;
         case "workbench":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
           this.__resetSlideCtrlBtnsVis(true);
           this.__populateWorkbenchNodesLayout();
+          this.__prevNextBtns.exclude();
           break;
         case "slideshow":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
           this.__resetSlideCtrlBtnsVis(true);
           this.__populateGuidedNodesLayout();
+          this.__prevNextBtns.show();
           break;
       }
     },
