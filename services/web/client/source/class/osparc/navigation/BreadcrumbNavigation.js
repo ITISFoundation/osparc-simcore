@@ -99,6 +99,21 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
           converter: val => (pos+1).toString() + "- " + val
         });
         node.bind("label", btn, "toolTipText");
+
+        const nsUI = new osparc.ui.basic.NodeStatusUI(node);
+        const nsUIIcon = nsUI.getChildControl("icon");
+        // Hacky, aber schön
+        // eslint-disable-next-line no-underscore-dangle
+        btn._add(nsUIIcon);
+        const nsUILabel = nsUI.getChildControl("label");
+        nsUILabel.addListener("changeValue", e => {
+          const statusLabel = e.getData();
+          if (statusLabel) {
+            btn.setToolTipText(`${node.getLabel()} - ${statusLabel}`);
+          }
+        }, this);
+        if (nsUILabel.getValue()) {
+        btn.setToolTipText(`${node.getLabel()} - ${nsUILabel.getValue()}`);
       }
       return btn;
     },
