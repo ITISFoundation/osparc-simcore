@@ -24,7 +24,7 @@ async def study_export(
     Generates a folder with all the data necessary for exporting a project.
     If archive is True, an archive will always be produced.
 
-    returns: directory if both archive is True else a compressed archive is returned
+    returns: directory if archive is True else a compressed archive is returned
     """
     # storage area for the project data
     destination = Path(tmp_dir) / project_id
