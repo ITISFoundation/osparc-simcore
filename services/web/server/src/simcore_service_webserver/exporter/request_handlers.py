@@ -7,7 +7,7 @@ from aiohttp import web
 from aiohttp.web_request import FileField
 
 from ..login.decorators import RQT_USERID_KEY
-from .config import get_max_upload_file_size_gb
+from .config import exporter_settings
 from .exceptions import ExporterException
 from .export_import import study_export, study_import
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
@@ -65,7 +65,7 @@ async def import_project_handler(request_tup: Tuple[web.Request]):
     request = request_tup[0]
     # bumping this requests's max size
     # pylint: disable=protected-access
-    request._client_max_size = get_max_upload_file_size_gb(request.app) * ONE_GB
+    request._client_max_size = exporter_settings.max_upload_file_size * ONE_GB
 
     post_contents = await request.post()
     log.info("POST body %s", post_contents)

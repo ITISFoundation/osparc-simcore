@@ -16,12 +16,11 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, Field
-from trafaret_config.simple import read_and_validate
-
 from models_library.basic_types import LogLevel, PortInt
+from pydantic import BaseSettings, Field
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
+from trafaret_config.simple import read_and_validate
 
 from . import (
     catalog_config,
@@ -31,7 +30,6 @@ from . import (
     session_config,
     storage_config,
     tracing,
-    exporter,
 )
 from .activity import config as activity_config
 from .director import config as director_config
@@ -84,9 +82,6 @@ def create_schema() -> T.Dict:
             session_config.CONFIG_SECTION_NAME: session_config.schema,
             activity_config.CONFIG_SECTION_NAME: activity_config.schema,
             resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
-            addon_section(
-                exporter.config.CONFIG_SECTION_NAME, optional=True
-            ): exporter.config.schema,
             # BELOW HERE minimal sections until more options are needed
             addon_section("diagnostics", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),

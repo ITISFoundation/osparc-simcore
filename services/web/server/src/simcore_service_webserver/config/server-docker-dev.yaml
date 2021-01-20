@@ -64,5 +64,3 @@ storage:
   version: v0
 session:
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
-exporter:
-  max_upload_file_size_gb: ${WEBSERVER_MAX_UPLOAD_FILE_SIZE_GB}
