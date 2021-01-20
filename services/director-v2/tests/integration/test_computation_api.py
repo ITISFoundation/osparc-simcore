@@ -5,7 +5,7 @@
 # pylint:disable=no-value-for-parameter
 
 from random import randint
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 from uuid import UUID, uuid4
 
 import pytest
@@ -209,13 +209,13 @@ def test_run_partial_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench: Dict,
+    fake_workbench_as_dict: Dict[str, Any],
     subgraph_elements: List[int],
     exp_pipeline_dag_adj_list_1st_run: Dict[str, List[str]],
     exp_pipeline_dag_adj_list_2nd_run: Dict[str, List[str]],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench)
+    sleepers_project = project(workbench=fake_workbench_as_dict)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -298,10 +298,10 @@ def test_run_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench: Dict,
+    fake_workbench_as_dict: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench)
+    sleepers_project = project(workbench=fake_workbench_as_dict)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -340,10 +340,10 @@ def test_abort_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench: Dict,
+    fake_workbench_as_dict: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench)
+    sleepers_project = project(workbench=fake_workbench_as_dict)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -410,10 +410,10 @@ def test_update_and_delete_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench: Dict,
+    fake_workbench_as_dict: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench)
+    sleepers_project = project(workbench=fake_workbench_as_dict)
     response = client.post(
         COMPUTATION_URL,
         json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},

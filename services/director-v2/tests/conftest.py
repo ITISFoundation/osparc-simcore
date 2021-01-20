@@ -109,6 +109,12 @@ def fake_workbench(fake_workbench_file: Path) -> Workbench:
 
 
 @pytest.fixture(scope="session")
+def fake_workbench_as_dict(fake_workbench_file: Path) -> Dict[str, Any]:
+    workbench_dict = json.loads(fake_workbench_file.read_text())
+    return workbench_dict
+
+
+@pytest.fixture(scope="session")
 def fake_workbench_computational_adjacency_file(mocks_dir: Path) -> Path:
     file_path = mocks_dir / "fake_workbench_computational_adjacency_list.json"
     assert file_path.exists()
