@@ -526,7 +526,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobState"
+                  "$ref": "#/components/schemas/JobStatus"
                 }
               }
             }
@@ -632,7 +632,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobState"
+                  "$ref": "#/components/schemas/JobStatus"
                 }
               }
             }
@@ -718,7 +718,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobState"
+                  "$ref": "#/components/schemas/JobStatus"
                 }
               }
             }
@@ -1090,15 +1090,21 @@
           "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a"
         }
       },
-      "JobState": {
-        "title": "JobState",
+      "JobStatus": {
+        "title": "JobStatus",
         "required": [
-          "status",
+          "job_id",
+          "state",
           "submitted_at"
         ],
         "type": "object",
         "properties": {
-          "status": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
             "$ref": "#/components/schemas/TaskStates"
           },
           "progress": {
@@ -1116,16 +1122,17 @@
           "started_at": {
             "title": "Started At",
             "type": "string",
-            "description": "Time snapshot at which the solver starts the simulation",
+            "description": "Time stamp that indicates the solver starting execution",
             "format": "date-time"
           },
           "stopped_at": {
             "title": "Stopped At",
             "type": "string",
-            "description": "Time snapshot at which the solver finished or killed the simulation",
+            "description": "Time stamp at which the solver finished or killed execution",
             "format": "date-time"
           }
-        }
+        },
+        "description": "NOTE About naming. The result of an inspection on X returns a Status object\n    What is the status of X? What sort of state is X in?\n    SEE https://english.stackexchange.com/questions/12958/status-vs-state"
       },
       "Meta": {
         "title": "Meta",
