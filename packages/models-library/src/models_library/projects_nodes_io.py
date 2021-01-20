@@ -77,7 +77,7 @@ class BaseFileLink(BaseModel):
 
 
 class SimCoreFileLink(BaseFileLink):
-    @validator("label", pre=True)
+    @validator("label", always=True, pre=True)
     @classmethod
     def pre_fill_label_with_filename_ext(cls, v, values):
         if v is None and "path" in values:
