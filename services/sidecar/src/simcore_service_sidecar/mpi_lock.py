@@ -71,7 +71,7 @@ async def _acquire_and_extend_lock_forever(
     logger.info("Connecting to %s", endpoint)
     lock_manager = Aioredlock(
         redis_connections=endpoint,
-        retry_count=5,
+        retry_count=10,
         internal_lock_timeout=config.REDLOCK_REFRESH_INTERVAL_SECONDS,
     )
 
@@ -85,11 +85,18 @@ async def _acquire_and_extend_lock_forever(
         await lock_manager.destroy()
         return
 
+    # NOTE: in high concurrency situation you can have
+    # multiple instances acquire the same lock
+    # wait a tiny amount and read back the result of the lock acquisition
+    await asyncio.sleep(0.1)
+    # reed back result to make sure it was locked
+    is_locked = await lock_manager.is_locked(resource_name)
+
     # the lock was successfully acquired, put the result in the queue
-    reply_queue.put(True)
+    reply_queue.put(is_locked)
 
     # continue renewing the lock at regular intervals
-    sleep_interval = 0.9 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
+    sleep_interval = 0.5 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
     logger.info("Starting lock extention at %s seconds interval", sleep_interval)
 
     try:
