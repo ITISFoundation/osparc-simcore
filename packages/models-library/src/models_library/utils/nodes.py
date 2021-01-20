@@ -19,7 +19,6 @@ async def compute_node_hash(
     # resolve the port links if any and get only the payload
     node_payload = deepcopy(await get_node_io_payload_cb(node_id))
     assert all(k in node_payload for k in ["inputs", "outputs"])  # nosec
-    assert all(k in ["inputs", "outputs"] for k in node_payload.keys())  # nosec
 
     resolved_payload = {}
 
