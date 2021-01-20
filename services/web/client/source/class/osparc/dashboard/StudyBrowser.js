@@ -284,9 +284,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.resetSelection();
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
-        if (osparc.auth.Manager.getInstance().isLoggedIn()) {
-          this.reloadUserStudies();
-        }
+        this.reloadUserStudies();
       }, this);
     },
 
