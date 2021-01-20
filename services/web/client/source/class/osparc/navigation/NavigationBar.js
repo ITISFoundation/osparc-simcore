@@ -348,7 +348,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createSlideStartBtn: function() {
-      const startBtn = new qx.ui.form.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+      const startBtn = new qx.ui.form.Button(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
         ...this.self().BUTTON_OPTIONS
       });
       startBtn.addListener("execute", () => {
@@ -358,7 +358,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     },
 
     __createSlideStopBtn: function() {
-      const stopBtn = new qx.ui.form.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/16").set({
+      const stopBtn = new qx.ui.form.Button(this.tr("Guided Mode"), "@FontAwesome5Solid/stop/16").set({
         ...this.self().BUTTON_OPTIONS
       });
       stopBtn.addListener("execute", () => {

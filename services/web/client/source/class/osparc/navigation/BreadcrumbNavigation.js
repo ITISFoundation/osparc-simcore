@@ -34,15 +34,6 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
     "nodeSelected": "qx.event.type.Data"
   },
 
-  statics: {
-    BUTTON_OPTIONS: {
-      font: "text-14",
-      allowGrowY: false,
-      minWidth: 32,
-      minHeight: 32
-    }
-  },
-
   members: {
     populateButtons: function(nodesIds = [], shape = "slash") {
       const btns = [];
@@ -72,7 +63,7 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
 
     __createNodeBtn: function(nodeId) {
       const btn = new qx.ui.form.ToggleButton().set({
-        ...this.self().BUTTON_OPTIONS,
+        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         maxWidth: 200
       });
       btn.addListener("execute", () => {
