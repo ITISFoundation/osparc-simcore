@@ -36,22 +36,6 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     }
   },
 
-  statics: {
-    getSortedNodes: function(study) {
-      const slideShow = study.getUi().getSlideshow();
-      const nodes = [];
-      for (let nodeId in slideShow) {
-        const node = slideShow[nodeId];
-        nodes.push({
-          ...node,
-          nodeId
-        });
-      }
-      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-      return nodes;
-    }
-  },
-
   members: {
     __controlsBar: null,
     __prvsBtn: null,
@@ -168,7 +152,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __openFirstNode: function() {
       const study = this.getStudy();
       if (study) {
-        const nodes = this.self().getSortedNodes(study);
+        const nodes = osparc.data.model.StudyUI.getSortedNodes(study);
         if (nodes.length) {
           this.nodeSelected(nodes[0].nodeId);
         }

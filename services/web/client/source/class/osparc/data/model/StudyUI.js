@@ -57,6 +57,22 @@ qx.Class.define("osparc.data.model.StudyUI", {
     }
   },
 
+  statics: {
+    getSortedNodes: function(study) {
+      const slideShow = study.getUi().getSlideshow();
+      const nodes = [];
+      for (let nodeId in slideShow) {
+        const node = slideShow[nodeId];
+        nodes.push({
+          ...node,
+          nodeId
+        });
+      }
+      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
+      return nodes;
+    }
+  },
+
   members: {
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
