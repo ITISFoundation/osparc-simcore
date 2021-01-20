@@ -245,7 +245,10 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __isOutputFileSelectedFromStore: function() {
       const outFile = this.__getOutputFile();
-      if (outFile && "value" in outFile && "path" in outFile.value) {
+      if (outFile &&
+        "value" in outFile &&
+        typeof outFile["value"] === "object" &&
+        "path" in outFile["value"]) {
         return true;
       }
       return false;
@@ -253,7 +256,10 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __isOutputFileSelectedFromLink: function() {
       const outFile = this.__getOutputFile();
-      if (outFile && "value" in outFile && "downloadLink" in outFile.value) {
+      if (outFile &&
+        "value" in outFile &&
+        typeof outFile["value"] === "object" &&
+        "downloadLink" in outFile.value) {
         return true;
       }
       return false;
