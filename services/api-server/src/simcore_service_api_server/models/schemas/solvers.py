@@ -63,7 +63,7 @@ class Solver(BaseModel):
             released=img.released,
             version=version,
             version_aliases=alias,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -87,17 +87,32 @@ class TaskStates(str, Enum):
     FAILED = "failed"
 
 
-class JobState(BaseModel):
-    status: TaskStates
+class JobStatus(BaseModel):
+    """
+
+    NOTE About naming. The result of an inspection on X returns a Status object
+        What is the status of X? What sort of state is X in?
+        SEE https://english.stackexchange.com/questions/12958/status-vs-state
+    """
+
+    job_id: UUID
+
+    state: TaskStates
     progress: conint(ge=0, le=100) = 0
+
+    # Timestamps
+    # TODO: sync state events and timestamps
     submitted_at: datetime
     started_at: Optional[datetime] = Field(
-        None, description="Time snapshot at which the solver starts the simulation"
+        None, description="Time stamp that indicates the solver starting execution"
     )
     stopped_at: Optional[datetime] = Field(
         None,
-        description="Time snapshot at which the solver finished or killed the simulation",
+        description="Time stamp at which the solver finished or killed execution",
     )
+
+    def timestamp(self, event: str = "submitted"):
+        setattr(self, f"{event}_at", datetime.utcnow())
 
 
 class SolverPort(BaseModel):

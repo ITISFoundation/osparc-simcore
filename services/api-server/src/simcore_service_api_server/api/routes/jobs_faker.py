@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import hashlib
+import logging
 import random
 import uuid as uuidlib
 from dataclasses import dataclass, field
@@ -10,9 +11,10 @@ from uuid import UUID
 
 from faker import Faker
 
-from ...models.schemas.solvers import JobInput, JobOutput, JobState, TaskStates
+from ...models.schemas.solvers import JobInput, JobOutput, JobStatus, TaskStates
 
 fake = Faker()
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -26,7 +28,7 @@ class JobsFaker:
         default_factory=dict
     )  # solver_id, inputs_sha, job_id
 
-    job_states: Dict[UUID, JobState] = field(default_factory=dict)
+    job_states: Dict[UUID, JobStatus] = field(default_factory=dict)
     job_inputs: Dict[UUID, List[JobInput]] = field(default_factory=dict)
     job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
     job_outputs: Dict[UUID, List[JobOutput]] = field(default_factory=dict)
@@ -57,48 +59,62 @@ class JobsFaker:
         self.job_inputs[job_id] = inputs
         return job
 
-    def start_job(self, job_id: UUID) -> JobState:
+    def start_job(self, job_id: UUID) -> JobStatus:
         # why not getting inputs from here?
         inputs = self.job_inputs[job_id]
 
         state = self.job_states.get(job_id)
         if not state:
-            state = JobState(
-                status=TaskStates.UNDEFINED, progress=0, submitted_at=datetime.now()
+            state = JobStatus(
+                status=TaskStates.UNDEFINED, progress=0, submitted_at=datetime.utcnow()
             )
-            task = asyncio.ensure_future(self._start_job_task(job_id, state, inputs))
-            self.job_tasks[job_id] = task
+            self.job_states[job_id] = state
+            self.job_tasks[job_id] = asyncio.ensure_future(
+                self._start_job_task(job_id, inputs)
+            )
 
-        return state
+        return self.job_states[job_id]
 
-    async def _start_job_task(self, job_id, job_state, inputs):
+    async def _start_job_task(self, job_id, inputs):
+        MOCK_PULLING_TIME = 1, 2
+        MOCK_PENDING_TIME = 1, 3
+        MOCK_RUNNING_TIME = 1, 5 + len(inputs)
+
         # TODO: this should feel like a
         # TODO: how to cancel?
+
+        job_state = self.job_states[job_id]
+
         try:
-            self.job_states[job_id] = job_state
-            await asyncio.sleep(random.randint(1, 10))
+            await asyncio.sleep(random.randint(*MOCK_PULLING_TIME))
 
-            job_state.status = TaskStates.PENDING
-            await asyncio.sleep(random.randint(1, 10))
+            job_state.state = TaskStates.PENDING
+            logger.info(job_state)
 
-            job_state.status = TaskStates.RUNNING
-            print("running with ", inputs)
-            job_state.started_at = datetime.now()
-            await asyncio.sleep(random.randint(1, 10))
+            await asyncio.sleep(random.randint(*MOCK_PENDING_TIME))
 
-            job_state.status = random.choice([TaskStates.SUCCESS, TaskStates.FAILED])
+            job_state.state = TaskStates.RUNNING
+            job_state.timestamp("started")
+            logger.info(job_state)
+
+            job_state.progress = 0
+            for n in range(100):
+                await asyncio.sleep(random.randint(*MOCK_RUNNING_TIME) / 100.0)
+                job_state.progress = n + 1
+
+            job_state.state = random.choice([TaskStates.SUCCESS, TaskStates.FAILED])
             job_state.progress = 100
-            job_state.stopped_at = datetime.now()
+            job_state.timestamp("stopped")
+            logger.info(job_state)
 
-            if job_state.status == TaskStates.SUCCESS:
-                print("produced outputs")
-
+            if job_state.state == TaskStates.SUCCESS:
                 # TODO: return it
                 # if file, upload
                 return []
         except asyncio.CancelledError:
-            if job_state.status != TaskStates.SUCCESS:
-                job_state.status = TaskStates.FAILED
+            if job_state.state != TaskStates.SUCCESS:
+                job_state.state = TaskStates.FAILED
+                job_state.timestamp("stopped")
                 return None
 
     def stop_job(self, job_id) -> Dict:

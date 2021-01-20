@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from ...models.schemas.solvers import Job, JobInput, JobOutput, JobState, KeyIdentifier
+from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus, KeyIdentifier
 from ..dependencies.application import get_reverse_url_mapper
 from .jobs_faker import the_fake_impl
 from .solvers import router as solvers_router
@@ -73,7 +73,7 @@ async def create_job(
     )
 
 
-@solvers_router.post("/{solver_id}/jobs:run", response_model=JobState)
+@solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus)
 async def run_job(
     solver_id: UUID,
     inputs: List[JobInput] = [],
@@ -124,7 +124,7 @@ async def get_job(
         )
 
 
-@router.post("/{job_id}:start", response_model=JobState)
+@router.post("/{job_id}:start", response_model=JobStatus)
 async def start_job(job_id: UUID):
     with errors_mapper():
         job_state = the_fake_impl.start_job(job_id)
@@ -149,7 +149,7 @@ async def stop_job(
         )
 
 
-@router.post("/{job_id}:inspect", response_model=JobState)
+@router.post("/{job_id}:inspect", response_model=JobStatus)
 async def inspect_job(job_id: UUID):
     with errors_mapper():
         state = the_fake_impl.job_states[job_id]

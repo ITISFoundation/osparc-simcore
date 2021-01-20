@@ -7,12 +7,13 @@ import packaging.version
 class SolversFaker:
     solvers = [
         {
+            # https://github.com/ITISFoundation/osparc-services/blob/master/services/oc-opencor-base/metadata/metadata.yml
             "uuid": "3197d0df-1506-351c-86f9-a93783c5c306",
             "name": "simcore/services/comp/opencor",
             "version": "1.0.3",
             "title": "OpenCor",
             "description": "opencor simulator",
-            "maintainer": "mapcore@nz",
+            "maintainer": "zhuang@itis.swiss",
         },
         {
             "uuid": "42838344-03de-4ce2-8d93-589a5dcdfd05",
