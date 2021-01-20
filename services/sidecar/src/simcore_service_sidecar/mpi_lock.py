@@ -46,6 +46,7 @@ async def _wrapped_acquire_and_extend_lock_worker(
     reraise=True,
 )
 async def wait_till_redis_responsive(dsn: RedisDsn) -> None:
+    logger.info("Trying to connect to %s", dsn)
     client = await aioredis.create_redis_pool(dsn, encoding="utf-8")
     client.close()
     await client.wait_closed()
