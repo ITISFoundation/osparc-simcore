@@ -26,7 +26,7 @@ async def test_mpi_locking(loop, simcore_services, redis_service_config) -> None
     assert mpi_lock.acquire_mpi_lock(cpu_count) is False
 
 
-@pytest.mark.parametrize("process_count, cpu_count", [(1, 3), (10, 4), (100, 5)])
+@pytest.mark.parametrize("process_count, cpu_count", [(1, 3), (32, 4)])
 async def test_multiple_parallel_locking(
     loop, simcore_services, redis_service_config, process_count, cpu_count
 ) -> None:
