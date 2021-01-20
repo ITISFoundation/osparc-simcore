@@ -6,7 +6,9 @@ from collections import Counter
 core_services = ["redis"]
 
 
-async def test_mpi_locking(loop, simcore_services, redis_service) -> None:
+async def test_mpi_locking(loop, simcore_services, redis_service, mocker) -> None:
+    ## mocker.patch("mpi_lock.config") -> redis_service.
+
     from simcore_service_sidecar import mpi_lock
 
     cpu_count = 2
