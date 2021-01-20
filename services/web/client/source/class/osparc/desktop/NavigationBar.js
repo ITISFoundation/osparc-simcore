@@ -147,7 +147,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         }
       }, this);
 
-      this.__navNodesLayout = this.getChildControl("navigation-nodes-path-container");
+      this.__navNodesLayout = this.getChildControl("gm-breadcrumb-navigation");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -211,7 +211,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "navigation-nodes-path-container": {
+        case "gm-breadcrumb-navigation": {
           control = new qx.ui.container.Scroll();
           const breadcrumbNavigation = this.__navNodes = new osparc.component.widget.BreadcrumbNavigation();
           breadcrumbNavigation.addListener("nodeSelected", e => {
