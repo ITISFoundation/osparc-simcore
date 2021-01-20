@@ -2,7 +2,7 @@
 Try to acquire a lock on the MPI resource.
 
 Due to pour non async implementation aioredlock will be used.
-All configuration si specified upfront
+All configuration is specified upfront
 
 
 """
