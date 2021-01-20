@@ -36,5 +36,5 @@ async def test_multiple_parallel_locking(loop, simcore_services, redis_service) 
     assert len(results) == 10
 
     results = Counter(results)
-    assert results[False] == 9
     assert results[True] == 1
+    assert results[False] == 9
