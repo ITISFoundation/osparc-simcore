@@ -315,7 +315,7 @@ async def test_import_export_import(
         project_id=imported_project_uuid
     )
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}/export")
-    async with await client.get(url_export, timeout=10) as export_response:
+    async with await client.post(url_export, timeout=10) as export_response:
         assert export_response.status == 200, await export_response.text()
 
         content_disposition_header = export_response.headers["Content-Disposition"]
