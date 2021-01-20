@@ -11,7 +11,10 @@ import logging
 import multiprocessing
 import os
 
+import aioredis
+import tenacity
 from aioredlock import Aioredlock, LockError
+from pydantic.networks import RedisDsn
 
 from . import config
 
@@ -36,10 +39,24 @@ async def _wrapped_acquire_and_extend_lock_worker(
         reply_queue.put(False)
 
 
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(60),
+    before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+    reraise=True,
+)
+async def wait_till_redis_responsive(dsn: RedisDsn) -> None:
+    client = await aioredis.create_redis_pool(dsn, encoding="utf-8")
+    client.close()
+    await client.wait_closed()
+
+
 # trap lock_error
 async def _acquire_and_extend_lock_forever(
     reply_queue: multiprocessing.Queue, cpu_count: int
 ) -> None:
+    await wait_till_redis_responsive(config.CELERY_CONFIG.redis.dsn)
+
     resource_name = f"aioredlock:mpi_lock:{cpu_count}"
     endpoint = [
         {
@@ -101,7 +118,6 @@ def acquire_mpi_lock(cpu_count: int) -> bool:
     """
     returns True if successfull
     Will try to acquire a distributed shared lock.
-    This operation will last up to 2 x config.REDLOCK_REFRESH_INTERVAL_SECONDS
     """
     reply_queue = multiprocessing.Queue()
     multiprocessing.Process(
