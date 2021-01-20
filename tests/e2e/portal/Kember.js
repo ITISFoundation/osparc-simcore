@@ -45,10 +45,10 @@ async function runTutorial () {
   await tutorial.waitFor(2000);
   await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
   const iframeHandles = await page.$$("iframe");
-  // expected two iframes = loading + raw-graph
-  const frame = await iframeHandles[1].contentFrame();
+  // expected just one iframe = kember-notebook
+  const frame = await iframeHandles[0].contentFrame();
 
-  // - restart kernel: click restart and accept
+  // restart kernel: click restart and accept
   const restartSelector = "#run_int > button:nth-child(3)";
   await frame.waitForSelector(restartSelector);
   await frame.click(restartSelector);
@@ -60,11 +60,11 @@ async function runTutorial () {
   await tutorial.waitFor(2000);
   await utils.takeScreenshot(page, screenshotPrefix + 'restart_accept');
 
-  await tutorial.waitFor(8000);
+  await tutorial.waitFor(20000);
   await utils.takeScreenshot(page, screenshotPrefix + 'notebook_run');
 
-  // - check output
-  await tutorial.openNodeFiles(0);
+  // check output
+  await tutorial.openNodeFiles(1);
   const outFiles2 = [
     "Hear_Rate.csv",
     "notebooks.zip",
