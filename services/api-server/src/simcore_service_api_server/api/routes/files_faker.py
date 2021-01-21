@@ -6,12 +6,14 @@ from typing import List, Tuple
 
 from ...models.schemas.files import FileUploaded
 
-tmp_prefix = f"{__name__}-"
-tmp_dir = Path(tempfile.mkdtemp(prefix=tmp_prefix))
+STORAGE_DIR = Path(tempfile.mkdtemp(prefix=f"{__name__}-"))
 
-for d in tmp_dir.parent.glob(f"{tmp_prefix}*"):
-    if d != tmp_dir and d.is_dir():
-        shutil.rmtree(d, ignore_errors=True)
+
+def prune_storage_dirs():
+    for d in STORAGE_DIR.parent.glob(f"{__name__}*"):
+        if d != STORAGE_DIR and d.is_dir():
+            print("Removing dire")
+            shutil.rmtree(d, ignore_errors=True)
 
 
 @dataclass
@@ -37,4 +39,6 @@ class FilesFaker:
             self.files.append((metadata, path))
 
 
-the_fake_impl = FilesFaker(base_dir=tmp_dir, files=[])
+prune_storage_dirs()
+
+the_fake_impl = FilesFaker(base_dir=STORAGE_DIR, files=[])
