@@ -118,11 +118,11 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       this.add(moreCtrls);
 
       const pipelineCtrls = this.__pipelineCtrls =new osparc.desktop.StartStopButtons();
-      pipelineCtrls.addListener("startPipeline", e => {
-        this.fireDataEvent("startPipeline", e.getData());
+      pipelineCtrls.addListener("startPipeline", () => {
+        this.fireDataEvent("startPipeline");
       }, this);
-      pipelineCtrls.addListener("stopPipeline", e => {
-        this.fireDataEvent("stopPipeline", e.getData());
+      pipelineCtrls.addListener("stopPipeline", () => {
+        this.fireDataEvent("stopPipeline");
       }, this);
       this.add(pipelineCtrls);
     },

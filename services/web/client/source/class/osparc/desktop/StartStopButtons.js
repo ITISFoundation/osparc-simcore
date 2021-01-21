@@ -95,7 +95,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
               break;
           }
         }
-        this.__pipelineCtrls.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+        this.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+      } else {
+        this.exclude();
       }
     },
 

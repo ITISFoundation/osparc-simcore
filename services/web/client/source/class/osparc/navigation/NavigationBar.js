@@ -107,6 +107,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __navNodes: null,
     __navNodesLayout: null,
     __prevNextBtns: null,
+    __startStopBtns: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -150,6 +151,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this.__navNodesLayout = this.getChildControl("gm-breadcrumb-navigation");
       this.__prevNextBtns = this.getChildControl("gm-prev-next-btns");
+      this.__startStopBtns = this.getChildControl("gm-start-stop-btns");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -233,6 +235,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._add(control);
           break;
         }
+        case "gm-start-stop-btns": {
+          control = new osparc.desktop.StartStopButtons();
+          control.addListener("startPipeline", () => {
+            console.log("startPipeline");
+          }, this);
+          control.addListener("stopPipeline", () => {
+            console.log("stopPipeline");
+          }, this);
+          this._add(control);
+          break;
+        }
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
@@ -309,6 +322,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.__studyTitle.exclude();
           this.__navNodesLayout.exclude();
           this.__prevNextBtns.exclude();
+          this.__startStopBtns.exclude();
           break;
         case "workbench":
           this.__dashboardLabel.exclude();
@@ -316,6 +330,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.__resetSlideCtrlBtnsVis(true);
           this.__populateWorkbenchNodesLayout();
           this.__prevNextBtns.exclude();
+          this.__startStopBtns.exclude();
           break;
         case "slideshow":
           this.__dashboardLabel.exclude();
@@ -323,6 +338,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.__resetSlideCtrlBtnsVis(true);
           this.__populateGuidedNodesLayout();
           this.__prevNextBtns.show();
+          this.__startStopBtns.show();
           break;
       }
     },
