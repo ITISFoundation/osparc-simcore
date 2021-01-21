@@ -27,9 +27,21 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_env()
 
+    if settings.fake_server_enabled:
+        # This is a very special mode ONLY for development purposes and should be
+        # NOT enabled in production
+        logging.warning(
+            "Fake server enabled." "Disabling all interactions with backend services."
+        )
+        settings.postgres.enabled = False
+        settings.webserver.enabled = False
+        settings.catalog.enabled = False
+        settings.storage.enabled = False
+        settings.director.enabled = False
+
     logging.basicConfig(level=settings.loglevel)
     logging.root.setLevel(settings.loglevel)
-    logger.debug(settings)
+    logger.debug(settings.json(indent=2))
 
     # creates app instance
     app = FastAPI(

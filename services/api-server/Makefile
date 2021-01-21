@@ -51,8 +51,10 @@ db-migration: .env ## runs discover and upgrade on running pg-db [for developmen
 down: docker-compose.yml ## stops pg fixture
 	# stopping extra services
 	-@docker-compose -f $< down
-	# killing any process using port 8000
+	# killing any process using port 8000 (app) and 3000 (debug)
 	-@fuser --kill --verbose --namespace tcp 8000
+	-@fuser --kill --verbose --namespace tcp 3000
+
 
 
 

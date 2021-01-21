@@ -144,7 +144,7 @@ class AppSettings(BaseSettings):
 
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
     remote_debug_port: int = 3000
-    beta_features_enabled: bool = Field(False, env="SERVER_API_BETA_FEATURES_ENABLED")
+    fake_server_enabled: bool = Field(False, env="FAKE_API_SERVER_ENABLED")
 
     class Config(_CommonConfig):
         env_prefix = ""
