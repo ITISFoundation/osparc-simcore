@@ -1,131 +1,136 @@
 """
 Try to acquire a lock on the MPI resource.
 
-Due to pour non async implementation aioredlock will be used
+Due to pour non async implementation aioredlock will be used.
+All configuration is specified upfront
 
-How it works:
 
-- Try to acquire a lock the lock in a tight loop for about X seconds.
-- If it works start a task which updates the expiration every X second is spawned.
-- Ensures sleeper can be started as MPI sleeper again.
 """
 import asyncio
-import datetime
 import logging
-from threading import Thread
-from typing import Any, Callable, Optional, Tuple
+import multiprocessing
+import os
 
-from aioredlock import Aioredlock, Lock, LockError
+import aioredis
+import tenacity
+from aioredlock import Aioredlock, LockError
+from pydantic.networks import RedisDsn
 
 from . import config
+
+# ptsvd cause issues with multiprocessing
+# SEE: https://github.com/microsoft/ptvsd/issues/1443
+if os.environ.get("SC_BOOT_MODE") == "debug-ptvsd":  # pragma: no cover
+    multiprocessing.set_start_method("spawn", True)
 
 logger = logging.getLogger(__name__)
 
 
-async def retry_for_result(
-    result_validator: Callable[[Any], Any], coroutine_factory: Callable
-) -> Tuple[bool, Any]:
-    """
-    Will execute the given callback until the expected result is reached.
-    Between each retry it will wait 1/5 of REDLOCK_REFRESH_INTERVAL_SECONDS
-    """
-    sleep_interval = config.REDLOCK_REFRESH_INTERVAL_SECONDS / 5.0
-    elapsed = 0.0
-    start = datetime.datetime.utcnow()
-
-    while elapsed < config.REDLOCK_REFRESH_INTERVAL_SECONDS:
-        result = await coroutine_factory()
-        if result_validator(result):
-            return True, result
-        await asyncio.sleep(sleep_interval)
-        elapsed = (datetime.datetime.utcnow() - start).total_seconds()
-
-    return False, None
-
-
-def start_background_lock_extender(
-    lock_manager: Aioredlock, lock: Lock, loop: asyncio.BaseEventLoop
+async def _wrapped_acquire_and_extend_lock_worker(
+    reply_queue: multiprocessing.Queue, cpu_count: int
 ) -> None:
-    """Will periodically extend the duration of the lock"""
+    try:
+        # if the lock is acquired the above function will block here
+        await _acquire_and_extend_lock_forever(reply_queue, cpu_count)
+    finally:
+        # if the _acquire_and_extend_lock_forever function returns
+        # the lock was not acquired, need to make sure the acquire_mpi_lock
+        # always has a result to avoid issues
+        reply_queue.put(False)
 
-    async def extender_worker(lock_manager: Aioredlock):
-        sleep_interval = 0.9 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
+
+@tenacity.retry(
+    wait=tenacity.wait_fixed(5),
+    stop=tenacity.stop_after_attempt(60),
+    before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+    reraise=True,
+)
+async def wait_till_redis_responsive(dsn: RedisDsn) -> None:
+    logger.info("Trying to connect to %s", dsn)
+    client = await aioredis.create_redis_pool(dsn, encoding="utf-8")
+    client.close()
+    await client.wait_closed()
+
+
+# trap lock_error
+async def _acquire_and_extend_lock_forever(
+    reply_queue: multiprocessing.Queue, cpu_count: int
+) -> None:
+    await wait_till_redis_responsive(config.CELERY_CONFIG.redis.dsn)
+
+    resource_name = f"aioredlock:mpi_lock:{cpu_count}"
+    endpoint = [
+        {
+            "host": config.CELERY_CONFIG.redis.host,
+            "port": config.CELERY_CONFIG.redis.port,
+            "db": int(config.CELERY_CONFIG.redis.db),
+        }
+    ]
+
+    logger.info("Will try to acquire an mpi_lock on %s", resource_name)
+    logger.info("Connecting to %s", endpoint)
+    lock_manager = Aioredlock(
+        redis_connections=endpoint,
+        retry_count=10,
+        internal_lock_timeout=config.REDLOCK_REFRESH_INTERVAL_SECONDS,
+    )
+
+    # Try to acquire the lock, it will retry it 5 times with
+    # a wait between 0.1 and 0.3 seconds between each try
+    # if the lock is not acquire a LockError is raised
+    try:
+        lock = await lock_manager.lock(resource_name)
+    except LockError:
+        logger.warning("Could not acquire lock on resource %s", resource_name)
+        await lock_manager.destroy()
+        return
+
+    # NOTE: in high concurrency situation you can have
+    # multiple instances acquire the same lock
+    # wait a tiny amount and read back the result of the lock acquisition
+    await asyncio.sleep(0.1)
+    # reed back result to make sure it was locked
+    is_locked = await lock_manager.is_locked(resource_name)
+
+    # the lock was successfully acquired, put the result in the queue
+    reply_queue.put(is_locked)
+
+    # continue renewing the lock at regular intervals
+    sleep_interval = 0.5 * config.REDLOCK_REFRESH_INTERVAL_SECONDS
+    logger.info("Starting lock extention at %s seconds interval", sleep_interval)
+
+    try:
         while True:
-            await lock_manager.extend(lock, config.REDLOCK_REFRESH_INTERVAL_SECONDS)
+            try:
+                await lock_manager.extend(lock)
+            except LockError:
+                logger.warning(
+                    "There was an error trying to extend the lock %s", resource_name
+                )
 
             await asyncio.sleep(sleep_interval)
-
-    loop.run_until_complete(extender_worker(lock_manager))
-
-
-def thread_worker(
-    lock_manager: Aioredlock, lock: Lock, loop: asyncio.BaseEventLoop
-) -> None:
-    start_background_lock_extender(lock_manager, lock, loop)
+    finally:
+        # in case some other error occurs recycle all connections to redis
+        await lock_manager.destroy()
 
 
-async def try_to_acquire_lock(
-    lock_manager: Aioredlock, resource_name: str
-) -> Optional[Tuple[bool, Lock]]:
-    # Try to acquire the lock:
-    try:
-        return await lock_manager.lock(
-            resource_name, lock_timeout=config.REDLOCK_REFRESH_INTERVAL_SECONDS
-        )
-    except LockError:
-        pass
-
-    return None
-
-
-async def acquire_lock(cpu_count: int) -> bool:
-    resource_name = f"aioredlock:mpi_lock:{cpu_count}"
-    lock_manager = Aioredlock([config.CELERY_CONFIG.redis.dsn])
-    logger.info("Will try to acquire an mpi_lock")
-
-    def is_locked_factory():
-        return lock_manager.is_locked(resource_name)
-
-    is_lock_free, _ = await retry_for_result(
-        result_validator=lambda x: x is False,
-        coroutine_factory=is_locked_factory,
+def _process_worker(queue: multiprocessing.Queue, cpu_count: int) -> None:
+    logger.info("Starting background process for mpi lock result")
+    asyncio.get_event_loop().run_until_complete(
+        _wrapped_acquire_and_extend_lock_worker(queue, cpu_count)
     )
-
-    if not is_lock_free:
-        # it was not possible to acquire the lock
-        return False
-
-    def try_to_acquire_lock_factory():
-        return try_to_acquire_lock(lock_manager, resource_name)
-
-    # lock is free try to acquire and start background extention
-    managed_to_acquire_lock, lock = await retry_for_result(
-        result_validator=lambda x: type(x) == Lock,
-        coroutine_factory=try_to_acquire_lock_factory,
-    )
-
-    if managed_to_acquire_lock:
-        Thread(
-            target=thread_worker,
-            args=(
-                lock_manager,
-                lock,
-                asyncio.get_event_loop(),
-            ),
-            daemon=True,
-        ).start()
-
-    logger.info("mpi_lock acquisition result %s", managed_to_acquire_lock)
-    return managed_to_acquire_lock
+    logger.info("Background asyncio task finished. Background process will despawn.")
 
 
 def acquire_mpi_lock(cpu_count: int) -> bool:
     """
     returns True if successfull
     Will try to acquire a distributed shared lock.
-    This operation will last up to 2 x config.REDLOCK_REFRESH_INTERVAL_SECONDS
     """
-    from .utils import wrap_async_call
+    reply_queue = multiprocessing.Queue()
+    multiprocessing.Process(
+        target=_process_worker, args=(reply_queue, cpu_count), daemon=True
+    ).start()
 
-    was_acquired = wrap_async_call(acquire_lock(cpu_count))
-    return was_acquired
+    lock_acquired = reply_queue.get()
+    return lock_acquired
