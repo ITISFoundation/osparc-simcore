@@ -6,10 +6,12 @@ from typing import List, Tuple
 
 from ...models.schemas.files import FileUploaded
 
+# Directory used to save files uploaded to
+# the fake server
 STORAGE_DIR = Path(tempfile.mkdtemp(prefix=f"{__name__}-"))
 
 
-def prune_storage_dirs():
+def prune_other_storage_dirs():
     for d in STORAGE_DIR.parent.glob(f"{__name__}*"):
         if d != STORAGE_DIR and d.is_dir():
             print("Removing dire")
@@ -18,8 +20,12 @@ def prune_storage_dirs():
 
 @dataclass
 class FilesFaker:
-    base_dir: Path
+    storage_dir: Path
     files: List[Tuple[FileUploaded, Path]]
+
+    # TODO: normal class
+    # load/save to storage_dir
+    #
 
     async def get(self, checksum: str):
         for m, p in self.files:
@@ -28,9 +34,8 @@ class FilesFaker:
         raise KeyError()
 
     async def save(self, metadata, file_handler):
-        self.base_dir.mkdir(exist_ok=True)
 
-        path = self.base_dir / f"{metadata.hash[:5]}-{metadata.filename}"
+        path = self.storage_dir / f"{metadata.hash[:5]}-{metadata.filename}"
         await file_handler.seek(0)
         data = await file_handler.read()
         path.write_bytes(data)
@@ -39,6 +44,6 @@ class FilesFaker:
             self.files.append((metadata, path))
 
 
-prune_storage_dirs()
+prune_other_storage_dirs()
 
-the_fake_impl = FilesFaker(base_dir=STORAGE_DIR, files=[])
+the_fake_impl = FilesFaker(storage_dir=STORAGE_DIR, files=[])
