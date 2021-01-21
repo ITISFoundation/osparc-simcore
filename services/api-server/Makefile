@@ -4,7 +4,6 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-service.Makefile
 
-
 .PHONY: reqs
 reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
@@ -90,6 +89,10 @@ openapi-specs: openapi.json
 openapi.json: .env
 	# generating openapi specs file
 	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+	# validates OAS file: $@
+	@cd $(CURDIR); \
+	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+
 
 
 # GENERATION python client ###########################################################################
@@ -101,12 +104,10 @@ openapi.json: .env
 # TODO: put instead to additional-props.yaml and --config=openapi-generator/python-config.yaml
 # TODO: copy this code to https://github.com/ITISFoundation/osparc-simcore-python-client/blob/master/Makefile
 #
-
 # NOTE: assumes this repo exists
 GIT_USER_ID := ITISFoundation
 GIT_REPO_ID := osparc-simcore-python-client
 
-SCRIPTS_DIR := $(abspath $(CURDIR)/../../scripts)
 GENERATOR_NAME := python
 
 ADDITIONAL_PROPS := \
