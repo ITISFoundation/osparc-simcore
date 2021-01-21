@@ -121,7 +121,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             allowGrowY: false
           });
           const sharedDescriptionLayout = this.getChildControl("subtitle");
-          sharedDescriptionLayout.addAt(control, 1);
+          sharedDescriptionLayout.addAt(control, 1, {
+            flex: 1
+          });
           break;
         }
         case "icon": {
