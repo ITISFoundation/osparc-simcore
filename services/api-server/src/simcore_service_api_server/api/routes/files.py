@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 from textwrap import dedent
 from typing import List
 
@@ -16,38 +15,21 @@ from .files_faker import the_fake_impl
 router = APIRouter()
 
 
-async def eval_sha256_hash(file: UploadFile):
-    # TODO: adaptive chunks depending on file size
-    # SEE: https://stackoverflow.com/questions/17731660/hashlib-optimal-size-of-chunks-to-be-used-in-md5-update
-
-    CHUNK_BYTES = 4 * 1024  # 4K blocks
-
-    # TODO: put a limit in size to upload!
-    sha256_hash = hashlib.sha256()
-
-    await file.seek(0)
-    while True:
-        chunk = await file.read(CHUNK_BYTES)
-        if not chunk:
-            break
-        sha256_hash.update(chunk)
-    return sha256_hash.hexdigest()
-
-
 ## FILES ---------------
 
 
-@router.get("")
+@router.get("", response_model=List[FileUploaded])
 async def list_files():
-    """ Lists all user's files """
-    # TODO: pagination
-    return [metadata for metadata, _ in the_fake_impl.files]
+    # TODO: extend sear
+    return the_fake_impl.list_meta()
 
 
 async def list_files_impl(
     _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
+    # TODO: pagination
     # TODO: this is just a ping with retries
+    # TODO: extend :search see https://cloud.google.com/apis/design/custom_methods
     # await storage_client.get("/")
     raise NotImplementedError()
 
@@ -56,14 +38,7 @@ async def list_files_impl(
 async def upload_single_file(
     file: UploadFile = File(...),
 ):
-    metadata = FileUploaded(
-        filename=file.filename,
-        content_type=file.content_type,
-        hash=await eval_sha256_hash(file),
-        # TODO: FileResponse automatically computes etag. See how is done
-    )
-
-    await the_fake_impl.save(metadata, file)
+    metadata = await the_fake_impl.save(file)
     return metadata
 
 
@@ -71,6 +46,8 @@ async def upload_single_file_impl(
     file: UploadFile = File(...),
     _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
+    # TODO: FileResponse automatically computes etag. See how is done
+
     # TODO: every file uploaded is sent to S3 and a link is returned
     # TODO: every session has a folder. A session is defined by the access token
     #
@@ -85,16 +62,11 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
     # TODO: every file uploaded is sent to S3 and a link is returned
     # TODO: every session has a folder. A session is defined by the access token
     #
-    async def go(file):
-        metadata = FileUploaded(
-            filename=file.filename,
-            content_type=file.content_type,
-            hash=await eval_sha256_hash(file),
-        )
-        await the_fake_impl.save(metadata, file)
+    async def save_file(file):
+        metadata = await the_fake_impl.save(file)
         return metadata
 
-    uploaded = await asyncio.gather(*[go(f) for f in files])
+    uploaded = await asyncio.gather(*[save_file(f) for f in files])
     return uploaded
 
 
@@ -104,7 +76,10 @@ async def download_file(file_id: str):
     try:
         metadata, file_path = await the_fake_impl.get(file_id)
     except KeyError as err:
-        raise HTTPException(status.HTTP_404_NOT_FOUND) from err
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with identifier {file_id} not found",
+        ) from err
 
     return FileResponse(
         str(file_path),

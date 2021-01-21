@@ -107,14 +107,19 @@
           "files"
         ],
         "summary": "List Files",
-        "description": "Lists all user's files ",
         "operationId": "list_files",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response List Files V0 Files Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FileUploaded"
+                  }
+                }
               }
             }
           }
