@@ -17,6 +17,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@contextmanager
+def errors_mapper(to_not_found=KeyError):
+    try:
+        yield
+    except to_not_found as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
+
+
 ## JOBS ---------------
 #
 # - Similar to docker container's API design (container = job and image = solver)
@@ -168,14 +176,3 @@ async def get_job_output(job_id: UUID, output_name: KeyIdentifier):
     with errors_mapper((KeyError, StopIteration)):
         outputs = the_fake_impl.job_outputs[job_id]
         return next(output for output in outputs if output.name == output_name)
-
-
-# HELPERS ------------
-
-
-@contextmanager
-def errors_mapper(to_not_found=KeyError):
-    try:
-        yield
-    except to_not_found as err:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err

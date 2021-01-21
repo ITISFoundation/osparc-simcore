@@ -75,9 +75,6 @@ async def get_solver_by_id(
     except KeyError as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
 
-    # catalog get /image_id
-    # raise NotImplementedError(f"GET solver {solver_id}")
-
 
 @router.get("/{solver_name:path}/{version}", response_model=Solver)
 async def get_solver_by_name_and_version(
@@ -101,10 +98,6 @@ async def get_solver_by_name_and_version(
         ),
         **data,
     )
-
-    # catalog get / key:latest
-    # raise NotImplementedError(f"GET {solver_name}:{version}")
-    # raise NotImplementedError(f"GET latest {solver_name}")
 
 
 async def _list_solvers_impl(
