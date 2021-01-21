@@ -63,6 +63,7 @@ def mocked_catalog_service_api(app: FastAPI):
         yield respx_mock
 
 
+@pytest.mark.skip(reason="Still under development. Currently using fake implementation")
 def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocker):
     cli = sync_client
     warn = mocker.patch.object(
