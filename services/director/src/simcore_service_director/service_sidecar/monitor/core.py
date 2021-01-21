@@ -19,21 +19,18 @@ from ..exceptions import ServiceSidecarError
 from .models import MonitorData
 from .handlers_base import BaseEventHandler
 from .handlers import REGISTERED_HANDLERS
+from .service_sidecar_api import query_service
 
 logger = logging.getLogger(__name__)
 
 MONITOR_KEY = f"{__name__}.ServiceSidecarsMonitor"
 
 
-async def query_service(input_monitor_data: MonitorData) -> MonitorData:
-    # TODO: call into service-sidecar API for to update the data
-    return input_monitor_data
-
-
-async def apply_monitoring(input_monitor_data: MonitorData) -> MonitorData:
+async def apply_monitoring(
+    app: Application, input_monitor_data: MonitorData
+) -> MonitorData:
     """fetches status for service and then processes all the registered handlers"""
-    logger.debug("No transformation applied to %s", input_monitor_data)
-    output_monitor_data = await query_service(input_monitor_data)
+    output_monitor_data = await query_service(app, input_monitor_data)
 
     for handler in REGISTERED_HANDLERS:
         handler: BaseEventHandler = handler
@@ -98,7 +95,9 @@ class ServiceSidecarsMonitor:
             try:
                 # TODO: maybe put this under a thigh timeout to limit long requests
                 # the output would go inside the health endpoint showing degradation for the service
-                self._to_monitor[service_name] = await apply_monitoring(monitor_data)
+                self._to_monitor[service_name] = await apply_monitoring(
+                    self._app, monitor_data
+                )
             except asyncio.CancelledError:
                 raise
             except Exception:  # pylint: disable=broad-except
