@@ -7,6 +7,7 @@
 # Handlers to subscribe to this thing
 
 import asyncio
+from async_timeout import timeout
 
 from aiohttp.web import Application
 from asyncio import Lock, sleep
@@ -30,7 +31,15 @@ async def apply_monitoring(
     app: Application, input_monitor_data: MonitorData
 ) -> MonitorData:
     """fetches status for service and then processes all the registered handlers"""
-    output_monitor_data = await query_service(app, input_monitor_data)
+    service_sidecar_settings = get_settings(app)
+
+    try:
+        with timeout(service_sidecar_settings.max_status_api_duration):
+            output_monitor_data = await query_service(app, input_monitor_data)
+    except asyncio.TimeoutError:
+        output_monitor_data = input_monitor_data
+        output_monitor_data.service_sidecar_status.is_available = False
+        # TODO: maybe push this into the health API to monitor degradation of the services
 
     for handler in REGISTERED_HANDLERS:
         handler: BaseEventHandler = handler
@@ -93,8 +102,6 @@ class ServiceSidecarsMonitor:
             monitor_data: MonitorData = self._to_monitor[service_name]
 
             try:
-                # TODO: maybe put this under a thigh timeout to limit long requests
-                # the output would go inside the health endpoint showing degradation for the service
                 self._to_monitor[service_name] = await apply_monitoring(
                     self._app, monitor_data
                 )

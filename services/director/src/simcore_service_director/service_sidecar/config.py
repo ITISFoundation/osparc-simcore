@@ -14,6 +14,14 @@ class ServiceSidecarSettings(BaseSettings):
         5.0, description="interval at which the monitor cycle is repeated"
     )
 
+    max_status_api_duration: float = Field(
+        1.0,
+        description=(
+            "when requesting the status of a service this is the "
+            "maximum amount of time the request can last"
+        ),
+    )
+
     class Config:
         case_sensitive = False
         env_prefix = "SERVICE_SIDECAR_"
