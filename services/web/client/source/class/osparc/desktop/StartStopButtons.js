@@ -29,7 +29,7 @@
  */
 
 qx.Class.define("osparc.desktop.StartStopButtons", {
-  extend: qx.ui.basic.Widget,
+  extend: qx.ui.core.Widget,
 
   construct: function() {
     this.base(arguments);
@@ -65,7 +65,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       this._add(stopButton);
 
       const startButton = this.__createStartButton();
-      this._.add(startButton);
+      this._add(startButton);
 
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
