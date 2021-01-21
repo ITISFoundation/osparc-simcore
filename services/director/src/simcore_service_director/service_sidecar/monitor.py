@@ -142,7 +142,15 @@ class ServiceSidecarsMonitor:
 
         for service_name in self._to_monitor:
             monitor_data: MonitorData = self._to_monitor[service_name]
-            self._to_monitor[service_name] = apply_monitoring(monitor_data)
+
+            try:
+                self._to_monitor[service_name] = apply_monitoring(monitor_data)
+            except asyncio.CancelledError:
+                raise
+            except Exception:   #pylint: disable=broad-except
+                logger.exception(
+                    "Something went wrong while monitoring service %s", service_name
+                )
 
     async def _run_monitor_task(self) -> None:
         service_sidecar_settings = get_settings(self._app)
