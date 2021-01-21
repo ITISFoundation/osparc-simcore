@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "label": "file-picker",
     "outputs": {
-      "out_1": {
+      "outFile": {
         "store": 0,
         "label": "some_file.txt",
         "path": "/tmp/some_file.txt",
@@ -19,7 +19,7 @@
     "inputs": {
       "in_1": {
         "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
-        "output": "out_1"
+        "output": "outFile"
       },
       "in_2": 2
     },
@@ -94,8 +94,8 @@
     ]
   },
   "82d7a25c-18d4-44dc-a997-e5c9a745e7fd": {
-    "key": "simcore/services/dynamic/some-dynamic-service",
-    "version": "1.0.0",
+    "key": "simcore/services/dynamic/jupyter-base-notebook",
+    "version": "2.13.0",
     "label": "some-dynamic-service",
     "inputs": {
       "in_1": {

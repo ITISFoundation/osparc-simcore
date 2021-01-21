@@ -4,6 +4,7 @@
 # pylint:disable=protected-access
 # pylint:disable=no-value-for-parameter
 
+from copy import deepcopy
 from random import randint
 from typing import Any, Callable, Dict, List
 from uuid import UUID, uuid4
@@ -35,6 +36,7 @@ COMPUTATION_URL: str = "v2/computations"
 @pytest.fixture(autouse=True)
 def minimal_configuration(
     sleeper_service: Dict[str, str],
+    jupyter_service: Dict[str, str],
     redis_service: RedisConfig,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
@@ -71,6 +73,18 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
         yield dict(user)
 
         con.execute(users.delete().where(users.c.id == user["id"]))
+
+
+@pytest.fixture
+def fake_workbench_without_outputs(
+    fake_workbench_as_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    workbench = deepcopy(fake_workbench_as_dict)
+    # remove all the outputs from the workbench
+    for _, data in workbench.items():
+        data["outputs"] = None
+
+    return workbench
 
 
 @pytest.fixture
@@ -194,13 +208,12 @@ def _assert_pipeline_status(
 
 
 @pytest.mark.parametrize(
-    "subgraph_elements,exp_pipeline_dag_adj_list_1st_run, exp_pipeline_dag_adj_list_2nd_run",
+    "subgraph_elements,exp_pipeline_dag_adj_list_1st_run",
     [
-        pytest.param([0, 1], {0: [1], 1: []}, {0: [1], 1: []}, id="element 0,1"),
+        pytest.param([0, 1], {1: []}, id="element 0,1"),
         pytest.param(
             [1, 2, 4],
             {0: [1, 3], 1: [2], 2: [4], 3: [4], 4: []},
-            {1: [4], 2: [], 4: []},
             id="element 1,2,4",
         ),
     ],
@@ -209,13 +222,12 @@ def test_run_partial_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench_as_dict: Dict[str, Any],
+    fake_workbench_without_outputs: Dict[str, Any],
     subgraph_elements: List[int],
     exp_pipeline_dag_adj_list_1st_run: Dict[str, List[str]],
-    exp_pipeline_dag_adj_list_2nd_run: Dict[str, List[str]],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench_as_dict)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -264,7 +276,7 @@ def test_run_partial_computation(
         task_out.state == RunningState.SUCCESS
     ), f"the pipeline complete with state {task_out.state}"
 
-    # run it a second time. the expected tasks to run might change.
+    # run it a second time. the tasks are all up-to-date, nothing should be run
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -276,6 +288,25 @@ def test_run_partial_computation(
                 for index, node_id in enumerate(sleepers_project.workbench)
                 if index in subgraph_elements
             ],
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    # force run it this time.
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(sleepers_project.uuid),
+            "start_pipeline": True,
+            "subgraph": [
+                str(node_id)
+                for index, node_id in enumerate(sleepers_project.workbench)
+                if index in subgraph_elements
+            ],
+            "force_restart": True,
         },
     )
     assert (
@@ -298,10 +329,10 @@ def test_run_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench_as_dict: Dict[str, Any],
+    fake_workbench_without_outputs: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench_as_dict)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -340,10 +371,10 @@ def test_abort_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench_as_dict: Dict[str, Any],
+    fake_workbench_without_outputs: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench_as_dict)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -410,10 +441,10 @@ def test_update_and_delete_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    fake_workbench_as_dict: Dict[str, Any],
+    fake_workbench_without_outputs: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench_as_dict)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},
