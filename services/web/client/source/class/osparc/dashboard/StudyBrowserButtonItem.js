@@ -129,6 +129,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     }
   },
 
+  events: {
+    "updateQualityStudy": "qx.event.type.Data",
+    "updateQualityTemplate": "qx.event.type.Data",
+    "updateQualityService": "qx.event.type.Data"
+  },
+
   statics: {
     MENU_BTN_WIDTH: 25,
     SHARED_USER: "@FontAwesome5Solid/user/14",
@@ -499,15 +505,17 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
       const title = resourceData.name + " - " + this.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
-      [
-        "updateStudy",
-        "updateTemplate",
-        "updateService"
-      ].forEach(event => {
-        qualityEditor.addListener(event, e => {
-          const updatedStudyData = e.getData();
-          this.setQuality(updatedStudyData["quality"]);
-        });
+      qualityEditor.addListener("updateStudy", e => {
+        const updatedStudyData = e.getData();
+        this.fireDataEvent("updateQualityStudy", updatedStudyData);
+      });
+      qualityEditor.addListener("updateTemplate", e => {
+        const updatedTemplateData = e.getData();
+        this.fireDataEvent("updateQualityTemplate", updatedTemplateData);
+      });
+      qualityEditor.addListener("updateService", e => {
+        const updatedServiceData = e.getData();
+        this.fireDataEvent("updateQualityService", updatedServiceData);
       });
     },
 

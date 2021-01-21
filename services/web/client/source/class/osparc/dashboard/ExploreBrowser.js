@@ -350,6 +350,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
         const templateItem = this.__createStudyItem(tempStudy);
+        templateItem.addListener("updateQualityTemplate", e => {
+          const updatedTemplateData = e.getData();
+          updatedTemplateData["resourceType"] = "template";
+          this._resetTemplateItem(updatedTemplateData);
+        }, this);
         this.__templatesContainer.add(templateItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
@@ -371,7 +376,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.__servicesContainer.removeAll();
       servicesList.forEach(service => {
         service["resourceType"] = "service";
-        this.__servicesContainer.add(this.__createStudyItem(service));
+        const serviceItem = this.__createStudyItem(service);
+        serviceItem.addListener("updateQualityService", e => {
+          const updatedServiceData = e.getData();
+          updatedServiceData["resourceType"] = "service";
+          this._resetServiceItem(updatedServiceData);
+        }, this);
+        this.__servicesContainer.add(serviceItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },

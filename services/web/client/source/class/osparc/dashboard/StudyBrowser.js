@@ -351,6 +351,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           return;
         }
         const studyItem = this.__createStudyItem(userStudy);
+        studyItem.addListener("updateQualityStudy", e => {
+          const updatedStudyData = e.getData();
+          updatedStudyData["resourceType"] = "study";
+          this._resetStudyItem(updatedStudyData);
+        }, this);
         this.__userStudyContainer.add(studyItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
