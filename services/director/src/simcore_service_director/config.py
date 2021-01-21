@@ -122,4 +122,9 @@ TRACING_ZIPKIN_ENDPOINT: str = os.environ.get(
     "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411"
 )
 
+# service_sidecar integration
+SERVICE_SIDECAR_MONITOR_INTERVAL_SECONDS: int = int(
+    os.environ.get("SERVICE_SIDECAR_MONITOR_INTERVAL_SECONDS", "5")
+)
+
 __all__ = ["APP_CLIENT_SESSION_KEY"]
