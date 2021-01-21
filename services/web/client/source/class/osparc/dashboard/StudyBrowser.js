@@ -350,7 +350,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (osparc.data.model.Study.isStudySecondary(userStudy)) {
           return;
         }
-        this.__userStudyContainer.add(this.__createStudyItem(userStudy));
+        const studyItem = this.__createStudyItem(userStudy);
+        this.__userStudyContainer.add(studyItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },

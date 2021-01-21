@@ -349,7 +349,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.self().sortTemplateList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
-        this.__templatesContainer.add(this.__createStudyItem(tempStudy));
+        const templateItem = this.__createStudyItem(tempStudy);
+        this.__templatesContainer.add(templateItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
