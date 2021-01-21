@@ -9,11 +9,8 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from faker import Faker
-
 from ...models.schemas.solvers import JobInput, JobOutput, JobStatus, TaskStates
 
-fake = Faker()
 logger = logging.getLogger(__name__)
 
 
@@ -43,6 +40,8 @@ class JobsFaker:
                 yield job
 
     def create_job(self, solver_id: UUID, inputs: List[JobInput]) -> Dict:
+        # TODO: validate inputs against solver definition
+
         sha = hashlib.sha256(
             " ".join(input.json() for input in inputs).encode("utf-8")
         ).hexdigest()
@@ -93,6 +92,7 @@ class JobsFaker:
 
             await asyncio.sleep(random.randint(*MOCK_PENDING_TIME))
 
+            # -------------------------------------------------
             job_state.state = TaskStates.RUNNING
             job_state.timestamp("started")
             logger.info(job_state)
@@ -102,6 +102,12 @@ class JobsFaker:
                 await asyncio.sleep(random.randint(*MOCK_RUNNING_TIME) / 100.0)
                 job_state.progress = n + 1
 
+            # NOTE: types of solvers
+            #  - all outputs at once or output completion
+            #  - can pause and resume or not
+            #
+
+            # -------------------------------------------------
             job_state.state = random.choice([TaskStates.SUCCESS, TaskStates.FAILED])
             job_state.progress = 100
             job_state.timestamp("stopped")

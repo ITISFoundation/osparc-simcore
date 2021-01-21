@@ -96,19 +96,19 @@ class JobStatus(BaseModel):
     """
 
     job_id: UUID
-
     state: TaskStates
     progress: conint(ge=0, le=100) = 0
 
-    # Timestamps
+    # Timestamps to some of the states
     # TODO: sync state events and timestamps
     submitted_at: datetime
     started_at: Optional[datetime] = Field(
-        None, description="Time stamp that indicates the solver starting execution"
+        None,
+        description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
     )
     stopped_at: Optional[datetime] = Field(
         None,
-        description="Time stamp at which the solver finished or killed execution",
+        description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
 
     def timestamp(self, event: str = "submitted"):
