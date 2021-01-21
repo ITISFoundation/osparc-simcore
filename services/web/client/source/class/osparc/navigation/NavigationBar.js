@@ -584,6 +584,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             this.__populateGuidedNodesLayout();
           }
         });
+        this.__startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+      } else {
+        this.__startStopBtns.exclude();
       }
     }
   }

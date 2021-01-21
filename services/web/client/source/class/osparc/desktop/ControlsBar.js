@@ -61,14 +61,14 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __ungroupButton: null,
     __iterationCtrls: null,
     __parametersButton: null,
-    __pipelineCtrls: null,
+    __startStopBtns: null,
 
     getStartButton: function() {
-      return this.__pipelineCtrls.getStartButton();
+      return this.__startStopBtns.getStartButton();
     },
 
     getStopButton: function() {
-      return this.__pipelineCtrls.getStopButton();
+      return this.__startStopBtns.getStopButton();
     },
 
     setWorkbenchVisibility: function(isWorkbenchContext) {
@@ -117,14 +117,18 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         });
       this.add(moreCtrls);
 
-      const pipelineCtrls = this.__pipelineCtrls =new osparc.desktop.StartStopButtons();
-      pipelineCtrls.addListener("startPipeline", () => {
+      const startStopBtns = this.__startStopBtns =new osparc.desktop.StartStopButtons();
+      startStopBtns.addListener("startPipeline", () => {
         this.fireDataEvent("startPipeline");
       }, this);
-      pipelineCtrls.addListener("stopPipeline", () => {
+      startStopBtns.addListener("stopPipeline", () => {
         this.fireDataEvent("stopPipeline");
       }, this);
-      this.add(pipelineCtrls);
+      osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
+        const study = e.getData();
+        startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+      });
+      this.add(startStopBtns);
     },
 
     __createShowSweeperButton: function() {
