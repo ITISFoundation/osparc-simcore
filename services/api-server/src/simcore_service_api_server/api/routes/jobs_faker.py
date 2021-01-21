@@ -13,6 +13,15 @@ from ...models.schemas.solvers import JobInput, JobOutput, JobStatus, TaskStates
 
 logger = logging.getLogger(__name__)
 
+NAMESPACE_JOB_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
+
+
+@functools.lru_cache()
+def compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
+    # FIXME: this is a temporary solution. Should be image id
+
+    return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
+
 
 @dataclass
 class JobsFaker:
@@ -131,15 +140,3 @@ class JobsFaker:
 
 
 the_fake_impl = JobsFaker()
-
-
-# HELPERS ------------
-
-NAMESPACE_JOB_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
-
-
-@functools.lru_cache()
-def compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
-    # FIXME: this is a temporary solution. Should be image id
-
-    return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")

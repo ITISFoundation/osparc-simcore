@@ -18,8 +18,8 @@ from .solvers_faker import the_fake_impl
 
 NAMESPACE_SOLVER_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
-# from urllib.request import pathname2url
-# from fastapi.responses import RedirectResponse
+# TODO: from urllib.request import pathname2url
+# TODO: from fastapi.responses import RedirectResponse
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ async def _list_solvers_impl(
 ):
     # TODO: pagination
     # TODO: deduce user
-    # filter and format as in docker listings ??
+    # TODO: filter and format as in docker listings ??
 
     # FIXME: temporary hard-coded user!
     user_id = 1
@@ -125,6 +125,7 @@ async def _list_solvers_impl(
     )
 
     # TODO: move this sorting down to database?
+
     # Create list list of the latest version of each solver
     latest_solvers: Dict[str, Solver] = {}
     for service in available_services:
