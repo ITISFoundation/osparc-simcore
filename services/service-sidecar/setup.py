@@ -30,7 +30,7 @@ setup(
     setup_requires=["setuptools_scm"],
     entry_points={
         "console_scripts": [
-            "simcore_service_service_sidecar_startup = sidecar.main:main",
+            "simcore_service_service_sidecar_startup = simcore_service_service_sidecar.main:main",
         ],
     },
 )
