@@ -10,8 +10,8 @@ KEY_SERVICE_SIDECAR_SETTINGS = f"{__name__}.ServiceSidecarSettings"
 
 class ServiceSidecarSettings(BaseSettings):
     # service_sidecar integration
-    monitor_interval_seconds: int = Field(
-        5, description="interval at which the monitor cycle is repeated"
+    monitor_interval_seconds: float = Field(
+        5.0, description="interval at which the monitor cycle is repeated"
     )
 
     class Config:
