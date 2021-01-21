@@ -39,7 +39,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6));
+    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
+      maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
+      maxHeight: this.self().ITEM_HEIGHT - 2*this.self().PADDING
+    });
     this._add(mainLayout, {
       top: 0,
       right: 0,
@@ -118,14 +121,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             allowGrowY: false
           });
           const sharedDescriptionLayout = this.getChildControl("subtitle");
-          sharedDescriptionLayout.addAt(control, 1, {
-            flex: 1
-          });
+          sharedDescriptionLayout.addAt(control, 1);
           break;
         }
         case "icon": {
           const maxWidth = this.self().ITEM_WIDTH - 2*this.self().PADDING;
-          const image = new osparc.component.widget.Thumbnail(null, maxWidth, 130);
+          const image = new osparc.component.widget.Thumbnail(null, maxWidth, 124);
           control = image.getChildControl("image").set({
             anonymous: true
           });

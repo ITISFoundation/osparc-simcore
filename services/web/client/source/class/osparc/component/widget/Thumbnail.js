@@ -57,11 +57,7 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       });
     });
 
-    const image = this.getChildControl("image").set({
-      scale: true,
-      allowStretchX: true,
-      allowStretchY: true
-    });
+    const image = this.getChildControl("image");
 
     if (source) {
       image.setSource(source);
@@ -91,6 +87,9 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       switch (id) {
         case "image":
           control = new qx.ui.basic.Image().set({
+            scale: true,
+            allowStretchX: true,
+            allowStretchY: true,
             alignX: "center",
             alignY: "middle"
           });
