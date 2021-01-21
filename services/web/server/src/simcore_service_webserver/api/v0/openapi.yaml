@@ -10537,7 +10537,7 @@ paths:
           type: boolean
     post:
       tags:
-        - project
+        - exporter
       summary: creates an archive of the project and downloads it
       operationId: export_project
       responses:
@@ -10634,7 +10634,7 @@ paths:
   '/projects:import':
     post:
       tags:
-        - project
+        - exporter
       summary: Create new project from an archive
       operationId: import_project
       requestBody:

@@ -1,13 +1,11 @@
-# let us all thank code climate for this module
-
 import logging
-from typing import Tuple
 
 from aiohttp import web
 from aiohttp.web_request import FileField
 
-from ..login.decorators import RQT_USERID_KEY
-from .config import exporter_settings
+from ..login.decorators import RQT_USERID_KEY, login_required
+from ..security_decorators import permission_required
+from .config import get_settings
 from .exceptions import ExporterException
 from .export_import import study_export, study_import
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
@@ -17,7 +15,9 @@ ONE_GB: int = 1024 * 1024 * 1024
 log = logging.getLogger(__name__)
 
 
-async def export_project_handler(request_tup: Tuple[web.Request]):
+@login_required
+@permission_required("project.export")
+async def export_project(request: web.Request):
     """Exporting multiple studies in parallel is fully supported. How the process works:
     - each time an export request is created a new temporary
     directory is generated `/tmp/SOME_TMP_DIR/`
@@ -29,7 +29,6 @@ async def export_project_handler(request_tup: Tuple[web.Request]):
     in this path `/tmp/SOME_TMP_DIR/some_name#SHA256=SOME_HASH.osparc`
     - When the request finishes, for any reason (HTTO_OK, HTTP_ERROR, etc...), the
     `/tmp/SOME_TMP_DIR/` si removed from the disk."""
-    request = request_tup[0]
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
 
@@ -61,10 +60,12 @@ async def export_project_handler(request_tup: Tuple[web.Request]):
     )
 
 
-async def import_project_handler(request_tup: Tuple[web.Request]):
-    request = request_tup[0]
+@login_required
+@permission_required("project.import")
+async def import_project(request: web.Request):
     # bumping this requests's max size
     # pylint: disable=protected-access
+    exporter_settings = get_settings(request.app)
     request._client_max_size = exporter_settings.max_upload_file_size * ONE_GB
 
     post_contents = await request.post()
@@ -85,3 +86,6 @@ async def import_project_handler(request_tup: Tuple[web.Request]):
     await remove_dir(directory=temp_dir)
 
     return dict(uuid=imported_project_uuid)
+
+
+rest_handler_functions = {fun.__name__: fun for fun in [export_project, import_project]}

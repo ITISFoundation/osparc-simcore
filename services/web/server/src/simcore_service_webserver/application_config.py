@@ -94,6 +94,7 @@ def create_schema() -> T.Dict:
             addon_section("director-v2", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),
             addon_section("studies_dispatcher", optional=True): minimal_addon_schema(),
+            addon_section("exporter", optional=True): minimal_addon_schema(),
         }
     )
 

@@ -36,7 +36,9 @@ UPLOAD_HTTP_TIMEOUT = 60 * 60  # 1 hour
 log = logging.getLogger(__name__)
 
 
-async def download_all_files_from_storage(download_links: Deque[LinkAndPath2]) -> None:
+async def download_all_files_from_storage(
+    app: web.Application, download_links: Deque[LinkAndPath2]
+) -> None:
     """ Downloads links to files in their designed storage_path_to_file """
     parallel_downloader = ParallelDownloader()
     for link_and_path in download_links:
@@ -50,7 +52,7 @@ async def download_all_files_from_storage(download_links: Deque[LinkAndPath2]) -
             download_path=link_and_path.storage_path_to_file,
         )
 
-    await parallel_downloader.download_files()
+    await parallel_downloader.download_files(app)
 
     # check all files have been downloaded
     for link_and_path in download_links:
@@ -124,7 +126,7 @@ async def generate_directory_contents(
     )
 
     # make sure all files from storage services are persisted on disk
-    await download_all_files_from_storage(download_links=download_links)
+    await download_all_files_from_storage(app=app, download_links=download_links)
 
     # store manifest on disk
     manifest_params = dict(

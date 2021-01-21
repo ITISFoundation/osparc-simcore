@@ -3,9 +3,10 @@ from pathlib import Path
 
 import parfive
 from aiofiles import os as aiofiles_os
+from aiohttp.web import Application
 from parfive.downloader import Downloader
 
-from .config import exporter_settings
+from .config import get_settings
 from .exceptions import ExporterException
 from .utils import makedirs
 
@@ -35,11 +36,12 @@ class ParallelDownloader:
         )
         self.total_files_added += 1
 
-    async def download_files(self):
+    async def download_files(self, app: Application):
         """starts the download and waits for all files to finish"""
 
         # run this async, parfive will support aiofiles in the future as stated above
         wrapped_function = aiofiles_os.wrap(self.downloader.download)
+        exporter_settings = get_settings(app)
         results = await wrapped_function(
             timeouts={
                 "total": exporter_settings.max_upload_file_size,

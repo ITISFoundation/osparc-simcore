@@ -3,10 +3,9 @@
 """
 import json
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 from aiohttp import web
-
 from servicelib.application import create_safe_application
 
 from ._meta import WELCOME_MSG
@@ -18,6 +17,7 @@ from .diagnostics import setup_diagnostics
 from .director import setup_director
 from .director_v2 import setup_director_v2
 from .email import setup_email
+from .exporter.module_setup import setup_exporter
 from .groups import setup_groups
 from .login import setup_login
 from .products import setup_products
@@ -32,10 +32,10 @@ from .socketio import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
+from .studies_dispatcher.module_setup import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
-from .studies_dispatcher.module_setup import setup_studies_dispatcher
 
 log = logging.getLogger(__name__)
 
@@ -80,11 +80,12 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_products(app)
     setup_studies_access(app)
     setup_studies_dispatcher(app)
+    setup_exporter(app)
 
     return app
 
 
-def run_service(config: Dict[str,Any]):
+def run_service(config: Dict[str, Any]):
     app = create_application(config)
 
     async def welcome_banner(_app: web.Application):

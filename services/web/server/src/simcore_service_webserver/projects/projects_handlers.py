@@ -23,11 +23,6 @@ from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
 
-from ..exporter.request_handlers import (  # noqa isort:skip
-    export_project_handler,
-    import_project_handler,
-)
-
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
     "description",
@@ -579,15 +574,3 @@ async def remove_tag(request: web.Request):
         request.match_info.get("study_uuid"),
     )
     return await db.remove_tag(project_uuid=study_uuid, user_id=uid, tag_id=int(tag_id))
-
-
-@login_required
-@permission_required("project.export")
-async def export_project(request: web.Request):
-    return await export_project_handler((request,))
-
-
-@login_required
-@permission_required("project.import")
-async def import_project(request: web.Request):
-    return await import_project_handler((request,))
