@@ -6,6 +6,8 @@
 #
 # Handlers to subscribe to this thing
 
+import asyncio
+from aiohttp.web import Application
 from asyncio import Lock, sleep
 from typing import Dict, List
 from pydantic import BaseModel, Field
@@ -13,8 +15,11 @@ from enum import Enum
 import logging
 
 from .. import config
+from .exceptions import ServiceSidecarError
 
 logger = logging.getLogger(__name__)
+
+MONITOR_KEY = f"{__name__}.ServiceSidecarsMonitor"
 
 # think about how to recover a reply when status changed here? or something like that when starting a service
 
@@ -38,8 +43,7 @@ class StartedContainer(BaseModel):
 
 class ServiceSidecar(BaseModel):
     is_available: bool = Field(
-        ...,
-        default=False,
+        False,
         scription="infroms if the web API on the service-sidecar is responding",
     )
 
@@ -66,45 +70,97 @@ class MonitorData(BaseModel):
         return cls()
 
 
+def apply_monitoring(input_monitor_data: MonitorData) -> MonitorData:
+    # should do something and return an updated instance or a new one
+    # there is no difference
+    logger.info("No transformation applied to %s", input_monitor_data)
+    return input_monitor_data
+
+
 class ServiceSidecarsMonitor:
-    __slots__ = ("to_monitor", "_lock", "_keep_running")
+    __slots__ = ("_to_monitor", "_lock", "_keep_running", "_inverse_search_mapping")
 
     def __init__(self):
-        self.to_monitor: Dict[str, MonitorData] = dict()
+        self._to_monitor: Dict[str, MonitorData] = dict()
         self._lock: Lock = Lock()
         self._keep_running: bool = False
+        self._inverse_search_mapping: Dict[str, str] = dict()
 
-    async def add_service_to_monitor(self, service_name: str) -> None:
-        # invoked when the service is started
+    async def add_service_to_monitor(self, service_name: str, node_uuid: str) -> None:
+        """Invoked before the service is started
+
+        Because we do not have all items require to compute the service_name the node_uuid is used to
+        keep track of the service for faster searches.
+        """
         async with self._lock:
-            if service_name in self.to_monitor:
+            if service_name in self._to_monitor:
                 return
-            self.to_monitor[service_name] = MonitorData.make_empty()
+            if node_uuid in self._inverse_search_mapping:
+                raise ServiceSidecarError(
+                    "node_uuids at a global level collided. A running "
+                    f"service for node {node_uuid} already exists. Please checkout "
+                    "other projects which may have this issue."
+                )
+            self._inverse_search_mapping[node_uuid] = service_name
+            self._to_monitor[service_name] = MonitorData.make_empty()
 
-    async def remove_service_from_monitor(self, service_name: str) -> None:
-        # invoked when the service is removed
+    async def remove_service_from_monitor(self, node_uuid) -> None:
+        # invoked before the service is removed
+        # TODO: fetch service_name from somewhere we must keep a mapping of them
         async with self._lock:
-            if service_name in self.to_monitor:
-                del self.to_monitor[service_name]
+            if node_uuid not in self._inverse_search_mapping:
+                return
+
+            service_name = self._inverse_search_mapping[node_uuid]
+            if service_name in self._to_monitor:
+                del self._to_monitor[service_name]
 
     async def get_service_status(self, service_name: str) -> MonitorData:
         # it is ok to error out if requesting a service which dose not exists, this should not happen
         async with self._lock:
-            return self.to_monitor[service_name]
+            return self._to_monitor[service_name]
 
     # start monitor - tied to the lifecycle of the app
     # stop monitor
 
-    async def _run_monitor(self) -> None:
+    async def _runner(self):
+        """This code runs under a lock and can safely change the Monitor data of all entries"""
+        logger.info("Doing some monitorung here")
+
+        for service_name in self._to_monitor:
+            monitor_data: MonitorData = self._to_monitor[service_name]
+            self._to_monitor[service_name] = apply_monitoring(monitor_data)
+
+    async def _run_monitor_task(self) -> None:
         while self._keep_running:
             # make sure access to the dict is locked while the monitoring cycle is running
             async with self._lock:
                 await self._runner()
 
-            sleep(config.SERVICE_SIDECAR_MONITOR_INTERVAL_SECONDS)
+            await sleep(config.SERVICE_SIDECAR_MONITOR_INTERVAL_SECONDS)
 
-    async def _runner(self):
-        """This code runs under the lock"""
-        # spawn prcesses in parallel, use dedicated ClientSession just for this to monitor the requests to the service sidecars
-        # merge results back to the dictionary
-        logger.info("Doing some monitorung here")
+        logger.warning("Monitor was shut down")
+
+    async def start(self):
+        # run as a background task
+        logging.info("Starting service-sidecar monitor")
+        self._keep_running = True
+        asyncio.get_event_loop().create_task(self._run_monitor_task())
+
+    async def shutdown(self):
+        logging.info("Shutting down service-sidecar monitor")
+        self._keep_running = False
+
+
+def get_monitor(app: Application) -> ServiceSidecarsMonitor:
+    return app[MONITOR_KEY]
+
+
+async def setup_monitor(app: Application):
+    app[MONITOR_KEY] = service_sidecars_monitor = ServiceSidecarsMonitor()
+    await service_sidecars_monitor.start()
+
+
+async def shutdown_monitor(app: Application):
+    service_sidecars_monitor = app[MONITOR_KEY]
+    await service_sidecars_monitor.shutdown()

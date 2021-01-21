@@ -9,6 +9,7 @@ from servicelib.tracing import setup_tracing
 from simcore_service_director import config, registry_cache_task, resources
 from simcore_service_director.rest import routing
 from simcore_service_director.monitoring import setup_app_monitoring
+from simcore_service_director.service_sidecar import setup_exporter
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +24,6 @@ def setup_app_tracing(app: web.Application, app_name: str) -> bool:
     return setup_tracing(app, app_name, host, port, cfg)
 
 
-
 def setup_app() -> web.Application:
     api_spec_path = resources.get_path(resources.RESOURCE_OPEN_API)
     app = routing.create_web_app(api_spec_path.parent, api_spec_path.name)
@@ -36,6 +36,8 @@ def setup_app() -> web.Application:
     setup_app_monitoring(app, "simcore_service_director")
 
     setup_app_tracing(app, "simcore_service_director")
+
+    setup_exporter(app)
 
     return app
 

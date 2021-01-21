@@ -7,8 +7,13 @@ from aiohttp import web
 
 from .. import exceptions, config
 from ..utils import get_swarm_network
+from .monitor import get_monitor
+
 
 log = logging.getLogger(__name__)
+
+FIXED_SERVICE_NAME_SIDECAR = "sidecar"
+FIXED_SERVICE_NAME_PROXY = "proxy"
 
 
 def strip_service_name(service_name: str) -> str:
@@ -17,17 +22,67 @@ def strip_service_name(service_name: str) -> str:
 
 
 def get_service_name_proxy(
-    project_id: str, service_key: str, node_uuid: str, service: str
+    project_id: str, service_key: str, node_uuid: str, fixed_service: str
 ) -> str:
     first_two_project_id = project_id[:2]
     name_from_service_key = service_key.split("/")[-1]
     return strip_service_name(
-        f"srvsdcr_{node_uuid}_{first_two_project_id}-{service}-{name_from_service_key}"
+        f"srvsdcr_{node_uuid}_{first_two_project_id}-{fixed_service}-{name_from_service_key}"
     )
+
+
+async def stop_service_sidecar_stack_for_service(
+    app: web.Application, node_uuid: str
+) -> None:
+    """will trigger actions needed to stop the service: removal from monitoring"""
+    monitor = get_monitor(app)
+    monitor.remove_service_from_monitor(node_uuid)
 
 
 async def start_service_sidecar_stack_for_service(
     app: web.Application,
+    client: aiodocker.docker.Docker,
+    user_id: str,
+    project_id: str,
+    service_key: str,
+    service_tag: str,
+    main_service: bool,
+    node_uuid: str,
+    node_base_path: str,
+    internal_network_id: Optional[str],
+) -> Dict:
+    """start the monitoring before spawning the process and remove the monitoring 
+    in case an exception occurs, also continue propagating the exception.
+    """
+    monitor = get_monitor(app)
+
+    service_name = get_service_name_proxy(
+        project_id=project_id,
+        service_key=service_key,
+        node_uuid=node_uuid,
+        fixed_service=FIXED_SERVICE_NAME_SIDECAR,
+    )
+    try:
+        await monitor.add_service_to_monitor(
+            service_name=service_name, node_uuid=node_uuid
+        )
+        return await _wrapped_start_service_sidecar_stack_for_service(
+            client=client,
+            user_id=user_id,
+            project_id=project_id,
+            service_key=service_key,
+            service_tag=service_tag,
+            main_service=main_service,
+            node_uuid=node_uuid,
+            node_base_path=node_base_path,
+            internal_network_id=internal_network_id,
+        )
+    except Exception:
+        await monitor.remove_service_from_monitor(node_uuid)
+        raise
+
+
+async def _wrapped_start_service_sidecar_stack_for_service(
     client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
@@ -55,10 +110,10 @@ async def start_service_sidecar_stack_for_service(
     # -  srvsdcr_{uuid}_{first_two_project_id}-sidecar-{name_from_service_key}
 
     service_name_service_sidecar = get_service_name_proxy(
-        project_id, service_key, node_uuid, "sidecar"
+        project_id, service_key, node_uuid, FIXED_SERVICE_NAME_SIDECAR
     )
     service_name_proxy = get_service_name_proxy(
-        project_id, service_key, node_uuid, "proxy"
+        project_id, service_key, node_uuid, FIXED_SERVICE_NAME_PROXY
     )
 
     first_two_project_id = project_id[:2]
