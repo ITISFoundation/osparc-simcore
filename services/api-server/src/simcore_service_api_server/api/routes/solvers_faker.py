@@ -6,6 +6,7 @@ import yaml
 from importlib_resources import files
 
 
+# TODO: move all fake implementation here
 @dataclass
 class SolversFaker:
     solvers = [
@@ -41,7 +42,7 @@ class SolversFaker:
                 return s
         raise KeyError()
 
-    def get2(self, name, version):
+    def get_by_name_and_version(self, name, version):
         try:
             return next(
                 s
