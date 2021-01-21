@@ -10,7 +10,7 @@ reqs: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
 
 
-# DEVELOPMENT TOOLS ########
+# DEVELOPMENT TOOLS ###########################################################################
 
 .env:
 	cp .env-devel $@
@@ -18,21 +18,6 @@ reqs: ## compiles pip requirements (.in -> .txt)
 DOCKER_COMPOSE_EXTRA_FILE:=.docker-compose-extra-ignore.yml
 $(DOCKER_COMPOSE_EXTRA_FILE):
 	cp $(CURDIR)/tests/utils/docker-compose.yml $@
-
-
-.PHONY: run-devel down
-run-devel: .env $(DOCKER_COMPOSE_EXTRA_FILE)down ## runs app on host with pg fixture for development [for development]
-	# Starting db (under $<)
-	docker-compose --file $(DOCKER_COMPOSE_EXTRA_FILE)  up --detach
-	sleep 2
-	# Creating db-tables: user=key, password=secret
-	@$(MAKE) db-tables
-	# start app (under $<)
-	uvicorn simcore_service_api_server.__main__:the_app \
-		--reload --reload-dir $(SRC_DIR) \
-		--port=8000 --host=0.0.0.0 \
-		--log-level debug
-
 
 
 .PHONY: db-tables
@@ -50,7 +35,7 @@ db-migration: .env ## runs discover and upgrade on running pg-db [for developmen
 	sc-pg discover && sc-pg upgrade
 
 
-
+.PHONY: down
 down: $(DOCKER_COMPOSE_EXTRA_FILE)## stops pg fixture
 	# stopping extra services
 	-@docker-compose -f $< down
@@ -59,14 +44,46 @@ down: $(DOCKER_COMPOSE_EXTRA_FILE)## stops pg fixture
 	-@fuser --kill --verbose --namespace tcp 3000
 
 
-.PHONY: fake-server
-fake-server: # starts a fake server
-	docker run --env-file .env-fake-standalone -it -p 8000:8000 local/${APP_NAME}:production
+# TODO: These are all different ways to run the server for dev-purposes .
+
+.PHONY: run-devel
+run-devel: .env $(DOCKER_COMPOSE_EXTRA_FILE) down
+	# Starting db (under $<)
+	docker-compose --file $(DOCKER_COMPOSE_EXTRA_FILE)  up --detach
+	sleep 2
+	# Creating db-tables: user=key, password=secret
+	@$(MAKE) db-tables
+	# start app (under $<)
+	uvicorn simcore_service_api_server.__main__:the_app \
+		--reload --reload-dir $(SRC_DIR) \
+		--port=8000 --host=0.0.0.0 \
+		--log-level debug
+
+
+.PHONY: run-fake run-fake-devel
+run-fake: # starts a fake server in a container
+	docker run -it \
+		--env-file .env-fake-standalone \
+		--publish 8000:8000 \
+		local/${APP_NAME}:production
 	# Open http://172.0.0.1:8000/dev/doc
 
 
+run-fake-devel: # starts a fake server in a dev-container
+	docker run -it \
+		--env-file .env-fake-standalone \
+	  --env SC_BOOT_MODE=debug-ptvsd \
+    --env LOG_LEVEL=debug \
+    --env DEBUG=true \
+		--publish 8000:8000 \
+		--publish 3006:3000 \
+		--volume $(REPO_BASE_DIR)/services/api-server:/devel/services/api-server \
+		--volume $(REPO_BASE_DIR)/packages:/devel/packages \
+		local/${APP_NAME}:development
+	# Open http://172.0.0.1:8000/dev/doc
 
-# BUILD ########
+
+# BUILD ###########################################################################
 
 .PHONY: openapi-specs openapi.json
 openapi-specs: openapi.json
@@ -75,7 +92,7 @@ openapi.json: .env
 	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
 
 
-# GENERATION python client ########
+# GENERATION python client ###########################################################################
 .PHONY: python-client generator-help
 
 # SEE https://openapi-generator.tech/docs/usage#generate
