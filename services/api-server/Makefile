@@ -15,13 +15,15 @@ reqs: ## compiles pip requirements (.in -> .txt)
 .env:
 	cp .env-devel $@
 
-docker-compose.yml:
+DOCKER_COMPOSE_EXTRA_FILE:=.docker-compose-extra-ignore.yml
+$(DOCKER_COMPOSE_EXTRA_FILE):
 	cp $(CURDIR)/tests/utils/docker-compose.yml $@
 
+
 .PHONY: run-devel down
-run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for development [for development]
+run-devel: .env $(DOCKER_COMPOSE_EXTRA_FILE)down ## runs app on host with pg fixture for development [for development]
 	# Starting db (under $<)
-	docker-compose up --detach
+	docker-compose --file $(DOCKER_COMPOSE_EXTRA_FILE)  up --detach
 	sleep 2
 	# Creating db-tables: user=key, password=secret
 	@$(MAKE) db-tables
@@ -49,7 +51,7 @@ db-migration: .env ## runs discover and upgrade on running pg-db [for developmen
 
 
 
-down: docker-compose.yml ## stops pg fixture
+down: $(DOCKER_COMPOSE_EXTRA_FILE)## stops pg fixture
 	# stopping extra services
 	-@docker-compose -f $< down
 	# killing any process using port 8000 (app) and 3000 (debug)
