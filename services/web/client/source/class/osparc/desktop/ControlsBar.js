@@ -61,16 +61,14 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __ungroupButton: null,
     __iterationCtrls: null,
     __parametersButton: null,
-    __startButton: null,
-    __stopButton: null,
     __pipelineCtrls: null,
 
     getStartButton: function() {
-      return this.__startButton;
+      return this.__pipelineCtrls.getStartButton();
     },
 
     getStopButton: function() {
-      return this.__stopButton;
+      return this.__pipelineCtrls.getStopButton();
     },
 
     setWorkbenchVisibility: function(isWorkbenchContext) {
@@ -119,44 +117,14 @@ qx.Class.define("osparc.desktop.ControlsBar", {
         });
       this.add(moreCtrls);
 
-      const pipelineCtrls = this.__pipelineCtrls = new qx.ui.toolbar.Part();
-      const stopButton = this.__createStopButton();
-      stopButton.setEnabled(false);
-      pipelineCtrls.add(stopButton);
-      const startButton = this.__createStartButton();
-      pipelineCtrls.add(startButton);
+      const pipelineCtrls = this.__pipelineCtrls =new osparc.desktop.StartStopButtons();
+      pipelineCtrls.addListener("startPipeline", e => {
+        this.fireDataEvent("startPipeline", e.getData());
+      }, this);
+      pipelineCtrls.addListener("stopPipeline", e => {
+        this.fireDataEvent("stopPipeline", e.getData());
+      }, this);
       this.add(pipelineCtrls);
-
-      osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
-        const study = e.getData();
-        this.__updateRunButtonsStatus(study);
-      });
-    },
-
-    __updateRunButtonsStatus: function(study) {
-      if (study) {
-        const startButton = this.__startButton;
-        const stopButton = this.__stopButton;
-        if (study.getState() && study.getState().state) {
-          const pipelineState = study.getState().state;
-          switch (pipelineState.value) {
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-              startButton.setFetching(true);
-              stopButton.setEnabled(true);
-              break;
-            case "NOT_STARTED":
-            case "SUCCESS":
-            case "FAILED":
-            default:
-              startButton.setFetching(false);
-              stopButton.setEnabled(false);
-              break;
-          }
-        }
-        this.__pipelineCtrls.setVisibility(study.isReadOnly() ? "excluded" : "visible");
-      }
     },
 
     __createShowSweeperButton: function() {
@@ -194,15 +162,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       );
     },
 
-    __createStartButton: function() {
-      const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
-      return startButton;
-    },
-    __createStopButton: function() {
-      const stopButton = this.__stopButton = this.__createButton(this.tr("Stop"), "stop", "stopStudyBtn", "stopPipeline");
-      return stopButton;
-    },
-
     __createRadioButton: function(label, icon, widgetId, singalName) {
       const button = new qx.ui.toolbar.RadioButton(label);
       // button.setIcon("@FontAwesome5Solid/"+icon+"/14");
@@ -228,11 +187,11 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const selectedNodes = msg.getData();
       this.__groupButton.setVisibility(selectedNodes.length ? "visible" : "excluded");
       this.__ungroupButton.setVisibility((selectedNodes.length === 1 && selectedNodes[0].isContainer()) ? "visible" : "excluded");
-      if (!this.__startButton.isFetching()) {
+      if (!this.getStartButton().isFetching()) {
         if (selectedNodes.length) {
-          this.__startButton.setLabel(this.tr("Run selection"));
+          this.getStartButton().setLabel(this.tr("Run selection"));
         } else {
-          this.__startButton.setLabel(this.tr("Run"));
+          this.getStartButton().setLabel(this.tr("Run"));
         }
       }
     },
