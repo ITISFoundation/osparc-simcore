@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import conint, constr, confloat
+from pydantic import confloat, conint, constr
 
 PortInt = conint(gt=0, lt=65535)
 
