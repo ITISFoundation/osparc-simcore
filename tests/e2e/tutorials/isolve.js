@@ -22,7 +22,7 @@ async function runTutorial() {
   try {
     tutorial.startScreenshooter();
     await tutorial.start();
-    const studyData = await tutorial.openService(1000);
+    const studyData = await tutorial.openTemplate(1000);
     const studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
