@@ -4,9 +4,6 @@ APP_NAME := $(notdir $(CURDIR))
 
 .DEFAULT_GOAL := help
 
-.PHONY: help
-help: ## display this message
-	@awk 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: _ensure-in-venv
 _ensure-in-venv:
@@ -55,5 +52,5 @@ ci-install-requirements: ## runs tests with coverage in a new enviornment
 .PHONY: run-github-action-locally
 run-github-action-locally:  ## runs the defined github action from the workflow locally
 	# Note: ⚡ act is required https://github.com/nektos/act
-	# Note: ⚠️  "act-environments-ubuntu:18.04" image is 18Gb takes a lot the first time
+	# Note: ⚠️  "nektos/act-environments-ubuntu:18.04" image is 18Gb and takes a lot the first time
 	@act -C ../../. -P ubuntu-18.04=nektos/act-environments-ubuntu:18.04 -j unit-test-service-sidecar
