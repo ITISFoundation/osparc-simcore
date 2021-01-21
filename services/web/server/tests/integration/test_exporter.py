@@ -22,6 +22,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.exporter import setup_exporter
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
@@ -136,6 +137,7 @@ def client(
     setup_projects(app)
     setup_director(app)
     setup_director_v2(app)
+    setup_exporter(app)
     assert setup_resource_manager(app)
 
     yield loop.run_until_complete(
