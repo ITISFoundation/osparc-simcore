@@ -38,7 +38,6 @@ def compose_solver_id(solver_key: SolverImageName, version: str) -> UUID:
 
 @router.get("", response_model=List[Solver])
 async def list_solvers(
-    _catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """

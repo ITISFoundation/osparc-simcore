@@ -14,7 +14,6 @@ STORAGE_DIR = Path(tempfile.mkdtemp(prefix=f"{__name__}-"))
 def prune_other_storage_dirs():
     for d in STORAGE_DIR.parent.glob(f"{__name__}*"):
         if d != STORAGE_DIR and d.is_dir():
-            print("Removing dire")
             shutil.rmtree(d, ignore_errors=True)
 
 

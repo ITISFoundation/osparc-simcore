@@ -1122,13 +1122,13 @@
           "started_at": {
             "title": "Started At",
             "type": "string",
-            "description": "Time stamp that indicates the solver starting execution",
+            "description": "Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
             "format": "date-time"
           },
           "stopped_at": {
             "title": "Stopped At",
             "type": "string",
-            "description": "Time stamp at which the solver finished or killed execution",
+            "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur",
             "format": "date-time"
           }
         },

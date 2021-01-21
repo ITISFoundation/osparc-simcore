@@ -160,7 +160,7 @@ async def stop_job(
 @router.post("/{job_id}:inspect", response_model=JobStatus)
 async def inspect_job(job_id: UUID):
     with errors_mapper():
-        state = the_fake_impl.job_states[job_id]
+        state = the_fake_impl.job_status[job_id]
         return state
 
 
