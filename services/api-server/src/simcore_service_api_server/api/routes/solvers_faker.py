@@ -1,13 +1,15 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 import packaging.version
+import yaml
+from importlib_resources import files
 
 
 @dataclass
 class SolversFaker:
     solvers = [
         {
-            # https://github.com/ITISFoundation/osparc-services/blob/master/services/oc-opencor-base/metadata/metadata.yml
             "uuid": "3197d0df-1506-351c-86f9-a93783c5c306",
             "name": "simcore/services/comp/opencor",
             "version": "1.0.3",
@@ -57,6 +59,16 @@ class SolversFaker:
         if not _all:
             raise KeyError()
         return sorted(_all, key=lambda s: packaging.version.parse(s["version"]))[-1]
+
+
+def load_mocks():
+    # TODO: transform into solvers
+    mocks_dir: Path = files("simcore_service_api_server").joinpath("mocks")
+    mocks_metadata = []
+    for filepath in mocks_dir.glob("*.y*ml"):
+        metadata = yaml.safe_load(filepath.read_text())
+        mocks_metadata.append(metadata)
+    return mocks_metadata
 
 
 the_fake_impl = SolversFaker()

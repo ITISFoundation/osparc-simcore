@@ -51,6 +51,11 @@ setup(
         "": "src",
     },
     include_package_data=True,
+    package_data={
+        "": [
+            "mocks/*.y*ml",
+        ]
+    },
     install_requires=install_requirements,
     test_suite="tests",
     tests_require=test_requirements,
