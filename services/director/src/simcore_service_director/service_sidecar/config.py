@@ -4,9 +4,6 @@
 from pydantic import BaseSettings, Field
 from aiohttp.web import Application
 
-# this will be removed in the future
-from .. import config as director_config
-
 
 KEY_SERVICE_SIDECAR_SETTINGS = f"{__name__}.ServiceSidecarSettings"
 
@@ -14,8 +11,12 @@ KEY_SERVICE_SIDECAR_SETTINGS = f"{__name__}.ServiceSidecarSettings"
 class ServiceSidecarSettings(BaseSettings):
     # service_sidecar integration
     monitor_interval_seconds: int = Field(
-        director_config.SERVICE_SIDECAR_MONITOR_INTERVAL_SECONDS, description="used "
+        5, description="interval at which the monitor cycle is repeated"
     )
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "SERVICE_SIDECAR_"
 
 
 def setup_settings(app: Application) -> None:
