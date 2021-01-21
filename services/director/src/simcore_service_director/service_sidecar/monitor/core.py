@@ -116,10 +116,13 @@ class ServiceSidecarsMonitor:
 
         while self._keep_running:
             # make sure access to the dict is locked while the monitoring cycle is running
-            async with self._lock:
-                await self._runner()
+            try:
+                async with self._lock:
+                    await self._runner()
 
-            await sleep(service_sidecar_settings.monitor_interval_seconds)
+                await sleep(service_sidecar_settings.monitor_interval_seconds)
+            except asyncio.CancelledError:
+                break
 
         logger.warning("Monitor was shut down")
 
