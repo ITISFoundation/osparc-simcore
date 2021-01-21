@@ -89,7 +89,7 @@ async def get_solver_by_name_and_version(
         if version == LATEST_VERSION:
             data = the_fake_impl.get_latest(solver_name)
         else:
-            data = the_fake_impl.get2(solver_name, version)
+            data = the_fake_impl.get_by_name_and_version(solver_name, version)
 
     except KeyError as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
