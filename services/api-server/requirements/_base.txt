@@ -76,6 +76,8 @@ idna==2.10
     #   yarl
 immutables==0.14
     # via contextvars
+importlib-resources==5.1.0
+    # via -r requirements/_base.in
 itsdangerous==1.1.0
     # via fastapi
 jinja2==2.11.2
@@ -169,3 +171,5 @@ websockets==8.1
     # via uvicorn
 yarl==1.6.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+zipp==3.4.0
+    # via importlib-resources

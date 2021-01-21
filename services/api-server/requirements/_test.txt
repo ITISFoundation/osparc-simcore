@@ -269,7 +269,9 @@ yarl==1.6.3
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
 zipp==3.4.0
-    # via importlib-metadata
+    # via
+    #   -c requirements/_base.txt
+    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

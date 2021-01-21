@@ -25,6 +25,7 @@ aiopg[sa]
 httpx
 
 #
+importlib_resources
 attrs
 tenacity
 cryptography
