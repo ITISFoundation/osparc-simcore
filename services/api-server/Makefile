@@ -32,6 +32,7 @@ run-devel: .env docker-compose.yml down ## runs app on host with pg fixture for 
 		--log-level debug
 
 
+
 .PHONY: db-tables
 db-tables: .env ## upgrades and create tables [for development]
 	# Upgrading and creating tables
@@ -55,6 +56,11 @@ down: docker-compose.yml ## stops pg fixture
 	-@fuser --kill --verbose --namespace tcp 8000
 	-@fuser --kill --verbose --namespace tcp 3000
 
+
+.PHONY: fake-server
+fake-server: # starts a fake server
+	docker run --env-file .env-fake-standalone -it -p 8000:8000 local/${APP_NAME}:production
+	# Open http://172.0.0.1:8000/dev/doc
 
 
 
