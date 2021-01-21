@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 import logging
 
-from .. import config
+from .config import get_settings
 from .exceptions import ServiceSidecarError
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,10 @@ class ServiceSidecar(BaseModel):
 class MonitorData(BaseModel):
     """Stores information on the current status of service-sidecar"""
 
+    service_name: str = Field(
+        ..., description="Name of the current sidecar-service being monitored"
+    )
+
     service_sidecar_status: ServiceSidecar = Field(
         ServiceSidecar.make_empty(),
         description="stores information fetched from the service-sidecar",
@@ -66,25 +70,32 @@ class MonitorData(BaseModel):
     )
 
     @classmethod
-    def make_empty(cls):
-        return cls()
+    def assemble(cls, service_name: str):
+        return cls(service_name=service_name)
 
 
 def apply_monitoring(input_monitor_data: MonitorData) -> MonitorData:
     # should do something and return an updated instance or a new one
     # there is no difference
-    logger.info("No transformation applied to %s", input_monitor_data)
+    logger.debug("No transformation applied to %s", input_monitor_data)
     return input_monitor_data
 
 
 class ServiceSidecarsMonitor:
-    __slots__ = ("_to_monitor", "_lock", "_keep_running", "_inverse_search_mapping")
+    __slots__ = (
+        "_to_monitor",
+        "_lock",
+        "_keep_running",
+        "_inverse_search_mapping",
+        "_app",
+    )
 
-    def __init__(self):
+    def __init__(self, app: Application):
         self._to_monitor: Dict[str, MonitorData] = dict()
         self._lock: Lock = Lock()
         self._keep_running: bool = False
         self._inverse_search_mapping: Dict[str, str] = dict()
+        self._app: Application = app
 
     async def add_service_to_monitor(self, service_name: str, node_uuid: str) -> None:
         """Invoked before the service is started
@@ -102,7 +113,8 @@ class ServiceSidecarsMonitor:
                     "other projects which may have this issue."
                 )
             self._inverse_search_mapping[node_uuid] = service_name
-            self._to_monitor[service_name] = MonitorData.make_empty()
+            self._to_monitor[service_name] = MonitorData.assemble(service_name)
+            logger.debug("Added service '%s' to monitor", service_name)
 
     async def remove_service_from_monitor(self, node_uuid) -> None:
         # invoked before the service is removed
@@ -113,6 +125,7 @@ class ServiceSidecarsMonitor:
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name in self._to_monitor:
+                logger.debug("Removed service '%s' from monitoring", service_name)
                 del self._to_monitor[service_name]
 
     async def get_service_status(self, service_name: str) -> MonitorData:
@@ -132,12 +145,14 @@ class ServiceSidecarsMonitor:
             self._to_monitor[service_name] = apply_monitoring(monitor_data)
 
     async def _run_monitor_task(self) -> None:
+        service_sidecar_settings = get_settings(self._app)
+
         while self._keep_running:
             # make sure access to the dict is locked while the monitoring cycle is running
             async with self._lock:
                 await self._runner()
 
-            await sleep(config.SERVICE_SIDECAR_MONITOR_INTERVAL_SECONDS)
+            await sleep(service_sidecar_settings.monitor_interval_seconds)
 
         logger.warning("Monitor was shut down")
 
@@ -157,7 +172,7 @@ def get_monitor(app: Application) -> ServiceSidecarsMonitor:
 
 
 async def setup_monitor(app: Application):
-    app[MONITOR_KEY] = service_sidecars_monitor = ServiceSidecarsMonitor()
+    app[MONITOR_KEY] = service_sidecars_monitor = ServiceSidecarsMonitor(app)
     await service_sidecars_monitor.start()
 
 

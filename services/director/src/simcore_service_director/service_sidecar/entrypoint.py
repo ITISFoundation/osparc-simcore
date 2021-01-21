@@ -36,7 +36,7 @@ async def stop_service_sidecar_stack_for_service(
 ) -> None:
     """will trigger actions needed to stop the service: removal from monitoring"""
     monitor = get_monitor(app)
-    monitor.remove_service_from_monitor(node_uuid)
+    await monitor.remove_service_from_monitor(node_uuid)
 
 
 async def start_service_sidecar_stack_for_service(
