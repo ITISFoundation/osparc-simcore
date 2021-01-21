@@ -2,10 +2,10 @@
     Models a study's project document
 """
 from copy import deepcopy
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, validator
 
 from .basic_regex import DATE_RE
 from .projects_access import AccessRights, GroupID
@@ -40,7 +40,9 @@ class Project(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    thumbnail: HttpUrl = Field(
+    # NOTE: str is necessary because HttpUrl will not accept and empty string and the
+    # frontend sometimes sends this empty string, which is removed by the validator
+    thumbnail: Union[str, HttpUrl] = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -88,9 +90,14 @@ class Project(BaseModel):
     quality: Dict[str, Any] = {}
 
     # Dev only
-    dev: Optional[Dict] = Field(
-        description="object used for development purposes only"
-    )
+    dev: Optional[Dict] = Field(description="object used for development purposes only")
+
+    @classmethod
+    @validator("thumbnail")
+    def null_thumbnail(cls, v):
+        if isinstance(v, str) and v == "":
+            return None
+        return v
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
