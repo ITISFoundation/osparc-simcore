@@ -12,6 +12,7 @@ from asyncio import Lock, sleep
 from typing import Dict, List
 from pydantic import BaseModel, Field
 from enum import Enum
+from collections import deque
 import logging
 
 from .config import get_settings
@@ -140,17 +141,23 @@ class ServiceSidecarsMonitor:
         """This code runs under a lock and can safely change the Monitor data of all entries"""
         logger.info("Doing some monitorung here")
 
-        for service_name in self._to_monitor:
+        async def monitor_single_service(service_name: str) -> None:
             monitor_data: MonitorData = self._to_monitor[service_name]
 
             try:
                 self._to_monitor[service_name] = apply_monitoring(monitor_data)
             except asyncio.CancelledError:
                 raise
-            except Exception:   #pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logger.exception(
                     "Something went wrong while monitoring service %s", service_name
                 )
+
+        services = deque()
+        for service_name in self._to_monitor:
+            services.append(monitor_single_service(service_name))
+
+        asyncio.gather(*services)
 
     async def _run_monitor_task(self) -> None:
         service_sidecar_settings = get_settings(self._app)
