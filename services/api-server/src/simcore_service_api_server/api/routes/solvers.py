@@ -16,11 +16,21 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client
 from .solvers_faker import the_fake_impl
 
+NAMESPACE_SOLVER_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
+
 # from urllib.request import pathname2url
 # from fastapi.responses import RedirectResponse
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+@functools.lru_cache()
+def compose_solver_id(solver_key: SolverImageName, version: str) -> UUID:
+    # FIXME: this is a temporary solution. Should be image id
+
+    return uuidlib.uuid3(NAMESPACE_SOLVER_KEY, f"{solver_key}:{version}")
 
 
 ## SOLVERS -----------------------------------------------------------------------------------------
@@ -165,15 +175,3 @@ async def _list_solvers_impl(
                     ) from err
 
     return sorted(latest_solvers.values(), key=attrgetter("name"))
-
-
-# HELPERS ----
-
-NAMESPACE_SOLVER_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
-
-
-@functools.lru_cache()
-def compose_solver_id(solver_key: SolverImageName, version: str) -> UUID:
-    # FIXME: this is a temporary solution. Should be image id
-
-    return uuidlib.uuid3(NAMESPACE_SOLVER_KEY, f"{solver_key}:{version}")
