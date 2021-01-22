@@ -136,21 +136,6 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
         this.__navNodes.populateButtons(nodeIds, "arrow");
         this.__prevNextBtns.populateButtons(nodeIds);
       }
-    },
-
-    __workbenchSelectionChanged: function(msg) {
-      const selectedNodes = msg.getData();
-      if (!this.getStartButton().isFetching()) {
-        if (selectedNodes.length) {
-          this.getStartButton().setLabel(this.tr("Run selection"));
-        } else {
-          this.getStartButton().setLabel(this.tr("Run"));
-        }
-      }
-    },
-
-    __attachEventHandlers: function() {
-      qx.event.message.Bus.subscribe("changeWorkbenchSelection", this.__workbenchSelectionChanged, this);
     }
   }
 });

@@ -27,6 +27,8 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     this.setAppearance("sidepanel");
 
     this.__buildLayout();
+
+    this.__attachEventHandlers();
   },
 
   events: {
