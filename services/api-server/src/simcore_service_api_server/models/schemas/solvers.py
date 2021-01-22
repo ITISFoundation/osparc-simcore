@@ -145,7 +145,7 @@ class JobInput(SolverPort):
         schema_extra = {
             "example": {
                 "name": "T",
-                "content_type": "number",
+                "type": "number",
                 "title": "Temperature",
                 "value": "33",
             }
@@ -153,9 +153,6 @@ class JobInput(SolverPort):
 
 
 class JobOutput(SolverPort):
-    status: TaskStates = Field(
-        ..., description="State towards completion of this output"
-    )
     value: Union[float, str, int, HttpUrl, None] = Field(
         ..., description="Result value in this output"
     )
@@ -165,7 +162,7 @@ class JobOutput(SolverPort):
         schema_extra = {
             "example": {
                 "name": "SAR",
-                "content_type": "data:application/hdf5",
+                "type": "data:application/hdf5",
                 "title": "SAR field output file",
                 "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
             }

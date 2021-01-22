@@ -16,8 +16,9 @@ async def create_md5_checksum(async_stream, *, chunk_size=CHUNK_4KB) -> str:
         md5check = await create_md5_checksum(file)
 
     SEE https://ant.apache.org/manual/Tasks/checksum.html
+    WARNING: bandit reports the use of insecure MD2, MD4, MD5, or SHA1 hash function.
     """
-    md5_hash = hashlib.md5()
+    md5_hash = hashlib.md5()  # nosec
     return await _eval_hash_async(async_stream, md5_hash, chunk_size)
 
 

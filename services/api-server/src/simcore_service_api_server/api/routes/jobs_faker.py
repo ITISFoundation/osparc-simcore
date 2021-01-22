@@ -1,3 +1,8 @@
+"""
+    Fakes the implementation of some some kind of queueing and
+    scheduling of jobs
+
+"""
 import asyncio
 import functools
 import hashlib
@@ -9,7 +14,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from ...models.schemas.solvers import JobInput, JobOutput, JobStatus, TaskStates
+from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus, TaskStates
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +23,6 @@ NAMESPACE_JOB_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
 @functools.lru_cache()
 def compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
-    # FIXME: this is a temporary solution. Should be image id
-
     return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
 
 
@@ -50,7 +53,6 @@ class JobsFaker:
 
     def create_job(self, solver_id: UUID, inputs: List[JobInput]) -> Dict:
         # TODO: validate inputs against solver definition
-
         sha = hashlib.sha256(
             " ".join(input.json() for input in inputs).encode("utf-8")
         ).hexdigest()
@@ -97,12 +99,12 @@ class JobsFaker:
         job_status = self.job_status[job_id]
 
         try:
-            await asyncio.sleep(random.randint(*MOCK_PULLING_TIME))
+            await asyncio.sleep(random.randint(*MOCK_PULLING_TIME))  # nosec
 
             job_status.state = TaskStates.PENDING
             logger.info(job_status)
 
-            await asyncio.sleep(random.randint(*MOCK_PENDING_TIME))
+            await asyncio.sleep(random.randint(*MOCK_PENDING_TIME))  # nosec
 
             # -------------------------------------------------
             job_status.state = TaskStates.RUNNING
@@ -111,7 +113,7 @@ class JobsFaker:
 
             job_status.progress = 0
             for n in range(100):
-                await asyncio.sleep(random.randint(*MOCK_RUNNING_TIME) / 100.0)
+                await asyncio.sleep(random.randint(*MOCK_RUNNING_TIME) / 100.0)  # nosec
                 job_status.progress = n + 1
 
             # NOTE: types of solvers
@@ -120,15 +122,34 @@ class JobsFaker:
             #
 
             # -------------------------------------------------
-            job_status.state = random.choice([TaskStates.SUCCESS, TaskStates.FAILED])
+            done_states = [TaskStates.SUCCESS, TaskStates.FAILED]
+            job_status.state = random.choice(done_states)  # nosec
             job_status.progress = 100
             job_status.timestamp("stopped")
             logger.info(job_status)
 
+            # Fakes a single output
             if job_status.state == TaskStates.SUCCESS:
-                # TODO: return it
-                # if file, upload
-                self.job_outputs[job_id] = []
+                self.job_outputs[job_id] = [
+                    JobOutput(
+                        name="T",
+                        type="number",
+                        title="Resulting Temperature",
+                        value=33,
+                        job_id=job_id,
+                    ),
+                ]
+            else:
+                self.job_outputs[job_id] = [
+                    JobOutput(
+                        name="T",
+                        type="string",
+                        title="Resulting Temperature",
+                        value="ERROR: simulation diverged",
+                        job_id=job_id,
+                    )
+                ]
+
         except asyncio.CancelledError:
             if job_status.state != TaskStates.SUCCESS:
                 job_status.state = TaskStates.FAILED
