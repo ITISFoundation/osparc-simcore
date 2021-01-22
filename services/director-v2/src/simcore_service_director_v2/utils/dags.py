@@ -87,28 +87,20 @@ async def create_minimal_computational_graph_based_on_selection(
         ):
             _mark_node_dirty(nodes_data_view, node)
 
+    # second pass, detect all the nodes that need to be run
     minimal_selection_nodes: Set[NodeID] = set()
-    if not selected_nodes and force_restart:
-        # we do want to re-run everything
+    if not selected_nodes:
+        # fully automatic detection, we want anything that is outdated or depending on outdated nodes
         minimal_selection_nodes.update(
             {
                 n
                 for n, _ in nodes_data_view
                 if _node_computational(nodes_data_view[n]["key"])
-            }
-        )
-    elif not selected_nodes:
-        # only run the outdated nodes and their descendants
-        minimal_selection_nodes.update(
-            {
-                n
-                for n, _ in nodes_data_view
-                if _node_computational(nodes_data_view[n]["key"])
-                and _is_node_dirty(nodes_data_view, n)
+                and (force_restart or _is_node_dirty(nodes_data_view, n))
             }
         )
     else:
-        # now we want all the outdated nodes that are in the tree from the selected nodes
+        # we want all the outdated nodes that are in the tree leading to the selected nodes
         for node in selected_nodes:
             minimal_selection_nodes.update(
                 set(

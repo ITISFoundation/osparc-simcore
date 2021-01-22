@@ -75,9 +75,6 @@ def test_create_complete_dag_graph(
                 "6ede1209-b459-5735-91fc-761aa584808d": [],
             },
             {
-                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
-                    "415fefd1-d08b-53c1-adb0-16bed3a687ef"
-                ],
                 "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": [
                     "6ede1209-b459-5735-91fc-761aa584808d"
                 ],
@@ -96,9 +93,7 @@ def test_create_complete_dag_graph(
             {
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7": [],
             },
-            {
-                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [],
-            },
+            {},
             id="nodes 0 and 1",
         ),
         pytest.param(
@@ -113,9 +108,6 @@ def test_create_complete_dag_graph(
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef": [],
             },
             {
-                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [  # expected because file-picker is selected
-                    "415fefd1-d08b-53c1-adb0-16bed3a687ef"
-                ],
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef": [],
             },
             id="node 0 and 2",
