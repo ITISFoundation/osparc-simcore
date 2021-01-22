@@ -11,12 +11,13 @@ from async_timeout import timeout
 
 from aiohttp.web import Application
 from asyncio import Lock, sleep
-from typing import Dict
+from typing import Dict, Deque, Tuple
 from collections import deque
 import logging
 
-from ..config import get_settings
+from ..config import get_settings, ServiceSidecarSettings
 from ..exceptions import ServiceSidecarError
+from ..docker_utils import get_service_sidecars_to_monitor
 from .models import MonitorData
 from .handlers_base import BaseEventHandler
 from .handlers import REGISTERED_HANDLERS
@@ -31,7 +32,7 @@ async def apply_monitoring(
     app: Application, input_monitor_data: MonitorData
 ) -> MonitorData:
     """fetches status for service and then processes all the registered handlers"""
-    service_sidecar_settings = get_settings(app)
+    service_sidecar_settings: ServiceSidecarSettings = get_settings(app)
 
     try:
         with timeout(service_sidecar_settings.max_status_api_duration):
@@ -58,20 +59,15 @@ class ServiceSidecarsMonitor:
     )
 
     def __init__(self, app: Application):
-        self._to_monitor: Dict[str, MonitorData] = dict()
+        self._app: Application = app
         self._lock: Lock = Lock()
+
+        self._to_monitor: Dict[str, MonitorData] = dict()
         self._keep_running: bool = False
         self._inverse_search_mapping: Dict[str, str] = dict()
-        self._app: Application = app
 
     async def add_service_to_monitor(
-        self,
-        service_name: str,
-        node_uuid: str,
-        hostname: str,
-        port: int,
-        service_sidecar_proxy_id: str,
-        service_sidecar_id: str,
+        self, service_name: str, node_uuid: str, hostname: str, port: int
     ) -> None:
         """Invoked before the service is started
 
@@ -89,11 +85,7 @@ class ServiceSidecarsMonitor:
                 )
             self._inverse_search_mapping[node_uuid] = service_name
             self._to_monitor[service_name] = MonitorData.assemble(
-                service_name=service_name,
-                hostname=hostname,
-                port=port,
-                service_sidecar_proxy_id=service_sidecar_proxy_id,
-                service_sidecar_id=service_sidecar_id,
+                service_name=service_name, hostname=hostname, port=port
             )
             logger.debug("Added service '%s' to monitor", service_name)
 
@@ -107,6 +99,7 @@ class ServiceSidecarsMonitor:
             if service_name in self._to_monitor:
                 logger.debug("Removed service '%s' from monitoring", service_name)
                 del self._to_monitor[service_name]
+                del self._inverse_search_mapping[node_uuid]
 
     async def _runner(self):
         """This code runs under a lock and can safely change the Monitor data of all entries"""
@@ -148,16 +141,34 @@ class ServiceSidecarsMonitor:
         logger.warning("Monitor was shut down")
 
     async def start(self):
+
         # run as a background task
         logging.info("Starting service-sidecar monitor")
         self._keep_running = True
         asyncio.get_event_loop().create_task(self._run_monitor_task())
-        # TODO: pickup service which were here when the monitor was not running
-        # can happen after a restart or for whatever reason
+
+        # discover all services which were started before and add them to the monitor
+        service_sidecar_settings: ServiceSidecarSettings = get_settings(self._app)
+        services_to_monitor: Deque[
+            Tuple[str, str]
+        ] = await get_service_sidecars_to_monitor(service_sidecar_settings)
+
+        logging.info("The following services need to be monitored: %s", services_to_monitor)
+
+        for service_to_monitor in services_to_monitor:
+            service_name, node_uuid = service_to_monitor
+            await self.add_service_to_monitor(
+                service_name=service_name,
+                node_uuid=node_uuid,
+                hostname=service_name,
+                port=service_sidecar_settings.web_service_port,
+            )
 
     async def shutdown(self):
         logging.info("Shutting down service-sidecar monitor")
         self._keep_running = False
+        self._inverse_search_mapping = dict()
+        self._to_monitor = dict()
 
 
 def get_monitor(app: Application) -> ServiceSidecarsMonitor:

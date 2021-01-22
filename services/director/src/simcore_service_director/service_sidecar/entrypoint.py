@@ -143,9 +143,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         service_name=service_name_service_sidecar,
         node_uuid=node_uuid,
         hostname=service_name_service_sidecar,
-        port=8000,
-        service_sidecar_proxy_id=service_sidecar_proxy_id,
-        service_sidecar_id=service_sidecar_id,
+        port=service_sidecar_settings.web_service_port,
     )
 
     return service_sidecar_proxy_meta_data
@@ -289,7 +287,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                     "STORAGE_ENDPOINT": "storage: 8080",
                 },
                 "Hosts": [],
-                "Image": service_sidecar_settings.service_sidecar_image,
+                "Image": service_sidecar_settings.image,
                 "Init": True,
                 "Labels": {},
                 "Mounts": mounts,

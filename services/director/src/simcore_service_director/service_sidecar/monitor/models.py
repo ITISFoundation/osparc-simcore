@@ -27,13 +27,6 @@ class ServiceSidecar(BaseModel):
         False,
         scription="infroms if the web API on the service-sidecar is responding",
     )
-    service_sidecar_proxy_id: str = Field(
-        ...,
-        description="id of the proxy docker service which exposes the service outside",
-    )
-    service_sidecar_id: str = Field(
-        ..., description="id of the service-sidecar docker service"
-    )
 
     @property
     def endpoint(self):
@@ -64,16 +57,12 @@ class MonitorData(BaseModel):
         service_name: str,
         hostname: str,
         port: int,
-        service_sidecar_proxy_id: str,
-        service_sidecar_id: str,
     ) -> "MonitorData":
         payload = dict(
             service_name=service_name,
             service_sidecar=dict(
                 hostname=hostname,
                 port=port,
-                service_sidecar_proxy_id=service_sidecar_proxy_id,
-                service_sidecar_id=service_sidecar_id,
             ),
         )
         return cls.parse_obj(payload)

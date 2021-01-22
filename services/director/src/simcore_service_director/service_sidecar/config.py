@@ -40,10 +40,13 @@ class ServiceSidecarSettings(BaseSettings):
         env="DEV_SIMCORE_SERVICE_SIDECAR_PATH",
     )
 
-    service_sidecar_image: str = Field(
+    image: str = Field(
         ...,
         description="used by the director to start a specific version of the service sidecar",
-        env="SERVICE_SIDECAR_IMAGE",
+    )
+
+    web_service_port: int = Field(
+        8000, description="port on which the webserver is exposed"
     )
 
     simcore_services_network_name: str = Field(

@@ -3,11 +3,12 @@ import logging
 
 import aiodocker
 
-from typing import Dict, Any
+from typing import Dict, Any, Deque, Tuple
 from asyncio_extras import async_contextmanager
 
 from .config import ServiceSidecarSettings
 from .exceptions import ServiceSidecarError, GenericDockerError
+from .constants import SERVICE_SIDECAR_PREFIX, FIXED_SERVICE_NAME_SIDECAR
 
 log = logging.getLogger(__name__)
 
@@ -55,3 +56,42 @@ async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
                 "Error while starting service: {}".format(str(service_start_result))
             )
         return service_start_result["ID"]
+
+
+async def get_service_sidecars_to_monitor(
+    service_sidecar_settings: ServiceSidecarSettings,
+) -> Deque[Tuple[str, str]]:
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+
+        running_services = await client.services.list(
+            filters={
+                "label": [
+                    f"swarm_stack_name={service_sidecar_settings.swarm_stack_name}"
+                ]
+            }
+        )
+
+        service_sidecar_services: Deque[Tuple[str, str]] = Deque()
+
+        for service in running_services:
+            service_name: str = service["Spec"]["Name"]
+            if not service_name.startswith(SERVICE_SIDECAR_PREFIX):
+                continue
+
+            service_name_parts = service_name.split("_")
+            if len(service_name_parts) < 5:
+                continue
+
+            # check to see if this is a service-sidecar
+            if (
+                service_name_parts[0] != SERVICE_SIDECAR_PREFIX
+                or service_name_parts[3] != FIXED_SERVICE_NAME_SIDECAR
+            ):
+                continue
+
+            # push found data to list
+            node_uuid = service["Spec"]["Labels"]["uuid"]
+            entry = (service_name, node_uuid)
+            service_sidecar_services.append(entry)
+
+        return service_sidecar_services
