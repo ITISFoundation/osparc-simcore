@@ -8,12 +8,14 @@ from aiohttp import web
 from .config import get_settings, ServiceSidecarSettings
 from .monitor import get_monitor
 from .docker_utils import get_swarm_network, create_network, create_service_and_get_id
+from .constants import (
+    FIXED_SERVICE_NAME_SIDECAR,
+    FIXED_SERVICE_NAME_PROXY,
+    SERVICE_SIDECAR_PREFIX,
+)
 
 
 log = logging.getLogger(__name__)
-
-FIXED_SERVICE_NAME_SIDECAR = "sidecar"
-FIXED_SERVICE_NAME_PROXY = "proxy"
 
 
 def strip_service_name(service_name: str) -> str:
@@ -27,7 +29,8 @@ def assemble_service_name(
     first_two_project_id = project_id[:2]
     name_from_service_key = service_key.split("/")[-1]
     return strip_service_name(
-        f"srvsdcr_{node_uuid}_{first_two_project_id}-{fixed_service}-{name_from_service_key}"
+        f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+        f"-{fixed_service}-{name_from_service_key}"
     )
 
 
@@ -39,7 +42,7 @@ async def stop_service_sidecar_stack_for_service(
     await monitor.remove_service_from_monitor(node_uuid)
 
 
-async def start_service_sidecar_stack_for_service(
+async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: str,
     project_id: str,
@@ -80,9 +83,10 @@ async def start_service_sidecar_stack_for_service(
     # unique name for the traefik constraints
     io_simcore_zone = f"service_sidecar_{node_uuid}_{first_two_project_id}"
 
-    # the 'serv_side_' is used to be easily garabage collected if the
-    # network is not attached to any other containers
-    service_sidecar_network_name = f"serv_side_{node_uuid}_{first_two_project_id}"  # based on the node_id and project_id
+    # based on the node_id and project_id
+    service_sidecar_network_name = (
+        f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+    )
     # these configuration should guarantee 245 address network
     network_config = {
         "Name": service_sidecar_network_name,
@@ -147,7 +151,7 @@ async def start_service_sidecar_stack_for_service(
     return service_sidecar_proxy_meta_data
 
 
-async def _dyn_proxy_entrypoint_assembly(
+async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     service_sidecar_settings: ServiceSidecarSettings,
     node_uuid: str,
     io_simcore_zone: str,
@@ -225,7 +229,7 @@ async def _dyn_proxy_entrypoint_assembly(
     }
 
 
-async def _dyn_service_sidecar_assembly(
+async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     service_sidecar_settings: ServiceSidecarSettings,
     io_simcore_zone: str,
     service_sidecar_network_name: str,
