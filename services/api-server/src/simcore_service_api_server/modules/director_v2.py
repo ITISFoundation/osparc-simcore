@@ -18,14 +18,14 @@ def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
 
     def on_startup() -> None:
         logger.debug("Setup %s at %s...", __name__, settings.base_url)
-        DirectorApi.create(
+        DirectorV2Api.create(
             app,
             client=httpx.AsyncClient(base_url=settings.base_url),
-            service_name="director",
+            service_name="director_v2",
         )
 
     async def on_shutdown() -> None:
-        client = DirectorApi.get_instance(app)
+        client = DirectorV2Api.get_instance(app)
         if client:
             await client.aclose()
         logger.debug("%s client closed successfully", __name__)
@@ -37,7 +37,7 @@ def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
 # API CLASS ---------------------------------------------
 
 
-class DirectorApi(BaseServiceClientApi):
+class DirectorV2Api(BaseServiceClientApi):
 
     # OPERATIONS
     # TODO: add ping to healthcheck

@@ -67,6 +67,7 @@ class Solver(BaseModel):
         )
 
 
+# TODO: this might be in common with Director-v2 models
 class Job(BaseModel):
     job_id: UUID
     inputs_sha: str

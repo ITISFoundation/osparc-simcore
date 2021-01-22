@@ -103,7 +103,7 @@ class AppSettings(BaseSettings):
             client_request=ClientRequestSettings(),
             catalog=CatalogSettings(),
             storage=StorageSettings(),
-            director=DirectorV2Settings(),
+            director_v2=DirectorV2Settings(),
         )
 
     # pylint: disable=no-self-use
@@ -134,7 +134,7 @@ class AppSettings(BaseSettings):
     webserver: WebServerSettings
     catalog: CatalogSettings
     storage: StorageSettings
-    director: DirectorV2Settings
+    director_v2: DirectorV2Settings
 
     client_request: ClientRequestSettings
 
