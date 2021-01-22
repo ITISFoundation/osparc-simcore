@@ -43,7 +43,7 @@ class Solver(BaseModel):
         regex=VERSION_RE,
         example=["1.0.0", "0.0.1"],
     )
-    id: Optional[UUID]
+    id: UUID
 
     # Human readables Identifiers
     title: str = Field(..., description="Human readable name")
@@ -73,7 +73,9 @@ class Solver(BaseModel):
     def compose_id_with_name_and_version(
         cls, v, values
     ):  # pylint: disable=unused-argument
-        return _compose_solver_id(values["name"], values["version"])
+        if v is None:
+            return _compose_solver_id(values["name"], values["version"])
+        return v
 
     @classmethod
     def create_from_image(cls, image_meta: ServiceDockerData) -> "Solver":

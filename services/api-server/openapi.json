@@ -260,7 +260,6 @@
           "solvers"
         ],
         "summary": "List Solvers",
-        "description": "Returns a list of the latest version of each solver",
         "operationId": "list_solvers",
         "responses": {
           "200": {
@@ -285,8 +284,8 @@
         "tags": [
           "solvers"
         ],
-        "summary": "Get Solver By Id",
-        "operationId": "get_solver_by_id",
+        "summary": "Get Solver",
+        "operationId": "get_solver",
         "parameters": [
           {
             "required": true,
@@ -335,7 +334,7 @@
             "required": true,
             "schema": {
               "title": "Solver Name",
-              "pattern": "^(simcore)/(services)/(comp)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
               "type": "string"
             },
             "name": "solver_name",
@@ -456,64 +455,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Job"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/solvers/{solver_id}/jobs:run": {
-      "post": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Run Job",
-        "description": "create + start job in a single call ",
-        "operationId": "run_job",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "solver_id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "title": "Inputs",
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/JobInput"
-                },
-                "default": []
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobStatus"
                 }
               }
             }
@@ -911,18 +852,18 @@
       "Job": {
         "title": "Job",
         "required": [
-          "job_id",
+          "id",
           "inputs_sha",
           "solver_id",
           "solver_url",
-          "inspect_url",
           "outputs_url"
         ],
         "type": "object",
         "properties": {
-          "job_id": {
-            "title": "Job Id",
+          "id": {
+            "title": "Id",
             "type": "string",
+            "description": "Job identifier",
             "format": "uuid"
           },
           "inputs_sha": {
@@ -932,6 +873,7 @@
           "solver_id": {
             "title": "Solver Id",
             "type": "string",
+            "description": "Solver running this job",
             "format": "uuid"
           },
           "solver_url": {
@@ -939,13 +881,7 @@
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
-            "format": "uri"
-          },
-          "inspect_url": {
-            "title": "Inspect Url",
-            "maxLength": 2083,
-            "minLength": 1,
-            "type": "string",
+            "description": "Link to job parent's solver",
             "format": "uri"
           },
           "outputs_url": {
@@ -953,6 +889,7 @@
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
+            "description": "Link to job's outputs",
             "format": "uri"
           }
         }
@@ -1213,41 +1150,40 @@
       "Solver": {
         "title": "Solver",
         "required": [
-          "uuid",
           "name",
           "version",
+          "id",
           "title",
           "maintainer",
-          "solver_url"
+          "url"
         ],
         "type": "object",
         "properties": {
-          "uuid": {
-            "title": "Uuid",
-            "type": "string",
-            "description": "Same as the solver's image sha256",
-            "format": "uuid"
-          },
           "name": {
             "title": "Name",
+            "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
             "type": "string",
-            "description": "Image name including namespace"
+            "description": "Unique solver name with path namespaces"
           },
           "version": {
             "title": "Version",
-            "type": "string"
+            "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
+            "type": "string",
+            "description": "semantic version number of the node",
+            "example": [
+              "1.0.0",
+              "0.0.1"
+            ]
           },
-          "version_aliases": {
-            "title": "Version Aliases",
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "default": []
+          "id": {
+            "title": "Id",
+            "type": "string",
+            "format": "uuid"
           },
           "title": {
             "title": "Title",
-            "type": "string"
+            "type": "string",
+            "description": "Human readable name"
           },
           "description": {
             "title": "Description",
@@ -1257,20 +1193,25 @@
             "title": "Maintainer",
             "type": "string"
           },
-          "released": {
-            "title": "Released",
-            "type": "string",
-            "format": "date-time"
-          },
-          "solver_url": {
-            "title": "Solver Url",
+          "url": {
+            "title": "Url",
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
+            "description": "Link to get this resource",
             "format": "uri"
           }
         },
-        "description": "A released solver with a specific version\n\nThis version might have human-readable alias (e.g. latest) or\nhierarchical version tags (e.g. 3, 3.2)"
+        "description": "A released solver with a specific version ",
+        "example": {
+          "name": "simcore/services/comp/isolve",
+          "version": "2.1.1",
+          "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+          "title": "iSolve",
+          "description": "EM solver",
+          "maintainer": "info@itis.swiss",
+          "url": ""
+        }
       },
       "TaskStates": {
         "title": "TaskStates",

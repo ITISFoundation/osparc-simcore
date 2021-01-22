@@ -96,7 +96,7 @@ def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocke
         assert f"GET solver {solver.id}" in resp0.json()["errors"][0]
         # assert Solver(**resp0.json()) == solver
 
-        # get_solver_by_id
+        # get_solver
         resp1 = cli.get(f"/v0/solvers/{solver.id}")
         assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
         assert f"GET solver {solver.id}" in resp1.json()["errors"][0]

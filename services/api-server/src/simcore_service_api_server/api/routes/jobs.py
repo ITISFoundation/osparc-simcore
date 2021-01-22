@@ -1,6 +1,6 @@
 import logging
 from contextlib import contextmanager
-from typing import Callable, List
+from typing import Callable, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -18,11 +18,13 @@ router = APIRouter()
 
 
 @contextmanager
-def errors_mapper(to_not_found=KeyError):
+def errors_mapper(as_404=KeyError, msg_404: Optional[str] = None):
     try:
         yield
-    except to_not_found as err:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from err
+    except as_404 as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=msg_404
+        ) from err
 
 
 ## JOBS ---------------
@@ -42,7 +44,7 @@ async def list_jobs(
     return [
         Job(
             solver_url=url_for(
-                "get_solver_by_id",
+                "get_solver",
                 solver_id=job["solver_id"],
             ),
             inspect_url=url_for("inspect_job", job_id=job["job_id"]),
@@ -72,17 +74,19 @@ async def create_job(
 
     return Job(
         solver_url=url_for(
-            "get_solver_by_id",
+            "get_solver",
             solver_id=job["solver_id"],
         ),
-        inspect_url=url_for("inspect_job", job_id=job["job_id"]),
         outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
         **job,
     )
 
 
-@solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus)
-async def run_job(
+#
+# TODO: disabled since MAG is not convinced it is necessary for now
+#
+# @solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus)
+async def _run_job(
     solver_id: UUID,
     inputs: List[JobInput] = [],
 ):
@@ -102,7 +106,7 @@ async def list_all_jobs(
     return [
         Job(
             solver_url=url_for(
-                "get_solver_by_id",
+                "get_solver",
                 solver_id=job["solver_id"],
             ),
             inspect_url=url_for("inspect_job", job_id=job["job_id"]),
@@ -123,7 +127,7 @@ async def get_job(
         job = the_fake_impl.job_info[job_id]
         return Job(
             solver_url=url_for(
-                "get_solver_by_id",
+                "get_solver",
                 solver_id=job["solver_id"],
             ),
             inspect_url=url_for("inspect_job", job_id=job["job_id"]),
@@ -148,7 +152,7 @@ async def stop_job(
         job = the_fake_impl.stop_job(job_id)
         return Job(
             solver_url=url_for(
-                "get_solver_by_id",
+                "get_solver",
                 solver_id=job["solver_id"],
             ),
             inspect_url=url_for("inspect_job", job_id=job["job_id"]),
@@ -166,13 +170,16 @@ async def inspect_job(job_id: UUID):
 
 @router.get("/{job_id}/outputs", response_model=List[JobOutput])
 async def list_job_outputs(job_id: UUID):
-    with errors_mapper():
+    with errors_mapper(msg_404=f"No outputs found in job '{job_id}"):
         outputs = the_fake_impl.job_outputs[job_id]
         return outputs
 
 
 @router.get("/{job_id}/outputs/{output_name}", response_model=JobOutput)
 async def get_job_output(job_id: UUID, output_name: KeyIdentifier):
-    with errors_mapper((KeyError, StopIteration)):
+    with errors_mapper(
+        (KeyError, StopIteration),
+        f"No output '{output_name}' was not found in job {job_id}",
+    ):
         outputs = the_fake_impl.job_outputs[job_id]
         return next(output for output in outputs if output.name == output_name)

@@ -55,9 +55,12 @@ class StorageFaker:
         return list(self.files.values())
 
     def get_storage_path(self, metadata) -> Path:
+        if not self.storage_dir.exists():
+            self.storage_dir.mkdir(parents=True, exist_ok=True)
         return self.storage_dir / f"{metadata.checksum}"
 
     async def save(self, uploaded_file: UploadFile) -> FileMetadata:
+
         metadata = await FileMetadata.create_from_uploaded(uploaded_file)
         await uploaded_file.seek(0)  # NOTE: create_from_uploaded moved cursor
 
