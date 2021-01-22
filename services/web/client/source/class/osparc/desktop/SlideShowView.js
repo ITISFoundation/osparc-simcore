@@ -22,6 +22,24 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     this.base(arguments, "horizontal");
 
     this._setLayout(new qx.ui.layout.VBox());
+
+    const slideShowToolbar = this.__slideShowToolbar = new osparc.desktop.SlideShowToolbar();
+    slideShowToolbar.addListener("nodeSelected", e => {
+      const nodeId = e.getData();
+      this.nodeSelected(nodeId);
+    }, this);
+    slideShowToolbar.addListener("startPipeline", () => {
+      this.fireEvent("startPipeline");
+    }, this);
+    slideShowToolbar.addListener("stopPipeline", () => {
+      this.fireEvent("stopPipeline");
+    }, this);
+    this._add(slideShowToolbar);
+  },
+
+  events: {
+    "startPipeline": "qx.event.type.Event",
+    "stopPipeline": "qx.event.type.Event"
   },
 
   properties: {
@@ -34,6 +52,16 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
   members: {
     __currentNodeId: null,
+    __slideShowToolbar: null,
+    __lastView: null,
+
+    getStartButton: function() {
+      return this.__slideShowToolbar.getStartButton();
+    },
+
+    getStopButton: function() {
+      return this.__slideShowToolbar.getStopButton();
+    },
 
     nodeSelected: function(nodeId) {
       this.__currentNodeId = nodeId;
@@ -50,11 +78,17 @@ qx.Class.define("osparc.desktop.SlideShowView", {
           view = new osparc.component.node.NodeView();
         }
         if (view) {
+          if (this.__lastView) {
+            this._remove(this.__lastView);
+          }
           view.setNode(node);
           view.populateLayout();
           view.getInputsView().exclude();
           view.getOutputsView().exclude();
-          this.__showInMainView(view);
+          this._add(view, {
+            flex: 1
+          });
+          this.__lastView = view;
         }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
@@ -74,19 +108,8 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     _applyStudy: function(study) {
       if (study) {
-        this.__initViews();
+        this.__slideShowToolbar.setStudy(study);
       }
-    },
-
-    __initViews: function() {
-      this._removeAll();
-    },
-
-    __showInMainView: function(nodeView) {
-      this._removeAll();
-      this._addAt(nodeView, 0, {
-        flex: 1
-      });
     },
 
     __openFirstNode: function() {

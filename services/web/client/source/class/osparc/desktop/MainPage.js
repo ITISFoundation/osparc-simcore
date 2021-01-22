@@ -39,7 +39,7 @@ qx.Class.define("osparc.desktop.MainPage", {
   construct: function() {
     this.base();
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
@@ -99,13 +99,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
           this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
-        }
-      }, this);
-
-      navBar.addListener("nodeSelected", e => {
-        if (this.__studyEditor) {
-          let nodeId = e.getData();
-          this.__studyEditor.nodeSelected(nodeId);
         }
       }, this);
 

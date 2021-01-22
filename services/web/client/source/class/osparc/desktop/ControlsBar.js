@@ -46,9 +46,7 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
-    "ungroupSelection": "qx.event.type.Event",
-    "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
+    "ungroupSelection": "qx.event.type.Event"
   },
 
   members: {
@@ -61,15 +59,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __ungroupButton: null,
     __iterationCtrls: null,
     __parametersButton: null,
-    __startStopBtns: null,
-
-    getStartButton: function() {
-      return this.__startStopBtns.getStartButton();
-    },
-
-    getStopButton: function() {
-      return this.__startStopBtns.getStopButton();
-    },
 
     setWorkbenchVisibility: function(isWorkbenchContext) {
       this.__serviceFilters.setVisibility(isWorkbenchContext ? "visible" : "excluded");
@@ -116,22 +105,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
           }
         });
       this.add(moreCtrls);
-
-      const startStopBtns = this.__startStopBtns =new osparc.desktop.StartStopButtons();
-      startStopBtns.addListener("startPipeline", () => {
-        this.fireDataEvent("startPipeline");
-      }, this);
-      startStopBtns.addListener("stopPipeline", () => {
-        this.fireDataEvent("stopPipeline");
-      }, this);
-      osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
-        const study = e.getData();
-        if (study) {
-          startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
-        }
-        startStopBtns.exclude();
-      });
-      this.add(startStopBtns);
     },
 
     __createShowSweeperButton: function() {
@@ -194,13 +167,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const selectedNodes = msg.getData();
       this.__groupButton.setVisibility(selectedNodes.length ? "visible" : "excluded");
       this.__ungroupButton.setVisibility((selectedNodes.length === 1 && selectedNodes[0].isContainer()) ? "visible" : "excluded");
-      if (!this.getStartButton().isFetching()) {
-        if (selectedNodes.length) {
-          this.getStartButton().setLabel(this.tr("Run selection"));
-        } else {
-          this.getStartButton().setLabel(this.tr("Run"));
-        }
-      }
     },
 
     __attachEventHandlers: function() {

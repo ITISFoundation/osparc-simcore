@@ -137,6 +137,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return borderStyle;
     },
 
+    TOP_OFFSET: 50 + 42,
+
     ZoomValues: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
   },
 
@@ -282,7 +284,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
       const posX = Math.min(winPos.x, maxLeft);
       const posY = Math.min(winPos.y, maxHeight);
-      srvCat.moveTo(posX + this.__getSidePanelWidth(), posY + 50);
+      srvCat.moveTo(posX + this.__getSidePanelWidth(), posY + this.self().TOP_OFFSET);
       srvCat.addListener("addService", e => {
         this.__addServiceFromCatalog(e.getData(), srvPos);
       }, this);
@@ -725,11 +727,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __pointerEventToWorkbenchPos: function(pointerEvent, scale = false) {
-      const topOffset = 50;
       const leftOffset = this.__getSidePanelWidth();
       const inputNodesLayoutWidth = this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
-      const y = pointerEvent.getDocumentTop() - topOffset;
+      const y = pointerEvent.getDocumentTop() - this.self().TOP_OFFSET;
       if (scale) {
         return this.__scaleCoordinates(x, y);
       }
