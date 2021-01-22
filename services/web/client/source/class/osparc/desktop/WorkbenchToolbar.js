@@ -16,98 +16,27 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.WorkbenchToolbar", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.desktop.Toolbar,
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10).set({
-      alignY: "middle"
-    }));
-    this.setAppearance("sidepanel");
-
-    this.__buildLayout();
-
     this.__attachEventHandlers();
   },
 
-  events: {
-    "nodeSelected": "qx.event.type.Data",
-    "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
-  },
-
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      apply: "_applyStudy",
-      nullable: false
-    }
-  },
-
   members: {
-    __navNodes: null,
-    __startStopBtns: null,
-
-    getStartButton: function() {
-      return this.__startStopBtns.getStartButton();
-    },
-
-    getStopButton: function() {
-      return this.__startStopBtns.getStopButton();
-    },
-
-    _applyStudy: function(study) {
-      if (study) {
-        study.getUi().addListener("changeCurrentNodeId", () => {
-          this.__populateGuidedNodesLayout();
-        });
-        this.__startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
-
-        this.__populateGuidedNodesLayout();
-      }
-    },
-
-    __buildLayout: function() {
+    // overriden
+    _buildLayout: function() {
       this.getChildControl("breadcrumb-navigation");
-      this.__startStopBtns = this.getChildControl("start-stop-btns");
+      this._startStopBtns = this.getChildControl("start-stop-btns");
     },
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "breadcrumb-navigation": {
-          control = new qx.ui.container.Scroll();
-          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbNavigation();
-          breadcrumbNavigation.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
-          control.add(breadcrumbNavigation);
-          this._add(control, {
-            flex: 1
-          });
-          break;
-        }
-        case "start-stop-btns": {
-          control = new osparc.desktop.StartStopButtons();
-          control.addListener("startPipeline", () => {
-            this.fireEvent("startPipeline");
-          }, this);
-          control.addListener("stopPipeline", () => {
-            this.fireEvent("stopPipeline");
-          }, this);
-          this._add(control);
-          break;
-        }
-      }
-      return control || this.base(arguments, id);
-    },
-
-    __populateGuidedNodesLayout: function() {
+    // overriden
+    _populateGuidedNodesLayout: function() {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
-        this.__navNodes.populateButtons(nodeIds, "slash");
+        this._navNodes.populateButtons(nodeIds, "slash");
       }
     },
 

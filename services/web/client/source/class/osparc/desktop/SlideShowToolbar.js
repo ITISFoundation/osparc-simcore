@@ -16,82 +16,14 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.desktop.SlideShowToolbar", {
-  extend: qx.ui.core.Widget,
-
-  construct: function() {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.HBox(10).set({
-      alignY: "middle"
-    }));
-    this.setAppearance("sidepanel");
-
-    this.__buildLayout();
-  },
-
-  events: {
-    "nodeSelected": "qx.event.type.Data",
-    "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
-  },
-
-  properties: {
-    study: {
-      check: "osparc.data.model.Study",
-      apply: "_applyStudy",
-      init: null,
-      nullable: false
-    }
-  },
+  extend: osparc.desktop.Toolbar,
 
   members: {
-    __navNodes: null,
     __prevNextBtns: null,
-    __startStopBtns: null,
-
-    getStartButton: function() {
-      return this.__startStopBtns.getStartButton();
-    },
-
-    getStopButton: function() {
-      return this.__startStopBtns.getStopButton();
-    },
-
-    _applyStudy: function(study) {
-      if (study) {
-        study.getUi().addListener("changeCurrentNodeId", () => {
-          this.__populateGuidedNodesLayout();
-        });
-        this.__startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
-
-        this.__populateGuidedNodesLayout();
-      }
-    },
-
-    __buildLayout: function() {
-      this.getChildControl("breadcrumb-navigation");
-      this.__prevNextBtns = this.getChildControl("prev-next-btns");
-
-      this._add(new qx.ui.core.Spacer(20));
-
-      this.__startStopBtns = this.getChildControl("start-stop-btns");
-    },
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "breadcrumb-navigation": {
-          control = new qx.ui.container.Scroll();
-          const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbNavigation();
-          breadcrumbNavigation.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
-          control.add(breadcrumbNavigation);
-          this._add(control, {
-            flex: 1
-          });
-          break;
-        }
         case "prev-next-btns": {
           control = new osparc.navigation.PrevNextButtons();
           control.addListener("nodeSelected", e => {
@@ -100,22 +32,22 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           this._add(control);
           break;
         }
-        case "start-stop-btns": {
-          control = new osparc.desktop.StartStopButtons();
-          control.addListener("startPipeline", () => {
-            this.fireEvent("startPipeline");
-          }, this);
-          control.addListener("stopPipeline", () => {
-            this.fireEvent("stopPipeline");
-          }, this);
-          this._add(control);
-          break;
-        }
       }
       return control || this.base(arguments, id);
     },
 
-    __populateGuidedNodesLayout: function() {
+    // overriden
+    _buildLayout: function() {
+      this.getChildControl("breadcrumb-navigation");
+      this.__prevNextBtns = this.getChildControl("prev-next-btns");
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      this._startStopBtns = this.getChildControl("start-stop-btns");
+    },
+
+    // overriden
+    _populateGuidedNodesLayout: function() {
       const study = this.getStudy();
       if (study) {
         const slideShow = study.getUi().getSlideshow();
@@ -133,7 +65,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
           nodeIds.push(node.nodeId);
         });
 
-        this.__navNodes.populateButtons(nodeIds, "arrow");
+        this._navNodes.populateButtons(nodeIds, "arrow");
         this.__prevNextBtns.populateButtons(nodeIds);
       }
     }
