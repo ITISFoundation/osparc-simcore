@@ -38,8 +38,8 @@ async def apply_monitoring(
         with timeout(service_sidecar_settings.max_status_api_duration):
             output_monitor_data = await query_service(app, input_monitor_data)
     except asyncio.TimeoutError:
-        output_monitor_data = input_monitor_data
-        output_monitor_data.service_sidecar_status.is_available = False
+        output_monitor_data = input_monitor_data.copy(deep=True)
+        output_monitor_data.service_sidecar.is_available = False
         # TODO: maybe push this into the health API to monitor degradation of the services
 
     for handler in REGISTERED_HANDLERS:
@@ -141,7 +141,6 @@ class ServiceSidecarsMonitor:
         logger.warning("Monitor was shut down")
 
     async def start(self):
-
         # run as a background task
         logging.info("Starting service-sidecar monitor")
         self._keep_running = True
@@ -153,7 +152,9 @@ class ServiceSidecarsMonitor:
             Tuple[str, str]
         ] = await get_service_sidecars_to_monitor(service_sidecar_settings)
 
-        logging.info("The following services need to be monitored: %s", services_to_monitor)
+        logging.info(
+            "The following services need to be monitored: %s", services_to_monitor
+        )
 
         for service_to_monitor in services_to_monitor:
             service_name, node_uuid = service_to_monitor
