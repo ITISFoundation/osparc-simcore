@@ -220,9 +220,6 @@ qx.Class.define("osparc.Application", {
       if (isLogged) {
         this.__loadMainPage();
       } else {
-        // Reset store (cache)
-        osparc.store.Store.getInstance().invalidate();
-
         osparc.auth.Manager.getInstance().validateToken()
           .then(data => {
             if (data.role.toLowerCase() === "guest") {
@@ -287,6 +284,7 @@ qx.Class.define("osparc.Application", {
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
       }
+      osparc.store.Store.getInstance().dispose();
       this.__restart();
     },
 

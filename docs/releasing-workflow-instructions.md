@@ -82,7 +82,7 @@ with:
 - ``RELEASE_VERSION`` is a version number following semantic versioning (e.g. 1.0.0, 1.2.0, 1.2.1, ...)
 - ``BUILD_DATE`` is the build date
 - ``BUILD_TIME`` is the build time
-- ``GIT_SHA`` is the git SHA corresponding to the code used for building
+- ``GIT_SHA`` is the git SHA corresponding to the code used for building **NOTE: put the full SHA entry not the shortened version**
 
 ### Release example
 
@@ -98,7 +98,7 @@ The team decides to release to production the lastest staging version of ``DAJIA
   ```bash
   git clone https://github.com/ITISFoundation/osparc-simcore.git
   cd osparc-simcore
-  make release-prod version=MAJ.MIN.PATCH (git_sha=OPTIONAL)
+  make release-prod version=MAJ.MIN.PATCH git_sha=SHA_OF_THE_WANTED_STAGING_RELEASE
   ```
 
 2. Adjust the list of changes if needed

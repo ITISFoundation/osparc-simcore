@@ -48,6 +48,8 @@ ROLES_PERMISSIONS = {
             "project.create",  # "studies.user.create",
             "project.close",
             "project.delete",  # "study.node.create",
+            "project.export",
+            "project.import",
             "project.access_rights.update",
             # "study.node.delete",
             # "study.node.rename",

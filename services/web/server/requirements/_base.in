@@ -31,6 +31,5 @@ semantic_version
 aiodebug
 json2html
 parfive
-PyYAML
 
 pydantic[email]

@@ -1,25 +1,28 @@
+import asyncio
+import json
 import logging
 import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque
+from typing import Deque, Dict
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.projects import AccessRights, Project
+from simcore_service_webserver.director_v2 import create_or_update_pipeline
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
     get_project_for_user,
 )
+from simcore_service_webserver.projects.projects_db import APP_PROJECT_DBAPI
 from simcore_service_webserver.projects.projects_exceptions import ProjectsException
 from simcore_service_webserver.storage_handlers import (
     get_file_download_url,
     get_file_upload_url,
     get_project_files_metadata,
 )
-from simcore_service_webserver.studies_dispatcher._projects import add_new_project
-from simcore_service_webserver.studies_dispatcher._users import UserInfo
+from simcore_service_webserver.users_api import get_user
 from simcore_service_webserver.utils import now_str
 
 from ..exceptions import ExporterException
@@ -33,7 +36,9 @@ UPLOAD_HTTP_TIMEOUT = 60 * 60  # 1 hour
 log = logging.getLogger(__name__)
 
 
-async def download_all_files_from_storage(download_links: Deque[LinkAndPath2]) -> None:
+async def download_all_files_from_storage(
+    app: web.Application, download_links: Deque[LinkAndPath2]
+) -> None:
     """ Downloads links to files in their designed storage_path_to_file """
     parallel_downloader = ParallelDownloader()
     for link_and_path in download_links:
@@ -47,7 +52,7 @@ async def download_all_files_from_storage(download_links: Deque[LinkAndPath2]) -
             download_path=link_and_path.storage_path_to_file,
         )
 
-    await parallel_downloader.download_files()
+    await parallel_downloader.download_files(app)
 
     # check all files have been downloaded
     for link_and_path in download_links:
@@ -121,7 +126,7 @@ async def generate_directory_contents(
     )
 
     # make sure all files from storage services are persisted on disk
-    await download_all_files_from_storage(download_links=download_links)
+    await download_all_files_from_storage(app=app, download_links=download_links)
 
     # store manifest on disk
     manifest_params = dict(
@@ -168,8 +173,27 @@ async def upload_file_to_storage(
         log.debug("Upload status=%s, result: '%s'", resp.status, upload_result)
 
 
+async def add_new_project(app: web.Application, project: Project, user_id: int):
+    # TODO: move this to projects_api
+    # TODO: this piece was taking fromt the end of projects.projects_handlers.create_projects
+
+    db = app[APP_PROJECT_DBAPI]
+
+    # validated project is transform in dict via json to use only primitive types
+    project_in: Dict = json.loads(project.json(exclude_none=True, by_alias=True))
+
+    # update metadata (uuid, timestamps, ownership) and save
+    _project_db: Dict = await db.add_project(
+        project_in, user_id, force_as_template=False
+    )
+    if _project_db["uuid"] != str(project.uuid):
+        raise ExporterException("Project uuid dose nto match after validation")
+
+    await create_or_update_pipeline(app, user_id, project.uuid)
+
+
 async def import_files_and_validate_project(
-    app: web.Application, user: UserInfo, root_folder: Path
+    app: web.Application, user_id: int, root_folder: Path
 ) -> str:
     project_file = await ProjectFile.model_from_file(root_dir=root_folder)
     shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
@@ -186,9 +210,12 @@ async def import_files_and_validate_project(
     # NOTE: it is not necessary to apply data shuffling to the manifest
     manifest_file = await ManifestFile.model_from_file(root_dir=root_folder)
 
+    user: Dict = await get_user(app=app, user_id=user_id)
+
     # check all attachments are present
     client_timeout = ClientTimeout(total=UPLOAD_HTTP_TIMEOUT, connect=5, sock_connect=5)
     async with ClientSession(timeout=client_timeout) as session:
+        run_in_parallel = deque()
         for attachment in manifest_file.attachments:
             attachment_parts = attachment.split("/")
             link_and_path = LinkAndPath2(
@@ -209,12 +236,15 @@ async def import_files_and_validate_project(
                     f"Could not find {link_and_path.storage_path_to_file} after shuffling data"
                 )
 
-            await upload_file_to_storage(
-                app=app,
-                link_and_path=link_and_path,
-                user_id=user.id,
-                session=session,
+            run_in_parallel.append(
+                upload_file_to_storage(
+                    app=app,
+                    link_and_path=link_and_path,
+                    user_id=user_id,
+                    session=session,
+                )
             )
+        await asyncio.gather(*run_in_parallel)
 
     # finally create and add the project
     project = Project(
@@ -222,9 +252,9 @@ async def import_files_and_validate_project(
         name=shuffled_project_file.name,
         description=shuffled_project_file.description,
         thumbnail=shuffled_project_file.thumbnail,
-        prjOwner=user.email,
+        prjOwner=user["email"],
         accessRights={
-            user.primary_gid: AccessRights(read=True, write=True, delete=True)
+            user["primary_gid"]: AccessRights(read=True, write=True, delete=True)
         },
         creationDate=now_str(),
         lastChangeDate=now_str(),
@@ -235,7 +265,7 @@ async def import_files_and_validate_project(
     project_uuid = str(project.uuid)
 
     try:
-        await add_new_project(app, project, user)
+        await add_new_project(app, project, user_id)
     except Exception as e:
         log.warning(
             "The below error occurred during import\n%s", traceback.format_exc()
@@ -244,7 +274,7 @@ async def import_files_and_validate_project(
             "Removing project %s, because there was an error while importing it."
         )
         try:
-            await delete_project(app=app, project_uuid=project_uuid, user_id=user.id)
+            await delete_project(app=app, project_uuid=project_uuid, user_id=user_id)
         except ProjectsException as e:
             # no need to raise an error here
             log.exception(
@@ -274,8 +304,8 @@ class FormatterV1(BaseFormatter):
 
     async def validate_and_import_directory(self, **kwargs) -> str:
         app: web.Application = kwargs["app"]
-        user: UserInfo = kwargs["user"]
+        user_id: int = kwargs["user_id"]
 
         return await import_files_and_validate_project(
-            app=app, user=user, root_folder=self.root_folder
+            app=app, user_id=user_id, root_folder=self.root_folder
         )

@@ -9,7 +9,6 @@ import aioredlock
 from aiohttp import web
 from aiohttp.web_request import FileField
 from jsonschema import ValidationError
-
 from models_library.projects_state import ProjectState
 from models_library.basic_types import StringBool
 from servicelib.utils import fire_and_forget_task, logged_gather

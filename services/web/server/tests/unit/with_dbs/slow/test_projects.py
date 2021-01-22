@@ -1004,7 +1004,7 @@ async def test_delete_project(
         calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
         mocked_director_subsystem["stop_service"].has_calls(calls)
         # wait for the fire&forget to run
-        await sleep(2)
+        await asyncio.sleep(2)
         await _assert_get_same_project(client, user_project, web.HTTPNotFound)
 
 
@@ -1392,7 +1392,6 @@ async def test_open_shared_project_2_users_locked(
     logged_user: Dict,
     shared_project: Dict,
     socketio_client: Callable,
-    # mocked_director_subsystem,
     client_session_id: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,

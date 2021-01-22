@@ -30,9 +30,7 @@
 
 qx.Class.define("osparc.wrapper.Svg", {
   extend: qx.core.Object,
-
-  construct: function() {
-  },
+  type: "singleton",
 
   properties: {
     libReady: {
@@ -40,10 +38,6 @@ qx.Class.define("osparc.wrapper.Svg", {
       init: false,
       check: "Boolean"
     }
-  },
-
-  events: {
-    "svgLibReady": "qx.event.type.Data"
   },
 
   statics: {
@@ -190,26 +184,34 @@ qx.Class.define("osparc.wrapper.Svg", {
 
   members: {
     init: function() {
-      // initialize the script loading
-      let svgPath = "svg/svg.js";
-      let svgPathPath = "svg/svg.path.js";
-      let dynLoader = new qx.util.DynamicScriptLoader([
-        svgPath,
-        svgPathPath
-      ]);
+      return new Promise((resolve, reject) => {
+        if (this.getLibReady()) {
+          resolve();
+          return;
+        }
 
-      dynLoader.addListenerOnce("ready", () => {
-        this.setLibReady(true);
-        this.fireDataEvent("svgLibReady", true);
-      }, this);
+        // initialize the script loading
+        const svgPath = "svg/svg.js";
+        const svgPathPath = "svg/svg.path.js";
+        const dynLoader = new qx.util.DynamicScriptLoader([
+          svgPath,
+          svgPathPath
+        ]);
 
-      dynLoader.addListener("failed", e => {
-        let data = e.getData();
-        console.error("failed to load " + data.script);
-        this.fireDataEvent("svgLibReady", false);
-      }, this);
+        dynLoader.addListenerOnce("ready", () => {
+          console.log(svgPath + " loaded");
+          this.setLibReady(true);
+          resolve();
+        }, this);
 
-      dynLoader.start();
+        dynLoader.addListener("failed", e => {
+          const data = e.getData();
+          console.error("failed to load " + data.script);
+          reject(data);
+        }, this);
+
+        dynLoader.start();
+      });
     },
 
     createEmptyCanvas: function(id) {

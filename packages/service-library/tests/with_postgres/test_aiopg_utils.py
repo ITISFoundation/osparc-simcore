@@ -139,7 +139,7 @@ async def test_engine_when_idle_for_some_time():
     # import pdb; pdb.set_trace()
 
 
-async def test_engine_when_pg_not_reachable():
+async def test_engine_when_pg_not_reachable(loop):
     dsn = DataSourceName(
         database="db", user="foo", password="foo", host="localhost", port=123
     )

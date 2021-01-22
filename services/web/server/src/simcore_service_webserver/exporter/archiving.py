@@ -1,9 +1,10 @@
 import asyncio
 import logging
+import shutil
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Callable, Tuple
 
-import aiohttp
 from passlib import pwd
 
 from .async_hashing import Algorithm, checksum
@@ -53,12 +54,25 @@ def search_for_unzipped_path(search_path: Path) -> Path:
 
     if len(found_dirs) != 1:
         raise ExporterException(
-            f"unexpected number of directories after unzipping {found_dirs}"
+            f"Unexpected number of directories after unzipping {[str(x) for x in found_dirs]}"
         )
     return search_path / found_dirs[0]
 
 
-async def zip_folder(project_id: str, input_path: Path, no_compression=False) -> Path:
+async def run_in_process_pool(function: Callable, *args: Tuple[Any]) -> Any:
+    try:
+        with ProcessPoolExecutor(max_workers=1) as pool:
+            return await asyncio.get_event_loop().run_in_executor(pool, function, *args)
+    except asyncio.CancelledError:
+        # making sure this error gets propagated correctly
+        raise
+    except Exception as e:
+        reason = str(e)
+        log.warning("During %s call there was an error: %s", function.__name__, reason)
+        raise ExporterException(reason) from e
+
+
+async def zip_folder(project_id: str, input_path: Path) -> Path:
     """Zips a folder and returns the path to the new archive"""
 
     zip_file = Path(input_path.parent) / f"{project_id}.zip"
@@ -67,28 +81,13 @@ async def zip_folder(project_id: str, input_path: Path, no_compression=False) ->
             f"Cannot archive because file already exists '{str(zip_file)}'"
         )
 
-    command_args = [
-        "zip",
-        "-0",
-        "-r",
-        str(zip_file),
-        project_id,
-    ]
-    if no_compression:
-        command_args.remove("-0")
-
-    proc = await asyncio.create_subprocess_exec(
-        *command_args,
-        cwd=str(input_path.parent),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+    await run_in_process_pool(
+        shutil.make_archive,  # callable
+        Path(input_path.parent) / project_id,  # base_name
+        "zip",  # format
+        input_path.parent,  # root_dir
+        project_id,  # base_dir
     )
-    stdout, stderr = await proc.communicate()
-
-    if proc.returncode != 0:
-        log.warning("STDOUT: %s", stdout.decode())
-        log.warning("STDERR: %s", stderr.decode())
-        raise ExporterException(f"Could not create archive {str(zip_file)}")
 
     # compute checksum and rename
     sha256_sum = await checksum(file_path=zip_file, algorithm=Algorithm.SHA256)
@@ -103,19 +102,10 @@ async def zip_folder(project_id: str, input_path: Path, no_compression=False) ->
 
 
 async def unzip_folder(input_path: Path) -> Path:
-    command_args = ["unzip", str(input_path), "-d", str(input_path.parent)]
-
-    proc = await asyncio.create_subprocess_exec(
-        *command_args,
-        cwd=str(input_path.parent),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+    await run_in_process_pool(
+        shutil.unpack_archive,  # callable
+        str(input_path),  # filename
+        str(input_path.parent),  # extract_dir
+        "zip",  # format
     )
-    stdout, stderr = await proc.communicate()
-
-    if proc.returncode != 0:
-        log.warning("STDOUT: %s", stdout.decode())
-        log.warning("STDERR: %s", stderr.decode())
-        raise ExporterException(f"Could not decompress {str(input_path)}")
-
     return search_for_unzipped_path(input_path.parent)

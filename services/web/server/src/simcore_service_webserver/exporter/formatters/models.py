@@ -1,25 +1,22 @@
 import uuid
-
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Callable, Optional
+from typing import Callable, Dict, List, Union
 
 import aiofiles
-from pydantic import Field, validator, EmailStr, BaseModel
+from models_library.projects import Project
+from pydantic import BaseModel, DirectoryPath, Field, validator
 
-from .base_models import BaseLoadingModel
 from ..utils import makedirs
-from models_library.projects import Workbench
-from models_library.projects_ui import StudyUI
+from .base_models import BaseLoadingModel
 
 ShuffledData = Dict[str, str]
 
 
 class LinkAndPath2(BaseModel):
-    _FILES_DIRECTORY: str = (
-        "storage"  # where all files are stored in the exported folder
-    )
-    root_dir: Path = Field(
+    # where all files are stored in the exported folder
+    _FILES_DIRECTORY: Union[str, Path] = "storage"
+    root_dir: DirectoryPath = Field(
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
@@ -33,15 +30,6 @@ class LinkAndPath2(BaseModel):
     )
 
     download_link: str = Field(..., description="Link from where to download the file")
-
-    @validator("root_dir")
-    @classmethod
-    def _validate_root_dir(cls, v):
-        if not isinstance(v, Path):
-            v = Path(v)
-        if not v.is_dir():
-            raise ValueError(f"Provided path {str(v)} is not a directory!")
-        return v
 
     @validator("relative_path_to_file")
     @classmethod
@@ -109,32 +97,8 @@ class ManifestFile(BaseLoadingModel):
         return str(v)
 
 
-class ProjectFile(BaseLoadingModel):
+class ProjectFile(BaseLoadingModel, Project):
     _RELATIVE_STORAGE_PATH: str = "project.json"
-
-    name: str = Field(..., description="name of the study")
-    description: str = Field(..., description="study description")
-    uuid: str = Field(..., description="study unique id used in the platform")
-    last_change_date: datetime = Field(
-        ..., alias="lastChangeDate", description="date when study was last changed"
-    )
-    creation_date: datetime = Field(
-        ..., alias="creationDate", description="date when study was created"
-    )
-    project_owner: EmailStr = Field(
-        ..., alias="prjOwner", description="email of the owner of the study"
-    )
-    thumbnail: str = Field(
-        ..., description="contains a link to an image to be used as thumbnail"
-    )
-    dev: Optional[Dict] = Field(None, description="used to store dev information")
-    ui: Optional[StudyUI] = Field(
-        None, description="contains data used to render the UI"
-    )
-    workbench: Workbench = Field(
-        ...,
-        description="representation all the information required to run and render studies",
-    )
 
     def get_shuffled_uuids(self) -> ShuffledData:
         """
@@ -146,7 +110,7 @@ class ProjectFile(BaseLoadingModel):
         """
         new_uuid: Callable = lambda: str(uuid.uuid4())
 
-        uuid_replace_values: ShuffledData = {self.uuid: new_uuid()}
+        uuid_replace_values: ShuffledData = {str(self.uuid): new_uuid()}
 
         for node in self.workbench.keys():
             uuid_replace_values[node] = new_uuid()

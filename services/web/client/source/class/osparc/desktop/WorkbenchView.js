@@ -94,26 +94,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const study = this.getStudy();
       const workbench = study.getWorkbench();
-      if (nodeId === study.getUuid()) {
-        this.__showInMainView(this.__workbenchUI, nodeId);
+      const node = workbench.getNode(nodeId);
+      if (node === null || nodeId === study.getUuid()) {
+        this.__showInMainView(this.__workbenchUI, study.getUuid());
         this.__workbenchUI.loadModel(workbench);
+      } else if (node.isContainer()) {
+        this.__groupNodeView.setNode(node);
+        this.__showInMainView(this.__workbenchUI, nodeId);
+        this.__workbenchUI.loadModel(node);
+        this.__groupNodeView.populateLayout();
+      } else if (node.isFilePicker()) {
+        const nodeView = new osparc.component.node.FilePickerNodeView();
+        nodeView.setNode(node);
+        this.__showInMainView(nodeView, nodeId);
+        nodeView.populateLayout();
       } else {
-        const node = workbench.getNode(nodeId);
-        if (node.isContainer()) {
-          this.__groupNodeView.setNode(node);
-          this.__showInMainView(this.__workbenchUI, nodeId);
-          this.__workbenchUI.loadModel(node);
-          this.__groupNodeView.populateLayout();
-        } else if (node.isFilePicker()) {
-          const nodeView = new osparc.component.node.FilePickerNodeView();
-          nodeView.setNode(node);
-          this.__showInMainView(nodeView, nodeId);
-          nodeView.populateLayout();
-        } else {
-          this.__nodeView.setNode(node);
-          this.__showInMainView(this.__nodeView, nodeId);
-          this.__nodeView.populateLayout();
-        }
+        this.__nodeView.setNode(node);
+        this.__showInMainView(this.__nodeView, nodeId);
+        this.__nodeView.populateLayout();
       }
     },
 
@@ -427,7 +425,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
 
-      const extraView = this.__extraView = new osparc.component.widget.StudyCardMedium(study);
+      const extraView = this.__extraView = new osparc.studycard.Medium(study);
       this.__sidePanel.addListener("panelResized", e => {
         const bounds = e.getData();
         extraView.checkResize(bounds);

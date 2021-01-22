@@ -1,21 +1,24 @@
 import logging
-import sys
 from pathlib import Path
 
+import parfive
 from aiofiles import os as aiofiles_os
-from aiohttp import web
+from aiohttp.web import Application
 from parfive.downloader import Downloader
 
+from .config import get_settings
 from .exceptions import ExporterException
 from .utils import makedirs
 
 log = logging.getLogger(__name__)
 
-if sys.version_info.major == 3 and sys.version_info.minor >= 7:
+
+if parfive.__version__ != "1.0.2":
     raise RuntimeError(
-        "Upgrade parfive version to a newer one. Also remember to implement "
-        "a better check for the downloaded files. The new version has "
-        "supprot for failed and not failed futures"
+        "Parfive was upgraded, please make sure this version supports "
+        "aiofiles otherwise it will block the main loop while downloading files. "
+        "If such condition is not met please do not upgrade! "
+        "A PR to parfive will be submitted by GitHK and this should be no longer required."
     )
 
 
@@ -33,12 +36,18 @@ class ParallelDownloader:
         )
         self.total_files_added += 1
 
-    async def download_files(self):
+    async def download_files(self, app: Application):
         """starts the download and waits for all files to finish"""
 
-        # run this async, newer versions do not require this trick
+        # run this async, parfive will support aiofiles in the future as stated above
         wrapped_function = aiofiles_os.wrap(self.downloader.download)
-        results = await wrapped_function()
+        exporter_settings = get_settings(app)
+        results = await wrapped_function(
+            timeouts={
+                "total": exporter_settings.max_upload_file_size,
+                "sock_read": 90,  # default as in parfive code
+            }
+        )
         log.debug("Download results %s", results)
 
         if len(results) != self.total_files_added:

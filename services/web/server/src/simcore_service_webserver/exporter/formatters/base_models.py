@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Any, Dict, Union
 
 import aiofiles
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, DirectoryPath, Field, validator
 
 
 class BaseModelSavePath(BaseModel):
-    root_dir: Path = Field(
+    root_dir: DirectoryPath = Field(
         ...,
         description="temporary directory where all data is stored, to be ignored from serialization",
     )
@@ -14,15 +14,6 @@ class BaseModelSavePath(BaseModel):
         ...,
         description="path to the file where to store this model, to be ignored from serialization",
     )
-
-    @validator("root_dir")
-    @classmethod
-    def _validate_root_dir(cls, v):
-        if not isinstance(v, Path):
-            v = Path(v)
-        if not v.is_dir():
-            raise ValueError(f"Provided path {str(v)} is not a directory!")
-        return v
 
     @validator("path_in_root_dir")
     @classmethod

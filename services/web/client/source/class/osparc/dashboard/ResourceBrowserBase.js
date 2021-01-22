@@ -47,12 +47,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _getMoreInfoMenuButton: function(resourceData) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
+      osparc.utils.Utils.setIdToWidget(moreInfoButton, "moreInfoBtn");
       moreInfoButton.addListener("execute", () => {
         if (osparc.utils.Resources.isService(resourceData)) {
           this._openServiceDetailsEditor(resourceData);
         } else {
-          const winWidth = 400;
-          this.__openStudyDetailsEditor(resourceData, winWidth);
+          this.__openStudyDetails(resourceData);
         }
       }, this);
       return moreInfoButton;
@@ -66,28 +66,21 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return studyQualityButton;
     },
 
-    __openStudyDetailsEditor: function(resourceData, winWidth) {
-      const studyDetails = new osparc.component.metadata.StudyDetailsEditor(resourceData, osparc.utils.Resources.isTemplate(resourceData), winWidth);
-      const title = this.tr("Study Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(studyDetails, title, winWidth, 400);
-      studyDetails.addListener("openStudy", () => {
-        this._startStudy(resourceData["uuid"]);
-        win.close();
-      }, this);
-      studyDetails.addListener("openTemplate", () => {
-        this._createStudyFromTemplate(resourceData);
-        win.close();
-      }, this);
+    __openStudyDetails: function(resourceData) {
+      const studyDetails = new osparc.studycard.Large(resourceData);
+      const title = this.tr("Study Details");
+      const width = 500;
+      const height = 500;
+      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
       studyDetails.addListener("updateStudy", e => {
-        const updatedStudyData = e.getData();
-        this._reloadStudy(updatedStudyData.uuid);
-        win.close();
+        if (osparc.utils.Resources.isTemplate(resourceData)) {
+          const updatedTemplateData = e.getData();
+          this._reloadTemplate(updatedTemplateData.uuid);
+        } else {
+          const updatedStudyData = e.getData();
+          this._reloadStudy(updatedStudyData.uuid);
+        }
       });
-      studyDetails.addListener("updateTemplate", e => {
-        const updatedTemplateData = e.getData();
-        this._reloadTemplate(updatedTemplateData.uuid);
-        win.close();
-      }, this);
       studyDetails.addListener("updateTags", () => {
         if (osparc.utils.Resources.isTemplate(resourceData)) {
           this._resetTemplatesList(osparc.store.Store.getInstance().getTemplates());

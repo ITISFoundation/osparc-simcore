@@ -10535,9 +10535,9 @@ paths:
         required: false
         schema:
           type: boolean
-    get:
+    post:
       tags:
-        - project
+        - exporter
       summary: creates an archive of the project and downloads it
       operationId: export_project
       responses:
@@ -10634,7 +10634,7 @@ paths:
   '/projects:import':
     post:
       tags:
-        - project
+        - exporter
       summary: Create new project from an archive
       operationId: import_project
       requestBody:
@@ -11090,6 +11090,10 @@ paths:
                                 required:
                                   - locked
                                   - state
+                          quality:
+                            type: object
+                            title: Quality
+                            description: Object containing Quality Assessment related data
                       - type: object
                         properties:
                           state:

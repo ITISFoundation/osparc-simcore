@@ -22,6 +22,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.exporter import setup_exporter
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
@@ -51,8 +52,8 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
-# store only lowercase "v1", "v2", ... and "v1_compressed", "v2_compressed", ...
-SUPPORTED_EXPORTER_VERSIONS = {"v1", "v1_compressed"}
+# store only lowercase "v1", "v2", etc...
+SUPPORTED_EXPORTER_VERSIONS = {"v1"}
 
 KEYS_TO_IGNORE_FROM_COMPARISON = {"id", "uuid", "creation_date", "last_change_date"}
 
@@ -136,6 +137,7 @@ def client(
     setup_projects(app)
     setup_director(app)
     setup_director_v2(app)
+    setup_exporter(app)
     assert setup_resource_manager(app)
 
     yield loop.run_until_complete(
@@ -160,7 +162,7 @@ def get_exported_projects() -> List[Path]:
 
 
 @pytest.fixture
-async def mock_asyncio_subporcess(mocker):
+async def monkey_patch_asyncio_subporcess(mocker):
     # TODO: The below bug is not allowing me to fully test,
     # mocking and waiting for an update
     # https://bugs.python.org/issue35621
@@ -278,8 +280,9 @@ async def import_study_from_file(client, file_path: Path) -> str:
     async with await client.post(url_import, data=data, timeout=10) as import_response:
         assert import_response.status == 200, await import_response.text()
         reply_data = await import_response.json()
+        assert reply_data.get("data") is not None
 
-    imported_project_uuid = reply_data["uuid"]
+    imported_project_uuid = reply_data["data"]["uuid"]
     return imported_project_uuid
 
 
@@ -291,7 +294,7 @@ async def test_import_export_import(
     db_engine,
     redis_client,
     export_version,
-    mock_asyncio_subporcess,
+    monkey_patch_asyncio_subporcess,
     simcore_services,
     monkey_patch_aiohttp_request_url,
 ):
@@ -314,7 +317,7 @@ async def test_import_export_import(
         project_id=imported_project_uuid
     )
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}/export")
-    async with await client.get(url_export, timeout=10) as export_response:
+    async with await client.post(url_export, timeout=10) as export_response:
         assert export_response.status == 200, await export_response.text()
 
         content_disposition_header = export_response.headers["Content-Disposition"]
