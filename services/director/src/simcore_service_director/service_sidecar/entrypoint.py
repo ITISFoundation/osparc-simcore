@@ -2,13 +2,12 @@ import logging
 
 from typing import Dict, Optional, Any
 
-import aiodocker
+
 from aiohttp import web
 
 from .config import get_settings, ServiceSidecarSettings
-from ..utils import get_swarm_network  # this needs to be replaced
 from .monitor import get_monitor
-from .exceptions import GenericDockerError, ServiceSidecarError
+from .docker_utils import get_swarm_network, create_network, create_service_and_get_id
 
 
 log = logging.getLogger(__name__)
@@ -40,28 +39,8 @@ async def stop_service_sidecar_stack_for_service(
     await monitor.remove_service_from_monitor(node_uuid)
 
 
-async def start_service_and_get_id(
-    client: aiodocker.docker.Docker, service_start_data: Dict[str, Any]
-) -> str:
-    service_start_result = await client.services.create(**service_start_data)
-    if "ID" not in service_start_result:
-        raise ServiceSidecarError(
-            "Error while starting service: {}".format(str(service_start_result))
-        )
-    return service_start_result["ID"]
-
-
-async def get_service_information(
-    client: aiodocker.docker.Docker, service_id: str
-) -> Dict[str, Any]:
-    info = await client.services.inspect(service_id)
-    log.error("information %s", info)
-    return info
-
-
 async def start_service_sidecar_stack_for_service(
     app: web.Application,
-    client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
     service_key: str,
@@ -116,14 +95,10 @@ async def start_service_sidecar_stack_for_service(
         "Attachable": True,
         "Internal": False,
     }
-    try:
-        service_sidecar_network_id = (await client.networks.create(network_config)).id
-    except aiodocker.exceptions.DockerError as err:
-        log.exception("Error while creating network %s", service_sidecar_network_name)
-        raise GenericDockerError("Error while creating network", err) from err
+    service_sidecar_network_id = await create_network(network_config)
 
     # attach the service to the swarm network dedicated to services
-    swarm_network = await get_swarm_network(client)
+    swarm_network = await get_swarm_network(service_sidecar_settings)
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
 
@@ -139,8 +114,8 @@ async def start_service_sidecar_stack_for_service(
         user_id=user_id,
     )
 
-    service_sidecar_proxy_id = await start_service_and_get_id(
-        client, service_sidecar_proxy_meta_data
+    service_sidecar_proxy_id = await create_service_and_get_id(
+        service_sidecar_proxy_meta_data
     )
     logging.debug("sidecar-service-proxy id %s", service_sidecar_proxy_id)
 
@@ -155,9 +130,7 @@ async def start_service_sidecar_stack_for_service(
         node_uuid=node_uuid,
     )
 
-    service_sidecar_id = await start_service_and_get_id(
-        client, service_sidecar_meta_data
-    )
+    service_sidecar_id = await create_service_and_get_id(service_sidecar_meta_data)
     logging.debug("sidecar-service id %s", service_sidecar_id)
 
     # services where successfully started and they can be monitored

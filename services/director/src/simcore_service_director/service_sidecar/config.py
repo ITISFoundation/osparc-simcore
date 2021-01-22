@@ -46,6 +46,11 @@ class ServiceSidecarSettings(BaseSettings):
         env="SERVICE_SIDECAR_IMAGE",
     )
 
+    simcore_services_network_name: str = Field(
+        None,
+        description="network all simcore services are currently present",
+        env="SIMCORE_SERVICES_NETWORK_NAME",
+    )
 
     @property
     def is_dev_mode(self):

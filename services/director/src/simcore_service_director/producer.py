@@ -746,7 +746,6 @@ async def _create_node(
         )
         service_sidecar_start_result = await start_service_sidecar_stack_for_service(
             app,
-            client,
             user_id,
             project_id,
             service["key"],
