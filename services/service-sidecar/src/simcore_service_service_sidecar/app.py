@@ -167,6 +167,26 @@ async def get_spawned_container_names() -> List[str]:
     return await get_container_names()
 
 
+@app.get("/containers/inspect")
+async def containers_inspect(response: Response) -> Dict[str, Any]:
+    """ Returns information about the container, like docker inspect command """
+    docker = aiodocker.Docker()
+
+    container_names = await get_container_names()
+
+    results = {}
+
+    for container in container_names:
+        try:
+            container_instance = await docker.containers.get(container)
+            results[container] = await container_instance.show()
+        except aiodocker.exceptions.DockerError as e:
+            response.status_code = 400
+            return dict(error=e.message)
+
+    return results
+
+
 @app.get("/container/logs")
 async def get_container_logs(
     # pylint: disable=unused-argument
