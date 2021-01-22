@@ -2,7 +2,7 @@
   "8902d36c-bc65-5b0d-848f-88aed72d7849": {
     "key": "simcore/services/frontend/file-picker",
     "version": "1.0.0",
-    "label": "file-picker",
+    "label": "file-picker - elem0",
     "outputs": {
       "outFile": {
         "store": 0,
@@ -15,7 +15,7 @@
   "3a710d8b-565c-5f46-870b-b45ebe195fc7": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 1",
+    "label": "sleeper 1 - elem1",
     "inputs": {
       "in_1": {
         "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
@@ -45,7 +45,7 @@
   "415fefd1-d08b-53c1-adb0-16bed3a687ef": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 2",
+    "label": "sleeper 2 - elem2",
     "inputs": {
       "in_1": {
         "nodeUuid": "3a710d8b-565c-5f46-870b-b45ebe195fc7",
@@ -63,11 +63,11 @@
   "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 3",
+    "label": "sleeper 3 - elem3",
     "inputs": {
       "in_2": {
         "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
-        "output": "out_2"
+        "output": "outFile"
       }
     },
     "inputNodes": [
@@ -77,7 +77,7 @@
   "6ede1209-b459-5735-91fc-761aa584808d": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 4",
+    "label": "sleeper 4 - elem4",
     "inputs": {
       "in_1": {
         "nodeUuid": "415fefd1-d08b-53c1-adb0-16bed3a687ef",
@@ -96,7 +96,7 @@
   "82d7a25c-18d4-44dc-a997-e5c9a745e7fd": {
     "key": "simcore/services/dynamic/jupyter-base-notebook",
     "version": "2.13.0",
-    "label": "some-dynamic-service",
+    "label": "some-dynamic-service - elem5",
     "inputs": {
       "in_1": {
         "nodeUuid": "6ede1209-b459-5735-91fc-761aa584808d",

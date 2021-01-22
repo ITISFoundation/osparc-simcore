@@ -18,6 +18,7 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
+from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.models.domains.comp_tasks import ComputationTaskOut
@@ -35,7 +36,6 @@ core_services = [
     "sidecar",
     "storage",
     "postgres",
-    "webserver",
 ]
 ops_services = ["minio", "adminer"]
 
@@ -131,6 +131,34 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
             con.execute(projects.delete().where(projects.c.uuid == str(pid)))
 
 
+@pytest.fixture
+def update_project_workbench_with_comp_tasks(postgres_db: sa.engine.Engine) -> Callable:
+    def updator(project_uuid: str):
+        with postgres_db.connect() as con:
+            result = con.execute(
+                projects.select().where(projects.c.uuid == project_uuid)
+            )
+            prj_row = result.first()
+            prj_workbench = prj_row.workbench
+
+            result = con.execute(
+                comp_tasks.select().where(comp_tasks.c.project_id == project_uuid)
+            )
+            # let's get the results and run_hash
+            for task_row in result:
+                # pass these to the project workbench
+                prj_workbench[task_row.node_id]["outputs"] = task_row.outputs
+                prj_workbench[task_row.node_id]["runHash"] = task_row.run_hash
+
+            con.execute(
+                projects.update()
+                .values(workbench=prj_workbench)
+                .where(projects.c.uuid == project_uuid)
+            )
+
+    yield updator
+
+
 @pytest.mark.parametrize(
     "body,exp_response",
     [
@@ -224,7 +252,7 @@ def _assert_pipeline_status(
         pytest.param([0, 1], {1: []}, id="element 0,1"),
         pytest.param(
             [1, 2, 4],
-            {0: [1, 3], 1: [2], 2: [4], 3: [4], 4: []},
+            {1: [2], 2: [4], 3: [4], 4: []},
             id="element 1,2,4",
         ),
     ],
@@ -233,6 +261,7 @@ def test_run_partial_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
+    update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     subgraph_elements: List[int],
     exp_pipeline_dag_adj_list_1st_run: Dict[str, List[str]],
@@ -288,7 +317,8 @@ def test_run_partial_computation(
     ), f"the pipeline complete with state {task_out.state}"
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
-    # FIXME: currently the webserver is the one updating the projects table
+    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     response = client.post(
         COMPUTATION_URL,
         json={
