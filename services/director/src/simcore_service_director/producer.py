@@ -744,7 +744,7 @@ async def _create_node(
             node_base_path,
             inter_docker_network_id,
         )
-        sidecar_service_meta_data = await start_service_sidecar_stack_for_service(
+        service_sidecar_start_result = await start_service_sidecar_stack_for_service(
             app,
             client,
             user_id,
@@ -756,7 +756,7 @@ async def _create_node(
             node_base_path,
             inter_docker_network_id,
         )
-        log.debug("Result of service start %s", sidecar_service_meta_data)
+        log.debug("Result of service-sidecar start %s", service_sidecar_start_result)
         containers_meta_data.append(service_meta_data)
 
     return containers_meta_data

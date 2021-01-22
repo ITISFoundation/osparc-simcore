@@ -4,6 +4,7 @@
 # NOTE: ALL version constraints MUST be commented
 
 fastapi
+pydantic
 dataclasses==0.6  # version 0.7 is not found
 uvicorn
 

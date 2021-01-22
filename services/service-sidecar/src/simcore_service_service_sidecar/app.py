@@ -14,6 +14,14 @@ from simcore_service_service_sidecar.utils import (
     validate_compose_spec,
     write_to_tmp_file,
 )
+from pydantic import BaseModel, Field
+
+
+class HealthResponse(BaseModel):
+    is_healthy: bool = Field(
+        True, description="returns True if the service sis running correctly"
+    )
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +33,7 @@ async def write_file_and_run_command(
     file_content: str, command: str
 ) -> Tuple[bool, str]:
     """ The command which accepts {file_path} as an argument for string formatting """
+    # pylint: disable=not-async-context-manager
     async with write_to_tmp_file(file_content) as file_path:
         return await async_command(
             command.format(
@@ -66,6 +75,11 @@ async def get_container_names():
 async def shutdown_event():
     await remove_the_compose_spec()
     logger.error("shutdown cleanup completed")
+
+
+@app.get("/health", response_model=HealthResponse)
+async def health_endpoint() -> HealthResponse:
+    return HealthResponse()
 
 
 @app.post("/compose/preload", response_class=PlainTextResponse)

@@ -27,7 +27,7 @@ class ServiceSidecarSettings(BaseSettings):
         env_prefix = "SERVICE_SIDECAR_"
 
 
-def setup_settings(app: Application) -> None:
+async def setup_settings(app: Application) -> None:
     app[KEY_SERVICE_SIDECAR_SETTINGS] = ServiceSidecarSettings()
 
 

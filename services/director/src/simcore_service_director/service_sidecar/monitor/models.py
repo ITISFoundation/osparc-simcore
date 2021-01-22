@@ -1,5 +1,5 @@
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PositiveInt
 from typing import List
 
 
@@ -21,14 +21,24 @@ class StartedContainer(BaseModel):
 
 
 class ServiceSidecar(BaseModel):
+    hostname: str = Field(..., description="docker hostname for this service")
+    port: PositiveInt = Field(8000, description="service-sidecar port")
     is_available: bool = Field(
         False,
         scription="infroms if the web API on the service-sidecar is responding",
     )
+    service_sidecar_proxy_id: str = Field(
+        ...,
+        description="id of the proxy docker service which exposes the service outside",
+    )
+    service_sidecar_id: str = Field(
+        ..., description="id of the service-sidecar docker service"
+    )
 
-    @classmethod
-    def make_empty(cls):
-        return cls()
+    @property
+    def endpoint(self):
+        """endpoint where all teh services are exposed"""
+        return f"http://{self.hostname}:{self.port}"
 
 
 class MonitorData(BaseModel):
@@ -38,8 +48,8 @@ class MonitorData(BaseModel):
         ..., description="Name of the current sidecar-service being monitored"
     )
 
-    service_sidecar_status: ServiceSidecar = Field(
-        ServiceSidecar.make_empty(),
+    service_sidecar: ServiceSidecar = Field(
+        ...,
         description="stores information fetched from the service-sidecar",
     )
 
@@ -49,5 +59,21 @@ class MonitorData(BaseModel):
     )
 
     @classmethod
-    def assemble(cls, service_name: str):
-        return cls(service_name=service_name)
+    def assemble(
+        cls,
+        service_name: str,
+        hostname: str,
+        port: int,
+        service_sidecar_proxy_id: str,
+        service_sidecar_id: str,
+    ) -> "MonitorData":
+        payload = dict(
+            service_name=service_name,
+            service_sidecar=dict(
+                hostname=hostname,
+                port=port,
+                service_sidecar_proxy_id=service_sidecar_proxy_id,
+                service_sidecar_id=service_sidecar_id,
+            ),
+        )
+        return cls.parse_obj(payload)

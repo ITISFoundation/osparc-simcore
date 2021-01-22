@@ -64,7 +64,15 @@ class ServiceSidecarsMonitor:
         self._inverse_search_mapping: Dict[str, str] = dict()
         self._app: Application = app
 
-    async def add_service_to_monitor(self, service_name: str, node_uuid: str) -> None:
+    async def add_service_to_monitor(
+        self,
+        service_name: str,
+        node_uuid: str,
+        hostname: str,
+        port: int,
+        service_sidecar_proxy_id: str,
+        service_sidecar_id: str,
+    ) -> None:
         """Invoked before the service is started
 
         Because we do not have all items require to compute the service_name the node_uuid is used to
@@ -80,7 +88,13 @@ class ServiceSidecarsMonitor:
                     "other projects which may have this issue."
                 )
             self._inverse_search_mapping[node_uuid] = service_name
-            self._to_monitor[service_name] = MonitorData.assemble(service_name)
+            self._to_monitor[service_name] = MonitorData.assemble(
+                service_name=service_name,
+                hostname=hostname,
+                port=port,
+                service_sidecar_proxy_id=service_sidecar_proxy_id,
+                service_sidecar_id=service_sidecar_id,
+            )
             logger.debug("Added service '%s' to monitor", service_name)
 
     async def remove_service_from_monitor(self, node_uuid) -> None:
@@ -138,6 +152,8 @@ class ServiceSidecarsMonitor:
         logging.info("Starting service-sidecar monitor")
         self._keep_running = True
         asyncio.get_event_loop().create_task(self._run_monitor_task())
+        # TODO: pickup service which were here when the monitor was not running
+        # can happen after a restart or for whatever reason
 
     async def shutdown(self):
         logging.info("Shutting down service-sidecar monitor")

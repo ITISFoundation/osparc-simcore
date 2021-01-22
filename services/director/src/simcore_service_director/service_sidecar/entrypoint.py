@@ -1,13 +1,14 @@
 import logging
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 import aiodocker
 from aiohttp import web
 
-from .. import exceptions, config
+from .. import config
 from ..utils import get_swarm_network
 from .monitor import get_monitor
+from . import exceptions
 
 
 log = logging.getLogger(__name__)
@@ -39,50 +40,27 @@ async def stop_service_sidecar_stack_for_service(
     await monitor.remove_service_from_monitor(node_uuid)
 
 
+async def start_service_and_get_id(
+    client: aiodocker.docker.Docker, service_start_data: Dict[str, Any]
+) -> str:
+    service_start_result = await client.services.create(**service_start_data)
+    if "ID" not in service_start_result:
+        raise exceptions.DirectorException(
+            "Error while starting service: {}".format(str(service_start_result))
+        )
+    return service_start_result["ID"]
+
+
+async def get_service_information(
+    client: aiodocker.docker.Docker, service_id: str
+) -> Dict[str, Any]:
+    info = await client.services.inspect(service_id)
+    log.error("information %s", info)
+    return info
+
+
 async def start_service_sidecar_stack_for_service(
     app: web.Application,
-    client: aiodocker.docker.Docker,
-    user_id: str,
-    project_id: str,
-    service_key: str,
-    service_tag: str,
-    main_service: bool,
-    node_uuid: str,
-    node_base_path: str,
-    internal_network_id: Optional[str],
-) -> Dict:
-    """start the monitoring before spawning the process and remove the monitoring 
-    in case an exception occurs, also continue propagating the exception.
-    """
-    monitor = get_monitor(app)
-
-    service_name = get_service_name_proxy(
-        project_id=project_id,
-        service_key=service_key,
-        node_uuid=node_uuid,
-        fixed_service=FIXED_SERVICE_NAME_SIDECAR,
-    )
-    try:
-        await monitor.add_service_to_monitor(
-            service_name=service_name, node_uuid=node_uuid
-        )
-        return await _wrapped_start_service_sidecar_stack_for_service(
-            client=client,
-            user_id=user_id,
-            project_id=project_id,
-            service_key=service_key,
-            service_tag=service_tag,
-            main_service=main_service,
-            node_uuid=node_uuid,
-            node_base_path=node_base_path,
-            internal_network_id=internal_network_id,
-        )
-    except Exception:
-        await monitor.remove_service_from_monitor(node_uuid)
-        raise
-
-
-async def _wrapped_start_service_sidecar_stack_for_service(
     client: aiodocker.docker.Docker,
     user_id: str,
     project_id: str,
@@ -149,7 +127,7 @@ async def _wrapped_start_service_sidecar_stack_for_service(
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
 
-    sidecar_service_proxy_meta_data = await _dyn_proxy_entrypoint_assembly(
+    service_sidecar_proxy_meta_data = await _dyn_proxy_entrypoint_assembly(
         node_uuid=node_uuid,
         io_simcore_zone=io_simcore_zone,
         service_sidecar_network_name=service_sidecar_network_name,
@@ -160,17 +138,12 @@ async def _wrapped_start_service_sidecar_stack_for_service(
         user_id=user_id,
     )
 
-    log.debug("NEW_SERVICE_PROXY %s", sidecar_service_proxy_meta_data)
-
-    service_start_result = await client.services.create(
-        **sidecar_service_proxy_meta_data
+    service_sidecar_proxy_id = await start_service_and_get_id(
+        client, service_sidecar_proxy_meta_data
     )
-    if "ID" not in service_start_result:
-        raise exceptions.DirectorException(
-            "Error while starting service: {}".format(str(service_start_result))
-        )
+    logging.debug("sidecar-service-proxy id %s", service_sidecar_proxy_id)
 
-    sidecar_service_meta_data = await _dyn_service_sidecar_assembly(
+    service_sidecar_meta_data = await _dyn_service_sidecar_assembly(
         io_simcore_zone=io_simcore_zone,
         service_sidecar_network_name=service_sidecar_network_name,
         service_sidecar_network_id=service_sidecar_network_id,
@@ -180,15 +153,23 @@ async def _wrapped_start_service_sidecar_stack_for_service(
         node_uuid=node_uuid,
     )
 
-    log.debug("NEW_SERVICE %s", sidecar_service_meta_data)
+    service_sidecar_id = await start_service_and_get_id(
+        client, service_sidecar_meta_data
+    )
+    logging.debug("sidecar-service id %s", service_sidecar_id)
 
-    service_start_result = await client.services.create(**sidecar_service_meta_data)
-    if "ID" not in service_start_result:
-        raise exceptions.DirectorException(
-            "Error while starting service: {}".format(str(service_start_result))
-        )
+    # services where successfully started and they can be monitored
+    monitor = get_monitor(app)
+    await monitor.add_service_to_monitor(
+        service_name=service_name_service_sidecar,
+        node_uuid=node_uuid,
+        hostname=service_name_service_sidecar,
+        port=8000,
+        service_sidecar_proxy_id=service_sidecar_proxy_id,
+        service_sidecar_id=service_sidecar_id,
+    )
 
-    return sidecar_service_proxy_meta_data
+    return service_sidecar_proxy_meta_data
 
 
 async def _dyn_proxy_entrypoint_assembly(
@@ -200,7 +181,7 @@ async def _dyn_proxy_entrypoint_assembly(
     swarm_network_id: str,
     swarm_network_name: str,
     user_id: str,
-):
+) -> Dict[str, Any]:
     """This is the entrypoint to the network and needs to be configured properly"""
 
     mounts = [
@@ -279,7 +260,7 @@ async def _dyn_service_sidecar_assembly(
     service_sidecar_name: str,
     user_id: str,
     node_uuid: str,
-):
+) -> Dict[str, Any]:
     """This service contains the service-sidecar which will spawn the dynamic service itself """
     mounts = []
 
