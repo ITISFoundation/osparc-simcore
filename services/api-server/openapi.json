@@ -213,7 +213,7 @@
       }
     },
     "/v0/files/{file_id}:download": {
-      "get": {
+      "post": {
         "tags": [
           "files"
         ],
@@ -246,26 +246,6 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/files/upload-multiple-view": {
-      "get": {
-        "tags": [
-          "files"
-        ],
-        "summary": "Files Upload Multiple View",
-        "description": "Web form to upload files at http://localhost:8000/v0/files/upload-form-view\n\nOvercomes limitation of Swagger UI view\nNOTE: As of 2020-10-07, Swagger UI doesn't support multiple file uploads in the same form field",
-        "operationId": "files_upload_multiple_view",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
