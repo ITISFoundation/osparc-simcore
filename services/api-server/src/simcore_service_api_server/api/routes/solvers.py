@@ -2,7 +2,7 @@ import functools
 import logging
 import uuid as uuidlib
 from operator import attrgetter
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, Iterator, List
 from uuid import UUID
 
 import packaging.version
@@ -115,56 +115,58 @@ async def _list_solvers_impl(
         params={"user_id": user_id, "details": False},
         headers={"x-simcore-products-name": "osparc"},
     )
+    computational_services: Iterator[Dict[str, Any]] = (
+        s for s in available_services if s["type"] == "computational"
+    )
 
     # TODO: move this sorting down to database?
 
     # Create list list of the latest version of each solver
     latest_solvers: Dict[str, Solver] = {}
-    for service in available_services:
-        if service["type"] == "computational":
-            service_key = service["key"]
 
-            solver = latest_solvers.get(service_key)
+    for service in computational_services:
+        service_key = service["key"]
+        solver = latest_solvers.get(service_key)
 
-            if not solver or packaging.version.parse(
-                solver.version
-            ) < packaging.version.parse(service["version"]):
-                try:
-                    # FIXME: image id is not provided. Temp fake id
-                    image_uuid = compose_solver_id(service_key, service["version"])
+        if not solver or packaging.version.parse(
+            solver.version
+        ) < packaging.version.parse(service["version"]):
+            try:
+                # FIXME: image id is not provided. Temp fake id
+                image_uuid = compose_solver_id(service_key, service["version"])
 
-                    latest_solvers[service_key] = Solver(
-                        uuid=image_uuid,
-                        name=service_key,
-                        title=service["name"],
-                        maintainer=service["contact"],
-                        version=service["version"],
-                        description=service.get("description"),
-                        # solver_url=url_for(
-                        #    "get_solver_by_name_and_version",
-                        #    solver_name=pathname2url(service_key),
-                        #    version=service["version"],
-                        # ),
-                        solver_url=url_for(
-                            "get_solver_by_id",
-                            solver_id=image_uuid,
-                        ),
-                        # TODO: if field is not set in service, do not set here
-                    )
-                except ValidationError as err:
-                    # NOTE: This is necessary because there are no guarantees
-                    #       at the image registry. Therefore we exclude and warn
-                    #       invalid items instead of returning error
-                    logger.warning(
-                        "Skipping invalid service returned by catalog '%s': %s",
-                        service_key,
-                        err,
-                    )
-                except (KeyError, IndexError) as err:
-                    logger.error("API catalog response required fields did change!")
-                    raise HTTPException(
-                        status.HTTP_503_SERVICE_UNAVAILABLE,
-                        detail="Catalog API corrupted",
-                    ) from err
+                latest_solvers[service_key] = Solver(
+                    uuid=image_uuid,
+                    name=service_key,
+                    title=service["name"],
+                    maintainer=service["contact"],
+                    version=service["version"],
+                    description=service.get("description"),
+                    # solver_url=url_for(
+                    #    "get_solver_by_name_and_version",
+                    #    solver_name=pathname2url(service_key),
+                    #    version=service["version"],
+                    # ),
+                    solver_url=url_for(
+                        "get_solver_by_id",
+                        solver_id=image_uuid,
+                    ),
+                    # TODO: if field is not set in service, do not set here
+                )
+            except ValidationError as err:
+                # NOTE: This is necessary because there are no guarantees
+                #       at the image registry. Therefore we exclude and warn
+                #       invalid items instead of returning error
+                logger.warning(
+                    "Skipping invalid service returned by catalog '%s': %s",
+                    service_key,
+                    err,
+                )
+            except (KeyError, IndexError) as err:
+                logger.error("API catalog response required fields did change!")
+                raise HTTPException(
+                    status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Catalog API corrupted",
+                ) from err
 
     return sorted(latest_solvers.values(), key=attrgetter("name"))

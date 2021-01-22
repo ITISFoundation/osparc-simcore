@@ -15,6 +15,7 @@ KeyIdentifier = constr(strip_whitespace=True, min_length=3)
 SolverImageName = constr(regex=KEY_RE, strip_whitespace=True)
 
 
+# TODO: use instead models library domain model
 class SolverImage(BaseModel):
     # This is an image. Notice that tags refer to this image
     uuid: UUID = Field(..., description="Image sha256 unique identifier")
