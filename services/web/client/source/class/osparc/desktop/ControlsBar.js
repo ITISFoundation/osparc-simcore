@@ -126,7 +126,10 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       }, this);
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
-        startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+        if (study) {
+          startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+        }
+        startStopBtns.exclude();
       });
       this.add(startStopBtns);
     },
