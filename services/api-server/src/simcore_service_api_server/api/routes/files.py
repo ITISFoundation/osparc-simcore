@@ -59,6 +59,9 @@ async def upload_single_file_impl(
 
 @router.post(":upload-multiple", response_model=List[FileUploaded])
 async def upload_multiple_files(files: List[UploadFile] = File(...)):
+    # TODO: idealy we should only have upload_multiple_files but Union[List[UploadFile], File] produces an error in
+    # generated openapi.json
+
     # TODO: every file uploaded is sent to S3 and a link is returned
     # TODO: every session has a folder. A session is defined by the access token
     #

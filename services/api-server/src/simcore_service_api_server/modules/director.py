@@ -3,18 +3,18 @@ import logging
 import httpx
 from fastapi import FastAPI
 
-from ..core.settings import DirectorSettings
-from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+from ..core.settings import DirectorV2Settings
 from ..utils.client_base import BaseServiceClientApi
+from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
 # Module's setup logic ---------------------------------------------
 
 
-def setup(app: FastAPI, settings: DirectorSettings) -> None:
+def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
     if not settings:
-        settings = DirectorSettings()
+        settings = DirectorV2Settings()
 
     def on_startup() -> None:
         logger.debug("Setup %s at %s...", __name__, settings.base_url)
