@@ -137,7 +137,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return borderStyle;
     },
 
-    TOP_OFFSET: 50 + 42,
+    TOP_OFFSET: 50 + 46,
 
     ZoomValues: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
   },

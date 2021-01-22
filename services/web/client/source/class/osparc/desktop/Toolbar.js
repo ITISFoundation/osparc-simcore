@@ -26,6 +26,10 @@ qx.Class.define("osparc.desktop.Toolbar", {
     }));
     this.setAppearance("sidepanel");
 
+    this.set({
+      height: 46
+    });
+
     this._buildLayout();
   },
 
