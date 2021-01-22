@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 # pylint:disable=no-value-for-parameter
+# pylint:disable=too-many-arguments
 
 from copy import deepcopy
 from random import randint
