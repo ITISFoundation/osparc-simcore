@@ -214,8 +214,8 @@ qx.Class.define("osparc.wrapper.Svg", {
       });
     },
 
-    createEmptyCanvas: function(id) {
-      return SVG(id);
+    createEmptyCanvas: function(element) {
+      return SVG(element);
     }
   }
 });

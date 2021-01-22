@@ -31,14 +31,12 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
     });
 
     this.addListenerOnce("appear", () => {
-      const randomID = Math.random().toString(36).substring(7);
       const el = this.getContentElement().getDomElement();
-      qx.bom.element.Attribute.set(el, "id", randomID);
       const svgWrapper = osparc.wrapper.Svg.getInstance();
       svgWrapper.init()
         .then(() => {
           if (this.__canvas === null) {
-            this.__canvas = svgWrapper.createEmptyCanvas(randomID);
+            this.__canvas = svgWrapper.createEmptyCanvas(el);
             this.setReady(true);
             this.fireDataEvent("SvgWidgetReady", true);
           }
