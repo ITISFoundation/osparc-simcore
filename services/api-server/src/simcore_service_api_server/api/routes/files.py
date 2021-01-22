@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.get("", response_model=List[FileMetadata])
 async def list_files():
-    # TODO: extend sear
+    """ Gets metadata for all file resources """
     return the_fake_impl.list_meta()
 
 
@@ -36,7 +36,11 @@ async def list_files_impl(
 
 
 @router.post(":upload", response_model=FileMetadata)
-async def upload_single_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...)):
+    """Uploads a single file to the system
+
+    To upload multiple with one call, see upload_files
+    """
     metadata = await the_fake_impl.save(file)
     return metadata
 
@@ -56,20 +60,31 @@ async def upload_single_file_impl(
     raise NotImplementedError()
 
 
-@router.post(":upload-multiple", response_model=List[FileMetadata])
-async def upload_multiple_files(files: List[UploadFile] = File(...)):
+# TODO: disabled until actual use case is presented
+# @router.post(":upload-multiple", response_model=List[FileMetadata])
+#
+async def _upload_files(files: List[UploadFile] = File(...)):
+    """ Uploads multiple files to the system """
     # TODO: idealy we should only have upload_multiple_files but Union[List[UploadFile], File] produces an error in
     # generated openapi.json
-
-    # TODO: every file uploaded is sent to S3 and a link is returned
-    # TODO: every session has a folder. A session is defined by the access token
-    #
     async def save_file(file):
         metadata = await the_fake_impl.save(file)
         return metadata
 
     uploaded = await asyncio.gather(*[save_file(f) for f in files])
     return uploaded
+
+
+@router.get("/{file_id}", response_model=FileMetadata)
+async def get_file(file_id: UUID):
+    """ Gets metadata for a given file resource """
+    try:
+        return the_fake_impl.files[file_id]
+    except KeyError as err:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with identifier {file_id} not found",
+        ) from err
 
 
 @router.post("/{file_id}:download")

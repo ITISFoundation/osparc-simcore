@@ -41,6 +41,13 @@ def clean_storage_dirs():
 
 @dataclass
 class StorageFaker:
+    """
+    Emulates a Single Instance Storage
+    Real one will be S3 and will work with upload/download links
+
+    SEE https://en.wikipedia.org/wiki/Data_deduplication
+    """
+
     storage_dir: Path
     files: Dict[UUID, FileMetadata]
 
@@ -48,12 +55,9 @@ class StorageFaker:
         return list(self.files.values())
 
     def get_storage_path(self, metadata) -> Path:
-        # Single Instance Storage for data deduplication
-        # SEE https://en.wikipedia.org/wiki/Data_deduplication
         return self.storage_dir / f"{metadata.checksum}"
 
     async def save(self, uploaded_file: UploadFile) -> FileMetadata:
-
         metadata = await FileMetadata.create_from_uploaded(uploaded_file)
         await uploaded_file.seek(0)  # NOTE: create_from_uploaded moved cursor
 
@@ -70,7 +74,7 @@ class StorageFaker:
                 more_data = True
                 while more_data:
                     chunk = await uploaded_file.read(chunk_size)
-                    more_data = len(chunk) != chunk_size
+                    more_data = len(chunk) == chunk_size
                     await store_file.write(chunk)
 
         assert path.exists()  # nosec
