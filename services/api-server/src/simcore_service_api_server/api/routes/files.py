@@ -1,6 +1,7 @@
 import asyncio
 from textwrap import dedent
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.exceptions import HTTPException
@@ -35,9 +36,7 @@ async def list_files_impl(
 
 
 @router.post(":upload", response_model=FileUploaded)
-async def upload_single_file(
-    file: UploadFile = File(...),
-):
+async def upload_single_file(file: UploadFile = File(...)):
     metadata = await the_fake_impl.save(file)
     return metadata
 
@@ -74,28 +73,29 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
 
 
 @router.post("/{file_id}:download")
-async def download_file(file_id: str):
+async def download_file(file_id: UUID):
     # TODO: hash or UUID? Ideally like container ids
     try:
-        metadata, file_path = await the_fake_impl.get(file_id)
+        metadata = the_fake_impl.files[file_id]
+        file_path = the_fake_impl.get_storage_path(metadata)
+
+        return FileResponse(
+            str(file_path),
+            media_type=metadata.content_type,
+            filename=metadata.filename,
+        )
     except KeyError as err:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"File with identifier {file_id} not found",
         ) from err
 
-    return FileResponse(
-        str(file_path),
-        media_type=metadata.content_type,
-        filename=metadata.filename,
-    )
-
 
 async def files_upload_multiple_view():
-    """Returns a **web form** to upload files at http://localhost:8000/v0/files/upload-form-view
+    """Extra **Web form** to upload multiple files at http://localhost:8000/v0/files/upload-form-view
+        and overcomes the limitations of Swagger-UI view
 
-    Overcomes limitation of Swagger UI view
-    Only enabled if DEBUG=1
+    NOTE: Only enabled if DEBUG=1
     NOTE: As of 2020-10-07, Swagger UI doesn't support multiple file uploads in the same form field
     """
     return HTMLResponse(

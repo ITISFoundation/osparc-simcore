@@ -11,17 +11,19 @@
 """
 
 
-import hashlib
 import logging
 import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
+from uuid import UUID
 
+import aiofiles
 from fastapi import UploadFile
 
 from ...models.schemas.files import FileUploaded
+from ...utils.hash import CHUNK_4KB
 
 logger = logging.getLogger(__name__)
 
@@ -37,61 +39,43 @@ def clean_storage_dirs():
             shutil.rmtree(d, ignore_errors=True)
 
 
-async def eval_sha256_hash(file: UploadFile):
-    # TODO: adaptive chunks depending on file size
-    # SEE: https://stackoverflow.com/questions/17731660/hashlib-optimal-size-of-chunks-to-be-used-in-md5-update
-
-    CHUNK_BYTES = 4 * 1024  # 4K blocks
-
-    # TODO: put a limit in size to upload!
-    sha256_hash = hashlib.sha256()
-
-    await file.seek(0)
-    while True:
-        chunk = await file.read(CHUNK_BYTES)
-        if not chunk:
-            break
-        sha256_hash.update(chunk)
-    return sha256_hash.hexdigest()
-
-
 @dataclass
 class StorageFaker:
     storage_dir: Path
-    files: Dict[Path, FileUploaded]
+    files: Dict[UUID, FileUploaded]
 
     def list_meta(self) -> List[FileUploaded]:
         return list(self.files.values())
 
-    async def get(self, filehash: str) -> Tuple[FileUploaded, Path]:
-        for p, m in self.files.items():
-            if m.hash == filehash:
-                return m, p
-        raise KeyError()
+    def get_storage_path(self, metadata) -> Path:
+        return self.storage_dir / f"{metadata.checksum}"
 
-    async def save(self, file_handler) -> FileUploaded:
-        filehash = await eval_sha256_hash(file_handler)
+    async def save(self, uploaded_file: UploadFile) -> FileUploaded:
 
-        # key
-        path = self.storage_dir / f"{filehash}-{file_handler.filename}"
+        metadata = await FileUploaded.create_from_uploaded(uploaded_file)
+        path = self.get_storage_path(metadata)
 
         if not path.exists():
-            # creates metadata value
-            metadata = FileUploaded(
-                filename=file_handler.filename,
-                content_type=file_handler.content_type,
-                hash=filehash,
-            )
+            # Single Instance Storage for data deduplication (SEE https://en.wikipedia.org/wiki/Data_deduplication)
+
+            assert metadata.file_id not in self.files  # nosec
+
             # store
             logger.info("Saving %s  -> %s", metadata, path.name)
-            await file_handler.seek(0)
-            data = await file_handler.read()
-            path.write_bytes(data)
+            chunk_size: int = CHUNK_4KB
 
-            # ok, now register
-            self.files[path] = metadata
+            async with aiofiles.open(path, mode="wb") as store_file:
+                await uploaded_file.seek(0)
+                more_data = True
+                while more_data:
+                    chunk = await uploaded_file.read(chunk_size)
+                    more_data = len(chunk) != chunk_size
+                    await store_file.write(chunk)
 
-        return self.files[path]
+        assert path.exists()  # nosec
+
+        self.files[metadata.file_id] = metadata
+        return metadata
 
 
 clean_storage_dirs()
