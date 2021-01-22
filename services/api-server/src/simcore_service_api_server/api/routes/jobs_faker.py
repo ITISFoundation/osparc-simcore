@@ -11,19 +11,12 @@ import random
 import uuid as uuidlib
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 from uuid import UUID
 
 from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus, TaskStates
 
 logger = logging.getLogger(__name__)
-
-NAMESPACE_JOB_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
-
-
-@functools.lru_cache()
-def compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
-    return uuidlib.uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
 
 
 @dataclass
@@ -33,45 +26,41 @@ class JobsFaker:
     # TODO: preload JobsFaker configuration emulating a particular scenario (e.g. all jobs failed, ...)
     #
 
-    job_info: Dict[UUID, Dict[str, Any]] = field(
-        default_factory=dict
-    )  # solver_id, inputs_sha, job_id
-
+    job_info: Dict[UUID, Job] = field(default_factory=dict)
     job_status: Dict[UUID, JobStatus] = field(default_factory=dict)
     job_inputs: Dict[UUID, List[JobInput]] = field(default_factory=dict)
     job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
     job_outputs: Dict[UUID, List[JobOutput]] = field(default_factory=dict)
 
-    def iter_jobs(self, solver_id: Optional[UUID] = None):
+    def job_values(self, solver_id: Optional[UUID] = None) -> Iterator[Job]:
         if solver_id:
             for job in self.job_info.values():
-                if job["solver_id"] == str(solver_id):
+                if job.solver_id == solver_id:
                     yield job
         else:
             for job in self.job_info.values():
                 yield job
 
-    def create_job(self, solver_id: UUID, inputs: List[JobInput]) -> Dict:
+    def create_job(self, solver_id: UUID, inputs: List[JobInput]) -> Job:
         # TODO: validate inputs against solver definition
         sha = hashlib.sha256(
             " ".join(input.json() for input in inputs).encode("utf-8")
         ).hexdigest()
 
         # TODO: check if job exists already?? Do not consider date??
-        job_id = compose_job_id(solver_id, sha, datetime.utcnow())
-
-        job = dict(
-            job_id=str(job_id),
-            inputs_sha=sha,
-            solver_id=str(solver_id),
+        job = Job(
+            inputs_sha=sha, solver_id=str(solver_id), created_at=datetime.utcnow()
         )
-        self.job_info[job_id] = job
-        self.job_inputs[job_id] = inputs
+        self.job_info[job.id] = job
+        self.job_inputs[job.id] = inputs
         return job
 
     def start_job(self, job_id: UUID) -> JobStatus:
+        # check job was created?
+        job = self.job_info[job_id]
+
         # why not getting inputs from here?
-        inputs = self.job_inputs[job_id]
+        inputs = self.job_inputs[job.id]
 
         job_status = self.job_status.get(job_id)
         if not job_status:
@@ -156,10 +145,14 @@ class JobsFaker:
                 job_status.timestamp("stopped")
                 self.job_outputs.pop(job_id, None)
 
-    def stop_job(self, job_id) -> Dict:
+    def stop_job(self, job_id) -> Job:
         job = self.job_info[job_id]
-        task = self.job_tasks[job_id]
-        task.cancel()  # not sure it will actually task.cancelling
+        try:
+            task = self.job_tasks[job_id]
+            task.cancel()  # not sure it will actually task.cancelling
+        except KeyError:
+            logger.debug("Stopping job {job_id} that was never started")
+            pass
         return job
 
 

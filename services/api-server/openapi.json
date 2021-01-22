@@ -399,7 +399,13 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response List Jobs V0 Solvers  Solver Id  Jobs  Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Job"
+                  }
+                }
               }
             }
           },
@@ -852,36 +858,52 @@
       "Job": {
         "title": "Job",
         "required": [
-          "id",
-          "inputs_sha",
           "solver_id",
+          "inputs_sha",
+          "created_at",
+          "id",
+          "url",
           "solver_url",
           "outputs_url"
         ],
         "type": "object",
         "properties": {
-          "id": {
-            "title": "Id",
+          "solver_id": {
+            "title": "Solver Id",
             "type": "string",
-            "description": "Job identifier",
+            "description": "Solver used to run this job",
             "format": "uuid"
           },
           "inputs_sha": {
             "title": "Inputs Sha",
-            "type": "string"
-          },
-          "solver_id": {
-            "title": "Solver Id",
             "type": "string",
-            "description": "Solver running this job",
+            "description": "Input's checksum"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string",
+            "description": "Job creation timestamp",
+            "format": "date-time"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string",
             "format": "uuid"
+          },
+          "url": {
+            "title": "Url",
+            "maxLength": 2083,
+            "minLength": 1,
+            "type": "string",
+            "description": "Link to get this resource",
+            "format": "uri"
           },
           "solver_url": {
             "title": "Solver Url",
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
-            "description": "Link to job parent's solver",
+            "description": "Link to the solver's job",
             "format": "uri"
           },
           "outputs_url": {
@@ -889,7 +911,7 @@
             "maxLength": 2083,
             "minLength": 1,
             "type": "string",
-            "description": "Link to job's outputs",
+            "description": "Link to the job outputs",
             "format": "uri"
           }
         }

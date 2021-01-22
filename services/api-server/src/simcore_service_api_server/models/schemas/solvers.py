@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
 
 LATEST_VERSION = "latest"
 NAMESPACE_SOLVER_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
+NAMESPACE_JOB_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
 # Human-readable unique identifier
 KeyIdentifier = constr(strip_whitespace=True, min_length=3)
@@ -21,9 +22,13 @@ def _compose_solver_id(name, version) -> UUID:
     return uuid3(NAMESPACE_SOLVER_KEY, f"{name}:{version}")
 
 
+@functools.lru_cache(maxsize=1024)
+def _compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
+    # NOTE: the date is part of the composition so maxsize to 1000 * sys.getsizeof(UUID) = 1000 * 56bytes elements
+    return uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
+
+
 # SOLVER ----------
-#
-# TODO: this might be in common with Director-v2 models
 #
 #
 
@@ -52,7 +57,7 @@ class Solver(BaseModel):
     # TODO: consider released: Optional[datetime]  # TODO: turn into required
     # TODO: consider version_aliases: List[str] = []  # remaining tags
 
-    # Links to other resources
+    # Get links to other resources
     url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
 
     class Config:
@@ -96,21 +101,30 @@ class Solver(BaseModel):
 
 # JOBS ----------
 #
-# TODO: this might be in common with Director-v2 models
 #
-#
-class Job(BaseModel):
-    id: UUID = Field(..., description="Job identifier")
-    inputs_sha: str
-    solver_id: UUID = Field(..., description="Solver running this job")
 
-    #
-    # HATEOAS  (Hypermedia as the Engine of Application State)  to GET parent/children resources
-    #
-    # SEE https://restfulapi.net/hateoas/
-    #
-    solver_url: HttpUrl = Field(..., description="Link to job parent's solver")
-    outputs_url: HttpUrl = Field(..., description="Link to job's outputs")
+
+class Job(BaseModel):
+    solver_id: UUID = Field(..., description="Solver used to run this job")
+    inputs_sha: str = Field(..., description="Input's checksum")
+    created_at: datetime = Field(..., description="Job creation timestamp")
+    id: UUID
+
+    # Get links to other resources
+    url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
+    solver_url: Optional[HttpUrl] = Field(..., description="Link to the solver's job")
+    outputs_url: Optional[HttpUrl] = Field(..., description="Link to the job outputs")
+
+    @validator("id", pre=True)
+    @classmethod
+    def compose_id_with_solver_and_input(
+        cls, v, values
+    ):  # pylint: disable=unused-argument
+        if v is None:
+            return _compose_job_id(
+                values["solver_id"], values["inputs_sha"], values["created_at"]
+            )
+        return v
 
 
 # TODO: these need to be in sync with celery task states

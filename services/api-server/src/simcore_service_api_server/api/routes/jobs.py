@@ -1,6 +1,5 @@
 import logging
-from contextlib import contextmanager
-from typing import Callable, List, Optional
+from typing import Callable, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -17,41 +16,30 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@contextmanager
-def errors_mapper(as_404=KeyError, msg_404: Optional[str] = None):
-    try:
-        yield
-    except as_404 as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=msg_404
-        ) from err
-
-
 ## JOBS ---------------
 #
 # - Similar to docker container's API design (container = job and image = solver)
 #
 
 
-@solvers_router.get("/{solver_id}/jobs/")
+@solvers_router.get("/{solver_id}/jobs/", response_model=List[Job])
 async def list_jobs(
     solver_id: UUID,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ List of all jobs with a given solver """
-    # TODO: add pagination
-    # similar to ps = process status
     return [
-        Job(
-            solver_url=url_for(
-                "get_solver",
-                solver_id=job["solver_id"],
-            ),
-            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
-            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
-            **job,
+        job.copy(
+            update={
+                "url": url_for("get_job", job_id=job.id),
+                "solver_url": url_for(
+                    "get_solver",
+                    solver_id=job.solver_id,
+                ),
+                "outputs_url": url_for("list_job_outputs", job_id=job.id),
+            }
         )
-        for job in the_fake_impl.iter_jobs(solver_id)
+        for job in the_fake_impl.job_values(solver_id)
     ]
 
 
@@ -66,19 +54,19 @@ async def create_job(
 
     NOTE: This operation does **not** start the job
     """
-
     # TODO: validate inputs against solver specs
     # TODO: create a unique identifier of job based on solver_id and inputs
 
     job = the_fake_impl.create_job(solver_id, inputs)
-
-    return Job(
-        solver_url=url_for(
-            "get_solver",
-            solver_id=job["solver_id"],
-        ),
-        outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
-        **job,
+    return job.copy(
+        update={
+            "url": url_for("get_job", job_id=job.id),
+            "solver_url": url_for(
+                "get_solver",
+                solver_id=job.solver_id,
+            ),
+            "outputs_url": url_for("list_job_outputs", job_id=job.id),
+        }
     )
 
 
@@ -92,7 +80,7 @@ async def _run_job(
 ):
     """ create + start job in a single call """
     job = the_fake_impl.create_job(solver_id, inputs)
-    job_state = the_fake_impl.start_job(job["job_id"])
+    job_state = the_fake_impl.start_job(job.id)
     return job_state
 
 
@@ -101,19 +89,18 @@ async def list_all_jobs(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ List of all jobs created by user """
-    # TODO: add pagination and filtering (e.g. all active jobs etc)
-    # similar docker ps -a
     return [
-        Job(
-            solver_url=url_for(
-                "get_solver",
-                solver_id=job["solver_id"],
-            ),
-            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
-            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
-            **job,
+        job.copy(
+            update={
+                "url": url_for("get_job", job_id=job.id),
+                "solver_url": url_for(
+                    "get_solver",
+                    solver_id=job.solver_id,
+                ),
+                "outputs_url": url_for("list_job_outputs", job_id=job.id),
+            }
         )
-        for job in the_fake_impl.iter_jobs()
+        for job in the_fake_impl.job_values()
     ]
 
 
@@ -122,25 +109,35 @@ async def get_job(
     job_id: UUID,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    with errors_mapper():
-
+    try:
         job = the_fake_impl.job_info[job_id]
-        return Job(
-            solver_url=url_for(
-                "get_solver",
-                solver_id=job["solver_id"],
-            ),
-            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
-            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
-            **job,
+        return job.copy(
+            update={
+                "url": url_for("get_job", job_id=job.id),
+                "solver_url": url_for(
+                    "get_solver",
+                    solver_id=job.solver_id,
+                ),
+                "outputs_url": url_for("list_job_outputs", job_id=job.id),
+            }
         )
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job {job_id} does not exists"
+        ) from err
 
 
 @router.post("/{job_id}:start", response_model=JobStatus)
 async def start_job(job_id: UUID):
-    with errors_mapper():
+    try:
         job_state = the_fake_impl.start_job(job_id)
         return job_state
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job {job_id} does not exists"
+        ) from err
 
 
 @router.post("/{job_id}:stop", response_model=Job)
@@ -148,38 +145,58 @@ async def stop_job(
     job_id: UUID,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    with errors_mapper():
+    try:
         job = the_fake_impl.stop_job(job_id)
-        return Job(
-            solver_url=url_for(
-                "get_solver",
-                solver_id=job["solver_id"],
-            ),
-            inspect_url=url_for("inspect_job", job_id=job["job_id"]),
-            outputs_url=url_for("list_job_outputs", job_id=job["job_id"]),
-            **job,
+        return job.copy(
+            update={
+                "url": url_for("get_job", job_id=job.id),
+                "solver_url": url_for(
+                    "get_solver",
+                    solver_id=job.solver_id,
+                ),
+                "outputs_url": url_for("list_job_outputs", job_id=job.id),
+            }
         )
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job {job_id} does not exists"
+        ) from err
 
 
 @router.post("/{job_id}:inspect", response_model=JobStatus)
 async def inspect_job(job_id: UUID):
-    with errors_mapper():
+    try:
         state = the_fake_impl.job_status[job_id]
         return state
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job {job_id} does not exists"
+        ) from err
 
 
 @router.get("/{job_id}/outputs", response_model=List[JobOutput])
 async def list_job_outputs(job_id: UUID):
-    with errors_mapper(msg_404=f"No outputs found in job '{job_id}"):
+    try:
         outputs = the_fake_impl.job_outputs[job_id]
         return outputs
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No outputs found in job '{job_id}'",
+        ) from err
 
 
 @router.get("/{job_id}/outputs/{output_name}", response_model=JobOutput)
 async def get_job_output(job_id: UUID, output_name: KeyIdentifier):
-    with errors_mapper(
-        (KeyError, StopIteration),
-        f"No output '{output_name}' was not found in job {job_id}",
-    ):
+    try:
         outputs = the_fake_impl.job_outputs[job_id]
         return next(output for output in outputs if output.name == output_name)
+
+    except (KeyError, StopIteration) as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No output '{output_name}' was not found in job {job_id}",
+        ) from err
