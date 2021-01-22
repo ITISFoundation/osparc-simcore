@@ -196,9 +196,6 @@ async def _dyn_proxy_entrypoint_assembly(
         }
     ]
 
-    # TODO: it needs to proxy the services form the network
-    # - also it needs to be discoverable, right now we have issues and it is not visible
-
     return {
         "endpoint_spec": {"Mode": "dnsrr"},
         "labels": {
@@ -268,9 +265,7 @@ async def _dyn_service_sidecar_assembly(
     """This service contains the service-sidecar which will spawn the dynamic service itself """
     mounts = []
 
-    # TODO: ask SAN how to check for dev mode to be 100% sure
-    is_development_mode = True
-    if is_development_mode:
+    if service_sidecar_settings.is_dev_mode:
         service_sidecar_path = service_sidecar_settings.dev_simcore_service_sidecar_path
         if service_sidecar_path is None:
             log.error(

@@ -46,6 +46,12 @@ class ServiceSidecarSettings(BaseSettings):
         env="SERVICE_SIDECAR_IMAGE",
     )
 
+
+    @property
+    def is_dev_mode(self):
+        # TODO: ask SAN how to check this, not sure from what env var to derive it
+        return True
+
     class Config:
         case_sensitive = False
         env_prefix = "SERVICE_SIDECAR_"
