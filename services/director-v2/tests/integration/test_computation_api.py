@@ -83,7 +83,7 @@ def fake_workbench_without_outputs(
     workbench = deepcopy(fake_workbench_as_dict)
     # remove all the outputs from the workbench
     for _, data in workbench.items():
-        data["outputs"] = None
+        data["outputs"] = {}
 
     return workbench
 
