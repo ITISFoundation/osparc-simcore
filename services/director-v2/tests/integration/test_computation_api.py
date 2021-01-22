@@ -28,7 +28,15 @@ from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 
-core_services = ["director", "redis", "rabbit", "sidecar", "storage", "postgres"]
+core_services = [
+    "director",
+    "redis",
+    "rabbit",
+    "sidecar",
+    "storage",
+    "postgres",
+    "webserver",
+]
 ops_services = ["minio", "adminer"]
 
 COMPUTATION_URL: str = "v2/computations"
@@ -280,6 +288,7 @@ def test_run_partial_computation(
     ), f"the pipeline complete with state {task_out.state}"
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
+    # FIXME: currently the webserver is the one updating the projects table
     response = client.post(
         COMPUTATION_URL,
         json={
