@@ -1,17 +1,16 @@
 import logging
 from asyncio import CancelledError
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 from aiohttp import web
-from pydantic.types import PositiveInt
-from yarl import URL
-
 from models_library.projects_state import RunningState
+from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations, map_handlers_with_operations
+from yarl import URL
 
 from .director_v2_settings import (
     CONFIG_SECTION_NAME,
@@ -47,9 +46,16 @@ async def _request_director_v2(
     session = get_client_session(app)
     try:
         async with session.request(method, url, headers=headers, json=data) as resp:
-            payload: Dict = await resp.json()
             if resp.status >= 400:
+                # in some cases the director answers with plain text
+                payload: Union[Dict, str] = (
+                    await resp.json()
+                    if resp.content_type == "application/json"
+                    else await resp.text()
+                )
                 raise _DirectorServiceError(resp.status, payload)
+
+            payload: Dict = await resp.json()
             return (payload, resp.status)
 
     except (CancelledError, TimeoutError) as err:

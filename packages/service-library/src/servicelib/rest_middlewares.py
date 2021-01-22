@@ -172,6 +172,9 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
         resp = await handler(request)
 
+        if isinstance(resp, web.FileResponse):  # allows for files to be downloaded
+            return resp
+
         if not isinstance(resp, web.Response):
             response = create_data_response(
                 data=resp, skip_internal_error_details=_is_prod,

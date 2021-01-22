@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Set
 import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
-
 from models_library.projects_state import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
@@ -308,7 +307,7 @@ async def delete_project(request: web.Request):
                 reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
             )
 
-        await projects_api.delete_project(request, project_uuid, user_id)
+        await projects_api.delete_project(request.app, project_uuid, user_id)
     except ProjectInvalidRightsError as err:
         raise web.HTTPForbidden(
             reason="You do not have sufficient rights to delete this project"

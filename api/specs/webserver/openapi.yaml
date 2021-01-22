@@ -125,7 +125,6 @@ paths:
   /groups/sparc/classifiers/scicrunch-resources:search:
     $ref: "./openapi-groups.yaml#/paths/~1groups~1sparc~1classifiers~1scicrunch-resources:search"
 
-
   # DATA STORAGE SERVICES ----------------------------------------------------------
 
   /storage/locations:
@@ -168,6 +167,13 @@ paths:
 
   /projects/{project_id}/state:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1state"
+
+  # FIXME: /projects/{project_id}:export dose not work
+  /projects/{project_id}/export:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1export"
+
+  /projects:import:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1import"
 
   /projects/{project_id}:close:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1close"

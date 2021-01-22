@@ -175,12 +175,12 @@ async def start_project_interactive_services(
             log.error("Error while starting dynamic service %s", entry)
 
 
-async def delete_project(request: web.Request, project_uuid: str, user_id: int) -> None:
-    await delete_project_from_db(request.app, project_uuid, user_id)
+async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
+    await delete_project_from_db(app, project_uuid, user_id)
 
     async def remove_services_and_data():
-        await remove_project_interactive_services(user_id, project_uuid, request.app)
-        await delete_project_data(request, project_uuid, user_id)
+        await remove_project_interactive_services(user_id, project_uuid, app)
+        await delete_project_data(app, project_uuid, user_id)
 
     fire_and_forget_task(remove_services_and_data())
 
@@ -207,10 +207,10 @@ async def remove_project_interactive_services(
 
 
 async def delete_project_data(
-    request: web.Request, project_uuid: str, user_id: int
+    app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(request.app, project_uuid, user_id)
+    await delete_data_folders_of_project(app, project_uuid, user_id)
 
 
 async def delete_project_from_db(
