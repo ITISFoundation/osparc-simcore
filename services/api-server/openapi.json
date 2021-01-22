@@ -998,7 +998,7 @@
         },
         "example": {
           "name": "T",
-          "content_type": "number",
+          "type": "number",
           "title": "Temperature",
           "value": "33"
         }
@@ -1007,7 +1007,6 @@
         "title": "JobOutput",
         "required": [
           "name",
-          "status",
           "value"
         ],
         "type": "object",
@@ -1029,14 +1028,6 @@
             "type": "string",
             "description": "Short human readable name to identify input/output"
           },
-          "status": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/TaskStates"
-              }
-            ],
-            "description": "State towards completion of this output"
-          },
           "value": {
             "title": "Value",
             "anyOf": [
@@ -1055,7 +1046,7 @@
         },
         "example": {
           "name": "SAR",
-          "content_type": "data:application/hdf5",
+          "type": "data:application/hdf5",
           "title": "SAR field output file",
           "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a"
         }
