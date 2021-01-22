@@ -12,9 +12,8 @@ from ...utils.hash import create_md5_checksum
 NAMESPACE_FILEID_KEY = UUID("aa154444-d22d-4290-bb15-df37dba87865")
 
 
-# FIXME: rename FileMetadata
-class FileUploaded(BaseModel):
-    """ Describes a file on the server side """
+class FileMetadata(BaseModel):
+    """ Describes a file stored on the server side """
 
     file_id: UUID = Field(
         None, description="File unique identifier built upon its name and checksum"
@@ -27,7 +26,7 @@ class FileUploaded(BaseModel):
     checksum: str = Field(..., description="MD5 hash of the file's content")
 
     @classmethod
-    async def create_from_path(cls, path: Path) -> "FileUploaded":
+    async def create_from_path(cls, path: Path) -> "FileMetadata":
 
         async with aiofiles.open(path, mode="rb") as file:
             md5check = await create_md5_checksum(file)
@@ -41,9 +40,11 @@ class FileUploaded(BaseModel):
         )
 
     @classmethod
-    async def create_from_uploaded(cls, file: UploadFile) -> "FileUploaded":
-        # WARNING: this will change seek for file_handler and await file.seek(0) might introduce race condition
+    async def create_from_uploaded(cls, file: UploadFile) -> "FileMetadata":
+
         md5check = await create_md5_checksum(file)
+        # WARNING: UploadFile wraps a stream and wil checkt its cursor position: file.file.tell() != 0
+        # WARNING: await file.seek(0) might introduce race condition if not done carefuly
 
         return cls(
             file_id=cls.create_id(md5check, file.filename),

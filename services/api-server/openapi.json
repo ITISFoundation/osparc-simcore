@@ -117,7 +117,7 @@
                   "title": "Response List Files V0 Files Get",
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/FileUploaded"
+                    "$ref": "#/components/schemas/FileMetadata"
                   }
                 }
               }
@@ -149,7 +149,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileUploaded"
+                  "$ref": "#/components/schemas/FileMetadata"
                 }
               }
             }
@@ -193,7 +193,7 @@
                   "title": "Response Upload Multiple Files V0 Files Upload Multiple Post",
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/FileUploaded"
+                    "$ref": "#/components/schemas/FileMetadata"
                   }
                 }
               }
@@ -224,7 +224,8 @@
             "required": true,
             "schema": {
               "title": "File Id",
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "name": "file_id",
             "in": "path"
@@ -855,36 +856,36 @@
           }
         }
       },
-      "FileUploaded": {
-        "title": "FileUploaded",
+      "FileMetadata": {
+        "title": "FileMetadata",
         "required": [
           "filename",
-          "content_type",
-          "hash"
+          "checksum"
         ],
         "type": "object",
         "properties": {
+          "file_id": {
+            "title": "File Id",
+            "type": "string",
+            "description": "File unique identifier built upon its name and checksum",
+            "format": "uuid"
+          },
           "filename": {
             "title": "Filename",
-            "type": "string"
+            "type": "string",
+            "description": "File with extenson"
           },
           "content_type": {
             "title": "Content Type",
             "type": "string"
           },
-          "hash": {
-            "title": "Hash",
-            "type": "string"
-          },
-          "download_url": {
-            "title": "Download Url",
-            "maxLength": 2083,
-            "minLength": 1,
+          "checksum": {
+            "title": "Checksum",
             "type": "string",
-            "format": "uri"
+            "description": "MD5 hash of the file's content"
           }
         },
-        "description": "Describes a file on the server side "
+        "description": "Describes a file stored on the server side "
       },
       "Groups": {
         "title": "Groups",

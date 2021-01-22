@@ -22,7 +22,7 @@ from uuid import UUID
 import aiofiles
 from fastapi import UploadFile
 
-from ...models.schemas.files import FileUploaded
+from ...models.schemas.files import FileMetadata
 from ...utils.hash import CHUNK_4KB
 
 logger = logging.getLogger(__name__)
@@ -42,22 +42,24 @@ def clean_storage_dirs():
 @dataclass
 class StorageFaker:
     storage_dir: Path
-    files: Dict[UUID, FileUploaded]
+    files: Dict[UUID, FileMetadata]
 
-    def list_meta(self) -> List[FileUploaded]:
+    def list_meta(self) -> List[FileMetadata]:
         return list(self.files.values())
 
     def get_storage_path(self, metadata) -> Path:
+        # Single Instance Storage for data deduplication
+        # SEE https://en.wikipedia.org/wiki/Data_deduplication
         return self.storage_dir / f"{metadata.checksum}"
 
-    async def save(self, uploaded_file: UploadFile) -> FileUploaded:
+    async def save(self, uploaded_file: UploadFile) -> FileMetadata:
 
-        metadata = await FileUploaded.create_from_uploaded(uploaded_file)
+        metadata = await FileMetadata.create_from_uploaded(uploaded_file)
+        await uploaded_file.seek(0)  # NOTE: create_from_uploaded moved cursor
+
         path = self.get_storage_path(metadata)
 
         if not path.exists():
-            # Single Instance Storage for data deduplication (SEE https://en.wikipedia.org/wiki/Data_deduplication)
-
             assert metadata.file_id not in self.files  # nosec
 
             # store
@@ -65,7 +67,6 @@ class StorageFaker:
             chunk_size: int = CHUNK_4KB
 
             async with aiofiles.open(path, mode="wb") as store_file:
-                await uploaded_file.seek(0)
                 more_data = True
                 while more_data:
                     chunk = await uploaded_file.read(chunk_size)

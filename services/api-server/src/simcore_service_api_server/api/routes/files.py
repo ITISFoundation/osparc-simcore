@@ -8,7 +8,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 
 from ..._meta import api_vtag
-from ...models.schemas.files import FileUploaded
+from ...models.schemas.files import FileMetadata
 from ...modules.storage import StorageApi
 from ..dependencies.services import get_api_client
 from .files_faker import the_fake_impl
@@ -19,7 +19,7 @@ router = APIRouter()
 ## FILES ---------------
 
 
-@router.get("", response_model=List[FileUploaded])
+@router.get("", response_model=List[FileMetadata])
 async def list_files():
     # TODO: extend sear
     return the_fake_impl.list_meta()
@@ -35,7 +35,7 @@ async def list_files_impl(
     raise NotImplementedError()
 
 
-@router.post(":upload", response_model=FileUploaded)
+@router.post(":upload", response_model=FileMetadata)
 async def upload_single_file(file: UploadFile = File(...)):
     metadata = await the_fake_impl.save(file)
     return metadata
@@ -56,7 +56,7 @@ async def upload_single_file_impl(
     raise NotImplementedError()
 
 
-@router.post(":upload-multiple", response_model=List[FileUploaded])
+@router.post(":upload-multiple", response_model=List[FileMetadata])
 async def upload_multiple_files(files: List[UploadFile] = File(...)):
     # TODO: idealy we should only have upload_multiple_files but Union[List[UploadFile], File] produces an error in
     # generated openapi.json
