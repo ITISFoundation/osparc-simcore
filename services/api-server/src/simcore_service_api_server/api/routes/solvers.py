@@ -1,6 +1,4 @@
-import functools
 import logging
-import uuid as uuidlib
 from operator import attrgetter
 from typing import Any, Callable, Dict, Iterator, List
 from uuid import UUID
@@ -16,21 +14,12 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.services import get_api_client
 from .solvers_faker import the_fake_impl
 
-NAMESPACE_SOLVER_KEY = uuidlib.UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
-
 # TODO: from urllib.request import pathname2url
 # TODO: from fastapi.responses import RedirectResponse
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-@functools.lru_cache()
-def compose_solver_id(solver_key: SolverImageName, version: str) -> UUID:
-    # FIXME: this is a temporary solution. Should be image id
-
-    return uuidlib.uuid3(NAMESPACE_SOLVER_KEY, f"{solver_key}:{version}")
 
 
 ## SOLVERS -----------------------------------------------------------------------------------------
@@ -45,9 +34,9 @@ async def list_solvers(
     """
     latest_solvers = [
         Solver(
-            solver_url=url_for(
+            url=url_for(
                 "get_solver_by_id",
-                solver_id=data["uuid"],
+                solver_id=data["id"],
             ),
             **data,
         )
@@ -67,7 +56,7 @@ async def get_solver_by_id(
         return Solver(
             solver_url=url_for(
                 "get_solver_by_id",
-                solver_id=data["uuid"],
+                solver_id=data["id"],
             ),
             **data,
         )
@@ -93,7 +82,7 @@ async def get_solver_by_name_and_version(
     return Solver(
         solver_url=url_for(
             "get_solver_by_id",
-            solver_id=data["uuid"],
+            solver_id=data["id"],
         ),
         **data,
     )

@@ -1,83 +1,114 @@
-import re
+import functools
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Union
-from uuid import UUID
+from typing import Optional, Union
+from uuid import UUID, uuid3
 
-from pydantic import BaseModel, Field, HttpUrl, conint, constr
+from models_library.basic_regex import VERSION_RE
+from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
+from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
 
 LATEST_VERSION = "latest"
-KEY_RE = r"^(simcore)/(services)/(comp)(/[^\s/]+)+$"  # NOTE: needs to end with / !!
-
+NAMESPACE_SOLVER_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
 # Human-readable unique identifier
 KeyIdentifier = constr(strip_whitespace=True, min_length=3)
-SolverImageName = constr(regex=KEY_RE, strip_whitespace=True)
+SolverImageName = constr(regex=COMPUTATIONAL_SERVICE_KEY_RE, strip_whitespace=True)
 
 
-# TODO: use instead models library domain model
-class SolverImage(BaseModel):
-    # This is an image. Notice that tags refer to this image
-    uuid: UUID = Field(..., description="Image sha256 unique identifier")
-    name: SolverImageName = Field(
-        ...,
-        description="Name of the solver image including namespace and excluding tag",
-    )
-    maintainer: str
-    released: datetime
+@functools.lru_cache()
+def _compose_solver_id(name, version) -> UUID:
+    return uuid3(NAMESPACE_SOLVER_KEY, f"{name}:{version}")
+
+
+# SOLVER ----------
+#
+# TODO: this might be in common with Director-v2 models
+#
+#
 
 
 class Solver(BaseModel):
-    """A released solver with a specific version
+    """ A released solver with a specific version """
 
-    This version might have human-readable alias (e.g. latest) or
-    hierarchical version tags (e.g. 3, 3.2)
-    """
+    # Unique machine identifiers
+    name: str = Field(
+        ...,
+        description="Unique solver name with path namespaces",
+        regex=COMPUTATIONAL_SERVICE_KEY_RE,
+    )
+    version: str = Field(
+        ...,
+        description="semantic version number of the node",
+        regex=VERSION_RE,
+        example=["1.0.0", "0.0.1"],
+    )
+    id: Optional[UUID]
 
-    uuid: UUID = Field(..., description="Same as the solver's image sha256")
-    name: str = Field(..., description="Image name including namespace")
-    version: str  # complete tag.  e.g. 3.4.5 TODO: regex for version in python PEP
-    version_aliases: List[str] = []  # remaining tags
-
-    title: str
+    # Human readables Identifiers
+    title: str = Field(..., description="Human readable name")
     description: Optional[str]
     maintainer: str
-    released: Optional[datetime]  # TODO: turn into required
+    # TODO: consider released: Optional[datetime]  # TODO: turn into required
+    # TODO: consider version_aliases: List[str] = []  # remaining tags
 
-    solver_url: HttpUrl
+    # Links to other resources
+    url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "name": "simcore/services/comp/isolve",
+                "version": "2.1.1",
+                "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+                "title": "iSolve",
+                "description": "EM solver",
+                "maintainer": "info@itis.swiss",
+                "url": "",
+            }
+        }
+
+    @validator("id", pre=True)
+    @classmethod
+    def compose_id_with_name_and_version(
+        cls, v, values
+    ):  # pylint: disable=unused-argument
+        return _compose_solver_id(values["name"], values["version"])
 
     @classmethod
-    def create_from_image(cls, img: SolverImage, tags: List, **kwargs) -> "Solver":
-        version = None
-        alias = []
-        for tag in tags:
-            if re.match(r"\d+\.\d+\.\d+", tag):
-                version = tag
-            else:
-                alias.append(tag)
+    def create_from_image(cls, image_meta: ServiceDockerData) -> "Solver":
+        data = image_meta.dict(
+            include={"name", "key", "version", "description", "contact"},
+        )
 
         return cls(
-            uuid=img.uuid,
-            name=img.name,
-            title=img.name.split("/")[-1],
-            maintainer=img.maintainer,
-            released=img.released,
-            version=version,
-            version_aliases=alias,
-            **kwargs,
+            name=data.pop("key"),
+            version=data.pop("version"),
+            title=data.pop("name"),
+            maintainer=data.pop("contact"),
+            url=None,
+            id=None,
+            **data,
         )
 
 
+# JOBS ----------
+#
 # TODO: this might be in common with Director-v2 models
+#
+#
 class Job(BaseModel):
-    job_id: UUID
+    id: UUID = Field(..., description="Job identifier")
     inputs_sha: str
-    solver_id: UUID
+    solver_id: UUID = Field(..., description="Solver running this job")
 
-    # hyperlinks
-    solver_url: HttpUrl
-    inspect_url: HttpUrl
-    outputs_url: HttpUrl
+    #
+    # HATEOAS  (Hypermedia as the Engine of Application State)  to GET parent/children resources
+    #
+    # SEE https://restfulapi.net/hateoas/
+    #
+    solver_url: HttpUrl = Field(..., description="Link to job parent's solver")
+    outputs_url: HttpUrl = Field(..., description="Link to job's outputs")
 
 
 # TODO: these need to be in sync with celery task states
@@ -115,6 +146,12 @@ class JobStatus(BaseModel):
 
     def timestamp(self, event: str = "submitted"):
         setattr(self, f"{event}_at", datetime.utcnow())
+
+
+# INPUTS/OUTPUTS ----------
+#
+#
+#
 
 
 class SolverPort(BaseModel):

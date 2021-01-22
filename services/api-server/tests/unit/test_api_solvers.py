@@ -87,19 +87,19 @@ def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocke
         print(solver.json(indent=1, exclude_unset=True))
 
         # use link to get the same solver
-        assert solver.solver_url.host == "api.testserver.io"  # cli.base_url
+        assert solver.url.host == "api.testserver.io"  # cli.base_url
 
         # get_solver_latest_version_by_name
-        resp0 = cli.get(solver.solver_url.path)
+        resp0 = cli.get(solver.url.path)
         assert resp0.status_code == status.HTTP_501_NOT_IMPLEMENTED
         # assert f"GET {solver.name}:{solver.version}"  in resp0.json()["errors"][0]
-        assert f"GET solver {solver.uuid}" in resp0.json()["errors"][0]
+        assert f"GET solver {solver.id}" in resp0.json()["errors"][0]
         # assert Solver(**resp0.json()) == solver
 
         # get_solver_by_id
-        resp1 = cli.get(f"/v0/solvers/{solver.uuid}")
+        resp1 = cli.get(f"/v0/solvers/{solver.id}")
         assert resp1.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET solver {solver.uuid}" in resp1.json()["errors"][0]
+        assert f"GET solver {solver.id}" in resp1.json()["errors"][0]
         # assert Solver(**resp1.json()) == solver
 
         # get_solver_latest_version_by_name

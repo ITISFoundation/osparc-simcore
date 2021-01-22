@@ -4,6 +4,7 @@ type: computational
 integration-version: 2.0.72
 version: 2.0.72
 description: GPU solvers for sim4life-master-3938
+contact: guidon@itis.swiss
 authors:
   - name: Manuel Guidon
     email: guidon@itis.swiss
