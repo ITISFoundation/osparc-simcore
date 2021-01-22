@@ -13,6 +13,7 @@ from .constants import (
     FIXED_SERVICE_NAME_PROXY,
     SERVICE_SIDECAR_PREFIX,
 )
+from .utils import unused_port
 
 
 log = logging.getLogger(__name__)
@@ -172,7 +173,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     ]
 
     return {
-        "endpoint_spec": {"Mode": "dnsrr"},
+        # "endpoint_spec": {"Mode": "dnsrr"},
         "labels": {
             "io.simcore.zone": f"{service_sidecar_settings.traefik_simcore_zone}",
             "port": "80",
@@ -238,7 +239,16 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     node_uuid: str,
 ) -> Dict[str, Any]:
     """This service contains the service-sidecar which will spawn the dynamic service itself """
-    mounts = []
+    mounts = [
+        # docker socket needed to use the docker api
+        {
+            "Source": "/var/run/docker.sock",
+            "Target": "/var/run/docker.sock",
+            "Type": "bind",
+        }
+    ]
+
+    endpint_spec = {}
 
     if service_sidecar_settings.is_dev_mode:
         service_sidecar_path = service_sidecar_settings.dev_simcore_service_sidecar_path
@@ -256,9 +266,19 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
 
+        # expose this service on an empty port
+        if service_sidecar_settings.dev_expose_service_sidecar:
+            endpint_spec["Ports"] = [
+                {
+                    "Protocol": "tcp",
+                    "PublishedPort": unused_port(),
+                    "TargetPort": service_sidecar_settings.web_service_port,
+                }
+            ]
+
     return {
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
-        "endpoint_spec": {"Mode": "dnsrr"},
+        "endpoint_spec": endpint_spec,
         "labels": {
             "io.simcore.zone": io_simcore_zone,
             "port": "8000",

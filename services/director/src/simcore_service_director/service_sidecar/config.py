@@ -55,6 +55,11 @@ class ServiceSidecarSettings(BaseSettings):
         env="SIMCORE_SERVICES_NETWORK_NAME",
     )
 
+    dev_expose_service_sidecar: bool = Field(
+        False,
+        description="if true exposes all the service sidecars to the host for simpler debugging",
+    )
+
     @property
     def is_dev_mode(self):
         # TODO: ask SAN how to check this, not sure from what env var to derive it
