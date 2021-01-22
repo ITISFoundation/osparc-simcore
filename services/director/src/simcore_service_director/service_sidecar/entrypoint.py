@@ -30,7 +30,7 @@ def assemble_service_name(
     name_from_service_key = service_key.split("/")[-1]
     return strip_service_name(
         f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
-        f"-{fixed_service}-{name_from_service_key}"
+        f"_{fixed_service}_{name_from_service_key}"
     )
 
 
@@ -68,8 +68,8 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     service_sidecar_settings: ServiceSidecarSettings = get_settings(app)
 
     # Service naming schema:
-    # -  srvsdcr_{uuid}_{first_two_project_id}-proxy-{name_from_service_key}
-    # -  srvsdcr_{uuid}_{first_two_project_id}-sidecar-{name_from_service_key}
+    # -  srvsdcr_{uuid}_{first_two_project_id}_proxy_{name_from_service_key}
+    # -  srvsdcr_{uuid}_{first_two_project_id}_sidecar_{name_from_service_key}
 
     service_name_service_sidecar = assemble_service_name(
         project_id, service_key, node_uuid, FIXED_SERVICE_NAME_SIDECAR
@@ -81,7 +81,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     first_two_project_id = project_id[:2]
 
     # unique name for the traefik constraints
-    io_simcore_zone = f"service_sidecar_{node_uuid}_{first_two_project_id}"
+    io_simcore_zone = f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
 
     # based on the node_id and project_id
     service_sidecar_network_name = (
@@ -265,7 +265,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "io.simcore.zone": io_simcore_zone,
             "port": "8000",
             "study_id": "4b46c1d2-2d92-11eb-8066-02420a0000fe",
-            "swarm_stack_name": "master-simcore",  # nope, needs to change to custom
+            "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
             "traefik.docker.network": service_sidecar_network_name,
             "traefik.enable": "true",
             f"traefik.http.routers.{service_sidecar_name}.entrypoints": "http",
