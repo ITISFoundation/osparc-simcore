@@ -99,6 +99,8 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
             "type": ProjectType.STANDARD.name,
             "description": "my test description",
             "prj_owner": user_db["id"],
+            "access_rights": {"1": {"read": True, "write": True, "delete": True}},
+            "thumbnail": "",
             "workbench": {},
         }
         project_config.update(**overrides)
