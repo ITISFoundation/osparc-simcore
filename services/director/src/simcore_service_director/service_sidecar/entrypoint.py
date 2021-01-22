@@ -21,7 +21,7 @@ def strip_service_name(service_name: str) -> str:
     return service_name[:63]
 
 
-def get_service_name_proxy(
+def assemble_service_name(
     project_id: str, service_key: str, node_uuid: str, fixed_service: str
 ) -> str:
     first_two_project_id = project_id[:2]
@@ -68,10 +68,10 @@ async def start_service_sidecar_stack_for_service(
     # -  srvsdcr_{uuid}_{first_two_project_id}-proxy-{name_from_service_key}
     # -  srvsdcr_{uuid}_{first_two_project_id}-sidecar-{name_from_service_key}
 
-    service_name_service_sidecar = get_service_name_proxy(
+    service_name_service_sidecar = assemble_service_name(
         project_id, service_key, node_uuid, FIXED_SERVICE_NAME_SIDECAR
     )
-    service_name_proxy = get_service_name_proxy(
+    service_name_proxy = assemble_service_name(
         project_id, service_key, node_uuid, FIXED_SERVICE_NAME_PROXY
     )
 
