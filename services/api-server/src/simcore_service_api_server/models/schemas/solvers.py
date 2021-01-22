@@ -157,13 +157,15 @@ class JobOutput(SolverPort):
         ..., description="Result value in this output"
     )
 
-    # TODO: ???
+    job_id: UUID = Field(..., description="Job that produced this output")
+
     class Config:
         schema_extra = {
             "example": {
                 "name": "SAR",
                 "type": "data:application/hdf5",
-                "title": "SAR field output file",
+                "title": "SAR field output file-id",
                 "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
+                "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
             }
         }
