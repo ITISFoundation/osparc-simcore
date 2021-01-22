@@ -22,6 +22,30 @@ class ServiceSidecarSettings(BaseSettings):
         ),
     )
 
+    traefik_simcore_zone: str = Field(
+        "internal_simcore_stack",
+        description="used by Traefik to properly handle forwarding of requests",
+        env="TRAEFIK_SIMCORE_ZONE",
+    )
+
+    swarm_stack_name: str = Field(
+        "undefined-please-check",
+        description="used to filter out docker components from other deployments running on same swarm",
+        env="SWARM_STACK_NAME",
+    )
+
+    dev_simcore_service_sidecar_path: str = Field(
+        None,
+        description="optional, only used for development, mounts the source of the service sidecar",
+        env="DEV_SIMCORE_SERVICE_SIDECAR_PATH",
+    )
+
+    service_sidecar_image: str = Field(
+        ...,
+        description="used by the director to start a specific version of the service sidecar",
+        env="SERVICE_SIDECAR_IMAGE",
+    )
+
     class Config:
         case_sensitive = False
         env_prefix = "SERVICE_SIDECAR_"

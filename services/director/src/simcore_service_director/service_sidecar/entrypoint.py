@@ -5,10 +5,10 @@ from typing import Dict, Optional, Any
 import aiodocker
 from aiohttp import web
 
-from .. import config
-from ..utils import get_swarm_network
+from .config import get_settings, ServiceSidecarSettings
+from ..utils import get_swarm_network  # this needs to be replaced
 from .monitor import get_monitor
-from . import exceptions
+from .exceptions import GenericDockerError, ServiceSidecarError
 
 
 log = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ async def start_service_and_get_id(
 ) -> str:
     service_start_result = await client.services.create(**service_start_data)
     if "ID" not in service_start_result:
-        raise exceptions.DirectorException(
+        raise ServiceSidecarError(
             "Error while starting service: {}".format(str(service_start_result))
         )
     return service_start_result["ID"]
@@ -83,6 +83,8 @@ async def start_service_sidecar_stack_for_service(
 
     log.debug(debug_message)
 
+    service_sidecar_settings: ServiceSidecarSettings = get_settings(app)
+
     # Service naming schema:
     # -  srvsdcr_{uuid}_{first_two_project_id}-proxy-{name_from_service_key}
     # -  srvsdcr_{uuid}_{first_two_project_id}-sidecar-{name_from_service_key}
@@ -107,7 +109,7 @@ async def start_service_sidecar_stack_for_service(
         "Name": service_sidecar_network_name,
         "Driver": "overlay",
         "Labels": {
-            "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
+            "io.simcore.zone": f"{service_sidecar_settings.traefik_simcore_zone}",
             "com.simcore.description": f"interactive for node: {node_uuid}_{first_two_project_id}",
             "uuid": node_uuid,  # needed for removal when project is closed
         },
@@ -118,9 +120,7 @@ async def start_service_sidecar_stack_for_service(
         service_sidecar_network_id = (await client.networks.create(network_config)).id
     except aiodocker.exceptions.DockerError as err:
         log.exception("Error while creating network %s", service_sidecar_network_name)
-        raise exceptions.GenericDockerError(
-            "Error while creating network", err
-        ) from err
+        raise GenericDockerError("Error while creating network", err) from err
 
     # attach the service to the swarm network dedicated to services
     swarm_network = await get_swarm_network(client)
@@ -128,6 +128,7 @@ async def start_service_sidecar_stack_for_service(
     swarm_network_name = swarm_network["Name"]
 
     service_sidecar_proxy_meta_data = await _dyn_proxy_entrypoint_assembly(
+        service_sidecar_settings=service_sidecar_settings,
         node_uuid=node_uuid,
         io_simcore_zone=io_simcore_zone,
         service_sidecar_network_name=service_sidecar_network_name,
@@ -144,6 +145,7 @@ async def start_service_sidecar_stack_for_service(
     logging.debug("sidecar-service-proxy id %s", service_sidecar_proxy_id)
 
     service_sidecar_meta_data = await _dyn_service_sidecar_assembly(
+        service_sidecar_settings=service_sidecar_settings,
         io_simcore_zone=io_simcore_zone,
         service_sidecar_network_name=service_sidecar_network_name,
         service_sidecar_network_id=service_sidecar_network_id,
@@ -173,6 +175,7 @@ async def start_service_sidecar_stack_for_service(
 
 
 async def _dyn_proxy_entrypoint_assembly(
+    service_sidecar_settings: ServiceSidecarSettings,
     node_uuid: str,
     io_simcore_zone: str,
     service_sidecar_network_name: str,
@@ -199,9 +202,9 @@ async def _dyn_proxy_entrypoint_assembly(
     return {
         "endpoint_spec": {"Mode": "dnsrr"},
         "labels": {
-            "io.simcore.zone": f"{config.TRAEFIK_SIMCORE_ZONE}",
+            "io.simcore.zone": f"{service_sidecar_settings.traefik_simcore_zone}",
             "port": "80",
-            "swarm_stack_name": config.SWARM_STACK_NAME,
+            "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
             f"traefik.http.routers.{service_name}.entrypoints": "http",
@@ -253,6 +256,7 @@ async def _dyn_proxy_entrypoint_assembly(
 
 
 async def _dyn_service_sidecar_assembly(
+    service_sidecar_settings: ServiceSidecarSettings,
     io_simcore_zone: str,
     service_sidecar_network_name: str,
     service_sidecar_network_id: str,
@@ -267,11 +271,11 @@ async def _dyn_service_sidecar_assembly(
     # TODO: ask SAN how to check for dev mode to be 100% sure
     is_development_mode = True
     if is_development_mode:
-        service_sidecar_path = config.DEV_SIMCORE_SERVICE_SIDECAR_PATH
+        service_sidecar_path = service_sidecar_settings.dev_simcore_service_sidecar_path
         if service_sidecar_path is None:
             log.error(
                 "Could not mount the sources for the service-sidecar, please provide env var named %s",
-                config.DEV_SIMCORE_SERVICE_SIDECAR_PATH.__name__,
+                service_sidecar_settings.dev_simcore_service_sidecar_path.__name__,
             )
         else:
             mounts.append(
@@ -302,7 +306,6 @@ async def _dyn_service_sidecar_assembly(
         },
         "name": service_sidecar_name,
         "networks": [swarm_network_id, service_sidecar_network_id],
-        # "registry": config.REGISTRY_URL,
         "task_template": {
             "ContainerSpec": {
                 "Env": {
@@ -314,7 +317,7 @@ async def _dyn_service_sidecar_assembly(
                     "STORAGE_ENDPOINT": "storage: 8080",
                 },
                 "Hosts": [],
-                "Image": config.SERVICE_SIDECAR_IMAGE,
+                "Image": service_sidecar_settings.service_sidecar_image,
                 "Init": True,
                 "Labels": {},
                 "Mounts": mounts,
