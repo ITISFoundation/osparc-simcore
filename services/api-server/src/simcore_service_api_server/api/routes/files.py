@@ -70,7 +70,7 @@ async def upload_multiple_files(files: List[UploadFile] = File(...)):
     return uploaded
 
 
-@router.get("/{file_id}:download")
+@router.post("/{file_id}:download")
 async def download_file(file_id: str):
     # TODO: hash or UUID? Ideally like container ids
     try:
@@ -88,11 +88,11 @@ async def download_file(file_id: str):
     )
 
 
-@router.get("/upload-multiple-view")
 async def files_upload_multiple_view():
-    """Web form to upload files at http://localhost:8000/v0/files/upload-form-view
+    """Returns a **web form** to upload files at http://localhost:8000/v0/files/upload-form-view
 
     Overcomes limitation of Swagger UI view
+    Only enabled if DEBUG=1
     NOTE: As of 2020-10-07, Swagger UI doesn't support multiple file uploads in the same form field
     """
     return HTMLResponse(
