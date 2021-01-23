@@ -12,7 +12,7 @@
 
 # testing
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-asyncio
 pytest-cov
 pytest-docker
 pytest-mock
@@ -22,17 +22,16 @@ asgi_lifespan
 # fixtures
 faker
 passlib[bcrypt]
+respx
 
 # db migration
+-r ../../../packages/postgres-database/requirements/_base.in
 alembic
+click
 docker
+tenacity
 
 # tools
 pylint
 coveralls
 codecov
-
-# scripts/templates
-change_case
-jinja2
-ptvsd

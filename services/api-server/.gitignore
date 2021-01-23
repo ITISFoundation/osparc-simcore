@@ -1,4 +1,2 @@
 # outputs from makefile
 client
-docker-compose.yml
-.env
