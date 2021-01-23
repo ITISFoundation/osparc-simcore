@@ -84,7 +84,7 @@ async def _run_job(
     return job_state
 
 
-@router.get("")
+@router.get("", response_model=List[Job])
 async def list_all_jobs(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -110,7 +110,7 @@ async def get_job(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     try:
-        job = the_fake_impl.job_info[job_id]
+        job = the_fake_impl.jobs[job_id]
         return job.copy(
             update={
                 "url": url_for("get_job", job_id=job.id),

@@ -69,15 +69,13 @@ class Solver(BaseModel):
                 "title": "iSolve",
                 "description": "EM solver",
                 "maintainer": "info@itis.swiss",
-                "url": "",
+                "url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
             }
         }
 
     @validator("id", pre=True)
     @classmethod
-    def compose_id_with_name_and_version(
-        cls, v, values
-    ):  # pylint: disable=unused-argument
+    def compose_id_with_name_and_version(cls, v, values):
         if v is None:
             return _compose_solver_id(values["name"], values["version"])
         return v
@@ -115,16 +113,39 @@ class Job(BaseModel):
     solver_url: Optional[HttpUrl] = Field(..., description="Link to the solver's job")
     outputs_url: Optional[HttpUrl] = Field(..., description="Link to the job outputs")
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "solver_id": "32cfd2c5-ad5c-4086-ba5e-6f76a17dcb7a",
+                "inputs_sha": "12345",
+                "created_at": "2021-01-22T23:59:52.322176",
+                "id": "f5c44f80-af84-3d45-8836-7933f67959a6",
+                "url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6",
+                "solver_url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
+                "outputs_url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6/outputs",
+            }
+        }
+
     @validator("id", pre=True)
     @classmethod
-    def compose_id_with_solver_and_input(
-        cls, v, values
-    ):  # pylint: disable=unused-argument
+    def compose_id_with_solver_and_input(cls, v, values):
         if v is None:
             return _compose_job_id(
                 values["solver_id"], values["inputs_sha"], values["created_at"]
             )
         return v
+
+    @classmethod
+    def create_now(cls, solver_id: UUID, inputs_checksum: str) -> "Job":
+        return cls(
+            solver_id=solver_id,
+            inputs_sha=inputs_checksum,
+            created_at=datetime.utcnow(),
+            url=None,
+            solver_url=None,
+            outputs_url=None,
+            id=None,
+        )
 
 
 # TODO: these need to be in sync with celery task states

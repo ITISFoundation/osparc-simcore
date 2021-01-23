@@ -67,7 +67,7 @@ class StorageFaker:
         path = self.get_storage_path(metadata)
 
         if not path.exists():
-            assert metadata.file_id not in self.files  # nosec
+            assert metadata.file_id not in self.files, str(metadata)  # nosec
 
             # store
             logger.info("Saving %s  -> %s", metadata, path.name)

@@ -26,16 +26,9 @@ def test_create_solver_from_image_metadata():
 
 def test_create_job_model():
 
-    job = Job(
-        solver_id=uuid4(),
-        inputs_sha="12345",
-        created_at=datetime.utcnow(),
-        url=None,
-        solver_url=None,
-        outputs_url=None,
-        id=None,
-    )
+    job = Job.create_now(uuid4(), "12345")
 
+    print(job.json(indent=2))
     assert job.id is not None
 
     max_cached_bytes = sys.getsizeof(job.id) * _compose_job_id.cache_info().maxsize

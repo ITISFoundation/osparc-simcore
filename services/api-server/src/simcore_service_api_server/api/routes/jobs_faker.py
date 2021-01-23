@@ -4,14 +4,12 @@
 
 """
 import asyncio
-import functools
 import hashlib
 import logging
 import random
-import uuid as uuidlib
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional
 from uuid import UUID
 
 from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus, TaskStates
@@ -26,7 +24,7 @@ class JobsFaker:
     # TODO: preload JobsFaker configuration emulating a particular scenario (e.g. all jobs failed, ...)
     #
 
-    job_info: Dict[UUID, Job] = field(default_factory=dict)
+    jobs: Dict[UUID, Job] = field(default_factory=dict)
     job_status: Dict[UUID, JobStatus] = field(default_factory=dict)
     job_inputs: Dict[UUID, List[JobInput]] = field(default_factory=dict)
     job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
@@ -34,30 +32,29 @@ class JobsFaker:
 
     def job_values(self, solver_id: Optional[UUID] = None) -> Iterator[Job]:
         if solver_id:
-            for job in self.job_info.values():
+            for job in self.jobs.values():
                 if job.solver_id == solver_id:
                     yield job
         else:
-            for job in self.job_info.values():
+            for job in self.jobs.values():
                 yield job
 
     def create_job(self, solver_id: UUID, inputs: List[JobInput]) -> Job:
         # TODO: validate inputs against solver definition
-        sha = hashlib.sha256(
+        inputs_checksum = hashlib.sha256(
             " ".join(input.json() for input in inputs).encode("utf-8")
         ).hexdigest()
 
         # TODO: check if job exists already?? Do not consider date??
-        job = Job(
-            inputs_sha=sha, solver_id=str(solver_id), created_at=datetime.utcnow()
-        )
-        self.job_info[job.id] = job
+        job = Job.create_now(solver_id, inputs_checksum)
+
+        self.jobs[job.id] = job
         self.job_inputs[job.id] = inputs
         return job
 
     def start_job(self, job_id: UUID) -> JobStatus:
         # check job was created?
-        job = self.job_info[job_id]
+        job = self.jobs[job_id]
 
         # why not getting inputs from here?
         inputs = self.job_inputs[job.id]
@@ -117,11 +114,12 @@ class JobsFaker:
             job_status.timestamp("stopped")
             logger.info(job_status)
 
-            # Fakes a single output
+            # TODO: temporary A fixed output MOCK
+            # TODO: temporary writes error in value!
             if job_status.state == TaskStates.SUCCESS:
                 self.job_outputs[job_id] = [
                     JobOutput(
-                        name="T",
+                        name="Temp",
                         type="number",
                         title="Resulting Temperature",
                         value=33,
@@ -129,9 +127,10 @@ class JobsFaker:
                     ),
                 ]
             else:
+                # TODO: some kind of error
                 self.job_outputs[job_id] = [
                     JobOutput(
-                        name="T",
+                        name="Temp",
                         type="string",
                         title="Resulting Temperature",
                         value="ERROR: simulation diverged",
@@ -140,19 +139,27 @@ class JobsFaker:
                 ]
 
         except asyncio.CancelledError:
-            if job_status.state != TaskStates.SUCCESS:
-                job_status.state = TaskStates.FAILED
-                job_status.timestamp("stopped")
-                self.job_outputs.pop(job_id, None)
+
+            logging.debug("Task for job %s was cancelled", job_id)
+            job_status.state = TaskStates.FAILED
+            job_status.timestamp("stopped")
+            self.job_outputs[job_id] = [
+                JobOutput(
+                    name="Temp",
+                    type="string",
+                    title="Resulting Temperature",
+                    value="ERROR: Cancelled",
+                    job_id=job_id,
+                )
+            ]
 
     def stop_job(self, job_id) -> Job:
-        job = self.job_info[job_id]
+        job = self.jobs[job_id]
         try:
             task = self.job_tasks[job_id]
             task.cancel()  # not sure it will actually task.cancelling
         except KeyError:
             logger.debug("Stopping job {job_id} that was never started")
-            pass
         return job
 
 

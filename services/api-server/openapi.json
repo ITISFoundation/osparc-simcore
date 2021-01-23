@@ -491,7 +491,13 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response List All Jobs V0 Jobs Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Job"
+                  }
+                }
               }
             }
           }
@@ -914,6 +920,15 @@
             "description": "Link to the job outputs",
             "format": "uri"
           }
+        },
+        "example": {
+          "solver_id": "32cfd2c5-ad5c-4086-ba5e-6f76a17dcb7a",
+          "inputs_sha": "12345",
+          "created_at": "2021-01-22T23:59:52.322176",
+          "id": "f5c44f80-af84-3d45-8836-7933f67959a6",
+          "url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6",
+          "solver_url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
+          "outputs_url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6/outputs"
         }
       },
       "JobInput": {
@@ -1232,7 +1247,7 @@
           "title": "iSolve",
           "description": "EM solver",
           "maintainer": "info@itis.swiss",
-          "url": ""
+          "url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05"
         }
       },
       "TaskStates": {
