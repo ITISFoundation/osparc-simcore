@@ -39,9 +39,7 @@ aiozipkin==0.7.1
 aniso8601==7.0.0
     # via graphene
 async-exit-stack==1.0.1
-    # via
-    #   -r requirements/_base.in
-    #   fastapi
+    # via fastapi
 async-generator==1.10
     # via
     #   -r requirements/_base.in
@@ -139,10 +137,6 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.14
-    # via contextvars
-importlib-metadata==3.7.3
-    # via jsonschema
 importlib-resources==5.1.0
     # via -r requirements/_base.in
 isodate==0.6.0
@@ -348,14 +342,4 @@ werkzeug==1.0.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 yarl==1.6.3
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-    #   aiohttp
-zipp==3.4.0
-    # via
-    #   importlib-metadata
-    #   importlib-resources
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+    # via -r requirements/../../../packages/postgres-database/requirements/_base.in

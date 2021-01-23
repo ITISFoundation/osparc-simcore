@@ -10,10 +10,6 @@ asgi-lifespan==1.0.1
     # via -r requirements/_test.in
 astroid==2.5.3
     # via pylint
-async-exit-stack==1.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   asgi-lifespan
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
@@ -105,16 +101,6 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.14
-    # via
-    #   -c requirements/_base.txt
-    #   contextvars
-importlib-metadata==3.7.3
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via pytest
 isort==5.8.0
@@ -255,13 +241,6 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-typed-ast==1.4.3
-    # via astroid
-typing-extensions==3.7.4.3
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
-    #   yarl
 urllib3==1.26.4
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -278,10 +257,6 @@ yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
-zipp==3.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
