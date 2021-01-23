@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverImageName
+from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverName
 from ..dependencies.application import get_reverse_url_mapper
 from .solvers_faker import the_fake_impl
 
@@ -55,7 +55,7 @@ async def get_solver(
 
 @router.get("/{solver_name:path}/{version}", response_model=Solver)
 async def get_solver_by_name_and_version(
-    solver_name: SolverImageName,
+    solver_name: SolverName,
     version: str,
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):

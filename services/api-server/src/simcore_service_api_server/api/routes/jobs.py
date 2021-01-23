@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus, KeyIdentifier
+from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus
 from ..dependencies.application import get_reverse_url_mapper
 from .jobs_faker import the_fake_impl
 from .solvers import router as solvers_router
@@ -190,7 +190,7 @@ async def list_job_outputs(job_id: UUID):
 
 
 @router.get("/{job_id}/outputs/{output_name}", response_model=JobOutput)
-async def get_job_output(job_id: UUID, output_name: KeyIdentifier):
+async def get_job_output(job_id: UUID, output_name: str):
     try:
         outputs = the_fake_impl.job_outputs[job_id]
         return next(output for output in outputs if output.name == output_name)

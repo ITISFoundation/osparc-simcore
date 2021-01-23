@@ -3,12 +3,14 @@
 # pylint:disable=redefined-outer-name
 
 import sys
-from datetime import datetime
 from uuid import uuid4
 
+import pytest
 from simcore_service_api_server.api.routes.solvers_faker import SolversFaker
 from simcore_service_api_server.models.schemas.solvers import (
     Job,
+    JobInput,
+    JobOutput,
     Solver,
     _compose_job_id,
 )
@@ -31,6 +33,7 @@ def test_create_job_model():
     print(job.json(indent=2))
     assert job.id is not None
 
+    # pylint: disable=no-value-for-parameter
     max_cached_bytes = sys.getsizeof(job.id) * _compose_job_id.cache_info().maxsize
     assert max_cached_bytes < 1024 * 1024, "Cache expected < 1MB, reduce maxsize"
 
@@ -38,3 +41,12 @@ def test_create_job_model():
     # TODO: @validator("created_at", always=True)
     # def ensure_utc(cls, v):
     #    v.utc
+
+
+@pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
+def test_model_examples(model_cls):
+    example = model_cls.Config.schema_extra["example"]
+    print(example)
+
+    model_instance = model_cls(**example)
+    assert model_instance

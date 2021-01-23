@@ -2,10 +2,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
 
+import pytest
 from httpx import AsyncClient
-
 from simcore_service_api_server._meta import api_version, api_vtag
 from simcore_service_api_server.models.schemas.meta import Meta
+
+pytestmark = pytest.mark.asyncio
 
 
 async def test_read_service_meta(client: AsyncClient):

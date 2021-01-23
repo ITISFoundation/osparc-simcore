@@ -12,10 +12,6 @@ LATEST_VERSION = "latest"
 NAMESPACE_SOLVER_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 NAMESPACE_JOB_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
-# Human-readable unique identifier
-KeyIdentifier = constr(strip_whitespace=True, min_length=3)
-SolverImageName = constr(regex=COMPUTATIONAL_SERVICE_KEY_RE, strip_whitespace=True)
-
 
 @functools.lru_cache()
 def _compose_solver_id(name, version) -> UUID:
@@ -31,16 +27,19 @@ def _compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
 # SOLVER ----------
 #
 #
+SolverName = constr(
+    strip_whitespace=True,
+    regex=COMPUTATIONAL_SERVICE_KEY_RE,
+)
 
 
 class Solver(BaseModel):
     """ A released solver with a specific version """
 
     # Unique machine identifiers
-    name: str = Field(
+    name: SolverName = Field(
         ...,
         description="Unique solver name with path namespaces",
-        regex=COMPUTATIONAL_SERVICE_KEY_RE,
     )
     version: str = Field(
         ...,
@@ -104,7 +103,7 @@ class Solver(BaseModel):
 
 class Job(BaseModel):
     solver_id: UUID = Field(..., description="Solver used to run this job")
-    inputs_sha: str = Field(..., description="Input's checksum")
+    inputs_checksum: str = Field(..., description="Input's checksum")
     created_at: datetime = Field(..., description="Job creation timestamp")
     id: UUID
 
@@ -117,7 +116,7 @@ class Job(BaseModel):
         schema_extra = {
             "example": {
                 "solver_id": "32cfd2c5-ad5c-4086-ba5e-6f76a17dcb7a",
-                "inputs_sha": "12345",
+                "inputs_checksum": "12345",
                 "created_at": "2021-01-22T23:59:52.322176",
                 "id": "f5c44f80-af84-3d45-8836-7933f67959a6",
                 "url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6",
@@ -131,7 +130,7 @@ class Job(BaseModel):
     def compose_id_with_solver_and_input(cls, v, values):
         if v is None:
             return _compose_job_id(
-                values["solver_id"], values["inputs_sha"], values["created_at"]
+                values["solver_id"], values["inputs_checksum"], values["created_at"]
             )
         return v
 
@@ -139,7 +138,7 @@ class Job(BaseModel):
     def create_now(cls, solver_id: UUID, inputs_checksum: str) -> "Job":
         return cls(
             solver_id=solver_id,
-            inputs_sha=inputs_checksum,
+            inputs_checksum=inputs_checksum,
             created_at=datetime.utcnow(),
             url=None,
             solver_url=None,
@@ -192,7 +191,7 @@ class JobStatus(BaseModel):
 
 
 class SolverPort(BaseModel):
-    name: KeyIdentifier = Field(
+    name: str = Field(
         ...,
         description="Name given to the input/output in solver specs (see solver metadata.yml)",
     )
