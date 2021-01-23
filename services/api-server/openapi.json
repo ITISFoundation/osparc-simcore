@@ -954,18 +954,7 @@
             "description": "Short human readable name to identify input/output"
           },
           "value": {
-            "title": "Value",
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ]
+            "$ref": "#/components/schemas/PortValue"
           }
         },
         "example": {
@@ -1001,19 +990,7 @@
             "description": "Short human readable name to identify input/output"
           },
           "value": {
-            "title": "Value",
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "description": "Result value in this output"
+            "$ref": "#/components/schemas/PortValue"
           },
           "job_id": {
             "title": "Job Id",
@@ -1127,6 +1104,20 @@
           "doc_url": "https://api.osparc.io/doc",
           "doc_dev_url": "https://api.osparc.io/dev/doc"
         }
+      },
+      "PortValue": {
+        "title": "PortValue",
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          }
+        ]
       },
       "Profile": {
         "title": "Profile",

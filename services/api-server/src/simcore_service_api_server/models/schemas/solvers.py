@@ -190,6 +190,10 @@ class JobStatus(BaseModel):
 #
 
 
+class PortValue(BaseModel):
+    __root__: Union[float, str, int, HttpUrl, None]
+
+
 class SolverPort(BaseModel):
     name: str = Field(
         ...,
@@ -210,7 +214,7 @@ class SolverPort(BaseModel):
 
 
 class JobInput(SolverPort):
-    value: Union[float, str, int, HttpUrl, None] = None
+    value: PortValue = None
 
     # TODO: validate one or the other but not both
 
@@ -226,9 +230,7 @@ class JobInput(SolverPort):
 
 
 class JobOutput(SolverPort):
-    value: Union[float, str, int, HttpUrl, None] = Field(
-        ..., description="Result value in this output"
-    )
+    value: PortValue
 
     job_id: UUID = Field(..., description="Job that produced this output")
 
