@@ -276,8 +276,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
           this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 
-          const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener("progress", ep => {
+          /*
+          const headers = new Headers();
+          headers.append("Accept", "application/json");
+          const body = new FormData();
+          body.append("fileName", new Blob([file.name], {
+            type: "application/json"
+          }));
+          body.append("file", file);
+          fetch("/v0/projects:import", {
+            method: "POST",
+            headers,
+            body
+          });
+          */
+          const req = new XMLHttpRequest();
+          req.upload.addEventListener("progress", ep => {
             if (e.lengthComputable) {
               const percentComplete = ep.loaded / ep.total * 100;
               placeholderStudyCard.getProgressBar().setValue(percentComplete);
@@ -285,17 +299,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               console.log("Unable to compute progress information since the total size is unknown");
             }
           }, false);
-          xhr.onload = () => {
-            console.log(xhr.response);
-            if (xhr.status == 200) {
+          req.onload = () => {
+            console.log(req.response);
+            if (req.status == 200) {
               placeholderStudyCard.setStateLabel(this.tr("Processing study"));
               placeholderStudyCard.getProgressBar().exclude();
             }
           };
-          xhr.open("POST", "/v0/projects:import", true);
-          xhr.send(file);
+          req.open("POST", "/v0/projects:import", true);
+          req.send(file);
           /*
-          const file = e.getData();
           const req = new osparc.io.file.ApiRequest("/projects:import", "POST");
           req.upload.addEventListener("progress", ep => {
             if (e.lengthComputable) {
