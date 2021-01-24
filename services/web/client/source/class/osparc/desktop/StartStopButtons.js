@@ -43,20 +43,32 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
   events: {
     "startPipeline": "qx.event.type.Event",
+    "startPartialPipeline": "qx.event.type.Event",
     "stopPipeline": "qx.event.type.Event"
   },
 
   members: {
     __startButton: null,
+    __startSelectionButton: null,
+    __startAllButton: null,
     __stopButton: null,
-    __pipelineCtrls: null,
 
-    getStartButton: function() {
-      return this.__startButton;
+    setRunning: function(running) {
+      const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
+      startButtons.forEach(startButton => startButton.setFetching(running));
+      this.__stopButton.setFetching(running);
     },
 
-    getStopButton: function() {
-      return this.__stopButton;
+    nodeSelectionChanged: function(selectedNodes) {
+      if (!this.__startButton.isFetching()) {
+        if (selectedNodes.length) {
+          this.__startButton.exclude();
+          this.__startSelectionButton.show();
+        } else {
+          this.__startButton.show();
+          this.__startSelectionButton.exclude();
+        }
+      }
     },
 
     __initDefault: function() {
@@ -67,6 +79,11 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       const startButton = this.__createStartButton();
       this._add(startButton);
 
+      const startSplitButton = this.__createStartSplitButton().set({
+        visibility: "excluded"
+      });
+      this._add(startSplitButton);
+
       osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
         const study = e.getData();
         this.__updateRunButtonsStatus(study);
@@ -75,7 +92,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     __updateRunButtonsStatus: function(study) {
       if (study) {
-        const startButton = this.__startButton;
+        const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
         const stopButton = this.__stopButton;
         if (study.getState() && study.getState().state) {
           const pipelineState = study.getState().state;
@@ -83,14 +100,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":
-              startButton.setFetching(true);
+              startButtons.forEach(startButton => startButton.setFetching(true));
               stopButton.setEnabled(true);
               break;
             case "NOT_STARTED":
             case "SUCCESS":
             case "FAILED":
             default:
-              startButton.setFetching(false);
+              startButtons.forEach(startButton => startButton.setFetching(false));
               stopButton.setEnabled(false);
               break;
           }
@@ -105,6 +122,28 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         this.fireEvent("startPipeline");
       }, this);
       return startButton;
+    },
+
+    __createStartSplitButton: function() {
+      const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Node"), "@FontAwesome5Solid/play/14");
+      startSelectionButton.addListener("execute", () => {
+        this.fireEvent("startPartialPipeline");
+      }, this);
+      const splitButtonMenu = this.__createSplitButtonMenu();
+      startSelectionButton.setMenu(splitButtonMenu);
+      return startSelectionButton;
+    },
+
+    __createSplitButtonMenu: function() {
+      const splitButtonMenu = new qx.ui.menu.Menu();
+
+      const startAllButton = this.__startAllButton = new osparc.ui.menu.FetchButton(this.tr("Run All"));
+      startAllButton.addListener("execute", () => {
+        this.fireEvent("startPipeline");
+      });
+      splitButtonMenu.add(startAllButton);
+
+      return splitButtonMenu;
     },
 
     __createStopButton: function() {

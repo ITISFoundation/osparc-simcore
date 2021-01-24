@@ -36,6 +36,7 @@ qx.Class.define("osparc.desktop.Toolbar", {
   events: {
     "nodeSelected": "qx.event.type.Data",
     "startPipeline": "qx.event.type.Event",
+    "startPartialPipeline": "qx.event.type.Event",
     "stopPipeline": "qx.event.type.Event"
   },
 
@@ -51,12 +52,8 @@ qx.Class.define("osparc.desktop.Toolbar", {
     _navNodes: null,
     _startStopBtns: null,
 
-    getStartButton: function() {
-      return this._startStopBtns.getStartButton();
-    },
-
-    getStopButton: function() {
-      return this._startStopBtns.getStopButton();
+    getStartStopButtons: function() {
+      return this._startStopBtns;
     },
 
     _createChildControlImpl: function(id) {
@@ -78,6 +75,9 @@ qx.Class.define("osparc.desktop.Toolbar", {
           control = new osparc.desktop.StartStopButtons();
           control.addListener("startPipeline", () => {
             this.fireEvent("startPipeline");
+          }, this);
+          control.addListener("startPartialPipeline", () => {
+            this.fireEvent("startPartialPipeline");
           }, this);
           control.addListener("stopPipeline", () => {
             this.fireEvent("stopPipeline");

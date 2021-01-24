@@ -30,11 +30,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.fireDataEvent("startStudy", e.getData());
     });
     workbenchView.addListener("startPipeline", this.__startPipeline, this);
+    workbenchView.addListener("startPartialPipeline", this.__startPipeline, this);
     workbenchView.addListener("stopPipeline", this.__stopPipeline, this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideShowView();
     slideshowView.addListener("startPipeline", this.__startPipeline, this);
+    slideshowView.addListener("startPartialPipeline", this.__startPipeline, this);
     slideshowView.addListener("stopPipeline", this.__stopPipeline, this);
     viewsStack.add(slideshowView);
 
@@ -156,18 +158,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      const runButtonWB = this.__workbenchView.getStartButton();
-      const runButtonSS = this.__slideshowView.getStartButton();
-      runButtonWB.setFetching(true);
-      runButtonSS.setFetching(true);
+      const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
+      const startStopButtonsSS = this.__slideshowView.getStartStopButtons();
+      startStopButtonsWB.setFetching(true);
+      startStopButtonsSS.setFetching(true);
       this.updateStudyDocument(true)
         .then(() => {
           this.__doStartPipeline();
         })
         .catch(() => {
           this.getLogger().error(null, "Run failed");
-          runButtonWB.setFetching(false);
-          runButtonSS.setFetching(false);
+          startStopButtonsWB.setFetching(false);
+          startStopButtonsSS.setFetching(false);
         });
     },
 
@@ -194,13 +196,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __requestStartPipeline: function(studyId, selectedNodeIDs = []) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
-      const runButtonWB = this.__workbenchView.getStartButton();
-      const runButtonSS = this.__slideshowView.getStartButton();
+      const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
+      const startStopButtonsSS = this.__slideshowView.getStartStopButtons();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.getLogger().error(null, "Error submitting pipeline");
-        runButtonWB.setFetching(false);
-        runButtonSS.setFetching(false);
+        startStopButtonsWB.setRunning(false);
+        startStopButtonsSS.setRunning(false);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getResponse().error.status == "403") {
@@ -208,8 +210,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else {
           this.getLogger().error(null, "Failed submitting pipeline");
         }
-        runButtonWB.setFetching(false);
-        runButtonSS.setFetching(false);
+        startStopButtonsWB.setRunning(false);
+        startStopButtonsSS.setRunning(false);
       }, this);
       if (selectedNodeIDs.length) {
         req.setRequestData({

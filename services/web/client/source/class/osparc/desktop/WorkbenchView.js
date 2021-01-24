@@ -78,12 +78,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__mainPanel.getToolbar().setStudy(study);
     },
 
-    getStartButton: function() {
-      return this.__mainPanel.getToolbar().getStartButton();
-    },
-
-    getStopButton: function() {
-      return this.__mainPanel.getToolbar().getStopButton();
+    getStartStopButtons: function() {
+      return this.__mainPanel.getToolbar().getStartStopButtons();
     },
 
     getSelectedNodes: function() {

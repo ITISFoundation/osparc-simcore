@@ -42,13 +42,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     __workbenchSelectionChanged: function(msg) {
       const selectedNodes = msg.getData();
-      if (!this.getStartButton().isFetching()) {
-        if (selectedNodes.length) {
-          this.getStartButton().setLabel(this.tr("Run selection"));
-        } else {
-          this.getStartButton().setLabel(this.tr("Run"));
-        }
-      }
+      this.getStartStopButtons().nodeSelectionChanged(selectedNodes);
     },
 
     __attachEventHandlers: function() {
