@@ -2,16 +2,15 @@ import logging
 from enum import Enum
 from typing import Optional
 
+from models_library.settings.http_clients import ClientRequestSettings
 from pydantic import BaseSettings, Field, SecretStr, validator
 from yarl import URL
 
-from models_library.settings.http_clients import ClientRequestSettings
-
 
 class BootModeEnum(str, Enum):
-    debug = "debug-ptvsd"
-    production = "production"
-    development = "development"
+    DEBUG = "debug-ptvsd"
+    PRODUCTION = "production"
+    DEVELOPMENT = "development"
 
 
 class _CommonConfig:
@@ -19,22 +18,48 @@ class _CommonConfig:
     env_file = ".env"
 
 
-class WebServerSettings(BaseSettings):
-    enabled: bool = Field(
-        True, description="Enables/Disables connection with webserver service"
-    )
+# SERVICES CLIENTS --------------------------------------------
+class BaseServiceSettings(BaseSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
     host: str
     port: int = 8080
-    session_secret_key: SecretStr
-    session_name: str = "osparc.WEBAPI_SESSION"
     vtag: str = "v0"
 
     @property
     def base_url(self) -> str:
         return f"http://{self.host}:{self.port}/{self.vtag}"
 
+
+class WebServerSettings(BaseServiceSettings):
+    session_secret_key: SecretStr
+    session_name: str = "osparc.WEBAPI_SESSION"
+
     class Config(_CommonConfig):
         env_prefix = "WEBSERVER_"
+
+
+# TODO: dynamically create types with minimal options?
+class CatalogSettings(BaseServiceSettings):
+    host: str = "catalog"
+    port: int = 8000
+
+    class Config(_CommonConfig):
+        env_prefix = "CATALOG_"
+
+
+class StorageSettings(BaseServiceSettings):
+    host: str = "storage"
+
+    class Config(_CommonConfig):
+        env_prefix = "STORAGE_"
+
+
+class DirectorV2Settings(BaseServiceSettings):
+    host: str = "director-v2"
+    port: int = 8000
+
+    class Config(_CommonConfig):
+        env_prefix = "DIRECTOR2_"
 
 
 class PostgresSettings(BaseSettings):
@@ -65,14 +90,20 @@ class PostgresSettings(BaseSettings):
         env_prefix = "POSTGRES_"
 
 
+# MAIN SETTINGS --------------------------------------------
+
+
 class AppSettings(BaseSettings):
     @classmethod
-    def create_default(cls) -> "AppSettings":
+    def create_from_env(cls) -> "AppSettings":
         # This call triggers parsers
         return cls(
             postgres=PostgresSettings(),
             webserver=WebServerSettings(),
             client_request=ClientRequestSettings(),
+            catalog=CatalogSettings(),
+            storage=StorageSettings(),
+            director_v2=DirectorV2Settings(),
         )
 
     # pylint: disable=no-self-use
@@ -99,8 +130,11 @@ class AppSettings(BaseSettings):
     # POSTGRES
     postgres: PostgresSettings
 
-    # WEB-SERVER SERVICE
+    # SERVICES with http API
     webserver: WebServerSettings
+    catalog: CatalogSettings
+    storage: StorageSettings
+    director_v2: DirectorV2Settings
 
     client_request: ClientRequestSettings
 
@@ -109,6 +143,8 @@ class AppSettings(BaseSettings):
     port: int = 8000
 
     debug: bool = False  # If True, debug tracebacks should be returned on errors.
+    remote_debug_port: int = 3000
+    fake_server_enabled: bool = Field(False, env="FAKE_API_SERVER_ENABLED")
 
     class Config(_CommonConfig):
         env_prefix = ""
