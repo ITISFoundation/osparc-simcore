@@ -29,7 +29,7 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
       alignY: "middle"
     }));
 
-    this.setPaddingLeft(5);
+    this.setPaddingLeft(6);
   },
 
   events: {

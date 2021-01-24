@@ -56,7 +56,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     setRunning: function(running) {
       const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
       startButtons.forEach(startButton => startButton.setFetching(running));
-      this.__stopButton.setFetching(running);
+      this.__stopButton.setFetching(!running);
     },
 
     nodeSelectionChanged: function(selectedNodes) {

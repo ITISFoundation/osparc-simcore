@@ -44,9 +44,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
-    "startStudy": "qx.event.type.Data",
-    "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
+    "startStudy": "qx.event.type.Data"
   },
 
   properties: {
@@ -437,13 +435,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
-
-      workbenchToolbar.addListener("startPipeline", () => {
-        this.fireEvent("startPipeline");
-      }, this);
-      workbenchToolbar.addListener("stopPipeline", () => {
-        this.fireEvent("stopPipeline");
-      }, this);
 
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());

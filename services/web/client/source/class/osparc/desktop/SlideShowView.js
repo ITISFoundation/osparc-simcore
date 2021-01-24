@@ -28,18 +28,7 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       const nodeId = e.getData();
       this.nodeSelected(nodeId);
     }, this);
-    slideShowToolbar.addListener("startPipeline", () => {
-      this.fireEvent("startPipeline");
-    }, this);
-    slideShowToolbar.addListener("stopPipeline", () => {
-      this.fireEvent("stopPipeline");
-    }, this);
     this._add(slideShowToolbar);
-  },
-
-  events: {
-    "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
   },
 
   properties: {

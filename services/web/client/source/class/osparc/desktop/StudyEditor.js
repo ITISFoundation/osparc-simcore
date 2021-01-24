@@ -29,16 +29,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     workbenchView.addListener("startStudy", e => {
       this.fireDataEvent("startStudy", e.getData());
     });
-    workbenchView.addListener("startPipeline", this.__startPipeline, this);
-    workbenchView.addListener("startPartialPipeline", this.__startPipeline, this);
-    workbenchView.addListener("stopPipeline", this.__stopPipeline, this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideShowView();
-    slideshowView.addListener("startPipeline", this.__startPipeline, this);
-    slideshowView.addListener("startPartialPipeline", this.__startPipeline, this);
-    slideshowView.addListener("stopPipeline", this.__stopPipeline, this);
     viewsStack.add(slideshowView);
+
+    [
+      workbenchView.getStartStopButtons(),
+      slideshowView.getStartStopButtons()
+    ].forEach(startStopButtons => {
+      startStopButtons.addListener("startPipeline", this.__startPipeline, this);
+      startStopButtons.addListener("startPartialPipeline", () => this.__startPipeline(false), this);
+      startStopButtons.addListener("stopPipeline", this.__stopPipeline, this);
+    });
 
     this._add(viewsStack, {
       flex: 1
@@ -153,32 +156,34 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
 
     // ------------------ START/STOP PIPELINE ------------------
-    __startPipeline: function() {
+    __startPipeline: function(runAll = true) {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
 
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
       const startStopButtonsSS = this.__slideshowView.getStartStopButtons();
-      startStopButtonsWB.setFetching(true);
-      startStopButtonsSS.setFetching(true);
+      startStopButtonsWB.setRunning(true);
+      startStopButtonsSS.setRunning(true);
       this.updateStudyDocument(true)
         .then(() => {
-          this.__doStartPipeline();
+          this.__doStartPipeline(runAll);
         })
         .catch(() => {
           this.getLogger().error(null, "Run failed");
-          startStopButtonsWB.setFetching(false);
-          startStopButtonsSS.setFetching(false);
+          startStopButtonsWB.setRunning(false);
+          startStopButtonsSS.setRunning(false);
         });
     },
 
-    __doStartPipeline: function() {
+    __doStartPipeline: function(runAll) {
       if (this.getStudy().getSweeper().hasSecondaryStudies()) {
         const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
         secondaryStudyIds.forEach(secondaryStudyId => {
           this.__requestStartPipeline(secondaryStudyId);
         });
+      } else if (runAll) {
+        this.__requestStartPipeline(this.getStudy().getUuid());
       } else {
         const selectedNodeUIs = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodes() : [];
         if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
