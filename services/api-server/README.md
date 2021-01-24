@@ -21,7 +21,7 @@ Setup environment
 ```cmd
 make devenv
 source .venv/bin/activate
-cd services/api-service
+cd services/api-server
 make install-dev
 ```
 Then
