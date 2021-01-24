@@ -7,10 +7,8 @@ from typing import Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
-from aiohttp.web_request import FileField
 from jsonschema import ValidationError
 from models_library.projects_state import ProjectState
-from models_library.basic_types import StringBool
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog, director_v2
@@ -24,11 +22,6 @@ from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import project_uses_available_services
-from ..exporter.export_import import study_export, study_import
-from ..exporter.utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
-from ..exporter.config import get_max_upload_file_size_gb
-
-ONE_GB: int = 1024 * 1024 * 1024
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -581,66 +574,3 @@ async def remove_tag(request: web.Request):
         request.match_info.get("study_uuid"),
     )
     return await db.remove_tag(project_uuid=study_uuid, user_id=uid, tag_id=int(tag_id))
-
-
-@login_required
-async def export_project(request: web.Request):
-    user_id = request[RQT_USERID_KEY]
-    project_uuid = request.match_info.get("project_id")
-    compressed = StringBool.parse(request.query.get("compressed"))
-
-    log.info(project_uuid)
-    log.info("Is compressed %s", compressed)
-
-    temp_dir: str = await get_empty_tmp_dir()
-
-    file_to_download = await study_export(
-        app=request.app,
-        tmp_dir=temp_dir,
-        project_id=project_uuid,
-        user_id=user_id,
-        archive=True,
-        compress=compressed,
-    )
-    log.info("File to download '%s'", file_to_download)
-
-    if not file_to_download.is_file():
-        raise web.HTTPError(reason="Must provide a file to download")
-
-    # continue tomorrow to have the file download with sha256sum added to the header in order to check the file
-    # TODO: put the SHA256 header here for checksums?
-    headers = {"Content-Disposition": f'attachment; filename="{file_to_download.name}"'}
-    log.info("Will download file %s", file_to_download)
-
-    return CleanupFileResponse(
-        temp_dir=temp_dir, path=file_to_download, headers=headers
-    )
-
-
-@login_required
-async def import_project(request: web.Request):
-    # bumping this requet's max size
-    # pylint: disable=protected-access
-    request._client_max_size = get_max_upload_file_size_gb(request.app) * ONE_GB
-
-    post_contents = await request.post()
-    log.info("POST body %s", post_contents)
-    file_name_field: FileField = post_contents.get("fileName", None)
-
-    if file_name_field is None:
-        raise web.HTTPException(reason="Expected a file as 'fileName' form parmeter")
-
-    temp_dir: str = await get_empty_tmp_dir()
-
-    from simcore_service_webserver.studies_dispatcher._users import (
-        UserInfo,
-        acquire_user,
-    )
-
-    user: UserInfo = await acquire_user(request)
-    imported_project_uuid = await study_import(
-        app=request.app, temp_dir=temp_dir, file_field=file_name_field, user=user
-    )
-    await remove_dir(directory=temp_dir)
-
-    return web.json_response(dict(uuid=imported_project_uuid))

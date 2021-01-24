@@ -79,9 +79,8 @@ async def create_or_update_pipeline(
         )
         return computation_task_out
 
-    except _DirectorServiceError as e:
+    except _DirectorServiceError:
         log.error("could not create pipeline from project %s", project_id)
-        raise e
 
 
 @log_decorator(logger=log)
