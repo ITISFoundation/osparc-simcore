@@ -253,13 +253,23 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         importStudy.addListener("fileReady", e => {
           win.close();
 
+          const file = e.getData();
+          if (file === null || file === undefined) {
+            return;
+          }
+
+          const size = file.size;
+          const maxSize = 10; // 10 MB
+          if (size > maxSize * 1024 * 1024) {
+            osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            return;
+          }
+
           const importTask = new osparc.component.task.Import();
           const tasks = osparc.component.task.Tasks.getInstance();
           tasks.addTask(importTask);
           const text = this.tr("Importing process started and added to the background tasks");
           osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-
-          const file = e.getData();
 
           const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
           placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
