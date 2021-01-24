@@ -590,9 +590,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openTemplatePermissions: function(studyData) {
-      const permissionsView = new osparc.component.permissions.Study(studyData);
-      const title = this.tr("Available to");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
       permissionsView.addListener("updateStudy", e => {
         const studyId = e.getData();
         console.log(studyId);
