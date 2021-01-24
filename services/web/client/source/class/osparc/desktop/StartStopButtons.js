@@ -99,23 +99,21 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __createStartButton: function() {
-      const startButton = this.__startButton = this.__createButton(this.tr("Run"), "@FontAwesome5Solid/play/14", "runStudyBtn", "startPipeline");
+      const startButton = this.__startButton = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
+      osparc.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
+      startButton.addListener("execute", () => {
+        this.fireEvent("startPipeline");
+      }, this);
       return startButton;
     },
-    __createStopButton: function() {
-      const stopButton = this.__stopButton = this.__createButton(this.tr("Stop"), "@FontAwesome5Solid/stop/14", "stopStudyBtn", "stopPipeline");
-      return stopButton;
-    },
 
-    __createButton: function(label, icon, widgetId, signalName, visibility = "visible") {
-      const button = new osparc.ui.toolbar.FetchButton(label, icon).set({
-        visibility
-      });
-      osparc.utils.Utils.setIdToWidget(button, widgetId);
-      button.addListener("execute", () => {
-        this.fireEvent(signalName);
+    __createStopButton: function() {
+      const stopButton = this.__stopButton = new osparc.ui.toolbar.FetchButton(this.tr("Stop"), "@FontAwesome5Solid/stop/14");
+      osparc.utils.Utils.setIdToWidget(stopButton, "stopStudyBtn");
+      stopButton.addListener("execute", () => {
+        this.fireEvent("stopPipeline");
       }, this);
-      return button;
+      return stopButton;
     }
   }
 });
