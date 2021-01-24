@@ -185,14 +185,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       } else if (runAll) {
         this.__requestStartPipeline(this.getStudy().getUuid());
       } else {
-        const selectedNodeUIs = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodes() : [];
-        if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
+        const selectedNodeIDs = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodeIDs() : this.__slideshowView.getSelectedNodeIDs();
+        if (selectedNodeIDs === null || selectedNodeIDs.length === 0) {
           this.__requestStartPipeline(this.getStudy().getUuid());
         } else {
-          const selectedNodeIDs = [];
-          selectedNodeUIs.forEach(nodeUI => {
-            selectedNodeIDs.push(nodeUI.getNodeId());
-          });
           this.__requestStartPipeline(this.getStudy().getUuid(), selectedNodeIDs);
         }
       }

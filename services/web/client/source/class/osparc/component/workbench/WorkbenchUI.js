@@ -412,6 +412,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return this.__selectedNodes;
     },
 
+    getSelectedNodeIDs: function() {
+      const selectedNodeIDs = [];
+      this.__selectedNodes.forEach(nodeUI => {
+        selectedNodeIDs.push(nodeUI.getNodeId());
+      });
+      return selectedNodeIDs;
+    },
+
     resetSelectedNodes: function() {
       this.__selectedNodes.forEach(node => node.removeState("selected"));
       this.__selectedNodes = [];
@@ -1106,9 +1114,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const commandDel = new qx.ui.command.Command("Delete");
       commandDel.addListener("execute", () => {
-        const selectedNodes = this.getSelectedNodes();
-        if (selectedNodes.length === 1) {
-          this.fireDataEvent("removeNode", selectedNodes[0].getNodeId());
+        const selectedNodeIDs = this.getSelectedNodeIDs();
+        if (selectedNodeIDs.length === 1) {
+          this.fireDataEvent("removeNode", selectedNodeIDs[0]);
         }
       });
 

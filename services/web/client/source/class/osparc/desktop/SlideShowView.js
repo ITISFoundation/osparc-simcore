@@ -48,6 +48,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       return this.__slideShowToolbar.getStartStopButtons();
     },
 
+    getSelectedNodeIDs: function() {
+      return [this.__currentNodeId];
+    },
+
     nodeSelected: function(nodeId) {
       this.__currentNodeId = nodeId;
       this.getStudy().getUi().setCurrentNodeId(nodeId);
