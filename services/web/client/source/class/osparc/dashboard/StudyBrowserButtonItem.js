@@ -182,8 +182,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             alignX: "center",
             alignY: "middle"
           }));
-          // const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/file-export/70");
-          const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/cloud-download-alt/70");
+          // const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/file-export/60");
+          const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
           control.add(icon, {
             flex: 1
           });

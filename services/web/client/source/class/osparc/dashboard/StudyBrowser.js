@@ -247,6 +247,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       importButton.addListener("execute", () => {
         const importStudy = new osparc.component.study.Import();
         const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
+        win.set({
+          clickAwayClose: false
+        });
         importStudy.addListener("fileReady", e => {
           win.close();
 

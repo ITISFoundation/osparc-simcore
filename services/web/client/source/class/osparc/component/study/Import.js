@@ -36,6 +36,7 @@ qx.Class.define("osparc.component.study.Import", {
     const extensions = ["osparc"];
     const multiple = false;
     const fileInput = new osparc.ui.form.FileInput(extensions, multiple);
+    fileInput.getSelectedFilesLabel().setMaxWidth(250);
     this._add(fileInput);
 
     const importBtn = new qx.ui.form.Button(this.tr("Import")).set({
