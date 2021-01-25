@@ -132,13 +132,6 @@ async def create_computation(
                 detail=f"Project {job.project_id} is not a valid directed acyclic graph!",
             )
 
-        if not dag_graph.nodes():
-            # there is nothing else to be run here, so we are done
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Project {job.project_id} has no computational services",
-            )
-
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
             project.uuid, dag_graph, job.start_pipeline
@@ -150,6 +143,12 @@ async def create_computation(
         )
 
         if job.start_pipeline:
+            if not dag_graph.nodes():
+                # there is nothing else to be run here, so we are done
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Project {job.project_id} has no computational services",
+                )
             # trigger celery
             task = celery_client.send_computation_task(job.user_id, job.project_id)
             background_tasks.add_task(background_on_message, task)
