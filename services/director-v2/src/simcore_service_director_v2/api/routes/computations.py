@@ -1,10 +1,11 @@
 import logging
-from typing import List
+from typing import Any, List
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from pydantic.networks import AnyHttpUrl
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from starlette import status
 from starlette.requests import Request
@@ -25,9 +26,11 @@ from ...models.domains.comp_tasks import (
 )
 from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.constants import UserID
+from ...modules.celery import CeleryClient
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
+from ...modules.director_v0 import DirectorV0Client
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -38,9 +41,9 @@ from ...utils.dags import (
     create_minimal_computational_graph_based_on_selection,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
-from ..dependencies.celery import CeleryClient, get_celery_client
+from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
-from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
+from ..dependencies.director_v0 import get_director_v0_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -48,12 +51,12 @@ log = logging.getLogger(__file__)
 PIPELINE_ABORT_TIMEOUT_S = 10
 
 
-def celery_on_message(body):
+def celery_on_message(body: Any) -> None:
     # FIXME: this might become handy when we stop starting tasks recursively
     log.warning(body)
 
 
-def background_on_message(task):
+def background_on_message(task: Any) -> None:
     # FIXME: this might become handy when we stop starting tasks recursively
     log.warning(task.get(on_message=celery_on_message, propagate=False))
 
@@ -63,7 +66,7 @@ async def _abort_pipeline_tasks(
     tasks: List[CompTaskAtDB],
     computation_tasks: CompTasksRepository,
     celery_client: CeleryClient,
-):
+) -> None:
     await computation_tasks.mark_project_tasks_as_aborted(project)
     celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
     log.debug(
@@ -92,7 +95,7 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
-):
+) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
         job.user_id,
@@ -164,8 +167,8 @@ async def create_computation(
             if job.start_pipeline
             else RunningState.NOT_STARTED,
             pipeline=nx.to_dict_of_lists(dag_graph),
-            url=f"{request.url}/{job.project_id}",
-            stop_url=f"{request.url}/{job.project_id}:stop"
+            url=AnyHttpUrl(f"{request.url}/{job.project_id}"),
+            stop_url=AnyHttpUrl(f"{request.url}/{job.project_id}:stop")
             if job.start_pipeline
             else None,
         )
@@ -192,7 +195,7 @@ async def get_computation(
         get_repository(CompTasksRepository)
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
-):
+) -> ComputationTaskOut:
     log.debug("User %s getting computation status for project %s", user_id, project_id)
     try:
         # check that project actually exists
@@ -228,8 +231,8 @@ async def get_computation(
             id=project_id,
             state=pipeline_state,
             pipeline=pipeline_at_db.dag_adjacency_list,
-            url=f"{request.url.remove_query_params('user_id')}",
-            stop_url=f"{request.url.remove_query_params('user_id')}:stop"
+            url=AnyHttpUrl(f"{request.url.remove_query_params('user_id')}"),
+            stop_url=AnyHttpUrl(f"{request.url.remove_query_params('user_id')}:stop")
             if is_pipeline_running(pipeline_state)
             else None,
         )
@@ -254,7 +257,7 @@ async def get_computation(
 @router.post(
     "/{project_id}:stop",
     summary="Stops a computation pipeline",
-    response_model=None,
+    response_model=ComputationTaskOut,
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def stop_computation_project(
@@ -269,7 +272,7 @@ async def stop_computation_project(
         get_repository(CompTasksRepository)
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
-):
+) -> ComputationTaskOut:
     log.debug(
         "User %s stopping computation for project %s",
         comp_task_stop.user_id,
@@ -298,7 +301,7 @@ async def stop_computation_project(
             id=project_id,
             state=pipeline_state,
             pipeline=pipeline_at_db.dag_adjacency_list,
-            url=f"{str(request.url).rstrip(':stop')}",
+            url=AnyHttpUrl(f"{str(request.url).rstrip(':stop')}"),
         )
 
     except ProjectNotFoundError as e:
@@ -322,7 +325,7 @@ async def delete_pipeline(
         get_repository(CompTasksRepository)
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
-):
+) -> None:
     try:
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
@@ -344,7 +347,7 @@ async def delete_pipeline(
                 project, comp_tasks, computation_tasks, celery_client
             )
 
-            def return_last_value(retry_state):
+            def return_last_value(retry_state: Any) -> Any:
                 """return the result of the last call attempt"""
                 return retry_state.outcome.result()
 
