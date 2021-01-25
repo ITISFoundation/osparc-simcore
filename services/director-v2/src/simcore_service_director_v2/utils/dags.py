@@ -13,6 +13,10 @@ from .logging_utils import log_decorator
 logger = logging.getLogger(__file__)
 
 
+def _is_node_computational(node_key: str) -> bool:
+    return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+
+
 def _mark_node_as_dirty(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ):
@@ -25,13 +29,15 @@ def _is_node_dirty(
     return nodes_data_view[str(node_id)].get("dirty", False)
 
 
-def _is_node_computational(node_key: str) -> bool:
-    return to_node_class(node_key) == NodeClass.COMPUTATIONAL
-
-
 async def _is_node_outdated(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
+    """this function will return whether a node is outdated:
+    - if it has no outputs
+    - if one of the output ports in the outputs is missing
+    - if, after *resolving the inputs if linked to other nodes* these nodes are dirty (outdated themselves)
+    - if the last run_hash does not fit with the current one
+    """
     node = nodes_data_view[str(node_id)]
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
