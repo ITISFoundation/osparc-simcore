@@ -167,8 +167,8 @@ async def create_computation(
             if job.start_pipeline
             else RunningState.NOT_STARTED,
             pipeline=nx.to_dict_of_lists(dag_graph),
-            url=AnyHttpUrl(f"{request.url}/{job.project_id}"),
-            stop_url=AnyHttpUrl(f"{request.url}/{job.project_id}:stop")
+            url=f"{request.url}/{job.project_id}",
+            stop_url=f"{request.url}/{job.project_id}:stop"
             if job.start_pipeline
             else None,
         )
@@ -231,8 +231,8 @@ async def get_computation(
             id=project_id,
             state=pipeline_state,
             pipeline=pipeline_at_db.dag_adjacency_list,
-            url=AnyHttpUrl(f"{request.url.remove_query_params('user_id')}"),
-            stop_url=AnyHttpUrl(f"{request.url.remove_query_params('user_id')}:stop")
+            url=f"{request.url.remove_query_params('user_id')}",
+            stop_url=f"{request.url.remove_query_params('user_id')}:stop"
             if is_pipeline_running(pipeline_state)
             else None,
         )
@@ -301,7 +301,7 @@ async def stop_computation_project(
             id=project_id,
             state=pipeline_state,
             pipeline=pipeline_at_db.dag_adjacency_list,
-            url=AnyHttpUrl(f"{str(request.url).rstrip(':stop')}"),
+            url=f"{str(request.url).rstrip(':stop')}",
         )
 
     except ProjectNotFoundError as e:
