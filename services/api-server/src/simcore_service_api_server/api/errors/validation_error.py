@@ -19,8 +19,8 @@ async def http422_error_handler(
 
 validation_error_response_definition["properties"] = {
     "errors": {
-        "title": "Errors",
+        "title": "Validation errors",
         "type": "array",
-        "items": {"$ref": "{0}ValidationError".format(REF_PREFIX)},
+        "items": {"$ref": f"{REF_PREFIX}ValidationError"},
     },
 }

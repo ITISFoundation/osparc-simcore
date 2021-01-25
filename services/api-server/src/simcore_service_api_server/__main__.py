@@ -25,7 +25,7 @@ def main():
         "simcore_service_api_server.__main__:the_app",
         host=cfg.host,
         port=cfg.port,
-        reload=cfg.boot_mode == BootModeEnum.development,
+        reload=cfg.boot_mode == BootModeEnum.DEVELOPMENT,
         reload_dirs=[current_dir,],
         log_level=cfg.log_level_name.lower(),
     )

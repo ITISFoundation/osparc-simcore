@@ -2,9 +2,13 @@
 # Specifies third-party dependencies for 'services/api-server/src'
 #
 # NOTE: ALL version constraints MUST be commented
+# intra-repo constraints
 -c ../../../requirements/constraints.txt
--r ../../../packages/models-library/requirements/_base.in
+
+# intra-repo required dependencies
 -r ../../../packages/postgres-database/requirements/_base.in
+-r ../../../packages/models-library/requirements/_base.in
+
 
 # fastapi and extensions
 fastapi[all]
@@ -21,6 +25,8 @@ aiopg[sa]
 httpx
 
 #
+importlib_resources
 attrs
 tenacity
 cryptography
+packaging
