@@ -4,6 +4,8 @@ from pprint import pformat
 from typing import Any, Dict, Set
 
 from aiopg.sa.result import RowProxy
+from models_library.projects_nodes import NodeID
+from models_library.utils.nodes import compute_node_hash
 
 from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import InvalidProtocolError
@@ -77,8 +79,32 @@ async def dump(nodeports: Nodeports) -> None:
         exclude_unset=True,
     )
 
+    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+        ports = (
+            nodeports
+            if str(node_id) == nodeports.node_uuid
+            else await load(nodeports.db_manager, str(node_id))
+        )
+
+        return {
+            "inputs": {
+                port_key: port.value for port_key, port in ports.internal_inputs.items()
+            },
+            "outputs": {
+                port_key: port.value
+                for port_key, port in ports.internal_outputs.items()
+            },
+        }
+
+    run_hash = await compute_node_hash(nodeports.node_uuid, get_node_io_payload_cb)
+
     # convert to DB
-    port_cfg = {"schema": {"inputs": {}, "outputs": {}}, "inputs": {}, "outputs": {}}
+    port_cfg = {
+        "schema": {"inputs": {}, "outputs": {}},
+        "inputs": {},
+        "outputs": {},
+        "run_hash": run_hash,
+    }
     for port_type in ["inputs", "outputs"]:
         for port_key, port_values in _nodeports_cfg[port_type].items():
             # schemas

@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 import httpx
 from fastapi import HTTPException
@@ -9,7 +9,7 @@ from starlette import status
 logger = logging.getLogger(__name__)
 
 
-def unenvelope_or_raise_error(resp: httpx.Response) -> Dict:
+def unenvelope_or_raise_error(resp: httpx.Response) -> Dict[str, Any]:
     """
     Director responses are enveloped
     If successful response, we un-envelop it and return data as a dict

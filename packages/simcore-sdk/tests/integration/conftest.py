@@ -79,7 +79,6 @@ def default_configuration(
 ) -> Dict:
     # prepare database with default configuration
     json_configuration = default_configuration_file.read_text()
-
     _create_new_pipeline(postgres_session, project_id)
     _set_configuration(postgres_session, project_id, node_uuid, json_configuration)
     config_dict = json.loads(json_configuration)
@@ -227,6 +226,7 @@ def _set_configuration(
         schema=configuration["schema"],
         inputs=configuration["inputs"],
         outputs=configuration["outputs"],
+        run_hash=configuration["run_hash"],
     )
     postgres_session.add(new_Node)
     postgres_session.commit()

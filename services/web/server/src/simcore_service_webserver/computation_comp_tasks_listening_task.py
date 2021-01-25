@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from pprint import pformat
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -60,6 +60,7 @@ async def _update_project_outputs(
     project_uuid: ProjectID,
     node_uuid: NodeID,
     outputs: Dict,
+    run_hash: Optional[str],
 ) -> None:
     # the new outputs might be {}, or {key_name: payload}
     project, changed_keys = await projects_api.update_project_node_outputs(
@@ -67,7 +68,8 @@ async def _update_project_outputs(
         user_id,
         project_uuid,
         node_uuid,
-        data=outputs,
+        new_outputs=outputs,
+        new_run_hash=run_hash,
     )
 
     await projects_api.notify_project_node_update(app, project, node_uuid)
@@ -115,8 +117,14 @@ async def listen(app: web.Application):
 
                 if "outputs" in task_changes:
                     new_outputs = task_data.get("outputs", {})
+                    new_run_hash = task_data.get("run_hash", None)
                     await _update_project_outputs(
-                        app, the_project_owner, project_uuid, node_uuid, new_outputs
+                        app,
+                        the_project_owner,
+                        project_uuid,
+                        node_uuid,
+                        new_outputs,
+                        new_run_hash,
                     )
 
                 if "state" in task_changes:
