@@ -276,20 +276,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
           this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 
-          /*
           const headers = new Headers();
           headers.append("Accept", "application/json");
-          const body = new FormData();
+          const body = new FormData();/*
           body.append("fileName", new Blob([file.name], {
             type: "application/json"
           }));
           body.append("file", file);
+          */
+          body.append("fileName", file);
           fetch("/v0/projects:import", {
             method: "POST",
             headers,
             body
           });
-          */
+          /*
           const req = new XMLHttpRequest();
           req.upload.addEventListener("progress", ep => {
             if (e.lengthComputable) {
@@ -308,6 +309,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           };
           req.open("POST", "/v0/projects:import", true);
           req.send(file);
+          */
           /*
           const req = new osparc.io.file.ApiRequest("/projects:import", "POST");
           req.upload.addEventListener("progress", ep => {
