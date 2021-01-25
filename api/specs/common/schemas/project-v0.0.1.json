@@ -400,6 +400,7 @@
               "title": "Status",
               "description": "the node's connection state",
               "default": "CHANGED",
+              "type": "string",
               "enum": [
                 "CHANGED",
                 "CURRENT"
