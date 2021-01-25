@@ -18,8 +18,7 @@ import logging
 from ..config import get_settings, ServiceSidecarSettings
 from ..exceptions import ServiceSidecarError
 from ..docker_utils import get_service_sidecars_to_monitor
-from .models import MonitorData
-from .handlers_base import BaseEventHandler
+from .models import MonitorData, ServiceSidecarStatus
 from .handlers import REGISTERED_HANDLERS
 from .service_sidecar_api import query_service
 
@@ -31,22 +30,53 @@ MONITOR_KEY = f"{__name__}.ServiceSidecarsMonitor"
 async def apply_monitoring(
     app: Application, input_monitor_data: MonitorData
 ) -> MonitorData:
-    """fetches status for service and then processes all the registered handlers"""
+    """
+    fetches status for service and then processes all the registered handlers
+    and updates the status back
+    """
     service_sidecar_settings: ServiceSidecarSettings = get_settings(app)
+
+    output_monitor_data = input_monitor_data.copy(deep=True)
+
+    # if the service is not OK (for now failing) monitoring will be skipped
+    # this will allow others to debug it
+    if (
+        input_monitor_data.service_sidecar.overall_status.status
+        != ServiceSidecarStatus.OK
+    ):
+        logger.warning(
+            "Service %s is failing, skipping monitoring.",
+            input_monitor_data.service_name,
+        )
+        return output_monitor_data
 
     try:
         with timeout(service_sidecar_settings.max_status_api_duration):
             output_monitor_data = await query_service(app, input_monitor_data)
     except asyncio.TimeoutError:
-        output_monitor_data = input_monitor_data.copy(deep=True)
         output_monitor_data.service_sidecar.is_available = False
         # TODO: maybe push this into the health API to monitor degradation of the services
 
     for handler in REGISTERED_HANDLERS:
-        handler: BaseEventHandler = handler
-        await handler.process(input_monitor_data, output_monitor_data)
+        # the handler will apply changes to the output_monitor_data
+        await handler.process(
+            app=app, previous=input_monitor_data, current=output_monitor_data
+        )
 
-    return input_monitor_data
+    # check if the status of the services has changed from OK
+
+    if (
+        input_monitor_data.service_sidecar.overall_status
+        != output_monitor_data.service_sidecar.overall_status
+    ):
+        # TODO: push this to the UI to display to the user?
+        logger.info(
+            "Service %s overall status changed to %s",
+            output_monitor_data.service_name,
+            output_monitor_data.service_sidecar.overall_status,
+        )
+
+    return output_monitor_data
 
 
 class ServiceSidecarsMonitor:

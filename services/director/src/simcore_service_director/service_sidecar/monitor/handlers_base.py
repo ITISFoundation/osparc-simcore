@@ -1,6 +1,8 @@
 from abc import abstractclassmethod
 from .models import MonitorData
 
+from aiohttp.web import Application
+
 
 class BaseEventHandler:
     @abstractclassmethod
@@ -8,13 +10,18 @@ class BaseEventHandler:
         """returns True it the action needs to be invoked"""
 
     @abstractclassmethod
-    async def action(self, previous: MonitorData, current: MonitorData) -> None:
-        """code need to be run when this the condition is met"""
+    async def action(
+        self, app: Application, previous: MonitorData, current: MonitorData
+    ) -> None:
+        """
+        Code applied if the handler triggered.
+        All updates to the status(MonitorData) should be applied to the current variable
+        """
 
-    async def process(self, previous: MonitorData, current: MonitorData) -> None:
+    @classmethod
+    async def process(
+        self, app: Application, previous: MonitorData, current: MonitorData
+    ) -> None:
         """checks and runs the handler if needed"""
         if await self.will_trigger(previous, current):
-            await self.action(previous, current)
-
-
-
+            await self.action(app, previous, current)
