@@ -220,12 +220,8 @@ qx.Class.define("osparc.utils.Utils", {
             reject();
           }
         });
-        xhr.addEventListener("error", () => {
-          reject();
-        });
-        xhr.addEventListener("abort", () => {
-          reject();
-        });
+        xhr.addEventListener("error", () => reject());
+        xhr.addEventListener("abort", () => reject());
         xhr.send();
       });
     },
