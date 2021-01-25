@@ -426,7 +426,6 @@ def test_run_computation(
     )
     assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
     assert task_out.stop_url == None
-
     assert (
         task_out.state == RunningState.SUCCESS
     ), f"the pipeline complete with state {task_out.state}"
