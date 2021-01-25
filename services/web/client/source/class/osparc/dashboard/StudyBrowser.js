@@ -667,11 +667,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       body.append("fileName", file);
 
       const req = new XMLHttpRequest();
-      req.addEventListener("progress", ep => {
+      req.upload.addEventListener("progress", ep => {
         // updateProgress
         if (ep.lengthComputable) {
           const percentComplete = ep.loaded / ep.total * 100;
           placeholderStudyCard.getProgressBar().setValue(percentComplete);
+          if (percentComplete === 100) {
+            const processinglabel = this.tr("Processing study");
+            placeholderStudyCard.setStateLabel(processinglabel);
+            importTask.setSubtitle(processinglabel);
+            placeholderStudyCard.getProgressBar().exclude();
+          }
         } else {
           console.log("Unable to compute progress information since the total size is unknown");
         }
@@ -707,7 +713,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__userStudyContainer.remove(placeholderStudyCard);
       });
       req.addEventListener("abort", () => {
-        // transferFailed
+        // transferAborted
         osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
         tasks.removeTask(importTask);
         this.__userStudyContainer.remove(placeholderStudyCard);
