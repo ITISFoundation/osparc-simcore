@@ -65,7 +65,7 @@ qx.Class.define("osparc.component.task.Tasks", {
       const root = qx.core.Init.getApplication().getRoot();
       if (root && root.getBounds()) {
         this.__tasksContainer.setLayoutProperties({
-          left: x,
+          left: x-osparc.component.task.Task.MAX_WIDTH,
           top: y
         });
       }

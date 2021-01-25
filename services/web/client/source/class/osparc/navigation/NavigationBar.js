@@ -55,8 +55,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
-      height: 50,
-      maxHeight: 50,
+      height: this.self().HEIGHT,
+      maxHeight: this.self().HEIGHT,
       backgroundColor: "background-main-lighter"
     });
   },
@@ -82,6 +82,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   statics: {
+    HEIGHT: 50,
+
     BUTTON_OPTIONS: {
       font: "text-14",
       allowGrowY: false,

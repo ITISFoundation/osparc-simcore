@@ -109,7 +109,7 @@ qx.Class.define("osparc.component.task.TasksButton", {
 
       const bounds = this.getBounds();
       const tasks = osparc.component.task.Tasks.getInstance();
-      tasks.setTasksContainerPosition(bounds.left, 53);
+      tasks.setTasksContainerPosition(bounds.left+bounds.width, osparc.navigation.NavigationBar.HEIGHT+3);
       tasks.getTasksContainer().show();
       document.addEventListener("mousedown", tapListener);
     },

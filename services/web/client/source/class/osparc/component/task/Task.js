@@ -28,7 +28,7 @@ qx.Class.define("osparc.component.task.Task", {
 
     this.set({
       height: 30,
-      maxWidth: 250,
+      maxWidth: this.self().MAX_WIDTH,
       backgroundColor: "material-button-background"
     });
   },
@@ -47,6 +47,10 @@ qx.Class.define("osparc.component.task.Task", {
       nullable: true,
       event: "changeSubtitle"
     }
+  },
+
+  statics: {
+    MAX_WIDTH: 300
   },
 
   members: {
