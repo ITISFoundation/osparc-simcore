@@ -35,25 +35,25 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
         (
             {
                 "inputs": {
-                    "input_123": 12,
-                    "input_4454": True,
-                    "input_32233": "string",
-                    "some_download": DownloadLink(
+                    "input_int": 12,
+                    "input_bool": True,
+                    "input_string": "string",
+                    "input_downloadlink": DownloadLink(
                         downloadLink="http://httpbin.org/image/jpeg"
                     ),
-                    "some_simcore_link": SimCoreFileLink(
+                    "input_simcorelink": SimCoreFileLink(
                         store=0, path="/path/to/some/file"
                     ),
-                    "some_other_node_link": PortLink(
+                    "input_portlink": PortLink(
                         nodeUuid=ANOTHER_NODE_ID, output=ANOTHER_NODE_OUTPUT_KEY
                     ),
-                    "nullinput": None,
+                    "input_null": None,
                 },
                 "outputs": {
-                    "output_123": 2,
-                    "output_12343": False,
-                    "out_323": "some string",
-                    "out_some_simcore_link": SimCoreFileLink(
+                    "output_int": 2,
+                    "output_bool": False,
+                    "output_string": "some string",
+                    "output_simcorelink": SimCoreFileLink(
                         store=0, path="/path/to/some/file"
                     ),
                 },
