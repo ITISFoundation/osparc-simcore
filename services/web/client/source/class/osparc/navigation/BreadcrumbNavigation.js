@@ -19,7 +19,7 @@
  *
  */
 
-qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
+qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -28,19 +28,12 @@ qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
     this._setLayout(new qx.ui.layout.HBox(0).set({
       alignY: "middle"
     }));
+
+    this.setPaddingLeft(6);
   },
 
   events: {
     "nodeSelected": "qx.event.type.Data"
-  },
-
-  statics: {
-    BUTTON_OPTIONS: {
-      font: "text-14",
-      allowGrowY: false,
-      minWidth: 32,
-      minHeight: 32
-    }
   },
 
   members: {
@@ -72,7 +65,7 @@ qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
 
     __createNodeBtn: function(nodeId) {
       const btn = new qx.ui.form.ToggleButton().set({
-        ...this.self().BUTTON_OPTIONS,
+        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         maxWidth: 200
       });
       btn.addListener("execute", () => {
@@ -108,6 +101,22 @@ qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
           converter: val => (pos+1).toString() + "- " + val
         });
         node.bind("label", btn, "toolTipText");
+
+        const nsUI = new osparc.ui.basic.NodeStatusUI(node);
+        const nsUIIcon = nsUI.getChildControl("icon");
+        // Hacky, aber schön
+        // eslint-disable-next-line no-underscore-dangle
+        btn._add(nsUIIcon);
+        const nsUILabel = nsUI.getChildControl("label");
+        nsUILabel.addListener("changeValue", e => {
+          const statusLabel = e.getData();
+          if (statusLabel) {
+            btn.setToolTipText(`${node.getLabel()} - ${statusLabel}`);
+          }
+        }, this);
+        if (nsUILabel.getValue()) {
+          btn.setToolTipText(`${node.getLabel()} - ${nsUILabel.getValue()}`);
+        }
       }
       return btn;
     },
@@ -123,7 +132,7 @@ qx.Class.define("osparc.component.widget.BreadcrumbNavigation", {
 
         this._add(thisBtn);
 
-        const breadcrumbSplitter = new osparc.component.widget.BreadcrumbSplitter(16, 32).set({
+        const breadcrumbSplitter = new osparc.navigation.BreadcrumbSplitter(16, 32).set({
           shape,
           marginLeft: -1,
           marginRight: -1

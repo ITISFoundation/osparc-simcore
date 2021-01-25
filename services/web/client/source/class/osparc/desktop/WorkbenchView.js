@@ -73,6 +73,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__connectEvents();
         this.__attachSocketEventHandlers();
       }
+      this.__mainPanel.getToolbar().setStudy(study);
+    },
+
+    getStartStopButtons: function() {
+      return this.__mainPanel.getToolbar().getStartStopButtons();
+    },
+
+    getSelectedNodes: function() {
+      return this.__workbenchUI.getSelectedNodes();
+    },
+
+    getSelectedNodeIDs: function() {
+      return this.__workbenchUI.getSelectedNodeIds();
     },
 
     nodeSelected: function(nodeId) {
@@ -191,7 +204,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         return;
       }
 
-      const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+      const selectedNodeUIs = this.getSelectedNodes();
       if (this.__isSelectionEmpty(selectedNodeUIs)) {
         return;
       }
@@ -216,7 +229,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return;
       }
-      const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
+      const selectedNodeUIs = this.getSelectedNodes();
       if (this.__isSelectionEmpty(selectedNodeUIs)) {
         return;
       }
@@ -239,134 +252,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchChanged();
 
       this.__workbenchUI.resetSelectedNodes();
-    },
-
-    __startPipeline: function() {
-      if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
-        return;
-      }
-      const runButton = this.__mainPanel.getControls().getStartButton();
-      runButton.setFetching(true);
-      this.updateStudyDocument(true)
-        .then(() => {
-          this.__doStartPipeline();
-        })
-        .catch(() => {
-          this.getLogger().error(null, "Run failed");
-          runButton.setFetching(false);
-        });
-    },
-
-    __doStartPipeline: function() {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStartPipeline(secondaryStudyId);
-        });
-      } else {
-        const selectedNodeUIs = this.__workbenchUI.getSelectedNodes();
-        if (this.__isSelectionEmpty(selectedNodeUIs)) {
-          this.__requestStartPipeline(this.getStudy().getUuid());
-        } else {
-          const selectedNodeIDs = [];
-          selectedNodeUIs.forEach(nodeUI => {
-            selectedNodeIDs.push(nodeUI.getNodeId());
-          });
-          this.__requestStartPipeline(this.getStudy().getUuid(), selectedNodeIDs);
-        }
-      }
-    },
-
-    __requestStartPipeline: function(studyId, selectedNodeIDs = []) {
-      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
-      const req = new osparc.io.request.ApiRequest(url, "POST");
-      const runButton = this.__mainPanel.getControls().getStartButton();
-      req.addListener("success", this.__onPipelinesubmitted, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error submitting pipeline");
-        runButton.setFetching(false);
-      }, this);
-      req.addListener("fail", e => {
-        if (e.getTarget().getResponse().error.status == "403") {
-          this.getLogger().error(null, "Pipeline is already running");
-        } else {
-          this.getLogger().error(null, "Failed submitting pipeline");
-        }
-        runButton.setFetching(false);
-      }, this);
-      if (selectedNodeIDs.length) {
-        req.setRequestData({
-          "subgraph": selectedNodeIDs
-        });
-        req.send();
-        this.getLogger().info(null, "Starting partial pipeline");
-      } else {
-        req.send();
-        this.getLogger().info(null, "Starting pipeline");
-      }
-
-      return true;
-    },
-
-    __onPipelinesubmitted: function(e) {
-      const resp = e.getTarget().getResponse();
-      const pipelineId = resp.data["pipeline_id"];
-      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
-      const notGood = [null, undefined, -1];
-      if (notGood.includes(pipelineId)) {
-        this.getLogger().error(null, "Submission failed");
-      } else {
-        this.getLogger().info(null, "Pipeline started");
-        /* If no projectStateUpdated comes in 60 seconds, client must
-        check state of pipeline and update button accordingly. */
-        const timer = setTimeout(() => {
-          osparc.store.Store.getInstance().getStudyState(pipelineId);
-        }, 60000);
-        const socket = osparc.wrapper.WebSocket.getInstance();
-        socket.getSocket().once("projectStateUpdated", jsonStr => {
-          const study = JSON.parse(jsonStr);
-          if (study["project_uuid"] === pipelineId) {
-            clearTimeout(timer);
-          }
-        });
-      }
-    },
-
-    __stopPipeline: function() {
-      if (!osparc.data.Permissions.getInstance().canDo("study.stop", true)) {
-        return;
-      }
-
-      this.__doStopPipeline();
-    },
-
-    __doStopPipeline: function() {
-      if (this.getStudy().getSweeper().hasSecondaryStudies()) {
-        const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          this.__requestStopPipeline(secondaryStudyId);
-        });
-      } else {
-        this.__requestStopPipeline(this.getStudy().getUuid());
-      }
-    },
-
-    __requestStopPipeline: function(studyId) {
-      const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":stop";
-      const req = new osparc.io.request.ApiRequest(url, "POST");
-      req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline aborting");
-      }, this);
-      req.addListener("error", e => {
-        this.getLogger().error(null, "Error stopping pipeline");
-      }, this);
-      req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed stopping pipeline");
-      }, this);
-      req.send();
-
-      this.getLogger().info(null, "Stopping pipeline");
-      return true;
     },
 
     __maximizeIframe: function(maximize) {
@@ -401,8 +286,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
       controlsBar.addListener("ungroupSelection", this.__ungroupSelection, this);
-      controlsBar.addListener("startPipeline", this.__startPipeline, this);
-      controlsBar.addListener("stopPipeline", this.__stopPipeline, this);
     },
 
     __initViews: function() {
@@ -516,21 +399,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __updatePipelineAndRetrieve: function(node, portKey = null) {
-      this.updateStudyDocument(false)
-        .then(() => {
-          this.__retrieveInputs(node, portKey);
-        });
-      this.getLogger().debug(null, "Updating pipeline");
-    },
-
-    __retrieveInputs: function(node, portKey = null) {
-      this.getLogger().debug(null, "Retrieveing inputs");
-      if (node) {
-        node.retrieveInputs(portKey);
-      }
-    },
-
     __showInMainView: function(widget, nodeId) {
       this.__mainPanel.setMainView(widget);
 
@@ -551,13 +419,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
 
-      workbench.addListener("retrieveInputs", e => {
-        const data = e.getData();
-        const node = data["node"];
-        const portKey = data["portKey"];
-        this.__updatePipelineAndRetrieve(node, portKey);
-      }, this);
-
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();
         const nodeId = data.nodeId;
@@ -566,9 +427,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
 
       const workbenchUI = this.__workbenchUI;
+      const workbenchToolbar = this.__mainPanel.getToolbar();
       const nodesTree = this.__nodesTree;
       [
         nodesTree,
+        workbenchToolbar,
         workbenchUI
       ].forEach(widget => {
         widget.addListener("nodeSelected", e => {
@@ -714,36 +577,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       } else {
         this.nodeSelected(this.getStudy().getUuid());
       }
-    },
-
-    updateStudyDocument: function(run = false) {
-      const myGrpId = osparc.auth.Data.getInstance().getGroupId();
-      if (!osparc.component.export.StudyPermissions.canGroupWrite(this.getStudy().getAccessRights(), myGrpId)) {
-        return new Promise(resolve => {
-          resolve();
-        });
-      }
-
-      this.getStudy().setLastChangeDate(new Date());
-      const newObj = this.getStudy().serialize();
-      const prjUuid = this.getStudy().getUuid();
-
-      const params = {
-        url: {
-          projectId: prjUuid,
-          run
-        },
-        data: newObj
-      };
-      return new Promise((resolve, reject) => {
-        osparc.data.Resources.fetch("studies", "put", params)
-          .then(data => {
-            resolve();
-          })
-          .catch(error => {
-            reject();
-          });
-      });
     }
   }
 });
