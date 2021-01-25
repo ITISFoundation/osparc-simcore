@@ -1,31 +1,51 @@
 {
   "8902d36c-bc65-5b0d-848f-88aed72d7849": {
-    "key": "simcore/services/comp/itis/sleeper",
+    "key": "simcore/services/frontend/file-picker",
     "version": "1.0.0",
-    "label": "sleeper 0",
-    "inputs": {
-      "in_2": 2
+    "label": "file-picker - elem0",
+    "outputs": {
+      "outFile": {
+        "store": 0,
+        "label": "some_file.txt",
+        "path": "/tmp/some_file.txt",
+        "eTag": "3029u20fdlskjhdlkj"
+      }
     }
   },
   "3a710d8b-565c-5f46-870b-b45ebe195fc7": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 1",
+    "label": "sleeper 1 - elem1",
     "inputs": {
       "in_1": {
         "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
-        "output": "out_1"
+        "output": "outFile"
       },
       "in_2": 2
     },
     "inputNodes": [
       "8902d36c-bc65-5b0d-848f-88aed72d7849"
-    ]
+    ],
+    "outputs": {
+      "out_1": {
+        "store": 0,
+        "label": "some_file.txt",
+        "path": "/tmp/some_file.txt",
+        "eTag": "3029u20fdlskjhdlkj"
+      },
+      "out_2": {
+        "store": 0,
+        "label": "some_file2.txt",
+        "path": "/tmp/some_file2.txt",
+        "eTag": "3029u20fdlskjhddfssdlkj"
+      }
+    },
+    "runHash": "d8c418ad1a720861949017920a6676682adce13a87b7712c857f2eef927a06dd"
   },
   "415fefd1-d08b-53c1-adb0-16bed3a687ef": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 2",
+    "label": "sleeper 2 - elem2",
     "inputs": {
       "in_1": {
         "nodeUuid": "3a710d8b-565c-5f46-870b-b45ebe195fc7",
@@ -43,11 +63,11 @@
   "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 3",
+    "label": "sleeper 3 - elem3",
     "inputs": {
       "in_2": {
         "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
-        "output": "out_2"
+        "output": "outFile"
       }
     },
     "inputNodes": [
@@ -57,7 +77,7 @@
   "6ede1209-b459-5735-91fc-761aa584808d": {
     "key": "simcore/services/comp/itis/sleeper",
     "version": "1.0.0",
-    "label": "sleeper 4",
+    "label": "sleeper 4 - elem4",
     "inputs": {
       "in_1": {
         "nodeUuid": "415fefd1-d08b-53c1-adb0-16bed3a687ef",
@@ -71,6 +91,20 @@
     "inputNodes": [
       "415fefd1-d08b-53c1-adb0-16bed3a687ef",
       "e1e2ea96-ce8f-5abc-8712-b8ed312a782c"
+    ]
+  },
+  "82d7a25c-18d4-44dc-a997-e5c9a745e7fd": {
+    "key": "simcore/services/dynamic/jupyter-base-notebook",
+    "version": "2.13.0",
+    "label": "some-dynamic-service - elem5",
+    "inputs": {
+      "in_1": {
+        "nodeUuid": "6ede1209-b459-5735-91fc-761aa584808d",
+        "output": "out_1"
+      }
+    },
+    "inputNodes": [
+      "6ede1209-b459-5735-91fc-761aa584808d"
     ]
   }
 }

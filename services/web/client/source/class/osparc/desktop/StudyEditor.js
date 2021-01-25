@@ -206,8 +206,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         startStopButtonsSS.setRunning(false);
       }, this);
       req.addListener("fail", e => {
-        if (e.getTarget().getResponse().error.status == "403") {
+        if (e.getTarget().getStatus() == "403") {
           this.getLogger().error(null, "Pipeline is already running");
+        } else if (e.getTarget().getStatus() == "422") {
+          this.getLogger().info(null, "The pipeline is up-to-date");
         } else {
           this.getLogger().error(null, "Failed submitting pipeline");
         }

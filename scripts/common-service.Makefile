@@ -95,7 +95,8 @@ TEST_TARGET := $(if $(target),$(target),$(CURDIR)/tests/unit)
 
 _run-test-dev: _check_venv_active
 	# runs tests for development (e.g w/ pdb)
-	pytest -vv --exitfirst --failed-first --durations=10 --pdb $(TEST_TARGET)
+	pytest -vv --exitfirst --failed-first --durations=10 --pdb --color=yes \
+	--cov=$(APP_PACKAGE_NAME) --cov-report=term-missing --cov-config=.coveragerc $(TEST_TARGET)
 
 
 _run-test-ci: _check_venv_active

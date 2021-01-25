@@ -5,6 +5,7 @@ from typing import Optional
 
 import aiopg.sa
 import tenacity
+from aiopg.sa.result import RowProxy
 from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
@@ -22,7 +23,7 @@ log = logging.getLogger(__name__)
 
 async def _get_node_from_db(
     node_uuid: str, connection: aiopg.sa.SAConnection
-) -> comp_tasks:
+) -> RowProxy:
     log.debug(
         "Reading from comp_tasks table for node uuid %s, project %s",
         node_uuid,
@@ -38,7 +39,7 @@ async def _get_node_from_db(
     )
     if result.rowcount > 1:
         log.error("the node id %s is not unique", node_uuid)
-    node = await result.fetchone()
+    node: RowProxy = await result.fetchone()
     if not node:
         log.error("the node id %s was not found", node_uuid)
         raise NodeNotFound(node_uuid)
@@ -112,6 +113,7 @@ class DBManager:
                         schema=node_configuration["schema"],
                         inputs=node_configuration["inputs"],
                         outputs=node_configuration["outputs"],
+                        run_hash=node_configuration.get("run_hash"),
                     )
                 )
 
@@ -121,12 +123,13 @@ class DBManager:
         )
         async with DBContextManager(self._db_engine) as engine:
             async with engine.acquire() as connection:
-                node = await _get_node_from_db(node_uuid, connection)
+                node: RowProxy = await _get_node_from_db(node_uuid, connection)
                 node_json_config = json.dumps(
                     {
                         "schema": node.schema,
                         "inputs": node.inputs,
                         "outputs": node.outputs,
+                        "run_hash": node.run_hash,
                     }
                 )
         log.debug("Found and converted to json")

@@ -31,6 +31,7 @@ comp_tasks = sa.Table(
     sa.Column("schema", sa.JSON),
     sa.Column("inputs", sa.JSON),
     sa.Column("outputs", sa.JSON),
+    sa.Column("run_hash", sa.String, nullable=True),
     sa.Column("image", sa.JSON),
     sa.Column(
         "state",
