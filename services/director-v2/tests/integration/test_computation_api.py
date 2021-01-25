@@ -384,6 +384,32 @@ def test_run_partial_computation(
     assert task_out.pipeline == expected_adj_list_2nd_run
 
 
+def _assert_computation_task_out_obj(
+    client: TestClient,
+    task_out: ComputationTaskOut,
+    *,
+    project: ProjectAtDB,
+    exp_task_state: RunningState,
+    exp_adjacency: Dict[str, List[str]],
+):
+    assert task_out.id == project.uuid
+    assert task_out.state == exp_task_state
+    assert task_out.url == f"{client.base_url}/v2/computations/{project.uuid}"
+    assert (
+        task_out.stop_url == f"{client.base_url}/v2/computations/{project.uuid}:stop"
+        if exp_task_state in [RunningState.SUCCESS]
+        else None
+    )
+    for key, list_value in task_out.pipeline.items():
+        assert (
+            str(key) in exp_adjacency
+        ), f"expected adjacency list {pformat(exp_adjacency)}, received list {pformat(task_out.pipeline)}"
+        for item in list_value:
+            assert (
+                str(item) in exp_adjacency[str(key)]
+            ), f"expected adjacency list {pformat(exp_adjacency)}, received list {pformat(task_out.pipeline)}"
+
+
 def test_run_computation(
     client: TestClient,
     user_id: PositiveInt,
@@ -404,31 +430,26 @@ def test_run_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correct
-    assert task_out.id == sleepers_project.uuid
-    assert task_out.state == RunningState.PUBLISHED
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert (
-        task_out.stop_url
-        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.PUBLISHED,
+        exp_adjacency=fake_workbench_adjacency,
     )
-    for key, list_value in task_out.pipeline.items():
-        assert (
-            str(key) in fake_workbench_adjacency
-        ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
-        for item in list_value:
-            assert (
-                str(item) in fake_workbench_adjacency[str(key)]
-            ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
 
     # wait for the computation to finish
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert task_out.stop_url == None
-    assert (
-        task_out.state == RunningState.SUCCESS
-    ), f"the pipeline complete with state {task_out.state}"
+
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.SUCCESS,
+        exp_adjacency=fake_workbench_adjacency,
+    )
 
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
@@ -452,28 +473,25 @@ def test_run_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
     # check the contents is correct
-    assert task_out.id == sleepers_project.uuid
-    assert task_out.state == RunningState.PUBLISHED
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert (
-        task_out.stop_url
-        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.PUBLISHED,
+        exp_adjacency=fake_workbench_adjacency,
     )
-    for key, list_value in task_out.pipeline.items():
-        assert (
-            str(key) in fake_workbench_adjacency
-        ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
-        for item in list_value:
-            assert (
-                str(item) in fake_workbench_adjacency[str(key)]
-            ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
 
     # wait for the computation to finish
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert task_out.stop_url == None
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.SUCCESS,
+        exp_adjacency=fake_workbench_adjacency,
+    )
 
 
 def test_abort_computation(
