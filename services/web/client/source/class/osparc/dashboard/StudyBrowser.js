@@ -252,79 +252,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
         importStudy.addListener("fileReady", e => {
           win.close();
-
           const file = e.getData();
           if (file === null || file === undefined) {
             return;
           }
-
           const size = file.size;
           const maxSize = 10; // 10 MB
           if (size > maxSize * 1024 * 1024) {
             osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
           }
-
-          const importTask = new osparc.component.task.Import();
-          const tasks = osparc.component.task.Tasks.getInstance();
-          tasks.addTask(importTask);
-          const text = this.tr("Importing process started and added to the background tasks");
-          osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-
-          const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
-          placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
-          placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
-          this.__userStudyContainer.addAt(placeholderStudyCard, 1);
-
-          const body = new FormData();
-          body.append("fileName", file);
-
-          const req = new XMLHttpRequest();
-          req.addEventListener("progress", ep => {
-            // updateProgress
-            if (ep.lengthComputable) {
-              const percentComplete = ep.loaded / ep.total * 100;
-              placeholderStudyCard.getProgressBar().setValue(percentComplete);
-            } else {
-              console.log("Unable to compute progress information since the total size is unknown");
-            }
-          }, false);
-          req.addEventListener("load", () => {
-            // transferComplete
-            if (req.status == 200) {
-              placeholderStudyCard.setStateLabel(this.tr("Processing study..."));
-              placeholderStudyCard.getProgressBar().exclude();
-              const data = JSON.parse(req.responseText);
-              const params = {
-                url: {
-                  "projectId": data["data"]["uuid"]
-                }
-              };
-              osparc.data.Resources.getOne("studies", params)
-                .then(studyData => {
-                  this.__userStudyContainer.remove(placeholderStudyCard);
-                  tasks.removeTask(importTask);
-                  this._resetStudyItem(studyData);
-                })
-                .catch(err => {
-                  console.error(err);
-                });
-            }
-          });
-          req.addEventListener("error", () => {
-            // transferFailed
-            osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
-            tasks.removeTask(importTask);
-            this.__userStudyContainer.remove(placeholderStudyCard);
-          });
-          req.addEventListener("abort", () => {
-            // transferFailed
-            osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
-            tasks.removeTask(importTask);
-            this.__userStudyContainer.remove(placeholderStudyCard);
-          });
-          req.open("POST", "/v0/projects:import", true);
-          req.send(body);
+          this.__importStudy(file);
         }, this);
       }, this);
       return importButton;
@@ -716,6 +654,69 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         studiesDeleteButton.setVisibility("excluded");
       }
+    },
+
+    __importStudy: function(file) {
+      const importTask = new osparc.component.task.Import();
+      const tasks = osparc.component.task.Tasks.getInstance();
+      tasks.addTask(importTask);
+      const text = this.tr("Importing process started and added to the background tasks");
+      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+
+      const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
+      placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
+      placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
+      this.__userStudyContainer.addAt(placeholderStudyCard, 1);
+
+      const body = new FormData();
+      body.append("fileName", file);
+
+      const req = new XMLHttpRequest();
+      req.addEventListener("progress", ep => {
+        // updateProgress
+        if (ep.lengthComputable) {
+          const percentComplete = ep.loaded / ep.total * 100;
+          placeholderStudyCard.getProgressBar().setValue(percentComplete);
+        } else {
+          console.log("Unable to compute progress information since the total size is unknown");
+        }
+      }, false);
+      req.addEventListener("load", () => {
+        // transferComplete
+        if (req.status == 200) {
+          placeholderStudyCard.setStateLabel(this.tr("Processing study..."));
+          placeholderStudyCard.getProgressBar().exclude();
+          const data = JSON.parse(req.responseText);
+          const params = {
+            url: {
+              "projectId": data["data"]["uuid"]
+            }
+          };
+          osparc.data.Resources.getOne("studies", params)
+            .then(studyData => {
+              this.__userStudyContainer.remove(placeholderStudyCard);
+              tasks.removeTask(importTask);
+              this._resetStudyItem(studyData);
+            })
+            .catch(err => {
+              console.error(err);
+            });
+        }
+      });
+      req.addEventListener("error", () => {
+        // transferFailed
+        osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+        tasks.removeTask(importTask);
+        this.__userStudyContainer.remove(placeholderStudyCard);
+      });
+      req.addEventListener("abort", () => {
+        // transferFailed
+        osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+        tasks.removeTask(importTask);
+        this.__userStudyContainer.remove(placeholderStudyCard);
+      });
+      req.open("POST", "/v0/projects:import", true);
+      req.send(body);
     },
 
     __deleteStudy: function(studyData) {
