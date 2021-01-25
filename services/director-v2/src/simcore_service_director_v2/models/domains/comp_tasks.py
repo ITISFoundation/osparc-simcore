@@ -1,66 +1,16 @@
 from datetime import datetime
-from typing import Dict, List, Optional
-from uuid import UUID
+from typing import Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Inputs, NodeID, Outputs
 from models_library.projects_state import RunningState
 from models_library.services import KEY_RE, ServiceInputs, ServiceOutputs
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field, constr, validator
+from pydantic import BaseModel, Extra, Field, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE
-from ..schemas.constants import UserID
-
-TaskID = UUID
-
-
-class ComputationTaskCreate(BaseModel):
-    user_id: UserID
-    project_id: ProjectID
-    start_pipeline: Optional[bool] = Field(
-        False, description="if True the computation pipeline will start right away"
-    )
-    subgraph: Optional[List[NodeID]] = Field(
-        None,
-        description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
-    )
-    force_restart: Optional[bool] = Field(
-        False, description="if True will force re-running all dependent nodes"
-    )
-
-
-class ComputationTaskStop(BaseModel):
-    user_id: UserID
-
-
-class ComputationTaskDelete(ComputationTaskStop):
-    force: Optional[bool] = Field(
-        False,
-        description="if True then the pipeline will be removed even if it is running",
-    )
-
-
-class ComputationTask(BaseModel):
-    id: TaskID = Field(..., description="the id of the computation task")
-    state: RunningState = Field(..., description="the state of the computational task")
-    result: Optional[str] = Field(
-        None, description="the result of the computational task"
-    )
-    pipeline: Dict[NodeID, List[NodeID]] = Field(
-        ..., description="the corresponding pipeline in terms of node uuids"
-    )
-
-
-class ComputationTaskOut(ComputationTask):
-    url: AnyHttpUrl = Field(
-        ..., description="the link where to get the status of the task"
-    )
-    stop_url: Optional[AnyHttpUrl] = Field(
-        None, description="the link where to stop the task"
-    )
 
 
 class Image(BaseModel):

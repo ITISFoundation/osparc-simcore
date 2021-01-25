@@ -5,7 +5,6 @@ import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
-from pydantic.networks import AnyHttpUrl
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from starlette import status
 from starlette.requests import Request
@@ -17,14 +16,14 @@ from tenacity import (
     wait_random,
 )
 
-from ...models.domains.comp_tasks import (
-    CompTaskAtDB,
+from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.domains.projects import ProjectAtDB
+from ...models.schemas.comp_tasks import (
     ComputationTaskCreate,
     ComputationTaskDelete,
     ComputationTaskOut,
     ComputationTaskStop,
 )
-from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.constants import UserID
 from ...modules.celery import CeleryClient
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
