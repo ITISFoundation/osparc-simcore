@@ -276,61 +276,55 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
           this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 
-          const headers = new Headers();
-          headers.append("Accept", "application/json");
-          const body = new FormData();/*
-          body.append("fileName", new Blob([file.name], {
-            type: "application/json"
-          }));
-          body.append("file", file);
-          */
+          const body = new FormData();
           body.append("fileName", file);
-          fetch("/v0/projects:import", {
-            method: "POST",
-            headers,
-            body
-          });
-          /*
+
           const req = new XMLHttpRequest();
-          req.upload.addEventListener("progress", ep => {
-            if (e.lengthComputable) {
+          req.addEventListener("progress", ep => {
+            // updateProgress
+            if (ep.lengthComputable) {
               const percentComplete = ep.loaded / ep.total * 100;
               placeholderStudyCard.getProgressBar().setValue(percentComplete);
             } else {
               console.log("Unable to compute progress information since the total size is unknown");
             }
           }, false);
-          req.onload = () => {
-            console.log(req.response);
+          req.addEventListener("load", () => {
+            // transferComplete
             if (req.status == 200) {
-              placeholderStudyCard.setStateLabel(this.tr("Processing study"));
+              placeholderStudyCard.setStateLabel(this.tr("Processing study..."));
               placeholderStudyCard.getProgressBar().exclude();
+              const data = JSON.parse(req.responseText);
+              const params = {
+                url: {
+                  "projectId": data["data"]["uuid"]
+                }
+              };
+              osparc.data.Resources.getOne("studies", params)
+                .then(studyData => {
+                  this.__userStudyContainer.remove(placeholderStudyCard);
+                  tasks.removeTask(importTask);
+                  this._resetStudyItem(studyData);
+                })
+                .catch(err => {
+                  console.error(err);
+                });
             }
-          };
+          });
+          req.addEventListener("error", () => {
+            // transferFailed
+            osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+            tasks.removeTask(importTask);
+            this.__userStudyContainer.remove(placeholderStudyCard);
+          });
+          req.addEventListener("abort", () => {
+            // transferFailed
+            osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+            tasks.removeTask(importTask);
+            this.__userStudyContainer.remove(placeholderStudyCard);
+          });
           req.open("POST", "/v0/projects:import", true);
-          req.send(file);
-          */
-          /*
-          const req = new osparc.io.file.ApiRequest("/projects:import", "POST");
-          req.upload.addEventListener("progress", ep => {
-            if (e.lengthComputable) {
-              const percentComplete = ep.loaded / ep.total * 100;
-              placeholderStudyCard.getProgressBar().setValue(percentComplete);
-            } else {
-              console.log("Unable to compute progress information since the total size is unknown");
-            }
-          }, false);
-          req.onload = () => {
-            if (req.status == 200) {
-              console.log(req.response);
-              placeholderStudyCard.setStateLabel(this.tr("Processing study"));
-              placeholderStudyCard.getProgressBar().exclude();
-            } else {
-              console.log(req.response);
-            }
-          };
-          req.send(file.body);
-          */
+          req.send(body);
         }, this);
       }, this);
       return importButton;
