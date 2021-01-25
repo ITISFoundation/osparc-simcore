@@ -7,9 +7,8 @@ from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, Field, PositiveInt
-
 from models_library.settings.redis import RedisConfig
+from pydantic import BaseSettings, Field, PositiveInt
 from servicelib.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "resource_manager"
@@ -17,7 +16,6 @@ APP_CLIENT_REDIS_CLIENT_KEY = __name__ + ".resource_manager.redis_client"
 APP_CLIENT_REDIS_LOCK_KEY = __name__ + ".resource_manager.redis_lock"
 APP_CLIENT_SOCKET_REGISTRY_KEY = __name__ + ".resource_manager.registry"
 APP_RESOURCE_MANAGER_TASKS_KEY = __name__ + ".resource_manager.tasks.key"
-APP_GARBAGE_COLLECTOR_KEY = __name__ + ".resource_manager.garbage_collector_key"
 
 
 # lock names and format strings

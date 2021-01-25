@@ -2,10 +2,10 @@ import asyncio
 import logging
 from contextlib import suppress
 from itertools import chain
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
+import psycopg2
 from aiohttp import web
-from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.observer import emit
 from servicelib.utils import logged_gather
@@ -42,7 +42,6 @@ from simcore_service_webserver.users_to_groups_api import get_users_for_gid
 
 from .config import (
     APP_CLIENT_REDIS_LOCK_KEY,
-    APP_GARBAGE_COLLECTOR_KEY,
     GUEST_USER_RC_LOCK_FORMAT,
     get_garbage_collector_interval,
 )
@@ -51,23 +50,25 @@ from .registry import RedisResourceRegistry, get_registry
 logger = logging.getLogger(__name__)
 
 
-async def setup_garbage_collector_task(app: web.Application):
-    loop = asyncio.get_event_loop()
-    app[APP_GARBAGE_COLLECTOR_KEY] = loop.create_task(garbage_collector_task(app))
-    yield
-    task = app[APP_GARBAGE_COLLECTOR_KEY]
-    task.cancel()
-    await task
-
-
 def setup_garbage_collector(app: web.Application):
-    app.cleanup_ctx.append(setup_garbage_collector_task)
+    async def _setup_background_task(app: web.Application):
+        # on_startup
+        loop = asyncio.get_event_loop()
+        cgp_task = loop.create_task(collect_garbage_periodically(app))
+
+        yield
+
+        # on_cleanup
+        with suppress(asyncio.CancelledError):
+            cgp_task.cancel()
+            await cgp_task
+
+    app.cleanup_ctx.append(_setup_background_task)
 
 
-async def garbage_collector_task(app: web.Application):
-    keep_alive = True
+async def collect_garbage_periodically(app: web.Application):
 
-    while keep_alive:
+    while True:
         logger.info("Starting garbage collector...")
         try:
             interval = get_garbage_collector_interval(app)
@@ -76,8 +77,9 @@ async def garbage_collector_task(app: web.Application):
                 await asyncio.sleep(interval)
 
         except asyncio.CancelledError:
-            keep_alive = False
             logger.info("Garbage collection task was cancelled, it will not restart!")
+            # do not catch Cancellation errors
+            raise
 
         except Exception:  # pylint: disable=broad-except
             logger.warning(
@@ -253,12 +255,10 @@ async def remove_disconnected_user_resources(
                 resource_name,
                 keys_to_update,
             )
-            with suppress(asyncio.CancelledError):
-                on_released_tasks = [
-                    registry.remove_resource(key, resource_name)
-                    for key in keys_to_update
-                ]
-                await logged_gather(*on_released_tasks, reraise=False)
+            on_released_tasks = [
+                registry.remove_resource(key, resource_name) for key in keys_to_update
+            ]
+            await logged_gather(*on_released_tasks, reraise=False)
 
             # NOTE:
             #   - if releasing a resource (1) fails, annotations in registry allows GC to try in next round
@@ -373,8 +373,8 @@ async def remove_orphaned_services(
             logger.info("Will remove service %s", service_host)
             try:
                 await stop_service(app, node_id)
-            except (ServiceNotFoundError, DirectorException) as e:
-                logger.warning("Error while stopping service: %s", e)
+            except (ServiceNotFoundError, DirectorException) as err:
+                logger.warning("Error while stopping service: %s", err)
 
     logger.info("Finished orphaned services removal")
 
@@ -391,11 +391,12 @@ async def remove_guest_user_with_all_its_resources(
     try:
         await remove_all_projects_for_user(app=app, user_id=user_id)
         await remove_user(app=app, user_id=user_id)
-    except Exception as e:  # pylint: disable=broad-except
-        logger.warning("%s", e)
+
+    except psycopg2.DatabaseError:
         logger.warning(
             "Could not remove GUEST with id=%s. Check the logs above for details",
             user_id,
+            exc_info=True,
         )
 
 
@@ -421,7 +422,7 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
             user_id,
         )
         return
-    user_primary_gid: str = str(project_owner["primary_gid"])
+    user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
     user_project_uuids = await app[
@@ -488,8 +489,8 @@ async def get_new_project_owner_gid(
     project_uuid: str,
     user_id: int,
     user_primary_gid: int,
-    project: RowProxy,
-) -> str:
+    project: Dict,
+) -> Optional[int]:
     """Goes through the access rights and tries to find a new suitable owner.
     The first viable user is selected as a new owner.
     In order to become a new owner the user must have write access right.
@@ -549,7 +550,7 @@ async def get_new_project_owner_gid(
 
 async def fetch_new_project_owner_from_groups(
     app: web.Application, standard_groups: Dict, user_id: int
-) -> int:
+) -> Optional[int]:
     """Iterate over all the users in a group and if the users exists in the db
     return its gid"""
 
@@ -570,6 +571,7 @@ async def fetch_new_project_owner_from_groups(
                     "Could not find new owner '%s' will try a new one",
                     possible_user_id,
                 )
+
         return None
 
 
@@ -578,17 +580,19 @@ async def replace_current_owner(
     project_uuid: str,
     user_primary_gid: int,
     new_project_owner_gid: str,
-    project: RowProxy,
+    project: Dict,
 ) -> None:
     try:
         new_project_owner_id = await get_user_id_from_gid(
             app=app, primary_gid=int(new_project_owner_gid)
         )
-    except Exception:  # pylint: disable=broad-except
+
+    except psycopg2.DatabaseError:
         logger.exception(
             "Could not recover new user id from gid %s", new_project_owner_gid
         )
         return
+
     # the result might me none
     if new_project_owner_id is None:
         logger.warning(
@@ -604,13 +608,14 @@ async def replace_current_owner(
         str(new_project_owner_gid)
     ] = ProjectAccessRights.OWNER.value
     logger.error("Syncing back project %s", project)
+
     # syncing back project data
     try:
         await app[APP_PROJECT_DBAPI].update_project_without_enforcing_checks(
             project_data=project,
             project_uuid=project_uuid,
         )
-    except Exception:  # pylint: disable=broad-except
+    except psycopg2.DatabaseError:
         logger.exception(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
@@ -621,7 +626,7 @@ async def remove_user(app: web.Application, user_id: int) -> None:
     """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
-    except Exception:  # pylint: disable=broad-except
+    except psycopg2.DatabaseError:
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
         )
