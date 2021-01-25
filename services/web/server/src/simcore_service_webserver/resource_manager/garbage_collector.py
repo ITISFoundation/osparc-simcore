@@ -4,6 +4,7 @@ from contextlib import suppress
 from itertools import chain
 from typing import Dict, List, Optional, Tuple
 
+import asyncpg.exceptions
 import psycopg2
 from aiohttp import web
 from aioredlock import Aioredlock
@@ -48,6 +49,7 @@ from .config import (
 from .registry import RedisResourceRegistry, get_registry
 
 logger = logging.getLogger(__name__)
+database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 
 
 def setup_garbage_collector(app: web.Application):
@@ -58,6 +60,7 @@ def setup_garbage_collector(app: web.Application):
 
         yield
 
+        logger.info("Stopping garbage collector...")
         # on_cleanup
         with suppress(asyncio.CancelledError):
             cgp_task.cancel()
@@ -235,6 +238,7 @@ async def remove_disconnected_user_resources(
 
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
+                    # WARNING: slot functions can raise any exception
                     await emit(
                         event="SIGNAL_PROJECT_CLOSE",
                         user_id=None,
@@ -242,7 +246,7 @@ async def remove_disconnected_user_resources(
                         app=app,
                     )
 
-                # if this user was a GUEST also remove it from the database
+                # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
                 await remove_guest_user_with_all_its_resources(
                     app=app,
@@ -392,7 +396,7 @@ async def remove_guest_user_with_all_its_resources(
         await remove_all_projects_for_user(app=app, user_id=user_id)
         await remove_user(app=app, user_id=user_id)
 
-    except psycopg2.DatabaseError:
+    except database_errors:
         logger.warning(
             "Could not remove GUEST with id=%s. Check the logs above for details",
             user_id,
@@ -587,7 +591,7 @@ async def replace_current_owner(
             app=app, primary_gid=int(new_project_owner_gid)
         )
 
-    except psycopg2.DatabaseError:
+    except database_errors:
         logger.exception(
             "Could not recover new user id from gid %s", new_project_owner_gid
         )
@@ -615,7 +619,7 @@ async def replace_current_owner(
             project_data=project,
             project_uuid=project_uuid,
         )
-    except psycopg2.DatabaseError:
+    except database_errors:
         logger.exception(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
@@ -626,7 +630,7 @@ async def remove_user(app: web.Application, user_id: int) -> None:
     """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
-    except psycopg2.DatabaseError:
+    except database_errors:
         logger.warning(
             "User '%s' still has some projects, could not be deleted", user_id
         )
