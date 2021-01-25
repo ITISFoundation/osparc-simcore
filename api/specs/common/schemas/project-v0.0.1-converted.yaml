@@ -285,6 +285,13 @@ properties:
                 example:
                   - '15'
             deprecated: true
+          connection_state:
+            title: Status
+            description: the node's connection state
+            default: CHANGED
+            enum:
+              - CHANGED
+              - CURRENT
           state:
             title: RunningState
             description: the node's running state
