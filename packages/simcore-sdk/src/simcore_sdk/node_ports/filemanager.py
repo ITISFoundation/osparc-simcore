@@ -159,28 +159,40 @@ async def _upload_file_to_link(
 ) -> Optional[ETag]:
     log.debug("Uploading from %s to %s", file_path, url)
     file_size = file_path.stat().st_size
-    with tqdm(
-        desc=f"uploading {file_path} [{file_size} bytes]",
-        total=file_size,
-        unit="byte",
-        unit_scale=True,
-    ) as pbar:
-        async with session.put(url, data=file_path.open("rb")) as resp:
-            if resp.status > 299:
-                response_text = await resp.text()
-                raise exceptions.S3TransferError(
-                    "Could not upload file {}:{}".format(file_path, response_text)
-                )
-            if resp.status != 200:
-                response_text = await resp.text()
-                raise exceptions.S3TransferError(
-                    "Issue when uploading file {}:{}".format(file_path, response_text)
-                )
-            pbar.update(file_size)
-            # get the S3 etag from the headers
-            e_tag = json.loads(resp.headers.get("Etag", None))
-            log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
-            return e_tag
+
+    async def file_sender(file_name: Path):
+        with tqdm(
+            desc=f"uploading {file_path} [{file_size} bytes]",
+            total=file_size,
+            unit="byte",
+            unit_scale=True,
+        ) as pbar:
+            async with aiofiles.open(file_name, "rb") as f:
+                chunk = await f.read(CHUNK_SIZE)
+                while chunk:
+                    pbar.update(len(chunk))
+                    yield chunk
+                    chunk = await f.read(CHUNK_SIZE)
+
+    data_provider = file_sender(file_path)
+    headers = {"Content-Length": f"{file_size}"}
+
+    async with session.put(url, data=data_provider, headers=headers) as resp:
+        if resp.status > 299:
+            response_text = await resp.text()
+            raise exceptions.S3TransferError(
+                "Could not upload file {}:{}".format(file_path, response_text)
+            )
+        if resp.status != 200:
+            response_text = await resp.text()
+            raise exceptions.S3TransferError(
+                "Issue when uploading file {}:{}".format(file_path, response_text)
+            )
+
+        # get the S3 etag from the headers
+        e_tag = json.loads(resp.headers.get("Etag", None))
+        log.debug("Uploaded %s to %s, received Etag %s", file_path, url, e_tag)
+        return e_tag
 
 
 async def download_file_from_s3(

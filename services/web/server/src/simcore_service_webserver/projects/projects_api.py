@@ -343,19 +343,21 @@ async def update_project_node_outputs(
     user_id: int,
     project_id: str,
     node_id: str,
-    data: Optional[Dict],
+    new_outputs: Optional[Dict],
+    new_run_hash: Optional[str],
 ) -> Tuple[Dict, List[str]]:
     """
     Updates outputs of a given node in a project with 'data'
     """
     log.debug(
-        "updating node %s outputs in project %s for user %s with %s",
+        "updating node %s outputs in project %s for user %s with %s: run_hash [%s]",
         node_id,
         project_id,
         user_id,
-        pformat(data),
+        pformat(new_outputs),
+        new_run_hash,
     )
-    data: Dict[str, Any] = data or {}
+    new_outputs: Dict[str, Any] = new_outputs or {}
     project = await get_project_for_user(app, project_id, user_id)
 
     if not node_id in project["workbench"]:
@@ -364,8 +366,8 @@ async def update_project_node_outputs(
     # NOTE: update outputs (not required) if necessary as the UI expects a
     # dataset/label field that is missing
     current_outputs = project["workbench"][node_id].setdefault("outputs", {})
-    new_outputs = data
     project["workbench"][node_id]["outputs"] = new_outputs
+    project["workbench"][node_id]["runHash"] = new_run_hash
 
     # find changed keys (the ones that appear or disapppear for sure)
     changed_keys = list(current_outputs.keys() ^ new_outputs.keys())
@@ -373,17 +375,6 @@ async def update_project_node_outputs(
     for key in current_outputs.keys() & new_outputs.keys():
         if current_outputs[key] != new_outputs[key]:
             changed_keys.append(key)
-
-    # FIXME: this should be reviewed @maiz. how is an output file defined. I think we have several flavours.
-    for output_key in new_outputs.keys():
-        if not isinstance(new_outputs[output_key], dict):
-            continue
-        if "path" in new_outputs[output_key]:
-            # file_id is of type study_id/node_id/file.ext
-            file_id = new_outputs[output_key]["path"]
-            study_id, _, file_ext = file_id.split("/")
-            new_outputs[output_key]["dataset"] = study_id
-            new_outputs[output_key]["label"] = file_ext
 
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)

@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import Any, List
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -16,28 +16,33 @@ from tenacity import (
     wait_random,
 )
 
-from ...models.domains.comp_tasks import (
-    CompTaskAtDB,
+from ...models.domains.comp_tasks import CompTaskAtDB
+from ...models.domains.projects import ProjectAtDB
+from ...models.schemas.comp_tasks import (
     ComputationTaskCreate,
     ComputationTaskDelete,
     ComputationTaskOut,
     ComputationTaskStop,
 )
-from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.constants import UserID
+from ...modules.celery import CeleryClient
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
+from ...modules.director_v0 import DirectorV0Client
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
     is_pipeline_stopped,
 )
-from ...utils.dags import create_dag_graph, create_minimal_graph_based_on_selection
+from ...utils.dags import (
+    create_complete_dag_graph,
+    create_minimal_computational_graph_based_on_selection,
+)
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
-from ..dependencies.celery import CeleryClient, get_celery_client
+from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
-from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
+from ..dependencies.director_v0 import get_director_v0_client
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -45,12 +50,12 @@ log = logging.getLogger(__file__)
 PIPELINE_ABORT_TIMEOUT_S = 10
 
 
-def celery_on_message(body):
+def celery_on_message(body: Any) -> None:
     # FIXME: this might become handy when we stop starting tasks recursively
     log.warning(body)
 
 
-def background_on_message(task):
+def background_on_message(task: Any) -> None:
     # FIXME: this might become handy when we stop starting tasks recursively
     log.warning(task.get(on_message=celery_on_message, propagate=False))
 
@@ -60,7 +65,7 @@ async def _abort_pipeline_tasks(
     tasks: List[CompTaskAtDB],
     computation_tasks: CompTasksRepository,
     celery_client: CeleryClient,
-):
+) -> None:
     await computation_tasks.mark_project_tasks_as_aborted(project)
     celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
     log.debug(
@@ -89,7 +94,7 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
-):
+) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
         job.user_id,
@@ -113,17 +118,26 @@ async def create_computation(
                 detail=f"Projet {job.project_id} already started, current state is {pipeline_state}",
             )
 
-        # create the computational DAG
-        dag_graph = create_dag_graph(project.workbench)
+        # create the complete DAG graph
+        complete_dag_graph = create_complete_dag_graph(project.workbench)
+        # find the minimal viable graph to be run
+        dag_graph = await create_minimal_computational_graph_based_on_selection(
+            complete_dag_graph, job.subgraph or [], job.force_restart
+        )
+
         # validate DAG
         if not nx.is_directed_acyclic_graph(dag_graph):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Project {job.project_id} is not a valid directed acyclic graph!",
             )
-        # get a subgraph if needed
-        if job.subgraph:
-            dag_graph = create_minimal_graph_based_on_selection(dag_graph, job.subgraph)
+
+        if not dag_graph.nodes():
+            # there is nothing else to be run here, so we are done
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Project {job.project_id} has no computational services",
+            )
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
@@ -136,11 +150,6 @@ async def create_computation(
         )
 
         if job.start_pipeline:
-            if not dag_graph.nodes():
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Project {job.project_id} has no computational services",
-                )
             # trigger celery
             task = celery_client.send_computation_task(job.user_id, job.project_id)
             background_tasks.add_task(background_on_message, task)
@@ -185,7 +194,7 @@ async def get_computation(
         get_repository(CompTasksRepository)
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
-):
+) -> ComputationTaskOut:
     log.debug("User %s getting computation status for project %s", user_id, project_id)
     try:
         # check that project actually exists
@@ -247,7 +256,7 @@ async def get_computation(
 @router.post(
     "/{project_id}:stop",
     summary="Stops a computation pipeline",
-    response_model=None,
+    response_model=ComputationTaskOut,
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def stop_computation_project(
@@ -262,7 +271,7 @@ async def stop_computation_project(
         get_repository(CompTasksRepository)
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
-):
+) -> ComputationTaskOut:
     log.debug(
         "User %s stopping computation for project %s",
         comp_task_stop.user_id,
@@ -315,7 +324,7 @@ async def delete_pipeline(
         get_repository(CompTasksRepository)
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
-):
+) -> None:
     try:
         # get the project
         project: ProjectAtDB = await project_repo.get_project(project_id)
@@ -337,7 +346,7 @@ async def delete_pipeline(
                 project, comp_tasks, computation_tasks, celery_client
             )
 
-            def return_last_value(retry_state):
+            def return_last_value(retry_state: Any) -> Any:
                 """return the result of the last call attempt"""
                 return retry_state.outcome.result()
 

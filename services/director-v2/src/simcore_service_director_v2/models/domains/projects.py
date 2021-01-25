@@ -1,11 +1,10 @@
 from datetime import datetime
 from typing import Dict, Optional
 
+from models_library.projects import Project, Workbench
 from pydantic import Field
 from pydantic.class_validators import validator
 from pydantic.networks import HttpUrl
-
-from models_library.projects import Project, Workbench
 from simcore_postgres_database.models.projects import ProjectType
 
 
@@ -26,7 +25,7 @@ class ProjectAtDB(Project):
     thumbnail: Optional[HttpUrl] = Field(None)
     workbench: Workbench
 
-    @validator("thumbnail", pre=True)
+    @validator("thumbnail", always=True, pre=True)
     @classmethod
     def convert_empty_str_to_none(v):
         if isinstance(v, str) and v == "":

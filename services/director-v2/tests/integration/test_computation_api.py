@@ -3,9 +3,11 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 # pylint:disable=no-value-for-parameter
+# pylint:disable=too-many-arguments
 
+from copy import deepcopy
 from random import randint
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict, List
 from uuid import UUID, uuid4
 
 import pytest
@@ -16,17 +18,25 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
+from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
-from simcore_service_director_v2.models.domains.comp_tasks import ComputationTaskOut
 from simcore_service_director_v2.models.domains.projects import ProjectAtDB
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from sqlalchemy import literal_column
 from starlette import status
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 
-core_services = ["director", "redis", "rabbit", "sidecar", "storage", "postgres"]
+core_services = [
+    "director",
+    "redis",
+    "rabbit",
+    "sidecar",
+    "storage",
+    "postgres",
+]
 ops_services = ["minio", "adminer"]
 
 COMPUTATION_URL: str = "v2/computations"
@@ -35,6 +45,7 @@ COMPUTATION_URL: str = "v2/computations"
 @pytest.fixture(autouse=True)
 def minimal_configuration(
     sleeper_service: Dict[str, str],
+    jupyter_service: Dict[str, str],
     redis_service: RedisConfig,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
@@ -74,6 +85,18 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
 
 
 @pytest.fixture
+def fake_workbench_without_outputs(
+    fake_workbench_as_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    workbench = deepcopy(fake_workbench_as_dict)
+    # remove all the outputs from the workbench
+    for _, data in workbench.items():
+        data["outputs"] = {}
+
+    return workbench
+
+
+@pytest.fixture
 def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
     created_project_ids = []
 
@@ -84,6 +107,8 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
             "type": ProjectType.STANDARD.name,
             "description": "my test description",
             "prj_owner": user_db["id"],
+            "access_rights": {"1": {"read": True, "write": True, "delete": True}},
+            "thumbnail": "",
             "workbench": {},
         }
         project_config.update(**overrides)
@@ -104,6 +129,34 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable:
     with postgres_db.connect() as con:
         for pid in created_project_ids:
             con.execute(projects.delete().where(projects.c.uuid == str(pid)))
+
+
+@pytest.fixture
+def update_project_workbench_with_comp_tasks(postgres_db: sa.engine.Engine) -> Callable:
+    def updator(project_uuid: str):
+        with postgres_db.connect() as con:
+            result = con.execute(
+                projects.select().where(projects.c.uuid == project_uuid)
+            )
+            prj_row = result.first()
+            prj_workbench = prj_row.workbench
+
+            result = con.execute(
+                comp_tasks.select().where(comp_tasks.c.project_id == project_uuid)
+            )
+            # let's get the results and run_hash
+            for task_row in result:
+                # pass these to the project workbench
+                prj_workbench[task_row.node_id]["outputs"] = task_row.outputs
+                prj_workbench[task_row.node_id]["runHash"] = task_row.run_hash
+
+            con.execute(
+                projects.update()
+                .values(workbench=prj_workbench)
+                .where(projects.c.uuid == project_uuid)
+            )
+
+    yield updator
 
 
 @pytest.mark.parametrize(
@@ -194,13 +247,12 @@ def _assert_pipeline_status(
 
 
 @pytest.mark.parametrize(
-    "subgraph_elements,exp_pipeline_dag_adj_list_1st_run, exp_pipeline_dag_adj_list_2nd_run",
+    "subgraph_elements,exp_pipeline_dag_adj_list_1st_run",
     [
-        pytest.param([0, 1], {0: [1], 1: []}, {0: [1], 1: []}, id="element 0,1"),
+        pytest.param([0, 1], {1: []}, id="element 0,1"),
         pytest.param(
             [1, 2, 4],
-            {0: [1, 3], 1: [2], 2: [4], 3: [4], 4: []},
-            {1: [4], 2: [], 4: []},
+            {1: [2], 2: [4], 3: [4], 4: []},
             id="element 1,2,4",
         ),
     ],
@@ -209,13 +261,13 @@ def test_run_partial_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    update_project_workbench_with_comp_tasks: Callable,
+    fake_workbench_without_outputs: Dict[str, Any],
     subgraph_elements: List[int],
     exp_pipeline_dag_adj_list_1st_run: Dict[str, List[str]],
-    exp_pipeline_dag_adj_list_2nd_run: Dict[str, List[str]],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -264,7 +316,9 @@ def test_run_partial_computation(
         task_out.state == RunningState.SUCCESS
     ), f"the pipeline complete with state {task_out.state}"
 
-    # run it a second time. the expected tasks to run might change.
+    # run it a second time. the tasks are all up-to-date, nothing should be run
+    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -276,6 +330,25 @@ def test_run_partial_computation(
                 for index, node_id in enumerate(sleepers_project.workbench)
                 if index in subgraph_elements
             ],
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    # force run it this time.
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(sleepers_project.uuid),
+            "start_pipeline": True,
+            "subgraph": [
+                str(node_id)
+                for index, node_id in enumerate(sleepers_project.workbench)
+                if index in subgraph_elements
+            ],
+            "force_restart": True,
         },
     )
     assert (
@@ -298,10 +371,10 @@ def test_run_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    fake_workbench_without_outputs: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -340,10 +413,10 @@ def test_abort_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    fake_workbench_without_outputs: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -410,10 +483,10 @@ def test_update_and_delete_computation(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleepers_workbench: Dict,
+    fake_workbench_without_outputs: Dict[str, Any],
 ):
     # send a valid project with sleepers
-    sleepers_project = project(workbench=sleepers_workbench)
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = client.post(
         COMPUTATION_URL,
         json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},

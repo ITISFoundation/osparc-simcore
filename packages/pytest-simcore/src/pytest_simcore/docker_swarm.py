@@ -101,7 +101,7 @@ def docker_stack(
     stacks_up = []
     for stack_name, stack_config_file in stacks.items():
         subprocess.run(
-            f"docker stack deploy -c {stack_config_file.name} {stack_name}",
+            f"docker stack deploy --with-registry-auth -c {stack_config_file.name} {stack_name}",
             shell=True,
             check=True,
             cwd=stack_config_file.parent,

@@ -73,11 +73,11 @@ properties:
     maxLength: 2083
     format: uri
     description: url of the latest screenshot of the project
-    example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+    example: https://placeimg.com/171/96/tech/grayscale/?0.jpg
   workbench:
     type: object
     x-patternProperties:
-      '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+      ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$:
         type: object
         additionalProperties: false
         required:
@@ -88,7 +88,7 @@ properties:
           key:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+            pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$
             example:
               - simcore/services/comp/sleeper
               - simcore/services/dynamic/3dviewer
@@ -118,12 +118,19 @@ properties:
             type: string
             description: url of the latest screenshot of the node
             example:
-              - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+              - https://placeimg.com/171/96/tech/grayscale/?0.jpg
+          runHash:
+            description: >-
+              the hex digest of the resolved inputs +outputs hash at the time
+              when the last outputs were generated
+            type: string
+            example:
+              - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
           inputs:
             type: object
             description: values of input properties
             patternProperties:
-              '^[-_a-zA-Z0-9]+$':
+              ^[-_a-zA-Z0-9]+$:
                 oneOf:
                   - type:
                       - integer
@@ -142,7 +149,7 @@ properties:
                         format: uuid
                       output:
                         type: string
-                        pattern: '^[-_a-zA-Z0-9]+$'
+                        pattern: ^[-_a-zA-Z0-9]+$
                   - type: object
                     additionalProperties: false
                     required:
@@ -177,7 +184,7 @@ properties:
             description: map with key - access level pairs
             type: object
             patternProperties:
-              '^[-_a-zA-Z0-9]+$':
+              ^[-_a-zA-Z0-9]+$:
                 type: string
                 enum:
                   - Invisible
@@ -199,7 +206,7 @@ properties:
             default: {}
             type: object
             patternProperties:
-              '^[-_a-zA-Z0-9]+$':
+              ^[-_a-zA-Z0-9]+$:
                 oneOf:
                   - type:
                       - integer
@@ -299,7 +306,7 @@ properties:
       workbench:
         type: object
         x-patternProperties:
-          '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+          ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$:
             type: object
             additionalProperties: false
             required:
@@ -326,7 +333,7 @@ properties:
       slideshow:
         type: object
         x-patternProperties:
-          '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+          ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$:
             type: object
             additionalProperties: false
             required:
@@ -351,7 +358,7 @@ properties:
     description: Contains the reference to the project classifiers
     items:
       type: string
-    example: 'some:id:to:a:classifier'
+    example: some:id:to:a:classifier
   dev:
     type: object
     description: object used for development purposes only

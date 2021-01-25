@@ -2,7 +2,7 @@
     Models both project and node states
 """
 
-from enum import Enum
+from enum import Enum, unique
 from typing import Optional
 
 from pydantic import BaseModel, Extra, Field
@@ -10,6 +10,7 @@ from pydantic import BaseModel, Extra, Field
 from .projects_access import Owner
 
 
+@unique
 class RunningState(str, Enum):
     UNKNOWN = "UNKNOWN"
     PUBLISHED = "PUBLISHED"
@@ -20,6 +21,12 @@ class RunningState(str, Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
     ABORTED = "ABORTED"
+
+
+@unique
+class DataState(str, Enum):
+    UP_TO_DATE = "UPTODATE"
+    OUTDATED = "OUTDATED"
 
 
 class ProjectLocked(BaseModel):
