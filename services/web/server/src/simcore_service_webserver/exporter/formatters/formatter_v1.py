@@ -68,31 +68,47 @@ async def extract_download_links(
 ) -> Deque[LinkAndPath2]:
     download_links: Deque[LinkAndPath2] = deque()
 
-    s3_metadata = await get_project_files_metadata(
-        app=app,
-        location_id="0",
-        uuid_filter=project_id,
-        user_id=user_id,
-    )
+    try:
+        s3_metadata = await get_project_files_metadata(
+            app=app,
+            location_id="0",
+            uuid_filter=project_id,
+            user_id=user_id,
+        )
+    except Exception as e:
+        raise ExporterException(
+            f"Error while requesting project files metadata for S3 for project {project_id}"
+        ) from e
+
     log.debug("s3 files metadata %s: ", s3_metadata)
 
     # Still not sure if these are required, when pulling files from blackfynn they end up in S3
     # I am not sure there is an example where we need to directly export form blackfynn
-    blackfynn_metadata = await get_project_files_metadata(
-        app=app,
-        location_id="1",
-        uuid_filter=project_id,
-        user_id=user_id,
-    )
+    try:
+        blackfynn_metadata = await get_project_files_metadata(
+            app=app,
+            location_id="1",
+            uuid_filter=project_id,
+            user_id=user_id,
+        )
+    except Exception as e:
+        raise ExporterException(
+            f"Error while requesting project files metadata for blackfynn for project {project_id}"
+        ) from e
     log.debug("blackfynn files metadata %s: ", blackfynn_metadata)
 
     for file_metadata in chain(s3_metadata, blackfynn_metadata):
-        download_link = await get_file_download_url(
-            app=app,
-            location_id=file_metadata["location_id"],
-            fileId=file_metadata["raw_file_path"],
-            user_id=user_id,
-        )
+        try:
+            download_link = await get_file_download_url(
+                app=app,
+                location_id=file_metadata["location_id"],
+                fileId=file_metadata["raw_file_path"],
+                user_id=user_id,
+            )
+        except Exception as e:
+            raise ExporterException(
+                f'Error while requesting download url for file {file_metadata["raw_file_path"]}'
+            ) from e
         download_links.append(
             LinkAndPath2(
                 root_dir=dir_path,
