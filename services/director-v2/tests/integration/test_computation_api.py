@@ -587,3 +587,47 @@ def test_update_and_delete_computation(
     assert (
         response.status_code == status.HTTP_204_NO_CONTENT
     ), f"response code is {response.status_code}, error: {response.text}"
+
+
+def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+    jupyter_service: Dict[str, str],
+):
+    # create a workbench with just a dynamic service
+    project_with_dynamic_node = project(
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "my sole dynamic service",
+            }
+        }
+    )
+
+    # this pipeline is not runnable as there are no computational services
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_dynamic_node.uuid),
+            "start_pipeline": True,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    # still this pipeline shall be createable if we do not want to start it
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_dynamic_node.uuid),
+            "start_pipeline": False,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
