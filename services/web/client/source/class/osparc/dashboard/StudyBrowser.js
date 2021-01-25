@@ -553,18 +553,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
-        this.__exportStudy(studyData)
-          .then(() => {
-            const text = this.tr("Exporting process started and added to the background tasks");
-            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
-            const exportTask = new osparc.component.task.Export(studyData);
-            const tasks = osparc.component.task.Tasks.getInstance();
-            tasks.addTask(exportTask);
-          })
-          .catch(err => {
-            console.error(err);
-            osparc.component.message.FlashMessenger.getInstance().logAs(err, "ERROR");
-          });
+        this.__exportStudy(studyData);
       }, this);
       return exportButton;
     },
@@ -638,22 +627,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __exportStudy: function(studyData) {
-      const params = {
-        url: {
-          projectId: studyData["uuid"]
-        }
-      };
-      return osparc.data.Resources.fetch("studies", "export", params);
-    },
+      const exportTask = new osparc.component.task.Export(studyData);
+      const tasks = osparc.component.task.Tasks.getInstance();
+      tasks.addTask(exportTask);
+      exportTask.setSubtitle(this.tr("Preparing files"));
+      const text = this.tr("Exporting process started and added to the background tasks");
+      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
-    __updateDeleteStudiesButton: function(studiesDeleteButton) {
-      const nSelected = this.__userStudyContainer.getSelection().length;
-      if (nSelected) {
-        studiesDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
-        studiesDeleteButton.setVisibility("visible");
-      } else {
-        studiesDeleteButton.setVisibility("excluded");
-      }
+      const url = window.location.href + "v0/projects/" + studyData["uuid"] + "/export";
+      osparc.utils.Utils.downloadLink(url)
+        .then(() => {
+          const textSuccess = this.tr("Download started");
+          exportTask.setSubtitle(textSuccess);
+        })
+        .catch(() => {
+          const textError = this.tr("Something went wrong Exporting the study");
+          osparc.component.message.FlashMessenger.getInstance().logAs(textError, "ERROR");
+        })
+        .finally(() => {
+          tasks.removeTask(exportTask);
+        });
     },
 
     __importStudy: function(file) {
@@ -665,7 +658,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
       placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
-      placeholderStudyCard.setStateLabel(this.tr("Uploading file"));
+      const uploadingLabel = this.tr("Uploading file");
+      placeholderStudyCard.setStateLabel(uploadingLabel);
+      importTask.setSubtitle(uploadingLabel);
       this.__userStudyContainer.addAt(placeholderStudyCard, 1);
 
       const body = new FormData();
@@ -684,7 +679,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.addEventListener("load", () => {
         // transferComplete
         if (req.status == 200) {
-          placeholderStudyCard.setStateLabel(this.tr("Processing study..."));
+          const processinglabel = this.tr("Processing study");
+          placeholderStudyCard.setStateLabel(processinglabel);
+          importTask.setSubtitle(processinglabel);
           placeholderStudyCard.getProgressBar().exclude();
           const data = JSON.parse(req.responseText);
           const params = {
@@ -717,6 +714,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
+    },
+
+    __updateDeleteStudiesButton: function(studiesDeleteButton) {
+      const nSelected = this.__userStudyContainer.getSelection().length;
+      if (nSelected) {
+        studiesDeleteButton.setLabel(nSelected > 1 ? this.tr("Delete selected")+" ("+nSelected+")" : this.tr("Delete"));
+        studiesDeleteButton.setVisibility("visible");
+      } else {
+        studiesDeleteButton.setVisibility("excluded");
+      }
     },
 
     __deleteStudy: function(studyData) {
