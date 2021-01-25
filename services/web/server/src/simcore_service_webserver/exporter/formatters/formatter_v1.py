@@ -145,12 +145,18 @@ async def upload_file_to_storage(
     user_id: int,
     session: ClientSession,
 ) -> None:
-    upload_url = await get_file_upload_url(
-        app=app,
-        location_id=str(link_and_path.storage_type),
-        fileId=str(link_and_path.relative_path_to_file),
-        user_id=user_id,
-    )
+    try:
+        upload_url = await get_file_upload_url(
+            app=app,
+            location_id=str(link_and_path.storage_type),
+            fileId=str(link_and_path.relative_path_to_file),
+            user_id=user_id,
+        )
+    except Exception as e:
+        raise ExporterException(
+            f"While requesting upload for {str(link_and_path.relative_path_to_file)}"
+            f"the following error occurred {str(e)}"
+        ) from e
     log.debug(">>> upload url >>> %s", upload_url)
 
     async def file_sender(file_name=None):
