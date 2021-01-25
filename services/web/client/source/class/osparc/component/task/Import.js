@@ -46,11 +46,11 @@ qx.Class.define("osparc.component.task.Import", {
 
     __builyLayout: function() {
       this.getChildControl("icon");
-
-      const label = this.getChildControl("label");
-      label.setValue(this.tr("Importing Study"));
-
+      this.getChildControl("title");
+      this.getChildControl("subtitle");
       this.getChildControl("stop");
+
+      this.setTitle(this.tr("Importing Study"));
     },
 
     // overridden

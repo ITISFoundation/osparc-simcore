@@ -48,11 +48,11 @@ qx.Class.define("osparc.component.task.Export", {
 
     __builyLayout: function() {
       this.getChildControl("icon");
-
-      const label = this.getChildControl("label");
-      label.setValue(this.tr("Exporting: ") + this.__study.name);
-
+      this.getChildControl("title");
+      this.getChildControl("subtitle");
       this.getChildControl("stop");
+
+      this.setTitle(this.tr("Exporting ") + this.__study.name);
     },
 
     // overridden

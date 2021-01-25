@@ -33,6 +33,22 @@ qx.Class.define("osparc.component.task.Task", {
     });
   },
 
+  properties: {
+    title: {
+      check: "String",
+      init: "",
+      nullable: true,
+      event: "changeTitle"
+    },
+
+    subtitle: {
+      check: "String",
+      init: "",
+      nullable: true,
+      event: "changeSubtitle"
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -43,10 +59,16 @@ qx.Class.define("osparc.component.task.Task", {
           });
           this._add(control);
           break;
-        case "label":
+        case "title":
+          control = new qx.ui.basic.Label();
+          this.bind("title", control, "value");
+          this._add(control);
+          break;
+        case "subtitle":
           control = new qx.ui.basic.Label().set({
             allowGrowX: true
           });
+          this.bind("subtitle", control, "value");
           this._add(control, {
             flex: 1
           });
