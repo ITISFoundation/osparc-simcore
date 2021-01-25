@@ -13,7 +13,7 @@ from .logging_utils import log_decorator
 logger = logging.getLogger(__file__)
 
 
-def _mark_node_dirty(
+def _mark_node_as_dirty(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ):
     nodes_data_view[str(node_id)]["dirty"] = True
@@ -25,11 +25,11 @@ def _is_node_dirty(
     return nodes_data_view[str(node_id)].get("dirty", False)
 
 
-def _node_computational(node_key: str) -> bool:
+def _is_node_computational(node_key: str) -> bool:
     return to_node_class(node_key) == NodeClass.COMPUTATIONAL
 
 
-async def _node_outdated(
+async def _is_node_outdated(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = nodes_data_view[str(node_id)]
@@ -82,10 +82,10 @@ async def create_minimal_computational_graph_based_on_selection(
 
     # first pass, find the nodes that are dirty (outdated)
     for node in nx.topological_sort(full_dag_graph):
-        if _node_computational(nodes_data_view[node]["key"]) and await _node_outdated(
-            nodes_data_view, node
-        ):
-            _mark_node_dirty(nodes_data_view, node)
+        if _is_node_computational(
+            nodes_data_view[node]["key"]
+        ) and await _is_node_outdated(nodes_data_view, node):
+            _mark_node_as_dirty(nodes_data_view, node)
 
     # second pass, detect all the nodes that need to be run
     minimal_selection_nodes: Set[NodeID] = set()
@@ -95,7 +95,7 @@ async def create_minimal_computational_graph_based_on_selection(
             {
                 n
                 for n, _ in nodes_data_view
-                if _node_computational(nodes_data_view[n]["key"])
+                if _is_node_computational(nodes_data_view[n]["key"])
                 and (force_restart or _is_node_dirty(nodes_data_view, n))
             }
         )
@@ -106,7 +106,7 @@ async def create_minimal_computational_graph_based_on_selection(
                 set(
                     n
                     for n in nx.bfs_tree(full_dag_graph, str(node), reverse=True)
-                    if _node_computational(nodes_data_view[n]["key"])
+                    if _is_node_computational(nodes_data_view[n]["key"])
                     and (force_restart or _is_node_dirty(nodes_data_view, n))
                 )
             )
