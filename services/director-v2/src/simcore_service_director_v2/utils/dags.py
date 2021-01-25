@@ -59,7 +59,7 @@ async def _is_node_outdated(
 
 
 @log_decorator(logger=logger)
-def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
+def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():

@@ -36,7 +36,7 @@ from ...utils.computations import (
     is_pipeline_stopped,
 )
 from ...utils.dags import (
-    create_complete_dag_graph,
+    create_complete_dag,
     create_minimal_computational_graph_based_on_selection,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
@@ -119,7 +119,7 @@ async def create_computation(
             )
 
         # create the complete DAG graph
-        complete_dag = create_complete_dag_graph(project.workbench)
+        complete_dag = create_complete_dag(project.workbench)
         # find the minimal viable graph to be run
         computational_dag = await create_minimal_computational_graph_based_on_selection(
             full_dag_graph=complete_dag,
