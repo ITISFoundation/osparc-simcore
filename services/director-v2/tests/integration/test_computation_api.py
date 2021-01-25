@@ -6,6 +6,7 @@
 # pylint:disable=too-many-arguments
 
 from copy import deepcopy
+from pprint import pformat
 from random import randint
 from typing import Any, Callable, Dict, List
 from uuid import UUID, uuid4
@@ -389,6 +390,7 @@ def test_run_computation(
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
+    fake_workbench_adjacency: Dict[str, Any],
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
@@ -401,6 +403,7 @@ def test_run_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
+    # check the contents is correct
     assert task_out.id == sleepers_project.uuid
     assert task_out.state == RunningState.PUBLISHED
     assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
@@ -408,6 +411,14 @@ def test_run_computation(
         task_out.stop_url
         == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
+    for key, list_value in task_out.pipeline.items():
+        assert (
+            str(key) in fake_workbench_adjacency
+        ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
+        for item in list_value:
+            assert (
+                str(item) in fake_workbench_adjacency[str(key)]
+            ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
 
     # wait for the computation to finish
     task_out = _assert_pipeline_status(
@@ -441,6 +452,7 @@ def test_run_computation(
         force_restart=True,
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
+    # check the contents is correct
     assert task_out.id == sleepers_project.uuid
     assert task_out.state == RunningState.PUBLISHED
     assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
@@ -448,6 +460,14 @@ def test_run_computation(
         task_out.stop_url
         == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
+    for key, list_value in task_out.pipeline.items():
+        assert (
+            str(key) in fake_workbench_adjacency
+        ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
+        for item in list_value:
+            assert (
+                str(item) in fake_workbench_adjacency[str(key)]
+            ), f"expected adjacency list {pformat(fake_workbench_adjacency)}, received list {pformat(task_out.pipeline)}"
 
     # wait for the computation to finish
     task_out = _assert_pipeline_status(
