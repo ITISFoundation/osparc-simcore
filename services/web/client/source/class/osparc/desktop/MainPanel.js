@@ -40,6 +40,9 @@ qx.Class.define("osparc.desktop.MainPanel", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
+    const wbToolbar = this.__wbToolbar = new osparc.desktop.WorkbenchToolbar();
+    this._add(wbToolbar);
+
     const hBox = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
       allowGrowY: true
     });
@@ -60,6 +63,7 @@ qx.Class.define("osparc.desktop.MainPanel", {
   },
 
   members: {
+    __wbToolbar: null,
     __mainView: null,
     __controlsBar: null,
 
@@ -68,6 +72,10 @@ qx.Class.define("osparc.desktop.MainPanel", {
       this.__mainView.add(newWidget, {
         flex: 1
       });
+    },
+
+    getToolbar: function() {
+      return this.__wbToolbar;
     },
 
     getControls: function() {
