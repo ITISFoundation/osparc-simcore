@@ -96,7 +96,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           export: {
             useCache: false,
-            method: "POST",
+            method: "GET",
             // url: statics.API + "/projects/{projectId}:export"
             url: statics.API + "/projects/{projectId}/export"
           },
