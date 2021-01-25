@@ -216,10 +216,16 @@ qx.Class.define("osparc.utils.Utils", {
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
             resolve();
+          } else {
+            reject();
           }
         });
-        xhr.addEventListener("error", () => reject());
-        xhr.addEventListener("abort", () => reject());
+        xhr.addEventListener("error", () => {
+          reject();
+        });
+        xhr.addEventListener("abort", () => {
+          reject();
+        });
         xhr.send();
       });
     },
