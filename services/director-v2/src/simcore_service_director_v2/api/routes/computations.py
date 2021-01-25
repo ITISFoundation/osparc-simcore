@@ -36,6 +36,7 @@ from ...utils.computations import (
     is_pipeline_stopped,
 )
 from ...utils.dags import (
+    compute_pipeline_details,
     create_complete_dag,
     create_minimal_computational_graph_based_on_selection,
 )
@@ -159,7 +160,9 @@ async def create_computation(
             state=RunningState.PUBLISHED
             if job.start_pipeline
             else RunningState.NOT_STARTED,
-            pipeline=nx.to_dict_of_lists(computational_dag),
+            pipeline_details=await compute_pipeline_details(
+                complete_dag, computational_dag
+            ),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"
             if job.start_pipeline
@@ -193,8 +196,9 @@ async def get_computation(
     try:
         # check that project actually exists
         # TODO: get a copy of the project and process it here instead!
-        await project_repo.get_project(project_id)
-
+        project: ProjectAtDB = await project_repo.get_project(project_id)
+        # create the complete DAG graph
+        complete_dag = create_complete_dag(project.workbench)
         # get the project pipeline
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
@@ -204,7 +208,9 @@ async def get_computation(
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             project_id
         )
-        dag_graph: nx.DiGraph = nx.from_dict_of_lists(pipeline_at_db.dag_adjacency_list)
+        dag_graph: nx.DiGraph = nx.from_dict_of_lists(
+            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
+        )
         # filter the tasks by the effective pipeline
         filtered_tasks = [
             t for t in comp_tasks if str(t.node_id) in list(dag_graph.nodes())
@@ -223,7 +229,7 @@ async def get_computation(
         task_out = ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline=pipeline_at_db.dag_adjacency_list,
+            pipeline_details=await compute_pipeline_details(complete_dag, dag_graph),
             url=f"{request.url.remove_query_params('user_id')}",
             stop_url=f"{request.url.remove_query_params('user_id')}:stop"
             if is_pipeline_running(pipeline_state)

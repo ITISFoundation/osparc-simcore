@@ -395,12 +395,12 @@ def _assert_computation_task_out_obj(
     assert task_out.id == project.uuid
     assert task_out.state == exp_task_state
     assert task_out.url == f"{client.base_url}/v2/computations/{project.uuid}"
-    assert (
-        task_out.stop_url == f"{client.base_url}/v2/computations/{project.uuid}:stop"
-        if exp_task_state in [RunningState.SUCCESS]
+    assert task_out.stop_url == (
+        f"{client.base_url}/v2/computations/{project.uuid}:stop"
+        if exp_task_state in [RunningState.PUBLISHED, RunningState.PENDING]
         else None
     )
-    for key, list_value in task_out.pipeline.items():
+    for key, list_value in task_out.pipeline_details.adjacency_list.items():
         assert (
             str(key) in exp_adjacency
         ), f"expected adjacency list {pformat(exp_adjacency)}, received list {pformat(task_out.pipeline)}"
@@ -429,7 +429,7 @@ def test_run_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
-    # check the contents is correct
+    # check the contents is correctb
     _assert_computation_task_out_obj(
         client,
         task_out,

@@ -1,3 +1,4 @@
+from enum import Enum, unique
 from typing import Dict, List, Optional
 from uuid import UUID
 
@@ -11,14 +12,44 @@ from ..schemas.constants import UserID
 TaskID = UUID
 
 
+@unique
+class NodeIOState(str, Enum):
+    OK = "OK"
+    OUTDATED = "OUTDATED"
+
+
+@unique
+class NodeRunnableState(str, Enum):
+    WAITING_FOR_DEPENDENCIES = "WAITING_FOR_DEPENDENCIES"
+    READY = "READY"
+
+
+class NodeState(BaseModel):
+    io_state: NodeIOState = Field(
+        ..., description="represents the state of the inputs outputs"
+    )
+    runnable_state: NodeRunnableState = Field(
+        ..., description="represent the runnable state of the node"
+    )
+
+
+class PipelineDetails(BaseModel):
+    adjacency_list: Dict[NodeID, List[NodeID]] = Field(
+        ..., description="The adjacency list in terms of {NodeID: [successor NodeID]}"
+    )
+    node_states: Dict[NodeID, NodeState] = Field(
+        ..., description="The states of each of the pipeline node"
+    )
+
+
 class ComputationTask(BaseModel):
     id: TaskID = Field(..., description="the id of the computation task")
     state: RunningState = Field(..., description="the state of the computational task")
     result: Optional[str] = Field(
         None, description="the result of the computational task"
     )
-    pipeline: Dict[NodeID, List[NodeID]] = Field(
-        ..., description="the corresponding pipeline in terms of node uuids"
+    pipeline_details: PipelineDetails = Field(
+        ..., description="the details of the generated pipeline"
     )
 
 

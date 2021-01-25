@@ -8,6 +8,12 @@ from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import PortLink
 from models_library.utils.nodes import compute_node_hash
 
+from ..models.schemas.comp_tasks import (
+    NodeIOState,
+    NodeRunnableState,
+    NodeState,
+    PipelineDetails,
+)
 from .computations import NodeClass, to_node_class
 from .logging_utils import log_decorator
 
@@ -81,11 +87,6 @@ def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
     return dag_graph
 
 
-class NodeIOState(Enum):
-    OK = "OK"
-    OUTDATED = "OUTDATED"
-
-
 async def compute_node_io_state(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> NodeIOState:
@@ -104,11 +105,6 @@ async def compute_node_io_state(
     if computed_hash != node["run_hash"]:
         return NodeIOState.OUTDATED
     return NodeIOState.OK
-
-
-class NodeRunnableState(Enum):
-    WAITING_FOR_DEPENDENCIES = "WAITING_FOR_DEPENDENCIES"
-    READY = "READY"
 
 
 async def compute_node_runnable_state(nodes_data_view, node_id) -> NodeRunnableState:
@@ -141,6 +137,14 @@ def node_needs_computation(
 
 
 @log_decorator(logger=logger)
+async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
+    nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
+    for node in nx.topological_sort(complete_dag):
+        if _is_node_computational(nodes_data_view[node]["key"]):
+            await compute_node_states(nodes_data_view, node)
+
+
+@log_decorator(logger=logger)
 async def create_minimal_computational_graph_based_on_selection(
     complete_dag: nx.DiGraph, selected_nodes: List[NodeID], force_restart: bool
 ) -> nx.DiGraph:
@@ -148,9 +152,7 @@ async def create_minimal_computational_graph_based_on_selection(
 
     try:
         # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
-        for node in nx.topological_sort(complete_dag):
-            if _is_node_computational(nodes_data_view[node]["key"]):
-                await compute_node_states(nodes_data_view, node)
+        await _set_computational_nodes_states(complete_dag)
     except nx.NetworkXUnfeasible:
         # not acyclic, return an empty graph
         return nx.DiGraph()
@@ -180,6 +182,26 @@ async def create_minimal_computational_graph_based_on_selection(
             )
 
     return complete_dag.subgraph(minimal_nodes_selection)
+
+
+@log_decorator(logger=logger)
+async def compute_pipeline_details(
+    complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph
+) -> PipelineDetails:
+
+    # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
+    await _set_computational_nodes_states(complete_dag)
+    return PipelineDetails(
+        adjacency_list=nx.to_dict_of_lists(pipeline_dag),
+        node_states={
+            node_id: NodeState(
+                io_state=node_data.get("io_state"),
+                runnable_state=node_data.get("runnable_state"),
+            )
+            for node_id, node_data in complete_dag.nodes.data()
+            if node_id in pipeline_dag.nodes
+        },
+    )
 
 
 @log_decorator(logger=logger)
