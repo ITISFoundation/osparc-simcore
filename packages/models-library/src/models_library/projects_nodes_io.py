@@ -66,7 +66,7 @@ class BaseFileLink(BaseModel):
         description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
         alias="eTag",
     )
-    label: str = Field(
+    label: Optional[str] = Field(
         None,
         description="The real file name",
         examples=["MyFile.txt"],
