@@ -454,7 +454,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (osparc.data.model.Study.isStudySecondary(userStudy)) {
           return;
         }
-        this.__userStudyContainer.add(this.__createStudyItem(userStudy));
+        const studyItem = this.__createStudyItem(userStudy);
+        studyItem.addListener("updateQualityStudy", e => {
+          const updatedStudyData = e.getData();
+          updatedStudyData["resourceType"] = "study";
+          this._resetStudyItem(updatedStudyData);
+        }, this);
+        this.__userStudyContainer.add(studyItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
@@ -562,11 +568,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getPermissionsMenuButton: function(studyData) {
       const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
       permissionsButton.addListener("execute", () => {
-        const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
-        permissionsView.addListener("updateStudy", e => {
-          const studyId = e.getData();
-          this._reloadStudy(studyId);
-        }, this);
+        this.__openPermissions(studyData);
       }, this);
       return permissionsButton;
     },
@@ -581,6 +583,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__openClassifiers(studyData);
       }, this);
       return classifiersButton;
+    },
+
+    __openPermissions: function(studyData) {
+      const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
+      permissionsView.addListener("updateStudy", e => {
+        const studyId = e.getData();
+        this._reloadStudy(studyId);
+      }, this);
     },
 
     __openClassifiers: function(studyData) {

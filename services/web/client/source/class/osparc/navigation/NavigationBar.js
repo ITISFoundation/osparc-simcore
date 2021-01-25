@@ -31,12 +31,12 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let navBar = new osparc.desktop.NavigationBar();
+ *   let navBar = new osparc.navigation.NavigationBar();
  *   this.getRoot().add(navBar);
  * </pre>
  */
 
-qx.Class.define("osparc.desktop.NavigationBar", {
+qx.Class.define("osparc.navigation.NavigationBar", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
@@ -62,7 +62,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
   },
 
   events: {
-    "nodeSelected": "qx.event.type.Data",
     "dashboardPressed": "qx.event.type.Event",
     "slidesStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event"
@@ -104,8 +103,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     __startSlidesBtn: null,
     __stopSlidesBtn: null,
     __studyTitle: null,
-    __navNodes: null,
-    __navNodesLayout: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
@@ -146,8 +143,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
             });
         }
       }, this);
-
-      this.__navNodesLayout = this.getChildControl("navigation-nodes-path-container");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -212,23 +207,6 @@ qx.Class.define("osparc.desktop.NavigationBar", {
           });
           this._add(control);
           break;
-        case "navigation-nodes-path-container": {
-          control = new qx.ui.container.Scroll();
-          const breadcrumbNavigation = this.__navNodes = new osparc.component.widget.BreadcrumbNavigation();
-          breadcrumbNavigation.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
-          control.add(breadcrumbNavigation);
-          this._add(control, {
-            flex: 1
-          });
-          break;
-        }
-        case "tasks-button": {
-          control = new osparc.component.task.TasksButton();
-          this._add(control);
-          break;
-        }
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
@@ -258,68 +236,26 @@ qx.Class.define("osparc.desktop.NavigationBar", {
       return this.__dashboardBtn;
     },
 
-    __populateWorkbenchNodesLayout: function() {
-      const study = this.getStudy();
-      const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
-      if (nodeIds.length === 1) {
-        this.__studyTitle.show();
-        this.__navNodesLayout.exclude();
-      } else {
-        this.__studyTitle.exclude();
-        this.__navNodesLayout.show();
-        this.__navNodes.populateButtons(nodeIds, "slash");
-      }
-    },
-
-    __populateGuidedNodesLayout: function() {
-      this.__navNodesLayout.show();
-      this.__studyTitle.exclude();
-
-      const study = this.getStudy();
-      const slideShow = study.getUi().getSlideshow();
-      const nodes = [];
-      for (let nodeId in slideShow) {
-        const node = slideShow[nodeId];
-        nodes.push({
-          ...node,
-          nodeId
-        });
-      }
-      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-      const nodeIds = [];
-      nodes.forEach(node => {
-        nodeIds.push(node.nodeId);
-      });
-
-      this.__navNodes.populateButtons(nodeIds, "arrow");
-    },
-
     _applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "dashboard":
           this.__dashboardLabel.show();
           this.__dashboardBtn.exclude();
           this.__readOnlyIcon.exclude();
-          this.__resetSlideCtrlBtnsVis(false);
+          this.__resetSlidesBtnsVis(false);
           this.__studyTitle.exclude();
-          this.__navNodesLayout.exclude();
           break;
         case "workbench":
-          this.__dashboardLabel.exclude();
-          this.__dashboardBtn.show();
-          this.__resetSlideCtrlBtnsVis(true);
-          this.__populateWorkbenchNodesLayout();
-          break;
         case "slideshow":
           this.__dashboardLabel.exclude();
           this.__dashboardBtn.show();
-          this.__resetSlideCtrlBtnsVis(true);
-          this.__populateGuidedNodesLayout();
+          this.__resetSlidesBtnsVis(true);
+          this.__studyTitle.show();
           break;
       }
     },
 
-    __resetSlideCtrlBtnsVis: function() {
+    __resetSlidesBtnsVis: function() {
       const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
       const context = ["workbench", "slideshow"].includes(this.getPageContext());
       if (areSlidesEnabled && context) {
@@ -340,7 +276,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __createSlideStartBtn: function() {
-      const startBtn = new qx.ui.form.Button(this.tr("Start Guided mode"), "@FontAwesome5Solid/caret-square-right/16").set({
+      const startBtn = new qx.ui.form.Button(this.tr("Guided Mode"), "@FontAwesome5Solid/caret-square-right/16").set({
         ...this.self().BUTTON_OPTIONS
       });
       startBtn.addListener("execute", () => {
@@ -350,7 +286,7 @@ qx.Class.define("osparc.desktop.NavigationBar", {
     },
 
     __createSlideStopBtn: function() {
-      const stopBtn = new qx.ui.form.Button(this.tr("Stop Guided mode"), "@FontAwesome5Solid/stop/16").set({
+      const stopBtn = new qx.ui.form.Button(this.tr("Guided Mode"), "@FontAwesome5Solid/stop/16").set({
         ...this.self().BUTTON_OPTIONS
       });
       stopBtn.addListener("execute", () => {
@@ -549,16 +485,8 @@ qx.Class.define("osparc.desktop.NavigationBar", {
         study.bind("readOnly", this.__readOnlyIcon, "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-
         study.getUi().addListener("changeSlideshow", () => {
-          this.__resetSlideCtrlBtnsVis();
-        });
-        study.getUi().addListener("changeCurrentNodeId", () => {
-          if (this.getPageContext() === "workbench") {
-            this.__populateWorkbenchNodesLayout();
-          } else if (this.getPageContext() === "slideshow") {
-            this.__populateGuidedNodesLayout();
-          }
+          this.__resetSlidesBtnsVis();
         });
       }
     }
