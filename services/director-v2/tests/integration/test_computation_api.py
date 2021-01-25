@@ -25,6 +25,7 @@ from simcore_service_director_v2.models.domains.projects import ProjectAtDB
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from sqlalchemy import literal_column
 from starlette import status
+from starlette.responses import Response
 from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
@@ -40,6 +41,74 @@ core_services = [
 ops_services = ["minio", "adminer"]
 
 COMPUTATION_URL: str = "v2/computations"
+
+# HELPERS ---------------------------------------
+
+
+def _assert_pipeline_status(
+    client: TestClient,
+    url: AnyHttpUrl,
+    user_id: PositiveInt,
+    project_uuid: UUID,
+    wait_for_states: List[RunningState] = None,
+) -> ComputationTaskOut:
+    if not wait_for_states:
+        wait_for_states = [
+            RunningState.SUCCESS,
+            RunningState.FAILED,
+            RunningState.ABORTED,
+        ]
+
+    MAX_TIMEOUT_S = 60
+
+    @retry(
+        stop=stop_after_delay(MAX_TIMEOUT_S),
+        wait=wait_random(0, 2),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    )
+    def check_pipeline_state() -> ComputationTaskOut:
+        response = client.get(url, params={"user_id": user_id})
+        assert (
+            response.status_code == status.HTTP_202_ACCEPTED
+        ), f"response code is {response.status_code}, error: {response.text}"
+        task_out = ComputationTaskOut.parse_obj(response.json())
+        assert task_out.id == project_uuid
+        assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
+        print("Pipeline is in ", task_out.state)
+        assert task_out.state in wait_for_states
+        return task_out
+
+    task_out = check_pipeline_state()
+
+    return task_out
+
+
+def _create_pipeline(
+    client: TestClient,
+    *,
+    project: ProjectAtDB,
+    user_id: PositiveInt,
+    start_pipeline: bool,
+    expected_response_status_code: status,
+    **kwargs,
+) -> Response:
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project.uuid),
+            "start_pipeline": start_pipeline,
+            **kwargs,
+        },
+    )
+    assert (
+        response.status_code == expected_response_status_code
+    ), f"response code is {response.status_code}, error: {response.text}"
+    return response
+
+
+# FIXTURES ---------------------------------------
 
 
 @pytest.fixture(autouse=True)
@@ -159,6 +228,9 @@ def update_project_workbench_with_comp_tasks(postgres_db: sa.engine.Engine) -> C
     yield updator
 
 
+# TESTS ---------------------------------------
+
+
 @pytest.mark.parametrize(
     "body,exp_response",
     [
@@ -194,56 +266,13 @@ def test_start_empty_computation(
 ):
     # send an empty project to process
     empty_project = project()
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(empty_project.uuid),
-            "start_pipeline": True,
-        },
+    _create_pipeline(
+        client,
+        project=empty_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
-    assert (
-        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    ), f"response code is {response.status_code}, error: {response.text}"
-
-
-def _assert_pipeline_status(
-    client: TestClient,
-    url: AnyHttpUrl,
-    user_id: PositiveInt,
-    project_uuid: UUID,
-    wait_for_states: List[RunningState] = None,
-) -> ComputationTaskOut:
-    if not wait_for_states:
-        wait_for_states = [
-            RunningState.SUCCESS,
-            RunningState.FAILED,
-            RunningState.ABORTED,
-        ]
-
-    MAX_TIMEOUT_S = 60
-
-    @retry(
-        stop=stop_after_delay(MAX_TIMEOUT_S),
-        wait=wait_random(0, 2),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    )
-    def check_pipeline_state() -> ComputationTaskOut:
-        response = client.get(url, params={"user_id": user_id})
-        assert (
-            response.status_code == status.HTTP_202_ACCEPTED
-        ), f"response code is {response.status_code}, error: {response.text}"
-        task_out = ComputationTaskOut.parse_obj(response.json())
-        assert task_out.id == project_uuid
-        assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
-        print("Pipeline is in ", task_out.state)
-        assert task_out.state in wait_for_states
-        return task_out
-
-    task_out = check_pipeline_state()
-
-    return task_out
 
 
 @pytest.mark.parametrize(
@@ -268,23 +297,18 @@ def test_run_partial_computation(
 ):
     # send a valid project with sleepers
     sleepers_project = project(workbench=fake_workbench_without_outputs)
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(sleepers_project.uuid),
-            "start_pipeline": True,
-            "subgraph": [
-                str(node_id)
-                for index, node_id in enumerate(sleepers_project.workbench)
-                if index in subgraph_elements
-            ],
-        },
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_201_CREATED,
+        subgraph=[
+            str(node_id)
+            for index, node_id in enumerate(sleepers_project.workbench)
+            if index in subgraph_elements
+        ],
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
-
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
@@ -319,42 +343,34 @@ def test_run_partial_computation(
     # run it a second time. the tasks are all up-to-date, nothing should be run
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(sleepers_project.uuid),
-            "start_pipeline": True,
-            "subgraph": [
-                str(node_id)
-                for index, node_id in enumerate(sleepers_project.workbench)
-                if index in subgraph_elements
-            ],
-        },
+
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        subgraph=[
+            str(node_id)
+            for index, node_id in enumerate(sleepers_project.workbench)
+            if index in subgraph_elements
+        ],
     )
-    assert (
-        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    ), f"response code is {response.status_code}, error: {response.text}"
 
     # force run it this time.
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(sleepers_project.uuid),
-            "start_pipeline": True,
-            "subgraph": [
-                str(node_id)
-                for index, node_id in enumerate(sleepers_project.workbench)
-                if index in subgraph_elements
-            ],
-            "force_restart": True,
-        },
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_201_CREATED,
+        subgraph=[
+            str(node_id)
+            for index, node_id in enumerate(sleepers_project.workbench)
+            if index in subgraph_elements
+        ],
+        force_restart=True,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
-
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
@@ -372,21 +388,17 @@ def test_run_computation(
     user_id: PositiveInt,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
+    update_project_workbench_with_comp_tasks: Callable,
 ):
-    # send a valid project with sleepers
     sleepers_project = project(workbench=fake_workbench_without_outputs)
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(sleepers_project.uuid),
-            "start_pipeline": True,
-        },
+    # send a valid project with sleepers
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
-
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
@@ -397,7 +409,7 @@ def test_run_computation(
         == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
 
-    # now wait for the computation to finish
+    # wait for the computation to finish
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
@@ -408,6 +420,42 @@ def test_run_computation(
         task_out.state == RunningState.SUCCESS
     ), f"the pipeline complete with state {task_out.state}"
 
+    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
+    # run again should return a 422 cause everything is uptodate
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    )
+
+    # now force run again
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_201_CREATED,
+        force_restart=True,
+    )
+    task_out = ComputationTaskOut.parse_obj(response.json())
+    assert task_out.id == sleepers_project.uuid
+    assert task_out.state == RunningState.PUBLISHED
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert (
+        task_out.stop_url
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    )
+
+    # wait for the computation to finish
+    task_out = _assert_pipeline_status(
+        client, task_out.url, user_id, sleepers_project.uuid
+    )
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
+    assert task_out.stop_url == None
+
 
 def test_abort_computation(
     client: TestClient,
@@ -415,20 +463,15 @@ def test_abort_computation(
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
 ):
-    # send a valid project with sleepers
     sleepers_project = project(workbench=fake_workbench_without_outputs)
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(sleepers_project.uuid),
-            "start_pipeline": True,
-        },
+    # send a valid project with sleepers
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
-
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
@@ -485,16 +528,15 @@ def test_update_and_delete_computation(
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
 ):
-    # send a valid project with sleepers
     sleepers_project = project(workbench=fake_workbench_without_outputs)
-    response = client.post(
-        COMPUTATION_URL,
-        json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},
+    # send a valid project with sleepers
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=False,
+        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
-
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
@@ -502,14 +544,13 @@ def test_update_and_delete_computation(
     assert not task_out.stop_url
 
     # update the pipeline
-    response = client.post(
-        COMPUTATION_URL,
-        json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=False,
+        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
-
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
@@ -517,14 +558,13 @@ def test_update_and_delete_computation(
     assert not task_out.stop_url
 
     # update the pipeline
-    response = client.post(
-        COMPUTATION_URL,
-        json={"user_id": user_id, "project_id": str(sleepers_project.uuid)},
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=False,
+        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
-
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     assert task_out.id == sleepers_project.uuid
@@ -532,17 +572,13 @@ def test_update_and_delete_computation(
     assert not task_out.stop_url
 
     # start it now
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(sleepers_project.uuid),
-            "start_pipeline": True,
-        },
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_201_CREATED,
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
     task_out = ComputationTaskOut.parse_obj(response.json())
     assert task_out.id == sleepers_project.uuid
     assert task_out.state == RunningState.PUBLISHED
@@ -565,16 +601,13 @@ def test_update_and_delete_computation(
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
 
     # now try to update the pipeline, is expected to be forbidden
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(sleepers_project.uuid),
-        },
+    response = _create_pipeline(
+        client,
+        project=sleepers_project,
+        user_id=user_id,
+        start_pipeline=False,
+        expected_response_status_code=status.HTTP_403_FORBIDDEN,
     )
-    assert (
-        response.status_code == status.HTTP_403_FORBIDDEN
-    ), f"response code is {response.status_code}, error: {response.text}"
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
     response = client.delete(task_out.url, json={"user_id": user_id})
@@ -607,26 +640,21 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     )
 
     # this pipeline is not runnable as there are no computational services
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(project_with_dynamic_node.uuid),
-            "start_pipeline": True,
-        },
+    response = _create_pipeline(
+        client,
+        project=project_with_dynamic_node,
+        user_id=user_id,
+        start_pipeline=True,
+        expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
-    assert (
-        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    ), f"response code is {response.status_code}, error: {response.text}"
 
     # still this pipeline shall be createable if we do not want to start it
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(project_with_dynamic_node.uuid),
-            "start_pipeline": False,
-        },
+    response = _create_pipeline(
+        client,
+        project=project_with_dynamic_node,
+        user_id=user_id,
+        start_pipeline=False,
+        expected_response_status_code=status.HTTP_201_CREATED,
     )
     assert (
         response.status_code == status.HTTP_201_CREATED
