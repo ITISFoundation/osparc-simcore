@@ -1846,6 +1846,11 @@ paths:
                               description: url of the latest screenshot of the node
                               example:
                                 - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                            runHash:
+                              description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                              type: string
+                              example:
+                                - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                             inputs:
                               type: object
                               description: values of input properties
@@ -2283,6 +2288,11 @@ paths:
                               description: url of the latest screenshot of the node
                               example:
                                 - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                            runHash:
+                              description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                              type: string
+                              example:
+                                - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                             inputs:
                               type: object
                               description: values of input properties
@@ -2730,6 +2740,11 @@ paths:
                             description: url of the latest screenshot of the node
                             example:
                               - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                          runHash:
+                            description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                            type: string
+                            example:
+                              - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                           inputs:
                             type: object
                             description: values of input properties
@@ -3277,6 +3292,11 @@ components:
                   description: url of the latest screenshot of the node
                   example:
                     - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                runHash:
+                  description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                  type: string
+                  example:
+                    - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                 inputs:
                   type: object
                   description: values of input properties

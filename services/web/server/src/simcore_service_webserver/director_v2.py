@@ -130,9 +130,11 @@ async def start_pipeline(request: web.Request) -> web.Response:
     user_id = request[RQT_USERID_KEY]
     project_id = request.match_info.get("project_id", None)
     subgraph: Set[str] = set()
+    force_restart = False
     if request.can_read_body:
         body = await request.json()
         subgraph = body.get("subgraph")
+        force_restart = body.get("force_restart")
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
     log.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
@@ -141,6 +143,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
         "project_id": project_id,
         "start_pipeline": True,
         "subgraph": list(subgraph),  # sets are not natively json serializable
+        "force_restart": force_restart,
     }
 
     # request to director-v2

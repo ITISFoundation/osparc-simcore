@@ -718,13 +718,18 @@
           },
           "subgraph": {
             "title": "Subgraph",
-            "uniqueItems": true,
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
             },
             "description": "An optional set of nodes that must be executed, if empty the whole pipeline is executed"
+          },
+          "force_restart": {
+            "title": "Force Restart",
+            "type": "boolean",
+            "description": "if True will force re-running all dependent nodes",
+            "default": false
           }
         }
       },
@@ -1254,13 +1259,16 @@
             "title": "Defaultvalue",
             "anyOf": [
               {
-                "type": "string"
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
               },
               {
                 "type": "number"
               },
               {
-                "type": "integer"
+                "type": "string"
               }
             ]
           },
@@ -1318,13 +1326,16 @@
             "title": "Defaultvalue",
             "anyOf": [
               {
-                "type": "string"
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
               },
               {
                 "type": "number"
               },
               {
-                "type": "integer"
+                "type": "string"
               }
             ]
           },
