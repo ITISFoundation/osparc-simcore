@@ -322,59 +322,7 @@
         }
       }
     },
-    "/v0/solvers/{solver_name}/{version}": {
-      "get": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Get Solver By Name And Version",
-        "operationId": "get_solver_by_name_and_version",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Name",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
-              "type": "string"
-            },
-            "name": "solver_name",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Version",
-              "type": "string"
-            },
-            "name": "version",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Solver"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/solvers/{solver_id}/jobs/": {
+    "/v0/solvers/{solver_id}/jobs": {
       "get": {
         "tags": [
           "solvers"
@@ -400,7 +348,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Jobs V0 Solvers  Solver Id  Jobs  Get",
+                  "title": "Response List Jobs V0 Solvers  Solver Id  Jobs Get",
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Job"
@@ -461,6 +409,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_name}/{version}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Solver By Name And Version",
+        "operationId": "get_solver_by_name_and_version",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Name",
+              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "solver_name",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Solver"
                 }
               }
             }
