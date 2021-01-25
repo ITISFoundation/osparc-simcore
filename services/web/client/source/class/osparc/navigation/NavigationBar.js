@@ -207,6 +207,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this._add(control);
           break;
+        case "tasks-button": {
+          control = new osparc.component.task.TasksButton();
+          this._add(control);
+          break;
+        }
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
