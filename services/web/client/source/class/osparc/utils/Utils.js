@@ -199,22 +199,43 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     downloadLink: function(url, fileName) {
-      let xhr = new XMLHttpRequest();
-      xhr.open("GET", url, true);
-      xhr.responseType = "blob";
-      xhr.onload = () => {
-        console.log("onload", xhr);
-        if (xhr.status == 200) {
-          let blob = new Blob([xhr.response]);
-          let urlBlob = window.URL.createObjectURL(blob);
-          let downloadAnchorNode = document.createElement("a");
-          downloadAnchorNode.setAttribute("href", urlBlob);
-          downloadAnchorNode.setAttribute("download", fileName);
-          downloadAnchorNode.click();
-          downloadAnchorNode.remove();
+      return new Promise((resolve, reject) => {
+        let xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.responseType = "blob";
+        xhr.addEventListener("load", () => {
+          if (xhr.status == 200) {
+            let blob = new Blob([xhr.response]);
+            let urlBlob = window.URL.createObjectURL(blob);
+            let downloadAnchorNode = document.createElement("a");
+            downloadAnchorNode.setAttribute("href", urlBlob);
+            if (fileName === undefined) {
+              fileName = this.self().filenameFromContentDisposition(xhr);
+            }
+            downloadAnchorNode.setAttribute("download", fileName);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            resolve();
+          }
+        });
+        xhr.addEventListener("error", () => reject());
+        xhr.addEventListener("abort", () => reject());
+        xhr.send();
+      });
+    },
+
+    filenameFromContentDisposition: function(xhr) {
+      // https://stackoverflow.com/questions/40939380/how-to-get-file-name-from-content-disposition
+      let filename = "";
+      const disposition = xhr.getResponseHeader("Content-Disposition");
+      if (disposition && disposition.indexOf("attachment") !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, '');
         }
-      };
-      xhr.send();
+      }
+      return filename;
     },
 
     fileNameFromPresignedLink: function(link) {
