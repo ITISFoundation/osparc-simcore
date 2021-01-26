@@ -80,15 +80,19 @@ async def get_project_for_user(
     db = app[APP_PROJECT_DBAPI]
 
     project: Dict = None
+    is_template = False
     if include_templates:
         project = await db.get_template_project(project_uuid)
+        is_template = bool(project)
 
     if not project:
         project = await db.get_user_project(user_id, project_uuid)
 
     # adds state if it is not a template
     if include_state:
-        project["state"] = await get_project_state_for_user(user_id, project_uuid, app)
+        project["state"] = await get_project_state_for_user(
+            user_id, project_uuid, is_template, app
+        )
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
@@ -310,7 +314,7 @@ async def update_project_node_state(
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
     updated_project["state"] = await get_project_state_for_user(
-        user_id, project_id, app
+        user_id=user_id, project_uuid=project_id, is_template=False, app=app
     )
     return updated_project
 
@@ -333,7 +337,7 @@ async def update_project_node_progress(
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
     updated_project["state"] = await get_project_state_for_user(
-        user_id, project_id, app
+        user_id=user_id, project_uuid=project_id, is_template=False, app=app
     )
     return updated_project
 
@@ -379,7 +383,7 @@ async def update_project_node_outputs(
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
     updated_project["state"] = await get_project_state_for_user(
-        user_id, project_id, app
+        user_id=user_id, project_uuid=project_id, is_template=False, app=app
     )
     return updated_project, changed_keys
 
@@ -499,13 +503,19 @@ async def _get_project_lock_state(
 
 
 async def _get_project_running_state(
-    user_id: PositiveInt, project_uuid: str, app: web.Application
+    user_id: PositiveInt, project_uuid: str, is_template: bool, app: web.Application
 ) -> ProjectRunningState:
-    pipeline_state: RunningState = await get_pipeline_state(app, user_id, project_uuid)
+    pipeline_state: RunningState = (
+        RunningState.UNKNOWN
+        if is_template
+        else await get_pipeline_state(app, user_id, project_uuid)
+    )
     return ProjectRunningState(value=pipeline_state)
 
 
-async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
+async def get_project_state_for_user(
+    user_id: int, project_uuid: str, is_template: bool, app
+) -> Dict:
     """
     Returns state of a project with respect to a given user
     E.g.
@@ -517,7 +527,9 @@ async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
         might require a mock for this function to work properly
     """
     lock_state = await _get_project_lock_state(user_id, project_uuid, app)
-    running_state = await _get_project_running_state(user_id, project_uuid, app)
+    running_state = await _get_project_running_state(
+        user_id, project_uuid, is_template, app
+    )
     return ProjectState(
         locked=lock_state,
         state=running_state,
