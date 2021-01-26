@@ -7,7 +7,7 @@ from pydantic.types import PositiveInt
 from yarl import URL
 
 from models_library.projects_pipeline import ComputationTask
-from models_library.projects_state import RunningState
+from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
 from servicelib.rest_responses import wrap_as_envelope
@@ -91,7 +91,7 @@ async def create_or_update_pipeline(
 @log_decorator(logger=log)
 async def get_pipeline_state(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> RunningState:
+) -> Optional[ComputationTask]:
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(
@@ -104,14 +104,12 @@ async def get_pipeline_state(
             app, "GET", backend_url, expected_status=web.HTTPAccepted
         )
         task_out = ComputationTask.construct(**computation_task_out_dict)
-        return task_out.state
+        return task_out
     except _DirectorServiceError:
         log.warning(
-            "getting pipeline state for project %s failed. state is then %s",
+            "getting pipeline for project %s failed.",
             project_id,
-            RunningState.UNKNOWN,
         )
-        return RunningState.UNKNOWN
 
 
 @log_decorator(logger=log)
