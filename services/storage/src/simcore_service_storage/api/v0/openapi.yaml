@@ -24,10 +24,6 @@ servers:
           - v0
         default: v0
 tags:
-  - name: admins
-    description: Secured Admin-only calls
-  - name: tests
-    description: Operations available for testing
   - name: users
     description: Operations available to regular users
 paths:
@@ -44,113 +40,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                      status:
-                        type: string
-                      api_version:
-                        type: string
-                      version:
-                        type: string
-                    example:
-                      name: simcore-director-service
-                      status: SERVICE_RUNNING
-                      api_version: 0.1.0-dev+NJuzzD9S
-                      version: 0.1.0-dev+N127Mfv9H
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/HealthCheckEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/check/{action}':
     post:
       tags:
@@ -174,142 +66,16 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - path_value
-                - query_value
-                - body_value
-              properties:
-                path_value:
-                  type: string
-                query_value:
-                  type: string
-                body_value:
-                  type: object
-                  additionalProperties: true
-              example:
-                path_value: foo
-                query_value: bar
-                body_value:
-                  key1: value1
-                  key2: value2
+              $ref: '#/components/schemas/Fake'
       responses:
         '200':
           description: Echoes response based on action
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: object
-                    required:
-                      - path_value
-                      - query_value
-                      - body_value
-                    properties:
-                      path_value:
-                        type: string
-                      query_value:
-                        type: string
-                      body_value:
-                        type: object
-                        additionalProperties: true
-                    example:
-                      path_value: foo
-                      query_value: bar
-                      body_value:
-                        key1: value1
-                        key2: value2
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/FakeEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   /locations:
     get:
       tags:
@@ -328,109 +94,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                        id:
-                          type: integer
-                      example:
-                        filename: simcore.s3
-                        id: 0
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/FileLocationArrayEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/datasets':
     get:
       tags:
@@ -454,109 +120,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        dataset_id:
-                          type: string
-                        display_name:
-                          type: string
-                      example:
-                        dataset_uuid: 'N:id-aaaa'
-                        display_name: simcore-testing
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/DatasetMetaDataArrayEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/files/metadata':
     get:
       tags:
@@ -585,160 +151,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        file_uuid:
-                          type: string
-                        location_id:
-                          type: string
-                        location:
-                          type: string
-                        bucket_name:
-                          type: string
-                        object_name:
-                          type: string
-                        project_id:
-                          type: string
-                        project_name:
-                          type: string
-                        node_id:
-                          type: string
-                        node_name:
-                          type: string
-                        file_name:
-                          type: string
-                        user_id:
-                          type: string
-                        user_name:
-                          type: string
-                        file_id:
-                          type: string
-                        raw_file_path:
-                          type: string
-                        display_file_path:
-                          type: string
-                        created_at:
-                          type: string
-                        last_modified:
-                          type: string
-                        file_size:
-                          type: integer
-                        parent_id:
-                          type: string
-                      example:
-                        file_uuid: simcore-testing/105/1000/3
-                        location_id: '0'
-                        location_name: simcore.s3
-                        bucket_name: simcore-testing
-                        object_name: 105/10000/3
-                        project_id: '105'
-                        project_name: futurology
-                        node_id: '10000'
-                        node_name: alpha
-                        file_name: example.txt
-                        user_id: '12'
-                        user_name: dennis
-                        file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                        raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                        display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                        created_at: '2019-06-19T12:29:03.308611Z'
-                        last_modified: '2019-06-19T12:29:03.78852Z'
-                        file_size: 73
-                        parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/FileMetaDataArrayEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/datasets/{dataset_id}/metadata':
     get:
       tags:
@@ -767,160 +182,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        file_uuid:
-                          type: string
-                        location_id:
-                          type: string
-                        location:
-                          type: string
-                        bucket_name:
-                          type: string
-                        object_name:
-                          type: string
-                        project_id:
-                          type: string
-                        project_name:
-                          type: string
-                        node_id:
-                          type: string
-                        node_name:
-                          type: string
-                        file_name:
-                          type: string
-                        user_id:
-                          type: string
-                        user_name:
-                          type: string
-                        file_id:
-                          type: string
-                        raw_file_path:
-                          type: string
-                        display_file_path:
-                          type: string
-                        created_at:
-                          type: string
-                        last_modified:
-                          type: string
-                        file_size:
-                          type: integer
-                        parent_id:
-                          type: string
-                      example:
-                        file_uuid: simcore-testing/105/1000/3
-                        location_id: '0'
-                        location_name: simcore.s3
-                        bucket_name: simcore-testing
-                        object_name: 105/10000/3
-                        project_id: '105'
-                        project_name: futurology
-                        node_id: '10000'
-                        node_name: alpha
-                        file_name: example.txt
-                        user_id: '12'
-                        user_name: dennis
-                        file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                        raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                        display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                        created_at: '2019-06-19T12:29:03.308611Z'
-                        last_modified: '2019-06-19T12:29:03.78852Z'
-                        file_size: 73
-                        parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/FileMetaDataArrayEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/files/{fileId}/metadata':
     get:
       tags:
@@ -949,158 +213,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      file_uuid:
-                        type: string
-                      location_id:
-                        type: string
-                      location:
-                        type: string
-                      bucket_name:
-                        type: string
-                      object_name:
-                        type: string
-                      project_id:
-                        type: string
-                      project_name:
-                        type: string
-                      node_id:
-                        type: string
-                      node_name:
-                        type: string
-                      file_name:
-                        type: string
-                      user_id:
-                        type: string
-                      user_name:
-                        type: string
-                      file_id:
-                        type: string
-                      raw_file_path:
-                        type: string
-                      display_file_path:
-                        type: string
-                      created_at:
-                        type: string
-                      last_modified:
-                        type: string
-                      file_size:
-                        type: integer
-                      parent_id:
-                        type: string
-                    example:
-                      file_uuid: simcore-testing/105/1000/3
-                      location_id: '0'
-                      location_name: simcore.s3
-                      bucket_name: simcore-testing
-                      object_name: 105/10000/3
-                      project_id: '105'
-                      project_name: futurology
-                      node_id: '10000'
-                      node_name: alpha
-                      file_name: example.txt
-                      user_id: '12'
-                      user_name: dennis
-                      file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                      raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                      display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                      created_at: '2019-06-19T12:29:03.308611Z'
-                      last_modified: '2019-06-19T12:29:03.78852Z'
-                      file_size: 73
-                      parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/FileMetaDataEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
     patch:
       tags:
         - users
@@ -1121,224 +236,16 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                file_uuid:
-                  type: string
-                location_id:
-                  type: string
-                location:
-                  type: string
-                bucket_name:
-                  type: string
-                object_name:
-                  type: string
-                project_id:
-                  type: string
-                project_name:
-                  type: string
-                node_id:
-                  type: string
-                node_name:
-                  type: string
-                file_name:
-                  type: string
-                user_id:
-                  type: string
-                user_name:
-                  type: string
-                file_id:
-                  type: string
-                raw_file_path:
-                  type: string
-                display_file_path:
-                  type: string
-                created_at:
-                  type: string
-                last_modified:
-                  type: string
-                file_size:
-                  type: integer
-                parent_id:
-                  type: string
-              example:
-                file_uuid: simcore-testing/105/1000/3
-                location_id: '0'
-                location_name: simcore.s3
-                bucket_name: simcore-testing
-                object_name: 105/10000/3
-                project_id: '105'
-                project_name: futurology
-                node_id: '10000'
-                node_name: alpha
-                file_name: example.txt
-                user_id: '12'
-                user_name: dennis
-                file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                created_at: '2019-06-19T12:29:03.308611Z'
-                last_modified: '2019-06-19T12:29:03.78852Z'
-                file_size: 73
-                parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+              $ref: '#/components/schemas/FileMetaData'
       responses:
         '200':
           description: Returns file metadata
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      file_uuid:
-                        type: string
-                      location_id:
-                        type: string
-                      location:
-                        type: string
-                      bucket_name:
-                        type: string
-                      object_name:
-                        type: string
-                      project_id:
-                        type: string
-                      project_name:
-                        type: string
-                      node_id:
-                        type: string
-                      node_name:
-                        type: string
-                      file_name:
-                        type: string
-                      user_id:
-                        type: string
-                      user_name:
-                        type: string
-                      file_id:
-                        type: string
-                      raw_file_path:
-                        type: string
-                      display_file_path:
-                        type: string
-                      created_at:
-                        type: string
-                      last_modified:
-                        type: string
-                      file_size:
-                        type: integer
-                      parent_id:
-                        type: string
-                    example:
-                      file_uuid: simcore-testing/105/1000/3
-                      location_id: '0'
-                      location_name: simcore.s3
-                      bucket_name: simcore-testing
-                      object_name: 105/10000/3
-                      project_id: '105'
-                      project_name: futurology
-                      node_id: '10000'
-                      node_name: alpha
-                      file_name: example.txt
-                      user_id: '12'
-                      user_name: dennis
-                      file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                      raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                      display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                      created_at: '2019-06-19T12:29:03.308611Z'
-                      last_modified: '2019-06-19T12:29:03.78852Z'
-                      file_size: 73
-                      parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/FileMetaDataEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/files/{fileId}':
     get:
       tags:
@@ -1367,106 +274,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: object
-                    required:
-                      - link
-                    properties:
-                      link:
-                        type: string
-                    example:
-                      link: example_link
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/PresignedLinkEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
     put:
       tags:
         - users
@@ -1504,106 +314,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    type: object
-                    required:
-                      - link
-                    properties:
-                      link:
-                        type: string
-                    example:
-                      link: example_link
-                  error:
-                    nullable: true
-                    default: null
+                $ref: '#/components/schemas/PresignedLinkEnveloped'
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
     delete:
       tags:
         - users
@@ -3072,88 +1785,7 @@ paths:
                     title: Quality
                     description: Object containing Quality Assessment related data
         default:
-          description: Unexpected error
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - error
-                properties:
-                  data:
-                    nullable: true
-                    default: null
-                  error:
-                    type: object
-                    properties:
-                      logs:
-                        description: log messages
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            level:
-                              description: log level
-                              type: string
-                              default: INFO
-                              enum:
-                                - DEBUG
-                                - WARNING
-                                - INFO
-                                - ERROR
-                            message:
-                              description: 'log message. If logger is USER, then it MUST be human readable'
-                              type: string
-                            logger:
-                              description: name of the logger receiving this message
-                              type: string
-                          required:
-                            - message
-                          example:
-                            message: 'Hi there, Mr user'
-                            level: INFO
-                            logger: user-logger
-                      errors:
-                        description: errors metadata
-                        type: array
-                        items:
-                          type: object
-                          required:
-                            - code
-                            - message
-                          properties:
-                            code:
-                              type: string
-                              description: Typically the name of the exception that produced it otherwise some known error code
-                            message:
-                              type: string
-                              description: Error message specific to this item
-                            resource:
-                              type: string
-                              description: API resource affected by this error
-                            field:
-                              type: string
-                              description: Specific field within the resource
-                      status:
-                        description: HTTP error code
-                        type: integer
-                    example:
-                      BadRequestError:
-                        logs:
-                          - message: Requested information is incomplete or malformed
-                            level: ERROR
-                          - message: Invalid email and password
-                            level: ERROR
-                            logger: USER
-                        errors:
-                          - code: InvalidEmail
-                            message: Email is malformed
-                            field: email
-                          - code: UnsavePassword
-                            message: Password is not secure
-                            field: pasword
-                        status: 400
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/simcore-s3/folders/{folder_id}':
     delete:
       tags:
@@ -3181,6 +1813,339 @@ paths:
           description: folder has been successfully deleted
 components:
   schemas:
+    HealthCheckEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/HealthCheck'
+        error:
+          nullable: true
+          default: null
+    HealthCheck:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        api_version:
+          type: string
+        version:
+          type: string
+      example:
+        name: simcore-director-service
+        status: SERVICE_RUNNING
+        api_version: 0.1.0-dev+NJuzzD9S
+        version: 0.1.0-dev+N127Mfv9H
+    ErrorEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          nullable: true
+          default: null
+        error:
+          $ref: '#/components/schemas/Error'
+    Error:
+      type: object
+      properties:
+        logs:
+          description: log messages
+          type: array
+          items:
+            $ref: '#/components/schemas/LogMessage'
+        errors:
+          description: errors metadata
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorItem'
+        status:
+          description: HTTP error code
+          type: integer
+      example:
+        BadRequestError:
+          logs:
+            - message: Requested information is incomplete or malformed
+              level: ERROR
+            - message: Invalid email and password
+              level: ERROR
+              logger: USER
+          errors:
+            - code: InvalidEmail
+              message: Email is malformed
+              field: email
+            - code: UnsavePassword
+              message: Password is not secure
+              field: pasword
+          status: 400
+    ErrorItem:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Typically the name of the exception that produced it otherwise some known error code
+        message:
+          type: string
+          description: Error message specific to this item
+        resource:
+          type: string
+          description: API resource affected by this error
+        field:
+          type: string
+          description: Specific field within the resource
+    LogMessageEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/LogMessage'
+        error:
+          nullable: true
+          default: null
+    LogMessage:
+      type: object
+      properties:
+        level:
+          description: log level
+          type: string
+          default: INFO
+          enum:
+            - DEBUG
+            - WARNING
+            - INFO
+            - ERROR
+        message:
+          description: 'log message. If logger is USER, then it MUST be human readable'
+          type: string
+        logger:
+          description: name of the logger receiving this message
+          type: string
+      required:
+        - message
+      example:
+        message: 'Hi there, Mr user'
+        level: INFO
+        logger: user-logger
+    FakeEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/Fake'
+        error:
+          nullable: true
+          default: null
+    Fake:
+      type: object
+      required:
+        - path_value
+        - query_value
+        - body_value
+      properties:
+        path_value:
+          type: string
+        query_value:
+          type: string
+        body_value:
+          type: object
+          additionalProperties: true
+      example:
+        path_value: foo
+        query_value: bar
+        body_value:
+          key1: value1
+          key2: value2
+    FileLocationArrayEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileLocationArray'
+        error:
+          nullable: true
+          default: null
+    FileLocationArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/FileLocation'
+    FileLocationEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileLocation'
+        error:
+          nullable: true
+          default: null
+    FileLocation:
+      type: object
+      properties:
+        name:
+          type: string
+        id:
+          type: integer
+      example:
+        filename: simcore.s3
+        id: 0
+    DatasetMetaDataArrayEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/DatasetMetaDataArray'
+        error:
+          nullable: true
+          default: null
+    DatasetMetaDataEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/DatasetMetaData'
+        error:
+          nullable: true
+          default: null
+    DatasetMetaData:
+      type: object
+      properties:
+        dataset_id:
+          type: string
+        display_name:
+          type: string
+      example:
+        dataset_uuid: 'N:id-aaaa'
+        display_name: simcore-testing
+    DatasetMetaDataArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/DatasetMetaData'
+    FileMetaDataEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileMetaData'
+        error:
+          nullable: true
+          default: null
+    FileMetaData:
+      type: object
+      properties:
+        file_uuid:
+          type: string
+        location_id:
+          type: string
+        location:
+          type: string
+        bucket_name:
+          type: string
+        object_name:
+          type: string
+        project_id:
+          type: string
+        project_name:
+          type: string
+        node_id:
+          type: string
+        node_name:
+          type: string
+        file_name:
+          type: string
+        user_id:
+          type: string
+        user_name:
+          type: string
+        file_id:
+          type: string
+        raw_file_path:
+          type: string
+        display_file_path:
+          type: string
+        created_at:
+          type: string
+        last_modified:
+          type: string
+        file_size:
+          type: integer
+        parent_id:
+          type: string
+      example:
+        file_uuid: simcore-testing/105/1000/3
+        location_id: '0'
+        location_name: simcore.s3
+        bucket_name: simcore-testing
+        object_name: 105/10000/3
+        project_id: '105'
+        project_name: futurology
+        node_id: '10000'
+        node_name: alpha
+        file_name: example.txt
+        user_id: '12'
+        user_name: dennis
+        file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
+        raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
+        display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
+        created_at: '2019-06-19T12:29:03.308611Z'
+        last_modified: '2019-06-19T12:29:03.78852Z'
+        file_size: 73
+        parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+    FileMetaDataArrayEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/FileMetaDataArray'
+        error:
+          nullable: true
+          default: null
+    FileMetaDataArray:
+      type: array
+      items:
+        $ref: '#/components/schemas/FileMetaData'
+    PresignedLinkEnveloped:
+      type: object
+      required:
+        - data
+        - error
+      properties:
+        data:
+          $ref: '#/components/schemas/PresignedLink'
+        error:
+          nullable: true
+          default: null
+    PresignedLink:
+      type: object
+      required:
+        - link
+      properties:
+        link:
+          type: string
+      example:
+        link: example_link
     Project:
       title: simcore project
       description: Description of a simcore project
@@ -3626,249 +2591,9 @@ components:
           title: Quality
           description: Object containing Quality Assessment related data
   responses:
-    OK_NoContent_204:
-      description: 'everything is OK, but there is no content to return'
     DefaultErrorResponse:
       description: Unexpected error
       content:
         application/json:
           schema:
-            type: object
-            required:
-              - data
-              - error
-            properties:
-              data:
-                nullable: true
-                default: null
-              error:
-                type: object
-                properties:
-                  logs:
-                    description: log messages
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        level:
-                          description: log level
-                          type: string
-                          default: INFO
-                          enum:
-                            - DEBUG
-                            - WARNING
-                            - INFO
-                            - ERROR
-                        message:
-                          description: 'log message. If logger is USER, then it MUST be human readable'
-                          type: string
-                        logger:
-                          description: name of the logger receiving this message
-                          type: string
-                      required:
-                        - message
-                      example:
-                        message: 'Hi there, Mr user'
-                        level: INFO
-                        logger: user-logger
-                  errors:
-                    description: errors metadata
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - code
-                        - message
-                      properties:
-                        code:
-                          type: string
-                          description: Typically the name of the exception that produced it otherwise some known error code
-                        message:
-                          type: string
-                          description: Error message specific to this item
-                        resource:
-                          type: string
-                          description: API resource affected by this error
-                        field:
-                          type: string
-                          description: Specific field within the resource
-                  status:
-                    description: HTTP error code
-                    type: integer
-                example:
-                  BadRequestError:
-                    logs:
-                      - message: Requested information is incomplete or malformed
-                        level: ERROR
-                      - message: Invalid email and password
-                        level: ERROR
-                        logger: USER
-                    errors:
-                      - code: InvalidEmail
-                        message: Email is malformed
-                        field: email
-                      - code: UnsavePassword
-                        message: Password is not secure
-                        field: pasword
-                    status: 400
-    FileMetaData_200:
-      description: Returns file metadata
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - data
-              - error
-            properties:
-              data:
-                type: object
-                properties:
-                  file_uuid:
-                    type: string
-                  location_id:
-                    type: string
-                  location:
-                    type: string
-                  bucket_name:
-                    type: string
-                  object_name:
-                    type: string
-                  project_id:
-                    type: string
-                  project_name:
-                    type: string
-                  node_id:
-                    type: string
-                  node_name:
-                    type: string
-                  file_name:
-                    type: string
-                  user_id:
-                    type: string
-                  user_name:
-                    type: string
-                  file_id:
-                    type: string
-                  raw_file_path:
-                    type: string
-                  display_file_path:
-                    type: string
-                  created_at:
-                    type: string
-                  last_modified:
-                    type: string
-                  file_size:
-                    type: integer
-                  parent_id:
-                    type: string
-                example:
-                  file_uuid: simcore-testing/105/1000/3
-                  location_id: '0'
-                  location_name: simcore.s3
-                  bucket_name: simcore-testing
-                  object_name: 105/10000/3
-                  project_id: '105'
-                  project_name: futurology
-                  node_id: '10000'
-                  node_name: alpha
-                  file_name: example.txt
-                  user_id: '12'
-                  user_name: dennis
-                  file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-                  raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                  display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-                  created_at: '2019-06-19T12:29:03.308611Z'
-                  last_modified: '2019-06-19T12:29:03.78852Z'
-                  file_size: 73
-                  parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
-              error:
-                nullable: true
-                default: null
-    PresignedLink_200:
-      description: Returns presigned link
-      content:
-        application/json:
-          schema:
-            type: object
-            required:
-              - data
-              - error
-            properties:
-              data:
-                type: object
-                required:
-                  - link
-                properties:
-                  link:
-                    type: string
-                example:
-                  link: example_link
-              error:
-                nullable: true
-                default: null
-  requestBodies:
-    FileMetaDataBody:
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              file_uuid:
-                type: string
-              location_id:
-                type: string
-              location:
-                type: string
-              bucket_name:
-                type: string
-              object_name:
-                type: string
-              project_id:
-                type: string
-              project_name:
-                type: string
-              node_id:
-                type: string
-              node_name:
-                type: string
-              file_name:
-                type: string
-              user_id:
-                type: string
-              user_name:
-                type: string
-              file_id:
-                type: string
-              raw_file_path:
-                type: string
-              display_file_path:
-                type: string
-              created_at:
-                type: string
-              last_modified:
-                type: string
-              file_size:
-                type: integer
-              parent_id:
-                type: string
-            example:
-              file_uuid: simcore-testing/105/1000/3
-              location_id: '0'
-              location_name: simcore.s3
-              bucket_name: simcore-testing
-              object_name: 105/10000/3
-              project_id: '105'
-              project_name: futurology
-              node_id: '10000'
-              node_name: alpha
-              file_name: example.txt
-              user_id: '12'
-              user_name: dennis
-              file_id: 'N:package:e263da07-2d89-45a6-8b0f-61061b913873'
-              raw_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-              display_file_path: Curation/derivatives/subjects/sourcedata/docs/samples/sam_1/sam_1.csv
-              created_at: '2019-06-19T12:29:03.308611Z'
-              last_modified: '2019-06-19T12:29:03.78852Z'
-              file_size: 73
-              parent_id: 'N:collection:e263da07-2d89-45a6-8b0f-61061b913873'
+            $ref: '#/components/schemas/ErrorEnveloped'
