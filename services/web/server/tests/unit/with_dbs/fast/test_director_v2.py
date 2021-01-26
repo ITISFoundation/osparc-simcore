@@ -126,7 +126,7 @@ async def test_create_pipeline(client, user_id: PositiveInt, project_id: UUID):
         client.app, user_id, project_id
     )
 
-    assert task_out.state == RunningState.NOT_STARTED
+    assert task_out["state"] == RunningState.NOT_STARTED
 
 
 async def test_get_computation_task(
