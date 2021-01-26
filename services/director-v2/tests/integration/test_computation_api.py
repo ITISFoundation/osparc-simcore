@@ -6,9 +6,9 @@
 # pylint:disable=too-many-arguments
 
 import json
+from collections import namedtuple
 from copy import deepcopy
 from pathlib import Path
-from pprint import pformat
 from random import randint
 from typing import Any, Callable, Dict, List
 from uuid import UUID, uuid4
@@ -29,6 +29,7 @@ from simcore_service_director_v2.models.schemas.comp_tasks import (
     ComputationTaskOut,
     NodeIOState,
     NodeRunnableState,
+    NodeState,
     PipelineDetails,
 )
 from sqlalchemy import literal_column
@@ -114,6 +115,26 @@ def _create_pipeline(
         response.status_code == expected_response_status_code
     ), f"response code is {response.status_code}, error: {response.text}"
     return response
+
+
+def _assert_computation_task_out_obj(
+    client: TestClient,
+    task_out: ComputationTaskOut,
+    *,
+    project: ProjectAtDB,
+    exp_task_state: RunningState,
+    exp_pipeline_details: PipelineDetails,
+):
+    assert task_out.id == project.uuid
+    assert task_out.state == exp_task_state
+    assert task_out.url == f"{client.base_url}/v2/computations/{project.uuid}"
+    assert task_out.stop_url == (
+        f"{client.base_url}/v2/computations/{project.uuid}:stop"
+        if exp_task_state in [RunningState.PUBLISHED, RunningState.PENDING]
+        else None
+    )
+    # check pipeline details contents
+    assert task_out.pipeline_details == exp_pipeline_details
 
 
 # FIXTURES ---------------------------------------
@@ -236,6 +257,36 @@ def update_project_workbench_with_comp_tasks(postgres_db: sa.engine.Engine) -> C
     yield updator
 
 
+@pytest.fixture(scope="session")
+def fake_workbench_node_states_file(mocks_dir: Path) -> Path:
+    file_path = mocks_dir / "fake_workbench_computational_node_states.json"
+    assert file_path.exists()
+    return file_path
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_computational_pipeline_details(
+    fake_workbench_computational_adjacency_file: Path,
+    fake_workbench_node_states_file: Path,
+) -> PipelineDetails:
+    adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
+    node_states = json.loads(fake_workbench_node_states_file.read_text())
+    return PipelineDetails.parse_obj(
+        {"adjacency_list": adjacency_list, "node_states": node_states}
+    )
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_computational_pipeline_details_completed(
+    fake_workbench_computational_pipeline_details: PipelineDetails,
+) -> PipelineDetails:
+    completed_pipeline_details = deepcopy(fake_workbench_computational_pipeline_details)
+    for node_state in completed_pipeline_details.node_states.values():
+        node_state.io_state = NodeIOState.OK
+        node_state.runnable_state = NodeRunnableState.READY
+    return completed_pipeline_details
+
+
 # TESTS ---------------------------------------
 
 
@@ -283,13 +334,51 @@ def test_start_empty_computation(
     )
 
 
+PartialComputationParams = namedtuple(
+    "PartialComputationParams",
+    "subgraph_elements, exp_pipeline_adj_list, exp_node_states",
+)
+
+
 @pytest.mark.parametrize(
-    "subgraph_elements,exp_pipeline_dag_adj_list_1st_run",
+    "subgraph_elements,exp_pipeline_adj_list, exp_node_states",
     [
-        pytest.param([0, 1], {1: []}, id="element 0,1"),
         pytest.param(
-            [1, 2, 4],
-            {1: [2], 2: [4], 3: [4], 4: []},
+            *PartialComputationParams(
+                subgraph_elements=[0, 1],
+                exp_pipeline_adj_list={1: []},
+                exp_node_states={
+                    1: NodeState(
+                        io_state=NodeIOState.OUTDATED,
+                        runnable_state=NodeRunnableState.READY,
+                    )
+                },
+            ),
+            id="element 0,1",
+        ),
+        pytest.param(
+            *PartialComputationParams(
+                subgraph_elements=[1, 2, 4],
+                exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
+                exp_node_states={
+                    1: NodeState(
+                        io_state=NodeIOState.OUTDATED,
+                        runnable_state=NodeRunnableState.READY,
+                    ),
+                    2: NodeState(
+                        io_state=NodeIOState.OUTDATED,
+                        runnable_state=NodeRunnableState.WAITING_FOR_DEPENDENCIES,
+                    ),
+                    3: NodeState(
+                        io_state=NodeIOState.OUTDATED,
+                        runnable_state=NodeRunnableState.READY,
+                    ),
+                    4: NodeState(
+                        io_state=NodeIOState.OUTDATED,
+                        runnable_state=NodeRunnableState.WAITING_FOR_DEPENDENCIES,
+                    ),
+                },
+            ),
             id="element 1,2,4",
         ),
     ],
@@ -301,10 +390,35 @@ def test_run_partial_computation(
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     subgraph_elements: List[int],
-    exp_pipeline_dag_adj_list_1st_run: Dict[str, List[str]],
+    exp_pipeline_adj_list: Dict[int, List[str]],
+    exp_node_states: Dict[int, NodeState],
 ):
+    sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
+
+    def _convert_to_pipeline_details(
+        project: ProjectAtDB,
+        exp_pipeline_adj_list: Dict[int, List[str]],
+        exp_node_states: Dict[int, NodeState],
+    ) -> PipelineDetails:
+        workbench_node_uuids = list(project.workbench.keys())
+        converted_adj_list: Dict[NodeID, Dict[NodeID, List[NodeID]]] = {}
+        for node_key, next_nodes in exp_pipeline_adj_list.items():
+            converted_adj_list[NodeID(workbench_node_uuids[node_key])] = [
+                NodeID(workbench_node_uuids[n]) for n in next_nodes
+            ]
+        converted_node_states: Dict[NodeID, NodeState] = {
+            NodeID(workbench_node_uuids[n]): s for n, s in exp_node_states.items()
+        }
+        return PipelineDetails(
+            adjacency_list=converted_adj_list, node_states=converted_node_states
+        )
+
+    # convert the ids to the node uuids from the project
+    expected_pipeline_details = _convert_to_pipeline_details(
+        sleepers_project, exp_pipeline_adj_list, exp_node_states
+    )
+
     # send a valid project with sleepers
-    sleepers_project = project(workbench=fake_workbench_without_outputs)
     response = _create_pipeline(
         client,
         project=sleepers_project,
@@ -318,35 +432,36 @@ def test_run_partial_computation(
         ],
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
-
-    assert task_out.id == sleepers_project.uuid
-    assert task_out.state == RunningState.PUBLISHED
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert (
-        task_out.stop_url
-        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    # check the contents is correctb
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.PUBLISHED,
+        exp_pipeline_details=expected_pipeline_details,
     )
-    # convert the ids to the node uuids from the project
-    workbench_node_uuids = list(sleepers_project.workbench.keys())
-    expected_adj_list_1st_run: Dict[NodeID, List[NodeID]] = {}
-    expected_adj_list_2nd_run: Dict[NodeID, List[NodeID]] = {}
-    for conv in [expected_adj_list_1st_run, expected_adj_list_2nd_run]:
-        for node_key, next_nodes in exp_pipeline_dag_adj_list_1st_run.items():
-            conv[NodeID(workbench_node_uuids[node_key])] = [
-                NodeID(workbench_node_uuids[n]) for n in next_nodes
-            ]
-    assert task_out.pipeline == expected_adj_list_1st_run
 
     # now wait for the computation to finish
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert task_out.stop_url == None
-
-    assert (
-        task_out.state == RunningState.SUCCESS
-    ), f"the pipeline complete with state {task_out.state}"
+    expected_pipeline_details = _convert_to_pipeline_details(
+        sleepers_project,
+        exp_pipeline_adj_list,
+        {
+            n: NodeState(
+                io_state=NodeIOState.OK, runnable_state=NodeRunnableState.READY
+            )
+            for n in exp_node_states
+        },
+    )
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.SUCCESS,
+        exp_pipeline_details=expected_pipeline_details,
+    )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
@@ -381,64 +496,18 @@ def test_run_partial_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
-    assert task_out.id == sleepers_project.uuid
-    assert task_out.state == RunningState.PUBLISHED
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert (
-        task_out.stop_url
-        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
-    )
-    assert task_out.pipeline == expected_adj_list_2nd_run
-
-
-def _assert_computation_task_out_obj(
-    client: TestClient,
-    task_out: ComputationTaskOut,
-    *,
-    project: ProjectAtDB,
-    exp_task_state: RunningState,
-    exp_pipeline_details: PipelineDetails,
-):
-    assert task_out.id == project.uuid
-    assert task_out.state == exp_task_state
-    assert task_out.url == f"{client.base_url}/v2/computations/{project.uuid}"
-    assert task_out.stop_url == (
-        f"{client.base_url}/v2/computations/{project.uuid}:stop"
-        if exp_task_state in [RunningState.PUBLISHED, RunningState.PENDING]
-        else None
-    )
-    # check pipeline details contents
-    assert task_out.pipeline_details == exp_pipeline_details
-
-
-@pytest.fixture(scope="session")
-def fake_workbench_node_states_file(mocks_dir: Path) -> Path:
-    file_path = mocks_dir / "fake_workbench_computational_node_states.json"
-    assert file_path.exists()
-    return file_path
-
-
-@pytest.fixture(scope="session")
-def fake_workbench_computational_pipeline_details(
-    fake_workbench_computational_adjacency_file: Path,
-    fake_workbench_node_states_file: Path,
-) -> PipelineDetails:
-    adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
-    node_states = json.loads(fake_workbench_node_states_file.read_text())
-    return PipelineDetails.parse_obj(
-        {"adjacency_list": adjacency_list, "node_states": node_states}
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.PUBLISHED,
+        exp_pipeline_details=expected_pipeline_details,
     )
 
-
-@pytest.fixture(scope="session")
-def fake_workbench_computational_pipeline_details_completed(
-    fake_workbench_computational_pipeline_details: PipelineDetails,
-) -> PipelineDetails:
-    completed_pipeline_details = deepcopy(fake_workbench_computational_pipeline_details)
-    for node_state in completed_pipeline_details.node_states.values():
-        node_state.io_state = NodeIOState.OK
-        node_state.runnable_state = NodeRunnableState.READY
-    return completed_pipeline_details
+    # now wait for the computation to finish
+    task_out = _assert_pipeline_status(
+        client, task_out.url, user_id, sleepers_project.uuid
+    )
 
 
 def test_run_computation(
