@@ -110,6 +110,12 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
         const srcHeight = qx.io.ImageLoader.getHeight(source);
         if (srcWidth && srcHeight) {
           const aspectRatio = srcWidth/srcHeight;
+          if (this.getBounds() && this.getBounds().width < image.getMaxWidth()) {
+            image.setMaxWidth(this.getBounds().width);
+          }
+          if (this.getBounds() && this.getBounds().height < image.getMaxHeight()) {
+            image.setMaxHeight(this.getBounds().height);
+          }
           const maxWidth = image.getMaxWidth();
           const maxHeight = image.getMaxHeight();
 
