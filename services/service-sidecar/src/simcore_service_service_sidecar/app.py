@@ -40,9 +40,7 @@ async def write_file_and_run_command(
             project=config.compose_namespace,
             stop_and_remove_timeout=config.stop_and_remove_timeout,
         )
-        logger.debug(
-            "Will run command %s with content:\n%s", command, formatted_command
-        )
+        logger.debug("Will run command '%s' and file:\n%s", command, formatted_command)
         return await async_command(formatted_command)
 
 
