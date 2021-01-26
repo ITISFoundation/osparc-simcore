@@ -118,30 +118,40 @@ class DatasetMetaDataArrayEnveloped(BaseModel):
 # /locations/{location_id}/files/metadata:
 # /locations/{location_id}/files/{fileId}/metadata:
 class FileMetaData(BaseModel):
-    file_uuid: Optional[str] = None
+    file_uuid: Optional[str] = Field(
+        None,
+        description="unique identifier for a file, like bucket_name/project_id/node_id/file_name = /bucket_name/object_name",
+    )
 
-    location_id: Optional[int] = None
-    location: Optional[str] = None
+    user_id: Optional[int] = None
+    user_name: Optional[str] = None
 
-    bucket_name: Optional[str] = None
-    object_name: Optional[str] = None
+    location_id: Optional[int] = Field(None, description="storage location")
+    location: Optional[str] = Field(None, description="storage location display name")
+
+    bucket_name: Optional[str] = Field(None, description="name of the s3 bucket")
+    object_name: Optional[str] = Field(
+        None, description="name of the s3 object within the bucket"
+    )
 
     project_id: Optional[UUID] = None
     project_name: Optional[str] = None
     node_id: Optional[UUID] = None
     node_name: Optional[str] = None
-    file_name: Optional[str] = None
+    file_name: Optional[str] = Field(None, description="display name for a file")
 
-    user_id: Optional[int] = None
-    user_name: Optional[str] = None
-
-    file_id: Optional[str] = None
-    raw_file_path: Optional[str] = None
-    display_file_path: Optional[str] = None
+    file_id: Optional[str] = Field(
+        None,
+        description="unique uuid for the file. For simcore.s3: uuid created upon insertion and datcore: datcore uuid",
+    )
+    raw_file_path: Optional[str] = Field(None, description="raw path to file")
+    display_file_path: Optional[str] = Field(
+        None, description="human readlable  path to file"
+    )
 
     created_at: Optional[datetime] = None
     last_modified: Optional[datetime] = None
-    file_size: Optional[int] = -1
+    file_size: Optional[int] = Field(-1, description="file size in bytes")
 
     parent_id: Optional[str] = None
 
