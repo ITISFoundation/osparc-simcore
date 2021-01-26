@@ -76,7 +76,7 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       "loaded"
     ].forEach(eventName => {
       image.addListener(eventName, e => {
-        this.calculateMaxHeight();
+        this.recheckSize();
       }, this);
     });
   },
