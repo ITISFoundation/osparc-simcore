@@ -508,10 +508,11 @@ async def add_project_states_for_user(
     lock_state = ProjectLocked(value=False)
     running_state = RunningState.UNKNOWN
     if not is_template:
-        lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
-        computation_task: ComputationalTask = await get_computation_task(
-            app, user_id, project["uuid"]
+        lock_state, computation_task = await logged_gather(
+            _get_project_lock_state(user_id, project["uuid"], app),
+            get_computation_task(app, user_id, project["uuid"]),
         )
+
         if computation_task:
             # get the running state
             running_state = computation_task.state
@@ -519,10 +520,10 @@ async def add_project_states_for_user(
             for (
                 node_id,
                 node_state,
-            ) in computation_task.pipeline_details["node_states"].items():
+            ) in computation_task.pipeline_details.node_states.items():
                 prj_node = project["workbench"].get(str(node_id))
-                prj_node["io_state"] = node_state.get("io_state")
-                prj_node["runnable_state"] = node_state.get("runnable_state")
+                prj_node["ioState"] = node_state.io_state
+                prj_node["runnableState"] = node_state.runnable_state
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
