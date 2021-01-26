@@ -998,7 +998,7 @@ components:
                       example:
                         - "15"
                   deprecated: true
-                io_state:
+                ioState:
                   title: IO State
                   description: the node's Inputs/Outputs state
                   default: OUTDATED
@@ -1006,7 +1006,7 @@ components:
                   enum:
                     - OUTDATED
                     - OK
-                runnable_state:
+                runnableState:
                   title: Runnable State
                   description: the node's runnable state
                   default: READY
