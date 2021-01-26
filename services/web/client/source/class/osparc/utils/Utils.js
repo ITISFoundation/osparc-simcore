@@ -198,7 +198,7 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
     },
 
-    downloadLink: function(url, fileName) {
+    downloadLink: function(url, fileName, downloadStartedCB) {
       return new Promise((resolve, reject) => {
         let xhr = new XMLHttpRequest();
         xhr.open("GET", url, true);
@@ -206,7 +206,9 @@ qx.Class.define("osparc.utils.Utils", {
         xhr.addEventListener("progress", () => {
           if (xhr.readyState === XMLHttpRequest.LOADING) {
             if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
-              resolve();
+              if (downloadStartedCB) {
+                downloadStartedCB();
+              }
             } else {
               reject();
             }
