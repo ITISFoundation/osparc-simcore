@@ -634,12 +634,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const text = this.tr("Exporting process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
-      const url = window.location.href + "v0/projects/" + studyData["uuid"] + "/export";
+      const url = window.location.href + "v0/projects/" + studyData["uuid"] + ":xport";
       const downloadStartedCB = () => {
         const textSuccess = this.tr("Download started");
         exportTask.setSubtitle(textSuccess);
       };
-      osparc.utils.Utils.downloadLink(url, null, downloadStartedCB)
+      osparc.utils.Utils.downloadLink(url, "POST", null, downloadStartedCB)
         .catch(() => {
           const textError = this.tr("Something went wrong Exporting the study");
           osparc.component.message.FlashMessenger.getInstance().logAs(textError, "ERROR");

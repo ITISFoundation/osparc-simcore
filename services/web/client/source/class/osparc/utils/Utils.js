@@ -198,10 +198,10 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
     },
 
-    downloadLink: function(url, fileName, downloadStartedCB) {
+    downloadLink: function(url, method, fileName, downloadStartedCB) {
       return new Promise((resolve, reject) => {
         let xhr = new XMLHttpRequest();
-        xhr.open("GET", url, true);
+        xhr.open(method, url, true);
         xhr.responseType = "blob";
         xhr.addEventListener("progress", () => {
           if (xhr.readyState === XMLHttpRequest.LOADING) {
