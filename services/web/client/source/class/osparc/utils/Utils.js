@@ -220,7 +220,7 @@ qx.Class.define("osparc.utils.Utils", {
             let urlBlob = window.URL.createObjectURL(blob);
             let downloadAnchorNode = document.createElement("a");
             downloadAnchorNode.setAttribute("href", urlBlob);
-            if (fileName === undefined) {
+            if (!fileName) {
               fileName = this.self().filenameFromContentDisposition(xhr);
             }
             downloadAnchorNode.setAttribute("download", fileName);

@@ -635,11 +635,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
       const url = window.location.href + "v0/projects/" + studyData["uuid"] + "/export";
-      osparc.utils.Utils.downloadLink(url)
-        .then(() => {
-          const textSuccess = this.tr("Download started");
-          exportTask.setSubtitle(textSuccess);
-        })
+      const downloadStartedCB = () => {
+        const textSuccess = this.tr("Download started");
+        exportTask.setSubtitle(textSuccess);
+      };
+      osparc.utils.Utils.downloadLink(url, null, downloadStartedCB)
         .catch(() => {
           const textError = this.tr("Something went wrong Exporting the study");
           osparc.component.message.FlashMessenger.getInstance().logAs(textError, "ERROR");
