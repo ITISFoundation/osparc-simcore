@@ -129,16 +129,14 @@ async def test_create_pipeline(client, user_id: PositiveInt, project_id: UUID):
     assert task_out["state"] == RunningState.NOT_STARTED
 
 
-async def test_get_pipeline_state(
+async def test_get_computation_task(
     client,
     user_id: PositiveInt,
     project_id: UUID,
 ):
-    project_running_state = await director_v2.get_pipeline_state(
-        client.app, user_id, project_id
-    )
+    task_out = await director_v2.get_computation_task(client.app, user_id, project_id)
 
-    assert project_running_state == RunningState.NOT_STARTED
+    assert RunningState(task_out["state"]) == RunningState.NOT_STARTED
 
 
 async def test_delete_pipeline(client, user_id: PositiveInt, project_id: UUID):
