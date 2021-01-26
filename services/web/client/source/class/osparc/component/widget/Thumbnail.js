@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
     }
 
     [
-      "changeSource",
+      "appear",
       "loaded"
     ].forEach(eventName => {
       image.addListener(eventName, e => {

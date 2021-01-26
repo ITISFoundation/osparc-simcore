@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
+    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(this.self().V_SPACING)).set({
       maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
       maxHeight: this.self().ITEM_HEIGHT - 2*this.self().PADDING
     });
@@ -58,6 +58,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
     PADDING: 10,
+    V_SPACING: 6,
     SPACING: 12,
     POS: {
       TITLE: 0,
