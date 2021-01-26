@@ -500,44 +500,19 @@ async def _get_project_lock_state(
         return ProjectLocked(value=is_locked)
 
 
-async def _get_project_running_state(
-    user_id: PositiveInt, project_uuid: str, is_template: bool, app: web.Application
-) -> ProjectRunningState:
-    pipeline_state: RunningState = (
-        RunningState.UNKNOWN
-        if is_template
-        else await get_pipeline_state(app, user_id, project_uuid)
-    )
-    return ProjectRunningState(value=pipeline_state)
-
-
-async def get_project_state_for_user(
-    user_id: int, project_uuid: str, is_template: bool, app: web.Application
-) -> Dict[str, Any]:
-    """
-    Returns state of a project with respect to a given user
-    E.g.
-        the state is locked for user1 because user2 is working on it and
-        there is a locked-while-using policy in place
-
-    WARNING: assumes project_uuid exists!! If not, call first get_project_for_user
-    NOTE: This adds a dependency to the socket registry sub-module. Many tests
-        might require a mock for this function to work properly
-    """
-    lock_state = await _get_project_lock_state(user_id, project_uuid, app)
-    running_state = await _get_project_running_state(
-        user_id, project_uuid, is_template, app
-    )
-    return ProjectState(
-        locked=lock_state,
-        state=running_state,
-    ).dict(by_alias=True, exclude_unset=True)
-
-
 async def add_project_states_for_user(
     user_id: int, project: Dict[str, Any], is_template: bool, app: web.Application
 ) -> Dict[str, Any]:
-    project["state"] = await get_project_state_for_user(
-        user_id, project["uuid"], is_template, app
-    )
+
+    lock_state = ProjectLocked(value=False)
+    running_state = RunningState.UNKNOWN
+    if not is_template:
+        lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
+        computation_task = await get_pipeline_state(app, user_id, project["uuid"])
+        if computation_task:
+            running_state = computation_task.state
+
+    project["state"] = ProjectState(
+        locked=lock_state, state=ProjectRunningState(value=running_state)
+    ).dict(by_alias=True, exclude_unset=True)
     return project
