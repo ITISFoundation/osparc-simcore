@@ -11,6 +11,7 @@ import uuid as uuidlib
 from collections import deque
 from datetime import datetime
 from enum import Enum
+from pprint import pformat
 from typing import Dict, List, Mapping, Optional, Set, Union
 
 import psycopg2.errors
@@ -20,11 +21,10 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from change_case import ChangeCase
-from sqlalchemy import literal_column
-from sqlalchemy.sql import and_, select
-
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import ProjectType, projects
+from sqlalchemy import literal_column
+from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..utils import format_datetime, now_str
@@ -324,7 +324,7 @@ class ProjectDBAPI:
             except ProjectInvalidRightsError:
                 continue
             prj = dict(row.items())
-            log.debug("found project: %s", prj)
+            log.debug("found project: %s", pformat(prj))
             db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
