@@ -2,11 +2,14 @@
     Models used in storage API
 """
 
+from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 
+from ..basic_regex import UUID_RE
 from ..projects import Project as CommonProject
 
 
@@ -36,8 +39,13 @@ class Fake(BaseModel):
 
 
 class FileLocation(BaseModel):
-    name: Optional[str] = None
-    id: Optional[int] = None
+    name: str
+    id: int
+
+    class Config:
+        schema_extra = {
+            "examples": [{"name": "simcore.s3", "id": 0}, {"name": "datcore", "id": 1}]
+        }
 
 
 class FileLocationArray(BaseModel):
@@ -56,10 +64,40 @@ class FileLocationArrayEnveloped(BaseModel):
 
 # /locations/{location_id}/datasets
 
+DatCoreId = constr(regex=r"^N:dataset:" + UUID_RE)
+
 
 class DatasetMetaData(BaseModel):
-    dataset_id: Optional[str] = None
-    display_name: Optional[str] = None
+    dataset_id: Union[UUID, DatCoreId]
+    display_name: str
+
+    class Config:
+        schema_extra = {
+            "examples": [
+                # simcore dataset
+                {
+                    "dataset_id": "74a84992-8c99-47de-b88a-311c068055ea",
+                    "display_name": "api",
+                },
+                {
+                    "dataset_id": "1c46752c-b096-11ea-a3c4-02420a00392e",
+                    "display_name": "Octave JupyterLab",
+                },
+                {
+                    "dataset_id": "2de04d1a-f346-11ea-9c22-02420a00085a",
+                    "display_name": "Sleepers",
+                },
+                # datcore datasets
+                {
+                    "dataset_id": "N:dataset:be862eb8-861e-4b36-afc3-997329dd02bf",
+                    "display_name": "simcore-testing-bucket",
+                },
+                {
+                    "dataset_id": "N:dataset:9ad8adb0-8ea2-4be6-bc45-ecbec7546393",
+                    "display_name": "YetAnotherTest",
+                },
+            ]
+        }
 
 
 class DatasetMetaDataArray(BaseModel):
@@ -80,37 +118,45 @@ class DatasetMetaDataArrayEnveloped(BaseModel):
 # /locations/{location_id}/files/{fileId}/metadata:
 class FileMetaData(BaseModel):
     file_uuid: Optional[str] = None
-    location_id: Optional[str] = None
+
+    location_id: Optional[int] = None
     location: Optional[str] = None
+
     bucket_name: Optional[str] = None
     object_name: Optional[str] = None
-    project_id: Optional[str] = None
+
+    project_id: Optional[UUID] = None
     project_name: Optional[str] = None
-    node_id: Optional[str] = None
+    node_id: Optional[UUID] = None
     node_name: Optional[str] = None
     file_name: Optional[str] = None
-    user_id: Optional[str] = None
+
+    user_id: Optional[int] = None
     user_name: Optional[str] = None
+
     file_id: Optional[str] = None
     raw_file_path: Optional[str] = None
     display_file_path: Optional[str] = None
-    created_at: Optional[str] = None
-    last_modified: Optional[str] = None
-    file_size: Optional[int] = None
+
+    created_at: Optional[datetime] = None
+    last_modified: Optional[datetime] = None
+    file_size: Optional[int] = -1
+
     parent_id: Optional[str] = None
 
     class Config:
         schema_extra = {
             "examples": [
+                # FIXME: this example might be wrong!
                 {
-                    "file_uuid": "simcore-testing/105/1000/3",
+                    "file_uuid": "simcore-testing/85eef642-e808-4a90-82f5-1ee55da79e25/1000/3",
                     "location_id": "0",
                     "location_name": "simcore.s3",
                     "bucket_name": "simcore-testing",
-                    "object_name": "105/10000/3",
-                    "project_id": "105",
+                    "object_name": "85eef642-e808-4a90-82f5-1ee55da79e25/d5ac1d43-db04-422c-95a1-38b59f45f70b/3",
+                    "project_id": "85eef642-e808-4a90-82f5-1ee55da79e25",
                     "project_name": "futurology",
-                    "node_id": "10000",
+                    "node_id": "d5ac1d43-db04-422c-95a1-38b59f45f70b",
                     "node_name": "alpha",
                     "file_name": "example.txt",
                     "user_id": "12",
@@ -122,7 +168,28 @@ class FileMetaData(BaseModel):
                     "last_modified": "2019-06-19T12:29:03.78852Z",
                     "file_size": 73,
                     "parent_id": "N:collection:e263da07-2d89-45a6-8b0f-61061b913873",
-                }
+                },
+                {
+                    "file_uuid": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+                    "location_id": "0",
+                    "location": "simcore.s3",
+                    "bucket_name": "master-simcore",
+                    "object_name": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+                    "project_id": "1c46752c-b096-11ea-a3c4-02420a00392e",
+                    "project_name": "Octave JupyterLab",
+                    "node_id": "e603724d-4af1-52a1-b866-0d4b792f8c4a",
+                    "node_name": "JupyterLab Octave",
+                    "file_name": "work.zip",
+                    "user_id": "7",
+                    "user_name": None,
+                    "file_id": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+                    "raw_file_path": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a/work.zip",
+                    "display_file_path": "Octave JupyterLab/JupyterLab Octave/work.zip",
+                    "created_at": "2020-06-17 12:28:55.705340",
+                    "last_modified": "2020-06-22 13:48:13.398000+00:00",
+                    "file_size": 17866343,
+                    "parent_id": "1c46752c-b096-11ea-a3c4-02420a00392e/e603724d-4af1-52a1-b866-0d4b792f8c4a",
+                },
             ]
         }
 
