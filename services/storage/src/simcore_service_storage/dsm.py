@@ -7,7 +7,7 @@ import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Deque, Dict, List, Optional, Tuple
 
 import aiobotocore
 import aiofiles
@@ -477,7 +477,8 @@ class DataStorageManager:
                         file_meta_data.update()
                         .where(file_meta_data.c.file_uuid == file_uuid)
                         .values(
-                            file_size=new_file_size, last_modified=new_last_modified
+                            file_size=new_file_size,
+                            last_modified=new_last_modified,  # Etea
                         )
                     )  # primary key search is faster
                     await conn.execute(query)
@@ -487,7 +488,7 @@ class DataStorageManager:
 
     async def upload_link(self, user_id: str, file_uuid: str):
         @retry(**postgres_service_retry_policy_kwargs)
-        async def _execute_query() -> Tuple[int, str]:
+        async def _init_metadata() -> Tuple[int, str]:
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
@@ -503,7 +504,7 @@ class DataStorageManager:
                     await conn.execute(ins)
                 return fmd.file_size, fmd.last_modified
 
-        file_size, last_modified = await _execute_query()
+        file_size, last_modified = await _init_metadata()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
@@ -811,3 +812,24 @@ class DataStorageManager:
                         Delete={"Objects": objects_to_delete},
                     )
                     return response
+
+    async def search_s3_files_starting_with(
+        self, user_id: int, prefix: str
+    ) -> List[FileMetaDataEx]:
+        # Avoids using list_files since it accounts for projects/nodes
+        # Storage should know NOTHING about those concepts
+        data = deque()
+        async with self.engine.acquire() as conn:
+            stmt = sa.select([file_meta_data]).where(
+                (file_meta_data.c.user_id == user_id)
+                & file_meta_data.c.file_uuid.startswith(prefix)
+            )
+
+            async for row in conn.execute(stmt):
+                meta = FileMetaData(**dict(row))
+                data.append(
+                    FileMetaDataEx(
+                        fmd=meta, parent_id=str(Path(meta.object_name).parent)
+                    )
+                )
+        return list(data)

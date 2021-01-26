@@ -4,9 +4,9 @@
 import datetime
 from pathlib import Path
 from typing import Tuple
+from uuid import UUID
 
 import attr
-
 from simcore_postgres_database.storage_models import (
     file_meta_data,
     groups,
@@ -69,51 +69,60 @@ class DatasetMetaData:
     display_name: str = ""
 
 
+def is_uuid(value: str) -> bool:
+    try:
+        UUID(str(value))
+    except ValueError:
+        return False
+    else:
+        return True
+
+
 class FileMetaData:
-    """ This is a proposal, probably no everything is needed.
-        It is actually an overkill
+    """This is a proposal, probably no everything is needed.
+    It is actually an overkill
 
-        file_name       : display name for a file
-        location_id     : storage location
-        location_name   : storage location display name
-        project_id      : project_id
-        projec_name     : project display name
-        node_id         : node id
-        node_name       : display_name
-        bucket_name     : name of the bucket
-        object_name     : s3 object name = folder/folder/filename.ending
-        user_id         : user_id
-        user_name       : user_name
+    file_name       : display name for a file
+    location_id     : storage location
+    location_name   : storage location display name
+    project_id      : project_id
+    projec_name     : project display name
+    node_id         : node id
+    node_name       : display_name
+    bucket_name     : name of the bucket
+    object_name     : s3 object name = folder/folder/filename.ending
+    user_id         : user_id
+    user_name       : user_name
 
-        file_uuid       : unique identifier for a file:
+    file_uuid       : unique identifier for a file:
 
-            bucket_name/project_id/node_id/file_name = /bucket_name/object_name
+        bucket_name/project_id/node_id/file_name = /bucket_name/object_name
 
-        file_id         : unique uuid for the file
+    file_id         : unique uuid for the file
 
-            simcore.s3: uuid created upon insertion
-            datcore: datcore uuid
+        simcore.s3: uuid created upon insertion
+        datcore: datcore uuid
 
-        raw_file_path   : raw path to file
+    raw_file_path   : raw path to file
 
-            simcore.s3: proj_id/node_id/filename.ending
-            emailaddress/...
-            datcore: dataset/collection/filename.ending
+        simcore.s3: proj_id/node_id/filename.ending
+        emailaddress/...
+        datcore: dataset/collection/filename.ending
 
-        display_file_path: human readlable  path to file
+    display_file_path: human readlable  path to file
 
-            simcore.s3: proj_name/node_name/filename.ending
-            my_documents/...
-            datcore: dataset/collection/filename.ending
+        simcore.s3: proj_name/node_name/filename.ending
+        my_documents/...
+        datcore: dataset/collection/filename.ending
 
-        created_at          : time stamp
-        last_modified       : time stamp
-        file_size           : size in bytes
+    created_at          : time stamp
+    last_modified       : time stamp
+    file_size           : size in bytes
 
-        TODO:
-        state:  on of OK, UPLOADING, DELETED
+    TODO:
+    state:  on of OK, UPLOADING, DELETED
 
-        """
+    """
 
     # pylint: disable=attribute-defined-outside-init
     def simcore_from_uuid(self, file_uuid: str, bucket_name: str):
@@ -124,8 +133,8 @@ class FileMetaData:
             self.bucket_name = bucket_name
             self.object_name = "/".join(parts[:])
             self.file_name = parts[2]
-            self.project_id = parts[0]
-            self.node_id = parts[1]
+            self.project_id = parts[0] if is_uuid(parts[0]) else None
+            self.node_id = parts[1] if is_uuid(parts[1]) else None
             self.file_uuid = file_uuid
             self.file_id = file_uuid
             self.raw_file_path = self.file_uuid
@@ -153,8 +162,7 @@ attr.s(
 
 @attr.s(auto_attribs=True)
 class FileMetaDataEx:
-    """Extend the base type by some additional attributes that shall not end up in the db
-    """
+    """Extend the base type by some additional attributes that shall not end up in the db"""
 
     fmd: FileMetaData
     parent_id: str = ""

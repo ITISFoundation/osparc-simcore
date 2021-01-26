@@ -7,7 +7,6 @@ import logging
 from typing import List
 
 from aiohttp import web
-
 from servicelib.openapi import OpenApiSpec
 
 from . import handlers
@@ -80,6 +79,13 @@ def create(specs: OpenApiSpec) -> List[web.RouteDef]:
     path, handle = "/locations/{location_id}/files/{fileId}", handlers.upload_file
     operation_id = specs.paths[path].operations["put"].operation_id
     routes.append(web.put(BASEPATH + path, handle, name=operation_id))
+
+    path, handle = (
+        "/simcore-s3/files/metadata:search",
+        handlers.search_files_starting_with,
+    )
+    operation_id = specs.paths[path].operations["post"].operation_id
+    routes.append(web.delete(BASEPATH + path, handle, name=operation_id))
 
     path, handle = "/simcore-s3/folders", handlers.create_folders_from_project
     operation_id = specs.paths[path].operations["post"].operation_id

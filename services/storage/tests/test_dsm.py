@@ -13,6 +13,7 @@ import io
 import json
 import os
 import urllib
+import uuid
 from pathlib import Path
 from shutil import copyfile
 
@@ -436,12 +437,24 @@ async def test_copy_datcore(
 
 
 def test_fmd_build():
-    file_uuid = str(Path("1234") / Path("abcd") / Path("xx.dat"))
+    file_uuid = str(Path("api") / Path("abcd") / Path("xx.dat"))
     fmd = FileMetaData()
     fmd.simcore_from_uuid(file_uuid, "test-bucket")
 
-    assert fmd.node_id == "abcd"
-    assert fmd.project_id == "1234"
+    assert not fmd.node_id
+    assert not fmd.project_id
+    assert fmd.file_name == "xx.dat"
+    assert fmd.object_name == "api/abcd/xx.dat"
+    assert fmd.file_uuid == file_uuid
+    assert fmd.location == SIMCORE_S3_STR
+    assert fmd.location_id == SIMCORE_S3_ID
+    assert fmd.bucket_name == "test-bucket"
+
+    file_uuid = f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat"
+    fmd.simcore_from_uuid(file_uuid, "test-bucket")
+
+    assert fmd.node_id == file_uuid.split("/")[1]
+    assert fmd.project_id == file_uuid.split("/")[0]
     assert fmd.file_name == "xx.dat"
     assert fmd.object_name == "1234/abcd/xx.dat"
     assert fmd.file_uuid == file_uuid

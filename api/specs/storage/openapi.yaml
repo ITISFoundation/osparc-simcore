@@ -324,6 +324,33 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /simcore-s3/files/metadata:search:
+    post:
+      summary: Returns metadata for all files matching a pattern
+      operationId: search_files_starting_with
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: startswith
+          description: matches starting string of the file_uuid
+          in: query
+          schema:
+            type: string
+            default: ""
+      responses:
+        '200':
+          description: list of matching files found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileMetaDataArrayEnveloped'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+
+
   /simcore-s3/folders:
     post:
       summary: Deep copies of all data from source to destination project in s3

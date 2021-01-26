@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Dict
 
 import attr
 from aiohttp import web
@@ -288,6 +289,9 @@ async def delete_file(request: web.Request):
     return {"error": None, "data": None}
 
 
+# Exclusive for simcore-s3 storage -----------------------
+
+
 async def create_folders_from_project(request: web.Request):
     # FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
     # params, query, body = await extract_and_validate(request)
@@ -330,12 +334,33 @@ async def delete_folders_of_project(request: web.Request):
     raise web.HTTPNoContent(content_type="application/json")
 
 
+async def search_files_starting_with(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+    assert not params, "params %s" % params  # nosec
+    assert query, "query %s" % query  # nosec
+    assert not body, "body %s" % body  # nosec
+
+    assert query["user_id"]  # nosec
+    assert query["startswith"]  # nosec
+
+    user_id = int(query["user_id"])
+    startswith = query["startswith"]
+
+    dsm = await _prepare_storage_manager(
+        {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request
+    )
+
+    data = await dsm.search_s3_files_starting_with(user_id, prefix=startswith)
+
+    return [{**attr.asdict(d.fmd), "parent_id": d.parent_id} for d in data]
+
+
 # HELPERS -----------------------------------------------------
 INIT_STR = "init"
 
 
 async def _prepare_storage_manager(
-    params, query, request: web.Request
+    params: Dict, query: Dict, request: web.Request
 ) -> DataStorageManager:
     dsm = request.app[APP_DSM_KEY]
 
