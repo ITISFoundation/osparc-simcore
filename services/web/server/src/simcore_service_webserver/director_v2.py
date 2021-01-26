@@ -61,7 +61,7 @@ async def _request_director_v2(
                 raise _DirectorServiceError(resp.status, payload)
 
             payload: Dict = await resp.json()
-            return (payload, resp.status)
+            return payload
 
     except TimeoutError as err:
         raise web.HTTPServiceUnavailable(
