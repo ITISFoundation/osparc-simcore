@@ -285,22 +285,29 @@ async def stop_computation_project(
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
         )
-        # check if current state allow to stop the computation
-        comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
-            project_id
+        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
+            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
         )
+        # get the project task states
+        tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(project_id)
+        # create the complete DAG graph
+        complete_dag = create_complete_dag_from_tasks(tasks)
+        # filter the tasks by the effective pipeline
+        filtered_tasks = [
+            t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
+        ]
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            filtered_tasks, celery_client.settings.publication_timeout
         )
 
         if is_pipeline_running(pipeline_state):
             await _abort_pipeline_tasks(
-                project, comp_tasks, computation_tasks, celery_client
+                project, filtered_tasks, computation_tasks, celery_client
             )
         return ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline=pipeline_at_db.dag_adjacency_list,
+            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag),
             url=f"{str(request.url).rstrip(':stop')}",
         )
 

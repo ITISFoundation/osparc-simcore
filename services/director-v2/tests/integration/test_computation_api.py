@@ -600,6 +600,7 @@ def test_abort_computation(
     user_id: PositiveInt,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
@@ -612,12 +613,13 @@ def test_abort_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
-    assert task_out.id == sleepers_project.uuid
-    assert task_out.state == RunningState.PUBLISHED
-    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
-    assert (
-        task_out.stop_url
-        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+    # check the contents is correctb
+    _assert_computation_task_out_obj(
+        client,
+        task_out,
+        project=sleepers_project,
+        exp_task_state=RunningState.PUBLISHED,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details,
     )
 
     # wait until the pipeline is started
