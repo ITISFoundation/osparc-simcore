@@ -558,7 +558,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ComputationTaskOut"
+                }
               }
             }
           },
@@ -758,7 +760,7 @@
         "required": [
           "id",
           "state",
-          "pipeline",
+          "pipeline_details",
           "url"
         ],
         "type": "object",
@@ -782,17 +784,14 @@
             "type": "string",
             "description": "the result of the computational task"
           },
-          "pipeline": {
-            "title": "Pipeline",
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "format": "uuid"
+          "pipeline_details": {
+            "title": "Pipeline Details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PipelineDetails"
               }
-            },
-            "description": "the corresponding pipeline in terms of node uuids"
+            ],
+            "description": "the details of the generated pipeline"
           },
           "url": {
             "title": "Url",
@@ -875,6 +874,15 @@
           }
         }
       },
+      "NodeIOState": {
+        "title": "NodeIOState",
+        "enum": [
+          "OK",
+          "OUTDATED"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
       "NodeRequirement": {
         "title": "NodeRequirement",
         "enum": [
@@ -884,6 +892,71 @@
         ],
         "type": "string",
         "description": "An enumeration."
+      },
+      "NodeRunnableState": {
+        "title": "NodeRunnableState",
+        "enum": [
+          "WAITING_FOR_DEPENDENCIES",
+          "READY"
+        ],
+        "type": "string",
+        "description": "An enumeration."
+      },
+      "NodeState": {
+        "title": "NodeState",
+        "required": [
+          "io_state",
+          "runnable_state"
+        ],
+        "type": "object",
+        "properties": {
+          "io_state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NodeIOState"
+              }
+            ],
+            "description": "represents the state of the inputs outputs"
+          },
+          "runnable_state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NodeRunnableState"
+              }
+            ],
+            "description": "represent the runnable state of the node"
+          }
+        }
+      },
+      "PipelineDetails": {
+        "title": "PipelineDetails",
+        "required": [
+          "adjacency_list",
+          "node_states"
+        ],
+        "type": "object",
+        "properties": {
+          "adjacency_list": {
+            "title": "Adjacency List",
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "description": "The adjacency list in terms of {NodeID: [successor NodeID]}"
+          },
+          "node_states": {
+            "title": "Node States",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NodeState"
+            },
+            "description": "The states of each of the pipeline node"
+          }
+        }
       },
       "RetrieveDataIn": {
         "title": "RetrieveDataIn",
