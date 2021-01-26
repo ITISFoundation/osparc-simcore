@@ -89,7 +89,7 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=log)
-async def get_pipeline_state(
+async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:
     director2_settings: Directorv2Settings = get_settings(app)

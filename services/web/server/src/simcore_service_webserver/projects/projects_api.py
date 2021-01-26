@@ -31,7 +31,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from ..director import director_api
 from ..director_v2 import (
     delete_pipeline,
-    get_pipeline_state,
+    get_computation_task,
     request_retrieve_dyn_service,
 )
 from ..resource_manager.websocket_manager import managed_resource
@@ -508,7 +508,7 @@ async def add_project_states_for_user(
     running_state = RunningState.UNKNOWN
     if not is_template:
         lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
-        computation_task = await get_pipeline_state(app, user_id, project["uuid"])
+        computation_task = await get_computation_task(app, user_id, project["uuid"])
         if computation_task:
             running_state = computation_task.state
 
