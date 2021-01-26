@@ -76,7 +76,7 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       "loaded"
     ].forEach(eventName => {
       image.addListener(eventName, e => {
-        this.__calculateMaxHeight();
+        this.calculateMaxHeight();
       }, this);
     });
   },
@@ -102,7 +102,7 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       return control || this.base(arguments, id);
     },
 
-    __calculateMaxHeight: function() {
+    recheckSize: function() {
       const image = this.getChildControl("image");
       const source = image.getSource();
       if (source) {
