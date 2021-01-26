@@ -27,6 +27,7 @@ from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_sdk.models.pipeline_models import ComputationalTask
 
 from ..director import director_api
 from ..director_v2 import (
@@ -508,9 +509,20 @@ async def add_project_states_for_user(
     running_state = RunningState.UNKNOWN
     if not is_template:
         lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
-        computation_task = await get_computation_task(app, user_id, project["uuid"])
+        computation_task: ComputationalTask = await get_computation_task(
+            app, user_id, project["uuid"]
+        )
         if computation_task:
+            # get the running state
             running_state = computation_task.state
+            # get the nodes individual states
+            for (
+                node_id,
+                node_state,
+            ) in computation_task.pipeline_details["node_states"].items():
+                prj_node = project["workbench"].get(str(node_id))
+                prj_node["io_state"] = node_state.get("io_state")
+                prj_node["runnable_state"] = node_state.get("runnable_state")
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
