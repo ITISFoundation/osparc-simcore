@@ -103,7 +103,7 @@ async def get_computation_task(
         computation_task_out_dict = await _request_director_v2(
             app, "GET", backend_url, expected_status=web.HTTPAccepted
         )
-        task_out = ComputationTask.construct(**computation_task_out_dict)
+        task_out = ComputationTask.parse_obj(computation_task_out_dict)
         return task_out
     except _DirectorServiceError:
         log.warning(
