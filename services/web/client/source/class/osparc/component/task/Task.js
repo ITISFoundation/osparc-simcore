@@ -31,6 +31,8 @@ qx.Class.define("osparc.component.task.Task", {
       maxWidth: this.self().MAX_WIDTH,
       backgroundColor: "material-button-background"
     });
+
+    this._buildLayout();
   },
 
   properties: {
@@ -91,6 +93,13 @@ qx.Class.define("osparc.component.task.Task", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    /**
+      * @abstract
+      */
+    _buildLayout: function() {
+      throw new Error("Abstract method called!");
     },
 
     /**

@@ -18,15 +18,7 @@
 qx.Class.define("osparc.component.task.Import", {
   extend: osparc.component.task.Task,
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__builyLayout();
-  },
-
   members: {
-    __study: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -44,7 +36,8 @@ qx.Class.define("osparc.component.task.Import", {
       return control || this.base(arguments, id);
     },
 
-    __builyLayout: function() {
+    // overridden
+    _buildLayout: function() {
       this.getChildControl("icon");
       this.getChildControl("title");
       this.getChildControl("subtitle");

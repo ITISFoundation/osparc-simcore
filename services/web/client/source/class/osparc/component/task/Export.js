@@ -19,11 +19,9 @@ qx.Class.define("osparc.component.task.Export", {
   extend: osparc.component.task.Task,
 
   construct: function(study) {
-    this.base(arguments);
-
     this.__study = study;
 
-    this.__builyLayout();
+    this.base(arguments);
   },
 
   members: {
@@ -46,7 +44,8 @@ qx.Class.define("osparc.component.task.Export", {
       return control || this.base(arguments, id);
     },
 
-    __builyLayout: function() {
+    // overridden
+    _buildLayout: function() {
       this.getChildControl("icon");
       this.getChildControl("title");
       this.getChildControl("subtitle");
