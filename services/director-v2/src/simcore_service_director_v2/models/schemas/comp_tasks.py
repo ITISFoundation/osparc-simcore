@@ -1,45 +1,15 @@
-from enum import Enum, unique
-from typing import Dict, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, BaseModel, Field
 
 from ..schemas.constants import UserID
 
 TaskID = UUID
-
-
-@unique
-class NodeIOState(str, Enum):
-    OK = "OK"
-    OUTDATED = "OUTDATED"
-
-
-@unique
-class NodeRunnableState(str, Enum):
-    WAITING_FOR_DEPENDENCIES = "WAITING_FOR_DEPENDENCIES"
-    READY = "READY"
-
-
-class NodeState(BaseModel):
-    io_state: NodeIOState = Field(
-        ..., description="represents the state of the inputs outputs"
-    )
-    runnable_state: NodeRunnableState = Field(
-        ..., description="represent the runnable state of the node"
-    )
-
-
-class PipelineDetails(BaseModel):
-    adjacency_list: Dict[NodeID, List[NodeID]] = Field(
-        ..., description="The adjacency list in terms of {NodeID: [successor NodeID]}"
-    )
-    node_states: Dict[NodeID, NodeState] = Field(
-        ..., description="The states of each of the pipeline node"
-    )
 
 
 class ComputationTask(BaseModel):
