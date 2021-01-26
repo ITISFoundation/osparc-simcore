@@ -594,12 +594,10 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
-        if ("access_rights" in this.__resourceData) {
-          return osparc.component.export.ServicePermissions.canGroupWrite(this.__resourceData["access_rights"], myGid);
+        if (osparc.utils.Resources.isService(this.__resourceData)) {
+          return osparc.component.permissions.Service.canGroupWrite(this.__resourceData["access_rights"], myGid);
         }
-        if ("accessRights" in this.__resourceData) {
-          return osparc.component.export.StudyPermissions.canGroupWrite(this.__resourceData["accessRights"], myGid);
-        }
+        return osparc.component.permissions.Study.canGroupWrite(this.__resourceData["accessRights"], myGid);
       }
       return false;
     }

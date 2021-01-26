@@ -55,8 +55,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     this.set({
       paddingLeft: 10,
       paddingRight: 10,
-      height: 50,
-      maxHeight: 50,
+      height: this.self().HEIGHT,
+      maxHeight: this.self().HEIGHT,
       backgroundColor: "background-main-lighter"
     });
   },
@@ -82,6 +82,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   statics: {
+    HEIGHT: 50,
+
     BUTTON_OPTIONS: {
       font: "text-14",
       allowGrowY: false,
@@ -148,6 +150,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         flex: 1
       });
 
+      this.getChildControl("tasks-button");
       this.getChildControl("manual");
       this.getChildControl("feedback");
       this.getChildControl("theme-switch");
@@ -206,6 +209,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this._add(control);
           break;
+        case "tasks-button": {
+          control = new osparc.component.task.TasksButton();
+          this._add(control);
+          break;
+        }
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);

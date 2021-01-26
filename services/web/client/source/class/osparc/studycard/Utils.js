@@ -288,7 +288,7 @@ qx.Class.define("osparc.studycard.Utils", {
       * @param studyData {Object} Serialized Study Object
       */
     openAccessRights: function(studyData) {
-      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+      const permissionsView = new osparc.component.permissions.Study(studyData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       return permissionsView;
