@@ -3,6 +3,7 @@
 """
 
 from copy import deepcopy
+from enum import Enum, unique
 from typing import Dict, List, Optional, Union
 
 from pydantic import (
@@ -160,3 +161,24 @@ class Node(BaseModel):
                 if prop_name in schema.get("properties", {}):
                     was = deepcopy(schema["properties"][prop_name])
                     schema["properties"][prop_name] = {"anyOf": [{"type": "null"}, was]}
+
+
+@unique
+class NodeIOState(str, Enum):
+    OK = "OK"
+    OUTDATED = "OUTDATED"
+
+
+@unique
+class NodeRunnableState(str, Enum):
+    WAITING_FOR_DEPENDENCIES = "WAITING_FOR_DEPENDENCIES"
+    READY = "READY"
+
+
+class NodeState(BaseModel):
+    io_state: NodeIOState = Field(
+        ..., description="represents the state of the inputs outputs"
+    )
+    runnable_state: NodeRunnableState = Field(
+        ..., description="represent the runnable state of the node"
+    )

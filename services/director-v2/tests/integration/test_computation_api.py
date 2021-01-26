@@ -15,7 +15,9 @@ from uuid import UUID, uuid4
 
 import pytest
 import sqlalchemy as sa
+from models_library.projects_nodes import NodeIOState, NodeRunnableState, NodeState
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
@@ -25,13 +27,7 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.models.domains.projects import ProjectAtDB
-from simcore_service_director_v2.models.schemas.comp_tasks import (
-    ComputationTaskOut,
-    NodeIOState,
-    NodeRunnableState,
-    NodeState,
-    PipelineDetails,
-)
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from sqlalchemy import literal_column
 from starlette import status
 from starlette.responses import Response
