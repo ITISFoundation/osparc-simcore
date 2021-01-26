@@ -99,9 +99,9 @@ async def create_projects(request: web.Request):
         )
 
         # Appends state
-        project["state"] = await projects_api.get_project_state_for_user(
+        project = await projects_api.add_project_states_for_user(
             user_id=user_id,
-            project_uuid=project["uuid"],
+            project=project,
             is_template=as_template is not None,
             app=request.app,
         )
@@ -128,29 +128,29 @@ async def list_projects(request: web.Request):
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     # TODO: improve dbapi to list project
-    async def add_prj_state(project: Dict[str, Any], is_template: bool) -> None:
-        project["state"] = await projects_api.get_project_state_for_user(
-            user_id=user_id,
-            project_uuid=project["uuid"],
-            is_template=is_template,
-            app=request.app,
+    async def set_all_project_states(projects: List[Dict[str, Any]], is_template: bool):
+        await logged_gather(
+            *[
+                projects_api.add_project_states_for_user(
+                    user_id=user_id,
+                    project=prj,
+                    is_template=is_template,
+                    app=request.app,
+                )
+                for prj in projects
+            ],
+            reraise=True,
         )
 
     projects_list = []
     if ptype in ("template", "all"):
         template_projects = await db.load_template_projects(user_id=user_id)
-        await logged_gather(
-            *[add_prj_state(prj, is_template=True) for prj in template_projects],
-            reraise=True,
-        )
+        await set_all_project_states(template_projects, False)
         projects_list += template_projects
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
         user_projects = await db.load_user_projects(user_id=user_id)
-        await logged_gather(
-            *[add_prj_state(prj, is_template=False) for prj in user_projects],
-            reraise=True,
-        )
+        await set_all_project_states(user_projects, True)
         projects_list += user_projects
 
     start = int(request.query.get("start", 0))
@@ -276,9 +276,9 @@ async def replace_project(request: web.Request):
         )
         await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)
         # Appends state
-        new_project["state"] = await projects_api.get_project_state_for_user(
+        new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
-            project_uuid=project_uuid,
+            project=new_project,
             is_template=False,
             app=request.app,
         )
@@ -389,9 +389,9 @@ async def open_project(request: web.Request) -> web.Response:
         await projects_api.start_project_interactive_services(request, project, user_id)
 
         # notify users that project is now locked
-        project["state"] = await projects_api.get_project_state_for_user(
+        project = await projects_api.add_project_states_for_user(
             user_id=user_id,
-            project_uuid=project_uuid,
+            project=project,
             is_template=False,
             app=request.app,
         )
@@ -421,7 +421,7 @@ async def close_project(request: web.Request) -> web.Response:
             include_state=False,
         )
         # if we are the only user left we can safely remove the services
-        async def _close_project_task() -> None:
+        async def _close_project_task(project: Dict[str, Any]) -> None:
             try:
                 project_opened_by_others: bool = False
                 with managed_resource(user_id, client_session_id, request.app) as rt:
@@ -440,15 +440,15 @@ async def close_project(request: web.Request) -> web.Response:
                     # now we can remove the lock
                     await rt.remove("project_id")
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
-                project["state"] = await projects_api.get_project_state_for_user(
+                project = await projects_api.add_project_states_for_user(
                     user_id=user_id,
-                    project_uuid=project_uuid,
+                    project=project,
                     is_template=False,
                     app=request.app,
                 )
                 await projects_api.notify_project_state_update(request.app, project)
 
-        fire_and_forget_task(_close_project_task())
+        fire_and_forget_task(_close_project_task(project))
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError as exc:
