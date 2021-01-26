@@ -1,36 +1,16 @@
 import logging
+import traceback
 
 from typing import Optional, Dict, Any
 from aiohttp.web import Application
 from .models import MonitorData
+from ..config import get_settings
 import httpx
 
 logger = logging.getLogger(__name__)
 
 
 KEY_SERVICE_SIDECAR_API_CLIENT = f"{__name__}.ServiceSidecarClient"
-
-# pylint: disable=useless-return
-def log_error_and_return(
-    response: httpx.Response,
-    e: Optional[Exception] = None,
-    retrun_value: Optional[Any] = None,
-) -> None:
-    """Logs error and returns return_value"""
-    if e is None:
-        logging.warning(
-            "error during request status=%s, body=%s",
-            response.status_code,
-            response.text,
-        )
-    else:
-        logging.warning(
-            "error during request status=%s, body=%s\n\n%s\nThe above error occurred",
-            response.status_code,
-            response.text,
-            str(e),
-        )
-    return retrun_value
 
 
 def get_url(service_sidecar_endpoint: str, postfix: str) -> str:
@@ -40,11 +20,31 @@ def get_url(service_sidecar_endpoint: str, postfix: str) -> str:
     return url
 
 
+def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> None:
+    # this can be useful for debugging what is wrong with the API
+    logging.warning(
+        (
+            "%s -> %s generated:\n %s\nThe above logs can safely "
+            "be ignored, except when the service-sidecar is failing"
+        ),
+        method,
+        url,
+        formatted_traceback,
+    )
+
+
 class ServiceSidecarClient:
     """Will handle connections to the service sidecar"""
 
-    def __init__(self):
-        timeout = httpx.Timeout(1.0, connect=1.0)
+    def __init__(self, app: Application):
+        self._app = app
+        self._heatlth_request_timeout = httpx.Timeout(1.0, connect=1.0)
+
+        service_sidecar_settings = get_settings(app)
+
+        timeout = httpx.Timeout(
+            service_sidecar_settings.service_sidecar_api_request_timeout, connect=1.0
+        )
         self.httpx_client = httpx.AsyncClient(timeout=timeout)
 
     async def close(self):
@@ -55,7 +55,10 @@ class ServiceSidecarClient:
         url = get_url(service_sidecar_endpoint, "/health")
         logging.debug("Requesting url %s", url)
         try:
-            response = await self.httpx_client.get(url=url)
+            # this request uses a very short timeout
+            response = await self.httpx_client.get(
+                url=url, timeout=self._heatlth_request_timeout
+            )
             if response.status_code != 200:
                 return False
 
@@ -80,10 +83,8 @@ class ServiceSidecarClient:
                 return None
 
             return response.json()
-        except httpx.HTTPError as e:
-            logging.warning(
-                "While requesting %s the following error occurred: %s", url, str(e)
-            )
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "GET", traceback.format_exc())
             return None
 
     async def start_or_update_compose_service(
@@ -104,16 +105,14 @@ class ServiceSidecarClient:
             # request was ok
             logger.info("Applied spec result %s", response.text)
             return True
-        except httpx.HTTPError as e:
-            logging.warning(
-                "While requesting %s the following error occurred: %s", url, str(e)
-            )
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             return False
 
 
 async def setup_api_client(app: Application) -> None:
     logger.debug("service-sidecar api client setup")
-    app[KEY_SERVICE_SIDECAR_API_CLIENT] = ServiceSidecarClient()
+    app[KEY_SERVICE_SIDECAR_API_CLIENT] = ServiceSidecarClient(app)
 
 
 async def shutdown_api_client(app: Application) -> None:

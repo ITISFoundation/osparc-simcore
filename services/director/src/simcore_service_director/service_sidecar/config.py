@@ -1,7 +1,7 @@
 # this is a proxy for the global configuration and will be removed in the future
 # making it easy to refactor
 
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings, Field, PositiveInt
 from aiohttp.web import Application
 
 
@@ -58,6 +58,11 @@ class ServiceSidecarSettings(BaseSettings):
     dev_expose_service_sidecar: bool = Field(
         False,
         description="if true exposes all the service sidecars to the host for simpler debugging",
+    )
+
+    service_sidecar_api_request_timeout: PositiveInt = Field(
+        60,
+        description="the default timeout each request to the service-sidecar API in seconds",
     )
 
     @property

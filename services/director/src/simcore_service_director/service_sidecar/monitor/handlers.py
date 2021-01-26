@@ -78,6 +78,7 @@ class ServicesInspect(BaseEventHandler):
             )
 
         # TODO: parse and store service info here
+        logger.info("Container inspect, result %s", containers_inspect)
 
 
 # register all handlers defined in this module here
