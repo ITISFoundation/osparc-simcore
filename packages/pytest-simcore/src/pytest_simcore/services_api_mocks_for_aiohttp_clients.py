@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 from typing import Dict, List
 
 import pytest
@@ -9,11 +10,38 @@ from yarl import URL
 
 # The adjacency list is defined as a dictionary with the key to the node and its list of successors
 FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
-    "node id 1": ["node id 2", "node id 3", "node id 4"],
-    "node id 2": ["node_id 5"],
-    "node id 3": ["node_id 5"],
-    "node id 4": ["node_id 5"],
-    "node id 5": [],
+    "62bca361-8594-48c8-875e-b8577e868aec": [
+        "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd",
+        "5284bb5b-b068-4d0e-9075-3d5d8eec5060",
+        "750454a8-b450-43ce-a012-40b669f7d28c",
+    ],
+    "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": ["e83a359a-1efe-41d3-83aa-a285afbfaf12"],
+    "5284bb5b-b068-4d0e-9075-3d5d8eec5060": ["e83a359a-1efe-41d3-83aa-a285afbfaf12"],
+    "750454a8-b450-43ce-a012-40b669f7d28c": ["e83a359a-1efe-41d3-83aa-a285afbfaf12"],
+    "e83a359a-1efe-41d3-83aa-a285afbfaf12": [],
+}
+
+FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, str]] = {
+    "62bca361-8594-48c8-875e-b8577e868aec": {
+        "io_state": "OUTDATED",
+        "runnable_state": "READY",
+    },
+    "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": {
+        "io_state": "OUTDATED",
+        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+    },
+    "5284bb5b-b068-4d0e-9075-3d5d8eec5060": {
+        "io_state": "OK",
+        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+    },
+    "750454a8-b450-43ce-a012-40b669f7d28c": {
+        "io_state": "OUTDATED",
+        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+    },
+    "e83a359a-1efe-41d3-83aa-a285afbfaf12": {
+        "io_state": "OK",
+        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+    },
 }
 
 
@@ -29,17 +57,53 @@ def creation_cb(url, **kwargs) -> CallbackResult:
         else RunningState.NOT_STARTED
     )
     pipeline: Dict[str, List[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    node_states = FULL_PROJECT_NODE_STATES
     if body.get("subgraph"):
         # create some fake adjacency list
+        pipeline = {}
+        node_states = {}
         for node_id in body.get("subgraph"):
-            pipeline[node_id] = ["some node 5334", "some node 2324"]
+            pipeline[node_id] = [
+                "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
+                "0bdf824f-57cb-4e38-949e-fd12c184f000",
+            ]
+            node_states[node_id] = {"io_state": "OUTDATED", "runnable_state": "READY"}
+        node_states["62237c33-8d6c-4709-aa92-c3cf693dd6d2"] = {
+            "io_state": "OUTDATED",
+            "runnable_state": "WAITING_FOR_DEPENDENCIES",
+        }
+        node_states["0bdf824f-57cb-4e38-949e-fd12c184f000"] = {
+            "io_state": "OUTDATED",
+            "runnable_state": "WAITING_FOR_DEPENDENCIES",
+        }
 
     return CallbackResult(
         status=201,
         payload={
             "id": kwargs["json"]["project_id"],
             "state": state,
-            "pipeline": pipeline,
+            "pipeline_details": {
+                "adjacency_list": pipeline,
+                "node_states": node_states,
+            },
+        },
+    )
+
+
+def get_computation_cb(url, **kwargs) -> CallbackResult:
+    state = RunningState.NOT_STARTED
+    pipeline: Dict[str, List[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
+    node_states = FULL_PROJECT_NODE_STATES
+
+    return CallbackResult(
+        status=202,
+        payload={
+            "id": Path(url.path).name,
+            "state": state,
+            "pipeline_details": {
+                "adjacency_list": pipeline,
+                "node_states": node_states,
+            },
         },
     )
 
@@ -78,7 +142,7 @@ async def director_v2_service_mock() -> aioresponses:
         mock.get(
             get_computation_pattern,
             status=202,
-            payload={"state": str(RunningState.NOT_STARTED.value)},
+            callback=get_computation_cb,
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
