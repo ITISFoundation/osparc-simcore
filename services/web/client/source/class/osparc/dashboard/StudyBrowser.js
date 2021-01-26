@@ -202,10 +202,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createUserStudiesLayout: function() {
       const userStudyContainer = this.__userStudyContainer = this.__createStudyListLayout();
+      userStudyContainer.add(this.__createNewStudyButton());
       osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
+
+      const importStudyButton = this.__createImportButton();
+      studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
+      studiesTitleContainer.add(importStudyButton);
 
       // Delete Studies Button
       const studiesDeleteButton = this.__createDeleteButton(false);
@@ -235,6 +240,32 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => {
           this._startStudy(studyData["uuid"]);
         });
+    },
+
+    __createImportButton: function() {
+      const importButton = new qx.ui.form.Button(this.tr("Import"));
+      importButton.addListener("execute", () => {
+        const importStudy = new osparc.component.study.Import();
+        const win = osparc.ui.window.Window.popUpInWindow(importStudy, this.tr("Import Study"), 400, 125);
+        win.set({
+          clickAwayClose: false
+        });
+        importStudy.addListener("fileReady", e => {
+          win.close();
+          const file = e.getData();
+          if (file === null || file === undefined) {
+            return;
+          }
+          const size = file.size;
+          const maxSize = 10 * 1024 * 1024 * 1024; // 10 GB
+          if (size > maxSize) {
+            osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
+            return;
+          }
+          this.__importStudy(file);
+        }, this);
+      }, this);
+      return importButton;
     },
 
     __createDeleteButton: function() {
@@ -341,8 +372,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _resetStudiesList: function(userStudiesList) {
       this.__userStudies = userStudiesList;
-      this.__userStudyContainer.removeAll();
-      this.__userStudyContainer.add(this.__createNewStudyButton());
+      const userStudyItems = this.__userStudyContainer.getChildren();
+      for (let i=userStudyItems.length-1; i>=0; i--) {
+        const userStudyItem = userStudyItems[i];
+        if (userStudyItem instanceof osparc.dashboard.StudyBrowserButtonItem) {
+          this.__userStudyContainer.remove(userStudyItem);
+        }
+      }
       this.self().sortStudyList(userStudiesList);
       userStudiesList.forEach(userStudy => {
         userStudy["resourceType"] = "study";
@@ -428,6 +464,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
+      const exportButton = this.__getExportMenuButton(studyData);
+      menu.add(exportButton);
+
       const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && canCreateTemplate) {
@@ -479,9 +518,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __openPermissions: function(studyData) {
-      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
-      const title = this.tr("Share with Collaborators and Organizations");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
       permissionsView.addListener("updateStudy", e => {
         const studyId = e.getData();
         this._reloadStudy(studyId);
@@ -513,10 +550,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return studyServicesButton;
     },
 
+    __getExportMenuButton: function(studyData) {
+      const exportButton = new qx.ui.menu.Button(this.tr("Export"));
+      exportButton.addListener("execute", () => {
+        this.__exportStudy(studyData);
+      }, this);
+      return exportButton;
+    },
+
     __getSaveAsTemplateMenuButton: function(studyData) {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Publish as Template"));
       saveAsTemplateButton.addListener("execute", () => {
-        const saveAsTemplateView = new osparc.component.export.SaveAsTemplate(studyData.uuid, studyData);
+        const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(studyData.uuid, studyData);
         const title = this.tr("Publish as Template");
         const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 400, 300);
         saveAsTemplateView.addListener("finished", e => {
@@ -581,6 +626,100 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    __exportStudy: function(studyData) {
+      const exportTask = new osparc.component.task.Export(studyData);
+      exportTask.start();
+      exportTask.setSubtitle(this.tr("Preparing files"));
+      const text = this.tr("Exporting process started and added to the background tasks");
+      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+
+      const url = window.location.href + "v0/projects/" + studyData["uuid"] + ":xport";
+      const downloadStartedCB = () => {
+        const textSuccess = this.tr("Download started");
+        exportTask.setSubtitle(textSuccess);
+      };
+      osparc.utils.Utils.downloadLink(url, "POST", null, downloadStartedCB)
+        .catch(() => {
+          const textError = this.tr("Something went wrong Exporting the study");
+          osparc.component.message.FlashMessenger.getInstance().logAs(textError, "ERROR");
+        })
+        .finally(() => {
+          exportTask.stop();
+        });
+    },
+
+    __importStudy: function(file) {
+      const importTask = new osparc.component.task.Import();
+      importTask.start();
+      const text = this.tr("Importing process started and added to the background tasks");
+      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+
+      const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
+      placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
+      const uploadingLabel = this.tr("Uploading file");
+      placeholderStudyCard.setStateLabel(uploadingLabel);
+      importTask.setSubtitle(uploadingLabel);
+      this.__userStudyContainer.addAt(placeholderStudyCard, 1);
+
+      const body = new FormData();
+      body.append("fileName", file);
+
+      const req = new XMLHttpRequest();
+      req.upload.addEventListener("progress", ep => {
+        // updateProgress
+        if (ep.lengthComputable) {
+          const percentComplete = ep.loaded / ep.total * 100;
+          placeholderStudyCard.getProgressBar().setValue(percentComplete);
+          if (percentComplete === 100) {
+            const processinglabel = this.tr("Processing study");
+            placeholderStudyCard.setStateLabel(processinglabel);
+            importTask.setSubtitle(processinglabel);
+            placeholderStudyCard.getProgressBar().exclude();
+          }
+        } else {
+          console.log("Unable to compute progress information since the total size is unknown");
+        }
+      }, false);
+      req.addEventListener("load", () => {
+        // transferComplete
+        if (req.status == 200) {
+          const processinglabel = this.tr("Processing study");
+          placeholderStudyCard.setStateLabel(processinglabel);
+          importTask.setSubtitle(processinglabel);
+          placeholderStudyCard.getProgressBar().exclude();
+          const data = JSON.parse(req.responseText);
+          const params = {
+            url: {
+              "projectId": data["data"]["uuid"]
+            }
+          };
+          osparc.data.Resources.getOne("studies", params)
+            .then(studyData => {
+              this.__userStudyContainer.remove(placeholderStudyCard);
+              importTask.stop();
+              this._resetStudyItem(studyData);
+            })
+            .catch(err => {
+              console.error(err);
+            });
+        }
+      });
+      req.addEventListener("error", () => {
+        // transferFailed
+        osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+        importTask.stop();
+        this.__userStudyContainer.remove(placeholderStudyCard);
+      });
+      req.addEventListener("abort", () => {
+        // transferAborted
+        osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+        importTask.stop();
+        this.__userStudyContainer.remove(placeholderStudyCard);
+      });
+      req.open("POST", "/v0/projects:import", true);
+      req.send(body);
+    },
+
     __updateDeleteStudiesButton: function(studiesDeleteButton) {
       const nSelected = this.__userStudyContainer.getSelection().length;
       if (nSelected) {
@@ -599,7 +738,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.export.StudyPermissions.removeCollaborator(studyData, myGid);
+        osparc.component.permissions.Study.removeCollaborator(studyData, myGid);
         const params = {
           url: {
             projectId: studyData.uuid

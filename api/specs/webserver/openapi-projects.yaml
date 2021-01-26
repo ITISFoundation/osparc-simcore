@@ -194,7 +194,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/export:
+  /projects/{project_id}/xport:
     parameters:
       - name: project_id
         in: path

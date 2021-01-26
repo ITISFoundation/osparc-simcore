@@ -51,7 +51,7 @@ qx.Class.define("osparc.data.model.Study", {
       accessRights: studyData.accessRights || this.getAccessRights(),
       creationDate: studyData.creationDate ? new Date(studyData.creationDate) : this.getCreationDate(),
       lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : this.getLastChangeDate(),
-      classifiers: studyData.classifiers || studyData.getClassifiers(),
+      classifiers: studyData.classifiers || this.getClassifiers(),
       tags: studyData.tags || this.getTags(),
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality()
@@ -227,7 +227,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
-      return osparc.component.export.StudyPermissions.canGroupExecute(aceessRights, myGid);
+      return osparc.component.permissions.Study.canGroupExecute(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
@@ -250,7 +250,7 @@ qx.Class.define("osparc.data.model.Study", {
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
-        const canIWrite = osparc.component.export.StudyPermissions.canGroupWrite(value, myGid);
+        const canIWrite = osparc.component.permissions.Study.canGroupWrite(value, myGid);
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);

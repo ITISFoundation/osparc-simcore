@@ -44,7 +44,7 @@ class ParallelDownloader:
         exporter_settings = get_settings(app)
         results = await wrapped_function(
             timeouts={
-                "total": exporter_settings.max_upload_file_size,
+                "total": exporter_settings.downloader_max_timeout_seconds,
                 "sock_read": 90,  # default as in parfive code
             }
         )

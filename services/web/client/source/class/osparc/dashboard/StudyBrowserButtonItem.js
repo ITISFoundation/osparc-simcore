@@ -115,12 +115,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyLocked"
     },
 
-    lockedBy: {
-      check: "String",
-      nullable: true,
-      apply: "_applyLockedBy"
-    },
-
     multiSelectionMode: {
       check: "Boolean",
       init: false,
@@ -189,6 +183,26 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             left: 0
           });
           break;
+        case "exporting": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+            alignX: "center",
+            alignY: "middle"
+          }));
+          // const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/file-export/60");
+          const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
+          control.add(icon, {
+            flex: 1
+          });
+          const label = new qx.ui.basic.Label(this.tr("Exporting..."));
+          control.add(label);
+          this._add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
+          break;
+        }
         case "permission-icon": {
           control = new qx.ui.basic.Image();
           control.exclude();
@@ -445,7 +459,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const studyPerm = osparc.component.export.StudyPermissions;
+      const studyPerm = osparc.component.permissions.Study;
       const image = this.getChildControl("permission-icon");
       if (studyPerm.canGroupWrite(accessRights, myGroupId)) {
         image.exclude();
@@ -462,25 +476,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (locked) {
         this.setLocked(state["locked"]["value"]);
         const owner = state["locked"]["owner"];
-        this.setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
+        this.__setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
       } else {
         this.setLocked(false);
-        this.setLockedBy(null);
       }
     },
 
-    _applyLocked: function(locked) {
+    __enableCard: function(enabled) {
       this.set({
-        cursor: locked ? "not-allowed" : "pointer"
+        cursor: enabled ? "pointer" : "not-allowed"
       });
 
       this._getChildren().forEach(item => {
-        item.setOpacity(locked ? 0.4 : 1.0);
+        item.setOpacity(enabled ? 1.0 : 0.4);
       });
-
-      const lock = this.getChildControl("lock");
-      lock.setOpacity(1.0);
-      lock.setVisibility(locked ? "visible" : "excluded");
 
       [
         "tick-selected",
@@ -489,14 +498,45 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.set({
-          enabled: !locked
+          enabled
         });
       });
     },
 
-    _applyLockedBy: function(lockedBy) {
-      this.set({
+    _applyLocked: function(locked) {
+      this.__enableCard(!locked);
+
+      const lock = this.getChildControl("lock");
+      lock.set({
+        opacity: 1.0,
+        visibility: locked ? "visible" : "excluded"
+      });
+    },
+
+    __setLockedBy: function(lockedBy) {
+      const lock = this.getChildControl("lock");
+      lock.set({
         toolTipText: lockedBy ? (lockedBy + this.tr(" is using it")) : null
+      });
+    },
+
+    setExporting: function(exporting) {
+      this.__enableCard(!exporting);
+
+      const icon = this.getChildControl("exporting");
+      icon.set({
+        opacity: 1.0,
+        visibility: exporting ? "visible" : "excluded"
+      });
+    },
+
+    setImporting: function(importing) {
+      this.__enableCard(!importing);
+
+      const icon = this.getChildControl("importing");
+      icon.set({
+        opacity: 1.0,
+        visibility: importing ? "visible" : "excluded"
       });
     },
 
