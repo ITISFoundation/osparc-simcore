@@ -21,9 +21,7 @@ async def write_to_tmp_file(file_contents):
     try:
         yield file_path
     finally:
-        # TODO: do not forget to put me back
-        # await aiofiles.os.remove(file_path)
-        pass
+        await aiofiles.os.remove(file_path)
 
 
 async def async_command(command) -> Tuple[bool, str]:
