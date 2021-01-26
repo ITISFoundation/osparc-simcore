@@ -29,6 +29,7 @@ from simcore_service_webserver.scicrunch.service_client import (
     autocomplete_by_name,
     get_all_versions,
     get_resource_fields,
+    resolve_rrid,
 )
 from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
 
@@ -223,3 +224,43 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
             hits = resource_hits.dict()["__root__"]
 
             assert expected == hits, f"for {guess_name}"
+
+
+@pytest.mark.parametrize(
+    "name,rrid",
+    TOOL_CITATIONS
+    + ANTIBODY_CITATIONS
+    + PLAMID_CITATIONS
+    + ORGANISM_CITATIONS
+    + CELL_LINE_CITATIONS,
+)
+async def test_scicrunch_resolves_all_valid_rrids(
+    name: Optional[str], rrid: str, settings: SciCrunchSettings
+):
+    async with ClientSession() as client:
+        resp = await resolve_rrid(rrid, client, settings)
+
+        assert resp["hits"]["total"] == 1
+
+    #  "hits": {
+    #    "total": 1,
+    #    "hits": [ { "_source" : { "item"}} ]
+    #    "resolver": {
+    #      "uri": "scicrunch.org/resolver",
+    #      "timestamp": "2021-01-26T10:51:33-08:00"
+    #    }
+    # }
+
+    # {
+    #   "hits": {
+    #     "total": 0,
+    #     "hits": [
+    #
+    #     ]
+    #   },
+    #   "resolver": {
+    #     "uri": "scicrunch.org/resolver",
+    #     "timestamp": "2021-01-26T11:05:57-08:00",
+    #     "error": "RRID not found"
+    #   }
+    # }
