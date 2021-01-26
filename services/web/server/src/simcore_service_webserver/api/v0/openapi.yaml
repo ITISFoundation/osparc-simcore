@@ -6374,13 +6374,22 @@ paths:
                                           example:
                                             - "15"
                                       deprecated: true
-                                    connection_state:
-                                      title: Status
-                                      description: the node's connection state
-                                      default: CHANGED
+                                    io_state:
+                                      title: IO State
+                                      description: the node's Inputs/Outputs state
+                                      default: OUTDATED
+                                      type: string
                                       enum:
-                                        - CHANGED
-                                        - CURRENT
+                                        - OUTDATED
+                                        - OK
+                                    runnable_state:
+                                      title: Runnable State
+                                      description: the node's runnable state
+                                      default: READY
+                                      type: string
+                                      enum:
+                                        - READY
+                                        - WAITING_FOR_DEPENDENCIES
                                     state:
                                       title: RunningState
                                       description: the node's running state
@@ -6956,13 +6965,22 @@ paths:
                               example:
                                 - "15"
                           deprecated: true
-                        connection_state:
-                          title: Status
-                          description: the node's connection state
-                          default: CHANGED
+                        io_state:
+                          title: IO State
+                          description: the node's Inputs/Outputs state
+                          default: OUTDATED
+                          type: string
                           enum:
-                            - CHANGED
-                            - CURRENT
+                            - OUTDATED
+                            - OK
+                        runnable_state:
+                          title: Runnable State
+                          description: the node's runnable state
+                          default: READY
+                          type: string
+                          enum:
+                            - READY
+                            - WAITING_FOR_DEPENDENCIES
                         state:
                           title: RunningState
                           description: the node's running state
@@ -7418,13 +7436,22 @@ paths:
                                         example:
                                           - "15"
                                     deprecated: true
-                                  connection_state:
-                                    title: Status
-                                    description: the node's connection state
-                                    default: CHANGED
+                                  io_state:
+                                    title: IO State
+                                    description: the node's Inputs/Outputs state
+                                    default: OUTDATED
+                                    type: string
                                     enum:
-                                      - CHANGED
-                                      - CURRENT
+                                      - OUTDATED
+                                      - OK
+                                  runnable_state:
+                                    title: Runnable State
+                                    description: the node's runnable state
+                                    default: READY
+                                    type: string
+                                    enum:
+                                      - READY
+                                      - WAITING_FOR_DEPENDENCIES
                                   state:
                                     title: RunningState
                                     description: the node's running state
@@ -7998,13 +8025,22 @@ paths:
                                         example:
                                           - "15"
                                     deprecated: true
-                                  connection_state:
-                                    title: Status
-                                    description: the node's connection state
-                                    default: CHANGED
+                                  io_state:
+                                    title: IO State
+                                    description: the node's Inputs/Outputs state
+                                    default: OUTDATED
+                                    type: string
                                     enum:
-                                      - CHANGED
-                                      - CURRENT
+                                      - OUTDATED
+                                      - OK
+                                  runnable_state:
+                                    title: Runnable State
+                                    description: the node's runnable state
+                                    default: READY
+                                    type: string
+                                    enum:
+                                      - READY
+                                      - WAITING_FOR_DEPENDENCIES
                                   state:
                                     title: RunningState
                                     description: the node's running state
@@ -8584,13 +8620,22 @@ paths:
                                         example:
                                           - "15"
                                     deprecated: true
-                                  connection_state:
-                                    title: Status
-                                    description: the node's connection state
-                                    default: CHANGED
+                                  io_state:
+                                    title: IO State
+                                    description: the node's Inputs/Outputs state
+                                    default: OUTDATED
+                                    type: string
                                     enum:
-                                      - CHANGED
-                                      - CURRENT
+                                      - OUTDATED
+                                      - OK
+                                  runnable_state:
+                                    title: Runnable State
+                                    description: the node's runnable state
+                                    default: READY
+                                    type: string
+                                    enum:
+                                      - READY
+                                      - WAITING_FOR_DEPENDENCIES
                                   state:
                                     title: RunningState
                                     description: the node's running state
@@ -9161,13 +9206,22 @@ paths:
                               example:
                                 - "15"
                           deprecated: true
-                        connection_state:
-                          title: Status
-                          description: the node's connection state
-                          default: CHANGED
+                        io_state:
+                          title: IO State
+                          description: the node's Inputs/Outputs state
+                          default: OUTDATED
+                          type: string
                           enum:
-                            - CHANGED
-                            - CURRENT
+                            - OUTDATED
+                            - OK
+                        runnable_state:
+                          title: Runnable State
+                          description: the node's runnable state
+                          default: READY
+                          type: string
+                          enum:
+                            - READY
+                            - WAITING_FOR_DEPENDENCIES
                         state:
                           title: RunningState
                           description: the node's running state
@@ -9623,13 +9677,22 @@ paths:
                                         example:
                                           - "15"
                                     deprecated: true
-                                  connection_state:
-                                    title: Status
-                                    description: the node's connection state
-                                    default: CHANGED
+                                  io_state:
+                                    title: IO State
+                                    description: the node's Inputs/Outputs state
+                                    default: OUTDATED
+                                    type: string
                                     enum:
-                                      - CHANGED
-                                      - CURRENT
+                                      - OUTDATED
+                                      - OK
+                                  runnable_state:
+                                    title: Runnable State
+                                    description: the node's runnable state
+                                    default: READY
+                                    type: string
+                                    enum:
+                                      - READY
+                                      - WAITING_FOR_DEPENDENCIES
                                   state:
                                     title: RunningState
                                     description: the node's running state
@@ -10225,13 +10288,22 @@ paths:
                                         example:
                                           - "15"
                                     deprecated: true
-                                  connection_state:
-                                    title: Status
-                                    description: the node's connection state
-                                    default: CHANGED
+                                  io_state:
+                                    title: IO State
+                                    description: the node's Inputs/Outputs state
+                                    default: OUTDATED
+                                    type: string
                                     enum:
-                                      - CHANGED
-                                      - CURRENT
+                                      - OUTDATED
+                                      - OK
+                                  runnable_state:
+                                    title: Runnable State
+                                    description: the node's runnable state
+                                    default: READY
+                                    type: string
+                                    enum:
+                                      - READY
+                                      - WAITING_FOR_DEPENDENCIES
                                   state:
                                     title: RunningState
                                     description: the node's running state
@@ -11955,13 +12027,22 @@ paths:
                                         example:
                                           - "15"
                                     deprecated: true
-                                  connection_state:
-                                    title: Status
-                                    description: the node's connection state
-                                    default: CHANGED
+                                  io_state:
+                                    title: IO State
+                                    description: the node's Inputs/Outputs state
+                                    default: OUTDATED
+                                    type: string
                                     enum:
-                                      - CHANGED
-                                      - CURRENT
+                                      - OUTDATED
+                                      - OK
+                                  runnable_state:
+                                    title: Runnable State
+                                    description: the node's runnable state
+                                    default: READY
+                                    type: string
+                                    enum:
+                                      - READY
+                                      - WAITING_FOR_DEPENDENCIES
                                   state:
                                     title: RunningState
                                     description: the node's running state
@@ -12534,13 +12615,22 @@ paths:
                                         example:
                                           - "15"
                                     deprecated: true
-                                  connection_state:
-                                    title: Status
-                                    description: the node's connection state
-                                    default: CHANGED
+                                  io_state:
+                                    title: IO State
+                                    description: the node's Inputs/Outputs state
+                                    default: OUTDATED
+                                    type: string
                                     enum:
-                                      - CHANGED
-                                      - CURRENT
+                                      - OUTDATED
+                                      - OK
+                                  runnable_state:
+                                    title: Runnable State
+                                    description: the node's runnable state
+                                    default: READY
+                                    type: string
+                                    enum:
+                                      - READY
+                                      - WAITING_FOR_DEPENDENCIES
                                   state:
                                     title: RunningState
                                     description: the node's running state
