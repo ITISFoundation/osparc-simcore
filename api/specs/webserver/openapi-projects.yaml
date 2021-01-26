@@ -206,7 +206,7 @@ paths:
         required: false
         schema:
           type: boolean
-    get:
+    post:
       tags:
         - exporter
       summary: creates an archive of the project and downloads it
