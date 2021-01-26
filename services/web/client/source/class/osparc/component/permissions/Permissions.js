@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.export.Permissions", {
+qx.Class.define("osparc.component.permissions.Permissions", {
   extend: qx.ui.core.Widget,
   type: "abstract",
 

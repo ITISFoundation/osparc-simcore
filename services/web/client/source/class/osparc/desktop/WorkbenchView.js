@@ -463,7 +463,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node && node.isContainer()) {
-        const exportDAGView = new osparc.component.export.ExportDAG(node);
+        const exportDAGView = new osparc.component.study.ExportDAG(node);
         const window = new qx.ui.window.Window(this.tr("Export: ") + node.getLabel()).set({
           appearance: "service-window",
           layout: new qx.ui.layout.Grow(),

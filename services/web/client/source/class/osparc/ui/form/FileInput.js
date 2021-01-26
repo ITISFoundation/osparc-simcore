@@ -55,6 +55,8 @@ qx.Class.define("osparc.ui.form.FileInput", {
   members: {
     __input: null,
     __selectBtn: null,
+    __selectedFiles: null,
+
     __attachEventHandlers: function() {
       this.__input.addListener("change", () => {
         const fileNames = [];
@@ -68,10 +70,16 @@ qx.Class.define("osparc.ui.form.FileInput", {
         this.__input.getDomElement().click();
       }, this);
     },
+
+    getSelectedFilesLabel: function() {
+      return this.__selectedFiles;
+    },
+
     getValue: function() {
       const file = this.__input.getDomElement().files.item(0);
       return file ? file.name : null;
     },
+
     getFile: function() {
       return this.__input.getDomElement().files.item(0);
     }

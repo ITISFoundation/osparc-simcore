@@ -575,7 +575,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openServicePermissions: function(serviceData) {
-      const permissionsView = new osparc.component.export.ServicePermissions(serviceData);
+      const permissionsView = new osparc.component.permissions.Service(serviceData);
       const title = this.tr("Available to");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateService", e => {
@@ -585,9 +585,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openTemplatePermissions: function(studyData) {
-      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
-      const title = this.tr("Available to");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
       permissionsView.addListener("updateStudy", e => {
         const studyId = e.getData();
         console.log(studyId);
@@ -629,7 +627,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.export.StudyPermissions.removeCollaborator(studyData, myGid);
+        osparc.component.permissions.Study.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch("templates", "put", params);
       } else {
@@ -711,8 +709,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }));
         if (data.files && data.files.length) {
           const size = data.files[0].size;
-          const maxSize = 10; // 10 MB
-          if (size > maxSize * 1024 * 1024) {
+          const maxSize = 10 * 1024 * 1024; // 10 MB
+          if (size > maxSize) {
             osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
           }

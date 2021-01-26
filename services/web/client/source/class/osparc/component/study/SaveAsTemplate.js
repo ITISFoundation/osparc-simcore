@@ -21,7 +21,7 @@
  * - Using the ShareWith widget allows to publish the template
  */
 
-qx.Class.define("osparc.component.export.SaveAsTemplate", {
+qx.Class.define("osparc.component.study.SaveAsTemplate", {
   extend: qx.ui.core.Widget,
 
   /**
@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.export.SaveAsTemplate", {
     __formData: null,
 
     __buildLayout: function() {
-      const shareWith = this.__shareWith = new osparc.component.export.ShareWith();
+      const shareWith = this.__shareWith = new osparc.component.permissions.ShareWith();
       this.bind("headerText", shareWith, "legend");
       this._add(shareWith, {
         flex: 1

@@ -130,7 +130,6 @@ qx.Class.define("osparc.component.form.FieldWHint", {
             event.y < (boundRect.y + boundRect.height)) {
             return;
           }
-          // eslint-disable-next-line no-underscore-dangle
           hideHint();
           document.removeEventListener("mousedown", tapListener);
           this.__infoButton.addListener("mouseover", showHint);
