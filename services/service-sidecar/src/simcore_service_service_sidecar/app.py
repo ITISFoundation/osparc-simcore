@@ -43,13 +43,7 @@ async def write_file_and_run_command(
         logger.debug(
             "Will run command %s with content:\n%s", command, formatted_command
         )
-        return await async_command(
-            command.format(
-                file_path=file_path,
-                project=config.compose_namespace,
-                stop_and_remove_timeout=config.stop_and_remove_timeout,
-            )
-        )
+        return await async_command(formatted_command)
 
 
 async def remove_the_compose_spec():
