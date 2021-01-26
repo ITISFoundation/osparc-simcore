@@ -1,5 +1,7 @@
 """
     Models used in storage API
+
+    IMPORTANT: do NOT couple these schemas until properly
 """
 
 from datetime import datetime
@@ -9,8 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, constr
 
-from ..basic_regex import UUID_RE
-from ..projects import Project as CommonProject
+from .basic_regex import UUID_RE
 
 
 # /
@@ -147,7 +148,7 @@ class FileMetaData(BaseModel):
     class Config:
         schema_extra = {
             "examples": [
-                # FIXME: this example might be wrong!
+                # FIXME: this is the old example and might be wrong!
                 {
                     "file_uuid": "simcore-testing/85eef642-e808-4a90-82f5-1ee55da79e25/1000/3",
                     "location_id": "0",
@@ -222,12 +223,12 @@ class PresignedLinkEnveloped(BaseModel):
 
 # /simcore-s3/
 
-
-class Project(BaseModel):
-    __root__: CommonProject
+# TODO: class Project(BaseModel):
 
 
 # ERRORS/ LOGS ---------------
+#
+#
 
 
 class ErrorItem(BaseModel):

@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-from models_library.schemas.storage_api_models import (
+from models_library.api_schemas_storage import (
     DatasetMetaData,
     FileLocation,
     FileMetaData,
