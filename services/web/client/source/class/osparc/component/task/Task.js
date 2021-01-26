@@ -87,12 +87,22 @@ qx.Class.define("osparc.component.task.Task", {
             cursor: "pointer"
           });
           control.addListener("tap", () => {
-            this._stopTask();
+            this._requestStop();
           }, this);
           this._add(control);
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    start: function() {
+      const tasks = osparc.component.task.Tasks.getInstance();
+      tasks.addTask(this);
+    },
+
+    stop: function() {
+      const tasks = osparc.component.task.Tasks.getInstance();
+      tasks.removeTask(this);
     },
 
     /**
@@ -105,7 +115,7 @@ qx.Class.define("osparc.component.task.Task", {
     /**
       * @abstract
       */
-    _stopTask: function() {
+    _requestStop: function() {
       throw new Error("Abstract method called!");
     }
   }

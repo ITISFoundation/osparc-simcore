@@ -47,10 +47,8 @@ qx.Class.define("osparc.component.task.Import", {
     },
 
     // overridden
-    _stopTask: function() {
-      console.log("Stop importing");
-      const tasks = osparc.component.task.Tasks.getInstance();
-      tasks.removeTask(this);
+    _requestStop: function() {
+      console.log("Not yet implemented");
     }
   }
 });

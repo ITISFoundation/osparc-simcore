@@ -55,10 +55,8 @@ qx.Class.define("osparc.component.task.Export", {
     },
 
     // overridden
-    _stopTask: function() {
-      console.log("Stop exporting", this.__study.name);
-      const tasks = osparc.component.task.Tasks.getInstance();
-      tasks.removeTask(this);
+    _requestStop: function() {
+      console.log("Not yet implemented");
     }
   }
 });

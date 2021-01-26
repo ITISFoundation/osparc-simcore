@@ -628,8 +628,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __exportStudy: function(studyData) {
       const exportTask = new osparc.component.task.Export(studyData);
-      const tasks = osparc.component.task.Tasks.getInstance();
-      tasks.addTask(exportTask);
+      exportTask.start();
       exportTask.setSubtitle(this.tr("Preparing files"));
       const text = this.tr("Exporting process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
@@ -645,14 +644,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.component.message.FlashMessenger.getInstance().logAs(textError, "ERROR");
         })
         .finally(() => {
-          tasks.removeTask(exportTask);
+          exportTask.stop();
         });
     },
 
     __importStudy: function(file) {
       const importTask = new osparc.component.task.Import();
-      const tasks = osparc.component.task.Tasks.getInstance();
-      tasks.addTask(importTask);
+      importTask.start();
       const text = this.tr("Importing process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
@@ -698,7 +696,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.data.Resources.getOne("studies", params)
             .then(studyData => {
               this.__userStudyContainer.remove(placeholderStudyCard);
-              tasks.removeTask(importTask);
+              importTask.stop();
               this._resetStudyItem(studyData);
             })
             .catch(err => {
@@ -709,13 +707,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.addEventListener("error", () => {
         // transferFailed
         osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
-        tasks.removeTask(importTask);
+        importTask.stop();
         this.__userStudyContainer.remove(placeholderStudyCard);
       });
       req.addEventListener("abort", () => {
         // transferAborted
         osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
-        tasks.removeTask(importTask);
+        importTask.stop();
         this.__userStudyContainer.remove(placeholderStudyCard);
       });
       req.open("POST", "/v0/projects:import", true);
