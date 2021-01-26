@@ -44,6 +44,18 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       check: ["idle", "starting", "pulling", "pending", "connecting", "ready", "failed"],
       nullable: true,
       event: "changeInteractiveStatus"
+    },
+
+    ioState: {
+      check: ["OUTDATED", "OK"],
+      nullable: true,
+      event: "changeIoStateStatus"
+    },
+
+    runnableState: {
+      check: ["READY", "WAITING_FOR_DEPENDENCIES"],
+      nullable: true,
+      event: "changeRunnableStateStatus"
     }
   }
 });
