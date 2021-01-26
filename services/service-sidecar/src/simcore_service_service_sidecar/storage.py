@@ -4,6 +4,8 @@ from typing import Any
 class Store:
     """Define custom storage abstraction for easy future extention"""
 
+    __slots__ = ("_storage",)
+
     KEY = "compose_spec"  # default key for all actions
 
     def __init__(self):
