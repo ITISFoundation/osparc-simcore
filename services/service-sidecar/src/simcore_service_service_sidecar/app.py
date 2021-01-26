@@ -35,6 +35,14 @@ async def write_file_and_run_command(
     """ The command which accepts {file_path} as an argument for string formatting """
     # pylint: disable=not-async-context-manager
     async with write_to_tmp_file(file_content) as file_path:
+        formatted_command = command.format(
+            file_path=file_path,
+            project=config.compose_namespace,
+            stop_and_remove_timeout=config.stop_and_remove_timeout,
+        )
+        logger.debug(
+            "Will run command %s with content:\n%s", command, formatted_command
+        )
         return await async_command(
             command.format(
                 file_path=file_path,
