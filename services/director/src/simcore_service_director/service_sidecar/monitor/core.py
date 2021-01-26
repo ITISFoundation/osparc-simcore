@@ -97,7 +97,14 @@ class ServiceSidecarsMonitor:
         self._inverse_search_mapping: Dict[str, str] = dict()
 
     async def add_service_to_monitor(
-        self, service_name: str, node_uuid: str, hostname: str, port: int
+        self,
+        service_name: str,
+        node_uuid: str,
+        hostname: str,
+        port: int,
+        service_key: str,
+        service_tag: str,
+        service_published_url: str,
     ) -> None:
         """Invoked before the service is started
 
@@ -115,7 +122,12 @@ class ServiceSidecarsMonitor:
                 )
             self._inverse_search_mapping[node_uuid] = service_name
             self._to_monitor[service_name] = MonitorData.assemble(
-                service_name=service_name, hostname=hostname, port=port
+                service_name=service_name,
+                hostname=hostname,
+                port=port,
+                service_key=service_key,
+                service_tag=service_tag,
+                service_published_url=service_published_url,
             )
             logger.debug("Added service '%s' to monitor", service_name)
 
@@ -179,7 +191,7 @@ class ServiceSidecarsMonitor:
         # discover all services which were started before and add them to the monitor
         service_sidecar_settings: ServiceSidecarSettings = get_settings(self._app)
         services_to_monitor: Deque[
-            Tuple[str, str]
+            Tuple[str, str, str, str, str]
         ] = await get_service_sidecars_to_monitor(service_sidecar_settings)
 
         logging.info(
@@ -187,12 +199,22 @@ class ServiceSidecarsMonitor:
         )
 
         for service_to_monitor in services_to_monitor:
-            service_name, node_uuid = service_to_monitor
+            (
+                service_name,
+                node_uuid,
+                service_key,
+                service_tag,
+                service_published_url,
+            ) = service_to_monitor
+
             await self.add_service_to_monitor(
                 service_name=service_name,
                 node_uuid=node_uuid,
                 hostname=service_name,
                 port=service_sidecar_settings.web_service_port,
+                service_key=service_key,
+                service_tag=service_tag,
+                service_published_url=service_published_url,
             )
 
     async def shutdown(self):

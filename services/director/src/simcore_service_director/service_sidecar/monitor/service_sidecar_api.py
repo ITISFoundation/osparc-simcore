@@ -16,7 +16,6 @@ KEY_SERVICE_SIDECAR_API_CLIENT = f"{__name__}.ServiceSidecarClient"
 def get_url(service_sidecar_endpoint: str, postfix: str) -> str:
     """formats and returns an url for the request"""
     url = f"{service_sidecar_endpoint}{postfix}"
-    logging.debug("httpx requests url %s", url)
     return url
 
 
@@ -53,7 +52,6 @@ class ServiceSidecarClient:
     async def is_healthy(self, service_sidecar_endpoint: str) -> bool:
         """retruns True if service is UP and running else False"""
         url = get_url(service_sidecar_endpoint, "/health")
-        logging.debug("Requesting url %s", url)
         try:
             # this request uses a very short timeout
             response = await self.httpx_client.get(

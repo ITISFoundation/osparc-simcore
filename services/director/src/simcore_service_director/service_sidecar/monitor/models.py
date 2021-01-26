@@ -1,3 +1,4 @@
+import datetime
 from enum import Enum
 from pydantic import BaseModel, Field, PositiveInt
 from typing import List
@@ -43,10 +44,16 @@ class DockerStatus(str, Enum):
     DEAD = "dead"
 
 
-class StartedContainer(BaseModel):
+class DockerContainerInspect(BaseModel):
+    # TODO: add other containers which make sense
     status: DockerStatus = Field(
         ...,
         scription="status of the underlying container",
+    )
+
+    last_updated: datetime.datetime = Field(
+        default_factory=datetime.datetime.utcnow,
+        description="time of the update in UTC",
     )
 
 
@@ -70,12 +77,9 @@ class ServiceSidecar(BaseModel):
         description="if the docker-compose spec was already submitted this fields is True",
     )
 
-    are_containers_ready: bool = Field(
-        False,
-        description=(
-            "if all started containers are in a ready state the service all "
-            "is good and the service can receive requests"
-        ),
+    containers_inspect: List[DockerContainerInspect] = Field(
+        [],
+        scription="docker inspect results from all the container ran at regular intervals",
     )
 
     # consider adding containers for healthchecks but this is more difficult and it depends on each service
@@ -84,6 +88,16 @@ class ServiceSidecar(BaseModel):
     def endpoint(self):
         """endpoint where all teh services are exposed"""
         return f"http://{self.hostname}:{self.port}"
+
+    @property
+    def are_containers_ready(self) -> bool:
+        """returns: True if all containers are in running state"""
+        return all(
+            [
+                docker_container_inspect.status == DockerStatus.RUNNING
+                for docker_container_inspect in self.containers_inspect
+            ]
+        )
 
 
 class MonitorData(BaseModel):
@@ -98,9 +112,16 @@ class MonitorData(BaseModel):
         description="stores information fetched from the service-sidecar",
     )
 
-    started_containers: List[StartedContainer] = Field(
-        [],
-        scription="list of container's monitor data spaned from the service-sidecar",
+    service_key: str = Field(
+        ...,
+        description="together with the tag used to compose the docker-compose spec for the service",
+    )
+    service_tag: str = Field(
+        ...,
+        description="together with the key used to compose the docker-compose spec for the service",
+    )
+    service_published_url: str = Field(
+        ..., description="url where the service is available to the outside world"
     )
 
     @classmethod
@@ -109,9 +130,15 @@ class MonitorData(BaseModel):
         service_name: str,
         hostname: str,
         port: int,
+        service_key: str,
+        service_tag: str,
+        service_published_url: str,
     ) -> "MonitorData":
         payload = dict(
             service_name=service_name,
+            service_key=service_key,
+            service_tag=service_tag,
+            service_published_url=service_published_url,
             service_sidecar=dict(
                 hostname=hostname,
                 port=port,

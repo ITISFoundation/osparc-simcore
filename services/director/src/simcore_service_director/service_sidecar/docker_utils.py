@@ -91,7 +91,17 @@ async def get_service_sidecars_to_monitor(
 
         # push found data to list
         node_uuid = service["Spec"]["Labels"]["uuid"]
-        entry = (service_name, node_uuid)
+        service_key = service["Spec"]["Labels"]["service_key"]
+        service_tag = service["Spec"]["Labels"]["service_tag"]
+        service_published_url = service["Spec"]["Labels"]["service_published_url"]
+
+        entry = (
+            service_name,
+            node_uuid,
+            service_key,
+            service_tag,
+            service_published_url,
+        )
         service_sidecar_services.append(entry)
 
     return service_sidecar_services

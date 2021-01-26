@@ -43,6 +43,10 @@ async def stop_service_sidecar_stack_for_service(
     await monitor.remove_service_from_monitor(node_uuid)
 
 
+async def assemble_published_url(node_uuid: str, simcore_dns: str) -> str:
+    return f"{node_uuid}.services.{simcore_dns}"
+
+
 async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: str,
@@ -117,6 +121,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         swarm_network_id=swarm_network_id,
         swarm_network_name=swarm_network_name,
         user_id=user_id,
+        project_id=project_id,
     )
 
     service_sidecar_proxy_id = await create_service_and_get_id(
@@ -133,10 +138,18 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         service_sidecar_name=service_name_service_sidecar,
         user_id=user_id,
         node_uuid=node_uuid,
+        service_key=service_key,
+        service_tag=service_tag,
+        project_id=project_id,
     )
 
     service_sidecar_id = await create_service_and_get_id(service_sidecar_meta_data)
     logging.debug("sidecar-service id %s", service_sidecar_id)
+
+    # TODO: replace simcore_dns with something like simcore.io
+    published_url = await assemble_published_url(
+        node_uuid=node_uuid, simcore_dns="10.43.103.168.xip.io"
+    )
 
     # services where successfully started and they can be monitored
     monitor = get_monitor(app)
@@ -145,6 +158,9 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         node_uuid=node_uuid,
         hostname=service_name_service_sidecar,
         port=service_sidecar_settings.web_service_port,
+        service_key=service_key,
+        service_tag=service_tag,
+        service_published_url=published_url,
     )
 
     return service_sidecar_proxy_meta_data
@@ -160,6 +176,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     swarm_network_id: str,
     swarm_network_name: str,
     user_id: str,
+    project_id: str,
 ) -> Dict[str, Any]:
     """This is the entrypoint to the network and needs to be configured properly"""
 
@@ -172,6 +189,11 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
         }
     ]
 
+    # TODO: replace simcore_dns with something like simcore.io
+    published_url = await assemble_published_url(
+        node_uuid=node_uuid, simcore_dns="10.43.103.168.xip.io"
+    )
+
     return {
         # "endpoint_spec": {"Mode": "dnsrr"},
         "labels": {
@@ -183,9 +205,10 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.middlewares": "master-simcore_gzip@docker",
             f"traefik.http.routers.{service_name}.priority": "10",
-            f"traefik.http.routers.{service_name}.rule": "Host(`entrypoint.services.10.43.103.168.xip.io`)",  # TODO: change entrypoint -> node_uuid
+            f"traefik.http.routers.{service_name}.rule": f"Host(`{published_url}`)",
             f"traefik.http.services.{service_name}.loadbalancer.server.port": "80",
             "type": "dependency",
+            "study_id": project_id,
             "user_id": user_id,
             "uuid": node_uuid,  # needed for removal when project is closed
         },
@@ -237,6 +260,9 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     service_sidecar_name: str,
     user_id: str,
     node_uuid: str,
+    service_key: str,
+    service_tag: str,
+    project_id: str,
 ) -> Dict[str, Any]:
     """This service contains the service-sidecar which will spawn the dynamic service itself """
     mounts = [
@@ -276,23 +302,32 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             ]
 
+    # TODO: replace simcore_dns with something like simcore.io
+    published_url = await assemble_published_url(
+        node_uuid=node_uuid, simcore_dns="10.43.103.168.xip.io"
+    )
+
     return {
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
         "endpoint_spec": endpint_spec,
         "labels": {
             "io.simcore.zone": io_simcore_zone,
-            "port": "8000",
-            "study_id": "4b46c1d2-2d92-11eb-8066-02420a0000fe",
-            "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
+            "port": f"{service_sidecar_settings.web_service_port}",
+            "study_id": project_id,
             "traefik.docker.network": service_sidecar_network_name,
             "traefik.enable": "true",
             f"traefik.http.routers.{service_sidecar_name}.entrypoints": "http",
             f"traefik.http.routers.{service_sidecar_name}.priority": "10",
             f"traefik.http.routers.{service_sidecar_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{service_sidecar_name}.loadbalancer.server.port": "8000",
+            f"traefik.http.services.{service_sidecar_name}.loadbalancer.server.port": f"{service_sidecar_settings.web_service_port}",
             "type": "dependency",
             "user_id": user_id,
-            "uuid": node_uuid,  # needed for removal when project is closed
+            # the following are used for monitoring
+            "uuid": node_uuid,  # also needed for removal when project is closed
+            "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
+            "service_key": service_key,
+            "service_tag": service_tag,
+            "service_published_url": published_url,
         },
         "name": service_sidecar_name,
         "networks": [swarm_network_id, service_sidecar_network_id],
@@ -324,11 +359,3 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             },
         },
     }
-
-
-# TODO: move this to separate module, not here
-
-# TODO: make sure this service is up and running to start the rest of the things
-# - check service is up, use some sort of queuing for this part the cheking etc, to put requests for monitoring
-# - then assemble a docker-compose spec from a service, name and start the service
-# -

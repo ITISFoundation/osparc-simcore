@@ -1,15 +1,34 @@
 import logging
 
 from .handlers_base import BaseEventHandler
-from typing import List
-
+from typing import List, Dict, Any
+from collections import deque
 from aiohttp.web import Application
 
 from ..docker_compose_assembly import assemble_spec
-from .models import MonitorData, ServiceSidecarStatus
+from .models import (
+    MonitorData,
+    ServiceSidecarStatus,
+    DockerStatus,
+    DockerContainerInspect,
+)
 from .service_sidecar_api import get_api_client
 
 logger = logging.getLogger(__name__)
+
+
+def parse_containers_inspect(
+    containers_inspect: Dict[str, Any]
+) -> List[DockerContainerInspect]:
+    results = deque()
+
+    for container_id in containers_inspect:
+        container_inspect_data = containers_inspect[container_id]
+        docker_container_inspect = DockerContainerInspect(
+            status=DockerStatus(container_inspect_data["State"]["Status"])
+        )
+        results.append(docker_container_inspect)
+    return list(results)
 
 
 class RunDockerComposeUp(BaseEventHandler):
@@ -77,8 +96,10 @@ class ServicesInspect(BaseEventHandler):
                 "Ask and admin to check director logs for details."
             )
 
-        # TODO: parse and store service info here
-        logger.info("Container inspect, result %s", containers_inspect)
+        # parse and store data from container
+        current.service_sidecar.containers_inspect = parse_containers_inspect(
+            containers_inspect
+        )
 
 
 # register all handlers defined in this module here
