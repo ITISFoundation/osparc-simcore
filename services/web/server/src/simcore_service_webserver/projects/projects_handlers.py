@@ -3,7 +3,7 @@
 """
 import json
 import logging
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
@@ -100,7 +100,10 @@ async def create_projects(request: web.Request):
 
         # Appends state
         project["state"] = await projects_api.get_project_state_for_user(
-            user_id, project["uuid"], request.app
+            user_id=user_id,
+            project_uuid=project["uuid"],
+            is_template=as_template is not None,
+            app=request.app,
         )
 
     except ValidationError as exc:
@@ -125,12 +128,30 @@ async def list_projects(request: web.Request):
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     # TODO: improve dbapi to list project
+    async def add_prj_state(project: Dict[str, Any], is_template: bool) -> None:
+        project["state"] = await projects_api.get_project_state_for_user(
+            user_id=user_id,
+            project_uuid=project["uuid"],
+            is_template=is_template,
+            app=request.app,
+        )
+
     projects_list = []
     if ptype in ("template", "all"):
-        projects_list += await db.load_template_projects(user_id=user_id)
+        template_projects = await db.load_template_projects(user_id=user_id)
+        await logged_gather(
+            *[add_prj_state(prj, is_template=True) for prj in template_projects],
+            reraise=True,
+        )
+        projects_list += template_projects
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        projects_list += await db.load_user_projects(user_id=user_id)
+        user_projects = await db.load_user_projects(user_id=user_id)
+        await logged_gather(
+            *[add_prj_state(prj, is_template=False) for prj in user_projects],
+            reraise=True,
+        )
+        projects_list += user_projects
 
     start = int(request.query.get("start", 0))
     count = int(request.query.get("count", len(projects_list)))
@@ -144,11 +165,8 @@ async def list_projects(request: web.Request):
     )
 
     # validate response
-    async def validate_project(prj: Dict) -> Optional[Dict]:
+    async def validate_project(prj: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            prj["state"] = await projects_api.get_project_state_for_user(
-                user_id, project_uuid=prj["uuid"], app=request.app
-            )
             projects_api.validate_project(request.app, prj)
             if await project_uses_available_services(prj, user_available_services):
                 return prj
@@ -259,7 +277,10 @@ async def replace_project(request: web.Request):
         await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)
         # Appends state
         new_project["state"] = await projects_api.get_project_state_for_user(
-            user_id, project_uuid, request.app
+            user_id=user_id,
+            project_uuid=project_uuid,
+            is_template=False,
+            app=request.app,
         )
 
     except ValidationError as exc:
@@ -369,7 +390,10 @@ async def open_project(request: web.Request) -> web.Response:
 
         # notify users that project is now locked
         project["state"] = await projects_api.get_project_state_for_user(
-            user_id, project_uuid, request.app
+            user_id=user_id,
+            project_uuid=project_uuid,
+            is_template=False,
+            app=request.app,
         )
 
         await projects_api.notify_project_state_update(request.app, project)
@@ -417,7 +441,10 @@ async def close_project(request: web.Request) -> web.Response:
                     await rt.remove("project_id")
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
                 project["state"] = await projects_api.get_project_state_for_user(
-                    user_id, project_uuid, request.app
+                    user_id=user_id,
+                    project_uuid=project_uuid,
+                    is_template=False,
+                    app=request.app,
                 )
                 await projects_api.notify_project_state_update(request.app, project)
 
