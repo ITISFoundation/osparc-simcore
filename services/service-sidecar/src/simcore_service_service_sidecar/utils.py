@@ -15,19 +15,24 @@ class InvalidComposeSpec(Exception):
 @asynccontextmanager
 async def write_to_tmp_file(file_contents):
     """Disposes of file on exit"""
-    file_path = tempfile.gettempdir()
+    file_path = "/tmp/" + next(tempfile._get_candidate_names())
     async with aiofiles.open(file_path, mode="w") as tmp_file:
         await tmp_file.write(file_contents)
     try:
         yield file_path
     finally:
-        await aiofiles.os.remove(file_path)
+        # TODO: do not forget to put me back
+        # await aiofiles.os.remove(file_path)
+        pass
 
 
 async def async_command(command) -> Tuple[bool, str]:
     """Returns if the command exited correctly and the stdout of the command """
     proc = await asyncio.create_subprocess_shell(
-        command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+        command,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
     )
 
     stdout, _ = await proc.communicate()
