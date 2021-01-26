@@ -68,6 +68,8 @@ async def create_job_impl(
 #
 # TODO: disabled since MAG is not convinced it is necessary for now
 #
+
+# pylint: disable=dangerous-default-value
 # @solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus)
 async def _run_job(
     solver_id: UUID,
