@@ -81,6 +81,38 @@ async def autocomplete_by_name(
         return ListOfResourceHits.parse_obj(body.get("data", []))
 
 
+async def resolve_rrid(rrid: str, client: ClientSession, settings: SciCrunchSettings):
+    # TODO: implement, integrate and test
+    # exists? unique? multiple-hits? if so give me the name?
+    # NO auth required
+    ## https://scicrunch.org/resolver/RRID:AB_90755.json  -> {
+
+    raise NotImplementedError()
+    #
+    #  "hits": {
+    #    "total": 1,
+    #    "hits": [ { "_source" : { "item"}} ]
+    #    "resolver": {
+    #      "uri": "scicrunch.org/resolver",
+    #      "timestamp": "2021-01-26T10:51:33-08:00"
+    #    }
+    # }
+
+    # {
+    #   "hits": {
+    #     "total": 0,
+    #     "hits": [
+    #
+    #     ]
+    #   },
+    #   "resolver": {
+    #     "uri": "scicrunch.org/resolver",
+    #     "timestamp": "2021-01-26T11:05:57-08:00",
+    #     "error": "RRID not found"
+    #   }
+    # }
+
+
 ## ERROR  ------
 
 
