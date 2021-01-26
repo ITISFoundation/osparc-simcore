@@ -7,6 +7,7 @@ from models_library.projects import Workbench
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import PortLink
 from models_library.utils.nodes import compute_node_hash
+from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 
 from ..models.schemas.comp_tasks import (
     NodeIOState,
@@ -84,6 +85,25 @@ def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
             if predecessor_node:
                 dag_graph.add_edge(str(input_node_id), node_id)
 
+    return dag_graph
+
+
+@log_decorator(logger=logger)
+def create_complete_dag_from_tasks(tasks: List[CompTaskAtDB]) -> nx.DiGraph:
+    dag_graph = nx.DiGraph()
+    for task in tasks:
+        dag_graph.add_node(
+            str(task.node_id),
+            name=task.job_id,
+            key=task.image.name,
+            version=task.image.tag,
+            inputs=task.inputs,
+            run_hash=task.run_hash,
+            outputs=task.outputs,
+        )
+        for input_data in task.inputs.values():
+            if isinstance(input_data, PortLink):
+                dag_graph.add_edge(str(input_data.node_uuid), str(task.node_id))
     return dag_graph
 
 

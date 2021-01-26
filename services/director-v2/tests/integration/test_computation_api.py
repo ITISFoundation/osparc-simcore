@@ -5,7 +5,9 @@
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
 
+import json
 from copy import deepcopy
+from pathlib import Path
 from pprint import pformat
 from random import randint
 from typing import Any, Callable, Dict, List
@@ -23,7 +25,12 @@ from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.models.domains.projects import ProjectAtDB
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
+from simcore_service_director_v2.models.schemas.comp_tasks import (
+    ComputationTaskOut,
+    NodeIOState,
+    NodeRunnableState,
+    PipelineDetails,
+)
 from sqlalchemy import literal_column
 from starlette import status
 from starlette.responses import Response
@@ -390,7 +397,7 @@ def _assert_computation_task_out_obj(
     *,
     project: ProjectAtDB,
     exp_task_state: RunningState,
-    exp_adjacency: Dict[str, List[str]],
+    exp_pipeline_details: PipelineDetails,
 ):
     assert task_out.id == project.uuid
     assert task_out.state == exp_task_state
@@ -400,14 +407,38 @@ def _assert_computation_task_out_obj(
         if exp_task_state in [RunningState.PUBLISHED, RunningState.PENDING]
         else None
     )
-    for key, list_value in task_out.pipeline_details.adjacency_list.items():
-        assert (
-            str(key) in exp_adjacency
-        ), f"expected adjacency list {pformat(exp_adjacency)}, received list {pformat(task_out.pipeline)}"
-        for item in list_value:
-            assert (
-                str(item) in exp_adjacency[str(key)]
-            ), f"expected adjacency list {pformat(exp_adjacency)}, received list {pformat(task_out.pipeline)}"
+    # check pipeline details contents
+    assert task_out.pipeline_details == exp_pipeline_details
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_node_states_file(mocks_dir: Path) -> Path:
+    file_path = mocks_dir / "fake_workbench_computational_node_states.json"
+    assert file_path.exists()
+    return file_path
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_computational_pipeline_details(
+    fake_workbench_computational_adjacency_file: Path,
+    fake_workbench_node_states_file: Path,
+) -> PipelineDetails:
+    adjacency_list = json.loads(fake_workbench_computational_adjacency_file.read_text())
+    node_states = json.loads(fake_workbench_node_states_file.read_text())
+    return PipelineDetails.parse_obj(
+        {"adjacency_list": adjacency_list, "node_states": node_states}
+    )
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_computational_pipeline_details_completed(
+    fake_workbench_computational_pipeline_details: PipelineDetails,
+) -> PipelineDetails:
+    completed_pipeline_details = deepcopy(fake_workbench_computational_pipeline_details)
+    for node_state in completed_pipeline_details.node_states.values():
+        node_state.io_state = NodeIOState.OK
+        node_state.runnable_state = NodeRunnableState.READY
+    return completed_pipeline_details
 
 
 def test_run_computation(
@@ -416,7 +447,8 @@ def test_run_computation(
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
-    fake_workbench_adjacency: Dict[str, Any],
+    fake_workbench_computational_pipeline_details: PipelineDetails,
+    fake_workbench_computational_pipeline_details_completed: PipelineDetails,
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
@@ -435,7 +467,7 @@ def test_run_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
-        exp_adjacency=fake_workbench_adjacency,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details,
     )
 
     # wait for the computation to finish
@@ -448,7 +480,7 @@ def test_run_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
-        exp_adjacency=fake_workbench_adjacency,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
     )
 
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
@@ -478,7 +510,7 @@ def test_run_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
-        exp_adjacency=fake_workbench_adjacency,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,  # NOTE: here the pipeline already ran so its states are different
     )
 
     # wait for the computation to finish
@@ -490,7 +522,7 @@ def test_run_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
-        exp_adjacency=fake_workbench_adjacency,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
     )
 
 

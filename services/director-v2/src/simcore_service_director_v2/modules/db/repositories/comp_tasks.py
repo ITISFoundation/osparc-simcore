@@ -123,6 +123,20 @@ async def _generate_tasks_list_from_project(
 
 class CompTasksRepository(BaseRepository):
     @log_decorator(logger=logger)
+    async def get_all_tasks(
+        self,
+        project_id: ProjectID,
+    ) -> List[CompTaskAtDB]:
+        tasks: List[CompTaskAtDB] = []
+        async for row in self.connection.execute(
+            sa.select([comp_tasks]).where((comp_tasks.c.project_id == str(project_id)))
+        ):
+            task_db = CompTaskAtDB.from_orm(row)
+            tasks.append(task_db)
+
+        return tasks
+
+    @log_decorator(logger=logger)
     async def get_comp_tasks(
         self,
         project_id: ProjectID,
