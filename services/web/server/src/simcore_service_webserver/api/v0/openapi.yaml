@@ -10567,7 +10567,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/projects/{project_id}/export':
+  '/projects/{project_id}:xport':
     parameters:
       - name: project_id
         in: path
@@ -10579,7 +10579,7 @@ paths:
         required: false
         schema:
           type: boolean
-    get:
+    post:
       tags:
         - exporter
       summary: creates an archive of the project and downloads it
