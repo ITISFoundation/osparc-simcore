@@ -3,6 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import sys
+from operator import attrgetter
+from pprint import pprint
 from uuid import uuid4
 
 import pytest
@@ -45,8 +47,41 @@ def test_create_job_model():
 
 @pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
 def test_solvers_model_examples(model_cls):
-    example = model_cls.Config.schema_extra["example"]
-    print(example)
+    for example in model_cls.Config.schema_extra["examples"]:
+        pprint(example)
+        model_instance = model_cls(**example)
+        assert model_instance
 
-    model_instance = model_cls(**example)
-    assert model_instance
+
+def test_solvers_sorting_by_name_and_version(faker):
+    # SEE https://packaging.pypa.io/en/latest/version.html
+
+    # have a solver
+    solver0 = Solver(**Solver.Config.schema_extra["examples"][0])
+    major, minor, micro = solver0.pep404_version.release
+    solver0.version = f"{major}.{minor}.{micro}"
+
+    # and a different version of the same
+    solver1 = solver0.copy(update={"version": f"{solver0.version}beta"}, deep=True)
+    assert solver1.pep404_version.is_prerelease
+    assert solver1.pep404_version < solver0.pep404_version
+    assert solver0.id != solver1.id, "changing vesion should automaticaly change id"
+
+    # and yet a completely different solver
+    other_solver = solver0.copy(
+        update={"name": f"simcore/services/comp/{faker.name()}"}
+    )
+    assert (
+        solver0.id != other_solver.id
+    ), "changing vesion should automaticaly change id"
+
+    # let's sort a list of solvers by name and then by version
+    sorted_solvers = sorted(
+        [solver0, other_solver, solver1], key=attrgetter("name", "pep404_version")
+    )
+
+    # dont' really know reference solver name so...
+    if solver0.name < other_solver.name:
+        assert sorted_solvers == [solver1, solver0, other_solver]
+    else:
+        assert sorted_solvers == [other_solver, solver1, solver0]
