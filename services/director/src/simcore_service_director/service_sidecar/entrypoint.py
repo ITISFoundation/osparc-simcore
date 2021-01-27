@@ -1,9 +1,10 @@
 import logging
 
 from typing import Dict, Optional, Any
-
+from pathlib import Path
 
 from aiohttp import web
+
 
 from .config import get_settings, ServiceSidecarSettings
 from .monitor import get_monitor
@@ -291,7 +292,19 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                     "Type": "bind",
                 }
             )
-
+            packages_pacth = (
+                Path(service_sidecar_settings.dev_simcore_service_sidecar_path)
+                / ".."
+                / ".."
+                / "packages"
+            )
+            mounts.append(
+                {
+                    "Source": str(packages_pacth),
+                    "Target": "/devel/packages",
+                    "Type": "bind",
+                }
+            )
         # expose this service on an empty port
         if service_sidecar_settings.dev_expose_service_sidecar:
             endpint_spec["Ports"] = [
@@ -340,6 +353,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                     "POSTGRES_USER": "scu",
                     "SIMCORE_HOST_NAME": service_sidecar_name,
                     "STORAGE_ENDPOINT": "storage: 8080",
+                    "SERVICE_SIDECAR_COMPOSE_NAMESPACE": "lololol",
                 },
                 "Hosts": [],
                 "Image": service_sidecar_settings.image,
