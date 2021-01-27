@@ -41,10 +41,12 @@ class ServiceSidecarClient:
 
         service_sidecar_settings = get_settings(app)
 
-        timeout = httpx.Timeout(
-            service_sidecar_settings.service_sidecar_api_request_timeout, connect=1.0
+        self.httpx_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(
+                service_sidecar_settings.service_sidecar_api_request_timeout,
+                connect=1.0,
+            )
         )
-        self.httpx_client = httpx.AsyncClient(timeout=timeout)
 
     async def close(self):
         await self.httpx_client.aclose()

@@ -51,8 +51,10 @@ class RunDockerComposeUp(BaseEventHandler):
         api_client = get_api_client(app)
         service_sidecar_endpoint = current.service_sidecar.endpoint
 
-        # TODO: replace service_key and service_tag
-        compose_spec = await assemble_spec(service_key="", service_tag="")
+        # creates a docker compose spec given the service key and tag
+        compose_spec = await assemble_spec(
+            service_key=current.service_key, service_tag=current.service_tag
+        )
 
         compose_spec_was_applied = await api_client.start_or_update_compose_service(
             service_sidecar_endpoint, compose_spec
