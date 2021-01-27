@@ -633,7 +633,7 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
             assert len(files) == 0
 
         if files:
-            found = await dsm_fixture.search_s3_files_starting_with(
+            found = await dsm_fixture.search_files_starting_with(
                 user_id="21", prefix=files[0].fmd.file_uuid
             )
             assert found
