@@ -117,6 +117,8 @@ def _convert_to_schema_names(
         elif key == "prj_owner":
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
+        elif key == "thumbnail" and value is None:
+            converted_value = ""
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     converted_args.update(**kwargs)
     return converted_args
