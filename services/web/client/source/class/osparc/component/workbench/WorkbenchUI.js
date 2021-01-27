@@ -1143,12 +1143,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.resetSelectedNodes();
       }, this);
 
-      this.__workbenchLayout.addListener("dbltap", e => {
+      this.__workbenchLayout.addListener("dbltap", pointerEvent => {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-        const winPos = this.__pointerEventToWorkbenchPos(e, false);
-        const scaledPos = this.__pointerEventToWorkbenchPos(e, true);
+        const winPos = this.__pointerEventToWorkbenchPos(pointerEvent, false);
+        const scaledPos = this.__pointerEventToWorkbenchPos(pointerEvent, true);
         const srvCat = this.__createServiceCatalog(winPos, scaledPos);
         srvCat.open();
       }, this);
@@ -1169,27 +1169,27 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return files.length === 1;
     },
 
-    __dragEnter: function(e) {
-      this.__dragging(e, true);
+    __dragEnter: function(pointerEvent) {
+      this.__dragging(pointerEvent, true);
     },
 
-    __dragOver: function(e) {
-      this.__dragging(e, true);
+    __dragOver: function(pointerEvent) {
+      this.__dragging(pointerEvent, true);
     },
 
-    __dragLeave: function(e) {
-      this.__dragging(e, false);
+    __dragLeave: function(pointerEvent) {
+      this.__dragging(pointerEvent, false);
     },
 
-    __drop: function(e) {
-      this.__dragging(e, false);
+    __drop: function(pointerEvent) {
+      this.__dragging(pointerEvent, false);
 
-      if (this.__allowDropFile(e)) {
+      if (this.__allowDropFile(pointerEvent)) {
         const pos = {
-          x: e.offsetX,
-          y: e.offsetY
+          x: pointerEvent.offsetX,
+          y: pointerEvent.offsetY
         };
-        const fileList = e.dataTransfer.files;
+        const fileList = pointerEvent.dataTransfer.files;
         if (fileList.length) {
           const data = {
             service: qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker())
