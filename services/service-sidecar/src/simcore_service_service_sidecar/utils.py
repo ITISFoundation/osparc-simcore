@@ -5,7 +5,8 @@ from typing import Tuple
 
 import aiofiles
 import yaml
-from simcore_service_service_sidecar import config
+
+from .settings import ServiceSidecarSettings
 
 
 class InvalidComposeSpec(Exception):
@@ -40,11 +41,13 @@ async def async_command(command) -> Tuple[bool, str]:
     return finished_without_errors, decoded_stdout
 
 
-def assemble_container_name(service_key):
-    return f"{config.compose_namespace}_{service_key}_1"
+def assemble_container_name(settings: ServiceSidecarSettings, service_key: str) -> str:
+    return f"{settings.compose_namespace}_{service_key}_1"
 
 
-def validate_compose_spec(compose_file_content: str) -> None:
+def validate_compose_spec(
+    settings: ServiceSidecarSettings, compose_file_content: str
+) -> None:
     """
     Checks the following:
     - proper yaml format
@@ -65,7 +68,7 @@ def validate_compose_spec(compose_file_content: str) -> None:
                 f"'{service}', is not permitted"
             )
 
-        container_name = assemble_container_name(service)
+        container_name = assemble_container_name(settings, service)
         container_name_length = len(container_name)
         if container_name_length > 255:
             raise InvalidComposeSpec(
