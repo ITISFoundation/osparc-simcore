@@ -120,33 +120,33 @@ class DatasetMetaDataArrayEnveloped(BaseModel):
 class FileMetaData(BaseModel):
     file_uuid: Optional[str] = Field(
         None,
-        description="unique identifier for a file, like bucket_name/project_id/node_id/file_name = /bucket_name/object_name",
+        description="Unique identifier for a file, like bucket_name/project_id/node_id/file_name = /bucket_name/object_name",
     )
 
     user_id: Optional[int] = None
     user_name: Optional[str] = None
 
-    location_id: Optional[int] = Field(None, description="storage location")
-    location: Optional[str] = Field(None, description="storage location display name")
+    location_id: Optional[int] = Field(None, description="Storage location")
+    location: Optional[str] = Field(None, description="Storage location display name")
 
-    bucket_name: Optional[str] = Field(None, description="name of the s3 bucket")
+    bucket_name: Optional[str] = Field(None, description="Name of the s3 bucket")
     object_name: Optional[str] = Field(
-        None, description="name of the s3 object within the bucket"
+        None, description="Name of the s3 object within the bucket"
     )
 
     project_id: Optional[UUID] = None
     project_name: Optional[str] = None
     node_id: Optional[UUID] = None
     node_name: Optional[str] = None
-    file_name: Optional[str] = Field(None, description="display name for a file")
+    file_name: Optional[str] = Field(None, description="Display name for a file")
 
     file_id: Optional[str] = Field(
         None,
-        description="unique uuid for the file. For simcore.s3: uuid created upon insertion and datcore: datcore uuid",
+        description="Unique uuid for the file. For simcore.s3: uuid created upon insertion and datcore: datcore uuid",
     )
-    raw_file_path: Optional[str] = Field(None, description="raw path to file")
+    raw_file_path: Optional[str] = Field(None, description="Raw path to file")
     display_file_path: Optional[str] = Field(
-        None, description="human readlable  path to file"
+        None, description="Human readlable  path to file"
     )
 
     created_at: Optional[datetime] = None
@@ -154,7 +154,7 @@ class FileMetaData(BaseModel):
     file_size: Optional[int] = Field(-1, description="File size in bytes")
     entity_tag: Optional[str] = Field(
         None,
-        description="Entity tag (or ETag), represents a specific version of the file.",
+        description="Entity tag (or ETag), represents a specific version of the file",
     )
 
     parent_id: Optional[str] = None
@@ -265,19 +265,19 @@ class Level(Enum):
 
 
 class LogMessage(BaseModel):
-    level: Optional[Level] = Field("INFO", description="log level")
+    level: Optional[Level] = Field("INFO", description="Log level")
     message: str = Field(
         ...,
-        description="log message. If logger is USER, then it MUST be human readable",
+        description="Log message. If logger is USER, then it MUST be human readable",
     )
     logger: Optional[str] = Field(
-        None, description="name of the logger receiving this message"
+        None, description="Name of the logger receiving this message"
     )
 
 
 class Error(BaseModel):
-    logs: Optional[List[LogMessage]] = Field(None, description="log messages")
-    errors: Optional[List[ErrorItem]] = Field(None, description="errors metadata")
+    logs: Optional[List[LogMessage]] = Field(None, description="Log messages")
+    errors: Optional[List[ErrorItem]] = Field(None, description="Errors metadata")
     status: Optional[int] = Field(None, description="HTTP error code")
 
 
