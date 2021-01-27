@@ -320,6 +320,9 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
         node_uuid=node_uuid, simcore_dns="10.43.103.168.xip.io"
     )
 
+    # used for the container name to avoid collisions for started containers on the same node
+    compose_namespace = f"{project_id}_{node_uuid}"
+
     return {
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
         "endpoint_spec": endpint_spec,
@@ -353,7 +356,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                     "POSTGRES_USER": "scu",
                     "SIMCORE_HOST_NAME": service_sidecar_name,
                     "STORAGE_ENDPOINT": "storage: 8080",
-                    "SERVICE_SIDECAR_COMPOSE_NAMESPACE": "lololol",
+                    "SERVICE_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                 },
                 "Hosts": [],
                 "Image": service_sidecar_settings.image,
