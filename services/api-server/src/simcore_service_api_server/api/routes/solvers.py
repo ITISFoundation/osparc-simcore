@@ -1,13 +1,19 @@
 import logging
-from typing import Callable, List
+from operator import attrgetter
+from typing import Any, Callable, Dict, List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
-from starlette import status
+import packaging.version
+from fastapi import APIRouter, Depends, HTTPException, status
+from models_library.services import ServiceDockerData
+from pydantic import ValidationError
 
 from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverName
+from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from .jobs import Job, JobInput, create_job_impl, list_jobs_impl
+from ..dependencies.authentication import get_current_user_id
+from ..dependencies.services import get_api_client
 from .solvers_faker import the_fake_impl
 
 logger = logging.getLogger(__name__)
@@ -16,20 +22,29 @@ router = APIRouter()
 
 
 ## SOLVERS -----------------------------------------------------------------------------------------
+#
+# - TODO: pagination, result ordering, filter field and results fields?? SEE https://cloud.google.com/apis/design/standard_methods#list
+# - TODO: :search? SEE https://cloud.google.com/apis/design/custom_methods#common_custom_methods
 
 
 @router.get("", response_model=List[Solver])
 async def list_solvers(
+    user_id: int = Depends(get_current_user_id),
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    def _url_resolver(solver_id: UUID):
-        return url_for(
-            "get_solver",
-            solver_id=solver_id,
-        )
+    solver_images: List[ServiceDockerData] = await catalog_client.list_solvers(user_id)
 
-    # TODO: Consider sorted(latest_solvers, key=attrgetter("name", "version"))
-    return list(the_fake_impl.values(_url_resolver))
+    solvers = []
+    for image in solver_images:
+        solver = Solver.create_from_image(image)
+        solver.url = url_for(
+            "get_solver",
+            solver_id=solver.id,
+        )
+        solvers.append(solver)
+
+    return sorted(solvers, key=attrgetter("name", "pep404_version"))
 
 
 @router.get("/{solver_id}", response_model=Solver)

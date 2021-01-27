@@ -59,3 +59,21 @@ class SolversFaker:
 
 
 the_fake_impl = SolversFaker.create_from_mocks()
+
+
+# /files API fake implementations
+
+# GET /solvers
+
+
+async def list_solvers(
+    url_for: Callable,
+):
+    def _url_resolver(solver_id: UUID):
+        return url_for(
+            "get_solver",
+            solver_id=solver_id,
+        )
+
+    # TODO: Consider sorted(latest_solvers, key=attrgetter("name", "version"))
+    return list(the_fake_impl.values(_url_resolver))
