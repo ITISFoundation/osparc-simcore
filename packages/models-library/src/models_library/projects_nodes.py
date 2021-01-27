@@ -56,6 +56,27 @@ Inputs = Dict[InputID, InputTypes]
 Outputs = Dict[OutputID, OutputTypes]
 
 
+@unique
+class NodeIOState(str, Enum):
+    OK = "OK"
+    OUTDATED = "OUTDATED"
+
+
+@unique
+class NodeRunnableState(str, Enum):
+    WAITING_FOR_DEPENDENCIES = "WAITING_FOR_DEPENDENCIES"
+    READY = "READY"
+
+
+class NodeState(BaseModel):
+    io_state: NodeIOState = Field(
+        ..., description="represents the state of the inputs outputs"
+    )
+    runnable_state: NodeRunnableState = Field(
+        ..., description="represent the runnable state of the node"
+    )
+
+
 class Node(BaseModel):
     key: str = Field(
         ...,
@@ -125,14 +146,26 @@ class Node(BaseModel):
         example=["nodeUUid1", "nodeUuid2"],
     )
 
+    # NOTE: use projects_ui.py
+    position: Optional[Position] = Field(None, deprecated=True)
+
+    io_state: Optional[NodeIOState] = Field(
+        NodeIOState.OUTDATED,
+        description="The node's inpyts/outputs state",
+        alias="ioState",
+    )
+
+    runnable_state: Optional[NodeRunnableState] = Field(
+        NodeRunnableState.READY,
+        description="The node's runnable state",
+        alias="runnableState",
+    )
+
     state: Optional[RunningState] = Field(
         RunningState.NOT_STARTED,
         description="the node's running state",
         example=["RUNNING", "FAILED"],
     )
-
-    # NOTE: use projects_ui.py
-    position: Optional[Position] = Field(None, deprecated=True)
 
     @validator("thumbnail", pre=True)
     @classmethod
