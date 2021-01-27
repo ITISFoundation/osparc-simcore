@@ -178,8 +178,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __svgWidgetDrop: null,
     __tempEdgeNodeId: null,
     __tempEdgeRepr: null,
-    __pointerPosX: null,
-    __pointerPosY: null,
+    __pointerPos: null,
     __selectedItemId: null,
     __currentModel: null,
     __startHint: null,
@@ -596,12 +595,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         let dragNodeId = data.nodeId;
 
         if (this.__tempEdgeNodeId === dragNodeId) {
-          const winPos = this.__unscaleCoordinates(this.__pointerPosX, this.__pointerPosY);
-          const srvPos = {
-            x: this.__pointerPosX,
-            y: this.__pointerPosY
-          };
-          const srvCat = this.__createServiceCatalog(winPos, srvPos);
+          const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
+          const srvCat = this.__createServiceCatalog(winPos, this.__pointerPos);
           if (this.__tempEdgeIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
@@ -770,8 +765,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const scrollX = this.__workbenchLayoutScroll.getScrollX();
       const scrollY = this.__workbenchLayoutScroll.getScrollY();
       const scaledScroll = this.__scaleCoordinates(scrollX, scrollY);
-      this.__pointerPosX = scaledPos.x + scaledScroll.x;
-      this.__pointerPosY = scaledPos.y + scaledScroll.y;
+      this.__pointerPos = {
+        x: scaledPos.x + scaledScroll.x,
+        y: scaledPos.y + scaledScroll.y
+      };
 
       let portPos = nodeUI.getEdgePoint(port);
       if (portPos[0] === null) {
@@ -783,15 +780,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       let x2;
       let y2;
       if (port.isInput) {
-        x1 = this.__pointerPosX;
-        y1 = this.__pointerPosY;
+        x1 = this.__pointerPos.x;
+        y1 = this.__pointerPos.y;
         x2 = portPos[0];
         y2 = portPos[1];
       } else {
         x1 = portPos[0];
         y1 = portPos[1];
-        x2 = this.__pointerPosX;
-        y2 = this.__pointerPosY;
+        x2 = this.__pointerPos.x;
+        y2 = this.__pointerPos.y;
       }
 
       if (this.__tempEdgeRepr === null) {
@@ -807,8 +804,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       this.__tempEdgeRepr = null;
       this.__tempEdgeNodeId = null;
-      this.__pointerPosX = null;
-      this.__pointerPosY = null;
+      this.__pointerPos = null;
     },
 
     __getEdgePoints: function(node1, port1, node2, port2) {
@@ -1001,12 +997,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
-
-    __mouseWheel: function(e) {
-      this.__zoom(e.getWheelDelta() < 0);
-    },
-
-    __zoom: function(zoomIn = true) {
+    __zoom: function(e) {
+      const zoomIn = e.getWheelDelta() < 0;
       const zoomValues = this.self().ZoomValues;
       const nextItem = () => {
         const i = zoomValues.indexOf(this.getScale());
@@ -1132,7 +1124,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
         domEl.addEventListener("drop", this.__drop.bind(this), false);
 
-        this.addListener("mousewheel", this.__mouseWheel, this);
+        this.addListener("mousewheel", this.__zoom, this);
 
         commandDel.setEnabled(true);
         commandEsc.setEnabled(true);
