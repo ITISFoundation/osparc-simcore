@@ -482,6 +482,7 @@ class DataStorageManager:
                         .values(
                             file_size=new_file_size,
                             last_modified=new_last_modified,  # Etea
+                            entity_tag=file_e_tag,
                         )
                     )  # primary key search is faster
                     await conn.execute(query)
