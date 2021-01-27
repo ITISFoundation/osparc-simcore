@@ -102,7 +102,7 @@ class DatasetMetaData(BaseModel):
 
 
 class DatasetMetaDataArray(BaseModel):
-    __root__: List[DatasetMetaData]
+    __root__: List[DatasetMetaData] = []
 
 
 class DatasetMetaDataEnveloped(BaseModel):
@@ -206,7 +206,7 @@ class FileMetaData(BaseModel):
 
 
 class FileMetaDataArray(BaseModel):
-    __root__: List[FileMetaData]
+    __root__: List[FileMetaData] = []
 
 
 class FileMetaDataEnveloped(BaseModel):

@@ -350,7 +350,7 @@ async def search_files_starting_with(request: web.Request):
         {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request
     )
 
-    data = await dsm.search_s3_files_starting_with(user_id, prefix=startswith)
+    data = await dsm.search_files_starting_with(user_id, prefix=startswith)
 
     return [{**attr.asdict(d.fmd), "parent_id": d.parent_id} for d in data]
 
