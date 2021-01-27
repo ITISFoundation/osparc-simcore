@@ -11,13 +11,8 @@ from typing import Tuple
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
-from models_library.projects_state import (
-    Owner,
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    RunningState,
-)
+from aioresponses import aioresponses
+from models_library.projects_state import ProjectLocked
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
@@ -78,6 +73,13 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
     cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
 
     return cfg
+
+
+@pytest.fixture(autouse=True)
+async def director_v2_automock(
+    director_v2_service_mock: aioresponses,
+) -> aioresponses:
+    yield director_v2_service_mock
 
 
 # REST-API -----------------------------------------------------------------------------------------------
