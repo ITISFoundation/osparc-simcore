@@ -145,12 +145,12 @@ async def list_projects(request: web.Request):
     projects_list = []
     if ptype in ("template", "all"):
         template_projects = await db.load_template_projects(user_id=user_id)
-        await set_all_project_states(template_projects, False)
+        await set_all_project_states(template_projects, is_template=True)
         projects_list += template_projects
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
         user_projects = await db.load_user_projects(user_id=user_id)
-        await set_all_project_states(user_projects, True)
+        await set_all_project_states(user_projects, is_template=False)
         projects_list += user_projects
 
     start = int(request.query.get("start", 0))
