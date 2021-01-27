@@ -44,7 +44,9 @@ async def stop_service_sidecar_stack_for_service(
     await monitor.remove_service_from_monitor(node_uuid)
 
 
-async def assemble_published_url(node_uuid: str, simcore_dns: str) -> str:
+async def assemble_published_url(node_uuid: str) -> str:
+    # TODO: ask SAN how to compute this one
+    simcore_dns = "10.43.103.168.xip.io"
     return f"{node_uuid}.services.{simcore_dns}"
 
 
@@ -147,10 +149,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     service_sidecar_id = await create_service_and_get_id(service_sidecar_meta_data)
     logging.debug("sidecar-service id %s", service_sidecar_id)
 
-    # TODO: replace simcore_dns with something like simcore.io
-    published_url = await assemble_published_url(
-        node_uuid=node_uuid, simcore_dns="10.43.103.168.xip.io"
-    )
+    published_url = await assemble_published_url(node_uuid=node_uuid)
 
     # services where successfully started and they can be monitored
     monitor = get_monitor(app)
@@ -190,10 +189,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
         }
     ]
 
-    # TODO: replace simcore_dns with something like simcore.io
-    published_url = await assemble_published_url(
-        node_uuid=node_uuid, simcore_dns="10.43.103.168.xip.io"
-    )
+    published_url = await assemble_published_url(node_uuid=node_uuid)
 
     return {
         # "endpoint_spec": {"Mode": "dnsrr"},
@@ -315,13 +311,10 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             ]
 
-    # TODO: replace simcore_dns with something like simcore.io
-    published_url = await assemble_published_url(
-        node_uuid=node_uuid, simcore_dns="10.43.103.168.xip.io"
-    )
+    published_url = await assemble_published_url(node_uuid=node_uuid)
 
     # used for the container name to avoid collisions for started containers on the same node
-    compose_namespace = f"{project_id}_{node_uuid}"
+    compose_namespace = f"{SERVICE_SIDECAR_PREFIX}_{project_id}_{node_uuid}"
 
     return {
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
