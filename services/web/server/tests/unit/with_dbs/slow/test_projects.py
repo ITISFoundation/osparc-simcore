@@ -138,9 +138,9 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
             ),
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    ).dict(by_alias=True, exclude_unset=True)
+    )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
         return_value=future_with_result(state),
     )
 
@@ -328,7 +328,7 @@ async def _new_project(
             "classifiers": [],
             "ui": {},
             "dev": {},
-            "quality": {}
+            "quality": {},
         }
         if project:
             project_data.update(project)

@@ -11,11 +11,6 @@ from typing import Tuple
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
-from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import UserRole
-from pytest_simcore.helpers.utils_mock import future_with_result
-from yarl import URL
-
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -23,8 +18,12 @@ from models_library.projects_state import (
     ProjectState,
     RunningState,
 )
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import UserRole
+from pytest_simcore.helpers.utils_mock import future_with_result
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
+from yarl import URL
 
 
 @pytest.fixture
@@ -179,16 +178,9 @@ def mocks_on_projects_api(mocker):
     """
     All projects in this module are UNLOCKED
     """
-    state = ProjectState(
-        locked=ProjectLocked(
-            value=False,
-            owner=Owner(user_id=2, first_name="Speedy", last_name="Gonzalez"),
-        ),
-        state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    ).dict(by_alias=True, exclude_unset=True)
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
-        return_value=future_with_result(state),
+        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
+        return_value=future_with_result(ProjectLocked(value=False)),
     )
 
 
