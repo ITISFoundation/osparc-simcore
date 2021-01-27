@@ -5,11 +5,8 @@ from uuid import UUID
 
 import httpx
 from fastapi import FastAPI
-from models_library.api_schemas_storage import (
-    FileMetaData,
-    FileMetaDataArray,
-    PresignedLink,
-)
+from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
+from models_library.api_schemas_storage import FileMetaDataArray, PresignedLink
 
 from ..core.settings import StorageSettings
 from ..utils.client_base import BaseServiceClientApi
@@ -65,7 +62,8 @@ class StorageApi(BaseServiceClientApi):
         except httpx.HTTPStatusError:
             return False
 
-    async def list_files(self, user_id: int) -> List[FileMetaData]:
+    async def list_files(self, user_id: int) -> List[StorageFileMetaData]:
+        """ Lists metadata of all s3 objects name as api/* from a given user"""
         resp = await self.client.post(
             "/simcore-s3/files/metadata:search",
             params={
@@ -76,7 +74,8 @@ class StorageApi(BaseServiceClientApi):
         files_metadata = FileMetaDataArray.parse_obj(resp.json()["data"])
         return files_metadata.__root__
 
-    async def list_files_in_projects(self, user_id: int) -> List[FileMetaData]:
+    async def list_files_in_projects(self, user_id: int) -> List[StorageFileMetaData]:
+        # NOTE: This call will NOTE be used. Here only for TESTING purposes
         resp = await self.client.get(
             f"/locations/{self.SIMCORE_S3_ID}/files/metadata",
             params={

@@ -1,4 +1,8 @@
 import asyncio
+import logging
+import re
+from collections import deque
+from mimetypes import guess_type
 from textwrap import dedent
 from typing import List
 from uuid import UUID
@@ -6,33 +10,64 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
+from pydantic import ValidationError
+from simcore_service_storage.models import FileMetaData
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
-from ...modules.storage import StorageApi
+from ...modules.storage import StorageApi, StorageFileMetaData
+from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from .files_faker import the_fake_impl
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 ## FILES ---------------
+# TODO: pagination ?
+# TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
 
 
 @router.get("", response_model=List[FileMetadata])
-async def list_files():
-    """ Gets metadata for all file resources """
-    return the_fake_impl.list_meta()
-
-
-async def list_files_impl(
-    _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+async def list_files(
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
 ):
-    # TODO: pagination
-    # TODO: this is just a ping with retries
-    # TODO: extend :search see https://cloud.google.com/apis/design/custom_methods
-    # await storage_client.get("/")
-    raise NotImplementedError()
+    """ Gets metadata for all file resources """
+    # return the_fake_impl.list_meta()
+    FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
+
+    stored_files: List[StorageFileMetaData] = await storage_client.list_files(user_id)
+
+    # Adapts storage API model to API model
+    files_metadata = deque()
+    for stored_file_meta in stored_files:
+        try:
+            assert stored_file_meta.user_id == user_id  # nosec
+            assert stored_file_meta.file_id  # nosec
+
+            # extracts fields from api/{file_id}/{filename}
+            match = FILE_ID_PATTERN.match(stored_file_meta.file_id)
+            assert match  # nosec
+            file_id, filename = match.group()
+
+            meta = FileMetadata(
+                file_id=file_id,
+                filename=filename,
+                content_type=guess_type(filename),
+                checksum=stored_file_meta.etag,  # TODO:
+            )
+
+        except (ValidationError, ValueError, AttributeError) as err:
+            logger.warning(
+                "Skipping corrupted entry in storage: %s (%s).", stored_file_meta, err
+            )
+
+        else:
+            files_metadata.append(meta)
+
+    return list(files_metadata)
 
 
 @router.post(":upload", response_model=FileMetadata)
