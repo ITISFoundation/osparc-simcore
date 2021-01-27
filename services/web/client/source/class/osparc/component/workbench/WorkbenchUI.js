@@ -997,8 +997,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
-      this.__zoom(e.getWheelDelta() < 0, 3);
     __mouseWheel: function(e) {
+      const zoomIn = e.getWheelDelta() < 0;
+      this.__zoom(zoomIn);
     },
 
     __zoom: function(zoomIn = true) {
