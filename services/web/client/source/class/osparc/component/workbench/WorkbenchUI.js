@@ -139,7 +139,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     TOP_OFFSET: osparc.navigation.NavigationBar.HEIGHT + 46,
 
-    ZoomValues: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
+    ZOOM_VALUES: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
   },
 
   events: {
@@ -156,7 +156,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     scale: {
-      check: "osparc.component.workbench.WorkbenchUI.ZoomValues",
+      check: "osparc.component.workbench.WorkbenchUI.ZOOM_VALUES",
       init: 1,
       apply: "__applyScale",
       event: "changeScale",
@@ -997,9 +997,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
-    __zoom: function(e) {
-      const zoomIn = e.getWheelDelta() < 0;
-      const zoomValues = this.self().ZoomValues;
+    __mouseWheel: function() {
+      this.__zoom(e.getWheelDelta() < 0, 3);
+    },
+
+    __zoom: function(zoomIn = true) {
+      const zoomValues = this.self().ZOOM_VALUES;
       const nextItem = () => {
         const i = zoomValues.indexOf(this.getScale());
         if (i+1<zoomValues.length) {
@@ -1020,7 +1023,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __zoomAll: function() {
-      const zoomValues = this.self().ZoomValues;
+      const zoomValues = this.self().ZOOM_VALUES;
       const bounds = this.__getNodesBounds();
       if (bounds === null) {
         return;
@@ -1124,7 +1127,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
         domEl.addEventListener("drop", this.__drop.bind(this), false);
 
-        this.addListener("mousewheel", this.__zoom, this);
+        this.addListener("mousewheel", this.__mouseWheel, this);
 
         commandDel.setEnabled(true);
         commandEsc.setEnabled(true);
