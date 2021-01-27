@@ -2,7 +2,7 @@
     Models a study's project document
 """
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, validator
@@ -42,7 +42,7 @@ class Project(BaseModel):
     )
     # NOTE: str is necessary because HttpUrl will not accept and empty string and the
     # frontend sometimes sends this empty string, which is removed by the validator
-    thumbnail: Union[str, HttpUrl] = Field(
+    thumbnail: Optional[HttpUrl] = Field(
         ...,
         description="url of the project thumbnail",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
@@ -94,8 +94,8 @@ class Project(BaseModel):
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
 
+    @validator("thumbnail", pre=True)
     @classmethod
-    @validator("thumbnail")
     def null_thumbnail(cls, v):
         if isinstance(v, str) and v == "":
             return None
