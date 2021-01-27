@@ -1,8 +1,7 @@
-from typing import Any, Dict
+from typing import List, Dict, Any, Optional
 
-import yaml
 
-from .utils import assemble_container_name
+from .utils import validate_compose_spec, assemble_container_names
 from .settings import ServiceSidecarSettings
 
 
@@ -11,27 +10,32 @@ class AsyncStore:
 
     __slots__ = ("_storage", "_settings")
 
-    KEY = "compose_spec"  # default key for all actions
+    _K_COMPOSE_SPEC = "compose_spec"
+    _K_CONTAINER_NAMES = "container_names"
+
+    def __set_as_compose_spec_none(self):
+        self._storage[self._K_COMPOSE_SPEC] = None
+        self._storage[self._K_CONTAINER_NAMES] = []
 
     def __init__(self, settings: ServiceSidecarSettings):
         self._storage: Dict[str, Any] = {}
         self._settings: ServiceSidecarSettings = settings
+        self.__set_as_compose_spec_none()
 
-    async def get(self, default=None) -> Any:
-        return self._storage.get(AsyncStore.KEY, default)
-
-    async def update(self, value: Any) -> None:
-        self._storage[AsyncStore.KEY] = value
-
-    async def get_container_names(self):
-        """Parses the stored spec and returns the container names"""
-        # TODO: refactor to add caching here
-        compose_file_content = await self.get()
+    def put_spec(self, compose_file_content: Optional[str]) -> None:
         if compose_file_content is None:
-            return []
+            self.__set_as_compose_spec_none()
+            return
 
-        parsed_compose_spec = yaml.safe_load(compose_file_content)
-        return [
-            assemble_container_name(self._settings, service)
-            for service in parsed_compose_spec["services"]
-        ]
+        self._storage[self._K_COMPOSE_SPEC] = validate_compose_spec(
+            settings=self._settings, compose_file_content=compose_file_content
+        )
+        self._storage[self._K_CONTAINER_NAMES] = assemble_container_names(
+            self._storage[self._K_COMPOSE_SPEC]
+        )
+
+    def get_spec(self) -> str:
+        return self._storage.get(self._K_COMPOSE_SPEC)
+
+    def get_container_names(self) -> List[str]:
+        return self._storage[self._K_CONTAINER_NAMES]

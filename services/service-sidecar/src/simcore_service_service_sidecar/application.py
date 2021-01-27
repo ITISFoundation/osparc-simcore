@@ -1,9 +1,14 @@
+import logging
+
 from fastapi import FastAPI
 from .settings import ServiceSidecarSettings
 from .remote_debug import setup as remote_debug_setup
 from .storage import AsyncStore
 from .api import main_router
 from .models import ApplicationHealth
+from .shared_handlers import on_shutdown_handler
+
+logger = logging.getLogger(__name__)
 
 
 def assemble_application() -> FastAPI:
@@ -14,6 +19,10 @@ def assemble_application() -> FastAPI:
     """
 
     service_sidecar_settings = ServiceSidecarSettings.create()
+
+    logging.basicConfig(level=service_sidecar_settings.loglevel)
+    logging.root.setLevel(service_sidecar_settings.loglevel)
+    logger.debug(service_sidecar_settings.json(indent=2))
 
     application = FastAPI(debug=service_sidecar_settings.debug)
 
@@ -30,5 +39,12 @@ def assemble_application() -> FastAPI:
 
     # add routing paths
     application.include_router(main_router)
+
+    # setting up handler for lifecycle
+    async def on_shutdown() -> None:
+        await on_shutdown_handler(application)
+        logger.info("shutdown cleanup completed")
+
+    application.add_event_handler("shutdown", on_shutdown)
 
     return application

@@ -7,6 +7,12 @@ from models_library.basic_types import BootModeEnum, PortInt
 
 
 class ServiceSidecarSettings(BaseSettings):
+    @classmethod
+    def create(cls, **settings_kwargs) -> "ServiceSidecarSettings":
+        return cls(
+            **settings_kwargs,
+        )
+
     boot_mode: Optional[BootModeEnum] = Field(
         ...,
         description="boot mode helps determine if in development mode or normal operation",
@@ -68,12 +74,10 @@ class ServiceSidecarSettings(BaseSettings):
         """If in development mode this will be True"""
         return self.boot_mode == BootModeEnum.DEVELOPMENT
 
+    @property
+    def loglevel(self) -> int:
+        return getattr(logging, self.log_level_name)
+
     class Config:
         case_sensitive = False
         env_prefix = "SERVICE_SIDECAR_"
-
-    @classmethod
-    def create(cls, **settings_kwargs) -> "ServiceSidecarSettings":
-        return cls(
-            **settings_kwargs,
-        )

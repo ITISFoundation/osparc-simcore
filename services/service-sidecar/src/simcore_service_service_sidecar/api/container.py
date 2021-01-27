@@ -33,7 +33,7 @@ async def get_container_logs(
     """ Returns the logs of a given container if found """
     settings: ServiceSidecarSettings = request.app.state.settings
 
-    if container not in await settings.async_store.get_container_names():
+    if container not in settings.async_store.get_container_names():
         response.status_code = 400
         return f"No container '{container}' was started"
 
@@ -59,7 +59,7 @@ async def container_inspect(
     """ Returns information about the container, like docker inspect command """
     settings: ServiceSidecarSettings = request.app.state.settings
 
-    if container not in await settings.async_store.get_container_names():
+    if container not in settings.async_store.get_container_names():
         response.status_code = 400
         return dict(error=f"No container '{container}' was started")
 

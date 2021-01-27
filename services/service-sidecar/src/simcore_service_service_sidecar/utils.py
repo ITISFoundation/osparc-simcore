@@ -1,5 +1,6 @@
 import asyncio
 import tempfile
+from typing import List
 from contextlib import asynccontextmanager
 from typing import Tuple
 
@@ -7,6 +8,10 @@ import aiofiles
 import yaml
 
 from .settings import ServiceSidecarSettings
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class InvalidComposeSpec(Exception):
@@ -41,13 +46,21 @@ async def async_command(command) -> Tuple[bool, str]:
     return finished_without_errors, decoded_stdout
 
 
-def assemble_container_name(settings: ServiceSidecarSettings, service_key: str) -> str:
-    return f"{settings.compose_namespace}_{service_key}_1"
+def _assemble_container_name(
+    settings: ServiceSidecarSettings,
+    service_key: str,
+    user_given_container_name: str,
+    index: int,
+) -> str:
+    container_name = f"{settings.compose_namespace}_{index}_{user_given_container_name}_{service_key}"[
+        : settings.max_combined_container_name_length
+    ]
+    return container_name
 
 
 def validate_compose_spec(
     settings: ServiceSidecarSettings, compose_file_content: str
-) -> None:
+) -> str:
     """
     Checks the following:
     - proper yaml format
@@ -60,19 +73,23 @@ def validate_compose_spec(
     except yaml.YAMLError as e:
         raise InvalidComposeSpec(f"{str(e)}\nProvided yaml is not valid!") from e
 
-    for service in parsed_compose_spec["services"]:
+    for index, service in enumerate(parsed_compose_spec["services"]):
         service_content = parsed_compose_spec["services"][service]
-        if "container_name" in service_content:
-            raise InvalidComposeSpec(
-                "Field 'container_name', found int service "
-                f"'{service}', is not permitted"
-            )
+        user_given_container_name = service_content.get("container_name", "")
+        # assemble and inject the container name
+        service_content["container_name"] = _assemble_container_name(
+            settings, service, user_given_container_name, index
+        )
 
-        container_name = assemble_container_name(settings, service)
-        container_name_length = len(container_name)
-        if container_name_length > 255:
-            raise InvalidComposeSpec(
-                "The length of the final formatted container name "
-                f"'{container_name}' is '{container_name_length}' "
-                f"instead of '{config.max_combined_container_name_length}'"
-            )
+    # transform back to string and return
+    validated_compose_file_content = yaml.safe_dump(parsed_compose_spec)
+    return validated_compose_file_content
+
+
+def assemble_container_names(validated_compose_content: str) -> List[str]:
+    """returns the list of container names from a validated compose_spec"""
+    parsed_compose_spec = yaml.safe_load(validated_compose_content)
+    return [
+        service_data["container_name"]
+        for service_data in parsed_compose_spec["services"].values()
+    ]
