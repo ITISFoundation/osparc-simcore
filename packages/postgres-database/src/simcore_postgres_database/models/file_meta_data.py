@@ -22,6 +22,8 @@ file_meta_data = sa.Table(
     sa.Column("display_file_path", sa.String),
     sa.Column("created_at", sa.String),
     sa.Column("last_modified", sa.String),
-    sa.Column("file_size", sa.BigInteger)
-    #    sa.Column("state", sa.String())
+    sa.Column("file_size", sa.BigInteger),
+    # Entity tag (or ETag), represents a specific version of the object.
+    # SEE https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html)
+    sa.Column("entity_tag", sa.String),
 )
