@@ -481,7 +481,7 @@ class DataStorageManager:
                         .where(file_meta_data.c.file_uuid == file_uuid)
                         .values(
                             file_size=new_file_size,
-                            last_modified=new_last_modified,  # Etea
+                            last_modified=new_last_modified,
                             entity_tag=file_e_tag,
                         )
                     )  # primary key search is faster
@@ -817,7 +817,7 @@ class DataStorageManager:
                     )
                     return response
 
-    async def search_s3_files_starting_with(
+    async def search_files_starting_with(
         self, user_id: int, prefix: str
     ) -> List[FileMetaDataEx]:
         # Avoids using list_files since it accounts for projects/nodes

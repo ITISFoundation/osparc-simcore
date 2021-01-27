@@ -66,7 +66,7 @@ async def list_files(
                 file_id=file_id,
                 filename=filename,
                 content_type=guess_type(filename),
-                checksum=stored_file_meta.etag,  # TODO:
+                checksum=stored_file_meta.etag,
             )
 
         except (ValidationError, ValueError, AttributeError) as err:
@@ -95,6 +95,10 @@ async def upload_file(
     #
 
     # assign file_id
+    # FIXME: create file-id with time-stamp instead so we can stream up
+    # as chunks are arriving?
+    # can perhaps digest content on the fly
+    #
     meta: FileMetadata = await FileMetadata.create_from_uploaded(file)
     assert meta.content_type  # nosec
 
@@ -110,6 +114,10 @@ async def upload_file(
             files={"upload-file": (meta.filename, file, meta.content_type)},
         )
         resp.raise_for_status()
+        ## e_tag = json.loads(resp.headers.get("Etag", None))
+        # FIXME: get ETag from resp as SAN does saves re-calling storage
+
+    # FIXME: forgot error handling
 
     # validate upload and update checksum by getting storage metadata
     #
@@ -185,7 +193,7 @@ async def get_file(
                 file_id=file_id,
                 filename=_filename,
                 content_type=guess_type(_filename),
-                checksum=stored_file_meta.etag,  # TODO:
+                checksum=stored_file_meta.etag,
             )
 
         except (ValidationError, AttributeError) as err:
