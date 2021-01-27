@@ -40,8 +40,6 @@ class Project(BaseModel):
         description="longer one-line description about the project",
         examples=["Dabbling in temporal transitions ..."],
     )
-    # NOTE: str is necessary because HttpUrl will not accept and empty string and the
-    # frontend sometimes sends this empty string, which is removed by the validator
     thumbnail: Optional[HttpUrl] = Field(
         ...,
         description="url of the project thumbnail",
@@ -94,7 +92,7 @@ class Project(BaseModel):
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
 
-    @validator("thumbnail", pre=True)
+    @validator("thumbnail", pre=True, always=True)
     @classmethod
     def null_thumbnail(cls, v):
         if isinstance(v, str) and v == "":
