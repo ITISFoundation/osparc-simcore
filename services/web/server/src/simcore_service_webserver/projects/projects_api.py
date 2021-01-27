@@ -520,6 +520,8 @@ async def add_project_states_for_user(
                 node_state,
             ) in computation_task.pipeline_details.node_states.items():
                 prj_node = project["workbench"].get(str(node_id))
+                if prj_node is None:
+                    continue
                 prj_node["ioState"] = node_state.io_state
                 prj_node["runnableState"] = node_state.runnable_state
 
