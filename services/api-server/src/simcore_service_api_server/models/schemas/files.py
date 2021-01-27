@@ -27,7 +27,6 @@ class FileMetadata(BaseModel):
 
     @classmethod
     async def create_from_path(cls, path: Path) -> "FileMetadata":
-
         async with aiofiles.open(path, mode="rb") as file:
             md5check = await create_md5_checksum(file)
 

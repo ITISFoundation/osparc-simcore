@@ -22,6 +22,7 @@ from uuid import UUID
 import aiofiles
 from fastapi import UploadFile, status
 from fastapi.exceptions import HTTPException
+from fastapi.responses import FileResponse
 
 from ...models.schemas.files import FileMetadata
 from ...utils.hash import CHUNK_4KB
@@ -94,16 +95,41 @@ the_fake_impl = StorageFaker(storage_dir=STORAGE_DIR, files={})
 
 # /files API fake implementations
 
-
+# GET /files
 async def list_files_fake_implementation():
     return the_fake_impl.list_meta()
 
 
+# GET /files/{file_id}
 async def get_file_fake_implementation(
     file_id: UUID,
 ):
     try:
         return the_fake_impl.files[file_id]
+    except KeyError as err:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with identifier {file_id} not found",
+        ) from err
+
+
+# POST /files:upload
+async def upload_file_fake_implementation(file: UploadFile):
+    metadata = await the_fake_impl.save(file)
+    return metadata
+
+
+# POST /files:download
+async def download_file_fake_implementation(file_id: UUID):
+    try:
+        metadata = the_fake_impl.files[file_id]
+        file_path = the_fake_impl.get_storage_path(metadata)
+
+        return FileResponse(
+            str(file_path),
+            media_type=metadata.content_type,
+            filename=metadata.filename,
+        )
     except KeyError as err:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,

@@ -74,6 +74,19 @@ class StorageApi(BaseServiceClientApi):
         files_metadata = FileMetaDataArray.parse_obj(resp.json()["data"])
         return files_metadata.__root__
 
+    async def search_files(
+        self, user_id: int, file_id: UUID
+    ) -> List[StorageFileMetaData]:
+        resp = await self.client.post(
+            "/simcore-s3/files/metadata:search",
+            params={
+                "user_id": str(user_id),
+                "startswith": f"api/{file_id}",
+            },
+        )
+        files_metadata = FileMetaDataArray.parse_obj(resp.json()["data"])
+        return files_metadata.__root__
+
     async def list_files_in_projects(self, user_id: int) -> List[StorageFileMetaData]:
         # NOTE: This call will NOTE be used. Here only for TESTING purposes
         resp = await self.client.get(
@@ -89,7 +102,7 @@ class StorageApi(BaseServiceClientApi):
 
     async def get_download_link(
         self, user_id: int, file_id: UUID, file_name: str
-    ) -> PresignedLink:
+    ) -> str:
         object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
 
         resp = await self.client.get(
@@ -97,11 +110,10 @@ class StorageApi(BaseServiceClientApi):
             params={"user_id": str(user_id)},
         )
 
-        return PresignedLink.parse_obj(resp.json()["data"])
+        presigned_link = PresignedLink.parse_obj(resp.json()["data"])
+        return presigned_link.link
 
-    async def get_upload_link(
-        self, user_id: int, file_id: UUID, file_name: str
-    ) -> PresignedLink:
+    async def get_upload_link(self, user_id: int, file_id: UUID, file_name: str) -> str:
         object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
 
         resp = await self.client.put(
@@ -113,4 +125,5 @@ class StorageApi(BaseServiceClientApi):
             },
         )
 
-        return PresignedLink.parse_obj(resp.json()["data"])
+        presigned_link = PresignedLink.parse_obj(resp.json()["data"])
+        return presigned_link.link

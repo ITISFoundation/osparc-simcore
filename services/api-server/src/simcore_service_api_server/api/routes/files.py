@@ -4,13 +4,21 @@ import re
 from collections import deque
 from mimetypes import guess_type
 from textwrap import dedent
-from typing import List
+from typing import Dict, List
+from urllib.parse import quote
 from uuid import UUID
 
+import httpx
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import ValidationError
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
@@ -24,9 +32,12 @@ router = APIRouter()
 
 
 ## FILES ---------------------------------------------------------------------------------
-# TODO: pagination ?
-# TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
-
+#
+# - WARNING: the order of the router-decorated functions MATTER
+# - TODO: pagination ?
+# - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
+#
+#
 FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
@@ -70,36 +81,71 @@ async def list_files(
 
 
 @router.post(":upload", response_model=FileMetadata)
-async def upload_file(file: UploadFile = File(...)):
-    """Uploads a single file to the system
-
-    To upload multiple with one call, see upload_files
-    """
-    metadata = await the_fake_impl.save(file)
-    return metadata
-
-
-async def upload_single_file_impl(
+async def upload_file(
     file: UploadFile = File(...),
-    _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
 ):
-    # TODO: FileResponse automatically computes etag. See how is done
-
-    # TODO: every file uploaded is sent to S3 and a link is returned
-    # TODO: every session has a folder. A session is defined by the access token
+    """Uploads a single file to the system    """
+    # TODO: for the moment we upload file here and re-upload to S3
+    # using a pre-signed link. This is far from ideal since we are using the api-server as a
+    # passby service for all uploaded data which can be a lot.
+    # Next refactor should consider a solution that directly uploads from the client to S3
+    # avoiding the data trafic via this service
     #
 
-    # TODO: this is just a ping with retries
-    ## await storage_client.get("/")
-    raise NotImplementedError()
+    # assign file_id
+    meta: FileMetadata = await FileMetadata.create_from_uploaded(file)
+    assert meta.content_type  # nosec
+
+    await file.seek(0)  # reset since previous call read file to create checksum
+
+    # upload to S3 using pre-signed link
+    presigned_upload_link = await storage_client.get_upload_link(
+        user_id, meta.file_id, meta.filename
+    )
+    async with httpx.AsyncClient() as client:
+        resp = await client.put(
+            presigned_upload_link,
+            files={"upload-file": (meta.filename, file, meta.content_type)},
+        )
+        resp.raise_for_status()
+
+    # validate upload and update checksum by getting storage metadata
+    #
+    # NOTE: storage service is observing S3 to verify upload, which means that we need to give
+    #  a few seconds before the file_metadata table is updated
+    #
+    async for attempt in AsyncRetrying(
+        retry=retry_if_exception_type(ValueError),
+        wait=wait_fixed(2),
+        stop=stop_after_delay(10),
+    ):
+        with attempt:
+            stored_files: List[StorageFileMetaData] = await storage_client.search_files(
+                user_id, meta.file_id
+            )
+            if not stored_files:
+                raise ValueError("Not found in storage")
+            stored_file_meta = stored_files[0]
+            assert stored_file_meta.user_id == user_id  # nosec
+            assert stored_file_meta.file_id  # nosec
+
+            # the initial checksum was used to generate the file_id but
+            # for consistency we will be using the one provided by storage
+            meta.checksum = stored_file_meta.etag
+            return meta
 
 
-# TODO: disabled until actual use case is presented
-# @router.post(":upload-multiple", response_model=List[FileMetadata])
-async def _upload_files(files: List[UploadFile] = File(...)):
+# DISABLED @router.post(":upload-multiple", response_model=List[FileMetadata])
+async def upload_files(files: List[UploadFile] = File(...)):
     """ Uploads multiple files to the system """
-    # TODO: idealy we should only have upload_multiple_files but Union[List[UploadFile], File] produces an error in
-    # generated openapi.json
+    # MaG suggested a single function that can upload one or multiple files instead of having
+    # two of them. Tried something like upload_file( files: Union[List[UploadFile], File] ) but it
+    # produces an error in the generated openapi.json
+    #
+    # Since there is no inmediate need of this functions, we decided to disable it
+    #
     async def save_file(file):
         metadata = await the_fake_impl.save(file)
         return metadata
@@ -158,22 +204,42 @@ async def get_file(
 
 
 @router.post("/{file_id}:download")
-async def download_file(file_id: UUID):
-    # TODO: hash or UUID? Ideally like container ids
-    try:
-        metadata = the_fake_impl.files[file_id]
-        file_path = the_fake_impl.get_storage_path(metadata)
+async def download_file(
+    file_id: UUID,
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
+):
+    # gets meta
+    meta: FileMetadata = await get_file(file_id, storage_client, user_id)
 
-        return FileResponse(
-            str(file_path),
-            media_type=metadata.content_type,
-            filename=metadata.filename,
-        )
-    except KeyError as err:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"File with identifier {file_id} not found",
-        ) from err
+    # download from S3 using pre-signed link
+    presigned_download_link = await storage_client.get_download_link(
+        user_id, meta.file_id, meta.filename
+    )
+
+    async def _download_stream():
+        async with httpx.AsyncClient() as client:
+            async with client.stream("GET", presigned_download_link) as resp:
+                async for chunk in resp.aiter_bytes():
+                    yield chunk
+
+                resp.raise_for_status()
+
+    # attach download stream to the streamed response
+    def _build_headers() -> Dict:
+        # Adapted from from starlatte/responses.py::FileResponse.__init__
+        content_disposition_filename = quote(meta.filename)
+        if content_disposition_filename != meta.filename:
+            content_disposition = "attachment; filename*=utf-8''{}".format(
+                content_disposition_filename
+            )
+        else:
+            content_disposition = 'attachment; filename="{}"'.format(meta.filename)
+        return {"content-disposition": content_disposition}
+
+    return StreamingResponse(
+        _download_stream(), media_type=meta.content_type, headers=_build_headers()
+    )
 
 
 async def files_upload_multiple_view():
