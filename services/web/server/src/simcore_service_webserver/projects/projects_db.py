@@ -43,6 +43,7 @@ DB_EXCLUSIVE_COLUMNS = [
     "id",
     "published",
 ]
+SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
 
 class ProjectAccessRights(Enum):
@@ -117,8 +118,10 @@ def _convert_to_schema_names(
         elif key == "prj_owner":
             # this entry has to be converted to the owner e-mail address
             converted_value = user_email
-        elif key == "thumbnail" and value is None:
+
+        if key in SCHEMA_NON_NULL_KEYS and value is None:
             converted_value = ""
+
         converted_args[ChangeCase.snake_to_camel(key)] = converted_value
     converted_args.update(**kwargs)
     return converted_args
