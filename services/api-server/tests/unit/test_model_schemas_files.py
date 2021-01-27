@@ -65,3 +65,49 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
     file_meta = await FileMetadata.create_from_uploaded(upload_in_memory)
     assert upload_in_memory.file.tell() > 0, "modifies current position is at the end"
+
+
+@pytest.mark.skip(reason="dev")
+def test_create_filemetadata_from_storage_response():
+    from models_library.api_schemas_storage import DatasetMetaData, FileMetaData
+
+    dataset_meta = DatasetMetaData(**DatasetMetaData.Config.schema_extra["examples"][0])
+    file_meta = FileMetaData(**FileMetaData.Config.schema_extra["examples"][1])
+
+    api_file_metadata = FileMetadata(
+        file_id=file_meta.node_id,
+        filename=file_meta.file_name,
+        # ??
+        content_type=None,
+        # etag?
+        checksum=hashlib.sha256(
+            f"{file_meta.last_modified}:{file_meta.file_size}".encode("utf-8")
+        ).hexdigest(),
+    )
+
+    # user
+    uid = 44
+    uname = "Jack Sparrow"
+
+    # api/files folder per user
+    api_id = "74a84992-8c99-47de-b88a-311c068055ea"  # compose with user? ->
+    folder_id = ""  # compose with key?
+    files_id = "4896730a-f13b-46d3-b020-ddf559b0479f"  # fix, same for all?
+
+    # uploaded
+    filename = "foo.hd5"
+    fileid = "82c08600-2102-43b0-bb27-01ab5b3d558e"  # given by API
+
+    ds = DatasetMetaData(dataset_id=api_id, display_name="api")
+
+    fm = FileMetaData(
+        project_id=api_id,
+        project_name="api",
+        node_id=files_id,
+        node_name="files",
+        file_uuid=f"{api_id}/{files_id}/{fileid}",
+        file_name=filename,
+        user_id=uid,
+        user_name=uname,
+        raw_file_path="",
+    )
