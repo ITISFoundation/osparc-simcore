@@ -66,7 +66,7 @@ async def list_files(
                 file_id=file_id,
                 filename=filename,
                 content_type=guess_type(filename),
-                checksum=stored_file_meta.etag,
+                checksum=stored_file_meta.entity_tag,
             )
 
         except (ValidationError, ValueError, AttributeError) as err:
@@ -193,7 +193,7 @@ async def get_file(
                 file_id=file_id,
                 filename=_filename,
                 content_type=guess_type(_filename),
-                checksum=stored_file_meta.etag,
+                checksum=stored_file_meta.entity_tag,
             )
 
         except (ValidationError, AttributeError) as err:

@@ -720,6 +720,8 @@ components:
           type: integer
         parent_id:
           type: string
+        entity_tag:
+          type: string
       example:
         file_uuid: "simcore-testing/105/1000/3"
         location_id: "0"

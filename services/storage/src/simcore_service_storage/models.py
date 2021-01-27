@@ -144,6 +144,7 @@ class FileMetaData:
             self.created_at = str(datetime.datetime.now())
             self.last_modified = self.created_at
             self.file_size = -1
+            self.entity_tag = None
 
     def __str__(self):
         d = attr.asdict(self)

@@ -151,7 +151,11 @@ class FileMetaData(BaseModel):
 
     created_at: Optional[datetime] = None
     last_modified: Optional[datetime] = None
-    file_size: Optional[int] = Field(-1, description="file size in bytes")
+    file_size: Optional[int] = Field(-1, description="File size in bytes")
+    entity_tag: Optional[str] = Field(
+        None,
+        description="Entity tag (or ETag), represents a specific version of the file.",
+    )
 
     parent_id: Optional[str] = None
 
