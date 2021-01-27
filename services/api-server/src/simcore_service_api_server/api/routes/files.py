@@ -11,7 +11,6 @@ from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import ValidationError
-from simcore_service_storage.models import FileMetaData
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
@@ -24,9 +23,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-## FILES ---------------
+## FILES ---------------------------------------------------------------------------------
 # TODO: pagination ?
 # TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
+
+FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
 @router.get("", response_model=List[FileMetadata])
@@ -35,8 +36,6 @@ async def list_files(
     user_id: int = Depends(get_current_user_id),
 ):
     """ Gets metadata for all file resources """
-    # return the_fake_impl.list_meta()
-    FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
     stored_files: List[StorageFileMetaData] = await storage_client.list_files(user_id)
 
@@ -97,7 +96,6 @@ async def upload_single_file_impl(
 
 # TODO: disabled until actual use case is presented
 # @router.post(":upload-multiple", response_model=List[FileMetadata])
-#
 async def _upload_files(files: List[UploadFile] = File(...)):
     """ Uploads multiple files to the system """
     # TODO: idealy we should only have upload_multiple_files but Union[List[UploadFile], File] produces an error in
@@ -111,11 +109,48 @@ async def _upload_files(files: List[UploadFile] = File(...)):
 
 
 @router.get("/{file_id}", response_model=FileMetadata)
-async def get_file(file_id: UUID):
+async def get_file(
+    file_id: UUID,
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
+):
     """ Gets metadata for a given file resource """
+
     try:
-        return the_fake_impl.files[file_id]
-    except KeyError as err:
+        stored_files: List[StorageFileMetaData] = await storage_client.search_files(
+            user_id, file_id
+        )
+        if not stored_files:
+            raise ValueError("Not found in storage")
+        stored_file_meta = stored_files[0]
+        assert stored_file_meta.user_id == user_id  # nosec
+        assert stored_file_meta.file_id  # nosec
+
+        # Adapts storage API model to API model
+        try:
+            # extracts fields from api/{file_id}/{filename}
+            match = FILE_ID_PATTERN.match(stored_file_meta.file_id)
+            assert match  # nosec
+
+            _file_id, _filename = match.group()
+            assert str(file_id) == _file_id  # nosec
+
+            meta = FileMetadata(
+                file_id=file_id,
+                filename=_filename,
+                content_type=guess_type(_filename),
+                checksum=stored_file_meta.etag,  # TODO:
+            )
+
+        except (ValidationError, AttributeError) as err:
+            logger.warning(
+                "Skipping corrupted entry in storage: %s (%s).", stored_file_meta, err
+            )
+            raise ValueError("Corrupted entry in storage") from err
+        else:
+            return meta
+
+    except ValueError as err:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"File with identifier {file_id} not found",

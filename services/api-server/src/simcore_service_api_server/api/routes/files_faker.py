@@ -20,7 +20,8 @@ from typing import Dict, List
 from uuid import UUID
 
 import aiofiles
-from fastapi import UploadFile
+from fastapi import UploadFile, status
+from fastapi.exceptions import HTTPException
 
 from ...models.schemas.files import FileMetadata
 from ...utils.hash import CHUNK_4KB
@@ -89,3 +90,22 @@ class StorageFaker:
 clean_storage_dirs()
 
 the_fake_impl = StorageFaker(storage_dir=STORAGE_DIR, files={})
+
+
+# /files API fake implementations
+
+
+async def list_files_fake_implementation():
+    return the_fake_impl.list_meta()
+
+
+async def get_file_fake_implementation(
+    file_id: UUID,
+):
+    try:
+        return the_fake_impl.files[file_id]
+    except KeyError as err:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail=f"File with identifier {file_id} not found",
+        ) from err
