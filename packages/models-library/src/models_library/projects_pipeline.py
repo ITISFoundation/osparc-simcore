@@ -28,3 +28,29 @@ class ComputationTask(BaseModel):
     pipeline_details: PipelineDetails = Field(
         ..., description="the details of the generated pipeline"
     )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+                "state": "PUBLISHED",
+                "pipeline_details": {
+                    "adjacency_list": {
+                        "2fb4808a-e403-4a46-b52c-892560d27862": [],
+                        "19a40c7b-0a40-458a-92df-c77a5df7c886": [
+                            "2fb4808a-e403-4a46-b52c-892560d27862"
+                        ],
+                    },
+                    "node_states": {
+                        "2fb4808a-e403-4a46-b52c-892560d27862": {
+                            "io_state": "OUTDATED",
+                            "runnable_state": "READY",
+                        },
+                        "19a40c7b-0a40-458a-92df-c77a5df7c886": {
+                            "io_state": "OK",
+                            "runnable_state": "WAITING_FOR_DEPENDENCIES",
+                        },
+                    },
+                },
+            }
+        }
