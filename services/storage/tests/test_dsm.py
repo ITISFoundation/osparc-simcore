@@ -456,7 +456,7 @@ def test_fmd_build():
     assert fmd.node_id == file_uuid.split("/")[1]
     assert fmd.project_id == file_uuid.split("/")[0]
     assert fmd.file_name == "xx.dat"
-    assert fmd.object_name == "1234/abcd/xx.dat"
+    assert fmd.object_name == file_uuid
     assert fmd.file_uuid == file_uuid
     assert fmd.location == SIMCORE_S3_STR
     assert fmd.location_id == SIMCORE_S3_ID
@@ -631,6 +631,19 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
             assert len(files) == 2
         else:
             assert len(files) == 0
+
+        if files:
+            found = await dsm_fixture.search_s3_files_starting_with(
+                user_id="21", prefix=files[0].fmd.file_uuid
+            )
+            assert found
+            assert len(found) == 1
+            assert found[0].fmd.file_uuid == files[0].fmd.file_uuid
+            assert found[0].parent_id == files[0].parent_id
+            assert found[0].fmd.node_id == files[0].fmd.node_id
+            # NOTE: found and files differ in these attributes
+            #  ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+            #  because these are added artificially in list_files
 
 
 async def test_dsm_list_dataset_files_datcore(

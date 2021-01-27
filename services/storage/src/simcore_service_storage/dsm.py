@@ -7,7 +7,7 @@ import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Deque, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import aiobotocore
 import aiofiles
@@ -242,6 +242,9 @@ class DataStorageManager:
                     d = dx.fmd
                     if d.project_id not in uuid_name_dict:
                         continue
+                    #
+                    # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+                    #        with information from the projects table!
 
                     d.project_name = uuid_name_dict[d.project_id]
                     if d.node_id in uuid_name_dict:
@@ -274,7 +277,7 @@ class DataStorageManager:
                 if _query.search(d.file_uuid):
                     filtered_data.append(dx)
 
-            return filtered_data
+            return list(filtered_data)
 
         if regex:
             _query = re.compile(regex, re.IGNORECASE)
@@ -286,7 +289,7 @@ class DataStorageManager:
                     if _query.search(v) or _query.search(str(_vars[v])):
                         filtered_data.append(dx)
                         break
-            return filtered_data
+            return list(filtered_data)
 
         return list(data)
 
