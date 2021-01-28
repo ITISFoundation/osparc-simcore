@@ -12,15 +12,15 @@ from async_timeout import timeout
 from aiohttp.web import Application
 from asyncio import Lock, sleep
 from typing import Dict, Deque, Tuple
-from collections import deque
 import logging
 
 from ..config import get_settings, ServiceSidecarSettings
 from ..exceptions import ServiceSidecarError
 from ..docker_utils import get_service_sidecars_to_monitor
-from .models import MonitorData, ServiceSidecarStatus
+from .models import MonitorData, ServiceSidecarStatus, LockWithMonitorData
 from .handlers import REGISTERED_HANDLERS
 from .service_sidecar_api import query_service
+from .utils import AsyncResourceLock
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ class ServiceSidecarsMonitor:
         self._app: Application = app
         self._lock: Lock = Lock()
 
-        self._to_monitor: Dict[str, MonitorData] = dict()
+        self._to_monitor: Dict[str, LockWithMonitorData] = dict()
         self._keep_running: bool = False
         self._inverse_search_mapping: Dict[str, str] = dict()
 
@@ -121,13 +121,16 @@ class ServiceSidecarsMonitor:
                     "other projects which may have this issue."
                 )
             self._inverse_search_mapping[node_uuid] = service_name
-            self._to_monitor[service_name] = MonitorData.assemble(
-                service_name=service_name,
-                hostname=hostname,
-                port=port,
-                service_key=service_key,
-                service_tag=service_tag,
-                service_published_url=service_published_url,
+            self._to_monitor[service_name] = LockWithMonitorData(
+                resource_lock=AsyncResourceLock(False),
+                monitor_data=MonitorData.assemble(
+                    service_name=service_name,
+                    hostname=hostname,
+                    port=port,
+                    service_key=service_key,
+                    service_tag=service_tag,
+                    service_published_url=service_published_url,
+                ),
             )
             logger.debug("Added service '%s' to monitor", service_name)
 
@@ -148,11 +151,11 @@ class ServiceSidecarsMonitor:
         logger.info("Doing some monitorung here")
 
         async def monitor_single_service(service_name: str) -> None:
-            monitor_data: MonitorData = self._to_monitor[service_name]
+            lock_with_monitor_data: LockWithMonitorData = self._to_monitor[service_name]
 
             try:
-                self._to_monitor[service_name] = await apply_monitoring(
-                    self._app, monitor_data
+                self._to_monitor[service_name].monitor_data = await apply_monitoring(
+                    self._app, lock_with_monitor_data.monitor_data
                 )
             except asyncio.CancelledError:
                 raise
@@ -160,12 +163,22 @@ class ServiceSidecarsMonitor:
                 logger.exception(
                     "Something went wrong while monitoring service %s", service_name
                 )
+            finally:
+                # when done, always unlock the resource
+                await lock_with_monitor_data.resource_lock.unlock_resource()
 
-        services = deque()
+        # start monitoring for services which are not currently undergoing
+        # a monitoring cycle
         for service_name in self._to_monitor:
-            services.append(monitor_single_service(service_name))
-
-        asyncio.gather(*services)
+            lock_with_monitor_data = self._to_monitor[service_name]
+            resource_was_locked = (
+                await lock_with_monitor_data.resource_lock.mark_as_locked_if_unlocked()
+            )
+            if resource_was_locked:
+                # fire and forget about the task
+                asyncio.get_event_loop().create_task(
+                    monitor_single_service(service_name)
+                )
 
     async def _run_monitor_task(self) -> None:
         service_sidecar_settings = get_settings(self._app)

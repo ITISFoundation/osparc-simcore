@@ -13,10 +13,11 @@ BASE_SERVICE_SPEC: Dict[str, Any] = {
 async def assemble_spec(service_key: str, service_tag: str) -> str:
     """returns a docker-compose spec which will be use by the service-sidecar to start the service """
     service_spec = deepcopy(BASE_SERVICE_SPEC)
+    # registry.osparc-master.speag.com/simcore/services/dynamic/jupyter-octave-python-math:1.5.2
+    image = f"{service_key}:{service_tag}"
     service_spec["services"] = {
         "whocontainer": {
-            "container_name": "ohhhhhhh",
-            "image": f"{service_key}:{service_tag}",
+            "image": image,
         }
     }
 

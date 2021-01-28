@@ -2,6 +2,7 @@ import datetime
 from enum import Enum
 from pydantic import BaseModel, Field, PositiveInt
 from typing import List
+from .utils import AsyncResourceLock
 
 
 class ServiceSidecarStatus(str, Enum):
@@ -10,6 +11,7 @@ class ServiceSidecarStatus(str, Enum):
 
 
 class OverallStatus(BaseModel):
+    """Generated from data from docker container inspect API"""
 
     status: ServiceSidecarStatus = Field(..., description="status of the service")
     info: str = Field(..., description="additional information for the user")
@@ -101,8 +103,6 @@ class ServiceSidecar(BaseModel):
 
 
 class MonitorData(BaseModel):
-    """Stores information on the current status of service-sidecar"""
-
     service_name: str = Field(
         ..., description="Name of the current sidecar-service being monitored"
     )
@@ -145,3 +145,24 @@ class MonitorData(BaseModel):
             ),
         )
         return cls.parse_obj(payload)
+
+
+class LockWithMonitorData(BaseModel):
+    """Used to wrap the """
+
+    # locking is required to guarantee the monitoring will not be triggered
+    # twice in a row for the service
+    resource_lock: AsyncResourceLock = Field(
+        ...,
+        description=(
+            "needed to exclude the service from a monitoring cycle while another "
+            "monitoring cycle is already running"
+        ),
+    )
+
+    monitor_data: MonitorData = Field(
+        ..., description="required data used to monitor the service-sidecar"
+    )
+
+    class Config:
+        arbitrary_types_allowed = True
