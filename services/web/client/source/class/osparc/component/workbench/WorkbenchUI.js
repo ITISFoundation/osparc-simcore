@@ -1163,7 +1163,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
-
     },
 
     __allowDrag: function(pointerEvent) {
