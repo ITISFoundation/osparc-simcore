@@ -61,8 +61,22 @@ class ServiceSidecarSettings(BaseSettings):
     )
 
     service_sidecar_api_request_timeout: PositiveInt = Field(
-        60,
-        description="the default timeout each request to the service-sidecar API in seconds",
+        15,
+        description=(
+            "the default timeout each request to the service-sidecar API in seconds; as per "
+            "design, all requests should answer quite quickly, in theory a few seconds or less"
+        ),
+    )
+
+    service_sidecar_api_request_docker_compose_up_timeout: PositiveInt = Field(
+        10,
+        description=(
+            "when running docker-compose up -d if there are errors in the compose spec it can "
+            "happen that the command expects some user input, so this will wait forever. To avoid"
+            "this situation we are adding a timeout. note that if a compose-spec lots of containers "
+            "the current default may not be enough. Also pleasenote that this value has to be "
+            "smaller then service_sidecar_api_request_timeout or the errors may not be consistent"
+        ),
     )
 
     @property
