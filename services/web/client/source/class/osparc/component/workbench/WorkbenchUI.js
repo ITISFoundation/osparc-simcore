@@ -998,6 +998,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __mouseWheel: function(e) {
+      this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
       const zoomIn = e.getWheelDelta() < 0;
       this.__zoom(zoomIn);
     },
@@ -1061,7 +1062,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const transformOrigin = [0, 0];
       const p = ["webkit", "moz", "ms", "o"];
       const s = `scale(${zoom})`;
-      const oString = (transformOrigin[0] * 100) + "% " + (transformOrigin[1] * 100) + "%";
+      const oString = transformOrigin[0] + "px " + transformOrigin[1] + "px";
       for (let i = 0; i < p.length; i++) {
         el.style[p[i] + "Transform"] = s;
         el.style[p[i] + "TransformOrigin"] = oString;
