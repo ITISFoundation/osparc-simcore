@@ -17,30 +17,41 @@ const screenshotPrefix = "Opencor_";
 async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
-  tutorial.startScreenshooter();
-  const page = await tutorial.beforeScript();
-  const studyData = await tutorial.openStudyLink();
-  const studyId = studyData["data"]["uuid"];
-  console.log("Study ID:", studyId);
+  try {
+    tutorial.startScreenshooter();
+    const page = await tutorial.beforeScript();
+    const studyData = await tutorial.openStudyLink();
+    const studyId = studyData["data"]["uuid"];
+    console.log("Study ID:", studyId);
 
-  // Some time for loading the workbench
-  await tutorial.waitFor(10000);
-  await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
+    // Some time for loading the workbench
+    await tutorial.waitFor(10000);
+    await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
-  await tutorial.runPipeline(studyId, 30000);
-  await utils.takeScreenshot(page, screenshotPrefix + 'pipeline_run');
+    await tutorial.runPipeline(studyId, 30000);
+    await utils.takeScreenshot(page, screenshotPrefix + 'pipeline_run');
 
-  await tutorial.openNodeFiles(0);
-  const outFiles = [
-    "results.json",
-    "logs.zip",
-    "membrane-potential.csv"
-  ];
-  await tutorial.checkResults(outFiles.length);
+    await tutorial.openNodeFiles(0);
+    const outFiles = [
+      "results.json",
+      "logs.zip",
+      "membrane-potential.csv"
+    ];
+    await tutorial.checkResults(outFiles.length);
+  }
+  catch(err) {
+    tutorial.setTutorialFailed(true);
+    console.log('Tutorial error: ' + err);
+  }
+  finally {
+    await tutorial.logOut();
+    tutorial.stopScreenshooter();
+    await tutorial.close();
+  }
 
-  await tutorial.logOut();
-  tutorial.stopScreenshooter();
-  await tutorial.close();
+  if (tutorial.getTutorialFailed()) {
+    throw "Tutorial Failed";
+  }
 }
 
 runTutorial()
