@@ -200,16 +200,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return zoomToolbar;
     },
 
-    __getZoomBtn: function(icon) {
+    __getZoomBtn: function(icon, tooltip) {
       const btn = new qx.ui.toolbar.Button(null, icon+"/18").set({
         width: ZOOM_BUTTON_SIZE,
         height: ZOOM_BUTTON_SIZE
       });
+      if (tooltip) {
+        btn.setToolTipText(tooltip);
+      }
       return btn;
     },
 
     __getZoomInButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_in");
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_in", this.tr("Zoom In"));
       btn.addListener("execute", () => {
         this.__zoom(true);
       }, this);
@@ -217,7 +220,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getZoomOutButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out");
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out", this.tr("Zoom Out"));
       btn.addListener("execute", () => {
         this.__zoom(false);
       }, this);
@@ -225,7 +228,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getZoomResetButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/find_replace");
+      const btn = this.__getZoomBtn("@MaterialIcons/find_replace", this.tr("Reset Zoom"));
       btn.addListener("execute", () => {
         this.setScale(1);
       }, this);
@@ -233,7 +236,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getZoomAllButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out_map");
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out_map", this.tr("Zoom All"));
       btn.addListener("execute", () => {
         this.__zoomAll();
       }, this);
@@ -1062,7 +1065,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const transformOrigin = [0, 0];
       const p = ["webkit", "moz", "ms", "o"];
       const s = `scale(${zoom})`;
-      const oString = transformOrigin[0] + "px " + transformOrigin[1] + "px";
+      const oString = (transformOrigin[0] * 100) + "% " + (transformOrigin[1] * 100) + "%";
       for (let i = 0; i < p.length; i++) {
         el.style[p[i] + "Transform"] = s;
         el.style[p[i] + "TransformOrigin"] = oString;
