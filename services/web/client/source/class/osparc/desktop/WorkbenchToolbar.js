@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     },
 
     // overriden
-    _populateGuidedNodesLayout: function() {
+    _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
