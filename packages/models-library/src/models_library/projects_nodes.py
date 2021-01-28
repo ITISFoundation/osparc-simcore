@@ -148,3 +148,12 @@ class Node(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
+        # NOTE: exporting without this trick does not make runHash as nullabel.
+        # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
+        @staticmethod
+        def schema_extra(schema, _):
+            for prop, value in schema.get("properties", {}).items():
+                if prop in ["runHash"]:  # Your actual nullable fields go in this list.
+                    was = value["type"]
+                    value["type"] = [was, "null"]
