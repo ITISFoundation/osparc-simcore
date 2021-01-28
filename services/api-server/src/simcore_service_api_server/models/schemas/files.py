@@ -23,7 +23,7 @@ class FileMetadata(BaseModel):
     content_type: Optional[str] = None
 
     # SEE https://ant.apache.org/manual/Tasks/checksum.html
-    checksum: str = Field(..., description="MD5 hash of the file's content")
+    checksum: str = Field(None, description="MD5 hash of the file's content")
 
     @classmethod
     async def create_from_path(cls, path: Path) -> "FileMetadata":
@@ -39,19 +39,25 @@ class FileMetadata(BaseModel):
         )
 
     @classmethod
-    async def create_from_uploaded(cls, file: UploadFile) -> "FileMetadata":
-
-        md5check = await create_md5_checksum(file)
+    async def create_from_uploaded(
+        cls, file: UploadFile, *, file_size=None, created_at=None
+    ) -> "FileMetadata":
+        """
+        If use_md5=True, then checksum  if fi
+        """
+        md5check = None
+        if not file_size:
+            md5check = await create_md5_checksum(file)
         # WARNING: UploadFile wraps a stream and wil checkt its cursor position: file.file.tell() != 0
         # WARNING: await file.seek(0) might introduce race condition if not done carefuly
 
         return cls(
-            file_id=cls.create_id(md5check, file.filename),
+            file_id=cls.create_id(md5check or file_size, file.filename, created_at),
             filename=file.filename,
             content_type=file.content_type,
             checksum=md5check,
         )
 
     @classmethod
-    def create_id(cls, checksum, filename) -> UUID:
-        return uuid3(NAMESPACE_FILEID_KEY, f"{checksum}:{filename}")
+    def create_id(cls, *keys) -> UUID:
+        return uuid3(NAMESPACE_FILEID_KEY, ":".join(keys))
