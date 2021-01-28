@@ -1,6 +1,12 @@
 from aiohttp.web import Application
-from .monitor import setup_monitor, shutdown_monitor, setup_api_client, shutdown_api_client
+
 from .config import setup_settings
+from .monitor import (
+    setup_api_client,
+    setup_monitor,
+    shutdown_api_client,
+    shutdown_monitor,
+)
 
 
 def setup_service_sidecar(app: Application):

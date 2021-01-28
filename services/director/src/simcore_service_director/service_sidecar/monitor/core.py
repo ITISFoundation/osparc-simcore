@@ -7,18 +7,18 @@
 # Handlers to subscribe to this thing
 
 import asyncio
-from async_timeout import timeout
+import logging
+from asyncio import Lock, sleep
+from typing import Deque, Dict, Tuple
 
 from aiohttp.web import Application
-from asyncio import Lock, sleep
-from typing import Dict, Deque, Tuple
-import logging
+from async_timeout import timeout
 
-from ..config import get_settings, ServiceSidecarSettings
-from ..exceptions import ServiceSidecarError
+from ..config import ServiceSidecarSettings, get_settings
 from ..docker_utils import get_service_sidecars_to_monitor
-from .models import MonitorData, ServiceSidecarStatus, LockWithMonitorData
+from ..exceptions import ServiceSidecarError
 from .handlers import REGISTERED_HANDLERS
+from .models import LockWithMonitorData, MonitorData, ServiceSidecarStatus
 from .service_sidecar_api import query_service
 from .utils import AsyncResourceLock
 

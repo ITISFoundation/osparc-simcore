@@ -1,16 +1,16 @@
 import logging
-
-from .handlers_base import BaseEventHandler
-from typing import List, Dict, Any
 from collections import deque
+from typing import Any, Dict, List
+
 from aiohttp.web import Application
 
 from ..docker_compose_assembly import assemble_spec
+from .handlers_base import BaseEventHandler
 from .models import (
+    DockerContainerInspect,
+    DockerStatus,
     MonitorData,
     ServiceSidecarStatus,
-    DockerStatus,
-    DockerContainerInspect,
 )
 from .service_sidecar_api import get_api_client
 

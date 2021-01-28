@@ -1,7 +1,8 @@
 from abc import abstractclassmethod
-from .models import MonitorData
 
 from aiohttp.web import Application
+
+from .models import MonitorData
 
 
 class BaseEventHandler:

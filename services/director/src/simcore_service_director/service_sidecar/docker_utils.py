@@ -1,14 +1,13 @@
 # wraps all calls to underlying docker engine
 import logging
+from typing import Any, Deque, Dict, Tuple
 
 import aiodocker
-
-from typing import Dict, Any, Deque, Tuple
 from asyncio_extras import async_contextmanager
 
 from .config import ServiceSidecarSettings
-from .exceptions import ServiceSidecarError, GenericDockerError
-from .constants import SERVICE_SIDECAR_PREFIX, FIXED_SERVICE_NAME_SIDECAR
+from .constants import FIXED_SERVICE_NAME_SIDECAR, SERVICE_SIDECAR_PREFIX
+from .exceptions import GenericDockerError, ServiceSidecarError
 
 log = logging.getLogger(__name__)
 

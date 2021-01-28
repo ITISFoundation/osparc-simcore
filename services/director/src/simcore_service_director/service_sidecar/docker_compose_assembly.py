@@ -1,11 +1,10 @@
 from copy import deepcopy
-from typing import Dict, Any
+from typing import Any, Dict
 
 import yaml
 from aiohttp.web import Application
 
-
-from .config import get_settings, ServiceSidecarSettings
+from .config import ServiceSidecarSettings, get_settings
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {

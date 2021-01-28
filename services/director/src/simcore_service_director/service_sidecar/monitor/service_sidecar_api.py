@@ -1,11 +1,12 @@
 import logging
 import traceback
+from typing import Any, Dict, Optional
 
-from typing import Optional, Dict, Any
-from aiohttp.web import Application
-from .models import MonitorData
-from ..config import get_settings
 import httpx
+from aiohttp.web import Application
+
+from ..config import get_settings
+from .models import MonitorData
 
 logger = logging.getLogger(__name__)
 

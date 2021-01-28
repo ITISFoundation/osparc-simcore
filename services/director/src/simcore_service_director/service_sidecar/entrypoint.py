@@ -1,21 +1,18 @@
 import logging
-
-from typing import Dict, Optional, Any
 from pathlib import Path
+from typing import Any, Dict, Optional
 
 from aiohttp import web
 
-
-from .config import get_settings, ServiceSidecarSettings
-from .monitor import get_monitor
-from .docker_utils import get_swarm_network, create_network, create_service_and_get_id
+from .config import ServiceSidecarSettings, get_settings
 from .constants import (
-    FIXED_SERVICE_NAME_SIDECAR,
     FIXED_SERVICE_NAME_PROXY,
+    FIXED_SERVICE_NAME_SIDECAR,
     SERVICE_SIDECAR_PREFIX,
 )
+from .docker_utils import create_network, create_service_and_get_id, get_swarm_network
+from .monitor import get_monitor
 from .utils import unused_port
-
 
 log = logging.getLogger(__name__)
 
