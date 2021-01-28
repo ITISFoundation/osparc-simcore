@@ -1,15 +1,17 @@
 import asyncio
+import json
 import logging
 import re
 from collections import deque
+from datetime import datetime
 from mimetypes import guess_type
 from textwrap import dedent
-from typing import Dict, List
+from typing import Dict, List, Optional
 from urllib.parse import quote
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import ValidationError
@@ -41,6 +43,23 @@ router = APIRouter()
 FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
+def convert_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
+    # extracts fields from api/{file_id}/{filename}
+    match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
+    if not match:
+        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
+
+    file_id, filename = match.groups()
+
+    meta = FileMetadata(
+        file_id=file_id,
+        filename=filename,
+        content_type=guess_type(filename)[0],
+        checksum=stored_file_meta.entity_tag,
+    )
+    return meta
+
+
 @router.get("", response_model=List[FileMetadata])
 async def list_files(
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
@@ -57,21 +76,14 @@ async def list_files(
             assert stored_file_meta.user_id == user_id  # nosec
             assert stored_file_meta.file_id  # nosec
 
-            # extracts fields from api/{file_id}/{filename}
-            match = FILE_ID_PATTERN.match(stored_file_meta.file_id)
-            assert match  # nosec
-            file_id, filename = match.group()
-
-            meta = FileMetadata(
-                file_id=file_id,
-                filename=filename,
-                content_type=guess_type(filename),
-                checksum=stored_file_meta.entity_tag,
-            )
+            meta = convert_metadata(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
             logger.warning(
-                "Skipping corrupted entry in storage: %s (%s).", stored_file_meta, err
+                "Skipping corrupted entry in storage '%s' (%s)"
+                "TIP: check this entry in file_meta_data table.",
+                stored_file_meta.file_uuid,
+                err,
             )
 
         else:
@@ -83,66 +95,46 @@ async def list_files(
 @router.post(":upload", response_model=FileMetadata)
 async def upload_file(
     file: UploadFile = File(...),
+    content_length: Optional[str] = Header(None),
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
     """Uploads a single file to the system    """
-    # TODO: for the moment we upload file here and re-upload to S3
+    # TODO: For the moment we upload file here and re-upload to S3
     # using a pre-signed link. This is far from ideal since we are using the api-server as a
     # passby service for all uploaded data which can be a lot.
     # Next refactor should consider a solution that directly uploads from the client to S3
     # avoiding the data trafic via this service
     #
 
-    # assign file_id
-    # FIXME: create file-id with time-stamp instead so we can stream up
-    # as chunks are arriving?
-    # can perhaps digest content on the fly
-    #
-    meta: FileMetadata = await FileMetadata.create_from_uploaded(file)
-    assert meta.content_type  # nosec
-
-    await file.seek(0)  # reset since previous call read file to create checksum
+    # assign file_id.
+    meta: FileMetadata = await FileMetadata.create_from_uploaded(
+        file, file_size=content_length, created_at=datetime.utcnow().isoformat()
+    )
+    logger.debug("Assigned id: %s of %s bytes", meta, content_length)
 
     # upload to S3 using pre-signed link
     presigned_upload_link = await storage_client.get_upload_link(
         user_id, meta.file_id, meta.filename
     )
+
+    logger.info("Uploading %s to %s ...", meta, presigned_upload_link)
+
     async with httpx.AsyncClient() as client:
+        assert meta.content_type  # nosec
+
+        # NOTE: _file attribute is a file-like object of ile.file which is
+        # a https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile
         resp = await client.put(
             presigned_upload_link,
-            files={"upload-file": (meta.filename, file, meta.content_type)},
+            files={"upload-file": (meta.filename, file.file._file, meta.content_type)},
         )
         resp.raise_for_status()
-        ## e_tag = json.loads(resp.headers.get("Etag", None))
-        # FIXME: get ETag from resp as SAN does saves re-calling storage
 
-    # FIXME: forgot error handling
-
-    # validate upload and update checksum by getting storage metadata
-    #
-    # NOTE: storage service is observing S3 to verify upload, which means that we need to give
-    #  a few seconds before the file_metadata table is updated
-    #
-    async for attempt in AsyncRetrying(
-        retry=retry_if_exception_type(ValueError),
-        wait=wait_fixed(2),
-        stop=stop_after_delay(10),
-    ):
-        with attempt:
-            stored_files: List[StorageFileMetaData] = await storage_client.search_files(
-                user_id, meta.file_id
-            )
-            if not stored_files:
-                raise ValueError("Not found in storage")
-            stored_file_meta = stored_files[0]
-            assert stored_file_meta.user_id == user_id  # nosec
-            assert stored_file_meta.file_id  # nosec
-
-            # the initial checksum was used to generate the file_id but
-            # for consistency we will be using the one provided by storage
-            meta.checksum = stored_file_meta.etag
-            return meta
+    # update checksum
+    entity_tag = json.loads(resp.headers.get("Etag"))
+    meta.checksum = entity_tag
+    return meta
 
 
 # DISABLED @router.post(":upload-multiple", response_model=List[FileMetadata])
@@ -176,35 +168,17 @@ async def get_file(
         )
         if not stored_files:
             raise ValueError("Not found in storage")
+
         stored_file_meta = stored_files[0]
         assert stored_file_meta.user_id == user_id  # nosec
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model
-        try:
-            # extracts fields from api/{file_id}/{filename}
-            match = FILE_ID_PATTERN.match(stored_file_meta.file_id)
-            assert match  # nosec
+        meta = convert_metadata(stored_file_meta)
+        return meta
 
-            _file_id, _filename = match.group()
-            assert str(file_id) == _file_id  # nosec
-
-            meta = FileMetadata(
-                file_id=file_id,
-                filename=_filename,
-                content_type=guess_type(_filename),
-                checksum=stored_file_meta.entity_tag,
-            )
-
-        except (ValidationError, AttributeError) as err:
-            logger.warning(
-                "Skipping corrupted entry in storage: %s (%s).", stored_file_meta, err
-            )
-            raise ValueError("Corrupted entry in storage") from err
-        else:
-            return meta
-
-    except ValueError as err:
+    except (ValueError, ValidationError) as err:
+        logger.debug("File %d not found: %s", file_id, err)
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"File with identifier {file_id} not found",
@@ -224,6 +198,7 @@ async def download_file(
     presigned_download_link = await storage_client.get_download_link(
         user_id, meta.file_id, meta.filename
     )
+    logger.info("Downloading %s to %s ...", meta, presigned_download_link)
 
     async def _download_stream():
         async with httpx.AsyncClient() as client:
@@ -245,6 +220,7 @@ async def download_file(
             content_disposition = 'attachment; filename="{}"'.format(meta.filename)
         return {"content-disposition": content_disposition}
 
+    # FIXME: this DOES NOT WORK, it only downloads one chunk
     return StreamingResponse(
         _download_stream(), media_type=meta.content_type, headers=_build_headers()
     )

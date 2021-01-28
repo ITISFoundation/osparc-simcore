@@ -72,6 +72,9 @@ class StorageApi(BaseServiceClientApi):
                 "startswith": "api/",
             },
         )
+        # FIXME: handle HTTPStatusError
+        resp.raise_for_status()
+
         files_metadata = FileMetaDataArray(__root__=resp.json()["data"] or [])
         return files_metadata.__root__
 
