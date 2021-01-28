@@ -42,7 +42,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
-    "showSweeper": "qx.event.type.Event",
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
@@ -95,21 +94,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       if (osparc.data.Permissions.getInstance().canDo("study.node.grouping")) {
         this.add(groupCtrls);
       }
-
-      const moreCtrls = new qx.ui.toolbar.Part();
-      osparc.data.model.Sweeper.isSweeperEnabled()
-        .then(isSweeperEnabled => {
-          if (isSweeperEnabled) {
-            const sweeperButton = this.__createShowSweeperButton();
-            moreCtrls.add(sweeperButton);
-          }
-        });
-      this.add(moreCtrls);
-    },
-
-    __createShowSweeperButton: function() {
-      const parametersButton = this.__createButton(this.tr("Sweeper"), "paw", "showSweeperButton", "showSweeper");
-      return parametersButton;
     },
 
     __createWorkbenchButton: function() {

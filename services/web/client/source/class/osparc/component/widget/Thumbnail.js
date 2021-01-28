@@ -72,11 +72,11 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
     }
 
     [
-      "changeSource",
+      "appear",
       "loaded"
     ].forEach(eventName => {
       image.addListener(eventName, e => {
-        this.__calculateMaxHeight();
+        this.recheckSize();
       }, this);
     });
   },
@@ -102,14 +102,20 @@ qx.Class.define("osparc.component.widget.Thumbnail", {
       return control || this.base(arguments, id);
     },
 
-    __calculateMaxHeight: function() {
+    recheckSize: function() {
       const image = this.getChildControl("image");
       const source = image.getSource();
       if (source) {
-        const width = qx.io.ImageLoader.getWidth(source);
-        const height = qx.io.ImageLoader.getHeight(source);
-        if (width && height) {
-          const aspectRatio = width/height;
+        const srcWidth = qx.io.ImageLoader.getWidth(source);
+        const srcHeight = qx.io.ImageLoader.getHeight(source);
+        if (srcWidth && srcHeight) {
+          const aspectRatio = srcWidth/srcHeight;
+          if (this.getBounds() && this.getBounds().width < image.getMaxWidth()) {
+            image.setMaxWidth(this.getBounds().width);
+          }
+          if (this.getBounds() && this.getBounds().height < image.getMaxHeight()) {
+            image.setMaxHeight(this.getBounds().height);
+          }
           const maxWidth = image.getMaxWidth();
           const maxHeight = image.getMaxHeight();
 

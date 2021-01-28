@@ -18,7 +18,7 @@ qx.Class.define("osparc.component.filter.group.StudyFilterGroup", {
    */
   construct: function(filterGroupId) {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox());
+    this._setLayout(new qx.ui.layout.HBox(5));
 
     this.__textFilter = new osparc.component.filter.TextFilter("text", filterGroupId);
     this.__textFilter.getChildControl("textfield").setFont("text-14");

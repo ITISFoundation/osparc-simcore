@@ -92,11 +92,11 @@ qx.Class.define("osparc.desktop.Toolbar", {
     __applyStudy: function(study) {
       if (study) {
         study.getUi().addListener("changeCurrentNodeId", () => {
-          this._populateGuidedNodesLayout();
+          this._populateNodesNavigationLayout();
         });
         this._startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
 
-        this._populateGuidedNodesLayout();
+        this._populateNodesNavigationLayout();
       }
     },
 
@@ -104,7 +104,7 @@ qx.Class.define("osparc.desktop.Toolbar", {
       throw new Error("Abstract method called!");
     },
 
-    _populateGuidedNodesLayout: function() {
+    _populateNodesNavigationLayout: function() {
       throw new Error("Abstract method called!");
     }
   }

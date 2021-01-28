@@ -17,28 +17,39 @@ const screenshotPrefix = "3DAnatomical_";
 async function runTutorial () {
   const tutorial = new tutorialBase.TutorialBase(anonURL, screenshotPrefix, null, null, null, enableDemoMode);
 
-  tutorial.startScreenshooter();
-  const page = await tutorial.beforeScript();
-  const studyData = await tutorial.openStudyLink();
-  const studyId = studyData["data"]["uuid"];
-  console.log("Study ID:", studyId);
+  try {
+    tutorial.startScreenshooter();
+    const page = await tutorial.beforeScript();
+    const studyData = await tutorial.openStudyLink();
+    const studyId = studyData["data"]["uuid"];
+    console.log("Study ID:", studyId);
 
-  const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-  await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1]]);
+    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1]]);
 
-  // Some time for starting the service
-  await tutorial.waitFor(10000);
-  await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
+    // Some time for starting the service
+    await tutorial.waitFor(10000);
+    await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-  await tutorial.openNodeFiles(1);
-  const outFiles = [
-    "data.zip"
-  ];
-  await tutorial.checkResults(outFiles.length);
+    await tutorial.openNodeFiles(1);
+    const outFiles = [
+      "data.zip"
+    ];
+    await tutorial.checkResults(outFiles.length);
+  }
+  catch(err) {
+    tutorial.setTutorialFailed(true);
+    console.log('Tutorial error: ' + err);
+  }
+  finally {
+    await tutorial.logOut();
+    tutorial.stopScreenshooter();
+    await tutorial.close();
+  }
 
-  await tutorial.logOut();
-  tutorial.stopScreenshooter();
-  await tutorial.close();
+  if (tutorial.getTutorialFailed()) {
+    throw "Tutorial Failed";
+  }
 }
 
 runTutorial()

@@ -110,6 +110,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         collapsedMinWidth: collapsedWidth,
         collapsedWidth: collapsedWidth
       });
+      sidePanel.getLayout().resetSeparator();
 
       const sideHeader = new qx.ui.toolbar.ToolBar();
       const titlePart = new qx.ui.toolbar.Part();

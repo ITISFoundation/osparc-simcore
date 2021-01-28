@@ -139,7 +139,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     TOP_OFFSET: osparc.navigation.NavigationBar.HEIGHT + 46,
 
-    ZoomValues: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
+    ZOOM_VALUES: [0.25, 0.4, 0.5, 0.6, 0.8, 1, 1.25, 1.5, 2, 3]
   },
 
   events: {
@@ -156,7 +156,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     scale: {
-      check: "osparc.component.workbench.WorkbenchUI.ZoomValues",
+      check: "osparc.component.workbench.WorkbenchUI.ZOOM_VALUES",
       init: 1,
       apply: "__applyScale",
       event: "changeScale",
@@ -178,8 +178,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __svgWidgetDrop: null,
     __tempEdgeNodeId: null,
     __tempEdgeRepr: null,
-    __pointerPosX: null,
-    __pointerPosY: null,
+    __pointerPos: null,
     __selectedItemId: null,
     __currentModel: null,
     __startHint: null,
@@ -201,16 +200,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return zoomToolbar;
     },
 
-    __getZoomBtn: function(icon) {
+    __getZoomBtn: function(icon, tooltip) {
       const btn = new qx.ui.toolbar.Button(null, icon+"/18").set({
         width: ZOOM_BUTTON_SIZE,
         height: ZOOM_BUTTON_SIZE
       });
+      if (tooltip) {
+        btn.setToolTipText(tooltip);
+      }
       return btn;
     },
 
     __getZoomInButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_in");
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_in", this.tr("Zoom In"));
       btn.addListener("execute", () => {
         this.__zoom(true);
       }, this);
@@ -218,7 +220,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getZoomOutButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out");
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out", this.tr("Zoom Out"));
       btn.addListener("execute", () => {
         this.__zoom(false);
       }, this);
@@ -226,7 +228,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getZoomResetButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/find_replace");
+      const btn = this.__getZoomBtn("@MaterialIcons/find_replace", this.tr("Reset Zoom"));
       btn.addListener("execute", () => {
         this.setScale(1);
       }, this);
@@ -234,7 +236,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getZoomAllButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out_map");
+      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out_map", this.tr("Zoom All"));
       btn.addListener("execute", () => {
         this.__zoomAll();
       }, this);
@@ -596,12 +598,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         let dragNodeId = data.nodeId;
 
         if (this.__tempEdgeNodeId === dragNodeId) {
-          const winPos = this.__unscaleCoordinates(this.__pointerPosX, this.__pointerPosY);
-          const srvPos = {
-            x: this.__pointerPosX,
-            y: this.__pointerPosY
-          };
-          const srvCat = this.__createServiceCatalog(winPos, srvPos);
+          const winPos = this.__unscaleCoordinates(this.__pointerPos.x, this.__pointerPos.y);
+          const srvCat = this.__createServiceCatalog(winPos, this.__pointerPos);
           if (this.__tempEdgeIsInput === true) {
             srvCat.setContext(dragNodeId, this.getNodeUI(dragNodeId).getInputPort());
           } else {
@@ -770,8 +768,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const scrollX = this.__workbenchLayoutScroll.getScrollX();
       const scrollY = this.__workbenchLayoutScroll.getScrollY();
       const scaledScroll = this.__scaleCoordinates(scrollX, scrollY);
-      this.__pointerPosX = scaledPos.x + scaledScroll.x;
-      this.__pointerPosY = scaledPos.y + scaledScroll.y;
+      this.__pointerPos = {
+        x: scaledPos.x + scaledScroll.x,
+        y: scaledPos.y + scaledScroll.y
+      };
 
       let portPos = nodeUI.getEdgePoint(port);
       if (portPos[0] === null) {
@@ -783,15 +783,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       let x2;
       let y2;
       if (port.isInput) {
-        x1 = this.__pointerPosX;
-        y1 = this.__pointerPosY;
+        x1 = this.__pointerPos.x;
+        y1 = this.__pointerPos.y;
         x2 = portPos[0];
         y2 = portPos[1];
       } else {
         x1 = portPos[0];
         y1 = portPos[1];
-        x2 = this.__pointerPosX;
-        y2 = this.__pointerPosY;
+        x2 = this.__pointerPos.x;
+        y2 = this.__pointerPos.y;
       }
 
       if (this.__tempEdgeRepr === null) {
@@ -807,8 +807,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       this.__tempEdgeRepr = null;
       this.__tempEdgeNodeId = null;
-      this.__pointerPosX = null;
-      this.__pointerPosY = null;
+      this.__pointerPos = null;
     },
 
     __getEdgePoints: function(node1, port1, node2, port2) {
@@ -1001,13 +1000,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
-
     __mouseWheel: function(e) {
-      this.__zoom(e.getWheelDelta() < 0);
+      this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
+      const zoomIn = e.getWheelDelta() < 0;
+      this.__zoom(zoomIn);
     },
 
     __zoom: function(zoomIn = true) {
-      const zoomValues = this.self().ZoomValues;
+      const zoomValues = this.self().ZOOM_VALUES;
       const nextItem = () => {
         const i = zoomValues.indexOf(this.getScale());
         if (i+1<zoomValues.length) {
@@ -1028,7 +1028,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __zoomAll: function() {
-      const zoomValues = this.self().ZoomValues;
+      const zoomValues = this.self().ZOOM_VALUES;
       const bounds = this.__getNodesBounds();
       if (bounds === null) {
         return;
@@ -1149,23 +1149,20 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.__workbenchLayout.addListener("tap", () => {
         this.resetSelectedNodes();
+        this.__selectedItemChanged(null);
       }, this);
 
-      this.__workbenchLayout.addListener("dbltap", e => {
+      this.__workbenchLayout.addListener("dbltap", pointerEvent => {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-        const winPos = this.__pointerEventToWorkbenchPos(e, false);
-        const scaledPos = this.__pointerEventToWorkbenchPos(e, true);
+        const winPos = this.__pointerEventToWorkbenchPos(pointerEvent, false);
+        const scaledPos = this.__pointerEventToWorkbenchPos(pointerEvent, true);
         const srvCat = this.__createServiceCatalog(winPos, scaledPos);
         srvCat.open();
       }, this);
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
-
-      this.__workbenchLayout.addListener("tap", e => {
-        this.__selectedItemChanged(null);
-      }, this);
     },
 
     __allowDrag: function(pointerEvent) {
@@ -1177,27 +1174,27 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return files.length === 1;
     },
 
-    __dragEnter: function(e) {
-      this.__dragging(e, true);
+    __dragEnter: function(pointerEvent) {
+      this.__dragging(pointerEvent, true);
     },
 
-    __dragOver: function(e) {
-      this.__dragging(e, true);
+    __dragOver: function(pointerEvent) {
+      this.__dragging(pointerEvent, true);
     },
 
-    __dragLeave: function(e) {
-      this.__dragging(e, false);
+    __dragLeave: function(pointerEvent) {
+      this.__dragging(pointerEvent, false);
     },
 
-    __drop: function(e) {
-      this.__dragging(e, false);
+    __drop: function(pointerEvent) {
+      this.__dragging(pointerEvent, false);
 
-      if (this.__allowDropFile(e)) {
+      if (this.__allowDropFile(pointerEvent)) {
         const pos = {
-          x: e.offsetX,
-          y: e.offsetY
+          x: pointerEvent.offsetX,
+          y: pointerEvent.offsetY
         };
-        const fileList = e.dataTransfer.files;
+        const fileList = pointerEvent.dataTransfer.files;
         if (fileList.length) {
           const data = {
             service: qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker())
