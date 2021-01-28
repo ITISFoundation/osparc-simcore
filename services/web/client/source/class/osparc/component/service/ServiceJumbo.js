@@ -63,9 +63,8 @@ qx.Class.define("osparc.component.service.ServiceJumbo", {
         }
       }
       if (data.tags && data.tags.length) {
-        const category = this.getServiceModel().getCategory ? this.getServiceModel().getCategory() : "";
         const type = this.getServiceModel().getType() || "";
-        if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
+        if (!data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }
