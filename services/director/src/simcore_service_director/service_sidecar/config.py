@@ -79,6 +79,19 @@ class ServiceSidecarSettings(BaseSettings):
         ),
     )
 
+    # Trying to resolve docker registry url
+    registry_path: str = Field(
+        None, description="url to the docker registry", env="REGISTRY_PATH"
+    )
+    registry_url: str = Field(
+        "", description="url to the docker registry", env="REGISTRY_URL"
+    )
+
+    @property
+    def resolved_registry_url(self) -> str:
+        # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine
+        return self.registry_path or self.registry_url
+
     @property
     def is_dev_mode(self):
         # TODO: ask SAN how to check this, not sure from what env var to derive it

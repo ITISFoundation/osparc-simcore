@@ -53,7 +53,7 @@ class RunDockerComposeUp(BaseEventHandler):
 
         # creates a docker compose spec given the service key and tag
         compose_spec = await assemble_spec(
-            service_key=current.service_key, service_tag=current.service_tag
+            app=app, service_key=current.service_key, service_tag=current.service_tag
         )
 
         compose_spec_was_applied = await api_client.start_or_update_compose_service(
