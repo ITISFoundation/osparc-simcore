@@ -15,12 +15,6 @@ from fastapi import APIRouter, Depends, File, Header, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import ValidationError
-from tenacity import (
-    AsyncRetrying,
-    retry_if_exception_type,
-    stop_after_delay,
-    wait_fixed,
-)
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata

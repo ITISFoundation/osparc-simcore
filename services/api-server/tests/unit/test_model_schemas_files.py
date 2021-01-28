@@ -5,9 +5,13 @@
 import hashlib
 import tempfile
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
+from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
+from pydantic import ValidationError
+from simcore_service_api_server.api.routes.files import convert_metadata
 from simcore_service_api_server.models.schemas.files import FileMetadata
 
 pytestmark = pytest.mark.asyncio
@@ -67,47 +71,23 @@ async def test_create_filemetadata_from_starlette_uploadfile(
     assert upload_in_memory.file.tell() > 0, "modifies current position is at the end"
 
 
-@pytest.mark.skip(reason="dev")
-def test_create_filemetadata_from_storage_response():
-    from models_library.api_schemas_storage import DatasetMetaData, FileMetaData
+def test_convert_filemetadata():
 
-    dataset_meta = DatasetMetaData(**DatasetMetaData.Config.schema_extra["examples"][0])
-    file_meta = FileMetaData(**FileMetaData.Config.schema_extra["examples"][1])
-
-    api_file_metadata = FileMetadata(
-        file_id=file_meta.node_id,
-        filename=file_meta.file_name,
-        # ??
-        content_type=None,
-        # etag?
-        checksum=hashlib.sha256(
-            f"{file_meta.last_modified}:{file_meta.file_size}".encode("utf-8")
-        ).hexdigest(),
+    storage_file_meta = StorageFileMetaData(
+        **StorageFileMetaData.Config.schema_extra["examples"][1]
     )
+    storage_file_meta.file_id = f"api/{uuid4()}/extensionless"
+    apiserver_file_meta = convert_metadata(storage_file_meta)
 
-    # user
-    uid = 44
-    uname = "Jack Sparrow"
+    assert apiserver_file_meta.file_id
+    assert apiserver_file_meta.filename == "extensionless"
+    assert apiserver_file_meta.content_type is None
+    assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
 
-    # api/files folder per user
-    api_id = "74a84992-8c99-47de-b88a-311c068055ea"  # compose with user? ->
-    folder_id = ""  # compose with key?
-    files_id = "4896730a-f13b-46d3-b020-ddf559b0479f"  # fix, same for all?
+    with pytest.raises(ValueError):
+        storage_file_meta.file_id = f"{uuid4()}/{uuid4()}/foo.txt"
+        convert_metadata(storage_file_meta)
 
-    # uploaded
-    filename = "foo.hd5"
-    fileid = "82c08600-2102-43b0-bb27-01ab5b3d558e"  # given by API
-
-    ds = DatasetMetaData(dataset_id=api_id, display_name="api")
-
-    fm = FileMetaData(
-        project_id=api_id,
-        project_name="api",
-        node_id=files_id,
-        node_name="files",
-        file_uuid=f"{api_id}/{files_id}/{fileid}",
-        file_name=filename,
-        user_id=uid,
-        user_name=uname,
-        raw_file_path="",
-    )
+    with pytest.raises(ValidationError):
+        storage_file_meta.file_id = "api/NOTUUID/foo.txt"
+        convert_metadata(storage_file_meta)

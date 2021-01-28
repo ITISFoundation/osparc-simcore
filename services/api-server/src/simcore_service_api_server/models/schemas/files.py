@@ -60,4 +60,4 @@ class FileMetadata(BaseModel):
 
     @classmethod
     def create_id(cls, *keys) -> UUID:
-        return uuid3(NAMESPACE_FILEID_KEY, ":".join(keys))
+        return uuid3(NAMESPACE_FILEID_KEY, ":".join(map(str, keys)))
