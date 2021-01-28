@@ -220,8 +220,9 @@ class TutorialBase {
         return;
       }
     }
-    console.log("Timeout reached waiting for services", ((new Date().getTime()) - start) / 1000);
-    return;
+    const errorMsg = "Timeout reached waiting for services";
+    console.log(errorMsg, ((new Date().getTime()) - start) / 1000);
+    throw new Error(errorMsg);
   }
 
   async waitForStudyRun(studyId, timeout = 60000) {
