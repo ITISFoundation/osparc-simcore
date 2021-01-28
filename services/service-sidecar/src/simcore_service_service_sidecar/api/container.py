@@ -1,7 +1,7 @@
-from typing import Dict, Any
-import aiodocker
+from typing import Any, Dict
 
-from fastapi import APIRouter, Response, Query, Request
+import aiodocker
+from fastapi import APIRouter, Query, Request, Response
 
 from ..settings import ServiceSidecarSettings
 

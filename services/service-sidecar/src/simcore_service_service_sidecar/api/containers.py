@@ -1,8 +1,7 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 import aiodocker
-
-from fastapi import APIRouter, Response, Request
-
+from fastapi import APIRouter, Request, Response
 
 containers_router = APIRouter()
 

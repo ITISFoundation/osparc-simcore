@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 
-from .health import health_router
 from .compose import compose_router
-from .containers import containers_router
 from .container import container_router
+from .containers import containers_router
+from .health import health_router
 
 # setup and register all routes here form different modules
 main_router = APIRouter()

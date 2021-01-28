@@ -1,16 +1,14 @@
 import asyncio
+import logging
 import tempfile
-from typing import List
 from contextlib import asynccontextmanager
-from typing import Tuple
+from typing import List, Tuple
 
 import aiofiles
 import yaml
 from async_timeout import timeout
 
 from .settings import ServiceSidecarSettings
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +27,9 @@ async def write_to_tmp_file(file_contents):
     try:
         yield file_path
     finally:
-        await aiofiles.os.remove(file_path)
+        # TODO: put this back when done with the PR
+        # await aiofiles.os.remove(file_path)
+        pass
 
 
 async def async_command(command, command_timeout: float) -> Tuple[bool, str]:
@@ -45,7 +45,7 @@ async def async_command(command, command_timeout: float) -> Tuple[bool, str]:
     # have a timeout otherwise nor to stream the response from the process.
     try:
         async with timeout(command_timeout):
-    stdout, _ = await proc.communicate()
+            stdout, _ = await proc.communicate()
     except asyncio.TimeoutError:
         message = f"Timed out after {command_timeout} seconds while running {command}"
         logger.warning(message)

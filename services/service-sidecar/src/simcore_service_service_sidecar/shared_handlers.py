@@ -1,12 +1,11 @@
 import logging
-
 from typing import Tuple
 
 from fastapi import FastAPI
 
-from .storage import AsyncStore
 from .settings import ServiceSidecarSettings
-from .utils import write_to_tmp_file, async_command
+from .storage import AsyncStore
+from .utils import async_command, write_to_tmp_file
 
 logger = logging.getLogger(__name__)
 

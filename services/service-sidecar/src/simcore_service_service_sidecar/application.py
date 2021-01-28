@@ -1,12 +1,13 @@
 import logging
 
 from fastapi import FastAPI
-from .settings import ServiceSidecarSettings
-from .remote_debug import setup as remote_debug_setup
-from .storage import AsyncStore
+
 from .api import main_router
 from .models import ApplicationHealth
+from .remote_debug import setup as remote_debug_setup
+from .settings import ServiceSidecarSettings
 from .shared_handlers import on_shutdown_handler
+from .storage import AsyncStore
 
 logger = logging.getLogger(__name__)
 

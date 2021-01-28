@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request
+
 from ..models import ApplicationHealth
 
 health_router = APIRouter()

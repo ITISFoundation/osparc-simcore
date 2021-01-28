@@ -1,8 +1,7 @@
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
-
-from .utils import validate_compose_spec, assemble_container_names
 from .settings import ServiceSidecarSettings
+from .utils import assemble_container_names, validate_compose_spec
 
 
 class AsyncStore:

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import PlainTextResponse
 
-from ..storage import AsyncStore
 from ..settings import ServiceSidecarSettings
+from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
+from ..storage import AsyncStore
 from ..utils import InvalidComposeSpec
-from ..shared_handlers import write_file_and_run_command, remove_the_compose_spec
 
 compose_router = APIRouter()
 
