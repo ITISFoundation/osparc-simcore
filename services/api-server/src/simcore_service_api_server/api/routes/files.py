@@ -117,8 +117,10 @@ async def upload_file(
     async with httpx.AsyncClient() as client:
         assert meta.content_type  # nosec
 
+        # pylint: disable=protected-access
         # NOTE: _file attribute is a file-like object of ile.file which is
         # a https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile
+        #
         resp = await client.put(
             presigned_upload_link,
             files={"upload-file": (meta.filename, file.file._file, meta.content_type)},
