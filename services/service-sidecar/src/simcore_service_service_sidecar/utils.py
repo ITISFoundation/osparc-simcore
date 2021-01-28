@@ -22,6 +22,7 @@ class InvalidComposeSpec(Exception):
 @asynccontextmanager
 async def write_to_tmp_file(file_contents):
     """Disposes of file on exit"""
+    # pylint: disable=protected-access,stop-iteration-return
     file_path = "/tmp/" + next(tempfile._get_candidate_names())
     async with aiofiles.open(file_path, mode="w") as tmp_file:
         await tmp_file.write(file_contents)
