@@ -12,3 +12,4 @@ docker-compose
 aiodocker
 aiofiles
 PyYAML
+async-timeout

@@ -12,7 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 async def write_file_and_run_command(
-    settings: ServiceSidecarSettings, file_content: str, command: str
+    settings: ServiceSidecarSettings,
+    file_content: str,
+    command: str,
+    command_timeout: float,
 ) -> Tuple[bool, str]:
     """ The command which accepts {file_path} as an argument for string formatting """
 
@@ -24,11 +27,11 @@ async def write_file_and_run_command(
             stop_and_remove_timeout=settings.stop_and_remove_timeout,
         )
         logger.debug("Will run command\n'%s':\n%s", formatted_command, file_content)
-        return await async_command(formatted_command)
+        return await async_command(formatted_command, command_timeout)
 
 
 async def remove_the_compose_spec(
-    async_store: AsyncStore, settings: ServiceSidecarSettings
+    async_store: AsyncStore, settings: ServiceSidecarSettings, command_timeout: float
 ) -> None:
 
     stored_compose_content = async_store.get_spec()
@@ -40,7 +43,10 @@ async def remove_the_compose_spec(
         "down --remove-orphans -t {stop_and_remove_timeout}"
     )
     result = await write_file_and_run_command(
-        settings=settings, file_content=stored_compose_content, command=command
+        settings=settings,
+        file_content=stored_compose_content,
+        command=command,
+        command_timeout=command_timeout,
     )
     async_store.put_spec(None)  # removing compose-file spec
     return result
@@ -51,5 +57,10 @@ async def on_shutdown_handler(app: FastAPI) -> None:
     async_store: AsyncStore = app.state.async_store
     settings: ServiceSidecarSettings = app.state.settings
 
-    result = await remove_the_compose_spec(async_store=async_store, settings=settings)
+    # the process has settings.stop_and_remove_timeout seconds since sigterm
+    # is received; the chosen timeout value is more then enough for a proper shutdown
+    command_timeout = 1.1 * settings.stop_and_remove_timeout
+    result = await remove_the_compose_spec(
+        async_store=async_store, settings=settings, command_timeout=command_timeout
+    )
     logging.info("Container removal did_succeed=%s\n%s", result[0], result[1])

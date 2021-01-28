@@ -6,6 +6,7 @@ from typing import Tuple
 
 import aiofiles
 import yaml
+from async_timeout import timeout
 
 from .settings import ServiceSidecarSettings
 
@@ -30,7 +31,7 @@ async def write_to_tmp_file(file_contents):
         await aiofiles.os.remove(file_path)
 
 
-async def async_command(command) -> Tuple[bool, str]:
+async def async_command(command, command_timeout: float) -> Tuple[bool, str]:
     """Returns if the command exited correctly and the stdout of the command """
     proc = await asyncio.create_subprocess_shell(
         command,
@@ -39,7 +40,16 @@ async def async_command(command) -> Tuple[bool, str]:
         stderr=asyncio.subprocess.STDOUT,
     )
 
+    # because the Processes returned by create_subprocess_shell it is not possible to
+    # have a timeout otherwise nor to stream the response from the process.
+    try:
+        async with timeout(command_timeout):
     stdout, _ = await proc.communicate()
+    except asyncio.TimeoutError:
+        message = f"Timed out after {command_timeout} seconds while running {command}"
+        logger.warning(message)
+        return False, message
+
     decoded_stdout = stdout.decode()
     finished_without_errors = proc.returncode == 0
 

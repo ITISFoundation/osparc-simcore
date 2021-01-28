@@ -7,7 +7,7 @@
 aiodocker==0.19.1         # via -r requirements/_base.in
 aiofiles==0.6.0           # via -r requirements/_base.in
 aiohttp==3.7.3            # via aiodocker
-async-timeout==3.0.1      # via aiohttp
+async-timeout==3.0.1      # via -r requirements/_base.in, aiohttp
 attrs==20.3.0             # via aiohttp, jsonschema
 bcrypt==3.2.0             # via paramiko
 cached-property==1.5.2    # via docker-compose
