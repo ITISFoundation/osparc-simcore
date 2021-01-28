@@ -24,10 +24,46 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     this.__attachEventHandlers();
   },
 
+  events: {
+    "showSweeper": "qx.event.type.Event"
+  },
+
   members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "sweeper-btn": {
+          control = new qx.ui.form.Button(this.tr("Sweeper"), "@FontAwesome5Solid/paw/14").set({
+            toolTipText: this.tr("Sweeper"),
+            icon: "@FontAwesome5Solid/paw/14",
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            allowGrowX: false
+          });
+          control.addListener("execute", e => {
+            this.fireDataEvent("showSweeper");
+          }, this);
+          this._add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
+
     // overriden
     _buildLayout: function() {
       this.getChildControl("breadcrumb-navigation");
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      const sweeperBtn = this.getChildControl("sweeper-btn");
+      sweeperBtn.exclude();
+      osparc.data.model.Sweeper.isSweeperEnabled()
+        .then(isSweeperEnabled => {
+          if (isSweeperEnabled) {
+            sweeperBtn.show();
+          }
+        });
+
       this._startStopBtns = this.getChildControl("start-stop-btns");
     },
 
