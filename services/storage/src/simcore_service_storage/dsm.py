@@ -464,7 +464,7 @@ class DataStorageManager:
                     await asyncio.sleep(sleep_amount)
                     continue
 
-                file_e_tag = result["Contents"][0]["ETag"]
+                file_e_tag = result["Contents"][0]["ETag"].strip('"')
                 # finally update the data in the database and exit
                 continue_loop = False
 
@@ -825,7 +825,7 @@ class DataStorageManager:
         data = deque()
         async with self.engine.acquire() as conn:
             stmt = sa.select([file_meta_data]).where(
-                (file_meta_data.c.user_id == user_id)
+                (file_meta_data.c.user_id == str(user_id))
                 & file_meta_data.c.file_uuid.startswith(prefix)
             )
 
