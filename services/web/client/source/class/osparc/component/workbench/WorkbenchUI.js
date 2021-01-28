@@ -1149,6 +1149,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.__workbenchLayout.addListener("tap", () => {
         this.resetSelectedNodes();
+        this.__selectedItemChanged(null);
       }, this);
 
       this.__workbenchLayout.addListener("dbltap", pointerEvent => {
@@ -1163,9 +1164,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
 
-      this.__workbenchLayout.addListener("tap", e => {
-        this.__selectedItemChanged(null);
-      }, this);
     },
 
     __allowDrag: function(pointerEvent) {
