@@ -248,6 +248,10 @@ qx.Class.define("osparc.studycard.Medium", {
       const width = 500;
       const height = 500;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+      studyDetails.addListener("updateStudy", e => {
+        const updatedStudy = e.getData();
+        this.getStudy().updateModel(updatedStudy);
+      }, this);
     }
   }
 });
