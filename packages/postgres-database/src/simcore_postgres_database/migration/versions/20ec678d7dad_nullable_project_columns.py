@@ -5,9 +5,9 @@ Revises: 99db5efc4548
 Create Date: 2019-07-04 08:44:35.901118+00:00
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
+from simcore_postgres_database.models.projects import projects
 
 # revision identifiers, used by Alembic.
 revision = "20ec678d7dad"
@@ -23,9 +23,6 @@ def upgrade():
     )
     op.alter_column("projects", "thumbnail", existing_type=sa.VARCHAR(), nullable=True)
     # ### end Alembic commands ###
-
-
-from simcore_postgres_database.models.projects import projects
 
 
 def downgrade():
