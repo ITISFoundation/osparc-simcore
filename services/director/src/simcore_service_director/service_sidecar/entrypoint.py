@@ -43,6 +43,8 @@ async def stop_service_sidecar_stack_for_service(
 
 async def assemble_published_url(node_uuid: str) -> str:
     # TODO: ask SAN how to compute this one
+    # should it also include the port here?
+    # http://bb08a588-62b8-48a4-a459-7a61b4d47199.services.10.43.103.168.xip.io:9081
     simcore_dns = "10.43.103.168.xip.io"
     return f"{node_uuid}.services.{simcore_dns}"
 
@@ -158,6 +160,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         service_key=service_key,
         service_tag=service_tag,
         service_published_url=published_url,
+        service_sidecar_network_name=service_sidecar_network_name,
     )
 
     return service_sidecar_proxy_meta_data
@@ -223,9 +226,12 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
                     "--entryPoints.http.forwardedHeaders.insecure",
                     "--providers.docker.endpoint=unix:///var/run/docker.sock",
                     f"--providers.docker.network={service_sidecar_network_name}",
-                    "--providers.docker.swarmMode=true",
                     "--providers.docker.exposedByDefault=false",
                     f"--providers.docker.constraints=Label(`io.simcore.zone`, `{io_simcore_zone}`)",
+                    # inject basic auth https://doc.traefik.io/traefik/v2.0/middlewares/basicauth/
+                    # TODO: attach new auth_url to the service and make it available in the monitor
+                    # use md5 for generating the passwords
+                    # replace '$' with '$$'
                 ],
                 "Mounts": mounts,
             },
@@ -320,7 +326,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "io.simcore.zone": io_simcore_zone,
             "port": f"{service_sidecar_settings.web_service_port}",
             "study_id": project_id,
-            "traefik.docker.network": service_sidecar_network_name,
+            "traefik.docker.network": service_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
             f"traefik.http.routers.{service_sidecar_name}.entrypoints": "http",
             f"traefik.http.routers.{service_sidecar_name}.priority": "10",
