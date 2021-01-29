@@ -56,10 +56,9 @@ async def on_shutdown_handler(app: FastAPI) -> None:
     async_store: AsyncStore = app.state.async_store
     settings: ServiceSidecarSettings = app.state.settings
 
-    # the process has settings.stop_and_remove_timeout seconds since sigterm
-    # is received; the chosen timeout value is more then enough for a proper shutdown
-    command_timeout = 1.1 * settings.stop_and_remove_timeout
     result = await remove_the_compose_spec(
-        async_store=async_store, settings=settings, command_timeout=command_timeout
+        async_store=async_store,
+        settings=settings,
+        command_timeout=settings.docker_compose_down_timeout,
     )
     logging.info("Container removal did_succeed=%s\n%s", result[0], result[1])

@@ -347,6 +347,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                     "SIMCORE_HOST_NAME": service_sidecar_name,
                     "STORAGE_ENDPOINT": "storage: 8080",
                     "SERVICE_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+                    "SERVICE_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": service_sidecar_settings.service_sidecar_api_request_docker_compose_down_timeout,
                 },
                 "Hosts": [],
                 "Image": service_sidecar_settings.image,

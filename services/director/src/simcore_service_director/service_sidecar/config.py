@@ -78,6 +78,15 @@ class ServiceSidecarSettings(BaseSettings):
         ),
     )
 
+    service_sidecar_api_request_docker_compose_down_timeout: PositiveInt = Field(
+        15,
+        description=(
+            "used by the service-sidecar when it's shutting down to cleanup all spawned containers; "
+            "if the containers tend to remain in the system increasing this will help with removing "
+            "pending containers spawned by the service-sidecar"
+        ),
+    )
+
     # Trying to resolve docker registry url
     registry_path: str = Field(
         None, description="url to the docker registry", env="REGISTRY_PATH"

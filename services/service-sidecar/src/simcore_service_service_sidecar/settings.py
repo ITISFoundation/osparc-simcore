@@ -69,6 +69,10 @@ class ServiceSidecarSettings(BaseSettings):
         3000, description="ptsvd remote debugger starting port"
     )
 
+    docker_compose_down_timeout: PositiveInt = Field(
+        ..., description="used during shutdown when containers swapend will be removed"
+    )
+
     @property
     def is_development_mode(self):
         """If in development mode this will be True"""
