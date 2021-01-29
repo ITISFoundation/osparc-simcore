@@ -174,7 +174,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
           let maxHeight = this.self().ITEM_HEIGHT - 2*this.self().PADDING;
           // eslint-disable-next-line no-underscore-dangle
           this._mainLayout._getChildren().forEach(child => {
-            if (child.getSubcontrolId() !== "icon") {
+            if (child.getSubcontrolId() !== "icon" && child.getBounds()) {
               maxHeight -= (child.getBounds().height + 6);
             }
           });
