@@ -542,9 +542,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     __openQualityEditor: function() {
       const resourceData = this.getResourceData();
-      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
-      const title = resourceData.name + " - " + this.tr("Quality Assessment");
-      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
+      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
       qualityEditor.addListener("updateStudy", e => {
         const updatedStudyData = e.getData();
         this.fireDataEvent("updateQualityStudy", updatedStudyData);
