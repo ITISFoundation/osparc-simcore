@@ -190,15 +190,19 @@ qx.Class.define("osparc.studycard.Large", {
           callback: this.__openClassifiers,
           ctx: this
         } : null
-      }, {
-        label: this.tr("Quality"),
-        view: this.__createQuality(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openQuality,
-          ctx: this
-        }
       }];
+
+      if ("quality" in this.__studyData && osparc.component.metadata.Quality.isEnabled(this.__studyData["quality"])) {
+        extraInfo.push({
+          label: this.tr("Quality"),
+          view: this.__createQuality(),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.__openQuality,
+            ctx: this
+          }
+        });
+      }
 
       if (osparc.data.Permissions.getInstance().isTester()) {
         extraInfo.unshift({

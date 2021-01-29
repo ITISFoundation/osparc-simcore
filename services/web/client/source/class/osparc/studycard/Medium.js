@@ -173,15 +173,19 @@ qx.Class.define("osparc.studycard.Medium", {
           callback: this.__openAccessRights,
           ctx: this
         }
-      }, {
-        label: this.tr("Quality"),
-        view: this.__createQuality(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openQuality,
-          ctx: this
-        }
       }];
+
+      if (osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
+        extraInfo.push({
+          label: this.tr("Quality"),
+          view: this.__createQuality(),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.__openQuality,
+            ctx: this
+          }
+        });
+      }
       return extraInfo;
     },
 

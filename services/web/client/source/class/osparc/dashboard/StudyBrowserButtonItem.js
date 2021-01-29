@@ -436,7 +436,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyQuality: function(quality) {
-      if (quality && "tsr" in quality) {
+      if (osparc.component.metadata.Quality.isEnabled(quality)) {
         const {
           score,
           maxScore
