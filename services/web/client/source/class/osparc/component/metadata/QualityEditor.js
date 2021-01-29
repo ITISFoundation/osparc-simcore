@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
   construct: function(resourceData) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(8));
 
     this.__initResourceData(resourceData);
   },
@@ -56,6 +56,9 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __resourceData: null,
     __copyResourceData: null,
     __schema: null,
+    __enabledQuality: null,
+    __TSRSection: null,
+    __annotationsSection: null,
     __tsrGrid: null,
     __annotationsGrid: null,
 
@@ -134,12 +137,14 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         this._removeAll();
 
         this.__schema = schema;
-        this.__createTSRSection();
-        this.__createAnnotationsSection();
 
         if (this.__isUserOwner()) {
           this.__createEditBtns();
+          this.__createEnableSection();
         }
+
+        this.__createTSRSection();
+        this.__createAnnotationsSection();
 
         this.__populateForms();
       } else {
@@ -148,12 +153,21 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateForms: function() {
+      this.__populateEnable();
       this.__populateTSR();
       this.__populateAnnotations();
     },
 
+    __createEnableSection: function() {
+      const enabledQuality = this.__enabledQuality = new qx.ui.form.CheckBox(this.tr("Enabled"));
+      this.bind("mode", enabledQuality, "enabled", {
+        converter: value => value === "edit"
+      });
+      this._add(enabledQuality);
+    },
+
     __createTSRSection: function() {
-      const box = new qx.ui.groupbox.GroupBox(this.tr("Ten Simple Rules"));
+      const box = this.__TSRSection = new qx.ui.groupbox.GroupBox(this.tr("Ten Simple Rules"));
       box.getChildControl("legend").set({
         font: "title-14"
       });
@@ -166,7 +180,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const helpTextMD = new osparc.ui.markdown.Markdown(helpText);
       box.add(helpTextMD);
 
-      const grid = new qx.ui.layout.Grid(10, 8);
+      const grid = new qx.ui.layout.Grid(10, 6);
       grid.setColumnAlign(0, "left", "middle");
       grid.setColumnAlign(1, "left", "middle");
       grid.setColumnAlign(2, "left", "middle");
@@ -183,7 +197,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __createAnnotationsSection: function() {
-      const box = new qx.ui.groupbox.GroupBox(this.tr("Annotations"));
+      const box = this.__annotationsSection = new qx.ui.groupbox.GroupBox(this.tr("Annotations"));
       box.getChildControl("legend").set({
         font: "title-14"
       });
@@ -192,7 +206,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       box.setLayout(new qx.ui.layout.VBox(10));
 
-      const grid = new qx.ui.layout.Grid(10, 8);
+      const grid = new qx.ui.layout.Grid(10, 6);
       grid.setColumnAlign(0, "left", "middle");
       grid.setColumnAlign(1, "left", "middle");
       grid.setColumnAlign(2, "left", "middle");
@@ -201,6 +215,20 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       box.add(this.__annotationsGrid);
 
       this._add(box);
+    },
+
+    __populateEnable: function() {
+      this.__enabledQuality.setValue(this.__copyResourceData["quality"]["enabled"]);
+      this.__enabledQuality.addListener("changeValue", e => {
+        const value = e.getData();
+        this.__copyResourceData["quality"]["enabled"] = value;
+      }, this);
+      this.__enabledQuality.bind("value", this.__TSRSection, "visibility", {
+        converter: value => value ? "visible" : "excluded"
+      });
+      this.__enabledQuality.bind("value", this.__annotationsSection, "visibility", {
+        converter: value => value ? "visible" : "excluded"
+      });
     },
 
     __populateTSR: function() {
@@ -270,7 +298,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRDataView: function() {
-      const metadataTSR = this.__resourceData["quality"]["tsr"];
+      const metadataTSR = this.__copyResourceData["quality"]["tsr"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
         const ruleRating = new osparc.ui.basic.StarsRating();
@@ -505,7 +533,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         appearance: "toolbar-md-button"
       });
       this.bind("mode", editButton, "visibility", {
-        converter: value => value === "edit" ? "hidden" : "visible"
+        converter: value => value === "display" ? "visible" : "excluded"
       });
       editButton.addListener("execute", () => {
         this.setMode("edit");
@@ -515,7 +543,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         appearance: "toolbar-md-button"
       });
       this.bind("mode", saveButton, "visibility", {
-        converter: value => value === "edit" ? "visible" : "hidden"
+        converter: value => value === "edit" ? "visible" : "excluded"
       });
       saveButton.addListener("execute", e => {
         this.__save(saveButton);
@@ -525,15 +553,15 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         appearance: "toolbar-md-button"
       });
       this.bind("mode", cancelButton, "visibility", {
-        converter: value => value === "edit" ? "visible" : "hidden"
+        converter: value => value === "edit" ? "visible" : "excluded"
       });
       cancelButton.addListener("execute", () => {
         this.setMode("display");
       }, this);
 
       const buttonsToolbar = new qx.ui.toolbar.ToolBar();
-      buttonsToolbar.add(editButton);
       buttonsToolbar.addSpacer();
+      buttonsToolbar.add(editButton);
       buttonsToolbar.add(saveButton);
       buttonsToolbar.add(cancelButton);
       this._add(buttonsToolbar);
@@ -543,6 +571,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const data = {
         "quality" : {}
       };
+      data["quality"]["enabled"] = this.__copyResourceData["quality"]["enabled"];
       data["quality"]["tsr"] = this.__copyResourceData["quality"]["tsr"];
       data["quality"]["annotations"] = this.__copyResourceData["quality"]["annotations"];
       if (this.__validate(this.__schema, data["quality"])) {
