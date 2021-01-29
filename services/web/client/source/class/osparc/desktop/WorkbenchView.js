@@ -281,7 +281,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
 
       const controlsBar = this.__mainPanel.getControls();
-      controlsBar.addListener("showSweeper", this.__showSweeper, this);
       controlsBar.addListener("showWorkbench", this.__showWorkbenchUI, this);
       controlsBar.addListener("showSettings", this.__showSettings, this);
       controlsBar.addListener("groupSelection", this.__groupSelection, this);
@@ -439,6 +438,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           this.nodeSelected(nodeId);
         }, this);
       });
+      workbenchToolbar.addListener("showSweeper", this.__showSweeper, this);
 
       nodesTree.addListener("changeSelectedNode", e => {
         const node = workbenchUI.getNodeUI(e.getData());

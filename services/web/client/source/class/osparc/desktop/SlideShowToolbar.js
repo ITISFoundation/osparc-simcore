@@ -47,7 +47,7 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
     },
 
     // overriden
-    _populateGuidedNodesLayout: function() {
+    _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
       if (study) {
         const slideShow = study.getUi().getSlideshow();

@@ -39,7 +39,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
+    const mainLayout = this._mainLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(this.self().V_SPACING)).set({
       maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING,
       maxHeight: this.self().ITEM_HEIGHT - 2*this.self().PADDING
     });
@@ -58,6 +58,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
     PADDING: 10,
+    V_SPACING: 6,
     SPACING: 12,
     POS: {
       TITLE: 0,
@@ -128,11 +129,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
         }
         case "icon": {
           const maxWidth = this.self().ITEM_WIDTH - 2*this.self().PADDING;
-          const image = new osparc.component.widget.Thumbnail(null, maxWidth, 124);
-          control = image.getChildControl("image").set({
+          control = new osparc.component.widget.Thumbnail(null, maxWidth, 124);
+          control.getChildControl("image").set({
             anonymous: true
           });
-          this._mainLayout.addAt(image, this.self().POS.THUMBNAIL, {
+          this._mainLayout.addAt(control, this.self().POS.THUMBNAIL, {
             flex: 1
           });
           break;
@@ -159,9 +160,27 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
     },
 
     _applyIcon: function(value, old) {
-      let icon = this.getChildControl("icon");
-      icon.set({
+      const iconLayout = this.getChildControl("icon");
+      const image = iconLayout.getChildControl("image");
+      image.set({
         source: value
+      });
+
+      [
+        "appear",
+        "loaded"
+      ].forEach(eventName => {
+        image.addListener(eventName, () => {
+          let maxHeight = this.self().ITEM_HEIGHT - 2*this.self().PADDING;
+          // eslint-disable-next-line no-underscore-dangle
+          this._mainLayout._getChildren().forEach(child => {
+            if (child.getSubcontrolId() !== "icon") {
+              maxHeight -= (child.getBounds().height + 6);
+            }
+          });
+          iconLayout.setMaxHeight(maxHeight);
+          iconLayout.recheckSize();
+        }, this);
       });
     },
 
