@@ -26,6 +26,13 @@ qx.Class.define("osparc.component.metadata.Quality", {
       if (Object.keys(obj["quality"]).length === 0) {
         obj["quality"] = osparc.component.metadata.Quality.getDefaultQuality();
       }
+      if (!("enabled" in obj["quality"])) {
+        obj["quality"]["enabled"] = true;
+      }
+    },
+
+    isEnabled: function(quality) {
+      return quality && "enabled" in quality && quality["enabled"];
     },
 
     getConformanceLevel: function() {
@@ -82,8 +89,9 @@ domain and the intended context of use",
 
     getDefaultQuality: function() {
       const defaultQuality = {};
-      defaultQuality["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
+      defaultQuality["enabled"] = true;
       defaultQuality["tsr"] = osparc.component.metadata.Quality.getDefaultQualityTSR();
+      defaultQuality["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
       return defaultQuality;
     },
 
