@@ -1,5 +1,4 @@
 import logging
-from asyncio import CancelledError
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
