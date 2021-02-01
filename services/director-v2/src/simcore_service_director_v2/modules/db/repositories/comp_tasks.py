@@ -190,66 +190,6 @@ class CompTasksRepository(BaseRepository):
             )
             await self.connection.execute(on_update_stmt)
 
-        # for internal_id, node_id in enumerate(project.workbench, 1):
-        #     node: Node = project.workbench[node_id]
-
-        #     service_key_version = ServiceKeyVersion(
-        #         key=node.key,
-        #         version=node.version,
-        #     )
-        #     node_class = to_node_class(service_key_version.key)
-        #     node_details: ServiceDockerData = None
-        #     node_extras: ServiceExtras = None
-        #     if node_class == NodeClass.FRONTEND:
-        #         node_details = _get_fake_service_details(service_key_version)
-        #     else:
-        #         node_details = await director_client.get_service_details(
-        #             service_key_version
-        #         )
-        #         node_extras: ServiceExtras = await director_client.get_service_extras(
-        #             service_key_version
-        #         )
-        #     if not node_details:
-        #         continue
-
-        #     requires_mpi = False
-        #     requires_gpu = False
-        #     if node_extras:
-        #         requires_gpu = NodeRequirement.GPU in node_extras.node_requirements
-        #         requires_mpi = NodeRequirement.MPI in node_extras.node_requirements
-        #     image = Image(
-        #         name=service_key_version.key,
-        #         tag=service_key_version.version,
-        #         requires_gpu=requires_gpu,
-        #         requires_mpi=requires_mpi,
-        #     )
-
-        #     task_db = CompTaskAtDB(
-        #         project_id=project.uuid,
-        #         node_id=node_id,
-        #         schema=NodeSchema(
-        #             inputs=node_details.inputs, outputs=node_details.outputs
-        #         ),
-        #         inputs=node.inputs,
-        #         outputs=node.outputs,
-        #         image=image,
-        #         submit=datetime.utcnow(),
-        #         state=(
-        #             RunningState.PUBLISHED
-        #             if node_id in published_nodes
-        #             and node_class == NodeClass.COMPUTATIONAL
-        #             else RunningState.NOT_STARTED
-        #         ),
-        #         internal_id=internal_id,
-        #         node_class=node_class,
-        #     )
-
-        #     await self.connection.execute(
-        #         insert(comp_tasks).values(
-        #             **task_db.dict(by_alias=True, exclude_unset=True)
-        #         )
-        #     )
-
     @log_decorator(logger=logger)
     async def upsert_tasks_from_project(
         self,
