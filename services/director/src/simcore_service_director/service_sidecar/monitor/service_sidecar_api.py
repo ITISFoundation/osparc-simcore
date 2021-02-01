@@ -21,7 +21,7 @@ def get_url(service_sidecar_endpoint: str, postfix: str) -> str:
 
 
 def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> None:
-    # this can be useful for debugging what is wrong with the API
+    # mainly used to debug issues with the API
     logging.warning(
         (
             "%s -> %s generated:\n %s\nThe above logs can safely "
@@ -88,7 +88,7 @@ class ServiceSidecarClient:
             log_httpx_http_error(url, "GET", traceback.format_exc())
             return None
 
-    async def start_or_update_compose_service(
+    async def start_or_update_compose_spec(
         self, service_sidecar_endpoint: str, compose_spec: str
     ) -> bool:
         """returns: True if the compose spec was applied """
@@ -118,6 +118,25 @@ class ServiceSidecarClient:
         except httpx.HTTPError:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             return False
+
+    async def remove_docker_compose_spec(
+        self, service_sidecar_endpoint: str
+    ) -> None:
+        """runs docker compose down on the started spec """
+        url = get_url(service_sidecar_endpoint, "/compose")
+        try:
+            response = await self.httpx_client.delete(url)
+            if response.status_code != 200:
+                logging.warning(
+                    "error during request status=%s, body=%s",
+                    response.status_code,
+                    response.text,
+                )
+                return
+
+            logger.info("Compose down result %s", response.text)
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "DELETE", traceback.format_exc())
 
 
 async def setup_api_client(app: Application) -> None:

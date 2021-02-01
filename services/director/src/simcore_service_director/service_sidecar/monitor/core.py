@@ -18,8 +18,12 @@ from ..config import ServiceSidecarSettings, get_settings
 from ..docker_utils import get_service_sidecars_to_monitor
 from ..exceptions import ServiceSidecarError
 from .handlers import REGISTERED_HANDLERS
-from .models import LockWithMonitorData, MonitorData, ServiceSidecarStatus
-from .service_sidecar_api import query_service
+from .models import (
+    LockWithMonitorData,
+    MonitorData,
+    ServiceSidecarStatus,
+)
+from .service_sidecar_api import query_service, get_api_client, ServiceSidecarClient
 from .utils import AsyncResourceLock
 
 logger = logging.getLogger(__name__)
@@ -104,7 +108,7 @@ class ServiceSidecarsMonitor:
         port: int,
         service_key: str,
         service_tag: str,
-        service_published_url: str,
+        service_sidecar_network_name: str,
     ) -> None:
         """Invoked before the service is started
 
@@ -129,7 +133,7 @@ class ServiceSidecarsMonitor:
                     port=port,
                     service_key=service_key,
                     service_tag=service_tag,
-                    service_published_url=service_published_url,
+                    service_sidecar_network_name=service_sidecar_network_name,
                 ),
             )
             logger.debug("Added service '%s' to monitor", service_name)
@@ -141,10 +145,27 @@ class ServiceSidecarsMonitor:
                 return
 
             service_name = self._inverse_search_mapping[node_uuid]
-            if service_name in self._to_monitor:
-                logger.debug("Removed service '%s' from monitoring", service_name)
-                del self._to_monitor[service_name]
-                del self._inverse_search_mapping[node_uuid]
+            if service_name not in self._to_monitor:
+                return
+
+            # invoke container cleanup at this point
+            services_sidecar_client: ServiceSidecarClient = get_api_client(self._app)
+
+            # invokes docker compose down, even if the containers are removed they still
+            # seem attached to the network; the network cannot be removed (this is logged
+            # as a failure by the director) and the docker_network will trash the environment
+            # There is no suitable solution to this issue, having netwoks trash
+            # the environment seems to be the best approach :\
+            current: LockWithMonitorData = self._to_monitor[service_name]
+            service_sidecar_endpoint = current.monitor_data.service_sidecar.endpoint
+            await services_sidecar_client.remove_docker_compose_spec(
+                service_sidecar_endpoint=service_sidecar_endpoint
+            )
+
+            # finally remove this service
+            del self._to_monitor[service_name]
+            del self._inverse_search_mapping[node_uuid]
+            logger.debug("Removed service '%s' from monitoring", service_name)
 
     async def _runner(self):
         """This code runs under a lock and can safely change the Monitor data of all entries"""
@@ -217,7 +238,7 @@ class ServiceSidecarsMonitor:
                 node_uuid,
                 service_key,
                 service_tag,
-                service_published_url,
+                service_sidecar_network_name,
             ) = service_to_monitor
 
             await self.add_service_to_monitor(
@@ -227,7 +248,7 @@ class ServiceSidecarsMonitor:
                 port=service_sidecar_settings.web_service_port,
                 service_key=service_key,
                 service_tag=service_tag,
-                service_published_url=service_published_url,
+                service_sidecar_network_name=service_sidecar_network_name,
             )
 
     async def shutdown(self):

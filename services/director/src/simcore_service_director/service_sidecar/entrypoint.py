@@ -41,14 +41,6 @@ async def stop_service_sidecar_stack_for_service(
     await monitor.remove_service_from_monitor(node_uuid)
 
 
-async def assemble_published_url(node_uuid: str) -> str:
-    # TODO: ask SAN how to compute this one
-    # should it also include the port here?
-    # http://bb08a588-62b8-48a4-a459-7a61b4d47199.services.10.43.103.168.xip.io:9081
-    simcore_dns = "10.43.103.168.xip.io"
-    return f"{node_uuid}.services.{simcore_dns}"
-
-
 async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: str,
@@ -148,8 +140,6 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     service_sidecar_id = await create_service_and_get_id(service_sidecar_meta_data)
     logging.debug("sidecar-service id %s", service_sidecar_id)
 
-    published_url = await assemble_published_url(node_uuid=node_uuid)
-
     # services where successfully started and they can be monitored
     monitor = get_monitor(app)
     await monitor.add_service_to_monitor(
@@ -159,7 +149,6 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         port=service_sidecar_settings.web_service_port,
         service_key=service_key,
         service_tag=service_tag,
-        service_published_url=published_url,
         service_sidecar_network_name=service_sidecar_network_name,
     )
 
@@ -189,8 +178,6 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
         }
     ]
 
-    published_url = await assemble_published_url(node_uuid=node_uuid)
-
     return {
         # "endpoint_spec": {"Mode": "dnsrr"},
         "labels": {
@@ -202,7 +189,8 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.middlewares": "master-simcore_gzip@docker",
             f"traefik.http.routers.{service_name}.priority": "10",
-            f"traefik.http.routers.{service_name}.rule": f"Host(`{published_url}`)",
+            # http://bb08a588-62b8-48a4-a459-7a61b4d47199.services.10.43.103.168.xip.io:9081
+            f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
             f"traefik.http.services.{service_name}.loadbalancer.server.port": "80",
             "type": "dependency",
             "study_id": project_id,
@@ -314,8 +302,6 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             ]
 
-    published_url = await assemble_published_url(node_uuid=node_uuid)
-
     # used for the container name to avoid collisions for started containers on the same node
     compose_namespace = f"{SERVICE_SIDECAR_PREFIX}_{project_id}_{node_uuid}"
 
@@ -339,7 +325,6 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
             "service_key": service_key,
             "service_tag": service_tag,
-            "service_published_url": published_url,
         },
         "name": service_sidecar_name,
         "networks": [swarm_network_id, service_sidecar_network_id],

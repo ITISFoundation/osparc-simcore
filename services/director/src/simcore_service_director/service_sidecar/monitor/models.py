@@ -49,11 +49,13 @@ class DockerStatus(str, Enum):
 
 
 class DockerContainerInspect(BaseModel):
-    # TODO: add other containers which make sense
+    # TODO: add other information which makes sense to store
     status: DockerStatus = Field(
         ...,
         scription="status of the underlying container",
     )
+    name: str = Field(..., description="docker name of the container")
+    id: str = Field(..., description="docker id of the container")
 
     last_updated: datetime.datetime = Field(
         default_factory=datetime.datetime.utcnow,
@@ -122,8 +124,10 @@ class MonitorData(BaseModel):
         ...,
         description="together with the key used to compose the docker-compose spec for the service",
     )
-    service_published_url: str = Field(
-        ..., description="url where the service is available to the outside world"
+
+    service_sidecar_network_name: str = Field(
+        ...,
+        description="overlay network biding the proxy to the container spaned by the service-sidecar",
     )
 
     @classmethod
@@ -134,13 +138,13 @@ class MonitorData(BaseModel):
         port: int,
         service_key: str,
         service_tag: str,
-        service_published_url: str,
+        service_sidecar_network_name: str,
     ) -> "MonitorData":
         payload = dict(
             service_name=service_name,
             service_key=service_key,
             service_tag=service_tag,
-            service_published_url=service_published_url,
+            service_sidecar_network_name=service_sidecar_network_name,
             service_sidecar=dict(
                 hostname=hostname,
                 port=port,

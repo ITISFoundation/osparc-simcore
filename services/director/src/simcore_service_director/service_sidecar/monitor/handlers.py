@@ -25,7 +25,9 @@ def parse_containers_inspect(
     for container_id in containers_inspect:
         container_inspect_data = containers_inspect[container_id]
         docker_container_inspect = DockerContainerInspect(
-            status=DockerStatus(container_inspect_data["State"]["Status"])
+            status=DockerStatus(container_inspect_data["State"]["Status"]),
+            name=container_inspect_data["Name"],
+            id=container_inspect_data["Id"],
         )
         results.append(docker_container_inspect)
     return list(results)
@@ -53,10 +55,13 @@ class RunDockerComposeUp(BaseEventHandler):
 
         # creates a docker compose spec given the service key and tag
         compose_spec = await assemble_spec(
-            app=app, service_key=current.service_key, service_tag=current.service_tag
+            app=app,
+            service_key=current.service_key,
+            service_tag=current.service_tag,
+            service_sidecar_network_name=current.service_sidecar_network_name,
         )
 
-        compose_spec_was_applied = await api_client.start_or_update_compose_service(
+        compose_spec_was_applied = await api_client.start_or_update_compose_spec(
             service_sidecar_endpoint, compose_spec
         )
 

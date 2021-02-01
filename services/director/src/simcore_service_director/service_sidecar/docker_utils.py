@@ -44,7 +44,29 @@ async def get_swarm_network(service_sidecar_settings: ServiceSidecarSettings) ->
 
 async def create_network(network_config: Dict[str, Any]) -> str:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
-        return (await client.networks.create(network_config)).id
+        try:
+            docker_network = await client.networks.create(network_config)
+            return docker_network.id
+        except aiodocker.exceptions.DockerError as e:
+            network_name = network_config["Name"]
+            # make sure the current error being trapped is network dose not exit
+            if f"network with name {network_name} already exists" not in str(e):
+                raise e
+
+            # Fetch network name if network already exists.
+            # The environment is trashed because there seems to be an issue
+            # when stopping previous services.
+            # It is not possible to immediately remote the network after
+            # a docker-compose down involving and external overlay network
+            # has removed a container; it results as already attached
+            for network_details in await client.networks.list():
+                if network_name == network_details["Name"]:
+                    return network_details["Id"]
+
+            # finally raise an error if a network cannot be spawned
+            raise ServiceSidecarError(
+                f"Could not create or recover a network ID for {network_config}"
+            )
 
 
 async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
@@ -60,7 +82,7 @@ async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
 
 async def get_service_sidecars_to_monitor(
     service_sidecar_settings: ServiceSidecarSettings,
-) -> Deque[Tuple[str, str]]:
+) -> Deque[Tuple[str, str, str, str, str]]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         running_services = await client.services.list(
             filters={
@@ -92,14 +114,16 @@ async def get_service_sidecars_to_monitor(
         node_uuid = service["Spec"]["Labels"]["uuid"]
         service_key = service["Spec"]["Labels"]["service_key"]
         service_tag = service["Spec"]["Labels"]["service_tag"]
-        service_published_url = service["Spec"]["Labels"]["service_published_url"]
+        service_sidecar_network_name = service["Spec"]["Labels"][
+            "traefik.docker.network"
+        ]
 
         entry = (
             service_name,
             node_uuid,
             service_key,
             service_tag,
-            service_published_url,
+            service_sidecar_network_name,
         )
         service_sidecar_services.append(entry)
 
