@@ -72,10 +72,9 @@ host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
 endif
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
-ifeq ($(IS_WSL2),WSL2)
 S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1):9001
 export S3_ENDPOINT
-endif
+
 
 
 .PHONY: help
