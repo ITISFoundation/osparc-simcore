@@ -3,7 +3,7 @@ from asyncio import CancelledError
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
-from aiohttp import web
+from aiohttp import ClientTimeout, web
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -42,10 +42,13 @@ async def _request_director_v2(
     url: URL,
     headers: Optional[Dict[str, str]] = None,
     data: Optional[bytes] = None,
+    **kwargs,
 ) -> Tuple[Dict, int]:
     session = get_client_session(app)
     try:
-        async with session.request(method, url, headers=headers, json=data) as resp:
+        async with session.request(
+            method, url, headers=headers, json=data, **kwargs
+        ) as resp:
             if resp.status >= 400:
                 # in some cases the director answers with plain text
                 payload: Union[Dict, str] = (
@@ -58,7 +61,7 @@ async def _request_director_v2(
             payload: Dict = await resp.json()
             return (payload, resp.status)
 
-    except (CancelledError, TimeoutError) as err:
+    except TimeoutError as err:
         raise web.HTTPServiceUnavailable(
             reason="director service is currently unavailable"
         ) from err
@@ -194,6 +197,9 @@ async def stop_pipeline(request: web.Request) -> web.Response:
         )
 
 
+SERVICE_RETRIEVE_HTTP_TIMEOUT = 60 * 60  # 1 hour
+
+
 @log_decorator(logger=log)
 async def request_retrieve_dyn_service(
     app: web.Application, service_uuid: str, port_keys: List[str]
@@ -206,7 +212,12 @@ async def request_retrieve_dyn_service(
 
     try:
         # request to director-v2
-        await _request_director_v2(app, "POST", backend_url, data=body)
+        client_timeout = ClientTimeout(
+            total=SERVICE_RETRIEVE_HTTP_TIMEOUT, connect=5, sock_connect=5
+        )
+        await _request_director_v2(
+            app, "POST", backend_url, data=body, timeout=client_timeout
+        )
     except _DirectorServiceError as exc:
         log.warning(
             "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
