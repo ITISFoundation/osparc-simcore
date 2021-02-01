@@ -44,7 +44,7 @@ def test_create_job_model():
 
 
 @pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
-def test_model_examples(model_cls):
+def test_solvers_model_examples(model_cls):
     example = model_cls.Config.schema_extra["example"]
     print(example)
 

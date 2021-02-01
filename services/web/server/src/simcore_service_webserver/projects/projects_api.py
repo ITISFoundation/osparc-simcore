@@ -436,6 +436,10 @@ async def notify_project_node_update(
         await post_group_messages(app, room, messages)
 
 
+async def post_trigger_connected_service_retrieve(**kwargs) -> None:
+    await fire_and_forget_task(trigger_connected_service_retrieve(**kwargs))
+
+
 async def trigger_connected_service_retrieve(
     app: web.Application, project: Dict, updated_node_uuid: str, changed_keys: List[str]
 ) -> None:

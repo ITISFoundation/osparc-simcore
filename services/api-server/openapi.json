@@ -124,22 +124,38 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
-    "/v0/files:upload": {
-      "post": {
+    "/v0/files/content": {
+      "put": {
         "tags": [
           "files"
         ],
         "summary": "Upload File",
-        "description": "Uploads a single file to the system\n\nTo upload multiple with one call, see upload_files",
+        "description": "Uploads a single file to the system",
         "operationId": "upload_file",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Content-Length",
+              "type": "string"
+            },
+            "name": "content-length",
+            "in": "header"
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_file_v0_files_upload_post"
+                "$ref": "#/components/schemas/Body_upload_file_v0_files_content_put"
               }
             }
           },
@@ -166,7 +182,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/files/{file_id}": {
@@ -210,11 +231,16 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
-    "/v0/files/{file_id}:download": {
-      "post": {
+    "/v0/files/{file_id}/content": {
+      "get": {
         "tags": [
           "files"
         ],
@@ -251,7 +277,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers": {
@@ -322,59 +353,7 @@
         }
       }
     },
-    "/v0/solvers/{solver_name}/{version}": {
-      "get": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Get Solver By Name And Version",
-        "operationId": "get_solver_by_name_and_version",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Name",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
-              "type": "string"
-            },
-            "name": "solver_name",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Version",
-              "type": "string"
-            },
-            "name": "version",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Solver"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/solvers/{solver_id}/jobs/": {
+    "/v0/solvers/{solver_id}/jobs": {
       "get": {
         "tags": [
           "solvers"
@@ -400,7 +379,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Jobs V0 Solvers  Solver Id  Jobs  Get",
+                  "title": "Response List Jobs V0 Solvers  Solver Id  Jobs Get",
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Job"
@@ -461,6 +440,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/solvers/{solver_name}/{version}": {
+      "get": {
+        "tags": [
+          "solvers"
+        ],
+        "summary": "Get Solver By Name And Version",
+        "operationId": "get_solver_by_name_and_version",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Solver Name",
+              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
+              "type": "string"
+            },
+            "name": "solver_name",
+            "in": "path"
+          },
+          {
+            "required": true,
+            "schema": {
+              "title": "Version",
+              "type": "string"
+            },
+            "name": "version",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Solver"
                 }
               }
             }
@@ -778,8 +809,8 @@
   },
   "components": {
     "schemas": {
-      "Body_upload_file_v0_files_upload_post": {
-        "title": "Body_upload_file_v0_files_upload_post",
+      "Body_upload_file_v0_files_content_put": {
+        "title": "Body_upload_file_v0_files_content_put",
         "required": [
           "file"
         ],
@@ -795,8 +826,7 @@
       "FileMetadata": {
         "title": "FileMetadata",
         "required": [
-          "filename",
-          "checksum"
+          "filename"
         ],
         "type": "object",
         "properties": {

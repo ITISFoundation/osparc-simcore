@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 from fastapi import APIRouter, Depends
 from starlette import status
 from starlette.datastructures import URL
@@ -33,6 +34,9 @@ async def service_retrieve_data_on_ports(
         "POST",
         f"{service_base_url}/retrieve",
         data=retrieve_settings.json(by_alias=True),
+        timeout=httpx.Timeout(
+            5.0, read=60 * 60.0
+        ),  # this call waits for the service to download data
     )
     # validate and return
     return RetrieveDataOutEnveloped.parse_obj(resp.json())

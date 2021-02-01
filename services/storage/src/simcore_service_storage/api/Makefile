@@ -28,7 +28,6 @@ API_COMMON_JSON_SCHEMAS = $(shell find ${API_SPECS_DIR}/common/schemas -type f -
 ${OAS_TARGET}: ${OAS_SOURCES} .update-schemas
 	# bundling '${API_SPECS_DIR}/${APP_NAME}' to '${OAS_TARGET}' ...
 	@swagger-cli bundle \
-		--dereference \
 		--outfile $@ \
 		--type yaml  \
 		"${API_SPECS_DIR}/${APP_NAME}/openapi.yaml"

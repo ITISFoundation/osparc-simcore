@@ -5,7 +5,7 @@ services:
     init: true
     environment:
       - WEBSERVER_HOST=${WEBSERVER_HOST:-webserver}
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
     env_file:
       - ../.env
     deploy:
