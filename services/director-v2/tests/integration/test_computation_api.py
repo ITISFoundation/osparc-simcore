@@ -631,3 +631,52 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     assert (
         response.status_code == status.HTTP_201_CREATED
     ), f"response code is {response.status_code}, error: {response.text}"
+
+
+def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+    jupyter_service: Dict[str, str],
+):
+    # create a workbench with just 2 dynamic service in a cycle
+    project_with_dynamic_node = project(
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "the controller",
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "the model",
+            },
+        }
+    )
+
+    # this pipeline is not runnable as there are no computational services and it contains a cycle
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_dynamic_node.uuid),
+            "start_pipeline": True,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    # still this pipeline shall be createable if we do not want to start it
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_dynamic_node.uuid),
+            "start_pipeline": False,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"

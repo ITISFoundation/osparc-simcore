@@ -119,35 +119,30 @@ async def create_computation(
             )
 
         # create the complete DAG graph
-        complete_dag_graph = create_complete_dag_graph(project.workbench)
+        complete_dag = create_complete_dag_graph(project.workbench)
         # find the minimal viable graph to be run
-        dag_graph = await create_minimal_computational_graph_based_on_selection(
-            complete_dag_graph, job.subgraph or [], job.force_restart
+        computational_dag = await create_minimal_computational_graph_based_on_selection(
+            full_dag_graph=complete_dag,
+            selected_nodes=job.subgraph or [],
+            force_restart=job.force_restart,
         )
-
-        # validate DAG
-        if not nx.is_directed_acyclic_graph(dag_graph):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Project {job.project_id} is not a valid directed acyclic graph!",
-            )
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            project.uuid, dag_graph, job.start_pipeline
+            project.uuid, computational_dag, job.start_pipeline
         )
         await computation_tasks.upsert_tasks_from_project(
             project,
             director_client,
-            list(dag_graph.nodes()) if job.start_pipeline else [],
+            list(computational_dag.nodes()) if job.start_pipeline else [],
         )
 
         if job.start_pipeline:
-            if not dag_graph.nodes():
+            if not computational_dag.nodes():
                 # there is nothing else to be run here, so we are done
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Project {job.project_id} has no computational services",
+                    detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
             # trigger celery
             task = celery_client.send_computation_task(job.user_id, job.project_id)
@@ -164,7 +159,7 @@ async def create_computation(
             state=RunningState.PUBLISHED
             if job.start_pipeline
             else RunningState.NOT_STARTED,
-            pipeline=nx.to_dict_of_lists(dag_graph),
+            pipeline=nx.to_dict_of_lists(computational_dag),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"
             if job.start_pipeline
