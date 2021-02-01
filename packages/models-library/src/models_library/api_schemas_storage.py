@@ -1,7 +1,7 @@
 """
     Models used in storage API
 
-    IMPORTANT: do NOT couple these schemas until properly
+    IMPORTANT: do NOT couple these schemas until storage is refactored
 """
 
 from datetime import datetime
@@ -16,10 +16,10 @@ from .basic_regex import UUID_RE
 
 # /
 class HealthCheck(BaseModel):
-    name: Optional[str] = None
-    status: Optional[str] = None
-    api_version: Optional[str] = None
-    version: Optional[str] = None
+    name: Optional[str]
+    status: Optional[str]
+    api_version: Optional[str]
+    version: Optional[str]
 
 
 class HealthCheckEnveloped(BaseModel):
@@ -28,8 +28,6 @@ class HealthCheckEnveloped(BaseModel):
 
 
 # /check/{action}:
-
-
 class Fake(BaseModel):
     path_value: str
     query_value: str
@@ -119,45 +117,42 @@ class DatasetMetaDataArrayEnveloped(BaseModel):
 # /locations/{location_id}/files/{fileId}/metadata:
 class FileMetaData(BaseModel):
     file_uuid: Optional[str] = Field(
-        None,
         description="Unique identifier for a file, like bucket_name/project_id/node_id/file_name = /bucket_name/object_name",
     )
 
-    user_id: Optional[int] = None
-    user_name: Optional[str] = None
+    user_id: Optional[int]
+    user_name: Optional[str]
 
-    location_id: Optional[int] = Field(None, description="Storage location")
-    location: Optional[str] = Field(None, description="Storage location display name")
+    location_id: Optional[int] = Field(description="Storage location")
+    location: Optional[str] = Field(description="Storage location display name")
 
-    bucket_name: Optional[str] = Field(None, description="Name of the s3 bucket")
+    bucket_name: Optional[str] = Field(description="Name of the s3 bucket")
     object_name: Optional[str] = Field(
-        None, description="Name of the s3 object within the bucket"
+        description="Name of the s3 object within the bucket"
     )
 
-    project_id: Optional[UUID] = None
-    project_name: Optional[str] = None
-    node_id: Optional[UUID] = None
-    node_name: Optional[str] = None
-    file_name: Optional[str] = Field(None, description="Display name for a file")
+    project_id: Optional[UUID]
+    project_name: Optional[str]
+    node_id: Optional[UUID]
+    node_name: Optional[str]
+    file_name: Optional[str] = Field(description="Display name for a file")
 
     file_id: Optional[str] = Field(
-        None,
         description="Unique uuid for the file. For simcore.s3: uuid created upon insertion and datcore: datcore uuid",
     )
-    raw_file_path: Optional[str] = Field(None, description="Raw path to file")
+    raw_file_path: Optional[str] = Field(description="Raw path to file")
     display_file_path: Optional[str] = Field(
-        None, description="Human readlable  path to file"
+        description="Human readlable  path to file"
     )
 
-    created_at: Optional[datetime] = None
-    last_modified: Optional[datetime] = None
+    created_at: Optional[datetime]
+    last_modified: Optional[datetime]
     file_size: Optional[int] = Field(-1, description="File size in bytes")
     entity_tag: Optional[str] = Field(
-        None,
         description="Entity tag (or ETag), represents a specific version of the file",
     )
 
-    parent_id: Optional[str] = None
+    parent_id: Optional[str]
 
     class Config:
         schema_extra = {
@@ -251,10 +246,8 @@ class ErrorItem(BaseModel):
         description="Typically the name of the exception that produced it otherwise some known error code",
     )
     message: str = Field(..., description="Error message specific to this item")
-    resource: Optional[str] = Field(
-        None, description="API resource affected by this error"
-    )
-    field: Optional[str] = Field(None, description="Specific field within the resource")
+    resource: Optional[str] = Field(description="API resource affected by this error")
+    field: Optional[str] = Field(description="Specific field within the resource")
 
 
 class Level(Enum):
@@ -271,14 +264,14 @@ class LogMessage(BaseModel):
         description="Log message. If logger is USER, then it MUST be human readable",
     )
     logger: Optional[str] = Field(
-        None, description="Name of the logger receiving this message"
+        description="Name of the logger receiving this message"
     )
 
 
 class Error(BaseModel):
-    logs: Optional[List[LogMessage]] = Field(None, description="Log messages")
-    errors: Optional[List[ErrorItem]] = Field(None, description="Errors metadata")
-    status: Optional[int] = Field(None, description="HTTP error code")
+    logs: Optional[List[LogMessage]] = Field(description="Log messages")
+    errors: Optional[List[ErrorItem]] = Field(description="Errors metadata")
+    status: Optional[int] = Field(description="HTTP error code")
 
 
 class LogMessageEnveloped(BaseModel):
