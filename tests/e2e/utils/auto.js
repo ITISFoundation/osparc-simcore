@@ -2,6 +2,12 @@ const utils = require("./utils")
 const responses = require('./responsesQueue');
 require('log-timestamp');
 
+async function acceptCookies(page) {
+  const id = 'osparc-test-id=acceptCookiesBtn';
+  page.waitForSelector(id, {
+    timeout: 10000 // default 30s
+  }).then(() => page.click(id));
+}
 
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');
@@ -334,6 +340,7 @@ async function clickRestart(page) {
 
 
 module.exports = {
+  acceptCookies,
   register,
   logIn,
   logOut,
