@@ -31,7 +31,7 @@ qx.Class.define("osparc.studycard.Medium", {
     });
     this._setLayout(new qx.ui.layout.VBox(6));
 
-    if (study && study instanceof osparc.data.model.Study) {
+    if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
     }
 
@@ -170,7 +170,8 @@ qx.Class.define("osparc.studycard.Medium", {
         view: this.__createAccessRights(),
         action: {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openAccessRights,
+          // TODO: support Study Model as input
+          // callback: this.__openAccessRights,
           ctx: this
         }
       }];
@@ -181,7 +182,8 @@ qx.Class.define("osparc.studycard.Medium", {
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
-            callback: this.__openQuality,
+            // TODO: support Study Model as input
+            // callback: this.__openQuality,
             ctx: this
           }
         });
@@ -231,11 +233,7 @@ qx.Class.define("osparc.studycard.Medium", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        this._reloadStudy(studyId);
-      }, this);
+      osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
     },
 
     __openQuality: function() {

@@ -26,11 +26,12 @@ qx.Class.define("osparc.studycard.Large", {
     this.base(arguments);
 
     this.set({
+      minHeight: 350,
       padding: this.self().PADDING
     });
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    if (studyData && studyData instanceof Object) {
+    if (studyData instanceof Object) {
       this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
     }
 

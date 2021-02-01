@@ -594,6 +594,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       nodeUI.addListener("edgeDragEnd", e => {
+        if (this.__pointerPos === null) {
+          return;
+        }
         let data = e.getData();
         let dragNodeId = data.nodeId;
 
