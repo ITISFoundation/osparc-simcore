@@ -8,7 +8,6 @@ from starlette import status
 from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus
 from ..dependencies.application import get_reverse_url_mapper
 from .jobs_faker import the_fake_impl
-from .solvers import router as solvers_router
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +21,10 @@ router = APIRouter()
 #
 
 
-@solvers_router.get("/{solver_id}/jobs/", response_model=List[Job])
-async def list_jobs(
+async def list_jobs_impl(
     solver_id: UUID,
-    url_for: Callable = Depends(get_reverse_url_mapper),
+    url_for: Callable,
 ):
-    """ List of all jobs with a given solver """
     return [
         job.copy(
             update={
@@ -43,12 +40,10 @@ async def list_jobs(
     ]
 
 
-# pylint: disable=dangerous-default-value
-@solvers_router.post("/{solver_id}/jobs/", response_model=Job)
-async def create_job(
+async def create_job_impl(
     solver_id: UUID,
-    inputs: List[JobInput] = [],
-    url_for: Callable = Depends(get_reverse_url_mapper),
+    inputs: List[JobInput],
+    url_for: Callable,
 ):
     """Creates a job for a solver with given inputs.
 
@@ -73,6 +68,8 @@ async def create_job(
 #
 # TODO: disabled since MAG is not convinced it is necessary for now
 #
+
+# pylint: disable=dangerous-default-value
 # @solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus)
 async def _run_job(
     solver_id: UUID,

@@ -5,9 +5,13 @@
 import hashlib
 import tempfile
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
+from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
+from pydantic import ValidationError
+from simcore_service_api_server.api.routes.files import convert_metadata
 from simcore_service_api_server.models.schemas.files import FileMetadata
 
 pytestmark = pytest.mark.asyncio
@@ -65,3 +69,25 @@ async def test_create_filemetadata_from_starlette_uploadfile(
 
     file_meta = await FileMetadata.create_from_uploaded(upload_in_memory)
     assert upload_in_memory.file.tell() > 0, "modifies current position is at the end"
+
+
+def test_convert_filemetadata():
+
+    storage_file_meta = StorageFileMetaData(
+        **StorageFileMetaData.Config.schema_extra["examples"][1]
+    )
+    storage_file_meta.file_id = f"api/{uuid4()}/extensionless"
+    apiserver_file_meta = convert_metadata(storage_file_meta)
+
+    assert apiserver_file_meta.file_id
+    assert apiserver_file_meta.filename == "extensionless"
+    assert apiserver_file_meta.content_type is None
+    assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
+
+    with pytest.raises(ValueError):
+        storage_file_meta.file_id = f"{uuid4()}/{uuid4()}/foo.txt"
+        convert_metadata(storage_file_meta)
+
+    with pytest.raises(ValidationError):
+        storage_file_meta.file_id = "api/NOTUUID/foo.txt"
+        convert_metadata(storage_file_meta)
