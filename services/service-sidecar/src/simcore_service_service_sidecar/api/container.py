@@ -3,7 +3,7 @@ from typing import Any, Dict
 import aiodocker
 from fastapi import APIRouter, Query, Request, Response
 
-from ..settings import ServiceSidecarSettings
+from ..storage import AsyncStore
 
 container_router = APIRouter()
 
@@ -31,9 +31,9 @@ async def get_container_logs(
     ),
 ) -> str:
     """ Returns the logs of a given container if found """
-    settings: ServiceSidecarSettings = request.app.state.settings
+    async_store: AsyncStore = request.app.state.async_store
 
-    if container not in settings.async_store.get_container_names():
+    if container not in async_store.get_container_names():
         response.status_code = 400
         return f"No container '{container}' was started"
 
@@ -57,9 +57,9 @@ async def container_inspect(
     request: Request, response: Response, container: str
 ) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
-    settings: ServiceSidecarSettings = request.app.state.settings
+    async_store: AsyncStore = request.app.state.async_store
 
-    if container not in settings.async_store.get_container_names():
+    if container not in async_store.get_container_names():
         response.status_code = 400
         return dict(error=f"No container '{container}' was started")
 
@@ -68,6 +68,27 @@ async def container_inspect(
     try:
         container_instance = await docker.containers.get(container)
         return await container_instance.show()
+    except aiodocker.exceptions.DockerError as e:
+        response.status_code = 400
+        return dict(error=e.message)
+
+
+@container_router.delete("/container/remove")
+async def container_remove(
+    request: Request, response: Response, container: str
+) -> bool:
+    async_store: AsyncStore = request.app.state.async_store
+
+    if container not in async_store.get_container_names():
+        response.status_code = 400
+        return dict(error=f"No container '{container}' was started")
+
+    docker = aiodocker.Docker()
+
+    try:
+        container_instance = await docker.containers.get(container)
+        await container_instance.delete()
+        return True
     except aiodocker.exceptions.DockerError as e:
         response.status_code = 400
         return dict(error=e.message)
