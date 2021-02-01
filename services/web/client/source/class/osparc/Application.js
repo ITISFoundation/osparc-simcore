@@ -96,6 +96,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
 
       this.__updateTabName();
+      this.__checkCookiesAccepted();
     },
 
     __initRouting: function() {
@@ -197,6 +198,31 @@ qx.Class.define("osparc.Application", {
           }
           if (platformName) {
             document.title += ` (${platformName})`;
+          }
+        });
+    },
+
+    __checkCookiesAccepted: function() {
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          if (platformName !== "master") {
+            if (!osparc.CookiePolicy.areCookiesAccepted()) {
+              const cookiePolicy = new osparc.CookiePolicy();
+              const title = this.tr("Cookie Policy");
+              const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 360, 140).set({
+                clickAwayClose: false,
+                resizable: false,
+                showClose: false
+              });
+              cookiePolicy.addListener("cookiesAccepted", () => {
+                osparc.CookiePolicy.acceptCookies();
+                win.close();
+              }, this);
+              cookiePolicy.addListener("cookiesDeclined", () => {
+                osparc.CookiePolicy.declineCookies();
+                win.close();
+              }, this);
+            }
           }
         });
     },
