@@ -35,7 +35,7 @@ qx.Class.define("osparc.CookiePolicy", {
   },
 
   statics: {
-    COOKIES_ACCEPTED_NAME: "accepted_cookies_v0",
+    COOKIES_ACCEPTED_NAME: "cookies_v0:accepted",
 
     areCookiesAccepted: function() {
       const cookiesAccepted = osparc.utils.Utils.cookie.getCookie(this.COOKIES_ACCEPTED_NAME);
@@ -81,6 +81,7 @@ qx.Class.define("osparc.CookiePolicy", {
         case "decline-button": {
           const ctrlBtns = this.getChildControl("control-buttons");
           control = new qx.ui.form.Button(this.tr("Decline")).set({
+            visibility: "excluded",
             allowGrowX: false
           });
           osparc.utils.Utils.setIdToWidget(control, "declineCookiesBtn");
