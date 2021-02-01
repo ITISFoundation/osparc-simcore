@@ -25,3 +25,7 @@ respx<0.13.0
 
 # Breaking changes. TODO: review ASAP
  minio<7.0.0
+
+
+# Keeps all docker compose to the same version. TODO: remove when all synced
+docker-compose==1.27.4

@@ -242,6 +242,9 @@ class DataStorageManager:
                     d = dx.fmd
                     if d.project_id not in uuid_name_dict:
                         continue
+                    #
+                    # FIXME: artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+                    #        with information from the projects table!
 
                     d.project_name = uuid_name_dict[d.project_id]
                     if d.node_id in uuid_name_dict:
@@ -274,7 +277,7 @@ class DataStorageManager:
                 if _query.search(d.file_uuid):
                     filtered_data.append(dx)
 
-            return filtered_data
+            return list(filtered_data)
 
         if regex:
             _query = re.compile(regex, re.IGNORECASE)
@@ -286,7 +289,7 @@ class DataStorageManager:
                     if _query.search(v) or _query.search(str(_vars[v])):
                         filtered_data.append(dx)
                         break
-            return filtered_data
+            return list(filtered_data)
 
         return list(data)
 
@@ -461,7 +464,7 @@ class DataStorageManager:
                     await asyncio.sleep(sleep_amount)
                     continue
 
-                file_e_tag = result["Contents"][0]["ETag"]
+                file_e_tag = result["Contents"][0]["ETag"].strip('"')
                 # finally update the data in the database and exit
                 continue_loop = False
 
@@ -477,7 +480,9 @@ class DataStorageManager:
                         file_meta_data.update()
                         .where(file_meta_data.c.file_uuid == file_uuid)
                         .values(
-                            file_size=new_file_size, last_modified=new_last_modified
+                            file_size=new_file_size,
+                            last_modified=new_last_modified,
+                            entity_tag=file_e_tag,
                         )
                     )  # primary key search is faster
                     await conn.execute(query)
@@ -487,7 +492,7 @@ class DataStorageManager:
 
     async def upload_link(self, user_id: str, file_uuid: str):
         @retry(**postgres_service_retry_policy_kwargs)
-        async def _execute_query() -> Tuple[int, str]:
+        async def _init_metadata() -> Tuple[int, str]:
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
@@ -503,7 +508,7 @@ class DataStorageManager:
                     await conn.execute(ins)
                 return fmd.file_size, fmd.last_modified
 
-        file_size, last_modified = await _execute_query()
+        file_size, last_modified = await _init_metadata()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
@@ -811,3 +816,24 @@ class DataStorageManager:
                         Delete={"Objects": objects_to_delete},
                     )
                     return response
+
+    async def search_files_starting_with(
+        self, user_id: int, prefix: str
+    ) -> List[FileMetaDataEx]:
+        # Avoids using list_files since it accounts for projects/nodes
+        # Storage should know NOTHING about those concepts
+        data = deque()
+        async with self.engine.acquire() as conn:
+            stmt = sa.select([file_meta_data]).where(
+                (file_meta_data.c.user_id == str(user_id))
+                & file_meta_data.c.file_uuid.startswith(prefix)
+            )
+
+            async for row in conn.execute(stmt):
+                meta = FileMetaData(**dict(row))
+                data.append(
+                    FileMetaDataEx(
+                        fmd=meta, parent_id=str(Path(meta.object_name).parent)
+                    )
+                )
+        return list(data)

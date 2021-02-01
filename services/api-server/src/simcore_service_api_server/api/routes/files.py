@@ -1,72 +1,152 @@
 import asyncio
+import json
+import logging
+import re
+import shutil
+import tempfile
+from collections import deque
+from datetime import datetime
+from mimetypes import guess_type
+from pathlib import Path
 from textwrap import dedent
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+import aiofiles
+import httpx
+from fastapi import APIRouter, Depends, File, Header, UploadFile, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
+from pydantic import ValidationError
+from starlette.background import BackgroundTask
+from starlette.responses import FileResponse
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
-from ...modules.storage import StorageApi
+from ...modules.storage import StorageApi, StorageFileMetaData
+from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from .files_faker import the_fake_impl
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-## FILES ---------------
+## FILES ---------------------------------------------------------------------------------
+#
+# - WARNING: the order of the router-decorated functions MATTER
+# - TODO: pagination ?
+# - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
+#
+#
+FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
+
+
+def convert_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
+    # extracts fields from api/{file_id}/{filename}
+    match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
+    if not match:
+        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
+
+    file_id, filename = match.groups()
+
+    meta = FileMetadata(
+        file_id=file_id,
+        filename=filename,
+        content_type=guess_type(filename)[0],
+        checksum=stored_file_meta.entity_tag,
+    )
+    return meta
 
 
 @router.get("", response_model=List[FileMetadata])
-async def list_files():
+async def list_files(
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
+):
     """ Gets metadata for all file resources """
-    return the_fake_impl.list_meta()
+
+    stored_files: List[StorageFileMetaData] = await storage_client.list_files(user_id)
+
+    # Adapts storage API model to API model
+    files_metadata = deque()
+    for stored_file_meta in stored_files:
+        try:
+            assert stored_file_meta.user_id == user_id  # nosec
+            assert stored_file_meta.file_id  # nosec
+
+            meta = convert_metadata(stored_file_meta)
+
+        except (ValidationError, ValueError, AttributeError) as err:
+            logger.warning(
+                "Skipping corrupted entry in storage '%s' (%s)"
+                "TIP: check this entry in file_meta_data table.",
+                stored_file_meta.file_uuid,
+                err,
+            )
+
+        else:
+            files_metadata.append(meta)
+
+    return list(files_metadata)
 
 
-async def list_files_impl(
-    _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
-):
-    # TODO: pagination
-    # TODO: this is just a ping with retries
-    # TODO: extend :search see https://cloud.google.com/apis/design/custom_methods
-    # await storage_client.get("/")
-    raise NotImplementedError()
-
-
-@router.post(":upload", response_model=FileMetadata)
-async def upload_file(file: UploadFile = File(...)):
-    """Uploads a single file to the system
-
-    To upload multiple with one call, see upload_files
-    """
-    metadata = await the_fake_impl.save(file)
-    return metadata
-
-
-async def upload_single_file_impl(
+@router.put("/content", response_model=FileMetadata)
+async def upload_file(
     file: UploadFile = File(...),
-    _storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    content_length: Optional[str] = Header(None),
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
 ):
-    # TODO: FileResponse automatically computes etag. See how is done
-
-    # TODO: every file uploaded is sent to S3 and a link is returned
-    # TODO: every session has a folder. A session is defined by the access token
+    """Uploads a single file to the system"""
+    # TODO: For the moment we upload file here and re-upload to S3
+    # using a pre-signed link. This is far from ideal since we are using the api-server as a
+    # passby service for all uploaded data which can be a lot.
+    # Next refactor should consider a solution that directly uploads from the client to S3
+    # avoiding the data trafic via this service
     #
 
-    # TODO: this is just a ping with retries
-    ## await storage_client.get("/")
-    raise NotImplementedError()
+    # assign file_id.
+    meta: FileMetadata = await FileMetadata.create_from_uploaded(
+        file, file_size=content_length, created_at=datetime.utcnow().isoformat()
+    )
+    logger.debug("Assigned id: %s of %s bytes", meta, content_length)
+
+    # upload to S3 using pre-signed link
+    presigned_upload_link = await storage_client.get_upload_link(
+        user_id, meta.file_id, meta.filename
+    )
+
+    logger.info("Uploading %s to %s ...", meta, presigned_upload_link)
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, write=3600)) as client:
+        assert meta.content_type  # nosec
+
+        # pylint: disable=protected-access
+        # NOTE: _file attribute is a file-like object of ile.file which is
+        # a https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile
+        #
+        resp = await client.put(
+            presigned_upload_link,
+            files={"upload-file": (meta.filename, file.file._file, meta.content_type)},
+        )
+        resp.raise_for_status()
+
+    # update checksum
+    entity_tag = json.loads(resp.headers.get("Etag"))
+    meta.checksum = entity_tag
+    return meta
 
 
-# TODO: disabled until actual use case is presented
-# @router.post(":upload-multiple", response_model=List[FileMetadata])
-#
-async def _upload_files(files: List[UploadFile] = File(...)):
+# DISABLED @router.post(":upload-multiple", response_model=List[FileMetadata])
+async def upload_files(files: List[UploadFile] = File(...)):
     """ Uploads multiple files to the system """
-    # TODO: idealy we should only have upload_multiple_files but Union[List[UploadFile], File] produces an error in
-    # generated openapi.json
+    # MaG suggested a single function that can upload one or multiple files instead of having
+    # two of them. Tried something like upload_file( files: Union[List[UploadFile], File] ) but it
+    # produces an error in the generated openapi.json
+    #
+    # Since there is no inmediate need of this functions, we decided to disable it
+    #
     async def save_file(file):
         metadata = await the_fake_impl.save(file)
         return metadata
@@ -76,34 +156,86 @@ async def _upload_files(files: List[UploadFile] = File(...)):
 
 
 @router.get("/{file_id}", response_model=FileMetadata)
-async def get_file(file_id: UUID):
+async def get_file(
+    file_id: UUID,
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
+):
     """ Gets metadata for a given file resource """
+
     try:
-        return the_fake_impl.files[file_id]
-    except KeyError as err:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail=f"File with identifier {file_id} not found",
-        ) from err
-
-
-@router.post("/{file_id}:download")
-async def download_file(file_id: UUID):
-    # TODO: hash or UUID? Ideally like container ids
-    try:
-        metadata = the_fake_impl.files[file_id]
-        file_path = the_fake_impl.get_storage_path(metadata)
-
-        return FileResponse(
-            str(file_path),
-            media_type=metadata.content_type,
-            filename=metadata.filename,
+        stored_files: List[StorageFileMetaData] = await storage_client.search_files(
+            user_id, file_id
         )
-    except KeyError as err:
+        if not stored_files:
+            raise ValueError("Not found in storage")
+
+        stored_file_meta = stored_files[0]
+        assert stored_file_meta.user_id == user_id  # nosec
+        assert stored_file_meta.file_id  # nosec
+
+        # Adapts storage API model to API model
+        meta = convert_metadata(stored_file_meta)
+        return meta
+
+    except (ValueError, ValidationError) as err:
+        logger.debug("File %d not found: %s", file_id, err)
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
             detail=f"File with identifier {file_id} not found",
         ) from err
+
+
+@router.get("/{file_id}/content")
+async def download_file(
+    file_id: UUID,
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
+    user_id: int = Depends(get_current_user_id),
+):
+    # gets meta
+    meta: FileMetadata = await get_file(file_id, storage_client, user_id)
+
+    # download from S3 using pre-signed link
+    presigned_download_link = await storage_client.get_download_link(
+        user_id, meta.file_id, meta.filename
+    )
+
+    logger.info("Downloading %s to %s ...", meta, presigned_download_link)
+
+    async def _download_chunk():
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, read=3600)) as client:
+            async with client.stream("GET", presigned_download_link) as resp:
+                async for chunk in resp.aiter_bytes():
+                    yield chunk
+
+                resp.raise_for_status()
+
+    def _delete(dirpath):
+        logger.debug("Deleting %s ...", dirpath)
+        shutil.rmtree(dirpath, ignore_errors=True)
+
+    async def _download_and_save():
+        file_path = Path(tempfile.mkdtemp()) / "dump"
+        try:
+            async with aiofiles.open(file_path, mode="wb") as fh:
+                async for chunk in _download_chunk():
+                    await fh.write(chunk)
+        except Exception:
+            _delete(file_path.parent)
+            raise
+        return file_path
+
+    # tmp download here TODO: had some problems with RedirectedResponse(presigned_download_link)
+    file_path = await _download_and_save()
+
+    task = BackgroundTask(_delete, dirpath=file_path.parent)
+
+    return FileResponse(
+        str(file_path),
+        media_type=meta.content_type,
+        filename=meta.filename,
+        background=task,
+    )
 
 
 async def files_upload_multiple_view():
