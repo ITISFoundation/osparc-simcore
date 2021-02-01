@@ -117,6 +117,7 @@ async def get_service_sidecars_to_monitor(
         service_sidecar_network_name = service["Spec"]["Labels"][
             "traefik.docker.network"
         ]
+        simcore_traefik_zone = service["Spec"]["Labels"]["io.simcore.zone"]
 
         entry = (
             service_name,
@@ -124,6 +125,7 @@ async def get_service_sidecars_to_monitor(
             service_key,
             service_tag,
             service_sidecar_network_name,
+            simcore_traefik_zone,
         )
         service_sidecar_services.append(entry)
 

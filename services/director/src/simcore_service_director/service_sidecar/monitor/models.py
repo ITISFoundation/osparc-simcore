@@ -130,6 +130,11 @@ class MonitorData(BaseModel):
         description="overlay network biding the proxy to the container spaned by the service-sidecar",
     )
 
+    simcore_traefik_zone: str = Field(
+        ...,
+        description="required for Traefik to correctly route requests to the spawned container",
+    )
+
     @classmethod
     def assemble(
         cls,
@@ -139,12 +144,14 @@ class MonitorData(BaseModel):
         service_key: str,
         service_tag: str,
         service_sidecar_network_name: str,
+        simcore_traefik_zone: str,
     ) -> "MonitorData":
         payload = dict(
             service_name=service_name,
             service_key=service_key,
             service_tag=service_tag,
             service_sidecar_network_name=service_sidecar_network_name,
+            simcore_traefik_zone=simcore_traefik_zone,
             service_sidecar=dict(
                 hostname=hostname,
                 port=port,

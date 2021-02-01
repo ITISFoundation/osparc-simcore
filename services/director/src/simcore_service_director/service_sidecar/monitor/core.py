@@ -109,6 +109,7 @@ class ServiceSidecarsMonitor:
         service_key: str,
         service_tag: str,
         service_sidecar_network_name: str,
+        simcore_traefik_zone: str,
     ) -> None:
         """Invoked before the service is started
 
@@ -134,6 +135,7 @@ class ServiceSidecarsMonitor:
                     service_key=service_key,
                     service_tag=service_tag,
                     service_sidecar_network_name=service_sidecar_network_name,
+                    simcore_traefik_zone=simcore_traefik_zone,
                 ),
             )
             logger.debug("Added service '%s' to monitor", service_name)
@@ -239,6 +241,7 @@ class ServiceSidecarsMonitor:
                 service_key,
                 service_tag,
                 service_sidecar_network_name,
+                simcore_traefik_zone,
             ) = service_to_monitor
 
             await self.add_service_to_monitor(
@@ -249,6 +252,7 @@ class ServiceSidecarsMonitor:
                 service_key=service_key,
                 service_tag=service_tag,
                 service_sidecar_network_name=service_sidecar_network_name,
+                simcore_traefik_zone=simcore_traefik_zone,
             )
 
     async def shutdown(self):

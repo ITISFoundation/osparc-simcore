@@ -17,8 +17,8 @@ def inject_traefik_configuration(
     service_spec: Dict[str, Any],
     target_container: str,
     service_sidecar_network_name: str,
+    simcore_traefik_zone: str,
     service_port: str = "8888",  # TODO: fetch from the service label
-    unique_traefik_zone: str = "srvsdcr_bb08a588-62b8-48a4-a459-7a61b4d47199_52",  # TOOD: maybe this needs to be different, but we do not care
 ) -> None:
     """Injects configuration to allow the service to be accessible on the uuid.services.SERVICE_DNS"""
 
@@ -41,7 +41,7 @@ def inject_traefik_configuration(
     # expose spaned container to the internet
     labels = target_container_spec.get("labels", [])
     for label in [
-        f"io.simcore.zone={unique_traefik_zone}",
+        f"io.simcore.zone={simcore_traefik_zone}",
         "traefik.enable=true",
         f"traefik.http.services.{target_container}.loadbalancer.server.port={service_port}",
         f"traefik.http.routers.{target_container}.entrypoints=http",
@@ -58,6 +58,7 @@ async def assemble_spec(
     service_key: str,
     service_tag: str,
     service_sidecar_network_name: str,
+    simcore_traefik_zone: str,
 ) -> str:
     """returns a docker-compose spec which will be use by the service-sidecar to start the service """
     settings: ServiceSidecarSettings = get_settings(app)
@@ -71,6 +72,7 @@ async def assemble_spec(
         service_spec,
         target_container=CONTAINER_NAME,
         service_sidecar_network_name=service_sidecar_network_name,
+        simcore_traefik_zone=simcore_traefik_zone,
     )
 
     return yaml.safe_dump(service_spec)

@@ -150,6 +150,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         service_key=service_key,
         service_tag=service_tag,
         service_sidecar_network_name=service_sidecar_network_name,
+        simcore_traefik_zone=io_simcore_zone,
     )
 
     return service_sidecar_proxy_meta_data
