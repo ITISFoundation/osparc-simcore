@@ -73,8 +73,8 @@ async def _update_project_outputs(
     )
 
     await projects_api.notify_project_node_update(app, project, node_uuid)
-    await projects_api.trigger_connected_service_retrieve(
-        app, project, node_uuid, changed_keys
+    await projects_api.post_trigger_connected_service_retrieve(
+        app=app, project=project, updated_node_uuid=node_uuid, changed_keys=changed_keys
     )
 
 
