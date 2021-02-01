@@ -2,19 +2,24 @@ import asyncio
 import json
 import logging
 import re
+import shutil
+import tempfile
 from collections import deque
 from datetime import datetime
 from mimetypes import guess_type
+from pathlib import Path
 from textwrap import dedent
-from typing import Dict, List, Optional
-from urllib.parse import quote
+from typing import List, Optional
 from uuid import UUID
 
+import aiofiles
 import httpx
 from fastapi import APIRouter, Depends, File, Header, UploadFile, status
 from fastapi.exceptions import HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
+from starlette.background import BackgroundTask
+from starlette.responses import FileResponse
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
@@ -86,14 +91,14 @@ async def list_files(
     return list(files_metadata)
 
 
-@router.post(":upload", response_model=FileMetadata)
+@router.put("/content", response_model=FileMetadata)
 async def upload_file(
     file: UploadFile = File(...),
     content_length: Optional[str] = Header(None),
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
-    """Uploads a single file to the system    """
+    """Uploads a single file to the system"""
     # TODO: For the moment we upload file here and re-upload to S3
     # using a pre-signed link. This is far from ideal since we are using the api-server as a
     # passby service for all uploaded data which can be a lot.
@@ -181,7 +186,7 @@ async def get_file(
         ) from err
 
 
-@router.post("/{file_id}:download")
+@router.get("/{file_id}/content")
 async def download_file(
     file_id: UUID,
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
@@ -194,9 +199,10 @@ async def download_file(
     presigned_download_link = await storage_client.get_download_link(
         user_id, meta.file_id, meta.filename
     )
+
     logger.info("Downloading %s to %s ...", meta, presigned_download_link)
 
-    async def _download_stream():
+    async def _download_chunk():
         async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, read=3600)) as client:
             async with client.stream("GET", presigned_download_link) as resp:
                 async for chunk in resp.aiter_bytes():
@@ -204,21 +210,31 @@ async def download_file(
 
                 resp.raise_for_status()
 
-    # attach download stream to the streamed response
-    def _build_headers() -> Dict:
-        # Adapted from from starlatte/responses.py::FileResponse.__init__
-        content_disposition_filename = quote(meta.filename)
-        if content_disposition_filename != meta.filename:
-            content_disposition = "attachment; filename*=utf-8''{}".format(
-                content_disposition_filename
-            )
-        else:
-            content_disposition = 'attachment; filename="{}"'.format(meta.filename)
-        return {"content-disposition": content_disposition}
+    def _delete(dirpath):
+        logger.debug("Deleting %s ...", dirpath)
+        shutil.rmtree(dirpath, ignore_errors=True)
 
-    # FIXME: this DOES NOT WORK, it only downloads one chunk
-    return StreamingResponse(
-        _download_stream(), media_type=meta.content_type, headers=_build_headers()
+    async def _download_and_save():
+        file_path = Path(tempfile.mkdtemp()) / "dump"
+        try:
+            async with aiofiles.open(file_path, mode="wb") as fh:
+                async for chunk in _download_chunk():
+                    await fh.write(chunk)
+        except Exception:
+            _delete(file_path.parent)
+            raise
+        return file_path
+
+    # tmp download here TODO: had some problems with RedirectedResponse(presigned_download_link)
+    file_path = await _download_and_save()
+
+    task = BackgroundTask(_delete, dirpath=file_path.parent)
+
+    return FileResponse(
+        str(file_path),
+        media_type=meta.content_type,
+        filename=meta.filename,
+        background=task,
     )
 
 
