@@ -3,10 +3,12 @@ const responses = require('./responsesQueue');
 require('log-timestamp');
 
 async function acceptCookies(page) {
-  const id = 'osparc-test-id=acceptCookiesBtn';
-  page.waitForSelector(id, {
-    timeout: 10000 // default 30s
-  }).then(() => page.click(id));
+  const id = '[osparc-test-id=acceptCookiesBtn]';
+  await page.waitForSelector(id, {
+    timeout: 5000
+  })
+    .then(() => page.click(id))
+    .catch(() => console.log("Accept Cookies button not found"));
 }
 
 async function register(page, user, pass) {

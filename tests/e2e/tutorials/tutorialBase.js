@@ -63,6 +63,7 @@ class TutorialBase {
     await this.takeScreenshot("landingPage_" + domain);
 
     await auto.acceptCookies(this.__page);
+    await this.takeScreenshot("postCookies_" + domain);
   }
 
   async start() {
