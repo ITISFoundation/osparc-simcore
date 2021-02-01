@@ -39,7 +39,7 @@ qx.Class.define("osparc.CookiePolicy", {
 
     areCookiesAccepted: function() {
       const cookiesAccepted = osparc.utils.Utils.cookie.getCookie(this.COOKIES_ACCEPTED_NAME);
-      return cookiesAccepted;
+      return (cookiesAccepted === "true");
     },
 
     acceptCookies: function() {
@@ -105,12 +105,12 @@ qx.Class.define("osparc.CookiePolicy", {
 
       const declineBtn = this.getChildControl("decline-button");
       declineBtn.addListener("execute", () => {
-        this.fireEvent("cookiesAccepted");
+        this.fireEvent("cookiesDeclined");
       }, this);
 
       const acceptBtn = this.getChildControl("accept-button");
       acceptBtn.addListener("execute", () => {
-        this.fireEvent("cookiesDeclined");
+        this.fireEvent("cookiesAccepted");
       }, this);
     }
   }
