@@ -86,12 +86,17 @@ async def create_minimal_computational_graph_based_on_selection(
 ) -> nx.DiGraph:
     nodes_data_view: nx.classes.reportviews.NodeDataView = full_dag_graph.nodes.data()
 
-    # first pass, find the nodes that are dirty (outdated)
-    for node in nx.topological_sort(full_dag_graph):
-        if _is_node_computational(
-            nodes_data_view[node]["key"]
-        ) and await _is_node_outdated(nodes_data_view, node):
-            _mark_node_as_dirty(nodes_data_view, node)
+    try:
+
+        # first pass, find the nodes that are dirty (outdated)
+        for node in nx.topological_sort(full_dag_graph):
+            if _is_node_computational(
+                nodes_data_view[node]["key"]
+            ) and await _is_node_outdated(nodes_data_view, node):
+                _mark_node_as_dirty(nodes_data_view, node)
+    except nx.NetworkXUnfeasible:
+        # not acyclic, return an empty graph
+        return nx.DiGraph()
 
     # second pass, detect all the nodes that need to be run
     minimal_selection_nodes: Set[NodeID] = set()
