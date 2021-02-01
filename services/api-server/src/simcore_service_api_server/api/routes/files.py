@@ -114,7 +114,7 @@ async def upload_file(
 
     logger.info("Uploading %s to %s ...", meta, presigned_upload_link)
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, write=3600)) as client:
         assert meta.content_type  # nosec
 
         # pylint: disable=protected-access
@@ -197,7 +197,7 @@ async def download_file(
     logger.info("Downloading %s to %s ...", meta, presigned_download_link)
 
     async def _download_stream():
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, read=3600)) as client:
             async with client.stream("GET", presigned_download_link) as resp:
                 async for chunk in resp.aiter_bytes():
                     yield chunk
