@@ -6,6 +6,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Remote Attach api-server",
+      "type": "python",
+      "request": "attach",
+      "port": 3006,
+      "host": "127.0.0.1",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/devel"
+        }
+      ]
+    },
+    {
       "name": "Python: Remote Attach director",
       "type": "python",
       "request": "attach",
