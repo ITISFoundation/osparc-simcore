@@ -55,7 +55,10 @@ run-prod: .env up-extra
 # BUILD #####################
 
 .PHONY: openapi-specs openapi.json
-openapi-specs: openapi.json .env
-openapi.json:
+openapi-specs: openapi.json
+openapi.json: .env
 	# generating openapi specs file
 	python3 -c "import json; from $(APP_PACKAGE_NAME).__main__ import *; print( json.dumps(the_app.openapi(), indent=2) )" > $@
+	# validates OAS file: $@
+	@cd $(CURDIR); \
+	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
