@@ -147,7 +147,8 @@ qx.Class.define("osparc.studycard.Medium", {
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        this.__openStudyDetails();
+        // TODO: Large card needs to support Study Model as input
+        // this.__openStudyDetails();
       }, this);
       return moreInfoButton;
     },
@@ -168,10 +169,10 @@ qx.Class.define("osparc.studycard.Medium", {
       }, {
         label: this.tr("Access Rights"),
         view: this.__createAccessRights(),
-        action: {
+        // TODO: Large card needs to support Study Model as input
+        actionTODO: {
           button: osparc.utils.Utils.getViewButton(),
-          // TODO: support Study Model as input
-          // callback: this.__openAccessRights,
+          callback: this.__openAccessRights,
           ctx: this
         }
       }];
@@ -180,10 +181,10 @@ qx.Class.define("osparc.studycard.Medium", {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
-          action: {
+          // TODO: Large card needs to support Study Model as input
+          actionTODO: {
             button: osparc.utils.Utils.getViewButton(),
-            // TODO: support Study Model as input
-            // callback: this.__openQuality,
+            callback: this.__openQuality,
             ctx: this
           }
         });
