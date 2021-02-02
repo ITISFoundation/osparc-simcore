@@ -237,6 +237,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __getZoomAllButton: function() {
       const btn = this.__getZoomBtn("@MaterialIcons/zoom_out_map", this.tr("Zoom All"));
+      btn.setVisibility("excluded");
       btn.addListener("execute", () => {
         this.__zoomAll();
       }, this);
