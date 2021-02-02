@@ -1,23 +1,19 @@
 import logging
 import urllib.parse
 from operator import attrgetter
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
 import httpx
 from fastapi import FastAPI
-from models_library.services import (
-    COMPUTATIONAL_SERVICE_KEY_RE,
-    ServiceDockerData,
-    ServiceType,
-)
+from models_library.services import ServiceDockerData, ServiceType
 from pydantic import ValidationError
-from simcore_service_api_server.api.routes.solvers import list_solvers
 
 from ..core.settings import CatalogSettings
 from ..models.schemas.solvers import LATEST_VERSION, SolverName
 from ..utils.client_base import BaseServiceClientApi
-from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+
+## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +117,10 @@ class CatalogApi(BaseServiceClientApi):
     async def get_latest_solver(
         self, user_id: int, name: SolverName
     ) -> ServiceDockerData:
-        def only_this_solver(solver: ServiceDockerData) -> bool:
+        def _this_solver(solver: ServiceDockerData) -> bool:
             return solver.key == name
 
-        solvers = await list_solvers(user_id, only_this_solver)
+        solvers = await self.list_solvers(user_id, _this_solver)
 
         # raise IndexError if None
         latest = sorted(solvers, key=attrgetter("pep404_version"))[-1]
