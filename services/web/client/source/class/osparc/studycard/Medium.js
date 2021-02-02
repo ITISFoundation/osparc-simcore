@@ -147,8 +147,7 @@ qx.Class.define("osparc.studycard.Medium", {
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        // TODO: Large card needs to support Study Model as input
-        // this.__openStudyDetails();
+        this.__openStudyDetails();
       }, this);
       return moreInfoButton;
     },
