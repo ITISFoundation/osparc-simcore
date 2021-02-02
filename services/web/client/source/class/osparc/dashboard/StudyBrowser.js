@@ -704,15 +704,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             });
         }
       });
-      req.addEventListener("error", () => {
+      req.addEventListener("error", e => {
         // transferFailed
-        osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong");
+        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         importTask.stop();
         this.__userStudyContainer.remove(placeholderStudyCard);
       });
-      req.addEventListener("abort", () => {
+      req.addEventListener("abort", e => {
         // transferAborted
-        osparc.component.message.FlashMessenger.logAs("Something went wrong", "ERROR");
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong");
+        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         importTask.stop();
         this.__userStudyContainer.remove(placeholderStudyCard);
       });
