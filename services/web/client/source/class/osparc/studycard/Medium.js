@@ -242,15 +242,11 @@ qx.Class.define("osparc.studycard.Medium", {
     },
 
     __openStudyDetails: function() {
-      const studyDetails = new osparc.studycard.Large(this.getStudy().serialize());
+      const studyDetails = new osparc.studycard.Large(this.getStudy());
       const title = this.tr("Study Details");
       const width = 500;
       const height = 500;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
-      studyDetails.addListener("updateStudy", e => {
-        const updatedStudy = e.getData();
-        this.getStudy().updateModel(updatedStudy);
-      }, this);
     }
   }
 });
