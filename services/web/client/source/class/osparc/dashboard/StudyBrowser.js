@@ -639,9 +639,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         exportTask.setSubtitle(textSuccess);
       };
       osparc.utils.Utils.downloadLink(url, "POST", null, downloadStartedCB)
-        .catch(() => {
-          const textError = this.tr("Something went wrong Exporting the study");
-          osparc.component.message.FlashMessenger.getInstance().logAs(textError, "ERROR");
+        .catch(e => {
+          const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Exporting the study");
+          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         })
         .finally(() => {
           exportTask.stop();
