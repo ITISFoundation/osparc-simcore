@@ -14,6 +14,7 @@ from simcore_service_api_server.models.schemas.solvers import (
     JobInput,
     JobOutput,
     Solver,
+    Version,
     _compose_job_id,
 )
 
@@ -58,6 +59,8 @@ def test_solvers_sorting_by_name_and_version(faker):
 
     # have a solver
     solver0 = Solver(**Solver.Config.schema_extra["examples"][0])
+
+    assert isinstance(solver0.pep404_version, Version)
     major, minor, micro = solver0.pep404_version.release
     solver0.version = f"{major}.{minor}.{micro}"
 
