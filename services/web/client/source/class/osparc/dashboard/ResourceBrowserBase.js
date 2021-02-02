@@ -75,10 +75,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       studyDetails.addListener("updateStudy", e => {
         if (osparc.utils.Resources.isTemplate(resourceData)) {
           const updatedTemplateData = e.getData();
-          this._reloadTemplate(updatedTemplateData.uuid);
+          this._resetTemplateItem(updatedTemplateData);
         } else {
           const updatedStudyData = e.getData();
-          this._reloadStudy(updatedStudyData.uuid);
+          this._resetStudyItem(updatedStudyData);
         }
       });
       studyDetails.addListener("updateTags", () => {
