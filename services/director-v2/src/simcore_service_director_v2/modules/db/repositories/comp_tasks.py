@@ -150,24 +150,22 @@ class CompTasksRepository(BaseRepository):
     ) -> None:
 
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
-
         list_of_comp_tasks_in_project = await _generate_tasks_list_from_project(
             project, director_client, published_nodes
         )
-
+        # get current tasks
         result: RowProxy = await self.connection.execute(
             sa.select([comp_tasks.c.node_id]).where(
                 comp_tasks.c.project_id == str(project.uuid)
             )
         )
-        node_id_to_delete = [
+        # remove the tasks that were removed from project workbench
+        node_ids_to_delete = [
             t.node_id
             for t in await result.fetchall()
             if t.node_id not in project.workbench
         ]
-
-        # start by removing the old tasks if they exist
-        for node_id in node_id_to_delete:
+        for node_id in node_ids_to_delete:
             await self.connection.execute(
                 sa.delete(comp_tasks).where(
                     (comp_tasks.c.project_id == str(project.uuid))
@@ -176,7 +174,7 @@ class CompTasksRepository(BaseRepository):
             )
 
         # insert or update the remaining tasks
-
+        # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
         for comp_task_db in list_of_comp_tasks_in_project:
 
             insert_stmt = insert(comp_tasks).values(
