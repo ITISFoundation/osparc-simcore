@@ -55,14 +55,6 @@ class StorageApi(BaseServiceClientApi):
     # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
     #     return await self.client.get(path, *args, **kwargs)
 
-    async def is_responsive(self) -> bool:
-        try:
-            resp = await self.client.get("/")
-            resp.raise_for_status()
-            return True
-        except httpx.HTTPStatusError:
-            return False
-
     async def list_files(self, user_id: int) -> List[StorageFileMetaData]:
         """ Lists metadata of all s3 objects name as api/* from a given user"""
         resp = await self.client.post(
