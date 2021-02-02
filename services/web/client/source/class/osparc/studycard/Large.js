@@ -295,7 +295,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy());
+      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
       permissionsView.addListener("updateStudy", e => {
         this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
       }, this);
@@ -316,7 +316,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openQuality: function() {
-      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy());
+      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
       [
         "updateStudy",
         "updateTemplate"
