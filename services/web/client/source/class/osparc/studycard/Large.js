@@ -388,7 +388,6 @@ qx.Class.define("osparc.studycard.Large", {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
-      }
-    },
+    }
   }
 });
