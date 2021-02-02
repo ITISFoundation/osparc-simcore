@@ -68,6 +68,7 @@ qx.Class.define("osparc.data.model.Study", {
     uuid: {
       check: "String",
       nullable: false,
+      event: "changeUuid",
       init: ""
     },
 
@@ -135,12 +136,14 @@ qx.Class.define("osparc.data.model.Study", {
     tags: {
       check: "Array",
       init: [],
+      event: "changeTags",
       nullable: true
     },
 
     classifiers: {
       check: "Array",
       init: [],
+      event: "changeClassifiers",
       nullable: true
     },
 
@@ -157,8 +160,8 @@ qx.Class.define("osparc.data.model.Study", {
     quality: {
       check: "Object",
       init: {},
-      nullable: true,
-      event: "changeQuality"
+      event: "changeQuality",
+      nullable: true
     },
 
     readOnly: {
