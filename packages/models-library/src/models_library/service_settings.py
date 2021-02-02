@@ -47,8 +47,8 @@ class ServiceSetting(BaseModel):
                     "value": [
                         {
                             "ReadOnly": True,
-                            "Source": "/tmp/.X11-unix",
-                            "Target": "/tmp/.X11-unix",
+                            "Source": "/tmp/.X11-unix",  # nosec
+                            "Target": "/tmp/.X11-unix",  # nosec
                             "Type": "bind",
                         }
                     ],
