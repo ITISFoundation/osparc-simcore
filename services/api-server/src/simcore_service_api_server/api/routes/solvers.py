@@ -3,7 +3,6 @@ from operator import attrgetter
 from typing import Any, Callable, Dict, List
 from uuid import UUID
 
-import packaging.version
 from fastapi import APIRouter, Depends, HTTPException, status
 from models_library.services import ServiceDockerData
 from pydantic import ValidationError
@@ -11,9 +10,9 @@ from pydantic import ValidationError
 from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverName
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
-from .jobs import Job, JobInput, create_job_impl, list_jobs_impl
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
+from .jobs import Job, JobInput, create_job_impl, list_jobs_impl
 from .solvers_faker import the_fake_impl
 
 logger = logging.getLogger(__name__)
@@ -33,6 +32,8 @@ async def list_solvers(
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
+    assert await catalog_client.is_responsive()  # nosec
+
     solver_images: List[ServiceDockerData] = await catalog_client.list_solvers(user_id)
 
     solvers = []
@@ -96,26 +97,23 @@ async def create_job(
 async def get_solver_by_name_and_version(
     solver_name: SolverName,
     version: str,
+    user_id: int = Depends(get_current_user_id),
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     try:
-        print(f"/{solver_name}/{version}", flush=True)
-
-        def _url_resolver(solver_id: UUID):
-            return url_for(
-                "get_solver",
-                solver_id=solver_id,
-            )
-
         if version == LATEST_VERSION:
-            solver = the_fake_impl.get_latest(solver_name, _url_resolver)
+            image = await catalog_client.get_latest_solver(user_id, solver_name)
         else:
-            solver = the_fake_impl.get_by_name_and_version(
-                solver_name, version, _url_resolver
-            )
-        return solver
+            image = await catalog_client.get_solver(user_id, solver_name, version)
 
-    except KeyError as err:
+        solver = Solver.create_from_image(image)
+        solver.url = url_for(
+            "get_solver",
+            solver_id=solver.id,
+        )
+
+    except (ValueError, IndexError, ValidationError) as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_name}:{version} not found",
