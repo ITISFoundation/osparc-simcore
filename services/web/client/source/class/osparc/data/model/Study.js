@@ -157,7 +157,8 @@ qx.Class.define("osparc.data.model.Study", {
     quality: {
       check: "Object",
       init: {},
-      nullable: true
+      nullable: true,
+      event: "changeQuality"
     },
 
     readOnly: {
@@ -313,20 +314,22 @@ qx.Class.define("osparc.data.model.Study", {
         ...params
       })
         .then(data => {
-          // TODO OM: Hacky
-          if ("dev" in data) {
-            delete data["dev"];
-          }
-          this.set({
-            ...data,
-            creationDate: new Date(data.creationDate),
-            lastChangeDate: new Date(data.lastChangeDate),
-            workbench: this.getWorkbench(),
-            ui: this.getUi(),
-            sweeper: this.getSweeper()
-          });
-          return data;
+          this.updateModel(data);
         });
+    },
+
+    updateModel: function(data) {
+      if ("dev" in data) {
+        delete data["dev"];
+      }
+      this.set({
+        ...data,
+        creationDate: new Date(data.creationDate),
+        lastChangeDate: new Date(data.lastChangeDate),
+        workbench: this.getWorkbench(),
+        ui: this.getUi(),
+        sweeper: this.getSweeper()
+      });
     }
   }
 });

@@ -178,8 +178,7 @@ qx.Class.define("osparc.studycard.Utils", {
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
-    createThumbnail: function(study, maxWidth) {
-      const maxHeight = 160;
+    createThumbnail: function(study, maxWidth, maxHeight = 160) {
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       if (study instanceof osparc.data.model.Study) {
@@ -295,12 +294,12 @@ qx.Class.define("osparc.studycard.Utils", {
     },
 
     /**
-      * @param studyData {Object} Serialized Study Object
+      * @param resourceData {Object} Serialized Resource Object
       */
-    openQuality: function(studyData) {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(studyData);
-      const title = studyData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
-      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
+    openQuality: function(resourceData) {
+      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
+      const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
+      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 770);
       return qualityEditor;
     }
   }

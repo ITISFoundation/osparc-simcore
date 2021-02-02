@@ -31,7 +31,7 @@ qx.Class.define("osparc.studycard.Medium", {
     });
     this._setLayout(new qx.ui.layout.VBox(6));
 
-    if (study && study instanceof osparc.data.model.Study) {
+    if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
     }
 
@@ -147,7 +147,8 @@ qx.Class.define("osparc.studycard.Medium", {
     __getMoreInfoMenuButton: function() {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       moreInfoButton.addListener("execute", () => {
-        this.__openStudyDetails();
+        // TODO: Large card needs to support Study Model as input
+        // this.__openStudyDetails();
       }, this);
       return moreInfoButton;
     },
@@ -168,20 +169,26 @@ qx.Class.define("osparc.studycard.Medium", {
       }, {
         label: this.tr("Access Rights"),
         view: this.__createAccessRights(),
-        action: {
+        // TODO: Large card needs to support Study Model as input
+        actionTODO: {
           button: osparc.utils.Utils.getViewButton(),
           callback: this.__openAccessRights,
           ctx: this
         }
-      }, {
-        label: this.tr("Quality"),
-        view: this.__createQuality(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openQuality,
-          ctx: this
-        }
       }];
+
+      if (osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
+        extraInfo.push({
+          label: this.tr("Quality"),
+          view: this.__createQuality(),
+          // TODO: Large card needs to support Study Model as input
+          actionTODO: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.__openQuality,
+            ctx: this
+          }
+        });
+      }
       return extraInfo;
     },
 
@@ -227,11 +234,7 @@ qx.Class.define("osparc.studycard.Medium", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        this._reloadStudy(studyId);
-      }, this);
+      osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
     },
 
     __openQuality: function() {
@@ -244,6 +247,10 @@ qx.Class.define("osparc.studycard.Medium", {
       const width = 500;
       const height = 500;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+      studyDetails.addListener("updateStudy", e => {
+        const updatedStudy = e.getData();
+        this.getStudy().updateModel(updatedStudy);
+      }, this);
     }
   }
 });
