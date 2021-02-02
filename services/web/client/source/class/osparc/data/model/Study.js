@@ -190,14 +190,16 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     updateStudy: function(params) {
-      return osparc.data.Resources.fetch("studies", "put", {
-        url: {
-          projectId: params.uuid
-        },
-        data: params
-      }).then(data => {
-        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
-        return data;
+      return new Promise(resolve => {
+        osparc.data.Resources.fetch("studies", "put", {
+          url: {
+            projectId: params.uuid
+          },
+          data: params
+        }).then(data => {
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+          resolve(data);
+        });
       });
     },
 
@@ -312,16 +314,19 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     updateStudy: function(params) {
-      return this.self().updateStudy({
-        ...this.serialize(),
-        ...params
-      })
-        .then(data => {
-          this.updateModel(data);
-        });
+      return new Promise(resolve => {
+        this.self().updateStudy({
+          ...this.serialize(),
+          ...params
+        })
+          .then(data => {
+            this.__updateModel(data);
+            resolve(data);
+          });
+      });
     },
 
-    updateModel: function(data) {
+    __updateModel: function(data) {
       if ("dev" in data) {
         delete data["dev"];
       }
