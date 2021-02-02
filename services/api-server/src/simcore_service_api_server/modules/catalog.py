@@ -1,9 +1,8 @@
 import logging
 import urllib.parse
 from operator import attrgetter
-
-# API CLASS ---------------------------------------------
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
+from uuid import UUID
 
 import httpx
 from fastapi import FastAPI
@@ -47,22 +46,24 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+# API CLASS ---------------------------------------------
+
+SolverNameVersionPair = Tuple[SolverName, str]
+
+
 class CatalogApi(BaseServiceClientApi):
     """
     This class acts a proxy of the catalog service
     It abstracts request to the catalog API service
     """
 
-    # TODO: could use catalog API pydantic models
-
-    # OPERATIONS
-    # TODO: add ping to healthcheck
+    ids_cache_map: Dict[UUID, SolverNameVersionPair]
 
     # TODO: handlers should not capture outputs
-    @handle_errors("catalog", logger, return_json=True)
-    @handle_retry(logger)
-    async def get(self, path: str, *args, **kwargs) -> JsonDataType:
-        return await self.client.get(path, *args, **kwargs)
+    # @handle_errors("catalog", logger, return_json=True)
+    # @handle_retry(logger)
+    # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+    #     return await self.client.get(path, *args, **kwargs)
 
     async def list_solvers(
         self,

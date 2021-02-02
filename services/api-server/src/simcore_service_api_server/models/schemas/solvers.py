@@ -16,7 +16,7 @@ NAMESPACE_JOB_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
 
 @functools.lru_cache()
-def _compose_solver_id(name, version) -> UUID:
+def compose_solver_id(name: str, version: str) -> UUID:
     return uuid3(NAMESPACE_SOLVER_KEY, f"{name}:{version}")
 
 
@@ -80,7 +80,7 @@ class Solver(BaseModel):
     @classmethod
     def compose_id_with_name_and_version(cls, v, values):
         if v is None:
-            return _compose_solver_id(values["name"], values["version"])
+            return compose_solver_id(values["name"], values["version"])
         return v
 
     @classmethod

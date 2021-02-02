@@ -107,3 +107,24 @@ async def get_solver_by_name_and_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_name}:{version} not found",
         ) from err
+
+
+async def get_solver(
+    solver_id: UUID,
+    url_for: Callable,
+):
+    try:
+        solver = the_fake_impl.get(
+            solver_id,
+            url=url_for(
+                "get_solver",
+                solver_id=solver_id,
+            ),
+        )
+        return solver
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solver {solver_id} not found",
+        ) from err
