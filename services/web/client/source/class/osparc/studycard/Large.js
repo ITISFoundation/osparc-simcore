@@ -324,7 +324,9 @@ qx.Class.define("osparc.studycard.Large", {
         "updateTemplate"
       ].forEach(event => {
         qualityEditor.addListener(event, e => {
-          this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
+          const updatedData = e.getData();
+          this.getStudy().setQuality(updatedData["quality"]);
+          this.fireDataEvent("updateStudy", updatedData);
         });
       });
     },

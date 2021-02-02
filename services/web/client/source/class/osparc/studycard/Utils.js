@@ -147,30 +147,37 @@ qx.Class.define("osparc.studycard.Utils", {
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createQuality: function(study) {
-      const quality = (study instanceof osparc.data.model.Study) ? study.getQuality() : study["quality"];
-      if (quality && "tsr" in quality) {
-        const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-          toolTipText: qx.locale.Manager.tr("Ten Simple Rules score")
-        });
-        const {
-          score,
-          maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
-        const tsrRating = new osparc.ui.basic.StarsRating();
-        tsrRating.set({
-          score,
-          maxScore,
-          nStars: 4,
-          showScore: true
-        });
-        tsrLayout.add(tsrRating);
-
-        return tsrLayout;
-      }
-      return null;
+      const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+        toolTipText: qx.locale.Manager.tr("Ten Simple Rules score")
+      });
+      const addStars = model => {
+        tsrLayout.removeAll();
+        const quality = model.getQuality();
+        if (osparc.component.metadata.Quality.isEnabled(quality)) {
+          const {
+            score,
+            maxScore
+          } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
+          const tsrRating = new osparc.ui.basic.StarsRating();
+          tsrRating.set({
+            score,
+            maxScore,
+            nStars: 4,
+            showScore: true
+          });
+          tsrLayout.add(tsrRating);
+        } else {
+          tsrLayout.exclude();
+        }
+      };
+      study.addListener("changeQuality", () => {
+        addStars(study);
+      }, this);
+      addStars(study);
+      return tsrLayout;
     },
 
     /**

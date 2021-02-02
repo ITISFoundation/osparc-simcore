@@ -181,7 +181,7 @@ qx.Class.define("osparc.studycard.Medium", {
           label: this.tr("Quality"),
           view: this.__createQuality(),
           // TODO: Large card needs to support Study Model as input
-          actionTODO: {
+          action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.__openQuality,
             ctx: this
@@ -237,7 +237,11 @@ qx.Class.define("osparc.studycard.Medium", {
     },
 
     __openQuality: function() {
-      osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+      qualityEditor.addListener("updateStudy", e => {
+        const updatedData = e.getData();
+        this.getStudy().setQuality(updatedData["quality"]);
+      });
     },
 
     __openStudyDetails: function() {
