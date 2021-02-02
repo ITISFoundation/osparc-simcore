@@ -587,9 +587,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __openTemplatePermissions: function(studyData) {
       const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
       permissionsView.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        console.log(studyId);
-        this.reloadTemplates();
+        const updatedData = e.getData();
+        this._resetTemplateItem(updatedData);
       });
     },
 

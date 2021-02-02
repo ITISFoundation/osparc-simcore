@@ -520,8 +520,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __openPermissions: function(studyData) {
       const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
       permissionsView.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        this._reloadStudy(studyId);
+        const updatedData = e.getData();
+        this._resetStudyItem(updatedData);
       }, this);
     },
 

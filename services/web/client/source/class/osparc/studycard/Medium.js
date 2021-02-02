@@ -231,8 +231,8 @@ qx.Class.define("osparc.studycard.Medium", {
     },
 
     __openAccessRights: function() {
-      const accessRightsEditor = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
-      accessRightsEditor.addListener("updateStudy", e => {
+      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
+      permissionsView.addListener("updateStudy", e => {
         const updatedData = e.getData();
         this.getStudy().setAccessRights(updatedData["accessRights"]);
       });
