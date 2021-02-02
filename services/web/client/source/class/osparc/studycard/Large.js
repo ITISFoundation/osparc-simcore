@@ -283,8 +283,10 @@ qx.Class.define("osparc.studycard.Large", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__studyData["name"] = newLabel;
-        this.__updateStudy(this.__studyData);
+        const params = {
+          name: newLabel
+        };
+        this.__updateStudy(params);
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -337,8 +339,10 @@ qx.Class.define("osparc.studycard.Large", {
         if (dirty && dirty !== clean) {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was some curation in the text of thumbnail "), "WARNING");
         }
-        this.__studyData["thumbnail"] = clean;
-        this.__updateStudy(this.__studyData);
+        const params = {
+          thumbnail: clean
+        };
+        this.__updateStudy(params);
       }, this);
       thubmnailEditor.center();
       thubmnailEditor.open();
@@ -350,10 +354,12 @@ qx.Class.define("osparc.studycard.Large", {
       const textEditor = new osparc.component.widget.TextEditor(this.getStudy().getDescription(), subtitle, title);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
-        const newDescription = e.getData();
-        this.__studyData["description"] = newDescription;
-        this.__updateStudy(this.__studyData);
         win.close();
+        const newDescription = e.getData();
+        const params = {
+          description: newDescription
+        };
+        this.__updateStudy(params);
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
@@ -372,23 +378,17 @@ qx.Class.define("osparc.studycard.Large", {
       }, this);
     },
 
-    __updateStudy: function() {
-      const params = {
-        url: {
-          projectId: this.getStudy().getUuid()
-        },
-        data: this.getStudy().serialize()
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
+    __updateStudy: function(params) {
+      this.getStudy().updateStudy(params)
         .then(studyData => {
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
-          this.__setUpdatedData(studyData);
         })
         .catch(err => {
           console.error(err);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the information."), "ERROR");
         });
-    }
+      }
+    },
   }
 });
