@@ -222,9 +222,9 @@ qx.Class.define("osparc.studycard.Utils", {
     },
 
     /**
-      * @param studyData {Object} Serialized Study Object
+      * @param tags {Array} tags list
       */
-    createTags: function(studyData) {
+    createTags: function(tags) {
       const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
       }));
@@ -236,7 +236,7 @@ qx.Class.define("osparc.studycard.Utils", {
 
       const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       tagsContainer.setMarginTop(5);
-      osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id))
+      osparc.store.Store.getInstance().getTags().filter(tag => tags.includes(tag.id))
         .forEach(selectedTag => {
           tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
         });
