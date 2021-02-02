@@ -242,7 +242,7 @@ class Executor:
                 )
             # get service settings
             self.service_settings = ServiceSettings.parse_raw(
-                image_cfg["Config"]["Labels"].get("simcore.service.settings", "")
+                image_cfg["Config"]["Labels"].get("simcore.service.settings", "[]")
             )
             log.debug(
                 "found following service settings: %s", pformat(self.service_settings)
