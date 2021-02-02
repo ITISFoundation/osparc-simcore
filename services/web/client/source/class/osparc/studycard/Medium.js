@@ -168,8 +168,7 @@ qx.Class.define("osparc.studycard.Medium", {
       }, {
         label: this.tr("Access Rights"),
         view: this.__createAccessRights(),
-        // TODO: Large card needs to support Study Model as input
-        actionTODO: {
+        action: {
           button: osparc.utils.Utils.getViewButton(),
           callback: this.__openAccessRights,
           ctx: this
@@ -180,7 +179,6 @@ qx.Class.define("osparc.studycard.Medium", {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
-          // TODO: Large card needs to support Study Model as input
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.__openQuality,
@@ -233,7 +231,11 @@ qx.Class.define("osparc.studycard.Medium", {
     },
 
     __openAccessRights: function() {
-      osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
+      const accessRightsEditor = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
+      accessRightsEditor.addListener("updateStudy", e => {
+        const updatedData = e.getData();
+        this.getStudy().setAccessRights(updatedData["accessRights"]);
+      });
     },
 
     __openQuality: function() {

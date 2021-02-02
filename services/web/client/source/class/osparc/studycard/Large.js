@@ -299,7 +299,9 @@ qx.Class.define("osparc.studycard.Large", {
     __openAccessRights: function() {
       const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
       permissionsView.addListener("updateStudy", e => {
-        this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
+        const updatedData = e.getData();
+        this.getStudy().setAccessRights(updatedData["accessRights"]);
+        this.fireDataEvent("updateStudy", updatedData);
       }, this);
     },
 

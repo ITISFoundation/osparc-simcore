@@ -112,8 +112,8 @@ qx.Class.define("osparc.component.permissions.Study", {
         data: this.__studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
+        .then(updatedData => {
+          this.fireDataEvent("updateStudy", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator(s) successfully added"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -137,8 +137,8 @@ qx.Class.define("osparc.component.permissions.Study", {
         data: this.__studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
+        .then(updatedData => {
+          this.fireDataEvent("updateStudy", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Collaborator successfully removed"));
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
@@ -158,8 +158,8 @@ qx.Class.define("osparc.component.permissions.Study", {
         data: this.__studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
-        .then(() => {
-          this.fireDataEvent("updateStudy", this.__studyData["uuid"]);
+        .then(updatedData => {
+          this.fireDataEvent("updateStudy", updatedData);
           osparc.component.message.FlashMessenger.getInstance().logAs(successMsg);
           this.__reloadOrganizationsAndMembers();
           this.__reloadCollaboratorsList();
