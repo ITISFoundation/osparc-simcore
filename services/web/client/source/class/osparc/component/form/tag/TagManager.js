@@ -87,6 +87,7 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         alignX: "right"
       }));
       const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
+      osparc.utils.Utils.setIdToWidget(saveButton, "saveTagsBtn");
       saveButton.addListener("execute", e => {
         this.__save(saveButton);
       }, this);
