@@ -310,7 +310,7 @@ qx.Class.define("osparc.studycard.Large", {
       let classifiers = null;
       if (this.__isOwner()) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
-        classifiers.addListener("updateResourceClassifiers", () => {
+        classifiers.addListener("updateClassifiers", () => {
           this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
         }, this);
       } else {

@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
   },
 
   events: {
-    "updateResourceClassifiers": "qx.event.type.Data"
+    "updateClassifiers": "qx.event.type.Data"
   },
 
   members: {
@@ -154,7 +154,7 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
         };
         osparc.data.Resources.fetch("studies", "put", params)
           .then(() => {
-            this.fireDataEvent("updateResourceClassifiers", this.__studyData["uuid"]);
+            this.fireDataEvent("updateClassifiers", this.__studyData["uuid"]);
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
           })
@@ -174,7 +174,7 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
         };
         osparc.data.Resources.fetch("services", "patch", params)
           .then(() => {
-            this.fireDataEvent("updateResourceClassifiers", this.__studyData["key"]);
+            this.fireDataEvent("updateClassifiers", this.__studyData["key"]);
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
           })

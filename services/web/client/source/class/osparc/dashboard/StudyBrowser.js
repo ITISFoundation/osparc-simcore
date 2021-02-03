@@ -530,7 +530,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let classifiers = null;
       if (osparc.data.model.Study.isOwner(studyData)) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
-        classifiers.addListener("updateResourceClassifiers", e => {
+        classifiers.addListener("updateClassifiers", e => {
           const studyId = e.getData();
           this._reloadStudy(studyId);
         }, this);
