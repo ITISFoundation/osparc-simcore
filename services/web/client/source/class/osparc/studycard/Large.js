@@ -274,7 +274,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __createTags: function() {
-      return osparc.studycard.Utils.createTags(this.getStudy().getTags());
+      return osparc.studycard.Utils.createTags(this.getStudy());
     },
 
     __openTitleEditor: function() {
@@ -331,6 +331,18 @@ qx.Class.define("osparc.studycard.Large", {
       });
     },
 
+    __openTagsEditor: function() {
+      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize(), null, "study", this.getStudy().getUuid()).set({
+        liveUpdate: false
+      });
+      tagManager.addListener("updateTags", e => {
+        tagManager.close();
+        const updatedData = e.getData();
+        this.getStudy().setTags(updatedData["tags"]);
+        this.fireDataEvent("updateStudy", updatedData);
+      }, this);
+    },
+
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const thubmnailEditor = new osparc.component.widget.Renamer(this.getStudy().getThumbnail(), null, title);
@@ -363,19 +375,6 @@ qx.Class.define("osparc.studycard.Large", {
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
-      }, this);
-    },
-
-    __openTagsEditor: function() {
-      // TODO
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().getTags(), null, "study", this.getStudy().getUuid());
-      tagManager.addListener("changeSelected", e => {
-        this.__studyData["tags"] = e.getData().selected;
-        this.__rebuildLayout();
-        this.fireDataEvent("updateTags", this.getStudy().getUuid());
-      }, this);
-      tagManager.addListener("close", () => {
-        this.fireDataEvent("updateTags", this.getStudy().getUuid());
       }, this);
     },
 

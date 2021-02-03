@@ -200,15 +200,19 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
       }
       if (promises.length) {
         saveButton.setFetching(true);
-        Promise.all(promises)
-          .then(values => {
-            const updatedData = values[values.length-1];
+
+        const serial = funcs =>
+          funcs.reduce((promise, func) =>
+            promise.then(result => func.then(Array.prototype.concat.bind(result))), Promise.resolve([]));
+
+        // call them sequentially
+        serial(promises)
+          .then(arrayOfResults => {
+            console.log(arrayOfResults);
+            saveButton.setFetching(false);
+            const updatedData = arrayOfResults[arrayOfResults.length-1];
             this.fireDataEvent("updateTags", updatedData);
-          })
-          .catch(err => {
-            console.error(err);
-          })
-          .finally(() => saveButton.setFetching(false));
+          });
       }
     },
 
