@@ -712,8 +712,8 @@ qx.Class.define("osparc.data.Resources", {
       };
     },
 
-    getErrorMsg: function(e) {
-      const error = e.getTarget().getResponse().error;
+    getErrorMsg: function(resp) {
+      const error = resp["error"];
       return error ? error["errors"][0].message : null;
     }
   }

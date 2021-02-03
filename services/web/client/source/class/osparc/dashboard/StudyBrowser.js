@@ -682,7 +682,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           console.log("Unable to compute progress information since the total size is unknown");
         }
       }, false);
-      req.addEventListener("load", () => {
+      req.addEventListener("load", e => {
         // transferComplete
         if (req.status == 200) {
           const processinglabel = this.tr("Processing study");
@@ -697,28 +697,37 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           };
           osparc.data.Resources.getOne("studies", params)
             .then(studyData => {
-              this.__userStudyContainer.remove(placeholderStudyCard);
-              importTask.stop();
               this._resetStudyItem(studyData);
             })
             .catch(err => {
-              console.error(err);
+              console.log(err);
+              const msg = this.tr("Something went wrong Fetching the study");
+              osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+            })
+            .finally(() => {
+              importTask.stop();
+              this.__userStudyContainer.remove(placeholderStudyCard);
             });
+        } else if (req.status == 400) {
+          importTask.stop();
+          this.__userStudyContainer.remove(placeholderStudyCard);
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(req.response)) || this.tr("Something went wrong Importing the study");
+          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         }
       });
       req.addEventListener("error", e => {
         // transferFailed
-        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong");
-        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         importTask.stop();
         this.__userStudyContainer.remove(placeholderStudyCard);
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
+        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
       });
       req.addEventListener("abort", e => {
         // transferAborted
-        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong");
-        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         importTask.stop();
         this.__userStudyContainer.remove(placeholderStudyCard);
+        const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Importing the study");
+        osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
