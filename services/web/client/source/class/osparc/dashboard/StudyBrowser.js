@@ -519,7 +519,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __openPermissions: function(studyData) {
       const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
-      permissionsView.addListener("updateStudy", e => {
+      permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
         this._resetStudyItem(updatedData);
       }, this);
@@ -532,7 +532,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
         classifiers.addListener("updateClassifiers", e => {
           const updatedStudy = e.getData();
-          this._reloadStudyItem(updatedStudy);
+          this._resetStudyItem(updatedStudy);
         }, this);
       } else {
         classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
