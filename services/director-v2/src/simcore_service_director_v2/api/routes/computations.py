@@ -124,7 +124,7 @@ async def create_computation(
         complete_dag = create_complete_dag(project.workbench)
         # find the minimal viable graph to be run
         computational_dag = await create_minimal_computational_graph_based_on_selection(
-            full_dag_graph=complete_dag,
+            complete_dag=complete_dag,
             selected_nodes=job.subgraph or [],
             force_restart=job.force_restart,
         )
