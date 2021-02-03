@@ -116,7 +116,6 @@ describe('tags testing', () => {
     await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagManager"] > .qx-workbench-small-cap-captionbar [qxclass="qx.ui.form.Button"]');
     await waitAndClick(page, '[osparc-test-id="saveTagsBtn"]');
     // UI displays the change
     let displayedTag = await page.waitForSelector('[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [qxclass="osparc.ui.basic.Tag"]')
