@@ -149,12 +149,12 @@ async def test_create_minimal_graph(
     force_exp_dag: Dict[str, List[str]],
     not_forced_exp_dag: Dict[str, List[str]],
 ):
-    full_dag_graph: nx.DiGraph = create_complete_dag(fake_workbench)
+    complete_dag: nx.DiGraph = create_complete_dag(fake_workbench)
 
     # everything is outdated in that case
     reduced_dag: nx.DiGraph = (
         await create_minimal_computational_graph_based_on_selection(
-            full_dag_graph, subgraph, force_restart=True
+            complete_dag, subgraph, force_restart=True
         )
     )
     assert nx.to_dict_of_lists(reduced_dag) == force_exp_dag
@@ -162,7 +162,7 @@ async def test_create_minimal_graph(
     # only the outdated stuff shall be found here
     reduced_dag_with_auto_detect: nx.DiGraph = (
         await create_minimal_computational_graph_based_on_selection(
-            full_dag_graph, subgraph, force_restart=False
+            complete_dag, subgraph, force_restart=False
         )
     )
     assert nx.to_dict_of_lists(reduced_dag_with_auto_detect) == not_forced_exp_dag
