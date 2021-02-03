@@ -283,10 +283,9 @@ qx.Class.define("osparc.studycard.Large", {
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        const params = {
-          name: newLabel
-        };
-        this.__updateStudy(params);
+        this.__updateStudy({
+          "name": newLabel
+        });
       }, this);
       titleEditor.center();
       titleEditor.open();
@@ -342,10 +341,9 @@ qx.Class.define("osparc.studycard.Large", {
         if (dirty && dirty !== clean) {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was some curation in the text of thumbnail "), "WARNING");
         }
-        const params = {
-          thumbnail: clean
-        };
-        this.__updateStudy(params);
+        this.__updateStudy({
+          "thumbnail": clean
+        });
       }, this);
       thubmnailEditor.center();
       thubmnailEditor.open();
@@ -359,10 +357,9 @@ qx.Class.define("osparc.studycard.Large", {
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        const params = {
-          description: newDescription
-        };
-        this.__updateStudy(params);
+        this.__updateStudy({
+          "description": newDescription
+        });
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
@@ -370,6 +367,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __openTagsEditor: function() {
+      // TODO
       const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().getTags(), null, "study", this.getStudy().getUuid());
       tagManager.addListener("changeSelected", e => {
         this.__studyData["tags"] = e.getData().selected;
