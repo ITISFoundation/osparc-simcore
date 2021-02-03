@@ -96,17 +96,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     __openQualityEditor: function(resourceData) {
       const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
-      qualityEditor.addListener("updateStudy", e => {
-        const updatedStudyData = e.getData();
-        this._resetStudyItem(updatedStudyData);
-      });
-      qualityEditor.addListener("updateTemplate", e => {
-        const updatedTemplateData = e.getData();
-        this._resetTemplateItem(updatedTemplateData);
-      });
-      qualityEditor.addListener("updateService", e => {
-        const updatedServiceData = e.getData();
-        this._resetServiceItem(updatedServiceData);
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedResourceData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this._resetStudyItem(updatedResourceData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this._resetTemplateItem(updatedResourceData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this._resetServiceItem(updatedResourceData);
+        }
       });
     },
 

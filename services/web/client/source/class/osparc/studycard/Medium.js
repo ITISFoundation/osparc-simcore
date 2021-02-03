@@ -240,7 +240,7 @@ qx.Class.define("osparc.studycard.Medium", {
 
     __openQuality: function() {
       const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
-      qualityEditor.addListener("updateStudy", e => {
+      qualityEditor.addListener("updateQuality", e => {
         const updatedData = e.getData();
         this.getStudy().setQuality(updatedData["quality"]);
       });

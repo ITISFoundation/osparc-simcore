@@ -321,15 +321,10 @@ qx.Class.define("osparc.studycard.Large", {
 
     __openQuality: function() {
       const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
-      [
-        "updateStudy",
-        "updateTemplate"
-      ].forEach(event => {
-        qualityEditor.addListener(event, e => {
-          const updatedData = e.getData();
-          this.getStudy().setQuality(updatedData["quality"]);
-          this.fireDataEvent("updateStudy", updatedData);
-        });
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedData = e.getData();
+        this.getStudy().setQuality(updatedData["quality"]);
+        this.fireDataEvent("updateStudy", updatedData);
       });
     },
 
