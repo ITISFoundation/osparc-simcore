@@ -599,12 +599,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
         osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
+          const updatedResource = e.getData();
           if (osparc.utils.Resources.isTemplate(studyData)) {
-            const studyId = e.getData();
-            this._reloadTemplate(studyId);
+            this._resetTemplateItem(updatedResource);
           } else if (osparc.utils.Resources.isService(studyData)) {
-            const serviceKey = e.getData();
-            this.__reloadService(serviceKey, studyData.version);
+            this._resetServiceItem(updatedResource);
           }
         }, this);
       } else {
