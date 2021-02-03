@@ -184,35 +184,29 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
         .finally(() => tagButton.setFetching(false));
     },
 
-    __save: function(saveButton) {
-      const promises = [];
+    __save: async function(saveButton) {
+      saveButton.setFetching(true);
+
+      // call them sequentially
+      let updatedStudy = null;
       for (let i=0; i<this.__selectedTags.length; i++) {
         const tagId = this.__selectedTags.getItem(i);
         if (!this.__studyData["tags"].includes(tagId)) {
-          promises.push(this.__getAddTagPromise(tagId));
+          updatedStudy = await this.__getAddTagPromise(tagId)
+            .then(updatedData => updatedData);
         }
       }
       for (let i=0; i<this.__studyData["tags"].length; i++) {
         const tagId = this.__studyData["tags"][i];
         if (!this.__selectedTags.includes(tagId)) {
-          promises.push(this.__getRemoveTagPromise(tagId));
+          updatedStudy = await this.__getRemoveTagPromise(tagId)
+            .then(updatedData => updatedData);
         }
       }
-      if (promises.length) {
-        saveButton.setFetching(true);
 
-        const serial = funcs =>
-          funcs.reduce((promise, func) =>
-            promise.then(result => func.then(Array.prototype.concat.bind(result))), Promise.resolve([]));
-
-        // call them sequentially
-        serial(promises)
-          .then(arrayOfResults => {
-            console.log(arrayOfResults);
-            saveButton.setFetching(false);
-            const updatedData = arrayOfResults[arrayOfResults.length-1];
-            this.fireDataEvent("updateTags", updatedData);
-          });
+      saveButton.setFetching(false);
+      if (updatedStudy) {
+        this.fireDataEvent("updateTags", updatedStudy);
       }
     },
 
