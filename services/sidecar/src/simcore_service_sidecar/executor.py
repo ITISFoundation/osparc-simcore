@@ -6,6 +6,7 @@ import shutil
 import time
 import zipfile
 from pathlib import Path
+from pprint import pformat
 from typing import Dict, Optional
 
 import aiopg
@@ -13,7 +14,9 @@ import attr
 from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 from aiodocker.exceptions import DockerContainerError, DockerError
+from models_library.service_settings import ServiceSettings
 from packaging import version
+from pydantic import BaseModel
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task, logged_gather
 from simcore_sdk import node_data, node_ports_v2
@@ -70,6 +73,13 @@ class TaskSharedVolumes:
                 shutil.rmtree(str(folder), onerror=log_error)
 
 
+class ServiceResources(BaseModel):
+    memory_reservation: int = 0
+    memory_limit: int = config.SERVICES_MAX_MEMORY_BYTES
+    nano_cpus_reservation: int = 0
+    nano_cpus_limit: int = config.SERVICES_MAX_NANO_CPUS
+
+
 @attr.s(auto_attribs=True)
 class Executor:
     db_engine: aiopg.sa.Engine = None
@@ -80,6 +90,7 @@ class Executor:
     stack_name: str = config.SWARM_STACK_NAME
     shared_folders: TaskSharedVolumes = None
     integration_version: version.Version = version.parse("0.0.0")
+    service_settings: ServiceSettings = []
 
     @log_decorator(logger=log)
     async def run(self):
@@ -187,6 +198,10 @@ class Executor:
                 for port in (await PORTS.inputs).values()
             ]
         )
+        await self._post_messages(
+            LogType.LOG,
+            "[sidecar]Downloaded inputs.",
+        )
         return input_ports
 
     @log_decorator(logger=log)
@@ -225,6 +240,17 @@ class Executor:
                         image_cfg["Config"]["Labels"]["io.simcore.integration-version"]
                     )["integration-version"]
                 )
+            # get service settings
+            self.service_settings = ServiceSettings.parse_raw(
+                image_cfg["Config"]["Labels"].get("simcore.service.settings", "[]")
+            )
+            log.debug(
+                "found following service settings: %s", pformat(self.service_settings)
+            )
+            await self._post_messages(
+                LogType.LOG,
+                f"[sidecar]Pulled {self.task.image['name']}:{self.task.image['tag']}",
+            )
 
     @log_decorator(logger=log)
     async def _create_container_config(self, docker_image: str) -> Dict:
@@ -247,6 +273,32 @@ class Executor:
         )
         host_log_path = await get_volume_mount_point(config.SIDECAR_DOCKER_VOLUME_LOG)
 
+        # get user-defined IT limitations
+        async def _get_resource_limitations() -> Dict[str, int]:
+            resource_limitations = {
+                "Memory": config.SERVICES_MAX_MEMORY_BYTES,
+                "NanoCPUs": config.SERVICES_MAX_NANO_CPUS,
+            }
+            for setting in self.service_settings:
+                if not setting.name == "Resources":
+                    continue
+                if not isinstance(setting.value, dict):
+                    continue
+
+                limits = setting.value.get("Limits", {})
+                resource_limitations["Memory"] = limits.get(
+                    "MemoryBytes", config.SERVICES_MAX_MEMORY_BYTES
+                )
+                resource_limitations["NanoCPUs"] = limits.get(
+                    "NanoCPUs", config.SERVICES_MAX_NANO_CPUS
+                )
+            log.debug(
+                "Current resource limitations are %s", pformat(resource_limitations)
+            )
+            return resource_limitations
+
+        resource_limitations = await _get_resource_limitations()
+
         docker_container_config = {
             "Env": env_vars,
             "Cmd": "run",
@@ -255,12 +307,12 @@ class Executor:
                 "user_id": str(self.user_id),
                 "study_id": str(self.task.project_id),
                 "node_id": str(self.task.node_id),
-                "nano_cpus_limit": str(config.SERVICES_MAX_NANO_CPUS),
-                "mem_limit": str(config.SERVICES_MAX_MEMORY_BYTES),
+                "nano_cpus_limit": str(resource_limitations["NanoCPUs"]),
+                "mem_limit": str(resource_limitations["Memory"]),
             },
             "HostConfig": {
-                "Memory": config.SERVICES_MAX_MEMORY_BYTES,
-                "NanoCPUs": config.SERVICES_MAX_NANO_CPUS,
+                "Memory": resource_limitations["Memory"],
+                "NanoCPUs": resource_limitations["NanoCPUs"],
                 "Init": True,
                 "AutoRemove": False,
                 "Binds": [
@@ -272,6 +324,7 @@ class Executor:
                 ],
             },
         }
+
         return docker_container_config
 
     @log_decorator(logger=log)
