@@ -597,8 +597,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       let classifiers = null;
       if (osparc.data.model.Study.isOwner(studyData)) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
+        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
+          win.close();
           const updatedResource = e.getData();
           if (osparc.utils.Resources.isTemplate(studyData)) {
             this._resetTemplateItem(updatedResource);
@@ -608,8 +609,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }, this);
       } else {
         classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
+        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
-      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __deleteTemplate: function(studyData) {

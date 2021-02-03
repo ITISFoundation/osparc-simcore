@@ -310,15 +310,17 @@ qx.Class.define("osparc.studycard.Large", {
       let classifiers = null;
       if (this.__isOwner()) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
+        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
+          win.close();
           const updatedData = e.getData();
           this.getStudy().setClassifiers(updatedData["classifiers"]);
           this.fireDataEvent("updateStudy", updatedData);
         }, this);
       } else {
         classifiers = new osparc.component.metadata.ClassifiersViewer(this.getStudy().serialize());
+        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
-      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __openQuality: function() {

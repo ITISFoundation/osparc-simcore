@@ -530,14 +530,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let classifiers = null;
       if (osparc.data.model.Study.isOwner(studyData)) {
         classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
+        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
+          win.close();
           const updatedStudy = e.getData();
           this._resetStudyItem(updatedStudy);
         }, this);
       } else {
         classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
+        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
-      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __getStudyServicesMenuButton: function(studyData) {
