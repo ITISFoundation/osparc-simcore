@@ -1,0 +1,10 @@
+-c ../../../requirements/constraints.txt
+
+pytest
+pytest-cov
+pytest-asyncio
+
+osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@catalog-solvers-api
+
+python-dotenv
+httpx
