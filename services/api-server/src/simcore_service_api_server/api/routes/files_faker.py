@@ -7,7 +7,7 @@
     and get upload/download links to S3 services and avoid
     the data traffic to go via the API server
 
-    This module should be used ONLY when AppSettings.fake_server_enabled==True
+    This module should be used ONLY when AppSettings.dev_feature_enabled==True
 """
 
 

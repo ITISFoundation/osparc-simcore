@@ -35,6 +35,7 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
         key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
     }
 
+    # These are overrides to .env-devel or an extension to them
     env_devel["LOG_LEVEL"] = "DEBUG"
     env_devel["REGISTRY_SSL"] = "False"
     env_devel["REGISTRY_URL"] = "{}:5000".format(_get_ip())
@@ -44,7 +45,7 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     env_devel["REGISTRY_AUTH"] = "False"
     env_devel["SWARM_STACK_NAME"] = "simcore"
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
-    env_devel["FAKE_API_SERVER_ENABLED"] = "1"
+    env_devel["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
 
     return env_devel
 
