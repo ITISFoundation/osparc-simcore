@@ -13,3 +13,4 @@ httpx
 docker
 tenacity
 jsonschema
+pyyaml
