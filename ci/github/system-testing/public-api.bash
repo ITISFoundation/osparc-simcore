@@ -15,7 +15,7 @@ export DOCKER_IMAGE_TAG
 
 install() {
   bash ci/helpers/ensure_python_pip.bash
-  pushd tests/swarm-deploy
+  pushd tests/public-api
   pip3 install -r requirements/ci.txt
   popd
   make pull-version || ( (make pull-cache || true) && make build-x tag-version)
@@ -25,7 +25,7 @@ install() {
 }
 
 test() {
-  pytest --color=yes --cov-report=term-missing -v tests/swarm-deploy --log-level=DEBUG
+  pytest --color=yes --cov-report=term-missing -v tests/public-api --log-level=DEBUG
 }
 
 clean_up() {
