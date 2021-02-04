@@ -461,6 +461,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
+      const cloneStudyButton = this.__getCloneStudyMenuButton(studyData);
+      menu.add(cloneStudyButton);
+
       const exportButton = this.__getExportMenuButton(studyData);
       menu.add(exportButton);
 
@@ -549,6 +552,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return studyServicesButton;
     },
 
+    __getCloneStudyMenuButton: function(studyData) {
+      const cloneStudyButton = new qx.ui.menu.Button(this.tr("Clone"));
+      // ANE: remove this when backend is ready
+      cloneStudyButton.setVisibility("excluded");
+      osparc.utils.Utils.setIdToWidget(cloneStudyButton, "cloneStudy");
+      cloneStudyButton.addListener("execute", () => {
+        this.__cloneStudy(studyData);
+      }, this);
+      return cloneStudyButton;
+    },
+
     __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export"));
       exportButton.addListener("execute", () => {
@@ -623,6 +637,32 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const studyData = this.__getStudyData(item.getUuid(), false);
         this._startStudy(studyData["uuid"]);
       }
+    },
+
+    __cloneStudy: function(studyData) {
+      const cloneTask = new osparc.component.task.Clone(studyData);
+      cloneTask.start();
+      const text = this.tr("Cloning process started and added to the background tasks");
+      osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+
+      const params = {
+        url: {
+          projectId: studyData["uuid"]
+        },
+        data: osparc.utils.Utils.getClientSessionID()
+      };
+      osparc.data.Resources.fetch("studies", "duplicate", params)
+        .then(() => {
+          const msg = this.tr("Study Cloned");
+          osparc.component.message.FlashMessenger.logAs(msg, "INFO");
+        })
+        .catch(e => {
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Exporting the study");
+          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+        })
+        .finally(() => {
+          cloneTask.stop();
+        });
     },
 
     __exportStudy: function(studyData) {
