@@ -91,13 +91,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const outputs = this.__buildSideView(false);
 
-      // |-1-|--4--|-1-|
       const pane2 = this.__pane2 = new qx.ui.splitpane.Pane();
-      this.add(inputs, 1); // flex 1
-      this.add(pane2, 5); // flex 5
+      this.add(inputs, 0); // flex 0
+      this.add(pane2, 1); // flex 1
 
-      pane2.add(vBox, 4); // flex 4
-      pane2.add(outputs, 1); // flex 1
+      pane2.add(vBox, 1); // flex 1
+      pane2.add(outputs, 0); // flex 0
     },
 
     __cleanLayout: function() {
