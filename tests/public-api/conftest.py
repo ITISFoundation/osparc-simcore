@@ -29,7 +29,10 @@ pytest_plugins = [
 
 @pytest.fixture(scope="module")
 def prepare_all_services(
-    simcore_docker_compose: Dict, ops_docker_compose: Dict, request
+    simcore_docker_compose: Dict,
+    ops_docker_compose: Dict,
+    request,
+    monkeypatch,
 ) -> Dict:
 
     setattr(
@@ -71,8 +74,10 @@ def make_up_prod(
 @pytest.fixture(scope="module")
 def registered_user(make_up_prod):
     user = {
-        "email": "foo@mymail.com",
+        "email": "first.last@mymail.com",
         "password": "my secret",
+        "api_key": None,
+        "api_secret": None,
     }
 
     with httpx.Client(base_url="http://127.0.0.1:9081/v0") as client:
@@ -92,7 +97,6 @@ def registered_user(make_up_prod):
                     "email": user["email"],
                     "password": user["password"],
                     "confirm": user["password"],
-                    "invitation": "33c451d4-17b7-4e65-9880-694559b8ffc2",
                 },
             )
             resp.raise_for_status()
