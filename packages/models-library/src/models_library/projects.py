@@ -115,9 +115,10 @@ class Project(ProjectCommons):
         examples=["2018-07-01T11:13:43Z"],
         alias="lastChangeDate",
     )
-    accessRights: Dict[GroupID, AccessRights] = Field(
+    access_rights: Dict[GroupID, AccessRights] = Field(
         ...,
         description="object containing the GroupID as key and read/write/execution permissions as value",
+        alias="accessRights",
     )
 
     # Classification
