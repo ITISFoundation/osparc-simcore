@@ -137,14 +137,15 @@ class Job(BaseModel):
             ]
         }
 
-    @validator("id", pre=True)
+    @validator("id", pre=True, always=True)
     @classmethod
     def compose_id_with_solver_and_input(cls, v, values):
-        if v is None:
-            return _compose_job_id(
-                values["solver_id"], values["inputs_checksum"], values["created_at"]
-            )
-        return v
+        jid = _compose_job_id(
+            values["solver_id"], values["inputs_checksum"], values["created_at"]
+        )
+        if v and str(v) != str(jid):
+            raise ValueError(f"Invalid id: {v}!={jid} is incompatible with composition")
+        return jid
 
     @classmethod
     def create_now(cls, solver_id: UUID, inputs_checksum: str) -> "Job":
