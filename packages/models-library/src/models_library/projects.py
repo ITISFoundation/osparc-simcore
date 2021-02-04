@@ -83,7 +83,7 @@ class ProjectAtDB(ProjectCommons):
 
     @validator("project_type", pre=True)
     @classmethod
-    def convert_sql_alchemy_enum(v):
+    def convert_sql_alchemy_enum(cls, v):
         if isinstance(v, Enum):
             return v.value
         return v
