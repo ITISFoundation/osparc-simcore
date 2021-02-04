@@ -1,10 +1,10 @@
 import hashlib
-import json
 import logging
 from copy import deepcopy
 from pprint import pformat
 from typing import Any, Callable, Coroutine, Dict
 
+import orjson
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import PortLink
 from pydantic import BaseModel
@@ -47,9 +47,9 @@ async def compute_node_hash(
             if payload is not None:
                 resolved_payload[port_type][port_key] = payload
 
-    # now create the hash
+    # now create the hash using orjson since there might be UUIDs in the Node
     logger.debug("io_payload generated is %s", pformat(resolved_payload))
-    block_string = json.dumps(resolved_payload, sort_keys=True).encode("utf-8")
+    block_string = orjson.dumps(resolved_payload, option=orjson.OPT_SORT_KEYS)
     logger.debug("block string generated is %s", block_string)
     raw_hash = hashlib.sha256(block_string)
     logger.debug("generated hash %s", raw_hash)
