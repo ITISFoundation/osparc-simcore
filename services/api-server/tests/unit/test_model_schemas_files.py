@@ -5,6 +5,7 @@
 import hashlib
 import tempfile
 from pathlib import Path
+from pprint import pprint
 from uuid import uuid4
 
 import pytest
@@ -91,3 +92,11 @@ def test_convert_filemetadata():
     with pytest.raises(ValidationError):
         storage_file_meta.file_id = "api/NOTUUID/foo.txt"
         convert_metadata(storage_file_meta)
+
+
+@pytest.mark.parametrize("model_cls", (FileMetadata,))
+def test_file_model_examples(model_cls, model_cls_examples):
+    for example in model_cls_examples:
+        pprint(example)
+        model_instance = model_cls(**example)
+        assert model_instance

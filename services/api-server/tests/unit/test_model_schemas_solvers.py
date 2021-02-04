@@ -19,8 +19,15 @@ from simcore_service_api_server.models.schemas.solvers import (
 )
 
 
-def test_create_solver_from_image_metadata():
+@pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
+def test_solvers_model_examples(model_cls, model_cls_examples):
+    for example in model_cls_examples:
+        pprint(example)
+        model_instance = model_cls(**example)
+        assert model_instance
 
+
+def test_create_solver_from_image_metadata():
     for image_metadata in SolversFaker.load_images():
         solver = Solver.create_from_image(image_metadata)
         print(solver.json(indent=2))
@@ -30,7 +37,6 @@ def test_create_solver_from_image_metadata():
 
 
 def test_create_job_model():
-
     job = Job.create_now(uuid4(), "12345")
 
     print(job.json(indent=2))
@@ -46,19 +52,11 @@ def test_create_job_model():
     #    v.utc
 
 
-@pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
-def test_solvers_model_examples(model_cls):
-    for example in model_cls.Config.schema_extra["examples"]:
-        pprint(example)
-        model_instance = model_cls(**example)
-        assert model_instance
-
-
 def test_solvers_sorting_by_name_and_version(faker):
     # SEE https://packaging.pypa.io/en/latest/version.html
 
     # have a solver
-    solver0 = Solver(**Solver.Config.schema_extra["examples"][0])
+    solver0 = Solver(**Solver.Config.schema_extra["example"])
 
     assert isinstance(solver0.pep404_version, Version)
     major, minor, micro = solver0.pep404_version.release

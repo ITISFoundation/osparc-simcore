@@ -62,17 +62,15 @@ class Solver(BaseModel):
     class Config:
         extra = Extra.ignore
         schema_extra = {
-            "examples": [
-                {
-                    "name": "simcore/services/comp/isolve",
-                    "version": "2.1.1",
-                    "id": "f7c25b7d-edd6-32a4-9751-6072e4163537",
-                    "title": "iSolve",
-                    "description": "EM solver",
-                    "maintainer": "info@itis.swiss",
-                    "url": "https://api.osparc.io/v0/solvers/f7c25b7d-edd6-32a4-9751-6072e4163537",
-                }
-            ]
+            "example": {
+                "name": "simcore/services/comp/isolve",
+                "version": "2.1.1",
+                "id": "f7c25b7d-edd6-32a4-9751-6072e4163537",
+                "title": "iSolve",
+                "description": "EM solver",
+                "maintainer": "info@itis.swiss",
+                "url": "https://api.osparc.io/v0/solvers/f7c25b7d-edd6-32a4-9751-6072e4163537",
+            }
         }
 
     @validator("id", pre=True, always=True)
@@ -129,17 +127,15 @@ class Job(BaseModel):
 
     class Config:
         schema_extra = {
-            "examples": [
-                {
-                    "solver_id": "32cfd2c5-ad5c-4086-ba5e-6f76a17dcb7a",
-                    "inputs_checksum": "12345",
-                    "created_at": "2021-01-22T23:59:52.322176",
-                    "id": "f5c44f80-af84-3d45-8836-7933f67959a6",
-                    "url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6",
-                    "solver_url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
-                    "outputs_url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6/outputs",
-                }
-            ]
+            "example": {
+                "solver_id": "32cfd2c5-ad5c-4086-ba5e-6f76a17dcb7a",
+                "inputs_checksum": "12345",
+                "created_at": "2021-01-22T23:59:52.322176",
+                "id": "f5c44f80-af84-3d45-8836-7933f67959a6",
+                "url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6",
+                "solver_url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
+                "outputs_url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6/outputs",
+            }
         }
 
     @validator("id", pre=True, always=True)
@@ -238,14 +234,12 @@ class JobInput(SolverPort):
 
     class Config:
         schema_extra = {
-            "examples": [
-                {
-                    "name": "T",
-                    "type": "number",
-                    "title": "Temperature",
-                    "value": "33",
-                }
-            ]
+            "example": {
+                "name": "T",
+                "type": "number",
+                "title": "Temperature",
+                "value": "33",
+            }
         }
 
 
@@ -256,13 +250,11 @@ class JobOutput(SolverPort):
 
     class Config:
         schema_extra = {
-            "examples": [
-                {
-                    "name": "SAR",
-                    "type": "data:application/hdf5",
-                    "title": "SAR field output file-id",
-                    "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
-                    "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
-                }
-            ]
+            "example": {
+                "name": "SAR",
+                "type": "data:application/hdf5",
+                "title": "SAR field output file-id",
+                "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
+                "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
+            }
         }
