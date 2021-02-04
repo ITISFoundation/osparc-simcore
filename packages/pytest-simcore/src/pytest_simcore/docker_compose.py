@@ -6,7 +6,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import logging
 import os
 import shutil
 import socket
