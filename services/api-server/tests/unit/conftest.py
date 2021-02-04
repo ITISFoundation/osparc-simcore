@@ -6,9 +6,8 @@ import os
 import shutil
 import subprocess
 import sys
-from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Iterator, List, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Type, Union
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
