@@ -2,11 +2,11 @@
 
     Basically runs `docker-compose config
 """
-import logging
-
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
+import logging
 import os
 import shutil
 import socket
@@ -14,7 +14,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List
+from typing import Dict, Iterator, List
 
 import pytest
 import yaml
@@ -22,12 +22,11 @@ from dotenv import dotenv_values
 
 from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
 
-log = logging.getLogger(__name__)
-
 
 @pytest.fixture(scope="session")
 def devel_environ(env_devel_file: Path) -> Dict[str, str]:
-    """Loads and extends .env-devel returning
+    """
+    Loads and extends .env-devel returning
     all environment variables key=value
     """
 
@@ -46,12 +45,15 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     env_devel["REGISTRY_AUTH"] = "False"
     env_devel["SWARM_STACK_NAME"] = "simcore"
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
+    env_devel["FAKE_API_SERVER_ENABLED"] = "1"
 
     return env_devel
 
 
 @pytest.fixture(scope="module")
-def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Path:
+def env_file(
+    osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]
+) -> Iterator[Path]:
     """
     Creates a .env file from the .env-devel
     """
@@ -76,6 +78,7 @@ def env_file(osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]) -> Pa
 
 @pytest.fixture(scope="module")
 def make_up_prod_environ():
+    # TODO: use monkeypatch for modules as in https://github.com/pytest-dev/pytest/issues/363#issuecomment-289830794
     old_env = deepcopy(os.environ)
     if not "DOCKER_REGISTRY" in os.environ:
         os.environ["DOCKER_REGISTRY"] = "local"
@@ -116,7 +119,7 @@ def simcore_docker_compose(
         workdir=env_file.parent,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-    log.debug("simcore docker-compose:\n%s", pformat(config))
+    print("simcore docker-compose:\n%s", pformat(config))
     return config
 
 
@@ -143,12 +146,13 @@ def ops_docker_compose(
         workdir=env_file.parent,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
-    log.debug("ops docker-compose:\n%s", pformat(config))
+    print("ops docker-compose:\n%s", pformat(config))
     return config
 
 
 @pytest.fixture(scope="module")
 def core_services(request) -> List[str]:
+    """ Selection of services from the simcore stack """
     core_services = getattr(request.module, "core_services", [])
     assert (
         core_services
@@ -185,7 +189,6 @@ def ops_docker_compose_file(
     """Creates a docker-compose config file for every stack of services in 'ops_services' module variable
     File is created in a temp folder
     """
-
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
     _filter_services_and_dump(ops_services, ops_docker_compose, docker_compose_path)

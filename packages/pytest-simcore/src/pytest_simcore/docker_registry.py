@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from copy import deepcopy
-from typing import Dict
+from typing import Any, Dict
 
 import docker
 import jsonschema
@@ -98,9 +98,11 @@ def wait_till_registry_is_responsive(url: str) -> bool:
 
 
 # ********************************************************* Services ***************************************
+
+
 def _pull_push_service(
     pull_key: str, tag: str, new_registry: str, node_meta_schema: Dict
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
     image = client.images.pull(pull_key, tag=tag)
@@ -114,6 +116,7 @@ def _pull_push_service(
         if key.startswith("io.simcore.")
     }
     assert io_simcore_labels
+
     # validate image
     jsonschema.validate(io_simcore_labels, node_meta_schema)
 
