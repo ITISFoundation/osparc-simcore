@@ -158,12 +158,15 @@ async def generate_directory_contents(
     await ProjectFile.model_to_file(root_dir=root_folder, **project_data)
 
 
+ETag = str
+
+
 async def upload_file_to_storage(
     app: web.Application,
     link_and_path: LinkAndPath2,
     user_id: int,
     session: ClientSession,
-) -> None:
+) -> ETag:
     try:
         upload_url = await get_file_upload_url(
             app=app,
@@ -194,8 +197,11 @@ async def upload_file_to_storage(
             raise ExporterException(
                 f"Client replied with status={resp.status} and body '{upload_result}'"
             )
-
-        log.debug("Upload status=%s, result: '%s'", resp.status, upload_result)
+        e_tag = resp.headers.get("Etag", None)
+        log.debug(
+            "Upload status=%s, result: '%s', Etag %s", resp.status, upload_result, e_tag
+        )
+        return e_tag
 
 
 async def add_new_project(app: web.Application, project: Project, user_id: int):
@@ -290,6 +296,9 @@ async def import_files_and_validate_project(
                 )
             )
         await asyncio.gather(*run_in_parallel)
+
+        # FIXME: @GitHK: the eTag changes since this is a new upload. Can you please fix this one? I modified the upload
+        # function such that it returns it now.
 
     # finally create and add the project
     project = Project(
