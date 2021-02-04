@@ -65,14 +65,17 @@ def test_solvers_sorting_by_name_and_version(faker):
     solver0.version = f"{major}.{minor}.{micro}"
 
     # and a different version of the same
-    solver1 = solver0.copy(update={"version": f"{solver0.version}beta"}, deep=True)
+    # NOTE: that id=None so that it can be re-coputed
+    solver1 = solver0.copy(
+        update={"version": f"{solver0.version}beta", "id": None}, deep=True
+    )
     assert solver1.pep404_version.is_prerelease
     assert solver1.pep404_version < solver0.pep404_version
     assert solver0.id != solver1.id, "changing vesion should automaticaly change id"
 
     # and yet a completely different solver
     other_solver = solver0.copy(
-        update={"name": f"simcore/services/comp/{faker.name()}"}
+        update={"name": f"simcore/services/comp/{faker.name()}", "id": None}
     )
     assert (
         solver0.id != other_solver.id

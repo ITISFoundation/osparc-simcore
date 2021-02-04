@@ -10,7 +10,7 @@ from models_library.services import ServiceDockerData, ServiceType
 from pydantic import ValidationError
 
 from ..core.settings import CatalogSettings
-from ..models.schemas.solvers import LATEST_VERSION, SolverName
+from ..models.schemas.solvers import LATEST_VERSION, SolverName, VersionStr
 from ..utils.client_base import BaseServiceClientApi
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
@@ -94,7 +94,7 @@ class CatalogApi(BaseServiceClientApi):
         return solvers
 
     async def get_solver(
-        self, user_id: int, name: SolverName, version: str
+        self, user_id: int, name: SolverName, version: VersionStr
     ) -> ServiceDockerData:
 
         assert version != LATEST_VERSION  # nosec
@@ -107,7 +107,6 @@ class CatalogApi(BaseServiceClientApi):
             params={"user_id": user_id},
             headers={"x-simcore-products-name": "osparc"},
         )
-
         resp.raise_for_status()
 
         solver = ServiceDockerData(**resp.json())

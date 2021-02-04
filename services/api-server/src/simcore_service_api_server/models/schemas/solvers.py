@@ -28,7 +28,7 @@ def _compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
 
 # SOLVER ----------
 #
-#
+VersionStr = constr(strip_whitespace=True, regex=VERSION_RE)
 SolverName = constr(
     strip_whitespace=True,
     regex=COMPUTATIONAL_SERVICE_KEY_RE,
@@ -43,11 +43,9 @@ class Solver(BaseModel):
         ...,
         description="Unique solver name with path namespaces",
     )
-    version: str = Field(
+    version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
-        regex=VERSION_RE,
-        example=["1.0.0", "0.0.1"],
     )
     id: UUID
 
@@ -67,21 +65,24 @@ class Solver(BaseModel):
                 {
                     "name": "simcore/services/comp/isolve",
                     "version": "2.1.1",
-                    "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+                    "id": "f7c25b7d-edd6-32a4-9751-6072e4163537",
                     "title": "iSolve",
                     "description": "EM solver",
                     "maintainer": "info@itis.swiss",
-                    "url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
+                    "url": "https://api.osparc.io/v0/solvers/f7c25b7d-edd6-32a4-9751-6072e4163537",
                 }
             ]
         }
 
-    @validator("id", pre=True)
+    @validator("id", pre=True, always=True)
     @classmethod
     def compose_id_with_name_and_version(cls, v, values):
-        if v is None:
-            return compose_solver_id(values["name"], values["version"])
-        return v
+        sid = compose_solver_id(values["name"], values["version"])
+        if v and str(v) != str(sid):
+            raise ValueError(
+                f"Invalid id: {v}!={sid} is incompatible with name and version composition"
+            )
+        return sid
 
     @classmethod
     def create_from_image(cls, image_meta: ServiceDockerData) -> "Solver":
