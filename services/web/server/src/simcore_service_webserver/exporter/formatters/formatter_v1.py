@@ -228,11 +228,7 @@ async def _fix_node_run_hashes_based_on_states(project: Project) -> None:
         node_io_payload = {"inputs": None, "outputs": None}
         node = project.workbench.get(str(node_id))
         if node:
-            node_io_payload = node.dict(
-                include={"inputs", "outputs"},
-                by_alias=True,
-                exclude_unset=True,
-            )
+            node_io_payload = {"inputs": node.inputs, "outputs": node.outputs}
 
         return node_io_payload
 
