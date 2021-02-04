@@ -91,12 +91,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const outputs = this.__buildSideView(false);
 
+      // |-1-|--4--|-1-|
       const pane2 = this.__pane2 = new qx.ui.splitpane.Pane();
-      this.add(inputs, 0); // flex 0
-      this.add(pane2, 1); // flex 1
+      this.add(inputs, 1); // flex 1
+      this.add(pane2, 5); // flex 5
 
-      pane2.add(vBox, 1); // flex 1
-      pane2.add(outputs, 0); // flex 0
+      pane2.add(vBox, 4); // flex 4
+      pane2.add(outputs, 1); // flex 1
     },
 
     __cleanLayout: function() {
@@ -106,7 +107,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __buildSideView: function(isInput) {
       const collapsedWidth = 35;
       const sidePanel = new osparc.desktop.SidePanel().set({
-        minWidth: 250,
+        minWidth: 220,
         collapsedMinWidth: collapsedWidth,
         collapsedWidth: collapsedWidth
       });
@@ -123,7 +124,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         alignY: "middle",
         font: "text-16"
       }));
-      const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
+      const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse"), "@FontAwesome5Solid/minus-square/14");
       buttonPart.add(collapseBtn);
       sidePanel.add(sideHeader);
 
