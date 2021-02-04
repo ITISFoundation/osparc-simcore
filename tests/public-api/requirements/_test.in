@@ -8,3 +8,8 @@ osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@
 
 python-dotenv
 httpx
+
+# pulled by pytest-simcore
+docker
+tenacity
+jsonschema
