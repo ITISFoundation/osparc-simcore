@@ -1177,7 +1177,7 @@ jobs:
           path: codeclimate.integration_simcoresdk_coverage.json
 
   system-test-public-api:
-    name: "[sys] deploy simcore"
+    name: "[sys] public api"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
