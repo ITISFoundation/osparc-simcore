@@ -93,7 +93,7 @@ async def create_projects(request: web.Request):
         project = await db.add_project(
             project, user_id, force_as_template=as_template is not None
         )
-        # This is a new project and every new graph needs to be reflected in the pipeline db
+        # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2.create_or_update_pipeline(
             request.app, user_id, project["uuid"]
         )
