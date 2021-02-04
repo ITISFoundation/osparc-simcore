@@ -8,7 +8,7 @@ import packaging.version
 from models_library.basic_regex import VERSION_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
 from packaging.version import LegacyVersion, Version
-from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
+from pydantic import BaseModel, Extra, Field, HttpUrl, conint, constr, validator
 
 LATEST_VERSION = "latest"
 NAMESPACE_SOLVER_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
@@ -60,6 +60,7 @@ class Solver(BaseModel):
     url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
 
     class Config:
+        extra = Extra.ignore
         schema_extra = {
             "examples": [
                 {

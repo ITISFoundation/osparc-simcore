@@ -7,10 +7,10 @@ from uuid import UUID
 import httpx
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData, ServiceType
-from pydantic import ValidationError
+from pydantic import EmailStr, Extra, ValidationError
 
 from ..core.settings import CatalogSettings
-from ..models.schemas.solvers import LATEST_VERSION, SolverName, VersionStr
+from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverName, VersionStr
 from ..utils.client_base import BaseServiceClientApi
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
@@ -42,9 +42,51 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-# API CLASS ---------------------------------------------
-
 SolverNameVersionPair = Tuple[SolverName, str]
+
+
+class TruncatedServiceOut(ServiceDockerData):
+    """This is a partial replica of catalog's API response body schema
+    in services/catalog/src/simcore_service_catalog/models/schemas/services.py::ServiceOut
+
+    It used here to parse and extract only necessary information from the
+    response. Ideally the rest of the response is dropped so here it would
+    perhaps make more sense to use something like graphql
+    that asks only what is needed.
+    """
+
+    owner: Optional[EmailStr]
+
+    class Config:
+        extra = Extra.ignore
+
+    # Converters
+    def to_solver(self) -> Solver:
+        data = self.dict(
+            include={"name", "key", "version", "description", "contact", "owner"},
+        )
+
+        return Solver(
+            name=data.pop("key"),
+            version=data.pop("version"),
+            title=data.pop("name"),
+            maintainer=data.pop("owner") or data.pop("contact"),
+            url=None,
+            id=None,  # auto-generated
+            **data,
+        )
+
+
+# API CLASS ---------------------------------------------
+#
+# - Error handling: What do we reraise, suppress, transform???
+#
+#
+# TODO: handlers should not capture outputs
+# @handle_errors("catalog", logger, return_json=True)
+# @handle_retry(logger)
+# async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+#     return await self.client.get(path, *args, **kwargs)
 
 
 class CatalogApi(BaseServiceClientApi):
@@ -55,17 +97,11 @@ class CatalogApi(BaseServiceClientApi):
 
     ids_cache_map: Dict[UUID, SolverNameVersionPair]
 
-    # TODO: handlers should not capture outputs
-    # @handle_errors("catalog", logger, return_json=True)
-    # @handle_retry(logger)
-    # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
-    #     return await self.client.get(path, *args, **kwargs)
-
     async def list_solvers(
         self,
         user_id: int,
-        predicate: Optional[Callable[[ServiceDockerData], bool]] = None,
-    ) -> List[ServiceDockerData]:
+        predicate: Optional[Callable[[Solver], bool]] = None,
+    ) -> List[Solver]:
         resp = await self.client.get(
             "/services",
             params={"user_id": user_id, "details": False},
@@ -73,17 +109,18 @@ class CatalogApi(BaseServiceClientApi):
         )
         resp.raise_for_status()
 
-        # TODO: move this sorting down to database?
+        # TODO: move this sorting down to catalog service?
         solvers = []
         for data in resp.json():
             try:
-                service = ServiceDockerData(**data)
+                service = TruncatedServiceOut.parse_obj(data)
                 if service.service_type == ServiceType.COMPUTATIONAL:
-                    if predicate is None or predicate(service):
-                        solvers.append(service)
+                    solver = service.to_solver()
+                    if predicate is None or predicate(solver):
+                        solvers.append(solver)
 
             except ValidationError as err:
-                # NOTE: This is necessary because there are no guarantees
+                # NOTE: For the moment, this is necessary because there are no guarantees
                 #       at the image registry. Therefore we exclude and warn
                 #       invalid items instead of returning error
                 logger.warning(
@@ -95,7 +132,7 @@ class CatalogApi(BaseServiceClientApi):
 
     async def get_solver(
         self, user_id: int, name: SolverName, version: VersionStr
-    ) -> ServiceDockerData:
+    ) -> Solver:
 
         assert version != LATEST_VERSION  # nosec
 
@@ -109,13 +146,14 @@ class CatalogApi(BaseServiceClientApi):
         )
         resp.raise_for_status()
 
-        solver = ServiceDockerData(**resp.json())
+        service = TruncatedServiceOut.parse_obj(resp.json())
+        assert (
+            service.service_type == ServiceType.COMPUTATIONAL
+        ), "Expected by SolverName regex"  # nosec
 
-        return solver
+        return service.to_solver()
 
-    async def get_latest_solver(
-        self, user_id: int, name: SolverName
-    ) -> ServiceDockerData:
+    async def get_latest_solver(self, user_id: int, name: SolverName) -> Solver:
         def _this_solver(solver: ServiceDockerData) -> bool:
             return solver.key == name
 

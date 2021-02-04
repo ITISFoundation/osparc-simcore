@@ -4,7 +4,6 @@ from typing import Callable, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from models_library.services import ServiceDockerData
 from pydantic import ValidationError
 
 from ...models.schemas.solvers import (
@@ -39,11 +38,9 @@ async def list_solvers(
 ):
     assert await catalog_client.is_responsive()  # nosec
 
-    solver_images: List[ServiceDockerData] = await catalog_client.list_solvers(user_id)
+    solvers: List[Solver] = await catalog_client.list_solvers(user_id)
 
-    solvers = []
-    for image in solver_images:
-        solver = Solver.create_from_image(image)
+    for solver in solvers:
         solver.url = url_for(
             "get_solver",
             solver_id=solver.id,
@@ -51,8 +48,6 @@ async def list_solvers(
 
         # updates id -> (name, version)
         catalog_client.ids_cache_map[solver.id] = (solver.name, solver.version)
-
-        solvers.append(solver)
 
     return sorted(solvers, key=attrgetter("name", "pep404_version"))
 
@@ -63,36 +58,34 @@ async def get_solver(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-):
+) -> Solver:
     try:
         if solver_id in catalog_client.ids_cache_map:
             solver_name, solver_version = catalog_client.ids_cache_map[solver_id]
 
-            image = await get_solver_by_name_and_version(
+            solver = await get_solver_by_name_and_version(
                 solver_name, solver_version, user_id, catalog_client, url_for
             )
 
         else:
 
-            def _with_id(img: ServiceDockerData):
-                return compose_solver_id(img.key, img.version) == solver_id
+            def _with_id(s: Solver):
+                return compose_solver_id(s.name, s.version) == solver_id
 
-            images: List[ServiceDockerData] = await catalog_client.list_solvers(
-                user_id, _with_id
-            )
-            assert len(images) <= 1  # nosec
-            image = images[0]
+            solvers: List[Solver] = await catalog_client.list_solvers(user_id, _with_id)
+            assert len(solvers) <= 1  # nosec
+            solver = solvers[0]
 
-        solver = Solver.create_from_image(image)
         solver.url = url_for(
             "get_solver",
             solver_id=solver.id,
         )
-
         assert solver.id == solver_id  # nosec
 
         # updates id -> (name, version)
         catalog_client.ids_cache_map[solver.id] = (solver.name, solver.version)
+
+        return solver
 
     except KeyError as err:
         raise HTTPException(
@@ -131,14 +124,13 @@ async def get_solver_by_name_and_version(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
-):
+) -> Solver:
     try:
         if version == LATEST_VERSION:
-            image = await catalog_client.get_latest_solver(user_id, solver_name)
+            solver = await catalog_client.get_latest_solver(user_id, solver_name)
         else:
-            image = await catalog_client.get_solver(user_id, solver_name, version)
+            solver = await catalog_client.get_solver(user_id, solver_name, version)
 
-        solver = Solver.create_from_image(image)
         solver.url = url_for(
             "get_solver",
             solver_id=solver.id,
@@ -146,6 +138,7 @@ async def get_solver_by_name_and_version(
 
         # updates id -> (name, version)
         catalog_client.ids_cache_map[solver.id] = (solver.name, solver.version)
+        return solver
 
     except (ValueError, IndexError, ValidationError) as err:
         raise HTTPException(
