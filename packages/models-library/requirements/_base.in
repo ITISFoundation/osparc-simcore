@@ -3,4 +3,5 @@
 #
 -c ../../../requirements/constraints.txt
 
+orjson
 pydantic[email]
