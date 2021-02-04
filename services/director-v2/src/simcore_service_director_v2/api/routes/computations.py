@@ -3,7 +3,7 @@ from typing import Any, List
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from models_library.projects import ProjectID
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from starlette import status
@@ -17,7 +17,6 @@ from tenacity import (
 )
 
 from ...models.domains.comp_tasks import CompTaskAtDB
-from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.comp_tasks import (
     ComputationTaskCreate,
     ComputationTaskDelete,
