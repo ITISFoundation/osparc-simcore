@@ -642,7 +642,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.utils.Utils.downloadLink(url, "POST", null, downloadStartedCB)
         .catch(e => {
-          const msg = osparc.data.Resources.getErrorMsg(e) || this.tr("Something went wrong Exporting the study");
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Exporting the study");
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         })
         .finally(() => {
