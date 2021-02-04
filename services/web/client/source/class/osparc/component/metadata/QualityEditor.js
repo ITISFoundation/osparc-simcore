@@ -37,9 +37,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
   },
 
   events: {
-    "updateStudy": "qx.event.type.Data",
-    "updateTemplate": "qx.event.type.Data",
-    "updateService": "qx.event.type.Data"
+    "updateQuality": "qx.event.type.Data"
   },
 
   properties: {
@@ -587,7 +585,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           osparc.data.Resources.fetch("services", "patch", params)
             .then(serviceData => {
               this.__initResourceData(serviceData);
-              this.fireDataEvent("updateService", serviceData);
+              this.fireDataEvent("updateQuality", serviceData);
             })
             .catch(err => {
               console.error(err);
@@ -607,7 +605,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           osparc.data.Resources.fetch(isTemplate ? "templates" : "studies", "put", params)
             .then(resourceData => {
               this.__initResourceData(resourceData);
-              this.fireDataEvent(isTemplate ? "updateTemplate" : "updateStudy", resourceData);
+              this.fireDataEvent("updateQuality", resourceData);
             })
             .catch(err => {
               console.error(err);

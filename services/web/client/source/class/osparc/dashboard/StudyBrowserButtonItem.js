@@ -459,9 +459,8 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const studyPerm = osparc.component.permissions.Study;
       const image = this.getChildControl("permission-icon");
-      if (studyPerm.canGroupWrite(accessRights, myGroupId)) {
+      if (osparc.component.permissions.Study.canGroupWrite(accessRights, myGroupId)) {
         image.exclude();
       } else {
         image.setSource(this.self().PERM_READ);
@@ -543,17 +542,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     __openQualityEditor: function() {
       const resourceData = this.getResourceData();
       const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
-      qualityEditor.addListener("updateStudy", e => {
-        const updatedStudyData = e.getData();
-        this.fireDataEvent("updateQualityStudy", updatedStudyData);
-      });
-      qualityEditor.addListener("updateTemplate", e => {
-        const updatedTemplateData = e.getData();
-        this.fireDataEvent("updateQualityTemplate", updatedTemplateData);
-      });
-      qualityEditor.addListener("updateService", e => {
-        const updatedServiceData = e.getData();
-        this.fireDataEvent("updateQualityService", updatedServiceData);
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedResourceData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateQualityStudy", updatedResourceData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this.fireDataEvent("updateQualityService", updatedResourceData);
+        }
       });
     },
 

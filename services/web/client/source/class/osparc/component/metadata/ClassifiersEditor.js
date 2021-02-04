@@ -33,7 +33,7 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
   },
 
   events: {
-    "updateResourceClassifiers": "qx.event.type.Data"
+    "updateClassifiers": "qx.event.type.Data"
   },
 
   members: {
@@ -153,10 +153,10 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
           data: this.__studyData
         };
         osparc.data.Resources.fetch("studies", "put", params)
-          .then(() => {
-            this.fireDataEvent("updateResourceClassifiers", this.__studyData["uuid"]);
+          .then(updatedStudy => {
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
+            this.fireDataEvent("updateClassifiers", updatedStudy);
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");
@@ -173,10 +173,10 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
           }
         };
         osparc.data.Resources.fetch("services", "patch", params)
-          .then(() => {
-            this.fireDataEvent("updateResourceClassifiers", this.__studyData["key"]);
+          .then(updatedService => {
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Classifiers successfully edited"));
             saveBtn.setFetching(false);
+            this.fireDataEvent("updateClassifiers", updatedService);
           })
           .catch(err => {
             osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong editing Classifiers"), "ERROR");

@@ -20,9 +20,9 @@ qx.Class.define("osparc.studycard.Large", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param studyData {Object} Serialized Study Object
+    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
     */
-  construct: function(studyData) {
+  construct: function(study) {
     this.base(arguments);
 
     this.set({
@@ -31,8 +31,11 @@ qx.Class.define("osparc.studycard.Large", {
     });
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    if (studyData instanceof Object) {
-      this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    if (study instanceof osparc.data.model.Study) {
+      this.setStudy(study);
+    } else if (study instanceof Object) {
+      const studyModel = new osparc.data.model.Study(study);
+      this.setStudy(studyModel);
     }
 
     this.addListenerOnce("appear", () => {
@@ -48,6 +51,14 @@ qx.Class.define("osparc.studycard.Large", {
     "updateTags": "qx.event.type.Data"
   },
 
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      init: null,
+      nullable: false
+    }
+  },
+
   statics: {
     PADDING: 5,
     EXTRA_INFO_WIDTH: 250,
@@ -56,15 +67,6 @@ qx.Class.define("osparc.studycard.Large", {
   },
 
   members: {
-    __studyData: null,
-
-    __setUpdatedData: function(studyData) {
-      if (studyData && studyData instanceof Object) {
-        this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
-        this.__rebuildLayout();
-      }
-    },
-
     __updateFromCacheAndNotify: function(studyId) {
       const params = {
         url: {
@@ -80,7 +82,7 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.__studyData);
+      return osparc.data.model.Study.isOwner(this.getStudy());
     },
 
     __rebuildLayout: function(width) {
@@ -128,13 +130,13 @@ qx.Class.define("osparc.studycard.Large", {
         this._add(hBox);
       }
 
-      if (this.__studyData["description"] || this.__isOwner()) {
+      if (this.getStudy().getDescription() || this.__isOwner()) {
         const description = this.__createDescription();
         const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
         this._add(descriptionLayout);
       }
 
-      if (this.__studyData["tags"].length || this.__isOwner()) {
+      if (this.getStudy().getTags().length || this.__isOwner()) {
         const tags = this.__createTags();
         const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
         if (this.__isOwner()) {
@@ -186,14 +188,14 @@ qx.Class.define("osparc.studycard.Large", {
       }, {
         label: this.tr("Classifiers"),
         view: this.__createClassifiers(),
-        action: (this.__studyData["classifiers"].length || this.__isOwner()) ? {
+        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
           button: osparc.utils.Utils.getViewButton(),
           callback: this.__openClassifiers,
           ctx: this
         } : null
       }];
 
-      if ("quality" in this.__studyData && osparc.component.metadata.Quality.isEnabled(this.__studyData["quality"])) {
+      if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
@@ -228,74 +230,77 @@ qx.Class.define("osparc.studycard.Large", {
     },
 
     __createTitle: function() {
-      const title = osparc.studycard.Utils.createTitle(this.__studyData).set({
+      const title = osparc.studycard.Utils.createTitle(this.getStudy()).set({
         font: "title-16"
       });
       return title;
     },
 
     __createUuid: function() {
-      return osparc.studycard.Utils.createUuid(this.__studyData);
+      return osparc.studycard.Utils.createUuid(this.getStudy());
     },
 
     __createOwner: function() {
-      return osparc.studycard.Utils.createOwner(this.__studyData);
+      return osparc.studycard.Utils.createOwner(this.getStudy());
     },
 
     __createCreationDate: function() {
-      return osparc.studycard.Utils.createCreationDate(this.__studyData);
+      return osparc.studycard.Utils.createCreationDate(this.getStudy());
     },
 
     __createLastChangeDate: function() {
-      return osparc.studycard.Utils.createLastChangeDate(this.__studyData);
+      return osparc.studycard.Utils.createLastChangeDate(this.getStudy());
     },
 
     __createAccessRights: function() {
-      return osparc.studycard.Utils.createAccessRights(this.__studyData);
+      return osparc.studycard.Utils.createAccessRights(this.getStudy());
     },
 
     __createClassifiers: function() {
-      return osparc.studycard.Utils.createClassifiers(this.__studyData);
+      return osparc.studycard.Utils.createClassifiers(this.getStudy());
     },
 
     __createQuality: function() {
-      return osparc.studycard.Utils.createQuality(this.__studyData);
+      return osparc.studycard.Utils.createQuality(this.getStudy());
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      return osparc.studycard.Utils.createThumbnail(this.__studyData, maxWidth, maxHeight);
+      return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.studycard.Utils.createDescription(this.__studyData, maxHeight);
+      return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
     },
 
     __createTags: function() {
-      return osparc.studycard.Utils.createTags(this.__studyData);
+      return osparc.studycard.Utils.createTags(this.getStudy());
     },
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.component.widget.Renamer(this.__studyData["name"], null, title);
+      const titleEditor = new osparc.component.widget.Renamer(this.getStudy().getName(), null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__studyData["name"] = newLabel;
-        this.__updateStudy(this.__studyData);
+        this.__updateStudy({
+          "name": newLabel
+        });
       }, this);
       titleEditor.center();
       titleEditor.open();
     },
 
     __copyUuidToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.__studyData["uuid"]);
+      osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid());
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(this.__studyData);
+      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
       permissionsView.addListener("updateStudy", e => {
-        this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
+        const updatedData = e.getData();
+        this.getStudy().setAccessRights(updatedData["accessRights"]);
+        this.fireDataEvent("updateStudy", updatedData);
       }, this);
     },
 
@@ -303,31 +308,44 @@ qx.Class.define("osparc.studycard.Large", {
       const title = this.tr("Classifiers");
       let classifiers = null;
       if (this.__isOwner()) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(this.__studyData);
-        classifiers.addListener("updateResourceClassifiers", () => {
-          this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
+        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
+        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
+        classifiers.addListener("updateClassifiers", e => {
+          win.close();
+          const updatedData = e.getData();
+          this.getStudy().setClassifiers(updatedData["classifiers"]);
+          this.fireDataEvent("updateStudy", updatedData);
         }, this);
       } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(this.__studyData);
+        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getStudy().serialize());
+        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
-      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __openQuality: function() {
-      const qualityEditor = osparc.studycard.Utils.openQuality(this.__studyData);
-      [
-        "updateStudy",
-        "updateTemplate"
-      ].forEach(event => {
-        qualityEditor.addListener(event, e => {
-          this.__updateFromCacheAndNotify(this.__studyData["uuid"]);
-        });
+      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedData = e.getData();
+        this.getStudy().setQuality(updatedData["quality"]);
+        this.fireDataEvent("updateStudy", updatedData);
       });
+    },
+
+    __openTagsEditor: function() {
+      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize(), null, "study", this.getStudy().getUuid()).set({
+        liveUpdate: false
+      });
+      tagManager.addListener("updateTags", e => {
+        tagManager.close();
+        const updatedData = e.getData();
+        this.getStudy().setTags(updatedData["tags"]);
+        this.fireDataEvent("updateStudy", updatedData);
+      }, this);
     },
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thubmnailEditor = new osparc.component.widget.Renamer(this.__studyData["thumbnail"], null, title);
+      const thubmnailEditor = new osparc.component.widget.Renamer(this.getStudy().getThumbnail(), null, title);
       thubmnailEditor.addListener("labelChanged", e => {
         thubmnailEditor.close();
         const dirty = e.getData()["newLabel"];
@@ -335,8 +353,9 @@ qx.Class.define("osparc.studycard.Large", {
         if (dirty && dirty !== clean) {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was some curation in the text of thumbnail "), "WARNING");
         }
-        this.__studyData["thumbnail"] = clean;
-        this.__updateStudy(this.__studyData);
+        this.__updateStudy({
+          "thumbnail": clean
+        });
       }, this);
       thubmnailEditor.center();
       thubmnailEditor.open();
@@ -345,43 +364,25 @@ qx.Class.define("osparc.studycard.Large", {
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
       const subtitle = this.tr("Supports Markdown");
-      const textEditor = new osparc.component.widget.TextEditor(this.__studyData["description"], subtitle, title);
+      const textEditor = new osparc.component.widget.TextEditor(this.getStudy().getDescription(), subtitle, title);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
-        const newDescription = e.getData();
-        this.__studyData["description"] = newDescription;
-        this.__updateStudy(this.__studyData);
         win.close();
+        const newDescription = e.getData();
+        this.__updateStudy({
+          "description": newDescription
+        });
       }, this);
       textEditor.addListener("cancel", () => {
         win.close();
       }, this);
     },
 
-    __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.__studyData["tags"], null, "study", this.__studyData["uuid"]);
-      tagManager.addListener("changeSelected", e => {
-        this.__studyData["tags"] = e.getData().selected;
-        this.__rebuildLayout();
-        this.fireDataEvent("updateTags", this.__studyData["uuid"]);
-      }, this);
-      tagManager.addListener("close", () => {
-        this.fireDataEvent("updateTags", this.__studyData["uuid"]);
-      }, this);
-    },
-
-    __updateStudy: function() {
-      const params = {
-        url: {
-          projectId: this.__studyData["uuid"]
-        },
-        data: this.__studyData
-      };
-      osparc.data.Resources.fetch("studies", "put", params)
+    __updateStudy: function(params) {
+      this.getStudy().updateStudy(params)
         .then(studyData => {
           this.fireDataEvent("updateStudy", studyData);
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
-          this.__setUpdatedData(studyData);
         })
         .catch(err => {
           console.error(err);

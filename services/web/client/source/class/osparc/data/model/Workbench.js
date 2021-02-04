@@ -556,6 +556,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     serialize: function() {
+      if (this.__workbenchInitData !== null) {
+        // workbench is not initialized
+        return this.__workbenchInitData;
+      }
       let workbench = {};
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
@@ -569,6 +573,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     serializeUI: function() {
+      if (this.__workbenchUIInitData !== null) {
+        // workbenchUI is not initialized
+        return this.__workbenchUIInitData;
+      }
       let workbenchUI = {};
       const nodes = this.getNodes(true);
       for (const nodeUuid in nodes) {

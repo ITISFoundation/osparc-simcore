@@ -704,11 +704,17 @@ qx.Class.define("osparc.data.Resources", {
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
     },
+
     getServiceUrl: function(serviceKey, serviceVersion) {
       return {
         "serviceKey": encodeURIComponent(serviceKey),
         "serviceVersion": serviceVersion
       };
+    },
+
+    getErrorMsg: function(resp) {
+      const error = resp["error"];
+      return error ? error["errors"][0].message : null;
     }
   }
 });
