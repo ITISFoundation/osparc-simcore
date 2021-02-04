@@ -143,16 +143,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           type: ports[portKey].type,
           open: false
         };
-        if (ports[portKey].type === "node-output-tree-api-v0.0.1") {
-          const itemList = osparc.dev.fake.Data.getItemList(node.getKey(), portKey);
-          const showLeavesAsDirs = !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"));
-          const children = osparc.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs, portKey);
-          portData.children = children;
-          portData.open = true;
-        } else {
           portData.icon = osparc.data.Converters.fromTypeToIcon(ports[portKey].type);
           portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value;
-        }
         data.children.push(portData);
       }
 
