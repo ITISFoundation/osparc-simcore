@@ -127,8 +127,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       buttonPart.add(collapseBtn);
       sidePanel.add(sideHeader);
 
-      const scroll = new qx.ui.container.Scroll();
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const scroll = new qx.ui.container.Scroll();
       scroll.add(container);
       sidePanel.add(scroll, {
         flex: 1
