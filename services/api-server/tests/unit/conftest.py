@@ -6,14 +6,17 @@ import os
 import shutil
 import subprocess
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Coroutine, Dict, Iterator, List, Type, Union
 
 import aiopg.sa
+import aiopg.sa.engine as aiopg_sa_engine
 import pytest
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
 import sqlalchemy as sa
+import sqlalchemy.engine as sa_engine
 import yaml
 from _helpers import RWApiKeysRepository, RWUsersRepository
 from asgi_lifespan import LifespanManager
@@ -172,7 +175,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
 def make_engine(postgres_service: Dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
-    def maker(is_async=True) -> Union[Coroutine, Callable]:
+    def maker(is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
         if is_async:
             return aiopg.sa.create_engine(dsn)
         return sa.create_engine(dsn)
@@ -182,6 +185,10 @@ def make_engine(postgres_service: Dict) -> Callable:
 
 @pytest.fixture
 def apply_migration(postgres_service: Dict, make_engine) -> Iterator[None]:
+    # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
+    # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
+    # fixture to have local scope
+    #
     kwargs = postgres_service.copy()
     kwargs.pop("dsn")
     pg_cli.discover.callback(**kwargs)

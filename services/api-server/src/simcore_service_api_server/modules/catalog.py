@@ -47,11 +47,16 @@ SolverNameVersionPair = Tuple[SolverName, str]
 
 
 class TruncatedServiceOut(ServiceDockerData):
-    """This is a partial replica of catalog's API response body schema
+    """
+    This model is used to truncate the response of the catalog, whose schema is
     in services/catalog/src/simcore_service_catalog/models/schemas/services.py::ServiceOut
+    and is a superset of ServiceDockerData.
 
-    It used here to parse and extract only necessary information from the
-    response. Ideally the rest of the response is dropped so here it would
+    We do not use directly ServiceDockerData because it will only consume the exact fields
+    (it is configured as Extra.forbid). Instead  we inherit from it, override this configuration
+    and add an extra field that we want to capture from ServiceOut.
+
+    Ideally the rest of the response is dropped so here it would
     perhaps make more sense to use something like graphql
     that asks only what is needed.
     """
