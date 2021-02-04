@@ -43,6 +43,7 @@
 
 qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
+  include: osparc.ui.tree.MHintInTree,
 
   properties: {
     isDir: {
