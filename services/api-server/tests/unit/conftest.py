@@ -1,12 +1,13 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, List, Type, Union
+from typing import Any, Callable, Coroutine, Dict, Iterator, List, Type, Union
 
 import aiopg.sa
 import pytest
@@ -61,6 +62,9 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 def project_env_devel_environment(project_env_devel_dict, monkeypatch):
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
+
+    # overrides
+    monkeypatch.setenv("API_SERVER_DEV_FEATURES_ENABLED", "1")
 
 
 ## FOLDER LAYOUT ---------------------------------------------------------------------
@@ -167,21 +171,24 @@ def make_engine(postgres_service: Dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
     def maker(is_async=True) -> Union[Coroutine, Callable]:
-        return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
+        if is_async:
+            return aiopg.sa.create_engine(dsn)
+        return sa.create_engine(dsn)
 
     return maker
 
 
 @pytest.fixture
-def apply_migration(postgres_service: Dict, make_engine) -> None:
+def apply_migration(postgres_service: Dict, make_engine) -> Iterator[None]:
     kwargs = postgres_service.copy()
     kwargs.pop("dsn")
     pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
+
     yield
+
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
-
     # FIXME: deletes all because downgrade is not reliable!
     engine = make_engine(False)
     metadata.drop_all(engine)
@@ -203,13 +210,13 @@ def app(monkeypatch, environment, apply_migration) -> FastAPI:
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI) -> FastAPI:
+async def initialized_app(app: FastAPI) -> Iterator[FastAPI]:
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
-async def client(initialized_app: FastAPI) -> AsyncClient:
+async def client(initialized_app: FastAPI) -> Iterator[AsyncClient]:
     async with AsyncClient(
         app=initialized_app,
         base_url="http://api.testserver.io",
