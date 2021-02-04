@@ -69,6 +69,7 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
     "uuid",
     "creation_date",
     "last_change_date",
+    "runHash",
     REMAPPING_KEY,
 }
 
@@ -283,10 +284,19 @@ def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, 
 
 
 def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, Any]:
-    result = deepcopy(dict_data)
-    for key in keys:
-        result.pop(key, None)
-    return result
+    def _delete_keys_from_dict(
+        dictionary: Dict[str, Any], keys: Set[str]
+    ) -> Dict[str, Any]:
+        modified_dict = {}
+        for key, value in dictionary.items():
+            if key not in keys:
+                if isinstance(value, dict):
+                    modified_dict[key] = _delete_keys_from_dict(value, keys)
+                else:
+                    modified_dict[key] = deepcopy(value)
+        return modified_dict
+
+    return _delete_keys_from_dict(dict_data, keys)
 
 
 def assert_combined_entires_condition(
