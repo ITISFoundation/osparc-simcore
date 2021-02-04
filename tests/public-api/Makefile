@@ -15,8 +15,13 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	pip-sync requirements/$(subst install-,,$@).txt
 
 
-.PHONY: tests
-tests: ## runs unit tests
+.PHONY: test-dev
+test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	# running unit tests
-	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
-	--pdb $(CURDIR)
+	@pytest --keep-docker-up \
+	-vv \
+	--color=yes \
+	--exitfirst --failed-first \
+	--durations=10 \
+	--pdb \
+	$(CURDIR)

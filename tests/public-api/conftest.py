@@ -32,7 +32,6 @@ def prepare_all_services(
     simcore_docker_compose: Dict,
     ops_docker_compose: Dict,
     request,
-    monkeypatch,
 ) -> Dict:
 
     setattr(
