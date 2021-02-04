@@ -43,5 +43,5 @@ class BaseServiceClientApi:
             resp = await self.client.get(self.health_check_path)
             resp.raise_for_status()
             return True
-        except httpx.HTTPStatusError:
+        except (httpx.HTTPStatusError, httpx.RequestError):
             return False

@@ -78,12 +78,16 @@ class Solver(BaseModel):
     @validator("id", pre=True, always=True)
     @classmethod
     def compose_id_with_name_and_version(cls, v, values):
-        sid = compose_solver_id(values["name"], values["version"])
-        if v and str(v) != str(sid):
-            raise ValueError(
-                f"Invalid id: {v}!={sid} is incompatible with name and version composition"
-            )
-        return sid
+        try:
+            sid = compose_solver_id(values["name"], values["version"])
+            if v and str(v) != str(sid):
+                raise ValueError(
+                    f"Invalid id: {v}!={sid} is incompatible with name and version composition"
+                )
+            return sid
+        except KeyError as err:
+            # If validation of name or version fails, it is NOT passed as values
+            raise ValueError(f"Id requires valid {err}") from err
 
     @classmethod
     def create_from_image(cls, image_meta: ServiceDockerData) -> "Solver":

@@ -1,5 +1,6 @@
 import logging
 import urllib.parse
+from dataclasses import dataclass, field
 from operator import attrgetter
 from typing import Callable, Dict, List, Optional, Tuple
 from uuid import UUID
@@ -89,13 +90,14 @@ class TruncatedServiceOut(ServiceDockerData):
 #     return await self.client.get(path, *args, **kwargs)
 
 
+@dataclass
 class CatalogApi(BaseServiceClientApi):
     """
     This class acts a proxy of the catalog service
     It abstracts request to the catalog API service
     """
 
-    ids_cache_map: Dict[UUID, SolverNameVersionPair]
+    ids_cache_map: Dict[UUID, SolverNameVersionPair] = field(default_factory=dict)
 
     async def list_solvers(
         self,
@@ -154,8 +156,8 @@ class CatalogApi(BaseServiceClientApi):
         return service.to_solver()
 
     async def get_latest_solver(self, user_id: int, name: SolverName) -> Solver:
-        def _this_solver(solver: ServiceDockerData) -> bool:
-            return solver.key == name
+        def _this_solver(solver: Solver) -> bool:
+            return solver.name == name
 
         solvers = await self.list_solvers(user_id, _this_solver)
 
