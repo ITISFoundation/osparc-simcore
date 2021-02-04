@@ -7,7 +7,6 @@ from typing import Dict, List, Tuple
 from aiohttp import web
 from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
-
 from servicelib.observer import emit
 from servicelib.utils import logged_gather
 from simcore_service_webserver import users_exceptions
@@ -354,7 +353,24 @@ async def remove_orphaned_services(
             not await is_node_id_present_in_any_project_workbench(app, node_id)
             or node_id not in currently_opened_projects_node_ids
         ):
-            logger.info("Will remove service %s", interactive_service["service_host"])
+            service_host = interactive_service["service_host"]
+            if interactive_service.get("service_state") == "pulling":
+                # Services returned in running_interactive_services
+                # might be still pulling its image and when stop_service is
+                # called, will cancel the pull operation as well.
+                # This enforces next run to start again by pulling the image
+                # which is costly and sometimes the cause of timeout and
+                # service malfunction.
+                # For that reason, we prefer here to allow the image to
+                # be completely pulled and stop it instead at the next gc round
+                #
+                # This should eventually be responsibility of the director, but
+                # the functionality is in the old service which is frozen.
+                #
+                logger.warning("Skipping %s since image is still pulling", service_host)
+                continue
+
+            logger.info("Will remove service %s", service_host)
             try:
                 await stop_service(app, node_id)
             except (ServiceNotFoundError, DirectorException) as e:
