@@ -171,12 +171,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudiesLayout: function() {
-      const studyBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
       const userStudyLayout = this.__createUserStudiesLayout();
-      studyBrowserLayout.add(userStudyLayout);
-
       const scrollStudies = new qx.ui.container.Scroll();
-      scrollStudies.add(studyBrowserLayout);
+      scrollStudies.add(userStudyLayout);
       this._add(scrollStudies, {
         flex: 1
       });
