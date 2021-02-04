@@ -24,47 +24,6 @@ def _is_node_computational(node_key: str) -> bool:
     return to_node_class(node_key) == NodeClass.COMPUTATIONAL
 
 
-def _mark_node_as_dirty(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-):
-    nodes_data_view[str(node_id)]["dirty"] = True
-
-
-def _is_node_dirty(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
-    return nodes_data_view[str(node_id)].get("dirty", False)
-
-
-async def _is_node_outdated(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
-    """this function will return whether a node is outdated:
-    - if it has no outputs
-    - if one of the output ports in the outputs is missing
-    - if, after *resolving the inputs if linked to other nodes* these nodes are dirty (outdated themselves)
-    - if the last run_hash does not fit with the current one
-    """
-    node = nodes_data_view[str(node_id)]
-    # if the node has no output it is outdated for sure
-    if not node["outputs"]:
-        return True
-    for output_port in node["outputs"]:
-        if output_port is None:
-            return True
-    # check if the previous node (if any) are dirty... in which case this one is too
-    for input_port in node["inputs"].values():
-        if isinstance(input_port, PortLink):
-            if _is_node_dirty(nodes_data_view, input_port.node_uuid):
-                return True
-    # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
-        return nodes_data_view[str(node_id)]
-
-    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
-    return computed_hash != node["run_hash"]
-
-
 @log_decorator(logger=logger)
 def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
