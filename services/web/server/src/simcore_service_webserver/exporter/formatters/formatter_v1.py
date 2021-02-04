@@ -5,11 +5,14 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Dict
+from typing import Any, Deque, Dict
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.projects import AccessRights, Project
+from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
+from models_library.utils.nodes import compute_node_hash
 from simcore_service_webserver.director_v2 import create_or_update_pipeline
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
@@ -214,6 +217,26 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
     await create_or_update_pipeline(app, user_id, project.uuid)
 
 
+async def _fix_node_run_hashes_based_on_states(project: Project) -> None:
+    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+        node_io_payload = {"inputs": None, "outputs": None}
+        node = project.workbench.get(str(node_id))
+        if node:
+            node_io_payload = node.dict(
+                include={"inputs", "outputs"},
+                by_alias=True,
+                exclude_unset=True,
+            )
+
+        return node_io_payload
+
+    for node_id, node in project.workbench.items():
+        if node.state == RunningState.SUCCESS:
+            # this node run hash shall be re-computed
+            new_node_run_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
+            node.run_hash = new_node_run_hash
+
+
 async def import_files_and_validate_project(
     app: web.Application, user_id: int, root_folder: Path
 ) -> str:
@@ -288,6 +311,7 @@ async def import_files_and_validate_project(
     project_uuid = str(project.uuid)
 
     try:
+        await _fix_node_run_hashes_based_on_states(project)
         await add_new_project(app, project, user_id)
     except Exception as e:
         log.warning(
@@ -298,7 +322,7 @@ async def import_files_and_validate_project(
         )
         try:
             await delete_project(app=app, project_uuid=project_uuid, user_id=user_id)
-        except ProjectsException as e:
+        except ProjectsException:
             # no need to raise an error here
             log.exception(
                 "Could not find project %s while trying to revert actions", project_uuid
