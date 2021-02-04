@@ -26,11 +26,11 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
     [
         (
             {"inputs": None, "outputs": None},
-            "6c4d5b04b166697ef6eddc63d6c1ee4092dccf8af91a0f7efc55bc423984ea5a",
+            "23db227371a8c18f25fcb51fef16a74b6ba4136c7988b8da50f17fc5fcff8524",
         ),
         (
             {"inputs": {}, "outputs": {}},
-            "d98878dbcffbb908ee6d96d3ca87cc0c083f75683488c50ce9c945bef0588047",
+            "3e8b860b6c32dc75b859f3d59c56dfcc0410bacdc623eb3d0d90f36d8720efb0",
         ),
         (
             {
@@ -58,7 +58,7 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
                     ),
                 },
             },
-            "829cb6d6e62142b27d0a07f56f279bdf68fa9ddcb6e61fdc0a77f2d2e9a18752",
+            "8acedaf90992acdc0c7d9b6774448206042b424cb9569d06a30519225d1b9e22",
         ),
     ],
 )
