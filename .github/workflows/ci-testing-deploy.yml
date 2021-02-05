@@ -40,7 +40,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -76,7 +76,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -125,7 +125,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -180,7 +180,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -229,7 +229,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -282,7 +282,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -331,7 +331,7 @@ jobs:
     strategy:
       matrix:
         node: [14]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -361,7 +361,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -397,7 +397,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -447,7 +447,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -496,7 +496,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -545,7 +545,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -594,7 +594,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -643,7 +643,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -693,7 +693,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -743,7 +743,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -793,7 +793,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -843,7 +843,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
@@ -923,7 +923,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -988,7 +988,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1053,7 +1053,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1118,7 +1118,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1183,7 +1183,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1229,7 +1229,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1276,7 +1276,7 @@ jobs:
       matrix:
         python: [3.6]
         node: [14]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
@@ -1353,7 +1353,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04.1]
+        os: [ubuntu-20.04]
       fail-fast: false
     steps:
       - name: set PR default variables
