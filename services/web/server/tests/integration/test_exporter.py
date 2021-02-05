@@ -69,8 +69,9 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
     "uuid",
     "creation_date",
     "last_change_date",
-    "runHash",
     REMAPPING_KEY,
+    "runHash",  # this changes after import, but the runnable states should remain the same
+    "eTag",  # this must change
 }
 
 
@@ -283,7 +284,9 @@ def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, 
     return project
 
 
-def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, Any]:
+def dict_without_keys(
+    dict_data: Dict[str, Any], skipped_keys: Set[str]
+) -> Dict[str, Any]:
     def _delete_keys_from_dict(
         dictionary: Dict[str, Any], keys: Set[str]
     ) -> Dict[str, Any]:
@@ -296,7 +299,7 @@ def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, An
                     modified_dict[key] = deepcopy(value)
         return modified_dict
 
-    return _delete_keys_from_dict(dict_data, keys)
+    return _delete_keys_from_dict(dict_data, skipped_keys)
 
 
 def assert_combined_entires_condition(
