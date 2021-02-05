@@ -8,18 +8,17 @@ from uuid import uuid4
 
 import aiopg.sa
 import faker
-import sqlalchemy as sa
-import yaml
-
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server.db.tables as pg
+import sqlalchemy as sa
+import yaml
 
 DSN_FORMAT = "postgresql://{user}:{password}@{host}:{port}/{database}"
 
 default_db_settings = dict(
     user=os.environ.get("POSTGRES_USER", "test"),
     password=os.environ.get("POSTGRES_PASSWORD", "test"),
-    host=os.environ.get("POSTGRES_HOST", "localhost"),
+    host=os.environ.get("POSTGRES_HOST", "127.0.0.1"),
     port=os.environ.get("POSTGRES_PORT", 5432),
     database=os.environ.get("POSTGRES_DB", 5432),
 )
@@ -37,7 +36,7 @@ def load_db_config() -> Dict:
     return dict(
         user=environ["POSTGRES_USER"],
         password=environ["POSTGRES_PASSWORD"],
-        host="localhost",
+        host="127.0.0.1",
         port=5432,
         database=environ["POSTGRES_DB"],
     )
@@ -64,7 +63,10 @@ def random_user(**overrides):
 
 def random_api_key(**overrides):
     data = dict(
-        user_id=1, display_name=fake.word(), api_key=uuid4(), api_secret=uuid4(),
+        user_id=1,
+        display_name=fake.word(),
+        api_key=uuid4(),
+        api_secret=uuid4(),
     )
     data.update(overrides)
     return data

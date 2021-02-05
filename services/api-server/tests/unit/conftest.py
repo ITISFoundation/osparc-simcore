@@ -37,7 +37,7 @@ def environment() -> Dict:
     env = {
         "WEBSERVER_HOST": "webserver",
         "WEBSERVER_SESSION_SECRET_KEY": "REPLACE ME with a key of at least length 32.",
-        "POSTGRES_HOST": "localhost",
+        "POSTGRES_HOST": "127.0.0.1",
         "POSTGRES_USER": "test",
         "POSTGRES_PASSWORD": "test",
         "POSTGRES_DB": "test",
