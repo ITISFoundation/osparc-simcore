@@ -19,7 +19,7 @@ db:
     database: test
     user: admin
     password: admin
-    host: localhost
+    host: 127.0.0.1
     port: 5432
     maxsize: 5
     minsize: 1
