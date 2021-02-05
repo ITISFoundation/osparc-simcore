@@ -138,24 +138,7 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     getNodesGroup: function() {
-      return {
-        key: "simcore/services/frontend/nodes-group",
-        version: "1.0.0",
-        type: "group",
-        name: "Group",
-        description: "Group of nodes",
-        authors: [{
-          name: "Odei Maiz",
-          email: "maiz@itis.swiss"
-        }],
-        contact: "maiz@itis.swiss",
-        owner: "maiz@itis.swiss",
-        inputs: {},
-        outputs: {},
-        "access_rights": {
-          "1": osparc.component.permissions.Service.getCollaboratorAccessRight()
-        }
-      };
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
 
     addServiceToCache: function(service) {
