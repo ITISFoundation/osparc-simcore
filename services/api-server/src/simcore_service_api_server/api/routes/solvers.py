@@ -4,6 +4,7 @@ from typing import Callable, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from httpx import HTTPStatusError
 from pydantic import ValidationError
 
 from ...models.schemas.solvers import (
@@ -28,6 +29,7 @@ router = APIRouter()
 # - TODO: pagination, result ordering, filter field and results fields?? SEE https://cloud.google.com/apis/design/standard_methods#list
 # - TODO: :search? SEE https://cloud.google.com/apis/design/custom_methods#common_custom_methods
 # - TODO: move more of this logic to catalog service
+# - TODO: error handling!!!
 
 
 @router.get("", response_model=List[Solver])
@@ -87,7 +89,7 @@ async def get_solver(
 
         return solver
 
-    except KeyError as err:
+    except (KeyError, HTTPStatusError) as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver with id={solver_id} not found",
@@ -140,7 +142,7 @@ async def get_solver_by_name_and_version(
         catalog_client.ids_cache_map[solver.id] = (solver.name, solver.version)
         return solver
 
-    except (ValueError, IndexError, ValidationError) as err:
+    except (ValueError, IndexError, ValidationError, HTTPStatusError) as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_name}:{version} not found",
