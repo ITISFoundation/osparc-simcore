@@ -5,14 +5,13 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Any, Deque, Dict
+from typing import Deque, Dict
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.projects import AccessRights, Project
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
-from models_library.utils.nodes import compute_node_hash
+from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 from simcore_service_webserver.director_v2 import create_or_update_pipeline
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
@@ -223,20 +222,32 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
     await create_or_update_pipeline(app, user_id, project.uuid)
 
 
-async def _fix_node_run_hashes_based_on_states(project: Project) -> None:
-    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
-        node_io_payload = {"inputs": None, "outputs": None}
-        node = project.workbench.get(str(node_id))
-        if node:
-            node_io_payload = {"inputs": node.inputs, "outputs": node.outputs}
+async def _fix_node_run_hashes_based_on_old_project(
+    project: Project, original_project: Project, node_mapping: Dict[NodeID, NodeID]
+) -> None:
+    for old_node_id, old_node in original_project.workbench.items():
+        new_node_id = node_mapping.get(old_node_id)
+        if new_node_id is None:
+            # this should not happen
+            continue
+        new_node = project.workbench.get(new_node_id)
+        if new_node is None:
+            # this should also not happen
+            continue
 
-        return node_io_payload
-
-    for node_id, node in project.workbench.items():
-        if node.state == RunningState.SUCCESS:
-            # this node run hash shall be re-computed
-            new_node_run_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
-            node.run_hash = new_node_run_hash
+        # check the node status in the old project
+        old_computed_hash = await compute_node_hash(
+            old_node_id, project_node_io_payload_cb(original_project)
+        )
+        node_needs_update = old_computed_hash != old_node.run_hash
+        # set the new node hash
+        new_node.run_hash = (
+            None
+            if node_needs_update
+            else await compute_node_hash(
+                new_node_id, project_node_io_payload_cb(project)
+            )
+        )
 
 
 async def import_files_and_validate_project(
@@ -316,7 +327,9 @@ async def import_files_and_validate_project(
     project_uuid = str(project.uuid)
 
     try:
-        await _fix_node_run_hashes_based_on_states(project)
+        await _fix_node_run_hashes_based_on_old_project(
+            project, project_file, shuffled_data
+        )
         await add_new_project(app, project, user_id)
     except Exception as e:
         log.warning(
