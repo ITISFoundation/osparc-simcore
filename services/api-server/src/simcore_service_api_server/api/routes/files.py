@@ -53,7 +53,10 @@ def convert_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
     meta = FileMetadata(
         file_id=file_id,
         filename=filename,
-        content_type=guess_type(filename)[0],
+        # FIXME: UploadFile gets content from the request header while here is
+        # mimetypes.guess_type used. Sometimes it does not match.
+        # Add column in meta_data table of storage and stop guessing :-)
+        content_type=guess_type(filename)[0] or "application/octet-stream",
         checksum=stored_file_meta.entity_tag,
     )
     return meta
