@@ -14,12 +14,12 @@ def build_url(
     database: str = "",
     user: str = "",
     password: str = "",
-    host: str = "localhost",
+    host: str = "127.0.0.1",
     port: int = 5432,
     **_kwargs,
 ) -> URL:
     """
-       Safe build pg url as 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
+    Safe build pg url as 'postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}'
     """
     dsn = URL.build(
         scheme="postgresql+psycopg2",
