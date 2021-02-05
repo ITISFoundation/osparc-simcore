@@ -5,11 +5,29 @@ from copy import deepcopy
 from pprint import pformat
 from typing import Any, Callable, Coroutine, Dict
 
-from models_library.projects_nodes import NodeID
-from models_library.projects_nodes_io import PortLink
 from pydantic import BaseModel
 
+from ..projects import Project
+from ..projects_nodes import NodeID
+from ..projects_nodes_io import PortLink
+
 logger = logging.getLogger(__name__)
+
+
+def project_node_io_payload_cb(
+    project: Project,
+) -> Callable[[NodeID], Coroutine[Any, Any, Dict[str, Any]]]:
+    """callback fct to use together with compute_node_hash when a Project as input"""
+
+    async def node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+        node_io_payload = {"inputs": None, "outputs": None}
+        node = project.workbench.get(str(node_id))
+        if node:
+            node_io_payload = {"inputs": node.inputs, "outputs": node.outputs}
+
+        return node_io_payload
+
+    return node_io_payload_cb
 
 
 async def compute_node_hash(
