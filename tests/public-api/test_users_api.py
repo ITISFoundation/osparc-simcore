@@ -42,9 +42,9 @@ def test_get_user(users_api: UsersApi, expected_profile):
 
 def test_update_user(users_api: UsersApi):
     before: Profile = users_api.get_my_profile()
-    assert before.first_name != "Foo"
+    assert before.first_name != "Richard"
 
-    after: Profile = users_api.update_my_profile(ProfileUpdate(first_name="Foo"))
+    after: Profile = users_api.update_my_profile(ProfileUpdate(first_name="Richard"))
     assert after != before
-    assert after.first_name == "Foo"
+    assert after.first_name == "Richard"
     assert after == users_api.get_my_profile()

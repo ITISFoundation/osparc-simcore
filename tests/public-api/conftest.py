@@ -137,3 +137,8 @@ def api_client(registered_user):
 
     with osparc.ApiClient(cfg) as api_client:
         yield api_client
+
+
+@pytest.fixture()
+def solvers_api(api_client):
+    return osparc.SolversApi(api_client)

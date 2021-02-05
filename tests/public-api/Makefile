@@ -27,7 +27,10 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 .PHONY: test-dev
 test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
-	# WARNING: do not forget to build latest changes images
+	# WARNING:
+	#   - do not forget to build latest changes images
+	#   - this test can be affected by existing docker volumes in your host machine
+	#
 	# running unit tests
 	@pytest --keep-docker-up \
 	-vv \
