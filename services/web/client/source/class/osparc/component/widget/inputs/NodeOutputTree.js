@@ -59,7 +59,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       createItem: () => new osparc.component.widget.inputs.NodeOutputTreeItem(),
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
-        c.bindProperty("value", "label", null, item, id);
+        c.bindProperty("value", "value", null, item, id);
         c.bindProperty("label", "description", null, item, id);
         c.bindProperty("nodeKey", "nodeKey", null, item, id);
         c.bindProperty("portKey", "portKey", null, item, id);

@@ -91,17 +91,14 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       // The standard tree icon follows
       this.addIcon();
 
-      // The label
-      this.addLabel();
+      // Add the port value
+      this.__valueLabel = new qx.ui.basic.Label();
+      this.addWidget(this.__valueLabel);
 
       // All else should be right justified
       this.addWidget(new qx.ui.core.Spacer(), {
         flex: 1
       });
-
-      // Add the port value
-      this.__valueLabel = new qx.ui.basic.Label();
-      this.addWidget(this.__valueLabel);
     },
 
     _applyValue: function(value) {
