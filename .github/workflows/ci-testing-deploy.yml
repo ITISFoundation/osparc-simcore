@@ -76,7 +76,7 @@ jobs:
     strategy:
       matrix:
         python: [3.6]
-        os: [ubuntu-20.04]
+        os: [ubuntu-20.04.1]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
