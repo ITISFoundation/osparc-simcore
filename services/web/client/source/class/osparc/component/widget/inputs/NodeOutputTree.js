@@ -61,6 +61,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         c.bindDefaultProperties(item, id);
         c.bindProperty("value", "value", null, item, id);
         c.bindProperty("label", "description", null, item, id);
+        c.bindProperty("description", "description2", null, item, id);
         c.bindProperty("nodeKey", "nodeKey", null, item, id);
         c.bindProperty("portKey", "portKey", null, item, id);
         c.bindProperty("isDir", "isDir", null, item, id);
@@ -138,6 +139,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       for (let portKey in ports) {
         let portData = {
           label: ports[portKey].label,
+          description: ports[portKey].description,
           portKey: portKey,
           nodeKey: node.getKey(),
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
