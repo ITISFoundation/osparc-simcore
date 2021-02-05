@@ -221,6 +221,9 @@
               }
             }
           },
+          "404": {
+            "description": "File not found"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -267,8 +270,16 @@
                   "type": "string",
                   "format": "binary"
                 }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
+          },
+          "404": {
+            "description": "File not found"
           },
           "422": {
             "description": "Validation Error",

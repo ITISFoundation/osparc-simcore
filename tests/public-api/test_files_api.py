@@ -4,6 +4,7 @@
 
 import time
 from pathlib import Path
+from uuid import UUID
 
 import osparc
 import pytest
@@ -26,6 +27,8 @@ def test_upload_file(files_api: FilesApi, tmpdir):
 
     assert input_file.filename == input_path.name
     assert input_file.content_type == "text/plain"
+    assert UUID(input_file.file_id)
+    assert input_file.checksum
 
     same_file = files_api.get_file(input_file.file_id)
     assert same_file == input_file
@@ -57,4 +60,3 @@ def test_upload_list_and_download(files_api: FilesApi, tmpdir):
     # ('--e66c24aef3a840f024407d17ba9046a8\r\n'\n 'Content-Disposition: form-data; name="upload-file"; '\n 'filename="some-hdf5-file.h5"\r\n'\n 'Content-Type: application/octet-stream\r\n'\n '\r\n'\n 'demo but some other stuff as well\r\n'\n '--e66c24aef3a840f024407d17ba9046a8--\r\n')
     same_file = files_api.download_file(file_id=input_file.file_id)
     assert input_path.read_text() == same_file
-    # TODO: check response of dowload_file ... says json

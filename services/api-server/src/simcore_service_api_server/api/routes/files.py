@@ -1,12 +1,10 @@
 import asyncio
 import json
 import logging
-import re
 import shutil
 import tempfile
 from collections import deque
 from datetime import datetime
-from mimetypes import guess_type
 from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
@@ -23,7 +21,7 @@ from starlette.responses import FileResponse
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
-from ...modules.storage import StorageApi, StorageFileMetaData
+from ...modules.storage import StorageApi, StorageFileMetaData, to_file_metadata
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from .files_faker import the_fake_impl
@@ -39,27 +37,11 @@ router = APIRouter()
 # - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
 #
 #
-FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
-def convert_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
-    # extracts fields from api/{file_id}/{filename}
-    match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
-    if not match:
-        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
-
-    file_id, filename = match.groups()
-
-    meta = FileMetadata(
-        file_id=file_id,
-        filename=filename,
-        # FIXME: UploadFile gets content from the request header while here is
-        # mimetypes.guess_type used. Sometimes it does not match.
-        # Add column in meta_data table of storage and stop guessing :-)
-        content_type=guess_type(filename)[0] or "application/octet-stream",
-        checksum=stored_file_meta.entity_tag,
-    )
-    return meta
+common_error_responses = {
+    404: {"description": "File not found"},
+}
 
 
 @router.get("", response_model=List[FileMetadata])
@@ -78,7 +60,7 @@ async def list_files(
             assert stored_file_meta.user_id == user_id  # nosec
             assert stored_file_meta.file_id  # nosec
 
-            meta = convert_metadata(stored_file_meta)
+            meta = to_file_metadata(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
             logger.warning(
@@ -158,7 +140,9 @@ async def upload_files(files: List[UploadFile] = File(...)):
     return uploaded
 
 
-@router.get("/{file_id}", response_model=FileMetadata)
+@router.get(
+    "/{file_id}", response_model=FileMetadata, responses={**common_error_responses}
+)
 async def get_file(
     file_id: UUID,
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
@@ -178,7 +162,7 @@ async def get_file(
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model
-        meta = convert_metadata(stored_file_meta)
+        meta = to_file_metadata(stored_file_meta)
         return meta
 
     except (ValueError, ValidationError) as err:
@@ -193,14 +177,16 @@ async def get_file(
     "/{file_id}/content",
     response_class=FileResponse,
     responses={
+        **common_error_responses,
         200: {
             "content": {
                 "application/octet-stream": {
                     "schema": {"type": "string", "format": "binary"}
-                }
+                },
+                "text/plain": {"schema": {"type": "string"}},
             },
             "description": "Returns a arbitrary binary data",
-        }
+        },
     },
 )
 async def download_file(
