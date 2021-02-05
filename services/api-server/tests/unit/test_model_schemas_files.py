@@ -82,7 +82,7 @@ def test_convert_filemetadata():
 
     assert apiserver_file_meta.file_id
     assert apiserver_file_meta.filename == "extensionless"
-    assert apiserver_file_meta.content_type is None
+    assert apiserver_file_meta.content_type == "application/octet-stream"  # default
     assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
 
     with pytest.raises(ValueError):
