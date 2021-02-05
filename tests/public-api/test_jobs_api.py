@@ -4,7 +4,7 @@
 
 import time
 from datetime import timedelta
-from typing import List
+from typing import Any, Dict, List
 
 import pytest
 from osparc import ApiClient, JobsApi, SolversApi
@@ -17,9 +17,14 @@ def jobs_api(api_client: ApiClient):
     return JobsApi(api_client)
 
 
-def test_create_job(solvers_api: SolversApi, jobs_api: JobsApi):
+def test_create_job(
+    solvers_api: SolversApi, jobs_api: JobsApi, services_registry: Dict[str, Any]
+):
+
+    sleeper = services_registry["sleeper_service"]
+
     solver = solvers_api.get_solver_by_name_and_version(
-        solver_name="simcore/services/comp/slepper", version="latest"
+        solver_name=sleeper["name"], version=sleeper["version"]
     )
     assert isinstance(solver, Solver)
 
@@ -40,10 +45,14 @@ def test_create_job(solvers_api: SolversApi, jobs_api: JobsApi):
     assert all(job in all_jobs for job in solver_jobs)
 
 
-def test_run_job(solvers_api: SolversApi, jobs_api: JobsApi):
+def test_run_job(
+    solvers_api: SolversApi, jobs_api: JobsApi, services_registry: Dict[str, Any]
+):
+
+    sleeper = services_registry["sleeper_service"]
 
     solver = solvers_api.get_solver_by_name_and_version(
-        solver_name="simcore/services/comp/slepper", version="latest"
+        solver_name=sleeper["name"], version=sleeper["version"]
     )
     assert isinstance(solver, Solver)
 

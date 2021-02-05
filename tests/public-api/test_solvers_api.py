@@ -4,9 +4,10 @@
 
 
 from http import HTTPStatus
-from typing import List
+from typing import Any, Dict, List
 
 import pytest
+from osparc.api.solvers_api import SolversApi
 from osparc.exceptions import ApiException
 from osparc.models import Solver
 from packaging.version import parse as parse_version
@@ -37,13 +38,16 @@ def test_get_latest_solver(solvers_api):
     )
 
 
-def test_get_solver(solvers_api, expected_):
+def test_get_solver(solvers_api: SolversApi, services_registry: Dict[str, Any]):
+    expected_name = services_registry["sleeper_service"]["name"]
+    expected_version = services_registry["sleeper_service"]["version"]
+
     solver = solvers_api.get_solver_by_name_and_version(
-        solver_name="simcore/services/comp/itis/sleeper", version="1.0.0"
+        solver_name=expected_name, version=expected_version
     )
 
-    assert solver.name == "simcore/services/comp/itis/sleeper"
-    assert solver.version == "1.0.0"
+    assert solver.name == expected_name
+    assert solver.version == expected_version
 
     same_solver = solvers_api.get_solver_by_id(solver.id)
 

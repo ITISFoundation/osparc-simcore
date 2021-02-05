@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 from pprint import pformat
-from typing import Dict
+from typing import Any, Dict
 
 import httpx
 import osparc
@@ -47,13 +47,26 @@ def prepare_all_services(
 
 
 @pytest.fixture(scope="module")
+def services_registry(sleeper_service) -> Dict[str, Any]:
+    # See other service fixtures in
+    # packages/pytest-simcore/src/pytest_simcore/docker_registry.py
+    return {
+        "sleeper_service": {
+            "name": sleeper_service["image"]["name"],
+            "version": sleeper_service["image"]["tag"],
+            "schema": sleeper_service["schema"],
+        },
+        # add here more
+    }
+
+
+@pytest.fixture(scope="module")
 def make_up_prod(
     prepare_all_services: Dict,
     simcore_docker_compose: Dict,
     ops_docker_compose: Dict,
     docker_stack: Dict,
-    # add here services in registry
-    sleeper_service,
+    services_registry,
 ) -> Dict:
 
     for attempt in Retrying(
