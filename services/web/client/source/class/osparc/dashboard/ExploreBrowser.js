@@ -472,7 +472,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         return null;
       }
 
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Sharing"));
       permissionsButton.addListener("execute", () => {
         this.__openPermissions(studyData);
       }, this);
