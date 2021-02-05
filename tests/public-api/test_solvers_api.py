@@ -13,7 +13,7 @@ from osparc.models import Solver
 from packaging.version import parse as parse_version
 
 
-def test_get_latest_solver(solvers_api):
+def test_get_latest_solver(solvers_api: SolversApi):
     solvers: List[Solver] = solvers_api.list_solvers()
 
     latest = None
@@ -25,7 +25,7 @@ def test_get_latest_solver(solvers_api):
                 latest = solver
 
             elif parse_version(latest.version) < parse_version(solver.version):
-                latest = solvers_api.get_solver_by_id(solver.id)
+                latest = solvers_api.get_solver(solver.id)
 
     print(latest)
     assert latest
@@ -49,7 +49,7 @@ def test_get_solver(solvers_api: SolversApi, services_registry: Dict[str, Any]):
     assert solver.name == expected_name
     assert solver.version == expected_version
 
-    same_solver = solvers_api.get_solver_by_id(solver.id)
+    same_solver = solvers_api.get_solver(solver.id)
 
     assert same_solver.id == solver.id
     assert same_solver.name == solver.name
@@ -66,5 +66,5 @@ def test_solvers_not_found(solvers_api):
             solver_name="simcore/services/comp/something-not-in-this-registry",
             version="1.4.55",
         )
-    assert excinfo.errisinstance.status == HTTPStatus.NOT_FOUND  # 404
-    assert "solver" in excinfo.errisinstance.reason.lower()
+    assert excinfo.value.status == HTTPStatus.NOT_FOUND  # 404
+    assert "solver" in excinfo.value.reason.lower()
