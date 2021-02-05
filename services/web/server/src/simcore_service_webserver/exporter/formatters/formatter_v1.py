@@ -5,12 +5,12 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Dict
+from typing import Deque, Dict, List, Tuple
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.projects import AccessRights, Project
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import BaseFileLink, NodeID
 from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 from simcore_service_webserver.director_v2 import create_or_update_pipeline
 from simcore_service_webserver.projects.projects_api import (
@@ -165,7 +165,7 @@ async def upload_file_to_storage(
     link_and_path: LinkAndPath2,
     user_id: int,
     session: ClientSession,
-) -> ETag:
+) -> Tuple[LinkAndPath2, ETag]:
     try:
         upload_url = await get_file_upload_url(
             app=app,
@@ -200,7 +200,7 @@ async def upload_file_to_storage(
         log.debug(
             "Upload status=%s, result: '%s', Etag %s", resp.status, upload_result, e_tag
         )
-        return e_tag
+        return (link_and_path, e_tag)
 
 
 async def add_new_project(app: web.Application, project: Project, user_id: int):
@@ -248,6 +248,33 @@ async def _fix_node_run_hashes_based_on_old_project(
                 new_node_id, project_node_io_payload_cb(project)
             )
         )
+
+
+async def _fix_file_e_tags(
+    project: Project, links_to_etags: List[Tuple[LinkAndPath2, ETag]]
+) -> None:
+    for link_and_path, e_tag in links_to_etags:
+        file_path = link_and_path.relative_path_to_file
+        if len(file_path.parts) < 3:
+            log.warning(
+                "fixing eTag while importing issue: the path is not expected, skipping %s",
+                file_path,
+            )
+            continue
+        node_id = file_path.parts[-2]
+
+        # now try to fix the eTag if any
+        node = project.workbench.get(node_id)
+        if node is None:
+            log.warning(
+                "node %s could not be found in project, skipping eTag fix",
+                node_id,
+            )
+            continue
+        # find the file in the outputs if any
+        for output in node.outputs.values():
+            if isinstance(output, BaseFileLink) and output.path == str(file_path):
+                output.e_tag = e_tag
 
 
 async def import_files_and_validate_project(
@@ -302,10 +329,7 @@ async def import_files_and_validate_project(
                     session=session,
                 )
             )
-        await asyncio.gather(*run_in_parallel)
-
-        # FIXME: @GitHK: the eTag changes since this is a new upload. Can you please fix this one? I modified the upload
-        # function such that it returns it now.
+        links_to_new_e_tags = await asyncio.gather(*run_in_parallel)
 
     # finally create and add the project
     project = Project(
@@ -330,6 +354,7 @@ async def import_files_and_validate_project(
         await _fix_node_run_hashes_based_on_old_project(
             project, project_file, shuffled_data
         )
+        await _fix_file_e_tags(project, links_to_new_e_tags)
         await add_new_project(app, project, user_id)
     except Exception as e:
         log.warning(
