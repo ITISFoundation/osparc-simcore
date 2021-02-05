@@ -4,14 +4,14 @@
 
 import hashlib
 
-import osparc
 import pytest
-from osparc.models import Profile, UserRoleEnum
+from osparc import UsersApi
+from osparc.models import Profile, ProfileUpdate, UserRoleEnum
 
 
 @pytest.fixture()
 def users_api(api_client):
-    return osparc.UsersApi(api_client)
+    return UsersApi(api_client)
 
 
 @pytest.fixture
@@ -33,18 +33,18 @@ def expected_profile(registered_user):
     }
 
 
-def test_get_user(users_api, expected_profile):
+def test_get_user(users_api: UsersApi, expected_profile):
     user: Profile = users_api.get_my_profile()
 
     # TODO: check all fields automatically
     assert user.login == expected_profile["login"]
 
 
-def test_update_user(users_api):
+def test_update_user(users_api: UsersApi):
     before: Profile = users_api.get_my_profile()
     assert before.first_name != "Foo"
 
-    after: Profile = users_api.update_my_profile(first_name="Foo")
+    after: Profile = users_api.update_my_profile(ProfileUpdate(first_name="Foo"))
     assert after != before
     assert after.first_name == "Foo"
     assert after == users_api.get_my_profile()

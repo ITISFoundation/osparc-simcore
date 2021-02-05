@@ -4,6 +4,16 @@
 include ../../scripts/common.Makefile
 include ../../scripts/common-package.Makefile
 
+# MAIN ------------------
+
+# Redirections to recipes in the main Makefile
+.PHONY: leave build
+leave build:
+	$(MAKE_C) $(REPO_BASE_DIR) $@
+
+
+# LOCAL ------------------
+
 .PHONY: requirements
 requirements: ## compiles pip requirements (.in -> .txt)
 	@$(MAKE_C) requirements reqs
@@ -17,11 +27,12 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 
 .PHONY: test-dev
 test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
+	# WARNING: do not forget to build latest changes images
 	# running unit tests
 	@pytest --keep-docker-up \
 	-vv \
 	--color=yes \
-	--exitfirst --failed-first \
+	--failed-first \
 	--durations=10 \
 	--pdb \
 	$(CURDIR)
