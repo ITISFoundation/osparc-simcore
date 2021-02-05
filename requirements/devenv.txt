@@ -20,9 +20,7 @@ black
 isort
 
 # dependency manager
-# last version completely changes the output formatting of requirements files
-# [https://github.com/jazzband/pip-tools/pull/1237] there is currently no way to disable it
-pip-tools==5.4.0
+pip-tools
 
 # version manager
 bump2version
