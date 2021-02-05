@@ -42,14 +42,6 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
     }
   },
 
-  statics: {
-    bindHintProps: function(controller, item, id) {
-      controller.bindProperty("description", "description", null, item, id);
-      controller.bindProperty("description2", "description2", null, item, id);
-      controller.bindProperty("url", "url", null, item, id);
-    }
-  },
-
   members: {
     __recreateInfoButton: function() {
       if (this.__infoButton) {
