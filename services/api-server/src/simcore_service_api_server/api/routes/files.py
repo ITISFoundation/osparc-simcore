@@ -189,12 +189,26 @@ async def get_file(
         ) from err
 
 
-@router.get("/{file_id}/content")
+@router.get(
+    "/{file_id}/content",
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"}
+                }
+            },
+            "description": "Returns a arbitrary binary data",
+        }
+    },
+)
 async def download_file(
     file_id: UUID,
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
+    # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
     meta: FileMetadata = await get_file(file_id, storage_client, user_id)
 

@@ -260,10 +260,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Returns a arbitrary binary data",
             "content": {
-              "application/json": {
-                "schema": {}
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
