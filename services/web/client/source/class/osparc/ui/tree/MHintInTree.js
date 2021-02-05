@@ -25,6 +25,14 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       nullable: true
     },
 
+    description2: {
+      check: "String",
+      init: null,
+      event: "changeDescription2",
+      apply: "__recreateInfoButton",
+      nullable: true
+    },
+
     url: {
       check: "String",
       init: null,
@@ -37,6 +45,7 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
   statics: {
     bindHintProps: function(controller, item, id) {
       controller.bindProperty("description", "description", null, item, id);
+      controller.bindProperty("description2", "description2", null, item, id);
       controller.bindProperty("url", "url", null, item, id);
     }
   },
@@ -51,12 +60,16 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       }
 
       const desc = this.getDescription();
+      const desc2 = this.getDescription2();
       const url = this.getUrl();
       const hints = [];
-      if (desc !== "" && desc !== null) {
+      if (desc && desc !== "") {
         hints.push(desc);
       }
-      if (url !== "" && url !== null) {
+      if (desc2 && desc2 !== "") {
+        hints.push(desc2);
+      }
+      if (url && url !== "") {
         const link = "<a href=" + url + " target='_blank'>More...</a>";
         const linkWithRightColor = link.replace(/^<a /, "<a style=\"color:"+ qx.theme.manager.Color.getInstance().getTheme().colors["link"] + "\"");
         hints.push(linkWithRightColor);
