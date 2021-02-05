@@ -693,12 +693,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const text = this.tr("Importing process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
-      const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonImporting();
-      placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
       const uploadingLabel = this.tr("Uploading file");
-      placeholderStudyCard.setStateLabel(uploadingLabel);
-      importTask.setSubtitle(uploadingLabel);
+      const placeholderStudyCard = new osparc.dashboard.StudyBrowserButtonPlaceholder();
+      placeholderStudyCard.buildLayout(
+        this.tr("Importing Study..."),
+        "@FontAwesome5Solid/cloud-upload-alt/60",
+        uploadingLabel,
+        true
+      );
+      placeholderStudyCard.subscribeToFilterGroup("sideSearchFilter");
       this.__userStudyContainer.addAt(placeholderStudyCard, 1);
+      importTask.setSubtitle(uploadingLabel);
 
       const body = new FormData();
       body.append("fileName", file);
@@ -708,10 +713,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // updateProgress
         if (ep.lengthComputable) {
           const percentComplete = ep.loaded / ep.total * 100;
-          placeholderStudyCard.getProgressBar().setValue(percentComplete);
+          placeholderStudyCard.getChildControl("progress-bar").setValue(percentComplete);
           if (percentComplete === 100) {
             const processinglabel = this.tr("Processing study");
-            placeholderStudyCard.setStateLabel(processinglabel);
+            placeholderStudyCard.getChildControl("state-label").setValue(processinglabel);
             importTask.setSubtitle(processinglabel);
             placeholderStudyCard.getProgressBar().exclude();
           }
@@ -723,9 +728,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         // transferComplete
         if (req.status == 200) {
           const processinglabel = this.tr("Processing study");
-          placeholderStudyCard.setStateLabel(processinglabel);
+          placeholderStudyCard.getChildControl("state-label").setValue(processinglabel);
           importTask.setSubtitle(processinglabel);
-          placeholderStudyCard.getProgressBar().exclude();
+          placeholderStudyCard.getChildControl("progress-bar").exclude();
           const data = JSON.parse(req.responseText);
           const params = {
             url: {
