@@ -4,7 +4,7 @@ pytest
 pytest-cov
 pytest-asyncio
 
-osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@catalog-solvers-api
+osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@master
 
 python-dotenv
 httpx
