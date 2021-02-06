@@ -67,4 +67,4 @@ def test_solvers_not_found(solvers_api):
             version="1.4.55",
         )
     assert excinfo.value.status == HTTPStatus.NOT_FOUND  # 404
-    assert "solver" in excinfo.value.reason.lower()
+    assert "not found" in excinfo.value.reason.lower()
