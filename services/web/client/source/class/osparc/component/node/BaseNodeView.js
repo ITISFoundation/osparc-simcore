@@ -120,6 +120,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       sideHeader.add(buttonPart);
       this.add(sideHeader, 0);
       titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
+        height: 35,
         alignY: "middle",
         font: "text-16"
       }));
@@ -148,21 +149,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __buildCollapsedSideView: function(isInput) {
       const text = isInput ? this.tr("Inputs") : this.tr("Outputs");
-      const icon = isInput ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-up/12";
       const minWidth = isInput ? 120 : 130;
       const view = isInput ? this.__inputsView : this.__outputsView;
       const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
 
       const collapsedView = new qx.ui.basic.Atom().set({
         label: text + " (0)",
-        icon: icon,
         iconPosition: "right",
         gap: 6,
         padding: 8,
         alignX: "center",
         alignY: "middle",
         minWidth: minWidth,
-        font: "title-18"
+        font: "title-16"
       });
       collapsedView.getContentElement().addClass("verticalText");
       collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
@@ -394,7 +393,21 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           visibility: "visible"
         });
         this.__inputsView.bind("collapsed", inputKnob, "source", {
-          converter: collapsed => collapsed ? "@FontAwesome5Solid/chevron-right/12" : "@FontAwesome5Solid/chevron-left/12"
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-right/12" : "@FontAwesome5Solid/angle-double-left/12"
+        });
+
+        // fill up the gap created on top of the slider when the image was added
+        const ph = new qx.ui.core.Widget().set({
+          backgroundColor: "material-button-background",
+          height: 35,
+          maxWidth: 10
+        });
+        inputKnob.setLayoutProperties({
+          flex: 1
+        });
+        // eslint-disable-next-line no-underscore-dangle
+        this.getChildControl("splitter")._addAt(ph, 0, {
+          flex: 0
         });
       }, this);
       this.__pane2.addListenerOnce("appear", () => {
@@ -403,7 +416,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           visibility: "visible"
         });
         this.__outputsView.bind("collapsed", outputKnob, "source", {
-          converter: collapsed => collapsed ? "@FontAwesome5Solid/chevron-left/12" : "@FontAwesome5Solid/chevron-right/12"
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-left/12" : "@FontAwesome5Solid/angle-double-right/12"
         });
       }, this);
 
