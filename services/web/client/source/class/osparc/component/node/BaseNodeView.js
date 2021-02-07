@@ -432,7 +432,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }, this);
     },
 
-    // fill up the gap created on top of the slider when the image was added
+    // fill up the gap created on top of the slider when the knob image was added
     __fillUpSplittersGap: function(splitter) {
       const toolbarExtender = new qx.ui.core.Widget().set({
         backgroundColor: "material-button-background",
@@ -447,7 +447,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       splitter._addAt(new qx.ui.core.Spacer(), 1, {
         flex: 1
       });
-      // knob goes in seoncd postion
+      // knob goes in second postion
       // eslint-disable-next-line no-underscore-dangle
       splitter._addAt(new qx.ui.core.Spacer(), 3, {
         flex: 1
