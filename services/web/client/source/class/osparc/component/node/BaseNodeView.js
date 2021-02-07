@@ -390,16 +390,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __attachEventHandlers: function() {
-      const blocker1 = this.getBlocker();
-      const blocker2 = this.__pane2.getBlocker();
-      blocker1.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
-      blocker2.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
+      const inputBlocker = this.getBlocker();
+      const outputBlocker = this.__pane2.getBlocker();
+      inputBlocker.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
+      outputBlocker.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
 
       const maximizeIframeCb = msg => {
-        blocker1.setStyles({
+        inputBlocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
-        blocker2.setStyles({
+        outputBlocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
         this.__inputsView.setVisibility(msg.getData() ? "excluded" : "visible");
