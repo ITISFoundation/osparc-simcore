@@ -123,6 +123,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         alignY: "middle",
         font: "text-16"
       }));
+      sidePanel.add(sideHeader);
 
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       const scroll = new qx.ui.container.Scroll();
