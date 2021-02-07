@@ -123,9 +123,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         alignY: "middle",
         font: "text-16"
       }));
-      const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse"), "@FontAwesome5Solid/minus-square/14");
-      buttonPart.add(collapseBtn);
-      sidePanel.add(sideHeader);
 
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       const scroll = new qx.ui.container.Scroll();
@@ -141,11 +138,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__outputsView = sidePanel;
         this.__outputNodesLayout = container;
       }
-      collapseBtn.addListener("execute", () => {
-        container.getChildren().forEach(node => {
-          node.setCollapsed(true);
-        });
-      }, this);
 
       const collapsedView = this.__buildCollapsedSideView(isInput);
       sidePanel.setCollapsedView(collapsedView);
