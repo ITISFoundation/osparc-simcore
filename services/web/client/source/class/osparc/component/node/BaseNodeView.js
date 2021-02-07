@@ -388,6 +388,25 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       inputBlocker.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
       outputBlocker.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
 
+      this.addListenerOnce("appear", () => {
+        const inputKnob = this.getChildControl("splitter").getChildControl("knob");
+        inputKnob.set({
+          visibility: "visible"
+        });
+        this.__inputsView.bind("collapsed", inputKnob, "source", {
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/chevron-right/12" : "@FontAwesome5Solid/chevron-left/12"
+        });
+      }, this);
+      this.__pane2.addListenerOnce("appear", () => {
+        const outputKnob = this.__pane2.getChildControl("splitter").getChildControl("knob");
+        outputKnob.set({
+          visibility: "visible"
+        });
+        this.__outputsView.bind("collapsed", outputKnob, "source", {
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/chevron-left/12" : "@FontAwesome5Solid/chevron-right/12"
+        });
+      }, this);
+
       const maximizeIframeCb = msg => {
         inputBlocker.setStyles({
           display: msg.getData() ? "none" : "block"
