@@ -390,6 +390,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
+    getLinks: function() {
+      const links = [];
+      Object.keys(this.__ctrlLinkMap).forEach(portKey => {
+        if ("link" in this._form.getControl(portKey)) {
+          links.push(this._form.getControl(portKey)["link"]);
+        }
+      });
+      return links;
+    },
+
     addLink: function(toPortId, fromNodeId, fromPortId) {
       if (!this.__isPortAvailable(toPortId)) {
         return false;
