@@ -32,6 +32,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   statics: {
+    TOOLBAR_HEIGHT: 35,
+
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
         appearance: "settings-groupbox",
@@ -112,7 +114,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       sidePanel.getLayout().resetSeparator();
 
-      const sideHeader = new qx.ui.toolbar.ToolBar();
+      const sideHeader = new qx.ui.toolbar.ToolBar().set({
+        alignY: "middle"
+      });
       const titlePart = new qx.ui.toolbar.Part();
       const buttonPart = new qx.ui.toolbar.Part();
       sideHeader.add(titlePart);
@@ -120,7 +124,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       sideHeader.add(buttonPart);
       this.add(sideHeader, 0);
       titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
-        height: 35,
+        height: this.self().TOOLBAR_HEIGHT,
         alignY: "middle",
         font: "text-16"
       }));
@@ -388,36 +392,27 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       outputBlocker.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
 
       this.addListenerOnce("appear", () => {
-        const inputKnob = this.getChildControl("splitter").getChildControl("knob");
+        const inputSplitter = this.getChildControl("splitter");
+        const inputKnob = inputSplitter.getChildControl("knob");
         inputKnob.set({
           visibility: "visible"
         });
         this.__inputsView.bind("collapsed", inputKnob, "source", {
           converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-right/12" : "@FontAwesome5Solid/angle-double-left/12"
         });
-
-        // fill up the gap created on top of the slider when the image was added
-        const ph = new qx.ui.core.Widget().set({
-          backgroundColor: "material-button-background",
-          height: 35,
-          maxWidth: 10
-        });
-        inputKnob.setLayoutProperties({
-          flex: 1
-        });
-        // eslint-disable-next-line no-underscore-dangle
-        this.getChildControl("splitter")._addAt(ph, 0, {
-          flex: 0
-        });
+        this.__fillUpSplittersGap(inputSplitter);
       }, this);
+
       this.__pane2.addListenerOnce("appear", () => {
-        const outputKnob = this.__pane2.getChildControl("splitter").getChildControl("knob");
+        const outputSplitter = this.__pane2.getChildControl("splitter");
+        const outputKnob = outputSplitter.getChildControl("knob");
         outputKnob.set({
           visibility: "visible"
         });
-        this.__outputsView.bind("collapsed", outputKnob, "source", {
+        this.__inputsView.bind("collapsed", outputKnob, "source", {
           converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-left/12" : "@FontAwesome5Solid/angle-double-right/12"
         });
+        this.__fillUpSplittersGap(outputSplitter);
       }, this);
 
       const maximizeIframeCb = msg => {
@@ -438,6 +433,28 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
       }, this);
+    },
+
+    // fill up the gap created on top of the slider when the image was added
+    __fillUpSplittersGap: function(splitter) {
+      const toolbarExtender = new qx.ui.core.Widget().set({
+        backgroundColor: "material-button-background",
+        height: this.self().TOOLBAR_HEIGHT,
+        maxWidth: 12
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(toolbarExtender, 0, {
+        flex: 0
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(new qx.ui.core.Spacer(), 1, {
+        flex: 1
+      });
+      // knob goes in seoncd postion
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(new qx.ui.core.Spacer(), 3, {
+        flex: 1
+      });
     },
 
     /**
