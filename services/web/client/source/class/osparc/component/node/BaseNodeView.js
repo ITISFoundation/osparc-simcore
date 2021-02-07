@@ -114,21 +114,18 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
       sidePanel.getLayout().resetSeparator();
 
-      const sideHeader = new qx.ui.toolbar.ToolBar().set({
+      const headerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignY: "middle"
-      });
-      const titlePart = new qx.ui.toolbar.Part();
-      const buttonPart = new qx.ui.toolbar.Part();
-      sideHeader.add(titlePart);
-      sideHeader.addSpacer();
-      sideHeader.add(buttonPart);
-      this.add(sideHeader, 0);
-      titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
+      })).set({
         height: this.self().TOOLBAR_HEIGHT,
-        alignY: "middle",
+        paddingLeft: 10,
+        backgroundColor: "material-button-background"
+      });
+      const titleLabel = new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
         font: "text-16"
-      }));
-      sidePanel.add(sideHeader);
+      });
+      headerContainer.add(titleLabel);
+      sidePanel.add(headerContainer);
 
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       const scroll = new qx.ui.container.Scroll();
@@ -409,7 +406,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         outputKnob.set({
           visibility: "visible"
         });
-        this.__inputsView.bind("collapsed", outputKnob, "source", {
+        this.__outputsView.bind("collapsed", outputKnob, "source", {
           converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-left/12" : "@FontAwesome5Solid/angle-double-right/12"
         });
         this.__fillUpSplittersGap(outputSplitter);
