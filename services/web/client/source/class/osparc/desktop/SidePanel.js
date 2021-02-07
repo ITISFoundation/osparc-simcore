@@ -49,6 +49,7 @@ qx.Class.define("osparc.desktop.SidePanel", {
     collapsed: {
       init: false,
       check: "Boolean",
+      event: "changeCollapsed",
       apply: "_applyCollapsed"
     },
 
