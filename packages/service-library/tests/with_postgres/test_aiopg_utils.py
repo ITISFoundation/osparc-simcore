@@ -14,7 +14,6 @@ import psycopg2
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
-
 from servicelib.aiopg_utils import (
     DatabaseError,
     DataSourceName,
@@ -141,7 +140,7 @@ async def test_engine_when_idle_for_some_time():
 
 async def test_engine_when_pg_not_reachable(loop):
     dsn = DataSourceName(
-        database="db", user="foo", password="foo", host="localhost", port=123
+        database="db", user="foo", password="foo", host="127.0.0.1", port=123
     )
 
     with pytest.raises(psycopg2.OperationalError):

@@ -175,15 +175,20 @@ class CompTasksRepository(BaseRepository):
 
         # insert or update the remaining tasks
         # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
+        # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
         for comp_task_db in list_of_comp_tasks_in_project:
 
             insert_stmt = insert(comp_tasks).values(
                 **comp_task_db.dict(by_alias=True, exclude_unset=True)
             )
+
+            exclusion_rule = {"state"}
+            if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
+                exclusion_rule.add("outputs")
             on_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
                 set_=comp_task_db.dict(
-                    by_alias=True, exclude_unset=True, exclude={"outputs", "state"}
+                    by_alias=True, exclude_unset=True, exclude=exclusion_rule
                 ),
             )
             await self.connection.execute(on_update_stmt)

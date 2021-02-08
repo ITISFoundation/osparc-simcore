@@ -27,6 +27,11 @@
         }
     },
     "properties": {
+        "enabled": {
+            "type": "boolean",
+            "title": "Whether the quality assesment is enabled or not",
+            "default": true
+        },
         "tsr": {
             "type": "object",
             "title": "Ten Simple Rules",

@@ -3,8 +3,8 @@ from typing import Callable
 
 from fastapi import FastAPI
 
-from ..db.events import close_db_connection, connect_to_db
 from .._meta import __version__, project_name
+from ..db.events import close_db_connection, connect_to_db
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def create_start_app_handler(app: FastAPI) -> Callable:
         if app.state.settings.postgres.enabled:
             await connect_to_db(app)
 
-        print(WELCOME_MSG)
+        print(WELCOME_MSG, flush=True)
 
     return on_startup
 

@@ -31,7 +31,7 @@ qx.Class.define("osparc.studycard.Medium", {
     });
     this._setLayout(new qx.ui.layout.VBox(6));
 
-    if (study && study instanceof osparc.data.model.Study) {
+    if (study instanceof osparc.data.model.Study) {
       this.setStudy(study);
     }
 
@@ -173,15 +173,19 @@ qx.Class.define("osparc.studycard.Medium", {
           callback: this.__openAccessRights,
           ctx: this
         }
-      }, {
-        label: this.tr("Quality"),
-        view: this.__createQuality(),
-        action: {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openQuality,
-          ctx: this
-        }
       }];
+
+      if (osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
+        extraInfo.push({
+          label: this.tr("Quality"),
+          view: this.__createQuality(),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.__openQuality,
+            ctx: this
+          }
+        });
+      }
       return extraInfo;
     },
 
@@ -228,18 +232,22 @@ qx.Class.define("osparc.studycard.Medium", {
 
     __openAccessRights: function() {
       const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        this._reloadStudy(studyId);
-      }, this);
+      permissionsView.addListener("updateAccessRights", e => {
+        const updatedData = e.getData();
+        this.getStudy().setAccessRights(updatedData["accessRights"]);
+      });
     },
 
     __openQuality: function() {
-      osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedData = e.getData();
+        this.getStudy().setQuality(updatedData["quality"]);
+      });
     },
 
     __openStudyDetails: function() {
-      const studyDetails = new osparc.studycard.Large(this.getStudy().serialize());
+      const studyDetails = new osparc.studycard.Large(this.getStudy());
       const title = this.tr("Study Details");
       const width = 500;
       const height = 500;
