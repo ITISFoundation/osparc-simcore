@@ -152,7 +152,7 @@ qx.Class.define("osparc.file.FilePicker", {
       filesAdd.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
-          this.__setOutputFileFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+          this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
         this.__filesTree.resetCache();
         this.__initResources();
@@ -162,7 +162,7 @@ qx.Class.define("osparc.file.FilePicker", {
       fileDownloadLink.addListener("fileLinkAdded", e => {
         const downloadLink = e.getData();
         const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
-        this.__setOutputFileFromLink(downloadLink, label);
+        this.__setOutputValueFromLink(downloadLink, label);
       }, this);
 
       const selectBtn = this.__selectBtn = this._createChildControlImpl("selectButton");
@@ -208,7 +208,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const data = this.__filesTree.getSelectedFile();
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
-        this.__setOutputFileFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
+        this.__setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
         this.getNode().repopulateOutputPortData();
       }
     },
@@ -218,7 +218,7 @@ qx.Class.define("osparc.file.FilePicker", {
       return outputs["outFile"];
     },
 
-    __setOutputFileFromStore: function(store, dataset, path, label) {
+    __setOutputValueFromStore: function(store, dataset, path, label) {
       if (store !== undefined && path) {
         const outputs = this.__getOutputFile();
         outputs["value"] = {
@@ -231,7 +231,7 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    __setOutputFileFromLink: function(downloadLink, label) {
+    __setOutputValueFromLink: function(downloadLink, label) {
       if (downloadLink) {
         const outputs = this.__getOutputFile();
         outputs["value"] = {
