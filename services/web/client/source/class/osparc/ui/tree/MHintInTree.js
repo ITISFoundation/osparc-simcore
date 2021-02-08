@@ -44,11 +44,10 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
 
   members: {
     addHint: function() {
-      this.__infoButton = new osparc.component.form.FieldWHint("", "", new qx.ui.basic.Label()).set({
-        visibility: "excluded",
-        maxWidth: 150
-      });
+      this.__infoButton = new osparc.ui.hint.InfoHint();
       this._add(this.__infoButton);
+
+      return this.__infoButton;
     },
 
     __populateInfoButton: function() {
@@ -72,13 +71,8 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
           this.__populateInfoButton();
         }, this);
       }
-      if (hints.length) {
-        const hint = hints.join("<br>");
-        this.__infoButton.setHintText(hint);
-        this.__infoButton.show();
-      } else {
-        this.__infoButton.exclude();
-      }
+      const hint = hints.join("<br>");
+      this.__infoButton.setHintText(hint);
     }
   }
 });
