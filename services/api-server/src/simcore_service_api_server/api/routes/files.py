@@ -162,7 +162,7 @@ async def get_file(
 
 @router.get(
     "/{file_id}/content",
-    response_class=FileResponse,
+    response_class=RedirectResponse,
     responses={
         **common_error_responses,
         200: {
