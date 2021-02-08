@@ -1,24 +1,17 @@
 import asyncio
 import json
 import logging
-import pdb
-import shutil
-import tempfile
 from collections import deque
 from datetime import datetime
-from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
 from uuid import UUID
 
-import aiofiles
-import aiofiles.os
 import httpx
 from fastapi import APIRouter, Depends, File, Header, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
-from starlette.background import BackgroundTask
 from starlette.responses import FileResponse, RedirectResponse
 
 from ..._meta import api_vtag
@@ -198,43 +191,7 @@ async def download_file(
     )
 
     logger.info("Downloading %s to %s ...", meta, presigned_download_link)
-
-    async def _download_chunk():
-        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, read=3600)) as client:
-            async with client.stream("GET", presigned_download_link) as resp:
-                async for chunk in resp.aiter_bytes():
-                    yield chunk
-
-                resp.raise_for_status()
-
-    async def _delete_file(file_path: Path):
-        logger.debug("Deleting %s ...", file_path)
-        if file_path.exists():
-            await aiofiles.os.remove(file_path)
-
-    async def _download_and_save(meta: FileMetadata):
-        file_path = Path(tempfile.gettempdir()) / f"download/{meta.file_id}"
-        try:
-            file_path.resolve().parent.mkdir(parents=True, exist_ok=True)
-            async with aiofiles.open(file_path, mode="wb") as fh:
-                async for chunk in _download_chunk():
-                    await fh.write(chunk)
-        except Exception:
-            await _delete_file(file_path)
-            raise
-        return file_path
-
-    # tmp download here TODO: had some problems with RedirectedResponse(presigned_download_link)
-    file_path = await _download_and_save(meta)
-    stats = await aiofiles.os.stat(file_path)
-
-    return FileResponse(
-        str(file_path),
-        media_type=meta.content_type,
-        filename=meta.filename,
-        stat_result=stats,
-        background=BackgroundTask(_delete_file, file_path=file_path),
-    )
+    return RedirectResponse(presigned_download_link)
 
 
 async def files_upload_multiple_view():
