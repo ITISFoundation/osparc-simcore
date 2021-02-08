@@ -7,7 +7,7 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from .config import get_settings
 from .exceptions import ExporterException
-from .export_import import study_export, study_import
+from .export_import import study_export, study_import, study_duplicate
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 
 ONE_GB: int = 1024 * 1024 * 1024
@@ -88,4 +88,37 @@ async def import_project(request: web.Request):
     return dict(uuid=imported_project_uuid)
 
 
-rest_handler_functions = {fun.__name__: fun for fun in [export_project, import_project]}
+@login_required
+@permission_required("project.duplicate")
+async def duplicate_project(request: web.Request):
+    user_id = request[RQT_USERID_KEY]
+    project_uuid = request.match_info.get("project_id")
+
+    temp_dir: str = await get_empty_tmp_dir()
+
+    try:
+        exported_project_path = await study_export(
+            app=request.app,
+            tmp_dir=temp_dir,
+            project_id=project_uuid,
+            user_id=user_id,
+            archive=False,
+        )
+        log.info("Study to duplicate '%s'", exported_project_path)
+
+        # return the duplicated study ID
+        duplicated_project_uuid = await study_duplicate(
+            app=request.app,
+            user_id=user_id,
+            exported_project_path=exported_project_path,
+        )
+        return dict(uuid=duplicated_project_uuid)
+    except Exception as e:
+        # make sure all errors are trapped and the directory where the file is sotred is removed
+        await remove_dir(temp_dir)
+        raise e
+
+
+rest_handler_functions = {
+    fun.__name__: fun for fun in {export_project, import_project, duplicate_project}
+}

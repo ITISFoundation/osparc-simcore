@@ -89,3 +89,10 @@ async def study_import(
 
     formatter: BaseFormatter = await validate_manifest(unzipped_root_folder)
     return await formatter.validate_and_import_directory(app=app, user_id=user_id)
+
+
+async def study_duplicate(
+    app: web.Application, user_id: int, exported_project_path: Path
+) -> str:
+    formatter: BaseFormatter = await validate_manifest(exported_project_path)
+    return await formatter.validate_and_import_directory(app=app, user_id=user_id)

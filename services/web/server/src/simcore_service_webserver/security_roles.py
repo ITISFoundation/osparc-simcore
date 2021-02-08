@@ -49,6 +49,7 @@ ROLES_PERMISSIONS = {
             "project.close",
             "project.delete",  # "study.node.create",
             "project.export",
+            "project.duplicate",
             "project.import",
             "project.access_rights.update",
             # "study.node.delete",
