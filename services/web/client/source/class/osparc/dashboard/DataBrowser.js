@@ -74,7 +74,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       });
       reloadBtn.addListener("execute", function() {
         this.__filesTree.resetCache();
-        this.__initResources(null);
+        this.__filesTree.populateTree(null);
       }, this);
       treeLayout.add(reloadBtn);
 
@@ -87,7 +87,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       }, this);
       filesTree.addListener("fileCopied", e => {
         if (e) {
-          this.__initResources(null);
+          this.__filesTree.populateTree(null);
         }
       }, this);
       treeLayout.add(filesTree, {
@@ -111,7 +111,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       const selectedFileLayout = this.__selectedFileLayout = new osparc.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
-        this.__initResources(fileMetadata["locationId"]);
+        this.__filesTree.populateTree(fileMetadata["locationId"]);
       }, this);
       fileActions.add(selectedFileLayout);
 
