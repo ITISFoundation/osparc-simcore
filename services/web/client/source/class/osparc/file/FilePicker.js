@@ -155,7 +155,7 @@ qx.Class.define("osparc.file.FilePicker", {
           this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
         this.__filesTree.resetCache();
-        this.__initResources();
+        this.__filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
 
       const fileDownloadLink = this.__downloadLink = this._createChildControlImpl("downloadLink");
