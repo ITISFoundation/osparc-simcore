@@ -154,7 +154,6 @@ qx.Class.define("osparc.file.FilePicker", {
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
           this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
-        this.getNode().repopulateOutputPortData();
         this.__filesTree.resetCache();
         this.__initResources();
       }, this);
@@ -210,7 +209,6 @@ qx.Class.define("osparc.file.FilePicker", {
       if (data && data["isFile"]) {
         const selectedItem = data["selectedItem"];
         this.__setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
-        this.getNode().repopulateOutputPortData();
       }
     },
 
@@ -221,26 +219,29 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __setOutputValueFromStore: function(store, dataset, path, label) {
       if (store !== undefined && path) {
-        const outputs = this.__getOutputFile();
-        outputs["value"] = {
+        const outputs = this.getNode().getOutputs();
+        outputs["outFile"]["value"] = {
           store,
           dataset,
           path,
           label
         };
+        this.getNode().setOutputs({});
+        this.getNode().setOutputs(outputs);
         this.getNode().getStatus().setProgress(100);
       }
     },
 
     __setOutputValueFromLink: function(downloadLink, label) {
       if (downloadLink) {
-        const outputs = this.__getOutputFile();
-        outputs["value"] = {
+        const outputs = this.getNode().getOutputs();
+        outputs["outFile"]["value"] = {
           downloadLink,
           label: label ? label : ""
         };
+        this.getNode().setOutputs({});
+        this.getNode().setOutputs(outputs);
         this.getNode().getStatus().setProgress(100);
-        this.getNode().repopulateOutputPortData();
       }
     },
 

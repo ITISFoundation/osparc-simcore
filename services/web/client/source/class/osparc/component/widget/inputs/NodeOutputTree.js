@@ -75,15 +75,17 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       }
     });
 
-    node.addListener("outputChanged", e => {
-      const portKey = e.getData();
-      const outValue = node.getOutput(portKey);
-      this.getModel().getChildren()
-        .forEach(treeItem => {
-          if (treeItem.getPortKey() === portKey) {
-            treeItem.setValue(qx.data.marshal.Json.createModel(outValue.value));
-          }
-        });
+    node.addListener("changeOutputs", e => {
+      const updatedOutputs = e.getData();
+      for (const portKey in updatedOutputs) {
+        const outValue = updatedOutputs[portKey];
+        this.getModel().getChildren()
+          .forEach(treeItem => {
+            if (treeItem.getPortKey() === portKey) {
+              treeItem.setValue(qx.data.marshal.Json.createModel(outValue.value));
+            }
+          });
+      }
     }, this);
   },
 
