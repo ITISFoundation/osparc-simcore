@@ -61,6 +61,10 @@ qx.Class.define("osparc.component.form.FieldWHint", {
     }
   },
 
+  statics: {
+    TOP_MARGIN: 2
+  },
+
   members: {
     __field: null,
     __hint: null,
@@ -75,11 +79,16 @@ qx.Class.define("osparc.component.form.FieldWHint", {
           control.getContentElement().addClass("hint-button");
           this._add(control, {
             right: 0,
-            top: 3
+            top: this.self().TOP_MARGIN
           });
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    setHintText: function(hintText) {
+      this.__hintText = hintText;
+      this.__attachEventHandlers();
     },
 
     __applyHintPosition: function(value) {
@@ -93,12 +102,12 @@ qx.Class.define("osparc.component.form.FieldWHint", {
       if (value === "left") {
         this._add(this.__infoButton, {
           left: 0,
-          top: 3
+          top: this.self().TOP_MARGIN
         });
       } else {
         this._add(this.__infoButton, {
           right: 0,
-          top: 3
+          top: this.self().TOP_MARGIN
         });
       }
     },
