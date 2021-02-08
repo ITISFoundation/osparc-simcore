@@ -33,6 +33,14 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       nullable: true
     },
 
+    description3: {
+      check: "String",
+      init: null,
+      event: "changeDescription3",
+      apply: "__populateInfoButton",
+      nullable: true
+    },
+
     url: {
       check: "String",
       init: null,
@@ -53,6 +61,7 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
     __populateInfoButton: function() {
       const desc = this.getDescription();
       const desc2 = this.getDescription2();
+      const desc3 = this.getDescription3();
       const url = this.getUrl();
       const hints = [];
       if (desc && desc !== "") {
@@ -60,6 +69,9 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       }
       if (desc2 && desc2 !== "") {
         hints.push(desc2);
+      }
+      if (desc3 && desc3 !== "") {
+        hints.push(desc3);
       }
       if (url && url !== "") {
         const link = "<a href=" + url + " target='_blank'>More...</a>";
