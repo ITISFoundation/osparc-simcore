@@ -35,23 +35,26 @@ def _parallel_zipfile_extract_worker(
 
 
 async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
-    with open(archive_to_extract, "rb") as file_handler:
-        zip_file_handler = zipfile.ZipFile(file_handler)
-        with ProcessPoolExecutor() as pool:
-            loop = asyncio.get_event_loop()
+    try:
+        with open(archive_to_extract, "rb") as file_handler:
+            zip_file_handler = zipfile.ZipFile(file_handler)
+            with ProcessPoolExecutor() as pool:
+                loop = asyncio.get_event_loop()
 
-            tasks = [
-                loop.run_in_executor(
-                    pool,
-                    _parallel_zipfile_extract_worker,
-                    archive_to_extract,
-                    zip_entry.filename,
-                    destination_folder,
-                )
-                for zip_entry in zip_file_handler.infolist()
-            ]
+                tasks = [
+                    loop.run_in_executor(
+                        pool,
+                        _parallel_zipfile_extract_worker,
+                        archive_to_extract,
+                        zip_entry.filename,
+                        destination_folder,
+                    )
+                    for zip_entry in zip_file_handler.infolist()
+                ]
 
-            await asyncio.gather(*tasks)
+                await asyncio.gather(*tasks)
+    except Exception as e:
+        raise ExporterException(f"There was an error while unarchiveing directory {e}") from e
 
 
 def _serial_add_to_archive(
@@ -163,7 +166,6 @@ async def zip_folder(input_path: Path) -> Path:
 
 
 async def unzip_folder(input_path: Path) -> Path:
-    log.info("unzip %s to %s", input_path, input_path.parent)
     await unarchive_dir(
         archive_to_extract=input_path, destination_folder=input_path.parent
     )

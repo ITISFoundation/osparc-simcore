@@ -52,7 +52,9 @@ async def monkey_patch_asyncio_subporcess(loop, mocker):
 @pytest.fixture
 def temp_dir() -> Path:
     with tempfile.TemporaryDirectory() as dir_path:
-        yield Path(dir_path)
+        subdir = Path(dir_path) / "subdir_in_temp_dir"
+        subdir.mkdir(parents=True, exist_ok=True)
+        yield subdir
 
 
 @pytest.fixture
@@ -71,7 +73,7 @@ def project_uuid():
 def temp_dir_with_existing_archive(temp_dir, project_uui) -> Path:
     nested_dir = temp_dir / "nested"
     nested_dir.mkdir(parents=True, exist_ok=True)
-    nested_file = nested_dir.parent / f"{project_uui}.zip"
+    nested_file = nested_dir.parent.parent / "archive.zip"
     nested_file.write_text("some_data")
 
     return nested_dir
@@ -153,34 +155,26 @@ def test_validate_osparc_file_name_too_many_shasums():
     )
 
 
-async def test_error_during_compression(temp_dir, project_uuid):
-    with pytest.raises(ExporterException) as exc_info:
-        await zip_folder(project_id=project_uuid, input_path=temp_dir)
-
-    assert exc_info.type is ExporterException
-    assert (
-        exc_info.value.args[0]
-        == f"[Errno 2] No such file or directory: '{project_uuid}'"
-    )
-
-
 async def test_error_during_decompression():
     with pytest.raises(ExporterException) as exc_info:
         await unzip_folder(Path("/i/do/not/exist"))
 
     assert exc_info.type is ExporterException
-    assert exc_info.value.args[0] == "/i/do/not/exist is not a zip file"
+    assert exc_info.value.args[0] == (
+        "There was an error while unarchiveing directory "
+        "[Errno 2] No such file or directory: '/i/do/not/exist'"
+    )
 
 
 async def test_archive_already_exists(temp_dir, project_uuid):
     tmp_dir_to_compress = temp_dir_with_existing_archive(temp_dir, project_uuid)
     with pytest.raises(ExporterException) as exc_info:
-        await zip_folder(project_id=project_uuid, input_path=tmp_dir_to_compress)
+        await zip_folder(input_path=tmp_dir_to_compress)
 
     assert exc_info.type is ExporterException
     assert (
         exc_info.value.args[0]
-        == f"Cannot archive because file already exists '{str(temp_dir)}/{project_uuid}.zip'"
+        == f"Cannot archive because file already exists '{str(temp_dir.parent)}/archive.zip'"
     )
 
 
@@ -192,9 +186,7 @@ async def test_zip_unzip_folder(
     file_in_archive = tmp_dir_to_compress / "random_file.txt"
     data_before_compression = file_in_archive.read_text()
 
-    archive_path = await zip_folder(
-        project_id=project_uuid, input_path=tmp_dir_to_compress
-    )
+    archive_path = await zip_folder(input_path=tmp_dir_to_compress)
 
     str_archive_path = str(archive_path)
 
@@ -217,9 +209,7 @@ async def test_unzip_found_too_many_project_targets(
         temp_dir, project_uuid
     )
 
-    archive_path = await zip_folder(
-        project_id=project_uuid, input_path=tmp_dir_to_compress
-    )
+    archive_path = await zip_folder(input_path=tmp_dir_to_compress)
 
     str_archive_path = str(archive_path)
 
