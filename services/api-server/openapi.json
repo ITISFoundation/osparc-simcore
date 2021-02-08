@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.2",
   "info": {
-    "title": "Public API Server",
-    "description": "**osparc-simcore Public RESTful API Specifications**\n## Python Library\n- Check the [documentation](https://itisfoundation.github.io/osparc-simcore-python-client)\n- Quick install: ``pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git``\n",
+    "title": "osparc.io web API",
+    "description": "osparc-simcore public web API specifications",
     "version": "0.3.0",
     "x-logo": {
       "url": "https://raw.githubusercontent.com/ITISFoundation/osparc-manual/b809d93619512eb60c827b7e769c6145758378d0/_media/osparc-logo.svg",
@@ -221,6 +221,9 @@
               }
             }
           },
+          "404": {
+            "description": "File not found"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -260,12 +263,23 @@
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Returns a arbitrary binary data",
             "content": {
-              "application/json": {
-                "schema": {}
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
               }
             }
+          },
+          "404": {
+            "description": "File not found"
           },
           "422": {
             "description": "Validation Error",
@@ -307,7 +321,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_id}": {
@@ -350,7 +369,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_id}/jobs": {
@@ -506,7 +530,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/jobs": {
@@ -851,7 +880,13 @@
             "description": "MD5 hash of the file's content"
           }
         },
-        "description": "Describes a file stored on the server side "
+        "description": "Describes a file stored on the server side ",
+        "example": {
+          "file_id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
+          "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
+          "content_type": "application/pdf",
+          "checksum": "de47d0e1229aa2dfb80097389094eadd-1"
+        }
       },
       "Groups": {
         "title": "Groups",
@@ -1182,8 +1217,28 @@
             "title": "Gravatar Id",
             "maxLength": 40,
             "type": "string",
-            "description": "Hash value of email to retrieve an avatar image from https://www.gravatar.com"
+            "description": "md5 hash value of email to retrieve an avatar image from https://www.gravatar.com"
           }
+        },
+        "example": {
+          "first_name": "James",
+          "last_name": "Maxwell",
+          "login": "james-maxwell@itis.swiss",
+          "role": "USER",
+          "groups": {
+            "me": {
+              "gid": "123",
+              "label": "maxy",
+              "description": "primary group"
+            },
+            "organizations": [],
+            "all": {
+              "gid": "1",
+              "label": "Everyone",
+              "description": "all users"
+            }
+          },
+          "gravatar_id": "9a8930a5b20d7048e37740bac5c1ca4f"
         }
       },
       "ProfileUpdate": {
@@ -1224,11 +1279,7 @@
             "title": "Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "semantic version number of the node",
-            "example": [
-              "1.0.0",
-              "0.0.1"
-            ]
+            "description": "semantic version number of the node"
           },
           "id": {
             "title": "Id",
@@ -1261,11 +1312,11 @@
         "example": {
           "name": "simcore/services/comp/isolve",
           "version": "2.1.1",
-          "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+          "id": "f7c25b7d-edd6-32a4-9751-6072e4163537",
           "title": "iSolve",
           "description": "EM solver",
           "maintainer": "info@itis.swiss",
-          "url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05"
+          "url": "https://api.osparc.io/v0/solvers/f7c25b7d-edd6-32a4-9751-6072e4163537"
         }
       },
       "TaskStates": {

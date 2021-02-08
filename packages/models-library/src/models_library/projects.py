@@ -104,7 +104,7 @@ class Project(BaseModel):
         title = "osparc-simcore project"
         extra = Extra.forbid
 
-        # pylint: disable=no-self-argument
+        @staticmethod
         def schema_extra(schema: Dict, _model: "Project"):
             # pylint: disable=unsubscriptable-object
 

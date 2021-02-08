@@ -1,0 +1,16 @@
+-c ../../../requirements/constraints.txt
+
+pytest
+pytest-cov
+pytest-asyncio
+
+osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@37641017e1222fe6a6e3adaf822ca009b096dd60
+
+python-dotenv
+httpx
+
+# pulled by pytest-simcore
+docker
+tenacity
+jsonschema
+pyyaml

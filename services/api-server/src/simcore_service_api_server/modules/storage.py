@@ -1,5 +1,7 @@
 import logging
+import re
 import urllib.parse
+from mimetypes import guess_type
 from typing import List
 from uuid import UUID
 
@@ -9,6 +11,7 @@ from models_library.api_schemas_storage import FileMetaData as StorageFileMetaDa
 from models_library.api_schemas_storage import FileMetaDataArray, PresignedLink
 
 from ..core.settings import StorageSettings
+from ..models.schemas.files import FileMetadata
 from ..utils.client_base import BaseServiceClientApi
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
@@ -54,14 +57,6 @@ class StorageApi(BaseServiceClientApi):
     # @handle_retry(logger)
     # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
     #     return await self.client.get(path, *args, **kwargs)
-
-    async def is_responsive(self) -> bool:
-        try:
-            resp = await self.client.get("/")
-            resp.raise_for_status()
-            return True
-        except httpx.HTTPStatusError:
-            return False
 
     async def list_files(self, user_id: int) -> List[StorageFileMetaData]:
         """ Lists metadata of all s3 objects name as api/* from a given user"""
@@ -119,3 +114,26 @@ class StorageApi(BaseServiceClientApi):
 
         presigned_link = PresignedLink.parse_obj(resp.json()["data"])
         return presigned_link.link
+
+
+FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
+
+
+def to_file_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
+    # extracts fields from api/{file_id}/{filename}
+    match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
+    if not match:
+        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
+
+    file_id, filename = match.groups()
+
+    meta = FileMetadata(
+        file_id=file_id,
+        filename=filename,
+        # FIXME: UploadFile gets content from the request header while here is
+        # mimetypes.guess_type used. Sometimes it does not match.
+        # Add column in meta_data table of storage and stop guessing :-)
+        content_type=guess_type(filename)[0] or "application/octet-stream",
+        checksum=stored_file_meta.entity_tag,
+    )
+    return meta

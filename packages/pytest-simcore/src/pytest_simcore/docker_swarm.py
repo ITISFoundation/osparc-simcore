@@ -33,11 +33,12 @@ def keep_docker_up(request) -> bool:
 @pytest.fixture(scope="module")
 def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
-) -> None:
+) -> Iterator[None]:
     try:
         docker_client.swarm.reload()
         print("CAUTION: Already part of a swarm")
         yield
+
     except docker.errors.APIError:
         docker_client.swarm.init(advertise_addr=get_ip())
         yield
