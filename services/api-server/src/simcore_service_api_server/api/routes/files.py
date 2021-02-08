@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, Header, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
-from starlette.responses import FileResponse, RedirectResponse
+from starlette.responses import RedirectResponse
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
