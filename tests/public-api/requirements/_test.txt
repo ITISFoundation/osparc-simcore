@@ -46,7 +46,7 @@ iniconfig==1.1.1
     # via pytest
 jsonschema==3.2.0
     # via -r requirements/_test.in
-git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@master
+git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@37641017e1222fe6a6e3adaf822ca009b096dd60
     # via -r requirements/_test.in
 packaging==20.9
     # via pytest
