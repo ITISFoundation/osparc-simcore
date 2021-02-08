@@ -27,7 +27,7 @@ async def study_export(
     returns: directory if archive is True else a compressed archive is returned
     """
     # storage area for the project data
-    destination = Path(tmp_dir) / project_id
+    destination = Path(tmp_dir) / project_id / project_id
     destination.mkdir(parents=True, exist_ok=True)
 
     # The formatter will always be chosen to be the highest availabel version
@@ -41,7 +41,7 @@ async def study_export(
         return destination
 
     # an archive is always produced when compression is active
-    archive_path = await zip_folder(project_id=project_id, input_path=destination)
+    archive_path = await zip_folder(input_path=destination)
 
     return archive_path
 
