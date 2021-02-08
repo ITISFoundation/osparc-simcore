@@ -57,8 +57,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     // overridden
     _gridPos: {
       label: 0,
-      ctrlField: 1,
-      retrieveStatus: 2
+      info: 1,
+      ctrlField: 2,
+      retrieveStatus: 3
     },
     _retrieveStatus: {
       failed: -1,
@@ -95,8 +96,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     // overridden
     setAccessLevel: function(data) {
       for (const key in data) {
-        const control = this._form.getControl(key);
-        this.__changeControlVisibility(control, data[key]);
+        const label = this._getLabelFieldChild(key);
+        if (label) {
+          this.__changeControlVisibility(label.child, data[key]);
+        }
+
+        const info = this._getInfoFieldChild(key);
+        if (info) {
+          this.__changeControlVisibility(info.child, data[key]);
+        }
 
         const controlLink = this._getCtrlFieldChild(key);
         if (controlLink) {
@@ -315,9 +323,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           this._remove(child);
           const item = this._form.getControl(portId);
 
-          const fieldWMenu = this._createFieldWithMenu(item);
-
-          const field = this._createFieldWithHint(fieldWMenu, item.description);
+          const field = this._createFieldWithMenu(item);
           this._addAt(field, idx, {
             row: layoutProps.row,
             column: this._gridPos.ctrlField
@@ -348,7 +354,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
-        const hint = "getField" in child ? child.getField().description : "";
         const idx = data.idx;
         const layoutProps = child.getLayoutProperties();
         this._remove(child);
@@ -364,10 +369,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }, this);
         hBox.add(unlinkBtn);
 
-        const field = this._createFieldWithHint(hBox, hint);
-        field.key = portId;
+        hBox.key = portId;
 
-        this._addAt(field, idx, {
+        this._addAt(hBox, idx, {
           row: layoutProps.row,
           column: this._gridPos.ctrlField
         });
@@ -462,7 +466,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
-        const hint = "getField" in child ? child.getField().description : "";
         const idx = data.idx;
         const layoutProps = child.getLayoutProperties();
         this._remove(child);
@@ -478,10 +481,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }, this);
         hBox.add(unparamBtn);
 
-        const field = this._createFieldWithHint(hBox, hint);
-        field.key = portId;
+        hBox.key = portId;
 
-        this._addAt(field, idx, {
+        this._addAt(hBox, idx, {
           row: layoutProps.row,
           column: this._gridPos.ctrlField
         });

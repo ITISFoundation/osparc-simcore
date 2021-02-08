@@ -85,9 +85,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
     _addWidgets : function() {
       this.addHint();
-      this._add(new qx.ui.core.Spacer(5), {
-        flex: 1
-      });
+      this._add(new qx.ui.core.Spacer(5));
 
       this.addIcon();
 
