@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.form.FieldWHint", {
   },
 
   statics: {
-    TOP_MARGIN: 2
+    TOP_MARGIN: 3
   },
 
   members: {
@@ -84,11 +84,6 @@ qx.Class.define("osparc.component.form.FieldWHint", {
           break;
       }
       return control || this.base(arguments, id);
-    },
-
-    setHintText: function(hintText) {
-      this.__hintText = hintText;
-      this.__attachEventHandlers();
     },
 
     __applyHintPosition: function(value) {
