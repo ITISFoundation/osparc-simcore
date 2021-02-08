@@ -429,7 +429,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
               "type": "string"
             },
             "name": "service_key",
@@ -498,7 +498,7 @@
             "required": true,
             "schema": {
               "title": "Service Key",
-              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+              "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
               "type": "string"
             },
             "name": "service_key",
@@ -598,20 +598,12 @@
             "title": "Email",
             "type": "string",
             "description": "Email address",
-            "format": "email",
-            "example": [
-              "sun@sense.eight",
-              "deleen@minbar.bab"
-            ]
+            "format": "email"
           },
           "affiliation": {
             "title": "Affiliation",
             "type": "string",
-            "description": "Affiliation of the author",
-            "example": [
-              "Sense8",
-              "Babylon 5"
-            ]
+            "description": "Affiliation of the author"
           }
         },
         "additionalProperties": false
@@ -628,12 +620,7 @@
           "name": {
             "title": "Name",
             "type": "string",
-            "description": "Name of the subject",
-            "example": [
-              "travis-ci",
-              "coverals.io",
-              "github.io"
-            ]
+            "description": "Name of the subject"
           },
           "image": {
             "title": "Image",
@@ -641,12 +628,7 @@
             "minLength": 1,
             "type": "string",
             "description": "Url to the badge",
-            "format": "uri",
-            "example": [
-              "https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master",
-              "https://coveralls.io/repos/github/ITISFoundation/osparc-simcore/badge.svg?branch=master",
-              "https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation"
-            ]
+            "format": "uri"
           },
           "url": {
             "title": "Url",
@@ -654,12 +636,7 @@
             "minLength": 1,
             "type": "string",
             "description": "Link to the status",
-            "format": "uri",
-            "example": [
-              "https://travis-ci.org/ITISFoundation/osparc-simcore 'State of CI: build, test and pushing images'",
-              "https://coveralls.io/github/ITISFoundation/osparc-simcore?branch=master 'Test coverage'",
-              "https://itisfoundation.github.io/"
-            ]
+            "format": "uri"
           }
         },
         "additionalProperties": false
@@ -675,7 +652,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
             "type": "string",
             "example": "simcore/services/frontend/nodes-group/macros/1"
           },
@@ -719,7 +696,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
             "type": "string",
             "example": "simcore/services/frontend/nodes-group/macros/1"
           },
@@ -760,8 +737,8 @@
         "required": [
           "store",
           "path",
-          "dataset",
-          "label"
+          "label",
+          "dataset"
         ],
         "type": "object",
         "properties": {
@@ -775,20 +752,23 @@
                 "type": "integer"
               }
             ],
-            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
-            "example": [
-              "0",
-              1
-            ]
+            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore"
           },
           "path": {
             "title": "Path",
+            "pattern": "^.+$",
             "type": "string",
-            "description": "The path to the file in the storage provider domain",
-            "example": [
-              "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
-              "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
-            ]
+            "description": "The path to the file in the storage provider domain"
+          },
+          "eTag": {
+            "title": "Etag",
+            "type": "string",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "The real file name"
           },
           "dataset": {
             "title": "Dataset",
@@ -797,14 +777,27 @@
             "example": [
               "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"
             ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "DownloadLink": {
+        "title": "DownloadLink",
+        "required": [
+          "downloadLink"
+        ],
+        "type": "object",
+        "properties": {
+          "downloadLink": {
+            "title": "Downloadlink",
+            "maxLength": 65536,
+            "minLength": 1,
+            "type": "string",
+            "format": "uri"
           },
           "label": {
             "title": "Label",
-            "type": "string",
-            "description": "The real file name (REQUIRED for datcore)",
-            "example": [
-              "MyFile.txt"
-            ]
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -869,7 +862,7 @@
         "properties": {
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
             "type": "string",
             "description": "distinctive name for the node based on the docker registry path",
             "example": [
@@ -914,13 +907,27 @@
               "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
             ]
           },
+          "runHash": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "title": "Runhash",
+                "description": "the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
+                "example": [
+                  "a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"
+                ],
+                "type": "string"
+              }
+            ]
+          },
           "inputs": {
             "title": "Inputs",
             "type": "object",
             "description": "values of input properties"
           },
           "inputAccess": {
-            "title": "Inputaccess",
             "type": "object",
             "description": "map with key - access level pairs"
           },
@@ -929,7 +936,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "format": "uuid4"
+              "format": "uuid"
             },
             "description": "node IDs of where the node is connected to",
             "example": [
@@ -939,7 +946,8 @@
           },
           "outputs": {
             "title": "Outputs",
-            "type": "object"
+            "type": "object",
+            "description": "values of output properties"
           },
           "outputNode": {
             "title": "Outputnode",
@@ -951,7 +959,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "format": "uuid4"
+              "format": "uuid"
             },
             "description": "Used in group-nodes. Node IDs of those connected to the output",
             "example": [
@@ -962,12 +970,21 @@
           "parent": {
             "title": "Parent",
             "type": "string",
-            "description": "Parent's (group-nodes') node ID s.",
-            "format": "uuid4",
+            "description": "Parent's (group-nodes') node ID s. Used to group",
+            "format": "uuid",
             "example": [
               "nodeUUid1",
               "nodeUuid2"
             ]
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunningState"
+              }
+            ],
+            "description": "the node's running state",
+            "default": "NOT_STARTED"
           },
           "position": {
             "title": "Position",
@@ -977,9 +994,6 @@
               }
             ],
             "deprecated": true
-          },
-          "state": {
-            "$ref": "#/components/schemas/RunningState"
           }
         },
         "additionalProperties": false
@@ -996,14 +1010,14 @@
             "title": "Nodeuuid",
             "type": "string",
             "description": "The node to get the port output from",
-            "format": "uuid4",
+            "format": "uuid",
             "example": [
               "da5068e0-8a8d-4fb9-9516-56e5ddaef15b"
             ]
           },
           "output": {
             "title": "Output",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+            "pattern": "^[-_a-zA-Z0-9]+$",
             "type": "string",
             "description": "The port key in the node given by nodeUuid",
             "example": [
@@ -1050,7 +1064,7 @@
           "STARTED",
           "RETRY",
           "SUCCESS",
-          "FAILURE",
+          "FAILED",
           "ABORTED"
         ],
         "type": "string",
@@ -1105,11 +1119,7 @@
           "displayOrder": {
             "title": "Displayorder",
             "type": "number",
-            "description": "use this to numerically sort the properties for display",
-            "example": [
-              1,
-              -0.2
-            ]
+            "description": "use this to numerically sort the properties for display"
           },
           "label": {
             "title": "Label",
@@ -1127,48 +1137,28 @@
             "title": "Type",
             "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
-            "description": "data type expected on this input glob matching for data type is allowed",
-            "example": [
-              "number",
-              "boolean",
-              "data:*/*",
-              "data:text/*",
-              "data:[image/jpeg,image/png]",
-              "data:application/json",
-              "data:application/json;schema=https://my-schema/not/really/schema.json",
-              "data:application/vnd.ms-excel",
-              "data:text/plain",
-              "data:application/hdf5",
-              "data:application/edu.ucdavis@ceclancy.xyz"
-            ]
+            "description": "data type expected on this input glob matching for data type is allowed"
           },
           "fileToKeyMap": {
             "title": "Filetokeymap",
             "type": "object",
-            "description": "Place the data associated with the named keys in files",
-            "example": [
-              {
-                "dir/input1.txt": "key_1",
-                "dir33/input2.txt": "key2"
-              }
-            ]
+            "description": "Place the data associated with the named keys in files"
           },
           "defaultValue": {
             "title": "Defaultvalue",
             "anyOf": [
               {
-                "type": "string"
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
               },
               {
                 "type": "number"
               },
               {
-                "type": "integer"
+                "type": "string"
               }
-            ],
-            "example": [
-              "Dog",
-              true
             ]
           },
           "widget": {
@@ -1210,17 +1200,12 @@
             "minLength": 1,
             "type": "string",
             "description": "url to the thumbnail",
-            "format": "uri",
-            "example": "https://user-images.githubusercontent.com/32800795/61083844-ff48fb00-a42c-11e9-8e63-fa2d709c8baf.png"
+            "format": "uri"
           },
           "description": {
             "title": "Description",
             "type": "string",
-            "description": "human readable description of the purpose of the node",
-            "example": [
-              "Our best node type",
-              "The mother of all nodes, makes your numbers shine!"
-            ]
+            "description": "human readable description of the purpose of the node"
           },
           "classifiers": {
             "title": "Classifiers",
@@ -1228,6 +1213,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "quality": {
+            "title": "Quality",
+            "type": "object",
+            "default": {}
           },
           "access_rights": {
             "title": "Access Rights",
@@ -1239,33 +1229,29 @@
           },
           "key": {
             "title": "Key",
-            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[^\\s/]+)+$",
+            "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
             "type": "string",
-            "description": "distinctive name for the node based on the docker registry path",
-            "example": [
-              "simcore/services/comp/itis/sleeper",
-              "simcore/services/dynamic/3dviewer"
-            ]
+            "description": "distinctive name for the node based on the docker registry path"
           },
           "version": {
             "title": "Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "service version number",
-            "example": [
-              "1.0.0",
-              "0.0.1"
-            ]
+            "description": "service version number"
           },
           "integration-version": {
             "title": "Integration-Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "integration version number",
-            "example": "1.0.0"
+            "description": "integration version number"
           },
           "type": {
-            "$ref": "#/components/schemas/ServiceType"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServiceType"
+              }
+            ],
+            "description": "service type"
           },
           "badges": {
             "title": "Badges",
@@ -1286,10 +1272,7 @@
             "title": "Contact",
             "type": "string",
             "description": "email to correspond to the authors about the node",
-            "format": "email",
-            "example": [
-              "lab@net.flix"
-            ]
+            "format": "email"
           },
           "inputs": {
             "title": "Inputs",
@@ -1307,7 +1290,8 @@
             "format": "email"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Service base schema (used for docker labels on docker images)"
       },
       "ServiceOutput": {
         "title": "ServiceOutput",
@@ -1322,11 +1306,7 @@
           "displayOrder": {
             "title": "Displayorder",
             "type": "number",
-            "description": "use this to numerically sort the properties for display",
-            "example": [
-              1,
-              -0.2
-            ]
+            "description": "use this to numerically sort the properties for display"
           },
           "label": {
             "title": "Label",
@@ -1344,49 +1324,39 @@
             "title": "Type",
             "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
-            "description": "data type expected on this input glob matching for data type is allowed",
-            "example": [
-              "number",
-              "boolean",
-              "data:*/*",
-              "data:text/*",
-              "data:[image/jpeg,image/png]",
-              "data:application/json",
-              "data:application/json;schema=https://my-schema/not/really/schema.json",
-              "data:application/vnd.ms-excel",
-              "data:text/plain",
-              "data:application/hdf5",
-              "data:application/edu.ucdavis@ceclancy.xyz"
-            ]
+            "description": "data type expected on this input glob matching for data type is allowed"
           },
           "fileToKeyMap": {
             "title": "Filetokeymap",
             "type": "object",
-            "description": "Place the data associated with the named keys in files",
-            "example": [
-              {
-                "dir/input1.txt": "key_1",
-                "dir33/input2.txt": "key2"
-              }
-            ]
+            "description": "Place the data associated with the named keys in files"
           },
           "defaultValue": {
             "title": "Defaultvalue",
             "anyOf": [
               {
-                "type": "string"
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
               },
               {
                 "type": "number"
               },
               {
-                "type": "integer"
+                "type": "string"
+              }
+            ]
+          },
+          "widget": {
+            "title": "Widget",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
               }
             ],
-            "example": [
-              "Dog",
-              true
-            ]
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "deprecated": true
           }
         },
         "additionalProperties": false
@@ -1394,9 +1364,9 @@
       "ServiceType": {
         "title": "ServiceType",
         "enum": [
-          "frontend",
           "computational",
-          "dynamic"
+          "dynamic",
+          "frontend"
         ],
         "type": "string",
         "description": "An enumeration."
@@ -1434,6 +1404,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "quality": {
+            "title": "Quality",
+            "type": "object",
+            "default": {}
           }
         }
       },
@@ -1455,20 +1430,23 @@
                 "type": "integer"
               }
             ],
-            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
-            "example": [
-              "0",
-              1
-            ]
+            "description": "The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore"
           },
           "path": {
             "title": "Path",
+            "pattern": "^.+$",
             "type": "string",
-            "description": "The path to the file in the storage provider domain",
-            "example": [
-              "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
-              "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt"
-            ]
+            "description": "The path to the file in the storage provider domain"
+          },
+          "eTag": {
+            "title": "Etag",
+            "type": "string",
+            "description": "Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box)."
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "The real file name"
           }
         },
         "additionalProperties": false
@@ -1553,7 +1531,12 @@
         "type": "object",
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/WidgetType"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WidgetType"
+              }
+            ],
+            "description": "type of the property"
           },
           "details": {
             "title": "Details",

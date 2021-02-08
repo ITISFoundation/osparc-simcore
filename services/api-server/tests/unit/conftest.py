@@ -1,18 +1,21 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Coroutine, Dict, Union
+from typing import Any, Callable, Dict, Iterator, List, Type, Union
 
 import aiopg.sa
+import aiopg.sa.engine as aiopg_sa_engine
 import pytest
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
 import sqlalchemy as sa
+import sqlalchemy.engine as sa_engine
 import yaml
 from _helpers import RWApiKeysRepository, RWUsersRepository
 from asgi_lifespan import LifespanManager
@@ -20,14 +23,18 @@ from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
+from pydantic import BaseModel
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+pytestmark = pytest.mark.asyncio
+
 pytest_plugins = [
     "pytest_simcore.repository_paths",
 ]
+
 
 ## TEST_ENVIRON ---
 
@@ -59,6 +66,9 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 def project_env_devel_environment(project_env_devel_dict, monkeypatch):
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
+
+    # overrides
+    monkeypatch.setenv("API_SERVER_DEV_FEATURES_ENABLED", "1")
 
 
 ## FOLDER LAYOUT ---------------------------------------------------------------------
@@ -164,22 +174,29 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
 def make_engine(postgres_service: Dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
-    def maker(is_async=True) -> Union[Coroutine, Callable]:
-        return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
+    def maker(is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
+        if is_async:
+            return aiopg.sa.create_engine(dsn)
+        return sa.create_engine(dsn)
 
     return maker
 
 
 @pytest.fixture
-def apply_migration(postgres_service: Dict, make_engine) -> None:
+def apply_migration(postgres_service: Dict, make_engine) -> Iterator[None]:
+    # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
+    # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
+    # fixture to have local scope
+    #
     kwargs = postgres_service.copy()
     kwargs.pop("dsn")
     pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
+
     yield
+
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
-
     # FIXME: deletes all because downgrade is not reliable!
     engine = make_engine(False)
     metadata.drop_all(engine)
@@ -201,13 +218,13 @@ def app(monkeypatch, environment, apply_migration) -> FastAPI:
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI) -> FastAPI:
+async def initialized_app(app: FastAPI) -> Iterator[FastAPI]:
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
-async def client(initialized_app: FastAPI) -> AsyncClient:
+async def client(initialized_app: FastAPI) -> Iterator[AsyncClient]:
     async with AsyncClient(
         app=initialized_app,
         base_url="http://api.testserver.io",
@@ -249,3 +266,21 @@ async def test_api_key(loop, initialized_app, test_user_id) -> ApiKeyInDB:
             "test-api-key", api_key="key", api_secret="secret", user_id=test_user_id
         )
         return apikey
+
+
+## PYDANTIC MODELS & SCHEMAS -----------------------------------------------------
+
+
+@pytest.fixture
+def model_cls_examples(model_cls: Type[BaseModel]) -> List[Dict[str, Any]]:
+    # Extracts examples from pydantic model class
+    # Use by defining model_cls as test parametrization
+    # SEE https://pydantic-docs.helpmanual.io/usage/schema/#schema-customization
+    examples = model_cls.Config.schema_extra.get("examples", [])
+    example = model_cls.Config.schema_extra.get("example")
+    if example:
+        examples.append(example)
+
+    assert model_cls_examples, f"{model_cls} has NO examples. Add them in Config class"
+
+    return examples

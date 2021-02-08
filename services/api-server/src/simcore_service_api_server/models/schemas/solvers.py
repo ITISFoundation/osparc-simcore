@@ -4,9 +4,11 @@ from enum import Enum
 from typing import Optional, Union
 from uuid import UUID, uuid3
 
+import packaging.version
 from models_library.basic_regex import VERSION_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
-from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
+from packaging.version import LegacyVersion, Version
+from pydantic import BaseModel, Extra, Field, HttpUrl, conint, constr, validator
 
 LATEST_VERSION = "latest"
 NAMESPACE_SOLVER_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
@@ -14,7 +16,7 @@ NAMESPACE_JOB_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
 
 @functools.lru_cache()
-def _compose_solver_id(name, version) -> UUID:
+def compose_solver_id(name: str, version: str) -> UUID:
     return uuid3(NAMESPACE_SOLVER_KEY, f"{name}:{version}")
 
 
@@ -26,7 +28,7 @@ def _compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
 
 # SOLVER ----------
 #
-#
+VersionStr = constr(strip_whitespace=True, regex=VERSION_RE)
 SolverName = constr(
     strip_whitespace=True,
     regex=COMPUTATIONAL_SERVICE_KEY_RE,
@@ -41,11 +43,9 @@ class Solver(BaseModel):
         ...,
         description="Unique solver name with path namespaces",
     )
-    version: str = Field(
+    version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
-        regex=VERSION_RE,
-        example=["1.0.0", "0.0.1"],
     )
     id: UUID
 
@@ -60,24 +60,32 @@ class Solver(BaseModel):
     url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
 
     class Config:
+        extra = Extra.ignore
         schema_extra = {
             "example": {
                 "name": "simcore/services/comp/isolve",
                 "version": "2.1.1",
-                "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+                "id": "f7c25b7d-edd6-32a4-9751-6072e4163537",
                 "title": "iSolve",
                 "description": "EM solver",
                 "maintainer": "info@itis.swiss",
-                "url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
+                "url": "https://api.osparc.io/v0/solvers/f7c25b7d-edd6-32a4-9751-6072e4163537",
             }
         }
 
-    @validator("id", pre=True)
+    @validator("id", pre=True, always=True)
     @classmethod
     def compose_id_with_name_and_version(cls, v, values):
-        if v is None:
-            return _compose_solver_id(values["name"], values["version"])
-        return v
+        try:
+            sid = compose_solver_id(values["name"], values["version"])
+            if v and str(v) != str(sid):
+                raise ValueError(
+                    f"Invalid id: {v}!={sid} is incompatible with name and version composition"
+                )
+            return sid
+        except KeyError as err:
+            # If validation of name or version fails, it is NOT passed as values
+            raise ValueError(f"Id requires valid {err}") from err
 
     @classmethod
     def create_from_image(cls, image_meta: ServiceDockerData) -> "Solver":
@@ -94,6 +102,11 @@ class Solver(BaseModel):
             id=None,
             **data,
         )
+
+    @property
+    def pep404_version(self) -> Union[Version, LegacyVersion]:
+        """ Rich version type that can be used e.g. to compare """
+        return packaging.version.parse(self.version)
 
 
 # JOBS ----------
@@ -125,14 +138,15 @@ class Job(BaseModel):
             }
         }
 
-    @validator("id", pre=True)
+    @validator("id", pre=True, always=True)
     @classmethod
     def compose_id_with_solver_and_input(cls, v, values):
-        if v is None:
-            return _compose_job_id(
-                values["solver_id"], values["inputs_checksum"], values["created_at"]
-            )
-        return v
+        jid = _compose_job_id(
+            values["solver_id"], values["inputs_checksum"], values["created_at"]
+        )
+        if v and str(v) != str(jid):
+            raise ValueError(f"Invalid id: {v}!={jid} is incompatible with composition")
+        return jid
 
     @classmethod
     def create_now(cls, solver_id: UUID, inputs_checksum: str) -> "Job":
@@ -214,7 +228,7 @@ class SolverPort(BaseModel):
 
 
 class JobInput(SolverPort):
-    value: PortValue = None
+    value: Optional[PortValue] = None
 
     # TODO: validate one or the other but not both
 

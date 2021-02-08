@@ -13,8 +13,9 @@ from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
 
-SERVICES_TO_SKIP = ["sidecar", "postgres", "redis", "rabbit"]
 log = logging.getLogger(__name__)
+
+SERVICES_TO_SKIP = ["sidecar", "postgres", "redis", "rabbit"]
 SERVICE_HEALTHCHECK_ENTRYPOINT = {"director-v2": "/"}
 
 
@@ -34,9 +35,9 @@ def services_endpoint(
 
 
 @pytest.fixture(scope="function")
-async def simcore_services(
-    services_endpoint: Dict[str, URL], monkeypatch
-) -> Dict[str, URL]:
+async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> None:
+
+    # waits for all services to be responsive
     wait_tasks = [
         wait_till_service_responsive(
             f"{endpoint}{SERVICE_HEALTHCHECK_ENTRYPOINT.get(service, '/v0/')}"
@@ -44,13 +45,12 @@ async def simcore_services(
         for service, endpoint in services_endpoint.items()
     ]
     await asyncio.gather(*wait_tasks, return_exceptions=False)
-    for service, endpoint in services_endpoint.items():
-        monkeypatch.setenv(f"{service.upper().replace('-', '_')}_HOST", endpoint.host)
-        monkeypatch.setenv(
-            f"{service.upper().replace('-', '_')}_PORT", str(endpoint.port)
-        )
 
-    yield
+    # patches environment variables with host/port per service
+    for service, endpoint in services_endpoint.items():
+        env_prefix = service.upper().replace("-", "_")
+        monkeypatch.setenv(f"{env_prefix}_HOST", endpoint.host)
+        monkeypatch.setenv(f"{env_prefix}_PORT", str(endpoint.port))
 
 
 # HELPERS --

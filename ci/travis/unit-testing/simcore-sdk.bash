@@ -1,5 +1,7 @@
 #!/bin/bash
-set -euo pipefail
+set -o errexit   # abort on nonzero exitstatus
+set -o nounset   # abort on unbound variable
+set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
