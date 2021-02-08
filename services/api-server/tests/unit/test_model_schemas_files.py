@@ -5,14 +5,15 @@
 import hashlib
 import tempfile
 from pathlib import Path
+from pprint import pprint
 from uuid import uuid4
 
 import pytest
 from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
 from pydantic import ValidationError
-from simcore_service_api_server.api.routes.files import convert_metadata
 from simcore_service_api_server.models.schemas.files import FileMetadata
+from simcore_service_api_server.modules.storage import to_file_metadata
 
 pytestmark = pytest.mark.asyncio
 
@@ -77,17 +78,25 @@ def test_convert_filemetadata():
         **StorageFileMetaData.Config.schema_extra["examples"][1]
     )
     storage_file_meta.file_id = f"api/{uuid4()}/extensionless"
-    apiserver_file_meta = convert_metadata(storage_file_meta)
+    apiserver_file_meta = to_file_metadata(storage_file_meta)
 
     assert apiserver_file_meta.file_id
     assert apiserver_file_meta.filename == "extensionless"
-    assert apiserver_file_meta.content_type is None
+    assert apiserver_file_meta.content_type == "application/octet-stream"  # default
     assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
 
     with pytest.raises(ValueError):
         storage_file_meta.file_id = f"{uuid4()}/{uuid4()}/foo.txt"
-        convert_metadata(storage_file_meta)
+        to_file_metadata(storage_file_meta)
 
     with pytest.raises(ValidationError):
         storage_file_meta.file_id = "api/NOTUUID/foo.txt"
-        convert_metadata(storage_file_meta)
+        to_file_metadata(storage_file_meta)
+
+
+@pytest.mark.parametrize("model_cls", (FileMetadata,))
+def test_file_model_examples(model_cls, model_cls_examples):
+    for example in model_cls_examples:
+        pprint(example)
+        model_instance = model_cls(**example)
+        assert model_instance

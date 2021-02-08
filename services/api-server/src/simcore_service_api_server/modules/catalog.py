@@ -1,11 +1,20 @@
 import logging
+import urllib.parse
+from dataclasses import dataclass, field
+from operator import attrgetter
+from typing import Callable, Dict, List, Optional, Tuple
+from uuid import UUID
 
 import httpx
 from fastapi import FastAPI
+from models_library.services import ServiceDockerData, ServiceType
+from pydantic import EmailStr, Extra, ValidationError
 
 from ..core.settings import CatalogSettings
-from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverName, VersionStr
 from ..utils.client_base import BaseServiceClientApi
+
+## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +43,129 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+SolverNameVersionPair = Tuple[SolverName, str]
+
+
+class TruncatedServiceOut(ServiceDockerData):
+    """
+    This model is used to truncate the response of the catalog, whose schema is
+    in services/catalog/src/simcore_service_catalog/models/schemas/services.py::ServiceOut
+    and is a superset of ServiceDockerData.
+
+    We do not use directly ServiceDockerData because it will only consume the exact fields
+    (it is configured as Extra.forbid). Instead  we inherit from it, override this configuration
+    and add an extra field that we want to capture from ServiceOut.
+
+    Ideally the rest of the response is dropped so here it would
+    perhaps make more sense to use something like graphql
+    that asks only what is needed.
+    """
+
+    owner: Optional[EmailStr]
+
+    class Config:
+        extra = Extra.ignore
+
+    # Converters
+    def to_solver(self) -> Solver:
+        data = self.dict(
+            include={"name", "key", "version", "description", "contact", "owner"},
+        )
+
+        return Solver(
+            name=data.pop("key"),
+            version=data.pop("version"),
+            title=data.pop("name"),
+            maintainer=data.pop("owner") or data.pop("contact"),
+            url=None,
+            id=None,  # auto-generated
+            **data,
+        )
+
+
 # API CLASS ---------------------------------------------
+#
+# - Error handling: What do we reraise, suppress, transform???
+#
+#
+# TODO: handlers should not capture outputs
+# @handle_errors("catalog", logger, return_json=True)
+# @handle_retry(logger)
+# async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+#     return await self.client.get(path, *args, **kwargs)
 
 
+@dataclass
 class CatalogApi(BaseServiceClientApi):
+    """
+    This class acts a proxy of the catalog service
+    It abstracts request to the catalog API service
+    """
 
-    # OPERATIONS
-    # TODO: add ping to healthcheck
+    ids_cache_map: Dict[UUID, SolverNameVersionPair] = field(default_factory=dict)
 
-    @handle_errors("catalog", logger, return_json=True)
-    @handle_retry(logger)
-    async def get(self, path: str, *args, **kwargs) -> JsonDataType:
-        return await self.client.get(path, *args, **kwargs)
+    async def list_solvers(
+        self,
+        user_id: int,
+        predicate: Optional[Callable[[Solver], bool]] = None,
+    ) -> List[Solver]:
+        resp = await self.client.get(
+            "/services",
+            params={"user_id": user_id, "details": False},
+            headers={"x-simcore-products-name": "osparc"},
+        )
+        resp.raise_for_status()
+
+        # TODO: move this sorting down to catalog service?
+        solvers = []
+        for data in resp.json():
+            try:
+                service = TruncatedServiceOut.parse_obj(data)
+                if service.service_type == ServiceType.COMPUTATIONAL:
+                    solver = service.to_solver()
+                    if predicate is None or predicate(solver):
+                        solvers.append(solver)
+
+            except ValidationError as err:
+                # NOTE: For the moment, this is necessary because there are no guarantees
+                #       at the image registry. Therefore we exclude and warn
+                #       invalid items instead of returning error
+                logger.warning(
+                    "Skipping invalid service returned by catalog '%s': %s",
+                    data,
+                    err,
+                )
+        return solvers
+
+    async def get_solver(
+        self, user_id: int, name: SolverName, version: VersionStr
+    ) -> Solver:
+
+        assert version != LATEST_VERSION  # nosec
+
+        service_key = urllib.parse.quote_plus(name)
+        service_version = version
+
+        resp = await self.client.get(
+            f"/services/{service_key}/{service_version}",
+            params={"user_id": user_id},
+            headers={"x-simcore-products-name": "osparc"},
+        )
+        resp.raise_for_status()
+
+        service = TruncatedServiceOut.parse_obj(resp.json())
+        assert (
+            service.service_type == ServiceType.COMPUTATIONAL
+        ), "Expected by SolverName regex"  # nosec
+
+        return service.to_solver()
+
+    async def get_latest_solver(self, user_id: int, name: SolverName) -> Solver:
+        def _this_solver(solver: Solver) -> bool:
+            return solver.name == name
+
+        solvers = await self.list_solvers(user_id, _this_solver)
+
+        # raise IndexError if None
+        latest = sorted(solvers, key=attrgetter("pep404_version"))[-1]
+        return latest
