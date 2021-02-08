@@ -35,7 +35,7 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
 
     const infoBtn = this._createChildControl("infobutton");
     this.bind("hintText", infoBtn, "visibility", {
-      converter: hintText => hintText !== "" ? "visible" : "excluded"
+      converter: hintText => (hintText && hintText !== "") ? "visible" : "excluded"
     });
 
     if (hint) {
@@ -46,7 +46,7 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
   properties: {
     hintText: {
       check: "String",
-      init: "",
+      init: null,
       apply: "__applyHintText"
     }
   },
