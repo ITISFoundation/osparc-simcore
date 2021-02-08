@@ -84,11 +84,11 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     __valueLabel: null,
 
     _addWidgets : function() {
-      // Here's our indentation and tree-lines
-      this.addSpacer();
-      this.addOpenButton();
+      this.addHint();
+      this._add(new qx.ui.core.Spacer(5), {
+        flex: 1
+      });
 
-      // The standard tree icon follows
       this.addIcon();
 
       // Add the port value

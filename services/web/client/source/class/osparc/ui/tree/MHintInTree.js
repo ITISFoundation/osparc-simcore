@@ -21,7 +21,7 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       check: "String",
       init: null,
       event: "changeDescription",
-      apply: "__recreateInfoButton",
+      apply: "__populateInfoButton",
       nullable: true
     },
 
@@ -29,7 +29,7 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       check: "String",
       init: null,
       event: "changeDescription2",
-      apply: "__recreateInfoButton",
+      apply: "__populateInfoButton",
       nullable: true
     },
 
@@ -37,20 +37,21 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
       check: "String",
       init: null,
       event: "changeUrl",
-      apply: "__recreateInfoButton",
+      apply: "__populateInfoButton",
       nullable: true
     }
   },
 
   members: {
-    __recreateInfoButton: function() {
-      if (this.__infoButton) {
-        const idx = this._indexOf(this.__infoButton);
-        if (idx !== -1) {
-          this._remove(this.__infoButton);
-        }
-      }
+    addHint: function() {
+      this.__infoButton = new osparc.component.form.FieldWHint("", "", new qx.ui.basic.Label()).set({
+        visibility: "excluded",
+        maxWidth: 150
+      });
+      this._add(this.__infoButton);
+    },
 
+    __populateInfoButton: function() {
       const desc = this.getDescription();
       const desc2 = this.getDescription2();
       const url = this.getUrl();
@@ -68,15 +69,15 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
 
         const themeManager = qx.theme.manager.Meta.getInstance();
         themeManager.addListener("changeTheme", () => {
-          this.__recreateInfoButton();
+          this.__populateInfoButton();
         }, this);
       }
       if (hints.length) {
         const hint = hints.join("<br>");
-        this.__infoButton = new osparc.component.form.FieldWHint("", hint, new qx.ui.basic.Label("")).set({
-          maxWidth: 150
-        });
-        this._add(this.__infoButton);
+        this.__infoButton.setHintText(hint);
+        this.__infoButton.show();
+      } else {
+        this.__infoButton.exclude();
       }
     }
   }
