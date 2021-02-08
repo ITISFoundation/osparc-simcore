@@ -154,6 +154,7 @@ qx.Class.define("osparc.file.FilePicker", {
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
           this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
+        this.getNode().repopulateOutputPortData();
         this.__filesTree.resetCache();
         this.__initResources();
       }, this);
