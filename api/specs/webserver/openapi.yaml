@@ -171,6 +171,9 @@ paths:
   /projects/{project_id}:xport:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1xport"
 
+  /projects/{project_id}:duplicate:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1duplicate"
+
   /projects:import:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1import"
 
