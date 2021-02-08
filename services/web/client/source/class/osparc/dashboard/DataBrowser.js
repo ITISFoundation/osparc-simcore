@@ -36,7 +36,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
   members: {
     __filesTree: null,
     __selectedFileLayout: null,
-    __pieChart: null,
 
     // overriden
     _initResources: function() {
@@ -124,47 +123,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
       }
-    },
-
-    __reloadChartData: function(pathId) {
-      if (this.__pieChart) {
-        const dataInfo = this.__getDataInfo(pathId);
-        const ids = dataInfo["ids"];
-        const labels = dataInfo["labels"];
-        const values = dataInfo["values"];
-        const tooltips = dataInfo["tooltips"];
-        const title = dataInfo["title"];
-        this.__pieChart.setData(ids, labels, values, tooltips, title);
-      }
-    },
-
-    __getDataInfo: function(pathId) {
-      const context = pathId || "/";
-      const children = this.__filesTree.getModel().getChildren();
-
-      let data = {
-        "ids": [],
-        "labels": [],
-        "values": [],
-        "tooltips": [],
-        "title": context
-      };
-      if (pathId === undefined) {
-        data["ids"].push("FreeSpaceId");
-        data["labels"].push("Free space");
-        const value = (Math.floor(Math.random()*1000000)+1);
-        data["values"].push(value);
-        data["tooltips"].push(osparc.utils.Utils.bytesToSize(value));
-      }
-      for (let i=0; i<children.length; i++) {
-        const child = children.toArray()[i];
-        data["ids"].push(child.getLabel());
-        data["labels"].push(child.getLabel());
-        const value2 = (Math.floor(Math.random()*1000000)+1);
-        data["values"].push(value2);
-        data["tooltips"].push(osparc.utils.Utils.bytesToSize(value2));
-      }
-      return data;
     }
   }
 });
