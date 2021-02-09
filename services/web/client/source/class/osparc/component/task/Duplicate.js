@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.task.Clone", {
+qx.Class.define("osparc.component.task.Duplicate", {
   extend: osparc.component.task.Task,
 
   construct: function(study) {
@@ -50,7 +50,7 @@ qx.Class.define("osparc.component.task.Clone", {
       this.getChildControl("subtitle");
       this.getChildControl("stop");
 
-      this.setTitle(this.tr("Cloning ") + this.__study.name);
+      this.setTitle(this.tr("Duplicating ") + this.__study.name);
     },
 
     // overridden

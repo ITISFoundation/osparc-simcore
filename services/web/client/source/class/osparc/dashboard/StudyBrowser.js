@@ -461,8 +461,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
-      const cloneStudyButton = this.__getCloneStudyMenuButton(studyData);
-      menu.add(cloneStudyButton);
+      const duplicateStudyButton = this.__getDuplicateStudyMenuButton(studyData);
+      menu.add(duplicateStudyButton);
 
       const exportButton = this.__getExportMenuButton(studyData);
       menu.add(exportButton);
@@ -552,15 +552,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return studyServicesButton;
     },
 
-    __getCloneStudyMenuButton: function(studyData) {
-      const cloneStudyButton = new qx.ui.menu.Button(this.tr("Clone"));
+    __getDuplicateStudyMenuButton: function(studyData) {
+      const duplicateStudyButton = new qx.ui.menu.Button(this.tr("Duplicate"));
       // ANE: remove this when backend is ready
-      cloneStudyButton.setVisibility("excluded");
-      osparc.utils.Utils.setIdToWidget(cloneStudyButton, "cloneStudy");
-      cloneStudyButton.addListener("execute", () => {
-        this.__cloneStudy(studyData);
+      duplicateStudyButton.setVisibility("excluded");
+      osparc.utils.Utils.setIdToWidget(duplicateStudyButton, "duplicateStudy");
+      duplicateStudyButton.addListener("execute", () => {
+        this.__duplicateStudy(studyData);
       }, this);
-      return cloneStudyButton;
+      return duplicateStudyButton;
     },
 
     __getExportMenuButton: function(studyData) {
@@ -639,19 +639,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __cloneStudy: function(studyData) {
-      const cloneTask = new osparc.component.task.Clone(studyData);
-      cloneTask.start();
-      const text = this.tr("Cloning process started and added to the background tasks");
+    __duplicateStudy: function(studyData) {
+      const duplicateTask = new osparc.component.task.Duplicate(studyData);
+      duplicateTask.start();
+      const text = this.tr("Duplicate process started and added to the background tasks");
       osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
 
-      const cloningStudyCard = new osparc.dashboard.StudyBrowserButtonPlaceholder();
-      cloningStudyCard.buildLayout(
-        this.tr("Cloning ") + studyData["name"],
+      const duplicatingStudyCard = new osparc.dashboard.StudyBrowserButtonPlaceholder();
+      duplicatingStudyCard.buildLayout(
+        this.tr("Duplicating ") + studyData["name"],
         "@FontAwesome5Solid/copy/60"
       );
-      cloningStudyCard.subscribeToFilterGroup("sideSearchFilter");
-      this.__userStudyContainer.addAt(cloningStudyCard, 1);
+      duplicatingStudyCard.subscribeToFilterGroup("sideSearchFilter");
+      this.__userStudyContainer.addAt(duplicatingStudyCard, 1);
 
       const params = {
         url: {
@@ -660,16 +660,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         data: osparc.utils.Utils.getClientSessionID()
       };
       osparc.data.Resources.fetch("studies", "duplicate", params)
-        .then(clonedStudyData => {
-          this._resetStudyItem(clonedStudyData);
+        .then(duplicatedStudyData => {
+          this._resetStudyItem(duplicatedStudyData);
         })
         .catch(e => {
-          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Cloning the study");
+          const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Duplicating the study");
           osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
         })
         .finally(() => {
-          cloneTask.stop();
-          this.__userStudyContainer.remove(cloningStudyCard);
+          duplicateTask.stop();
+          this.__userStudyContainer.remove(duplicatingStudyCard);
         });
     },
 
