@@ -183,8 +183,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createResourcesLayout: function() {
       const exploreBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
-      const tempStudyLayout = this.__createTemplatesLayout();
-      exploreBrowserLayout.add(tempStudyLayout);
+      const templatesLayout = this.__createTemplatesLayout();
+      exploreBrowserLayout.add(templatesLayout);
 
       const servicesLayout = this.__createServicesLayout();
       exploreBrowserLayout.add(servicesLayout);
@@ -472,7 +472,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         return null;
       }
 
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Sharing"));
       permissionsButton.addListener("execute", () => {
         this.__openPermissions(studyData);
       }, this);

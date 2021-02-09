@@ -60,11 +60,11 @@ qx.Class.define("osparc.desktop.Toolbar", {
       let control;
       switch (id) {
         case "breadcrumb-navigation": {
-          control = new qx.ui.container.Scroll();
           const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbNavigation();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
           }, this);
+          control = new qx.ui.container.Scroll();
           control.add(breadcrumbNavigation);
           this._add(control, {
             flex: 1

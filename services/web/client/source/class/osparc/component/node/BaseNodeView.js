@@ -32,6 +32,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   statics: {
+    TOOLBAR_HEIGHT: 35,
+
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
         appearance: "settings-groupbox",
@@ -106,29 +108,27 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __buildSideView: function(isInput) {
       const collapsedWidth = 35;
       const sidePanel = new osparc.desktop.SidePanel().set({
-        minWidth: 250,
+        minWidth: 200,
         collapsedMinWidth: collapsedWidth,
         collapsedWidth: collapsedWidth
       });
       sidePanel.getLayout().resetSeparator();
 
-      const sideHeader = new qx.ui.toolbar.ToolBar();
-      const titlePart = new qx.ui.toolbar.Part();
-      const buttonPart = new qx.ui.toolbar.Part();
-      sideHeader.add(titlePart);
-      sideHeader.addSpacer();
-      sideHeader.add(buttonPart);
-      this.add(sideHeader, 0);
-      titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
-        alignY: "middle",
+      const headerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignY: "middle"
+      })).set({
+        height: this.self().TOOLBAR_HEIGHT,
+        paddingLeft: 10,
+        backgroundColor: "material-button-background"
+      });
+      const titleLabel = new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
         font: "text-16"
-      }));
-      const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
-      buttonPart.add(collapseBtn);
-      sidePanel.add(sideHeader);
+      });
+      headerContainer.add(titleLabel);
+      sidePanel.add(headerContainer);
 
-      const scroll = new qx.ui.container.Scroll();
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const scroll = new qx.ui.container.Scroll();
       scroll.add(container);
       sidePanel.add(scroll, {
         flex: 1
@@ -141,11 +141,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__outputsView = sidePanel;
         this.__outputNodesLayout = container;
       }
-      collapseBtn.addListener("execute", () => {
-        container.getChildren().forEach(node => {
-          node.setCollapsed(true);
-        });
-      }, this);
 
       const collapsedView = this.__buildCollapsedSideView(isInput);
       sidePanel.setCollapsedView(collapsedView);
@@ -155,21 +150,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __buildCollapsedSideView: function(isInput) {
       const text = isInput ? this.tr("Inputs") : this.tr("Outputs");
-      const icon = isInput ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-up/12";
       const minWidth = isInput ? 120 : 130;
       const view = isInput ? this.__inputsView : this.__outputsView;
       const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
 
       const collapsedView = new qx.ui.basic.Atom().set({
         label: text + " (0)",
-        icon: icon,
         iconPosition: "right",
         gap: 6,
         padding: 8,
         alignX: "center",
         alignY: "middle",
         minWidth: minWidth,
-        font: "title-18"
+        font: "title-16"
       });
       collapsedView.getContentElement().addClass("verticalText");
       collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
@@ -390,16 +383,40 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __attachEventHandlers: function() {
-      const blocker1 = this.getBlocker();
-      const blocker2 = this.__pane2.getBlocker();
-      blocker1.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
-      blocker2.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
+      const inputBlocker = this.getBlocker();
+      const outputBlocker = this.__pane2.getBlocker();
+      inputBlocker.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
+      outputBlocker.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
+
+      this.addListenerOnce("appear", () => {
+        const inputSplitter = this.getChildControl("splitter");
+        const inputKnob = inputSplitter.getChildControl("knob");
+        inputKnob.set({
+          visibility: "visible"
+        });
+        this.__inputsView.bind("collapsed", inputKnob, "source", {
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-right/12" : "@FontAwesome5Solid/angle-double-left/12"
+        });
+        this.__fillUpSplittersGap(inputSplitter);
+      }, this);
+
+      this.__pane2.addListenerOnce("appear", () => {
+        const outputSplitter = this.__pane2.getChildControl("splitter");
+        const outputKnob = outputSplitter.getChildControl("knob");
+        outputKnob.set({
+          visibility: "visible"
+        });
+        this.__outputsView.bind("collapsed", outputKnob, "source", {
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-left/12" : "@FontAwesome5Solid/angle-double-right/12"
+        });
+        this.__fillUpSplittersGap(outputSplitter);
+      }, this);
 
       const maximizeIframeCb = msg => {
-        blocker1.setStyles({
+        inputBlocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
-        blocker2.setStyles({
+        outputBlocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
         this.__inputsView.setVisibility(msg.getData() ? "excluded" : "visible");
@@ -413,6 +430,28 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
       }, this);
+    },
+
+    // fill up the gap created on top of the slider when the knob image was added
+    __fillUpSplittersGap: function(splitter) {
+      const toolbarExtender = new qx.ui.core.Widget().set({
+        backgroundColor: "material-button-background",
+        height: this.self().TOOLBAR_HEIGHT,
+        maxWidth: 12
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(toolbarExtender, 0, {
+        flex: 0
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(new qx.ui.core.Spacer(), 1, {
+        flex: 1
+      });
+      // knob goes in second postion
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(new qx.ui.core.Spacer(), 3, {
+        flex: 1
+      });
     },
 
     /**
