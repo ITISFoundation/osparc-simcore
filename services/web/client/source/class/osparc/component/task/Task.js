@@ -48,6 +48,13 @@ qx.Class.define("osparc.component.task.Task", {
       init: "",
       nullable: true,
       event: "changeSubtitle"
+    },
+
+    stopSupported: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeStopSupported"
     }
   },
 
@@ -86,6 +93,9 @@ qx.Class.define("osparc.component.task.Task", {
             width: 25,
             cursor: "pointer"
           });
+          this.bind("stopSupported", control, "visibility", {
+            converter: value => value ? "visible" : "excluded"
+          }, this);
           control.addListener("tap", () => {
             this._requestStop();
           }, this);
