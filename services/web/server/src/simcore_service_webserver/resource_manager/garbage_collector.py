@@ -2,11 +2,12 @@ import asyncio
 import logging
 from contextlib import suppress
 from itertools import chain
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
 import psycopg2
 from aiohttp import web
+from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.observer import emit
 from servicelib.utils import logged_gather
@@ -508,7 +509,11 @@ async def get_new_project_owner_gid(
     """
 
     access_rights = project["accessRights"]
-    other_users_access_rights = set(access_rights.keys()) - {str(user_primary_gid)}
+    # A Set[str] is prefered over Set[int] because access_writes
+    # is a Dict with only key,valus in {str, None}
+    other_users_access_rights: Set[str] = set(access_rights.keys()) - {
+        str(user_primary_gid)
+    }
     logger.debug(
         "Processing other user and groups access rights '%s'",
         other_users_access_rights,
@@ -519,7 +524,10 @@ async def get_new_project_owner_gid(
     standard_groups = {}  # groups of users, multiple users can be part of this
     primary_groups = {}  # each individual user has a unique primary group
     for other_gid in other_users_access_rights:
-        group = await get_group_from_gid(app=app, gid=int(other_gid))
+        group: Optional[RowProxy] = await get_group_from_gid(
+            app=app, gid=int(other_gid)
+        )
+
         # only process for users and groups with write access right
         if group is None:
             continue
@@ -541,7 +549,7 @@ async def get_new_project_owner_gid(
     # the primary group contains the users which which the project was directly shared
     if len(primary_groups) > 0:
         # fetch directly from the direct users with which the project is shared with
-        new_project_owner_gid = list(primary_groups.keys())[0]
+        new_project_owner_gid = int(list(primary_groups.keys())[0])
     # fallback to the groups search if the user does not exist
     if len(standard_groups) > 0 and new_project_owner_gid is None:
         new_project_owner_gid = await fetch_new_project_owner_from_groups(
@@ -576,7 +584,7 @@ async def fetch_new_project_owner_from_groups(
             # check if the possible_user is still present in the db
             try:
                 possible_user = await get_user(app=app, user_id=possible_user_id)
-                return possible_user["primary_gid"]
+                return int(possible_user["primary_gid"])
             except users_exceptions.UserNotFoundError:
                 logger.warning(
                     "Could not find new owner '%s' will try a new one",
