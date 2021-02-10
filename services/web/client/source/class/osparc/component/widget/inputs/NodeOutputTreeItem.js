@@ -85,7 +85,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     __label: null,
 
     _addWidgets : function() {
-      this.addHint();
+      this.addHint().set({
+        alignY: "middle"
+      });
       this._add(new qx.ui.core.Spacer(5));
 
       this.addIcon();
@@ -97,7 +99,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
         converter: val => typeof val === "string" ? "visible" : "excluded"
       });
 
-      const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null);
+      const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null).set({
+        alignY: "middle"
+      });
       this.addWidget(labelLink);
       this.bind("value", labelLink, "visibility", {
         converter: val => typeof val === "string" ? "excluded" : "visible"
