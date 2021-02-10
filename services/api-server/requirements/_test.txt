@@ -44,10 +44,6 @@ click==7.1.2
     #   -r requirements/_test.in
 codecov==2.1.11
     # via -r requirements/_test.in
-contextvars==2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sniffio
 coverage==5.5
     # via
     #   codecov
