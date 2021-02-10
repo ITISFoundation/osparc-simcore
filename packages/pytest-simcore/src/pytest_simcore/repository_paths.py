@@ -49,6 +49,13 @@ def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def packages_directory(osparc_simcore_root_dir: Path) -> Path:
+    _folder = osparc_simcore_root_dir / "packages"
+    assert _folder.exists()
+    return _folder
+
+
+@pytest.fixture(scope="session")
 def script_dir(osparc_simcore_root_dir: Path) -> Path:
     scripts_folder = osparc_simcore_root_dir / "scripts"
     assert scripts_folder.exists()
