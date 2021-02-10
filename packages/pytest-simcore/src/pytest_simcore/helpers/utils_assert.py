@@ -1,14 +1,18 @@
 """ Extends assertions for testing
 
 """
-from aiohttp import web
-
 from pprint import pformat
+from typing import Type
+
+from aiohttp import ClientResponse
+from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
 from servicelib.rest_responses import unwrap_envelope
 
 
 async def assert_status(
-    response: web.Response, expected_cls: web.HTTPException, expected_msg: str = None
+    response: ClientResponse,
+    expected_cls: Type[HTTPException],
+    expected_msg: str = None,
 ):
     """
     Asserts for enveloped responses
@@ -18,10 +22,10 @@ async def assert_status(
         response.status == expected_cls.status_code
     ), f"received: ({data},{error}), \nexpected ({expected_cls.status_code}, {expected_msg})"
 
-    if issubclass(expected_cls, web.HTTPError):
+    if issubclass(expected_cls, HTTPError):
         do_assert_error(data, error, expected_cls, expected_msg)
 
-    elif issubclass(expected_cls, web.HTTPNoContent):
+    elif issubclass(expected_cls, HTTPNoContent):
         assert not data, pformat(data)
         assert not error, pformat(error)
     else:
@@ -37,14 +41,16 @@ async def assert_status(
 
 
 async def assert_error(
-    response: web.Response, expected_cls: web.HTTPException, expected_msg: str = None
+    response: ClientResponse,
+    expected_cls: Type[HTTPException],
+    expected_msg: str = None,
 ):
     data, error = unwrap_envelope(await response.json())
     return do_assert_error(data, error, expected_cls, expected_msg)
 
 
 def do_assert_error(
-    data, error, expected_cls: web.HTTPException, expected_msg: str = None
+    data, error, expected_cls: Type[HTTPException], expected_msg: str = None
 ):
     assert not data, pformat(data)
     assert error, pformat(error)
@@ -55,7 +61,7 @@ def do_assert_error(
     if expected_msg:
         assert expected_msg in err["message"]
 
-    if expected_cls != web.HTTPInternalServerError:
+    if expected_cls != HTTPInternalServerError:
         # otherwise, code is exactly the name of the Exception class
         assert expected_cls.__name__ == err["code"]
 
