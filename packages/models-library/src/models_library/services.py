@@ -180,6 +180,11 @@ class ServiceProperty(BaseModel):
         None, description="Units, when it refers to a physical quantity"
     )
 
+    # TODO: use discriminators
+    unit: Optional[str] = Field(
+        None, description="Units, when it refers to a physical quantity"
+    )
+
     class Config:
         extra = Extra.forbid
         # TODO: all alias with camecase
