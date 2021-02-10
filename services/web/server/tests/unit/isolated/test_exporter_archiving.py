@@ -1,8 +1,9 @@
-# pylint:disable=redefined-outer-name,unused-argument
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=no-name-in-module
 
 import os
 import sys
-import tempfile
 import uuid
 import hashlib
 import random
@@ -59,29 +60,12 @@ async def monkey_patch_asyncio_subporcess(loop, mocker):
 
 @pytest.fixture
 def temp_dir(tmpdir) -> Path:
-    # cast to Path object
-    yield Path(tmpdir)
+    # Casts https://docs.pytest.org/en/stable/tmpdir.html#the-tmpdir-fixture to Path
+    return Path(tmpdir)
 
 
 @pytest.fixture
-def temp_dir2() -> Path:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir_path = Path(temp_dir)
-        extract_dir_path = temp_dir_path / "extract_dir"
-        extract_dir_path.mkdir(parents=True, exist_ok=True)
-        yield extract_dir_path
-
-
-@pytest.fixture
-def temp_file() -> Path:
-    file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
-    file_path.write_text("test_data")
-    yield file_path
-    file_path.unlink()
-
-
-@pytest.fixture
-def project_uuid():
+def project_uuid() -> str:
     return str(uuid.uuid4())
 
 
@@ -113,83 +97,6 @@ def temp_dir_to_compress_with_too_many_targets(temp_dir, project_uuid) -> Path:
     extra_dir.mkdir(parents=True, exist_ok=True)
 
     return nested_dir
-
-
-def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
-    to_strip = f"{str(to_strip)}/"
-    return Path(str(input_path).replace(to_strip, ""))
-
-
-def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
-    return {
-        strip_directory_from_path(x, dir_path)
-        for x in dir_path.rglob("*")
-        if x.is_file()
-    }
-
-
-def _compute_hash(file_path: Path) -> str:
-    with open(file_path, "rb") as file_to_hash:
-        file_hash = hashlib.md5()
-        chunk = file_to_hash.read(8192)
-        while chunk:
-            file_hash.update(chunk)
-            chunk = file_to_hash.read(8192)
-
-    return file_path, file_hash.hexdigest()
-
-
-async def compute_hashes(file_paths: List[Path]) -> Dict[Path, str]:
-    """given a list of files computes hashes for the files on a process pool"""
-
-    loop = asyncio.get_event_loop()
-
-    with ProcessPoolExecutor() as prcess_pool_executor:
-        tasks = [
-            loop.run_in_executor(prcess_pool_executor, _compute_hash, file_path)
-            for file_path in file_paths
-        ]
-        return {k: v for k, v in await asyncio.gather(*tasks)}
-
-
-def full_file_path_from_dir_and_subdirs(dir_path: Path) -> List[Path]:
-    return [x for x in dir_path.rglob("*") if x.is_file()]
-
-
-async def assert_same_directory_content(
-    dir_to_compress: Path, output_dir: Path
-) -> None:
-    input_set = get_all_files_in_dir(dir_to_compress)
-    output_set = get_all_files_in_dir(output_dir)
-    assert (
-        input_set == output_set
-    ), f"There following files are missing {input_set - output_set}"
-
-    # computing the hashes for dir_to_compress and map in a dict
-    # with the name starting from the root of the directory and md5sum
-    dir_to_compress_hashes = {
-        strip_directory_from_path(k, dir_to_compress): v
-        for k, v in (
-            await compute_hashes(full_file_path_from_dir_and_subdirs(dir_to_compress))
-        ).items()
-    }
-
-    # computing the hashes for output_dir and map in a dict
-    # with the name starting from the root of the directory and md5sum
-    output_dir_hashes = {
-        strip_directory_from_path(k, output_dir): v
-        for k, v in (
-            await compute_hashes(full_file_path_from_dir_and_subdirs(output_dir))
-        ).items()
-    }
-
-    # finally check if hashes are mapped 1 to 1 in order to verify
-    # that the compress/decompress worked correctly
-    for key in dir_to_compress_hashes:
-        assert dir_to_compress_hashes[key] == output_dir_hashes[key]
-
-
-# end utils
 
 
 def test_validate_osparc_file_name_ok():
