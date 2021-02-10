@@ -150,9 +150,9 @@ qx.Class.define("osparc.file.FilePicker", {
       this._setLayout(new qx.ui.layout.VBox(5));
 
       const reloadButton = this.getChildControl("reload-button");
-      reloadButton.addListener("execute", function() {
+      reloadButton.addListener("execute", () => {
         this.__filesTree.resetCache();
-        this.__initResources();
+        this.__filesTree.populateTree();
       }, this);
 
       this.__recreateFilesTree();
@@ -163,8 +163,10 @@ qx.Class.define("osparc.file.FilePicker", {
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
           this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
-        this.__filesTree.resetCache();
-        this.__filesTree.loadFilePath(this.__getOutputFile()["value"]);
+        const filesTree = this.__recreateFilesTree();
+        filesTree.resetCache();
+        filesTree.populateTree();
+        filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
 
       const selectBtn = this.getChildControl("selectButton");
@@ -182,22 +184,21 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __recreateFilesTree: function() {
-      let oldFilesTree = this._getChildren().find(child => child.getSubcontrolId() === "files-tree");
-      if (oldFilesTree) {
-        this._remove(oldFilesTree);
+      if (this.__filesTree) {
+        this._remove(this.__filesTree);
       }
-      const filesTree = this.__filesTree = this.getChildControl("files-tree");
+      const filesTree = this.__filesTree = this._createChildControlImpl("files-tree");
       filesTree.addListener("selectionChanged", this.__selectionChanged, this);
       filesTree.addListener("itemSelected", this.__itemSelectedFromStore, this);
       filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
+      filesTree.populateTree();
+      return filesTree;
     },
 
     init: function() {
       if (this.__isOutputFileSelectedFromStore()) {
         const outFile = this.__getOutputFile();
         this.__filesTree.loadFilePath(outFile.value);
-      } else {
-        this.__initResources();
       }
 
       if (this.__isOutputFileSelectedFromLink()) {
@@ -213,10 +214,6 @@ qx.Class.define("osparc.file.FilePicker", {
         }
         this.getChildControl("files-add").retrieveUrlAndUpload(files[0]);
       }
-    },
-
-    __initResources: function() {
-      this.__filesTree.populateTree();
     },
 
     __selectionChanged: function() {
