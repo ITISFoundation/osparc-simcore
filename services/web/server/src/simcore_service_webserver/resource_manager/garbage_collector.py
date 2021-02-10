@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 import asyncpg.exceptions
 import psycopg2
 from aiohttp import web
-from aiopg.sa.results import RowProxy
+from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 
