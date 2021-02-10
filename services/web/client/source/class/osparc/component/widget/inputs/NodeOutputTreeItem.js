@@ -115,6 +115,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
     _applyValue: async function(value) {
       if (typeof value === "object" && "store" in value) {
+        // it's a file
         const download = true;
         const locationId = value.store;
         const fileId = value.path;
@@ -126,6 +127,12 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
             url: presignedLinkData.presignedLink.link
           });
         }
+      } else if (typeof value === "object" && "donwloadLink" in value) {
+        // it's a link
+        this.__labelLink.set({
+          value: value.filename,
+          url: value.donwloadLink
+        });
       } else {
         this.__label.setValue(value);
       }
@@ -147,6 +154,13 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
             filename: fn
           };
         }
+      }
+      if (value.getDownloadLink) {
+        // it's a link
+        return {
+          donwloadLink: value.getDownloadLink(),
+          filename: value.getLabel()
+        };
       }
       if (value.getLabel) {
         return value.getLabel();
