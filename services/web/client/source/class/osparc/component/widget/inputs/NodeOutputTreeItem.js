@@ -70,6 +70,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
     value: {
       nullable: true,
+      event: "changeValue",
       apply: "_applyValue",
       transform: "_transformValue"
     },
@@ -81,7 +82,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   },
 
   members : {
-    __valueLabel: null,
+    __label: null,
 
     _addWidgets : function() {
       this.addHint();
@@ -89,9 +90,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
       this.addIcon();
 
-      // Add the port value
-      this.__valueLabel = new qx.ui.basic.Label();
-      this.addWidget(this.__valueLabel);
+      // Add the port label
+      const label = this.__label = new qx.ui.basic.Label();
+      this.addWidget(label);
 
       // All else should be right justified
       this.addWidget(new qx.ui.core.Spacer(), {
@@ -108,14 +109,14 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     },
 
     _transformValue: function(value) {
-      if (value.getLabel) {
-        return value.getLabel();
-      }
       if (value.getPath) {
         const fileName = value.getPath().split("/");
         if (fileName.length) {
           return fileName[fileName.length-1];
         }
+      }
+      if (value.getLabel) {
+        return value.getLabel();
       }
       if (this.__isNumber(value)) {
         return value.toString();
