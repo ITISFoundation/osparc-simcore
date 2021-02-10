@@ -6,7 +6,6 @@ from typing import Optional
 from aiohttp import web
 from aiohttp.web import middleware
 from multidict import MultiDict
-
 from simcore_service_webserver._meta import api_vtag
 
 # FRONT_END ####################################
@@ -91,7 +90,7 @@ async def discover_product_middleware(request, handler):
         request[RQ_PRODUCT_NAME_KEY] = frontend_app
 
     else:
-        #/s4/boot.js is called with 'Referer': 'http://localhost:9081/s4l/index.html'
+        # /s4/boot.js is called with 'Referer': 'http://localhost:9081/s4l/index.html'
 
         # if path to index
         match = PRODUCT_PATH_RE.match(request.path)
@@ -102,7 +101,7 @@ async def discover_product_middleware(request, handler):
     response = await handler(request)
 
     # FIXME: notice that if raised error, it will not be attached
-    #if RQ_PRODUCT_NAME_KEY in request:
+    # if RQ_PRODUCT_NAME_KEY in request:
     #    response.headers[PRODUCT_NAME_HEADER] = request[RQ_PRODUCT_NAME_KEY]
 
     return response
@@ -113,8 +112,6 @@ async def discover_product_middleware(request, handler):
 async def serve_default_app(request):
     # TODO: check url and defined what is the default??
     print("Request from", request.headers["Host"])
-    import pdb; pdb.set_trace()
-
     target_product = request.get(RQ_PRODUCT_NAME_KEY, default_frontend_app)
 
     print("Serving front-end for product", target_product)
