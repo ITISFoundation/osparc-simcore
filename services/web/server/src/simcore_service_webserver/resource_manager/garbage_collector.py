@@ -55,14 +55,16 @@ database_errors = (psycopg2.DatabaseError, asyncpg.exceptions.PostgresError)
 def setup_garbage_collector(app: web.Application):
     async def _setup_background_task(app: web.Application):
         # on_startup
+        # create a background task to collect garbage periodically
         loop = asyncio.get_event_loop()
         cgp_task = loop.create_task(collect_garbage_periodically(app))
 
         yield
 
-        logger.info("Stopping garbage collector...")
         # on_cleanup
+        # controlled cancelation of the gc tas
         with suppress(asyncio.CancelledError):
+            logger.info("Stopping garbage collector...")
             cgp_task.cancel()
             await cgp_task
 
@@ -84,7 +86,7 @@ async def collect_garbage_periodically(app: web.Application):
             # do not catch Cancellation errors
             raise
 
-        except Exception:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except
             logger.warning(
                 "There was an error during garbage collection, restarting...",
                 exc_info=True,
@@ -238,7 +240,10 @@ async def remove_disconnected_user_resources(
 
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
-                    # WARNING: slot functions can raise any exception
+                    #
+                    # FIXME: slot functions are "whatever" and can e.g. raise any exception or
+                    # delay or block execution here in many different ways
+                    #
                     await emit(
                         event="SIGNAL_PROJECT_CLOSE",
                         user_id=None,
@@ -387,20 +392,21 @@ async def remove_guest_user_with_all_its_resources(
     app: web.Application, user_id: int
 ) -> None:
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
-    logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
-    if not await is_user_guest(app, user_id):
-        logger.debug("User is not GUEST, skipping cleanup")
-        return
 
     try:
+        logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
+        if not await is_user_guest(app, user_id):
+            logger.debug("User is not GUEST, skipping cleanup")
+            return
+
         await remove_all_projects_for_user(app=app, user_id=user_id)
         await remove_user(app=app, user_id=user_id)
 
-    except database_errors:
+    except database_errors as err:
         logger.warning(
-            "Could not remove GUEST with id=%s. Check the logs above for details",
+            "Could not remove GUEST with id=%s. Check the logs above for details [%s]",
             user_id,
-            exc_info=True,
+            err,
         )
 
 
@@ -426,6 +432,7 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
             user_id,
         )
         return
+
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
@@ -501,7 +508,7 @@ async def get_new_project_owner_gid(
     """
 
     access_rights = project["accessRights"]
-    other_users_access_rights = set(access_rights.keys()) - {user_primary_gid}
+    other_users_access_rights = set(access_rights.keys()) - {str(user_primary_gid)}
     logger.debug(
         "Processing other user and groups access rights '%s'",
         other_users_access_rights,
@@ -583,12 +590,12 @@ async def replace_current_owner(
     app: web.Application,
     project_uuid: str,
     user_primary_gid: int,
-    new_project_owner_gid: str,
+    new_project_owner_gid: int,
     project: Dict,
 ) -> None:
     try:
         new_project_owner_id = await get_user_id_from_gid(
-            app=app, primary_gid=int(new_project_owner_gid)
+            app=app, primary_gid=new_project_owner_gid
         )
 
     except database_errors:
@@ -630,7 +637,7 @@ async def remove_user(app: web.Application, user_id: int) -> None:
     """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
-    except database_errors:
+    except database_errors as err:
         logger.warning(
-            "User '%s' still has some projects, could not be deleted", user_id
+            "User '%s' still has some projects, could not be deleted [%s]", user_id, err
         )
