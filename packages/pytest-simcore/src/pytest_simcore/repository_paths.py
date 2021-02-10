@@ -117,3 +117,6 @@ def project_tests_dir(project_slug_dir: Path) -> Path:
     test_dir = project_slug_dir / "tests"
     assert test_dir.exists()
     return test_dir
+
+
+# TODO: test that all these path compositions exist
