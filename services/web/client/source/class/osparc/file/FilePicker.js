@@ -152,7 +152,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const reloadButton = this.getChildControl("reload-button");
       reloadButton.addListener("execute", () => {
         this.__filesTree.resetCache();
-        this.__filesTree.populateTree();
+        this.__recreateFilesTree();
       }, this);
 
       this.__recreateFilesTree();
@@ -171,7 +171,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const selectBtn = this.getChildControl("selectButton");
       selectBtn.setEnabled(false);
-      selectBtn.addListener("execute", function() {
+      selectBtn.addListener("execute", () => {
         this.__itemSelectedFromStore();
       }, this);
 
