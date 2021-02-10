@@ -25,4 +25,5 @@ coveralls
 
 
 # to test units tools
+pyyaml
 pint

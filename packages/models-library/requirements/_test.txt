@@ -38,6 +38,7 @@ pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar
+pyyaml==5.4.1             # via -c requirements/../../../requirements/constraints.txt, -r requirements/_test.in
 requests==2.25.0          # via coveralls
 six==1.15.0               # via astroid
 termcolor==1.1.0          # via pytest-sugar
