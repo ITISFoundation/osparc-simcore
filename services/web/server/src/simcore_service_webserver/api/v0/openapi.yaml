@@ -43,7 +43,7 @@ tags:
       defines the protocol for the frontend to interact with the node.
   - name: configuration
   - name: maintenance
-  - name: publications
+  - name: publication
     description: |
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
