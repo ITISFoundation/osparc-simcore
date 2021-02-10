@@ -93,6 +93,15 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       // Add the port label
       const label = this.__label = new qx.ui.basic.Label();
       this.addWidget(label);
+      this.bind("value", label, "visibility", {
+        converter: val => typeof val === "string" ? "visible" : "excluded"
+      });
+
+      const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null);
+      this.addWidget(labelLink);
+      this.bind("value", labelLink, "visibility", {
+        converter: val => typeof val === "string" ? "excluded" : "visible"
+      });
 
       // All else should be right justified
       this.addWidget(new qx.ui.core.Spacer(), {
@@ -100,8 +109,22 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       });
     },
 
-    _applyValue: function(value) {
-      this.__valueLabel.setValue(value);
+    _applyValue: async function(value) {
+      if (typeof value === "object" && "store" in value) {
+        const download = true;
+        const locationId = value.store;
+        const fileId = value.path;
+        const filename = value.filename;
+        const presignedLinkData = await osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId);
+        if ("presignedLink" in presignedLinkData) {
+          this.__labelLink.set({
+            value: filename,
+            url: presignedLinkData.presignedLink.link
+          });
+        }
+      } else {
+        this.__label.setValue(value);
+      }
     },
 
     __isNumber: function(n) {
@@ -110,9 +133,15 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
     _transformValue: function(value) {
       if (value.getPath) {
+        // it's a file
         const fileName = value.getPath().split("/");
         if (fileName.length) {
-          return fileName[fileName.length-1];
+          const fn = fileName[fileName.length-1];
+          return {
+            store: value.getStore(),
+            path: value.getPath(),
+            filename: fn
+          };
         }
       }
       if (value.getLabel) {
