@@ -127,6 +127,13 @@ class Widget(BaseModel):
 
 
 class ServiceProperty(BaseModel):
+    """
+    Metadata on a service input or output port
+    """
+
+    ## management
+
+    ### human readable descriptors
     display_order: float = Field(
         ...,
         alias="displayOrder",
@@ -139,6 +146,8 @@ class ServiceProperty(BaseModel):
         description="description of the property",
         example="Age in seconds since 1970",
     )
+
+    # mathematical and physics descriptors
     property_type: constr(regex=PROPERTY_TYPE_RE) = Field(
         ...,
         alias="type",
@@ -157,6 +166,8 @@ class ServiceProperty(BaseModel):
             "data:application/edu.ucdavis@ceclancy.xyz",
         ],
     )
+
+    # value
     file_to_key_map: Optional[Dict[FileName, PropertyName]] = Field(
         None,
         alias="fileToKeyMap",
@@ -167,8 +178,14 @@ class ServiceProperty(BaseModel):
         None, alias="defaultValue", examples=["Dog", True]
     )
 
+    # TODO: use discriminators
+    unit: Optional[str] = Field(
+        None, description="Units, when it refers to a physical quantity"
+    )
+
     class Config:
         extra = Extra.forbid
+        # TODO: all alias with camecase
 
 
 class ServiceInput(ServiceProperty):
