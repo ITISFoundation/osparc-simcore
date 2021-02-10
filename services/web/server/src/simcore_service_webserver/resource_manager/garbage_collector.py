@@ -86,7 +86,7 @@ async def collect_garbage_periodically(app: web.Application):
             # do not catch Cancellation errors
             raise
 
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logger.warning(
                 "There was an error during garbage collection, restarting...",
                 exc_info=True,
