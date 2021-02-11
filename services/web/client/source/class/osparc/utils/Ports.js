@@ -36,7 +36,7 @@ qx.Class.define("osparc.utils.Ports", {
 
     arePortsCompatible: function(port1, port2) {
       return new Promise(resolve => {
-        const ms = 200;
+        const ms = Math.random() * 1000;
         setTimeout(() => {
           const compatible = port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
           resolve(compatible);
