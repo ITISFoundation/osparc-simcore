@@ -67,6 +67,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         c.bindProperty("isDir", "isDir", null, item, id);
         c.bindProperty("icon", "icon", null, item, id);
         c.bindProperty("type", "type", null, item, id);
+        c.bindProperty("unit", "unit", null, item, id);
         c.bindProperty("open", "open", null, item, id);
       },
       configureItem: item => {
@@ -147,6 +148,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           nodeKey: node.getKey(),
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
           type: port.type,
+          unit: port.unit || null,
           open: false
         };
         portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);

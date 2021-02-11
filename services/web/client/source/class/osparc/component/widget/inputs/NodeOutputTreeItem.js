@@ -78,6 +78,12 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     type: {
       check: "String",
       nullable: false
+    },
+
+    unit: {
+      nullable: true,
+      event: "changeUnit",
+      apply: "_applyUnit"
     }
   },
 
@@ -94,7 +100,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
       // Add the port label
       const label = this.__label = new qx.ui.basic.Label();
-      this.addWidget(label);
+      this.addWidget(label, {
+        flex: 1
+      });
       this.bind("value", label, "visibility", {
         converter: val => typeof val === "string" ? "visible" : "excluded"
       });
@@ -102,14 +110,17 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null).set({
         alignY: "middle"
       });
-      this.addWidget(labelLink);
+      this.addWidget(labelLink, {
+        flex: 1
+      });
       this.bind("value", labelLink, "visibility", {
         converter: val => typeof val === "string" ? "excluded" : "visible"
       });
 
-      // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
+      const unitLabel = this.__unitLabel = new qx.ui.basic.Label();
+      this.addWidget(unitLabel);
+      unitLabel.bind("value", unitLabel, "visibility", {
+        converter: val => val === null ? "excluded" : "visible"
       });
     },
 
@@ -135,6 +146,14 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
         });
       } else {
         this.__label.setValue(value);
+      }
+    },
+
+    _applyUnit: function(value) {
+      if (value) {
+        this.__unitLabel.set({
+          value
+        });
       }
     },
 
