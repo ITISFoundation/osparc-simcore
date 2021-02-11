@@ -95,10 +95,11 @@ qx.Class.define("osparc.data.model.Edge", {
     },
 
     __applyOutputNode: function(node2) {
-      node2.addListener("changePortsConnected", e => {
-        const portsConnected = e.getData();
-        const isConnected = Boolean(Object.keys(portsConnected).length);
-        this.setPortConnected(isConnected);
+      node2.bind("portsConnected", this, "portConnected", {
+        converter: portsConnected => {
+          const isConnected = Boolean(Object.keys(portsConnected).length);
+          return isConnected;
+        }
       });
     },
 
