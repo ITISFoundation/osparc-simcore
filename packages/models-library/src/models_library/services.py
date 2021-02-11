@@ -260,7 +260,6 @@ class ServiceOutput(ServiceProperty):
 class ServiceKeyVersion(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
-        title="",
         description="distinctive name for the node based on the docker registry path",
         examples=[
             "simcore/services/comp/itis/sleeper",
