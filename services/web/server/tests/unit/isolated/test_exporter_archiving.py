@@ -126,7 +126,6 @@ def dir_with_random_content() -> Path:
         temp_dir_path = Path(temp_dir)
         data_container = ensure_dir(temp_dir_path / "study_data")
 
-        # only 1 directory should be present here
         make_subdirectories_with_content(
             subdir_name=data_container, max_subdirectories_count=5, max_file_count=5
         )
