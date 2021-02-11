@@ -128,11 +128,11 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
       const unitLabel = this.__unitLabel = new qx.ui.basic.Label();
       this.addWidget(unitLabel);
-      this.bind("unitShort", unitLabel, "value");
-      this.bind("unitLong", unitLabel, "toolTipText");
       unitLabel.bind("value", unitLabel, "visibility", {
         converter: val => val === null ? "excluded" : "visible"
       });
+      this.bind("unitShort", unitLabel, "value");
+      this.bind("unitLong", unitLabel, "toolTipText");
     },
 
     _applyValue: async function(value) {
