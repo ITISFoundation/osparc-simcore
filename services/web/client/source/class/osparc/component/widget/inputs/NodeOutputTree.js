@@ -152,7 +152,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           open: false
         };
         portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);
-        portData.value = port.value == null ? this.tr("-") : port.value;
+        portData.value = port.value == null ? "-" : port.value;
         data.children.push(portData);
       }
 

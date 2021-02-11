@@ -81,6 +81,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     },
 
     unit: {
+      check: "String",
       nullable: true,
       event: "changeUnit",
       apply: "_applyUnit"
@@ -99,7 +100,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       this.addIcon();
 
       // Add the port label
-      const label = this.__label = new qx.ui.basic.Label();
+      const label = this.__label = new qx.ui.basic.Label().set({
+        allowGrowX: true
+      });
       this.addWidget(label, {
         flex: 1
       });
@@ -108,7 +111,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       });
 
       const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null).set({
-        alignY: "middle"
+        alignY: "middle",
+        allowGrowX: true
       });
       this.addWidget(labelLink, {
         flex: 1
