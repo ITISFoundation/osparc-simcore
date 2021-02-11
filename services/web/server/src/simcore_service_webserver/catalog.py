@@ -2,83 +2,26 @@
 
 """
 import logging
-from asyncio import CancelledError
-from typing import Dict, List, Optional
+from typing import Optional
 
-from aiohttp import ContentTypeError, web
-from yarl import URL
-
+from aiohttp import web
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_routing import iter_path_operations
+from yarl import URL
 
-from ._meta import api_version_prefix
-from .catalog_config import assert_valid_config, get_client_session
+from . import catalog_client
+from .catalog_client import (
+    get_services_for_user_in_product,
+    is_service_responsive,
+    to_backend_service,
+)
+from .catalog_config import assert_valid_config
 from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 
 logger = logging.getLogger(__name__)
-
-
-async def is_service_responsive(app: web.Application):
-    """ Returns true if catalog is ready """
-    origin: URL = app.get(f"{__name__}.catalog_origin")
-
-    if not origin:  # service was not enabled!
-        return False
-
-    client = get_client_session(app)
-
-    # call to health-check entry-point
-    async with client.get(origin, ssl=False) as resp:
-        return resp.status == 200
-
-
-def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
-    """Translates relative url to backend catalog service url
-
-    E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
-    """
-    assert not rel_url.is_absolute()  # nosec
-    new_path = rel_url.path.replace(
-        f"/{api_version_prefix}/catalog", f"/{version_prefix}"
-    )
-    return origin.with_path(new_path).with_query(rel_url.query)
-
-
-async def _request_catalog(
-    app: web.Application,
-    method: str,
-    url: URL,
-    headers: Optional[Dict[str, str]] = None,
-    data: Optional[bytes] = None,
-) -> web.Response:
-    session = get_client_session(app)
-
-    try:
-        async with session.request(method, url, headers=headers, data=data) as resp:
-
-            is_error = resp.status >= 400
-            # catalog backend sometimes sends error in plan=in text
-            try:
-                payload: Dict = await resp.json()
-            except ContentTypeError:
-                payload = await resp.text()
-                is_error = True
-
-            if is_error:
-                # Only if error, it wraps since catalog service does
-                # not return (for the moment) enveloped
-                data = wrap_as_envelope(error=payload)
-            else:
-                data = wrap_as_envelope(data=payload)
-
-            return web.json_response(data, status=resp.status)
-
-    except (CancelledError, TimeoutError) as err:
-        raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
 
 
 ## HANDLERS  ------------------------
@@ -108,9 +51,9 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     logger.debug("Redirecting '%s' -> '%s'", request.url, backend_url)
 
     # body
-    raw = None
+    raw: Optional[bytes] = None
     if request.can_read_body:
-        raw: bytes = await request.read()
+        raw = await request.read()
 
     # injects product discovered by middleware in headers
     fwd_headers = request.headers.copy()
@@ -118,28 +61,9 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     fwd_headers.update({X_PRODUCT_NAME_HEADER: product_name})
 
     # forward request
-    return await _request_catalog(
+    return await catalog_client.make_request(
         request.app, request.method, backend_url, fwd_headers, raw
     )
-
-
-## API ------------------------
-
-
-async def get_services_for_user_in_product(
-    app: web.Application, user_id: int, product_name: str, *, only_key_versions: bool
-) -> Optional[List[Dict]]:
-    url = (
-        URL(app[f"{__name__}.catalog_origin"])
-        .with_path(app[f"{__name__}.catalog_version_prefix"] + "/services")
-        .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
-    )
-    session = get_client_session(app)
-    async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
-        if resp.status >= 400:
-            logger.error("Error while retrieving services for user %s", user_id)
-            return
-        return await resp.json()
 
 
 ## SETUP ------------------------
@@ -179,3 +103,6 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
 
     # reverse proxy to catalog's API
     app.router.add_routes(routes)
+
+
+__all__ = ("get_services_for_user_in_product", "is_service_responsive", "setup_catalog")
