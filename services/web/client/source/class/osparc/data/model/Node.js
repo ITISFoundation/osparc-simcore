@@ -128,6 +128,12 @@ qx.Class.define("osparc.data.model.Node", {
       init: ""
     },
 
+    dependencies: {
+      check: "Array",
+      init: [],
+      event: "changeDependencies"
+    },
+
     outputs: {
       check: "Object",
       nullable: false,
@@ -487,6 +493,14 @@ qx.Class.define("osparc.data.model.Node", {
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
+
+        const idx = this.getDependencies().indexOf(linkFieldModified.portId);
+        if (linkFieldModified.added && idx > -1) {
+          this.getDependencies().push(linkFieldModified.portId);
+        } else if (idx > -1) {
+          this.getDependencies().splice(idx, 1);
+        }
+
         const portId = linkFieldModified.portId;
         this.callRetrieveInputs(portId);
       }, this);
