@@ -8,17 +8,16 @@ from fastapi.routing import APIRoute
 from pydantic import BaseModel, Field
 from pydantic.networks import HttpUrl
 from pydantic.types import PositiveInt
-from yaml import safe_dump
 
 app = FastAPI()
 
 
-
 # TODO:
-#class ErrorType(BaseModel):
+# class ErrorType(BaseModel):
 #    logs: List[LogMessageType] = []
 #    errors: List[ErrorItemType]
 #    status: int
+
 
 class FileType2Viewer(BaseModel):
     file_type: str
@@ -35,11 +34,14 @@ class FielType2ViewerEnveloped(BaseModel):
     data: FileType2Viewer
     # error: Optional[ErrorType] = None
 
+
 class FieldType2ViewerListEnveloped(BaseModel):
     data: List[FileType2Viewer]
 
 
-@app.get("/viewers/filetypes", response_model=FieldType2ViewerListEnveloped, tags=["viewer"])
+@app.get(
+    "/viewers/filetypes", response_model=FieldType2ViewerListEnveloped, tags=["viewer"]
+)
 def list_supported_filetypes():
     pass
 
@@ -49,9 +51,9 @@ def get_viewer_for_file(
     file_type: str,
     file_name: Optional[str] = None,
     file_size: Optional[PositiveInt] = None
-    #Field(
+    # Field(
     #    None, description="Expected file size in bytes"
-    #),
+    # ),
 ):
     pass
 
