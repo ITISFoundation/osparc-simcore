@@ -79,9 +79,9 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       }];
     },
 
-    updateCurve: function(curve, x1, y1, x2, y2, dashed = false) {
+    updateCurve: function(curve, x1, y1, x2, y2) {
       const controls = osparc.component.workbench.SvgWidget.getCurveControls(x1, y1, x2, y2);
-      osparc.wrapper.Svg.updateCurve(curve, controls, dashed);
+      osparc.wrapper.Svg.updateCurve(curve, controls);
     },
 
     removeCurve: function(curve) {
@@ -94,6 +94,10 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     removeRect: function(rect) {
       osparc.wrapper.Svg.removeRect(rect);
+    },
+
+    updateDashes: function(curve, dashed = false) {
+      osparc.wrapper.Svg.updateCurve(curve, dashed);
     },
 
     updateCurveColor: function(curve, color) {
