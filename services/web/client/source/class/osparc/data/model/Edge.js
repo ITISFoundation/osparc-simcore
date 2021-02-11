@@ -61,13 +61,14 @@ qx.Class.define("osparc.data.model.Edge", {
 
     outputNode: {
       check: "osparc.data.model.Node",
-      apply: "_applyOutputNode",
+      apply: "__applyOutputNode",
       nullable: false
     },
 
     isPortConnected: {
       check: "Boolean",
       init: false,
+      event: "changeIsPortConnected",
       nullable: false
     }
   },
@@ -92,9 +93,9 @@ qx.Class.define("osparc.data.model.Edge", {
       return this.getOutputNode().getNodeId();
     },
 
-    _applyOutputNode: function(node) {
-      node.addListener("changeDependencies", () => {
-        this.__checkIsPortConnected();
+    __applyOutputNode: function(node2) {
+      node2.bind("dependencies", this, "isPortConnected", {
+        converter: dependencies => Boolean(dependencies.length)
       });
     },
 

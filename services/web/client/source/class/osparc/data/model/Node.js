@@ -495,7 +495,7 @@ qx.Class.define("osparc.data.model.Node", {
         const linkFieldModified = e.getData();
 
         const idx = this.getDependencies().indexOf(linkFieldModified.portId);
-        if (linkFieldModified.added && idx > -1) {
+        if (linkFieldModified.added && idx === -1) {
           this.getDependencies().push(linkFieldModified.portId);
         } else if (idx > -1) {
           this.getDependencies().splice(idx, 1);
