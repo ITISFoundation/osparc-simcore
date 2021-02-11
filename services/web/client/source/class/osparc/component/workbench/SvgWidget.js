@@ -108,9 +108,9 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
   members: {
     __canvas: null,
 
-    drawCurve: function(x1, y1, x2, y2, dashed = false) {
+    drawCurve: function(x1, y1, x2, y2) {
       const controls = this.self().getCurveControls(x1, y1, x2, y2);
-      return osparc.wrapper.Svg.drawCurve(this.__canvas, controls, dashed);
+      return osparc.wrapper.Svg.drawCurve(this.__canvas, controls);
     },
 
     drawDashedRect: function(width, height, x, y) {
