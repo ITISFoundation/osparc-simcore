@@ -495,19 +495,23 @@ qx.Class.define("osparc.data.model.Node", {
         const linkFieldModified = e.getData();
         const portId = linkFieldModified.portId;
 
-        const portsConnected = this.getPortsConnected();
-        const portConnected = portsConnected.find(connection => Object.keys(connection)[0] === portId);
+        const oldPortsConnected = this.getPortsConnected();
+        const portConnected = oldPortsConnected.find(connection => Object.keys(connection)[0] === portId);
         if (linkFieldModified.added && !(portConnected)) {
           const newConnection = {};
           newConnection[portId] = linkFieldModified.fromNodeId;
+          const portsConnected = [];
+          oldPortsConnected.forEach(oldPortConnected => portsConnected.push(oldPortConnected));
           portsConnected.push(newConnection);
           this.setPortsConnected(portsConnected);
         }
         if (!linkFieldModified.added && portConnected) {
-          const idx = portsConnected.indexOf(portConnected);
+          const idx = oldPortsConnected.indexOf(portConnected);
           if (idx > -1) {
-            portsConnected.splice(idx, 1);
+            oldPortsConnected.splice(idx, 1);
           }
+          const portsConnected = [];
+          oldPortsConnected.forEach(oldPortConnected => portsConnected.push(oldPortConnected));
           this.setPortsConnected(portsConnected);
         }
 
