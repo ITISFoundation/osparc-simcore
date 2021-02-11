@@ -80,11 +80,16 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       nullable: false
     },
 
-    unit: {
+    unitShort: {
       check: "String",
       nullable: true,
-      event: "changeUnit",
-      apply: "_applyUnit"
+      event: "changeUnitShort"
+    },
+
+    unitLong: {
+      check: "String",
+      nullable: true,
+      event: "changeUnitLong"
     }
   },
 
@@ -123,6 +128,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
       const unitLabel = this.__unitLabel = new qx.ui.basic.Label();
       this.addWidget(unitLabel);
+      this.bind("unitShort", unitLabel, "value");
+      this.bind("unitLong", unitLabel, "toolTipText");
       unitLabel.bind("value", unitLabel, "visibility", {
         converter: val => val === null ? "excluded" : "visible"
       });
@@ -150,15 +157,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
         });
       } else {
         this.__label.setValue(value);
-      }
-    },
-
-    _applyUnit: function(value) {
-      if (value) {
-        this.__unitLabel.set({
-          value,
-          toolTipText: "seconds"
-        });
       }
     },
 
