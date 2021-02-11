@@ -523,7 +523,25 @@
           }
         },
         "additionalProperties": false,
-        "description": "Metadata on a service input port"
+        "description": "Metadata on a service input port",
+        "example": {
+          "displayOrder": 2,
+          "label": "Sleep Time",
+          "description": "Time to wait before completion",
+          "type": "number",
+          "fileToKeyMap": {},
+          "defaultValue": 0,
+          "unit": "second",
+          "widget": {
+            "type": "TextArea",
+            "details": {
+              "minHeight": 0
+            }
+          },
+          "keyId": "input_2",
+          "unitLong": "seconds",
+          "unitShort": "sec"
+        }
       },
       "ServiceOutputApiOut": {
         "title": "ServiceOutputApiOut",
@@ -604,7 +622,25 @@
           }
         },
         "additionalProperties": false,
-        "description": "Metadata on a service input or output port"
+        "description": "Metadata on a service input or output port",
+        "example": {
+          "displayOrder": 2,
+          "label": "Sleep Time",
+          "description": "Time to wait before completion",
+          "type": "number",
+          "fileToKeyMap": {},
+          "defaultValue": 0,
+          "unit": "second",
+          "widget": {
+            "type": "TextArea",
+            "details": {
+              "minHeight": 0
+            }
+          },
+          "keyId": "input_2",
+          "unitLong": "seconds",
+          "unitShort": "sec"
+        }
       },
       "Structure": {
         "title": "Structure",
