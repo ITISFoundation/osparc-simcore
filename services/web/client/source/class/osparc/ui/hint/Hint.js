@@ -129,7 +129,7 @@ qx.Class.define("osparc.ui.hint.Hint", {
     },
 
     __updatePosition: function() {
-      if (this.isPropertyInitialized("element")) {
+      if (this.isPropertyInitialized("element") && this.getElement().getContentElement()) {
         const element = this.getElement().getContentElement()
           .getDomElement();
         const {

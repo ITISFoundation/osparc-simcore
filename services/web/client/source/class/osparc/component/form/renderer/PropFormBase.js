@@ -39,10 +39,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     this.base(arguments, form);
 
     const fl = this._getLayout();
-    fl.setColumnFlex(0, 0);
-    fl.setColumnAlign(0, "left", "top");
-    fl.setColumnFlex(1, 1);
-    fl.setColumnMinWidth(1, 130);
+    fl.setColumnFlex(this._gridPos.label, 0);
+    fl.setColumnAlign(this._gridPos.label, "left", "top");
+    fl.setColumnFlex(this._gridPos.info, 0);
+    fl.setColumnAlign(this._gridPos.info, "left", "middle");
+    fl.setColumnFlex(this._gridPos.ctrlField, 1);
+    fl.setColumnMinWidth(this._gridPos.ctrlField, 130);
   },
 
   properties: {
@@ -56,7 +58,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
   members: {
     _gridPos: {
       label: 0,
-      ctrlField: 1
+      info: 1,
+      ctrlField: 2
     },
 
     _visibility: {
@@ -89,9 +92,13 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           column: this._gridPos.label
         });
 
-        const fieldWMenu = this._createFieldWithMenu(item);
+        const info = this._createInfoWHint(item.description);
+        this._add(info, {
+          row: this._row,
+          column: this._gridPos.info
+        });
 
-        const field = this._createFieldWithHint(fieldWMenu, item.description);
+        const field = this._createFieldWithMenu(item);
         field.key = item.key;
         this._add(field, {
           row: this._row,
@@ -253,9 +260,9 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return field;
     },
 
-    _createFieldWithHint: function(field, hint) {
-      const fieldWHint = new osparc.component.form.FieldWHint(null, hint, field);
-      return fieldWHint;
+    _createInfoWHint: function(hint) {
+      const infoWHint = new osparc.ui.hint.InfoHint(hint);
+      return infoWHint;
     },
 
     _getLayoutChild: function(portId, column) {
@@ -288,6 +295,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     _getLabelFieldChild: function(portId) {
       return this._getLayoutChild(portId, this._gridPos.label);
+    },
+
+    _getInfoFieldChild: function(portId) {
+      return this._getLayoutChild(portId, this._gridPos.info);
     },
 
     _getCtrlFieldChild: function(portId) {

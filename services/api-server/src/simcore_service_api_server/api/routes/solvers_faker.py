@@ -5,10 +5,11 @@ from uuid import UUID
 
 import packaging.version
 import yaml
+from fastapi import HTTPException, status
 from importlib_resources import files
 from models_library.services import ServiceDockerData
 
-from ...models.schemas.solvers import Solver
+from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverName
 
 
 @dataclass
@@ -59,3 +60,71 @@ class SolversFaker:
 
 
 the_fake_impl = SolversFaker.create_from_mocks()
+
+
+# /files API fake implementations
+
+# GET /solvers
+
+
+async def list_solvers(
+    url_for: Callable,
+):
+    def _url_resolver(solver_id: UUID):
+        return url_for(
+            "get_solver",
+            solver_id=solver_id,
+        )
+
+    # TODO: Consider sorted(latest_solvers, key=attrgetter("name", "version"))
+    return list(the_fake_impl.values(_url_resolver))
+
+
+async def get_solver_by_name_and_version(
+    solver_name: SolverName,
+    version: str,
+    url_for: Callable,
+):
+    try:
+        print(f"/{solver_name}/{version}", flush=True)
+
+        def _url_resolver(solver_id: UUID):
+            return url_for(
+                "get_solver",
+                solver_id=solver_id,
+            )
+
+        if version == LATEST_VERSION:
+            solver = the_fake_impl.get_latest(solver_name, _url_resolver)
+        else:
+            solver = the_fake_impl.get_by_name_and_version(
+                solver_name, version, _url_resolver
+            )
+        return solver
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solver {solver_name}:{version} not found",
+        ) from err
+
+
+async def get_solver(
+    solver_id: UUID,
+    url_for: Callable,
+):
+    try:
+        solver = the_fake_impl.get(
+            solver_id,
+            url=url_for(
+                "get_solver",
+                solver_id=solver_id,
+            ),
+        )
+        return solver
+
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solver {solver_id} not found",
+        ) from err

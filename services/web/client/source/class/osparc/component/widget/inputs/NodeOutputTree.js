@@ -60,6 +60,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       bindItem: (c, item, id) => {
         c.bindDefaultProperties(item, id);
         c.bindProperty("value", "value", null, item, id);
+        c.bindProperty("label", "description", null, item, id);
+        c.bindProperty("description", "description2", null, item, id);
         c.bindProperty("nodeKey", "nodeKey", null, item, id);
         c.bindProperty("portKey", "portKey", null, item, id);
         c.bindProperty("isDir", "isDir", null, item, id);
@@ -73,15 +75,17 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       }
     });
 
-    node.addListener("outputChanged", e => {
-      const portKey = e.getData();
-      const outValue = node.getOutput(portKey);
-      this.getModel().getChildren()
-        .forEach(treeItem => {
-          if (treeItem.getPortKey() === portKey) {
-            treeItem.setValue(qx.data.marshal.Json.createModel(outValue.value));
-          }
-        });
+    node.addListener("changeOutputs", e => {
+      const updatedOutputs = e.getData();
+      for (const portKey in updatedOutputs) {
+        const outValue = updatedOutputs[portKey];
+        this.getModel().getChildren()
+          .forEach(treeItem => {
+            if (treeItem.getPortKey() === portKey) {
+              treeItem.setValue(qx.data.marshal.Json.createModel(outValue.value));
+            }
+          });
+      }
     }, this);
   },
 
@@ -137,22 +141,15 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       for (let portKey in ports) {
         let portData = {
           label: ports[portKey].label,
+          description: ports[portKey].description,
           portKey: portKey,
           nodeKey: node.getKey(),
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
           type: ports[portKey].type,
           open: false
         };
-        if (ports[portKey].type === "node-output-tree-api-v0.0.1") {
-          const itemList = osparc.dev.fake.Data.getItemList(node.getKey(), portKey);
-          const showLeavesAsDirs = !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting"));
-          const children = osparc.data.Converters.fromAPITreeToVirtualTreeModel(itemList, showLeavesAsDirs, portKey);
-          portData.children = children;
-          portData.open = true;
-        } else {
-          portData.icon = osparc.data.Converters.fromTypeToIcon(ports[portKey].type);
-          portData.value = ports[portKey].value == null ? this.tr("no value") : ports[portKey].value;
-        }
+        portData.icon = osparc.data.Converters.fromTypeToIcon(ports[portKey].type);
+        portData.value = ports[portKey].value == null ? this.tr("-") : ports[portKey].value;
         data.children.push(portData);
       }
 

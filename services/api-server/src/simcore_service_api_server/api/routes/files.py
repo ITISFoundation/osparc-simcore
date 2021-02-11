@@ -1,29 +1,22 @@
 import asyncio
 import json
 import logging
-import re
-import shutil
-import tempfile
 from collections import deque
 from datetime import datetime
-from mimetypes import guess_type
-from pathlib import Path
 from textwrap import dedent
 from typing import List, Optional
 from uuid import UUID
 
-import aiofiles
 import httpx
 from fastapi import APIRouter, Depends, File, Header, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
-from starlette.background import BackgroundTask
-from starlette.responses import FileResponse
+from starlette.responses import RedirectResponse
 
 from ..._meta import api_vtag
 from ...models.schemas.files import FileMetadata
-from ...modules.storage import StorageApi, StorageFileMetaData
+from ...modules.storage import StorageApi, StorageFileMetaData, to_file_metadata
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from .files_faker import the_fake_impl
@@ -39,24 +32,11 @@ router = APIRouter()
 # - TODO: extend :search as https://cloud.google.com/apis/design/custom_methods ?
 #
 #
-FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
-def convert_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
-    # extracts fields from api/{file_id}/{filename}
-    match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
-    if not match:
-        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
-
-    file_id, filename = match.groups()
-
-    meta = FileMetadata(
-        file_id=file_id,
-        filename=filename,
-        content_type=guess_type(filename)[0],
-        checksum=stored_file_meta.entity_tag,
-    )
-    return meta
+common_error_responses = {
+    404: {"description": "File not found"},
+}
 
 
 @router.get("", response_model=List[FileMetadata])
@@ -75,7 +55,7 @@ async def list_files(
             assert stored_file_meta.user_id == user_id  # nosec
             assert stored_file_meta.file_id  # nosec
 
-            meta = convert_metadata(stored_file_meta)
+            meta = to_file_metadata(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
             logger.warning(
@@ -118,18 +98,10 @@ async def upload_file(
     )
 
     logger.info("Uploading %s to %s ...", meta, presigned_upload_link)
-
     async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, write=3600)) as client:
         assert meta.content_type  # nosec
 
-        # pylint: disable=protected-access
-        # NOTE: _file attribute is a file-like object of ile.file which is
-        # a https://docs.python.org/3/library/tempfile.html#tempfile.TemporaryFile
-        #
-        resp = await client.put(
-            presigned_upload_link,
-            files={"upload-file": (meta.filename, file.file._file, meta.content_type)},
-        )
+        resp = await client.put(presigned_upload_link, data=await file.read())
         resp.raise_for_status()
 
     # update checksum
@@ -155,7 +127,9 @@ async def upload_files(files: List[UploadFile] = File(...)):
     return uploaded
 
 
-@router.get("/{file_id}", response_model=FileMetadata)
+@router.get(
+    "/{file_id}", response_model=FileMetadata, responses={**common_error_responses}
+)
 async def get_file(
     file_id: UUID,
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
@@ -175,7 +149,7 @@ async def get_file(
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model
-        meta = convert_metadata(stored_file_meta)
+        meta = to_file_metadata(stored_file_meta)
         return meta
 
     except (ValueError, ValidationError) as err:
@@ -186,12 +160,28 @@ async def get_file(
         ) from err
 
 
-@router.get("/{file_id}/content")
+@router.get(
+    "/{file_id}/content",
+    response_class=RedirectResponse,
+    responses={
+        **common_error_responses,
+        200: {
+            "content": {
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"}
+                },
+                "text/plain": {"schema": {"type": "string"}},
+            },
+            "description": "Returns a arbitrary binary data",
+        },
+    },
+)
 async def download_file(
     file_id: UUID,
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
+    # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
     meta: FileMetadata = await get_file(file_id, storage_client, user_id)
 
@@ -201,41 +191,7 @@ async def download_file(
     )
 
     logger.info("Downloading %s to %s ...", meta, presigned_download_link)
-
-    async def _download_chunk():
-        async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, read=3600)) as client:
-            async with client.stream("GET", presigned_download_link) as resp:
-                async for chunk in resp.aiter_bytes():
-                    yield chunk
-
-                resp.raise_for_status()
-
-    def _delete(dirpath):
-        logger.debug("Deleting %s ...", dirpath)
-        shutil.rmtree(dirpath, ignore_errors=True)
-
-    async def _download_and_save():
-        file_path = Path(tempfile.mkdtemp()) / "dump"
-        try:
-            async with aiofiles.open(file_path, mode="wb") as fh:
-                async for chunk in _download_chunk():
-                    await fh.write(chunk)
-        except Exception:
-            _delete(file_path.parent)
-            raise
-        return file_path
-
-    # tmp download here TODO: had some problems with RedirectedResponse(presigned_download_link)
-    file_path = await _download_and_save()
-
-    task = BackgroundTask(_delete, dirpath=file_path.parent)
-
-    return FileResponse(
-        str(file_path),
-        media_type=meta.content_type,
-        filename=meta.filename,
-        background=task,
-    )
+    return RedirectResponse(presigned_download_link)
 
 
 async def files_upload_multiple_view():

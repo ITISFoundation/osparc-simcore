@@ -1,12 +1,14 @@
 # pylint: disable=no-name-in-module
 # pylint: disable=no-value-for-parameter
 
-import pytest
-from aiopg.sa.result import RowProxy
-from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
-from sqlalchemy import literal_column
 
+from typing import Optional
+
+import aiopg.sa.exc
+import pytest
+from aiopg.sa.result import ResultProxy, RowProxy
 from fake_creators import random_group, random_user
+from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     GroupType,
@@ -14,6 +16,7 @@ from simcore_postgres_database.webserver_models import (
     user_to_groups,
     users,
 )
+from sqlalchemy import literal_column
 
 
 async def _create_group(conn, **overrides) -> RowProxy:
@@ -41,6 +44,7 @@ async def test_user_group_uniqueness(make_engine):
     sync_engine = make_engine(False)
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
+
     async with engine.acquire() as conn:
         rory_group = await _create_group(conn, name="Rory Storm and the Hurricanes")
         ringo = await _create_user(conn, "Ringo", rory_group)
@@ -49,6 +53,17 @@ async def test_user_group_uniqueness(make_engine):
             await conn.execute(
                 user_to_groups.insert().values(uid=ringo.id, gid=rory_group.gid)
             )
+
+        # Checks implementation of simcore_service_webserver/groups_api.py:get_group_from_gid
+        res: ResultProxy = await conn.execute(
+            groups.select().where(groups.c.gid == rory_group.gid)
+        )
+
+        the_one: Optional[RowProxy] = await res.first()
+        assert the_one.type == the_one["type"]
+
+        with pytest.raises(aiopg.sa.exc.ResourceClosedError):
+            await res.fetchone()
 
 
 async def test_all_group(make_engine):

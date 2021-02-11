@@ -45,7 +45,7 @@ qx.Class.define("osparc.data.model.Edge", {
     this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
     this.setInputNode(node1);
     this.setOutputNode(node2);
-    this.__checkIsPortConnected(node2);
+    this.__checkAnyPortsConnected();
   },
 
   properties: {
@@ -72,6 +72,17 @@ qx.Class.define("osparc.data.model.Edge", {
     }
   },
 
+  statics: {
+    checkAnyPortsConnected: function(node1, node2) {
+      if (node2.getPropsForm()) {
+        const links = node2.getPropsForm().getLinks();
+        const anyConnected = links.some(link => link["nodeUuid"] === node1.getNodeId());
+        return anyConnected;
+      }
+      return false;
+    }
+  },
+
   members: {
     getInputNodeId: function() {
       return this.getInputNode().getNodeId();
@@ -84,22 +95,33 @@ qx.Class.define("osparc.data.model.Edge", {
     _applyOutputNode: function(node) {
       if (node.getPropsForm()) {
         node.getPropsForm().addListener("linkFieldModified", () => {
-          this.__checkIsPortConnected(node);
+          this.__checkIsPortConnected();
         });
-        this.__checkIsPortConnected(node);
+        this.__checkIsPortConnected();
       }
     },
 
-    __checkIsPortConnected: function(node2) {
+    __checkAnyPortsConnected: function() {
+      const node1 = this.getInputNode();
+      const node2 = this.getOutputNode();
+      const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
+      this.setIsPortConnected(anyConnected);
+    },
+
+    __checkIsPortConnected: function() {
+      const node1 = this.getInputNode();
+      let node2 = this.getOutputNode();
       if (node2.getPropsForm()) {
-        this.setIsPortConnected(node2.getPropsForm().hasAnyPortConnected());
+        const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
+        this.setIsPortConnected(anyConnected);
       }
       if (node2.isContainer()) {
         const innerNodes = node2.getInnerNodes();
         for (const innerNodeId in innerNodes) {
-          const innerNode = innerNodes[innerNodeId];
-          if (innerNode.getPropsForm()) {
-            this.setIsPortConnected(innerNode.getPropsForm().hasAnyPortConnected());
+          node2 = innerNodes[innerNodeId];
+          if (node2.getPropsForm()) {
+            const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
+            this.setIsPortConnected(anyConnected);
           }
           break;
         }

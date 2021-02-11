@@ -27,7 +27,8 @@ qx.Class.define("osparc.ui.tree.ClassifiersTree", {
         },
         bindItem: function(controller, item, id) {
           controller.bindDefaultProperties(item, id);
-          osparc.ui.tree.MHintInTree.bindHintProps(controller, item, id);
+          controller.bindProperty("description", "description", null, item, id);
+          controller.bindProperty("url", "url", null, item, id);
         },
         configureItem: function(item) {
           item.setSelectable(false);

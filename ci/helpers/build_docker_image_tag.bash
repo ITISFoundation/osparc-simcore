@@ -8,7 +8,9 @@
 #   always adds -testbuild-latest to the image tag to differentiate from the real master/staging builds
 
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -euo pipefail
+set -o errexit   # abort on nonzero exitstatus
+set -o nounset   # abort on unbound variable
+set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 default_image_tag="github"

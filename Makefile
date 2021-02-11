@@ -11,7 +11,6 @@
 
 SHELL := /bin/bash
 
-
 MAKE_C := $(MAKE) --no-print-directory --directory
 
 # Operating system
@@ -71,8 +70,10 @@ export ETC_HOSTNAME
 host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
 endif
 
+get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
-S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1):9001
+S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
 
 
@@ -434,7 +435,6 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 
 
 local_registry=registry
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 .PHONY: local-registry rm-registry
 
 rm-registry: ## remove the registry and changes to host/file

@@ -29,13 +29,7 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     // Layout
     this._setLayout(new qx.ui.layout.VBox());
 
-    // Title bar
-    this.__titleBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-      alignY: "middle"
-    }));
-    this._add(this.__titleBar);
-
-    this.__caret = this.getChildControl("caret");
+    this.getChildControl("caret");
 
     // Set if coming in the constructor arguments
     if (title) {
@@ -79,9 +73,6 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
   },
 
   members: {
-    __titleBar: null,
-    __titleLabel: null,
-    __caret: null,
     _innerContainer: null,
     __containerHeight: null,
     __layoutFlex: null,
@@ -91,20 +82,30 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "caret":
+        case "header":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          }));
+          this._add(control);
+          break;
+        case "caret": {
+          const header = this.getChildControl("header");
           control = new qx.ui.basic.Image(this.__getCaretId(this.getCollapsed())).set({
             visibility: "excluded"
           });
-          this.__titleBar.addAt(control, 0);
+          header.addAt(control, 0);
           // Attach handler
           this.__attachToggler(control);
           break;
-        case "title":
+        }
+        case "title": {
+          const header = this.getChildControl("header");
           control = new qx.ui.basic.Atom(this.getTitle());
-          this.__titleBar.addAt(control, 1);
+          header.addAt(control, 1);
           // Attach handler
           this.__attachToggler(control);
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -114,16 +115,16 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     },
 
     getTitleBar: function() {
-      return this.__titleBar;
+      return this.getChildControl("header");
     },
 
     getTitleLabel: function() {
-      return this.__titleLabel;
+      return this.getChildControl("title");
     },
 
     _applyCollapsed: function(collapsed) {
       if (this.getContent()) {
-        this.__caret.setSource(this.__getCaretId(collapsed));
+        this.getChildControl("caret").setSource(this.__getCaretId(collapsed));
         if (collapsed) {
           this.__minHeight = this.getMinHeight();
           if (this.getContent()) {
@@ -178,20 +179,20 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
       this._innerContainer.add(content);
       this._innerContainer.setHeight(this.getCollapsed() ? 0 : this.__containerHeight);
 
+      const caret = this.getChildControl("caret");
       if (content) {
-        this.__caret.show();
+        caret.show();
       } else {
-        this.__caret.exclude();
+        caret.exclude();
       }
     },
 
     _applyTitle: function(title) {
-      this.__titleLabel = this.getChildControl("title");
-      this.__titleLabel.setLabel(title);
+      this.getChildControl("title").setLabel(title);
     },
 
     _applyCaretSize: function(size) {
-      this.__caret.setSource(this.__getCaretId(this.getCollapsed()));
+      this.getChildControl("caret").setSource(this.__getCaretId(this.getCollapsed()));
     },
 
     __getCaretId: function(collapsed) {

@@ -41,7 +41,7 @@ qx.Class.define("osparc.ui.basic.LinkLabel", {
       font: "link-label"
     });
 
-    this.addListener("click", this._onClick);
+    this.addListener("click", this.__onClick);
   },
 
   properties: {
@@ -52,8 +52,11 @@ qx.Class.define("osparc.ui.basic.LinkLabel", {
   },
 
   members: {
-    _onClick: function(e) {
-      window.open(this.getUrl());
+    __onClick: function() {
+      const link = this.getUrl();
+      if (link) {
+        window.open(link);
+      }
     }
   }
 });

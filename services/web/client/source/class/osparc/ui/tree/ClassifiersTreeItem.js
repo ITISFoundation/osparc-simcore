@@ -27,6 +27,7 @@ qx.Class.define("osparc.ui.tree.ClassifiersTreeItem", {
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
+      this.addHint();
     }
   }
 });

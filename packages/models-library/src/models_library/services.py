@@ -272,7 +272,6 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
 
     class Config:
         description = "Description of a simcore node 'class' with input and output"
-        title = "simcore node"
         extra = Extra.forbid
 
 

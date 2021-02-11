@@ -34,8 +34,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     # creates app instance
     app = FastAPI(
         debug=settings.debug,
-        title="Public API Server",
-        description="osparc-simcore Public RESTful API Specifications",
+        title="osparc.io web API",
+        description="osparc-simcore public web API specifications",
         version=api_version,
         openapi_url=f"/api/{api_vtag}/openapi.json",
         docs_url="/dev/doc",

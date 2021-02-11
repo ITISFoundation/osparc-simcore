@@ -8,14 +8,16 @@ from fastapi import FastAPI
 @dataclass
 class BaseServiceClientApi:
     """
-    - wrapper around thin-client to simplify service's API
+    - wrapper around thin-client to simplify service's API calls
     - sets endspoint upon construction
     - MIME type: application/json
     - processes responses, returning data or raising formatted HTTP exception
-
+    - helpers to create a unique client instance per application and service
     """
+
     client: httpx.AsyncClient
     service_name: str = ""
+    health_check_path: str = "/"
 
     @classmethod
     def create(cls, app: FastAPI, **kwargs):
@@ -35,3 +37,11 @@ class BaseServiceClientApi:
 
     async def aclose(self):
         await self.client.aclose()
+
+    async def is_responsive(self) -> bool:
+        try:
+            resp = await self.client.get(self.health_check_path)
+            resp.raise_for_status()
+            return True
+        except (httpx.HTTPStatusError, httpx.RequestError):
+            return False

@@ -43,6 +43,7 @@
 
 qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   extend: qx.ui.tree.VirtualTreeItem,
+  include: osparc.ui.tree.MHintInTree,
 
   properties: {
     isDir: {
@@ -69,6 +70,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
     value: {
       nullable: true,
+      event: "changeValue",
       apply: "_applyValue",
       transform: "_transformValue"
     },
@@ -80,31 +82,60 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   },
 
   members : {
-    __valueLabel: null,
+    __label: null,
 
     _addWidgets : function() {
-      // Here's our indentation and tree-lines
-      this.addSpacer();
-      this.addOpenButton();
+      this.addHint().set({
+        alignY: "middle"
+      });
+      this._add(new qx.ui.core.Spacer(5));
 
-      // The standard tree icon follows
       this.addIcon();
 
-      // The label
-      this.addLabel();
+      // Add the port label
+      const label = this.__label = new qx.ui.basic.Label();
+      this.addWidget(label);
+      this.bind("value", label, "visibility", {
+        converter: val => typeof val === "string" ? "visible" : "excluded"
+      });
+
+      const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null).set({
+        alignY: "middle"
+      });
+      this.addWidget(labelLink);
+      this.bind("value", labelLink, "visibility", {
+        converter: val => typeof val === "string" ? "excluded" : "visible"
+      });
 
       // All else should be right justified
       this.addWidget(new qx.ui.core.Spacer(), {
         flex: 1
       });
-
-      // Add the port value
-      this.__valueLabel = new qx.ui.basic.Label();
-      this.addWidget(this.__valueLabel);
     },
 
-    _applyValue: function(value) {
-      this.__valueLabel.setValue(value);
+    _applyValue: async function(value) {
+      if (typeof value === "object" && "store" in value) {
+        // it's a file
+        const download = true;
+        const locationId = value.store;
+        const fileId = value.path;
+        const filename = value.filename;
+        const presignedLinkData = await osparc.store.Data.getInstance().getPresignedLink(download, locationId, fileId);
+        if ("presignedLink" in presignedLinkData) {
+          this.__labelLink.set({
+            value: filename,
+            url: presignedLinkData.presignedLink.link
+          });
+        }
+      } else if (typeof value === "object" && "donwloadLink" in value) {
+        // it's a link
+        this.__labelLink.set({
+          value: value.filename,
+          url: value.donwloadLink
+        });
+      } else {
+        this.__label.setValue(value);
+      }
     },
 
     __isNumber: function(n) {
@@ -112,14 +143,27 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     },
 
     _transformValue: function(value) {
-      if (value.getLabel) {
-        return value.getLabel();
-      }
       if (value.getPath) {
+        // it's a file
         const fileName = value.getPath().split("/");
         if (fileName.length) {
-          return fileName[fileName.length-1];
+          const fn = fileName[fileName.length-1];
+          return {
+            store: value.getStore(),
+            path: value.getPath(),
+            filename: fn
+          };
         }
+      }
+      if (value.getDownloadLink) {
+        // it's a link
+        return {
+          donwloadLink: value.getDownloadLink(),
+          filename: value.getLabel()
+        };
+      }
+      if (value.getLabel) {
+        return value.getLabel();
       }
       if (this.__isNumber(value)) {
         return value.toString();

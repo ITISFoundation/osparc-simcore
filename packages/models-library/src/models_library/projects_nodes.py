@@ -2,6 +2,7 @@
     Models Node as a central element in a project's pipeline
 """
 
+from copy import deepcopy
 from typing import Dict, List, Optional, Union
 
 from pydantic import (
@@ -87,7 +88,7 @@ class Node(BaseModel):
     run_hash: Optional[str] = Field(
         None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
-        examples=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
+        example=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
         alias="runHash",
     )
 
@@ -149,11 +150,13 @@ class Node(BaseModel):
     class Config:
         extra = Extra.forbid
 
-        # NOTE: exporting without this trick does not make runHash as nullabel.
+        # NOTE: exporting without this trick does not make runHash as nullable.
         # It is a Pydantic issue see https://github.com/samuelcolvin/pydantic/issues/1270
         @staticmethod
-        def schema_extra(schema, _):
-            for prop, value in schema.get("properties", {}).items():
-                if prop in ["runHash"]:  # Your actual nullable fields go in this list.
-                    was = value["type"]
-                    value["type"] = [was, "null"]
+        def schema_extra(schema, _model: "Node"):
+            # NOTE: the variant with anyOf[{type: null}, { other }] is compatible with OpenAPI
+            # The other as type = [null, other] is only jsonschema compatible
+            for prop_name in ["runHash"]:
+                if prop_name in schema.get("properties", {}):
+                    was = deepcopy(schema["properties"][prop_name])
+                    schema["properties"][prop_name] = {"anyOf": [{"type": "null"}, was]}

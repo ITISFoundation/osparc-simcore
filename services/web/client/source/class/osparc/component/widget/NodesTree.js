@@ -316,10 +316,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             const params = {
               name: newLabel
             };
-            study.updateStudy(params)
-              .then(data => {
-                selectedItem.setLabel(data.name);
-              });
+            study.updateStudy(params);
           } else if (osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
             selectedItem.setLabel(newLabel);
             const node = study.getWorkbench().getNode(nodeId);

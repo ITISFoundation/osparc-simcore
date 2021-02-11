@@ -134,7 +134,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           } else if (status === "connecting") {
             return this.tr("Connecting...");
           }
-          return this.tr("Idle");
+          return status;
         }
       });
 
@@ -153,7 +153,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           } else if (status === "connecting") {
             return "@FontAwesome5Solid/circle-notch/12";
           }
-          return "@FontAwesome5Solid/check/12";
+          return "";
         },
         onUpdate: (source, target) => {
           if (source.getInteractiveStatus() == null) {

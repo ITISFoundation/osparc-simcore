@@ -203,14 +203,25 @@ qx.Class.define("osparc.utils.Utils", {
         let xhr = new XMLHttpRequest();
         xhr.open(method, url, true);
         xhr.responseType = "blob";
+        xhr.addEventListener("readystatechange", () => {
+        // xhr.onreadystatechange = () => {
+          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+            // The responseType value can be changed at any time before the readyState reaches 3.
+            // When the readyState reaches 2, we have access to the response headers to make that decision with.
+            if (xhr.status >= 200 && xhr.status < 400) {
+              xhr.responseType = "blob";
+            } else {
+              // get ready for handling an error
+              xhr.responseType = "text";
+            }
+          }
+        });
         xhr.addEventListener("progress", () => {
           if (xhr.readyState === XMLHttpRequest.LOADING) {
             if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
               if (downloadStartedCB) {
                 downloadStartedCB();
               }
-            } else {
-              reject();
             }
           }
         });
@@ -228,11 +239,11 @@ qx.Class.define("osparc.utils.Utils", {
             downloadAnchorNode.remove();
             resolve();
           } else {
-            reject();
+            reject(xhr);
           }
         });
-        xhr.addEventListener("error", () => reject());
-        xhr.addEventListener("abort", () => reject());
+        xhr.addEventListener("error", () => reject(xhr));
+        xhr.addEventListener("abort", () => reject(xhr));
         xhr.send();
       });
     },
