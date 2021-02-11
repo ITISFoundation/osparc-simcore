@@ -1,6 +1,4 @@
-import sys
-from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from models_library.services import (
     KEY_RE,
