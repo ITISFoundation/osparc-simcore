@@ -128,10 +128,10 @@ qx.Class.define("osparc.data.model.Node", {
       init: ""
     },
 
-    dependencies: {
+    portsConnected: {
       check: "Array",
       init: [],
-      event: "changeDependencies"
+      event: "changePortsConnected"
     },
 
     outputs: {
@@ -493,20 +493,24 @@ qx.Class.define("osparc.data.model.Node", {
       this.setPropsForm(propsForm);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
+        const portId = linkFieldModified.portId;
 
-        const dependencies = this.getDependencies();
-        const idx = dependencies.indexOf(linkFieldModified.fromNodeId);
-        if (linkFieldModified.added && idx === -1) {
-          dependencies.push(linkFieldModified.fromNodeId);
-          console.log("dependencies", dependencies);
-          this.setDependencies(dependencies);
-        } else if (idx > -1) {
-          dependencies.splice(idx, 1);
-          console.log("dependencies", dependencies);
-          this.setDependencies(dependencies);
+        const portsConnected = this.getPortsConnected();
+        const portConnected = portsConnected.find(connection => Object.keys(connection)[0] === portId);
+        if (linkFieldModified.added && !(portConnected)) {
+          const newConnection = {};
+          newConnection[portId] = linkFieldModified.fromNodeId;
+          portsConnected.push(newConnection);
+          this.setPortsConnected(portsConnected);
+        }
+        if (!linkFieldModified.added && portConnected) {
+          const idx = portsConnected.indexOf(portConnected);
+          if (idx > -1) {
+            portsConnected.splice(idx, 1);
+          }
+          this.setPortsConnected(portsConnected);
         }
 
-        const portId = linkFieldModified.portId;
         this.callRetrieveInputs(portId);
       }, this);
     },
