@@ -54,8 +54,7 @@ async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> N
     # creating them before the extraction is under way avoids the issue
 
     try:
-        with open(archive_to_extract, "rb") as file_handler:
-            zip_file_handler = zipfile.ZipFile(file_handler)
+        with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
             with ProcessPoolExecutor() as pool:
                 loop = asyncio.get_event_loop()
 
