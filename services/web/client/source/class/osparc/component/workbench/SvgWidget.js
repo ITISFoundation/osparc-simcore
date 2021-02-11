@@ -97,7 +97,7 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
     },
 
     updateDashes: function(curve, dashed = false) {
-      osparc.wrapper.Svg.updateCurve(curve, dashed);
+      osparc.wrapper.Svg.updateDashes(curve, dashed);
     },
 
     updateCurveColor: function(curve, color) {
