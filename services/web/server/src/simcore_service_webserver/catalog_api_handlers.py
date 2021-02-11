@@ -16,9 +16,12 @@ from .catalog_api_models import (
     ServiceVersion,
 )
 
+###############
+# API HANDLERS
 #
-# TODO: uuid instead of key+version?
-#
+# - TODO: uuid instead of key+version?
+# - Take into account that part of the API is also needed in the public API so logic should
+#   live in the catalog service in his final version
 
 routes = RouteTableDef()
 
