@@ -27,7 +27,8 @@ async def study_export(
     returns: directory if archive is True else a compressed archive is returned
     """
     # storage area for the project data
-    destination = Path(tmp_dir) / project_id / project_id
+    base_temp_dir = Path(tmp_dir)
+    destination = base_temp_dir / project_id
     destination.mkdir(parents=True, exist_ok=True)
 
     # The formatter will always be chosen to be the highest availabel version
@@ -41,7 +42,10 @@ async def study_export(
         return destination
 
     # an archive is always produced when compression is active
-    archive_path = await zip_folder(input_path=destination)
+
+    archive_path = await zip_folder(
+        folder_to_zip=base_temp_dir, destination_folder=base_temp_dir
+    )
 
     return archive_path
 
@@ -58,7 +62,8 @@ async def study_import(
     the imported project's uuid.
     """
     # Storing file to disk
-    upload_file_name = Path(temp_dir) / "uploaded.zip"
+    base_temp_dir = Path(temp_dir)
+    upload_file_name = base_temp_dir / "uploaded.zip"
     # upload and verify checksum
     original_file_name = file_field.filename
 
@@ -85,7 +90,9 @@ async def study_import(
             f"{digest_from_filename}, upload_digest={upload_digest}"
         )
 
-    unzipped_root_folder = await unzip_folder(upload_file_name)
+    unzipped_root_folder = await unzip_folder(
+        archive_to_extract=upload_file_name, destination_folder=base_temp_dir
+    )
 
     formatter: BaseFormatter = await validate_manifest(unzipped_root_folder)
     return await formatter.validate_and_import_directory(app=app, user_id=user_id)
