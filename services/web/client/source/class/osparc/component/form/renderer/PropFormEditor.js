@@ -35,12 +35,13 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
   // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
-    // overridden
     _gridPos: {
       label: 0,
-      ctrlField: 1,
-      accessLevel: 2
+      info: 1,
+      ctrlField: 2,
+      accessLevel: 3
     },
+
     _accessLevel: {
       hidden: 0,
       readOnly: 1,

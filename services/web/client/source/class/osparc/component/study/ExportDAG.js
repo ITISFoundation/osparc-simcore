@@ -94,12 +94,12 @@ qx.Class.define("osparc.component.study.ExportDAG", {
       } = this.__buildMetaDataForm();
       this._add(formRenderer);
 
-      const scroll = new qx.ui.container.Scroll();
       const settingsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       const settingsView = this.__buildOutputSettings();
       settingsLayout.add(settingsView, {
         flex: 1
       });
+      const scroll = new qx.ui.container.Scroll();
       scroll.add(settingsLayout);
       this._add(scroll, {
         flex: 1

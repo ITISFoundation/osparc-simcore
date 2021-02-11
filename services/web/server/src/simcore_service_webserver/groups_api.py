@@ -5,7 +5,8 @@ from typing import Dict, List, Optional, Tuple
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import SAConnection
-from aiopg.sa.result import RowProxy
+from aiopg.sa.engine import Engine
+from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from sqlalchemy import and_, literal_column
 from sqlalchemy.dialects.postgresql import insert
@@ -348,9 +349,11 @@ async def delete_user_in_group(
         )
 
 
-async def get_group_from_gid(app: web.Application, gid: int) -> Dict:
-    engine = app[APP_DB_ENGINE_KEY]
+async def get_group_from_gid(app: web.Application, gid: int) -> Optional[RowProxy]:
+    engine: Engine = app[APP_DB_ENGINE_KEY]
 
     async with engine.acquire() as conn:
-        group = await conn.execute(sa.select([groups]).where(groups.c.gid == gid))
-        return await group.fetchone()
+        res: ResultProxy = await conn.execute(
+            groups.select().where(groups.c.gid == gid)
+        )
+        return await res.first()
