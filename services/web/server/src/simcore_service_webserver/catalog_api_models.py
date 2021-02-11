@@ -26,8 +26,34 @@ ServiceOutputKey = PropertyName
 #  - API models should be adapted to API user needs
 #  - warning with couplings! Add example to ensure that API model maintain
 #    backwards compatibility
+#   - schema samples could have multiple schemas to tests backwards compatibility
 #
 # TODO: uuid instead of key+version?
+
+INPUT_SAMPLE = {
+    "displayOrder": 2,
+    "label": "Sleep Time",
+    "description": "Time to wait before completion",
+    "type": "number",
+    "fileToKeyMap": {},
+    "defaultValue": 0,
+    "unit": "second",
+    "widget": {"type": "TextArea", "details": {"minHeight": 0}},
+    "keyId": "input_2",
+    "unitLong": "seconds",
+    "unitShort": "sec",
+}
+
+OUTPUT_SAMPLE = {
+    "displayOrder": 2,
+    "label": "Time Slept",
+    "description": "Time the service waited before completion",
+    "type": "number",
+    "fileToKeyMap": {},
+    "defaultValue": 0,
+    "unit": "second",
+    "keyId": "output_2",
+}
 
 
 class ServiceInputApiOut(ServiceInput):
@@ -44,7 +70,7 @@ class ServiceInputApiOut(ServiceInput):
     class Config:
         extra = Extra.forbid
         alias_generator = snake_to_camel
-        # Add example v1, v2, ...
+        schema_extra = {"example": INPUT_SAMPLE}
 
 
 class ServiceOutputApiOut(ServiceOutput):
@@ -55,4 +81,4 @@ class ServiceOutputApiOut(ServiceOutput):
     class Config:
         extra = Extra.forbid
         alias_generator = snake_to_camel
-        # Add example v1, v2, ...
+        schema_extra = {"example": INPUT_SAMPLE}
