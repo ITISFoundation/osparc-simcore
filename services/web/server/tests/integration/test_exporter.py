@@ -6,8 +6,10 @@ import sys
 import tempfile
 from contextlib import contextmanager
 from copy import deepcopy
+import operator
+import itertools
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Callable
 
 import aiofiles
 import aiohttp
@@ -269,6 +271,14 @@ def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, An
     return result
 
 
+def assert_combined_entires_condition(
+    *entries: Any, condition_operator: Callable
+) -> bool:
+    """Ensures the condition_operator is True for all unique combinations"""
+    for combination in itertools.combinations(entries, 2):
+        assert condition_operator(combination[0], combination[1]) is True
+
+
 ################ end utils
 
 
@@ -287,7 +297,7 @@ async def import_study_from_file(client, file_path: Path) -> str:
 
 
 @pytest.mark.parametrize("export_version", get_exported_projects())
-async def test_import_export_import(
+async def test_import_export_import_duplicate(
     client,
     push_services_to_registry,
     socketio_client,
@@ -298,7 +308,10 @@ async def test_import_export_import(
     simcore_services,
     monkey_patch_aiohttp_request_url,
 ):
-    """Check that the full import -> export -> import cycle produces the same result in the DB"""
+    """
+    Checks if the full "import -> export -> import -> duplicate" cycle
+    produces the same result in the DB.
+    """
 
     _ = await login_user(client)
     export_file_name = export_version.name
@@ -335,15 +348,45 @@ async def test_import_export_import(
                 client, downloaded_file_path
             )
 
+    # duplicate newly imported project
+    url_duplicate = client.app.router["duplicate_project"].url_for(
+        project_id=imported_project_uuid
+    )
+    assert url_duplicate == URL(
+        API_PREFIX + f"/projects/{imported_project_uuid}:duplicate"
+    )
+    async with await client.post(url_duplicate, timeout=10) as duplicate_response:
+        assert duplicate_response.status == 200, await duplicate_response.text()
+        reply_data = await duplicate_response.json()
+        assert reply_data.get("data") is not None
+
+        duplicated_project_uuid = reply_data["data"]["uuid"]
+
     imported_project = await query_project_from_db(db_engine, imported_project_uuid)
     reimported_project = await query_project_from_db(db_engine, reimported_project_uuid)
+    duplicated_project = await query_project_from_db(db_engine, duplicated_project_uuid)
 
     # uuids are changed each time the project is imported, need to normalize them
     normalized_imported_project = replace_uuids_with_sequences(imported_project)
     normalized_reimported_project = replace_uuids_with_sequences(reimported_project)
+    normalized_duplicated_project = replace_uuids_with_sequences(duplicated_project)
 
-    assert dict_without_keys(
-        normalized_imported_project, KEYS_TO_IGNORE_FROM_COMPARISON
-    ) == dict_without_keys(
-        normalized_reimported_project, KEYS_TO_IGNORE_FROM_COMPARISON
+    # ensure values are different
+    for key in KEYS_TO_IGNORE_FROM_COMPARISON:
+        assert_combined_entires_condition(
+            normalized_imported_project[key],
+            normalized_reimported_project[key],
+            normalized_duplicated_project[key],
+            condition_operator=operator.ne,
+        )
+
+    assert_combined_entires_condition(
+        dict_without_keys(normalized_imported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        dict_without_keys(
+            normalized_reimported_project, KEYS_TO_IGNORE_FROM_COMPARISON
+        ),
+        dict_without_keys(
+            normalized_duplicated_project, KEYS_TO_IGNORE_FROM_COMPARISON
+        ),
+        condition_operator=operator.eq,
     )
