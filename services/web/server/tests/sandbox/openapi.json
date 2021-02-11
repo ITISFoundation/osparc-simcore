@@ -233,7 +233,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServiceOutputApiOut"
+                  "title": "Response List Service Outputs Catalog Services  Service Key   Service Version  Outputs Get",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceOutputApiOut"
+                  }
                 }
               }
             }
