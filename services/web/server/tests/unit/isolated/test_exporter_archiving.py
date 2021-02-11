@@ -250,27 +250,6 @@ async def assert_same_directory_content(
 # end utils
 
 
-async def test_same_dir_structure_after_compress_decompress(
-    dir_with_random_content: Path, temp_dir2: Path
-):
-    zip_archive = await zip_folder(
-        folder_to_zip=dir_with_random_content,
-        destination_folder=dir_with_random_content,
-    )
-
-    unzipped_content = await unzip_folder(
-        archive_to_extract=zip_archive, destination_folder=temp_dir2
-    )
-    zip_archive.unlink()
-    (unzipped_content.parent / "archive.zip").unlink()
-
-    print(unzipped_content.parent)
-    print(dir_with_random_content)
-    await assert_same_directory_content(
-        dir_with_random_content, unzipped_content.parent
-    )
-
-
 def test_validate_osparc_file_name_ok():
     algorithm, digest_sum = validate_osparc_import_name(
         "v1#SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e1180e9b5a892.osparc"
@@ -372,4 +351,25 @@ async def test_unzip_found_too_many_project_targets(
     assert exc_info.type is ExporterException
     assert exc_info.value.args[0].startswith(
         "There was an error while extracting directory"
+    )
+
+
+async def test_same_dir_structure_after_compress_decompress(
+    loop, dir_with_random_content: Path, temp_dir2: Path
+):
+    zip_archive = await zip_folder(
+        folder_to_zip=dir_with_random_content,
+        destination_folder=dir_with_random_content,
+    )
+
+    unzipped_content = await unzip_folder(
+        archive_to_extract=zip_archive, destination_folder=temp_dir2
+    )
+    zip_archive.unlink()
+    (unzipped_content.parent / "archive.zip").unlink()
+
+    print(unzipped_content.parent)
+    print(dir_with_random_content)
+    await assert_same_directory_content(
+        dir_with_random_content, unzipped_content.parent
     )
