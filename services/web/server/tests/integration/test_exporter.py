@@ -298,6 +298,7 @@ async def import_study_from_file(client, file_path: Path) -> str:
 
 @pytest.mark.parametrize("export_version", get_exported_projects())
 async def test_import_export_import_duplicate(
+    loop,
     client,
     push_services_to_registry,
     socketio_client,
