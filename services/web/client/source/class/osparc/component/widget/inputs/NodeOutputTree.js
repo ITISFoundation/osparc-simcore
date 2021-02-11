@@ -139,17 +139,18 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       };
 
       for (let portKey in ports) {
+        const port = ports[portKey];
         let portData = {
-          label: ports[portKey].label,
-          description: ports[portKey].description,
+          label: port.label,
+          description: port.description,
           portKey: portKey,
           nodeKey: node.getKey(),
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
-          type: ports[portKey].type,
+          type: port.type,
           open: false
         };
-        portData.icon = osparc.data.Converters.fromTypeToIcon(ports[portKey].type);
-        portData.value = ports[portKey].value == null ? this.tr("-") : ports[portKey].value;
+        portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);
+        portData.value = port.value == null ? this.tr("-") : port.value;
         data.children.push(portData);
       }
 
