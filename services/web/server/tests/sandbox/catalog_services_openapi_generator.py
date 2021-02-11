@@ -1,11 +1,11 @@
+# pylint: disable=unused-argument
+
 import json
 import sys
 from pathlib import Path
 from typing import List, Optional
 
-import yaml
 from fastapi import FastAPI, Query
-from fastapi.routing import APIRoute
 from models_library.services import (
     KEY_RE,
     VERSION_RE,
@@ -14,8 +14,6 @@ from models_library.services import (
     ServiceOutput,
 )
 from pydantic import BaseModel, Extra, Field, constr
-from pydantic.networks import HttpUrl
-from pydantic.types import PositiveInt
 from simcore_service_webserver.utils import snake_to_camel
 
 this_file = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
@@ -116,7 +114,7 @@ def get_compatible_inputs_given_source_output(
 
 @app.get(
     "/catalog/services/{service_key:path}/{service_version}/outputs",
-    response_model=ServiceOutputApiOut,
+    response_model=List[ServiceOutputApiOut],
 )
 def list_service_outputs(
     service_key: ServiceKey,
