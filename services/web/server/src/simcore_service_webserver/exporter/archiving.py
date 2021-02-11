@@ -3,7 +3,7 @@ import logging
 import zipfile
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
-from typing import Tuple, Iterator, Set
+from typing import Tuple, Iterator
 
 from passlib import pwd
 
