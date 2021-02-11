@@ -45,7 +45,8 @@ qx.Class.define("osparc.data.model.Edge", {
     this.setEdgeId(edgeId || osparc.utils.Utils.uuidv4());
     this.setInputNode(node1);
     this.setOutputNode(node2);
-    this.__checkAnyPortsConnected();
+
+    // this.__checkAnyPortsConnected();
   },
 
   properties: {
@@ -65,10 +66,10 @@ qx.Class.define("osparc.data.model.Edge", {
       nullable: false
     },
 
-    isPortConnected: {
+    portConnected: {
       check: "Boolean",
       init: false,
-      event: "changeIsPortConnected",
+      event: "changePortConnected",
       nullable: false
     }
   },
@@ -94,8 +95,10 @@ qx.Class.define("osparc.data.model.Edge", {
     },
 
     __applyOutputNode: function(node2) {
-      node2.bind("dependencies", this, "isPortConnected", {
-        converter: dependencies => Boolean(dependencies.length)
+      node2.addListener("changePortsConnected", e => {
+        const portsConnected = e.getData();
+        const isConnected = Boolean(Object.keys(portsConnected).length);
+        this.setPortConnected(isConnected);
       });
     },
 
@@ -103,7 +106,7 @@ qx.Class.define("osparc.data.model.Edge", {
       const node1 = this.getInputNode();
       const node2 = this.getOutputNode();
       const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
-      this.setIsPortConnected(anyConnected);
+      this.setPortConnected(anyConnected);
     },
 
     __checkIsPortConnected: function() {
@@ -111,7 +114,7 @@ qx.Class.define("osparc.data.model.Edge", {
       let node2 = this.getOutputNode();
       if (node2.getPropsForm()) {
         const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
-        this.setIsPortConnected(anyConnected);
+        this.setPortConnected(anyConnected);
       }
       if (node2.isContainer()) {
         const innerNodes = node2.getInnerNodes();
@@ -119,7 +122,7 @@ qx.Class.define("osparc.data.model.Edge", {
           node2 = innerNodes[innerNodeId];
           if (node2.getPropsForm()) {
             const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
-            this.setIsPortConnected(anyConnected);
+            this.setPortConnected(anyConnected);
           }
           break;
         }
