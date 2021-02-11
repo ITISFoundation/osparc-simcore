@@ -250,7 +250,7 @@ async def assert_same_directory_content(
 # end utils
 
 
-def test_validate_osparc_file_name_ok():
+def test_validate_osparc_file_name_ok(loop):
     algorithm, digest_sum = validate_osparc_import_name(
         "v1#SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e1180e9b5a892.osparc"
     )
@@ -261,7 +261,7 @@ def test_validate_osparc_file_name_ok():
     )
 
 
-def test_validate_osparc_file_name_no_extention():
+def test_validate_osparc_file_name_no_extention(loop):
     with pytest.raises(ExporterException) as exc_info:
         validate_osparc_import_name(
             "v1#SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e1180e9b5a892"
@@ -274,7 +274,7 @@ def test_validate_osparc_file_name_no_extention():
     )
 
 
-def test_validate_osparc_file_name_more_then_one_extention():
+def test_validate_osparc_file_name_more_then_one_extention(loop):
     with pytest.raises(ExporterException) as exc_info:
         validate_osparc_import_name("v1.osparc")
 
@@ -285,7 +285,7 @@ def test_validate_osparc_file_name_more_then_one_extention():
     )
 
 
-def test_validate_osparc_file_name_too_many_shasums():
+def test_validate_osparc_file_name_too_many_shasums(loop):
     with pytest.raises(ExporterException) as exc_info:
         validate_osparc_import_name(
             (
@@ -302,7 +302,7 @@ def test_validate_osparc_file_name_too_many_shasums():
     )
 
 
-async def test_error_during_decompression():
+async def test_error_during_decompression(loop):
     with pytest.raises(ExporterException) as exc_info:
         await unzip_folder(Path("/i/do/not/exist"), "/")
 
@@ -313,7 +313,7 @@ async def test_error_during_decompression():
     )
 
 
-async def test_archive_already_exists(temp_dir, project_uuid):
+async def test_archive_already_exists(loop, temp_dir, project_uuid):
     tmp_dir_to_compress = temp_dir_with_existing_archive(temp_dir, project_uuid)
     with pytest.raises(ExporterException) as exc_info:
         await zip_folder(
@@ -328,7 +328,7 @@ async def test_archive_already_exists(temp_dir, project_uuid):
 
 
 async def test_unzip_found_too_many_project_targets(
-    temp_dir, project_uuid, monkey_patch_asyncio_subporcess
+    loop, temp_dir, project_uuid, monkey_patch_asyncio_subporcess
 ):
     tmp_dir_to_compress = temp_dir_to_compress_with_too_many_targets(
         temp_dir, project_uuid
