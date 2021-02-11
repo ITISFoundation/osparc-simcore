@@ -558,7 +558,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const dropNode = this.getNodeUI(dropNodeId);
           const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
           const dropPortTarget = dropIsInput ? dropNode.getInputPort() : dropNode.getOutputPort();
-          compatible = this.__areNodesCompatible(dragPortTarget, dropPortTarget);
+          compatible = dragPortTarget.isInput !== dropPortTarget.isInput;
         }
 
         if (!compatible) {
@@ -671,10 +671,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       while (this.__outputNodesLayout.getChildren().length > 1) {
         this.__outputNodesLayout.removeAt(this.__outputNodesLayout.getChildren().length - 1);
       }
-    },
-
-    __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return osparc.utils.Ports.areNodesCompatible(topLevelPort1, topLevelPort2);
     },
 
     __findCompatiblePort: function(nodeB, portA) {
