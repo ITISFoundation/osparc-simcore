@@ -156,7 +156,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     _applyUnit: function(value) {
       if (value) {
         this.__unitLabel.set({
-          value
+          value,
+          toolTipText: "seconds"
         });
       }
     },
