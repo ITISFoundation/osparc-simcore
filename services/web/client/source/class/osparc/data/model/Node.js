@@ -494,11 +494,16 @@ qx.Class.define("osparc.data.model.Node", {
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
 
-        const idx = this.getDependencies().indexOf(linkFieldModified.portId);
+        const dependencies = this.getDependencies();
+        const idx = dependencies.indexOf(linkFieldModified.fromNodeId);
         if (linkFieldModified.added && idx === -1) {
-          this.getDependencies().push(linkFieldModified.portId);
+          dependencies.push(linkFieldModified.fromNodeId);
+          console.log("dependencies", dependencies);
+          this.setDependencies(dependencies);
         } else if (idx > -1) {
-          this.getDependencies().splice(idx, 1);
+          dependencies.splice(idx, 1);
+          console.log("dependencies", dependencies);
+          this.setDependencies(dependencies);
         }
 
         const portId = linkFieldModified.portId;

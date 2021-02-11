@@ -350,7 +350,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    __linkAdded: function(portId) {
+    __linkAdded: function(portId, fromNodeId, fromPortId) {
       let data = this._getCtrlFieldChild(portId);
       if (data) {
         let child = data.child;
@@ -378,6 +378,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         const linkFieldModified = {
           portId,
+          fromNodeId,
+          fromPortId,
           added: true
         };
         this.fireDataEvent("linkFieldModified", linkFieldModified);
@@ -423,7 +425,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         converter: label => label + ": " + fromPortLabel
       });
 
-      this.__linkAdded(toPortId);
+      this.__linkAdded(toPortId, fromNodeId, fromPortId);
 
       return true;
     },
