@@ -138,7 +138,11 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
         if (this.__isUserOwner()) {
           this.__createEditBtns();
-          this.__createEnableSection();
+        }
+
+        this.__createEnableSection();
+        if (!this.__isUserOwner()) {
+          this.__enabledQuality.exclude();
         }
 
         this.__createTSRSection();

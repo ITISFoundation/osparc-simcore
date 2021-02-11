@@ -121,7 +121,7 @@ async def _monitor_log_file(
             # try to read line
             line = await file_pointer.readline()
             if not line:
-                asyncio.sleep(1)
+                await asyncio.sleep(1)
                 continue
             log_type, parsed_line = await parse_line(line)
 
