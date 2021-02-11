@@ -35,7 +35,13 @@ qx.Class.define("osparc.utils.Ports", {
     },
 
     arePortsCompatible: function(port1, port2) {
-      return port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
+      return new Promise(resolve => {
+        const ms = 200;
+        setTimeout(() => {
+          const compatible = port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
+          resolve(compatible);
+        }, ms);
+      });
     },
 
     isDataALink: function(data) {

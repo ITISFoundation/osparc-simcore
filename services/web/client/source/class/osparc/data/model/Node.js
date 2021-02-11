@@ -629,7 +629,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     // Iterate over output ports and connect them to first compatible input port
-    __createAutoPortConnection: function(node1, node2) {
+    __createAutoPortConnection: async function(node1, node2) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (!preferencesSettings.getAutoConnectPorts()) {
         return;
@@ -641,7 +641,8 @@ qx.Class.define("osparc.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (osparc.utils.Ports.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          const portsCompatible = await osparc.utils.Ports.arePortsCompatible(outPorts[outPort], inPorts[inPort]);
+          if (portsCompatible) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               autoConnections++;
               break;
