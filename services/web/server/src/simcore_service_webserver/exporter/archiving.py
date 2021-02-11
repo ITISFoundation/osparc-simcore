@@ -3,7 +3,7 @@ import logging
 import zipfile
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
-from typing import Tuple, Iterator
+from typing import Tuple, Iterator, Set
 
 from passlib import pwd
 
@@ -34,12 +34,36 @@ def _parallel_zipfile_extract_worker(
         zf.extract(file_in_archive, destination_folder)
 
 
+def ensure_destination_subdirectories_exist(
+    zip_file_handler: zipfile.ZipFile, destination_folder: Path
+) -> None:
+    # assemble full destination paths
+    full_destination_paths = {
+        destination_folder / entry.filename for entry in zip_file_handler.infolist()
+    }
+    # extract all possible subdirectories
+    subdirectories = {x.parent for x in full_destination_paths}
+    # create all subdirectories before extracting
+    for subdirectory in subdirectories:
+        Path(subdirectory).mkdir(parents=True, exist_ok=True)
+
+
 async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
+    # running in process poll is not ideal for concurrency issues
+    # to avoid race conditions all subdirectories where files will be extracted need to exist
+    # creating them before the extraction is under way avoids the issue
+
     try:
         with open(archive_to_extract, "rb") as file_handler:
             zip_file_handler = zipfile.ZipFile(file_handler)
             with ProcessPoolExecutor() as pool:
                 loop = asyncio.get_event_loop()
+
+                # avoids race conditions while unzippin in parallel
+                ensure_destination_subdirectories_exist(
+                    zip_file_handler=zip_file_handler,
+                    destination_folder=destination_folder,
+                )
 
                 tasks = [
                     loop.run_in_executor(
@@ -54,7 +78,9 @@ async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> N
 
                 await asyncio.gather(*tasks)
     except Exception as e:
-        raise ExporterException(f"There was an error while unarchiveing directory {e}") from e
+        message = f"There was an error while extracting directory '{archive_to_extract}' to '{destination_folder}'"
+        log.exception(message)
+        raise ExporterException(f"{message} {e}") from e
 
 
 def _serial_add_to_archive(
@@ -138,35 +164,36 @@ def search_for_unzipped_path(search_path: Path) -> Path:
     return search_path / found_dirs[0]
 
 
-async def zip_folder(input_path: Path) -> Path:
+async def zip_folder(folder_to_zip: Path, destination_folder: Path) -> Path:
     """Zips a folder and returns the path to the new archive"""
-    zip_file = Path(input_path.parent.parent) / "archive.zip"
-    if zip_file.is_file():
+
+    archived_file = destination_folder / "archive.zip"
+    if archived_file.is_file():
         raise ExporterException(
-            f"Cannot archive because file already exists '{str(zip_file)}'"
+            f"Cannot archive '{folder_to_zip}' because '{str(archived_file)}' already exists"
         )
 
     await archive_dir(
-        dir_to_compress=input_path.parent,
-        destination=zip_file,
+        dir_to_compress=folder_to_zip,
+        destination=archived_file,
         compress=True,
         store_relative_path=True,
     )
 
     # compute checksum and rename
-    sha256_sum = await checksum(file_path=zip_file, algorithm=Algorithm.SHA256)
+    sha256_sum = await checksum(file_path=archived_file, algorithm=Algorithm.SHA256)
 
     # opsarc_formatted_name= "4_rand_chars#sha256_sum.osparc"
-    osparc_formatted_name = Path(input_path.parent) / _get_osparc_export_name(
+    osparc_formatted_name = Path(folder_to_zip) / _get_osparc_export_name(
         sha256_sum=sha256_sum, algorithm=Algorithm.SHA256
     )
-    await rename(zip_file, osparc_formatted_name)
+    await rename(archived_file, osparc_formatted_name)
 
     return osparc_formatted_name
 
 
-async def unzip_folder(input_path: Path) -> Path:
+async def unzip_folder(archive_to_extract: Path, destination_folder: Path) -> Path:
     await unarchive_dir(
-        archive_to_extract=input_path, destination_folder=input_path.parent
+        archive_to_extract=archive_to_extract, destination_folder=destination_folder
     )
-    return search_for_unzipped_path(input_path.parent)
+    return search_for_unzipped_path(destination_folder)
