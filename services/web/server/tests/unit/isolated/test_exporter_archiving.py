@@ -274,7 +274,7 @@ def test_validate_osparc_file_name_no_extention(loop):
     )
 
 
-def test_validate_osparc_file_name_more_then_one_extention(loop):
+def test_validate_osparc_file_name_more_then_one_extention():
     with pytest.raises(ExporterException) as exc_info:
         validate_osparc_import_name("v1.osparc")
 
