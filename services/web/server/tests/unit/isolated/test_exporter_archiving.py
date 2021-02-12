@@ -58,11 +58,9 @@ async def monkey_patch_asyncio_subporcess(loop, mocker):
 
 
 @pytest.fixture
-def temp_dir() -> Path:
-    with tempfile.TemporaryDirectory() as dir_path:
-        subdir = Path(dir_path) / "subdir_in_temp_dir"
-        subdir.mkdir(parents=True, exist_ok=True)
-        yield subdir
+def temp_dir(tmpdir) -> Path:
+    # cast to Path object
+    yield Path(tmpdir)
 
 
 @pytest.fixture
