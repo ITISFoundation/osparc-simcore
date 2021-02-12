@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from models_library.services import (
     KEY_RE,
@@ -8,6 +8,7 @@ from models_library.services import (
     ServiceOutput,
 )
 from pydantic import Extra, Field, constr
+from pydantic.main import BaseModel
 
 from .utils import snake_to_camel
 
@@ -54,10 +55,11 @@ OUTPUT_SAMPLE = {
 }
 
 
-class ServiceInputApiOut(ServiceInput):
-    key_id: ServiceInputKey = Field(
-        ..., description="Unique name identifier for this input"
-    )
+# TODO: will be replaced by pynt functionality
+FAKE_UNIT_TO_FORMATS = {"SECOND": ("s", "seconds"), "METER": ("m", "meters")}
+
+
+class _ServicePortApiExtension(BaseModel):
     unit_long: Optional[str] = Field(
         None, description="Long name of the unit, if available"
     )
@@ -65,13 +67,8 @@ class ServiceInputApiOut(ServiceInput):
         None, description="Short name for the unit, if available"
     )
 
-    class Config:
-        extra = Extra.forbid
-        alias_generator = snake_to_camel
-        schema_extra = {"example": INPUT_SAMPLE}
 
-
-class ServiceOutputApiOut(ServiceOutput):
+class ServiceInputApiOut(ServiceInput, _ServicePortApiExtension):
     key_id: ServiceInputKey = Field(
         ..., description="Unique name identifier for this input"
     )
@@ -80,3 +77,31 @@ class ServiceOutputApiOut(ServiceOutput):
         extra = Extra.forbid
         alias_generator = snake_to_camel
         schema_extra = {"example": INPUT_SAMPLE}
+
+    @classmethod
+    def from_service(cls, service: Dict[str, Any], input_key: ServiceInputKey):
+        data = service["inputs"][input_key]
+        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), "")
+
+        return cls(key_id=input_key, unit_long=ulong, unit_short=ushort, **data)
+
+
+class ServiceOutputApiOut(ServiceOutput, _ServicePortApiExtension):
+    key_id: ServiceOutputKey = Field(
+        ..., description="Unique name identifier for this input"
+    )
+
+    class Config:
+        extra = Extra.forbid
+        alias_generator = snake_to_camel
+        schema_extra = {"example": INPUT_SAMPLE}
+
+    @classmethod
+    def from_service(cls, service: Dict[str, Any], output_key: ServiceOutputKey):
+        data = service["outputs"][output_key]
+        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), "")
+
+        return cls(key_id=output_key, unit_long=ulong, unit_short=ushort, **data)
+
+
+# TODO: from models_library.api_schemas_catalog
