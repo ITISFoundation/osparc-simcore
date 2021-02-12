@@ -14140,6 +14140,8 @@ paths:
       summary: List Service Inputs
   '/catalog/services/{service_key}/{service_version}/inputs/{input_key}':
     get:
+      tags:
+        - catalog
       operationId: get_service_input_handler
       parameters:
         - in: path
@@ -14335,6 +14337,8 @@ paths:
       summary: Get Service Input
   '/catalog/services/{service_key}/{service_version}/inputs:match':
     get:
+      tags:
+        - catalog
       description: |2-
             Filters inputs of this service that match a given service output
 
@@ -14421,6 +14425,8 @@ paths:
       summary: Get Compatible Inputs Given Source Output
   '/catalog/services/{service_key}/{service_version}/outputs':
     get:
+      tags:
+        - catalog
       operationId: list_service_outputs_handler
       parameters:
         - in: path
@@ -14613,6 +14619,8 @@ paths:
       summary: List Service Outputs
   '/catalog/services/{service_key}/{service_version}/outputs/{output_key}':
     get:
+      tags:
+        - catalog
       operationId: get_service_output_handler
       parameters:
         - in: path
@@ -14809,6 +14817,8 @@ paths:
       summary: Get Service Output
   '/catalog/services/{service_key}/{service_version}/outputs:match':
     get:
+      tags:
+        - catalog
       description: |-
         Filters outputs of this service that match a given service input
 
