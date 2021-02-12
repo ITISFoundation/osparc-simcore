@@ -283,6 +283,7 @@ async def import_files_and_validate_project(
         dev=shuffled_project_file.dev,
         workbench=shuffled_project_file.workbench,
         ui=shuffled_project_file.ui,
+        quality=shuffled_project_file.quality,
     )
     project_uuid = str(project.uuid)
 

@@ -87,7 +87,9 @@ class Project(BaseModel):
     ui: Optional[StudyUI] = None
 
     # Quality
-    quality: Dict[str, Any] = {}
+    quality: Dict[str, Any] = Field(
+        {}, description="stores the study quality assessment"
+    )
 
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
