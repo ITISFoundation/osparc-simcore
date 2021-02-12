@@ -2,18 +2,17 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
+import asyncio
+import hashlib
 import os
+import random
+import secrets
+import string
 import sys
 import uuid
-import hashlib
-import random
-from pathlib import Path
-import asyncio
-from typing import Set, List, Dict, Iterator
 from concurrent.futures import ProcessPoolExecutor
-import string
-import secrets
-
+from pathlib import Path
+from typing import Dict, Iterator, List, Set
 
 import pytest
 from simcore_service_webserver.exporter.archiving import (
@@ -177,9 +176,7 @@ async def test_archive_already_exists(loop, temp_dir, project_uuid):
     )
 
 
-async def test_unzip_found_too_many_project_targets(
-    loop, temp_dir, project_uuid, monkey_patch_asyncio_subporcess
-):
+async def test_unzip_found_too_many_project_targets(loop, temp_dir, project_uuid):
     tmp_dir_to_compress = temp_dir_to_compress_with_too_many_targets(
         temp_dir, project_uuid
     )
