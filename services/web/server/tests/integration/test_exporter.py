@@ -63,13 +63,13 @@ API_PREFIX = "/" + API_VERSION
 # store only lowercase "v1", "v2", etc...
 SUPPORTED_EXPORTER_VERSIONS = {"v1"}
 
-REVERSE_REMAPPING_KEY = "__reverse__remapping__dict__key__"
+REMAPPING_KEY = "__reverse__remapping__dict__key__"
 KEYS_TO_IGNORE_FROM_COMPARISON = {
     "id",
     "uuid",
     "creation_date",
     "last_change_date",
-    REVERSE_REMAPPING_KEY,
+    REMAPPING_KEY,
 }
 
 
@@ -277,9 +277,7 @@ def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, 
     project["workbench"] = json.loads(str_workbench)
     project["ui"] = json.loads(str_ui)
     # store for later usage
-    project[
-        REVERSE_REMAPPING_KEY
-    ] = remapping_dict  # {v: k for k, v in remapping_dict.items()}
+    project[REMAPPING_KEY] = remapping_dict
 
     return project
 
@@ -307,7 +305,7 @@ def extract_original_files_for_node_sequence(
     returns mapped to the normalized data node keys for simpler comparison
     """
     results = {}
-    reverse_search_dict = normalized_project[REVERSE_REMAPPING_KEY]
+    reverse_search_dict = normalized_project[REMAPPING_KEY]
 
     for uuid_key, node in project["workbench"].items():
         output_1 = node["outputs"]["output_1"]
