@@ -228,7 +228,6 @@ class ServiceOutput(ServiceProperty):
                 "type": "number",
                 "defaultValue": 0,
                 "unit": "second",
-                "keyId": "output_2",
             }
         }
 
