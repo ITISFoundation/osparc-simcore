@@ -85,14 +85,14 @@ paths:
         schema:
           title: Service key
           type: string
-          pattern: ^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$
+          pattern: ^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$
       - in: path
         name: service_version
         required: true
         schema:
           title: Service version
           type: string
-          pattern: ^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
     get:
       tags:
         - catalog
@@ -122,6 +122,8 @@ paths:
 
   catalog_services_service_key_service_version_inputs:
     get:
+      tags:
+        - catalog
       operationId: list_service_inputs_handler
       parameters:
         - in: path

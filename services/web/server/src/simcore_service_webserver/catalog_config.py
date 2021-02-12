@@ -8,13 +8,14 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp import ClientSession, web
-from pydantic import BaseSettings, Field
-
 from models_library.basic_types import PortInt, VersionTag
+from pydantic import BaseSettings, Field
 from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "catalog"
 
+KCATALOG_ORIGIN = f"{__name__}.catalog_origin"
+KCATALOG_VERSION_PREFIX = f"{__name__}.catalog_version_prefix"
 
 _default_values = {
     "host": os.environ.get("CATALOG_HOST", "catalog"),
