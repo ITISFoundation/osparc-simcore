@@ -48,16 +48,15 @@ def ensure_destination_subdirectories_exist(
 
 
 async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
-    # running in process poll is not ideal for concurrency issues
-    # to avoid race conditions all subdirectories where files will be extracted need to exist
-    # creating them before the extraction is under way avoids the issue
-
     try:
         with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
             with ProcessPoolExecutor() as pool:
                 loop = asyncio.get_event_loop()
 
-                # avoids race conditions while unzippin in parallel
+                # running in process poll is not ideal for concurrency issues
+                # to avoid race conditions all subdirectories where files will be extracted need to exist
+                # creating them before the extraction is under way avoids the issue
+                # the following avoids race conditions while unzippin in parallel
                 ensure_destination_subdirectories_exist(
                     zip_file_handler=zip_file_handler,
                     destination_folder=destination_folder,
