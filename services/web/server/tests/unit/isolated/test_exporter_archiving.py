@@ -261,7 +261,7 @@ def test_validate_osparc_file_name_ok():
     )
 
 
-def test_validate_osparc_file_name_no_extention(loop):
+def test_validate_osparc_file_name_no_extention():
     with pytest.raises(ExporterException) as exc_info:
         validate_osparc_import_name(
             "v1#SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e1180e9b5a892"
@@ -285,7 +285,7 @@ def test_validate_osparc_file_name_more_then_one_extention():
     )
 
 
-def test_validate_osparc_file_name_too_many_shasums(loop):
+def test_validate_osparc_file_name_too_many_shasums():
     with pytest.raises(ExporterException) as exc_info:
         validate_osparc_import_name(
             (
