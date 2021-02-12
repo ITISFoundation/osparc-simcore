@@ -1,4 +1,5 @@
 import logging
+from tempfile import TemporaryDirectory
 
 from aiohttp import web
 from aiohttp.web_request import FileField
@@ -94,9 +95,7 @@ async def duplicate_project(request: web.Request):
     user_id = request[RQT_USERID_KEY]
     project_uuid = request.match_info.get("project_id")
 
-    temp_dir: str = await get_empty_tmp_dir()
-
-    try:
+    with TemporaryDirectory() as temp_dir:
         exported_project_path = await study_export(
             app=request.app,
             tmp_dir=temp_dir,
@@ -113,10 +112,6 @@ async def duplicate_project(request: web.Request):
             exported_project_path=exported_project_path,
         )
         return dict(uuid=duplicated_project_uuid)
-    except Exception as e:
-        # make sure all errors are trapped and the directory where the file is sotred is removed
-        await remove_dir(temp_dir)
-        raise e
 
 
 rest_handler_functions = {
