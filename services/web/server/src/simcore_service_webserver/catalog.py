@@ -61,7 +61,7 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     fwd_headers.update({X_PRODUCT_NAME_HEADER: product_name})
 
     # forward request
-    return await catalog_client.make_request(
+    return await catalog_client.make_request_and_envelope_response(
         request.app, request.method, backend_url, fwd_headers, raw
     )
 
