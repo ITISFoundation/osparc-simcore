@@ -15,7 +15,6 @@ log = logging.getLogger(__name__)
 
 
 def _full_file_path_from_dir_and_subdirs(dir_path: Path) -> Iterator[Path]:
-    """returns a generator"""
     for path in dir_path.rglob("*"):
         if path.is_file():
             yield path
