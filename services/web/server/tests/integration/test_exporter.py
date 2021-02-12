@@ -3,13 +3,15 @@ import cgi
 import json
 import logging
 import sys
+import asyncio
 import tempfile
 from contextlib import contextmanager
 from copy import deepcopy
 import operator
 import itertools
 from pathlib import Path
-from typing import Any, Dict, List, Set, Callable
+from typing import Any, Dict, List, Set, Callable, Tuple
+from collections import deque
 
 import aiofiles
 import aiohttp
@@ -34,6 +36,10 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.storage_handlers import get_file_download_url
+from simcore_service_webserver.storage import setup_storage
+from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
+from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -57,7 +63,14 @@ API_PREFIX = "/" + API_VERSION
 # store only lowercase "v1", "v2", etc...
 SUPPORTED_EXPORTER_VERSIONS = {"v1"}
 
-KEYS_TO_IGNORE_FROM_COMPARISON = {"id", "uuid", "creation_date", "last_change_date"}
+REVERSE_REMAPPING_KEY = "__reverse__remapping__dict__key__"
+KEYS_TO_IGNORE_FROM_COMPARISON = {
+    "id",
+    "uuid",
+    "creation_date",
+    "last_change_date",
+    REVERSE_REMAPPING_KEY,
+}
 
 
 @pytest.fixture
@@ -140,6 +153,7 @@ def client(
     setup_director(app)
     setup_director_v2(app)
     setup_exporter(app)
+    setup_storage(app)
     assert setup_resource_manager(app)
 
     yield loop.run_until_complete(
@@ -233,7 +247,9 @@ async def query_project_from_db(
         return dict(project)
 
 
-def replace_uuids_with_sequences(project: Dict[str, Any]) -> Dict[str, Any]:
+def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, Any]:
+    # first make a copy
+    project = deepcopy(original_project)
     workbench = project["workbench"]
     ui = project["ui"]
 
@@ -260,6 +276,10 @@ def replace_uuids_with_sequences(project: Dict[str, Any]) -> Dict[str, Any]:
 
     project["workbench"] = json.loads(str_workbench)
     project["ui"] = json.loads(str_ui)
+    # store for later usage
+    project[
+        REVERSE_REMAPPING_KEY
+    ] = remapping_dict  # {v: k for k, v in remapping_dict.items()}
 
     return project
 
@@ -273,10 +293,104 @@ def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, An
 
 def assert_combined_entires_condition(
     *entries: Any, condition_operator: Callable
-) -> bool:
+) -> None:
     """Ensures the condition_operator is True for all unique combinations"""
     for combination in itertools.combinations(entries, 2):
         assert condition_operator(combination[0], combination[1]) is True
+
+
+def extract_original_files_for_node_sequence(
+    project: Dict[str, Any], normalized_project: Dict[str, Any]
+) -> Dict[str, Dict[str, str]]:
+    """
+    Extracts path and store from ouput_1 field of each node and
+    returns mapped to the normalized data node keys for simpler comparison
+    """
+    results = {}
+    reverse_search_dict = normalized_project[REVERSE_REMAPPING_KEY]
+
+    for uuid_key, node in project["workbench"].items():
+        output_1 = node["outputs"]["output_1"]
+        sequence_key = reverse_search_dict[uuid_key]
+        results[sequence_key] = {"store": output_1["store"], "path": output_1["path"]}
+
+    return results
+
+
+async def extract_download_links_from_storage(
+    app: aiohttp.web.Application,
+    original_files: Dict[str, Dict[str, str]],
+    user_id: str,
+) -> Dict[str, str]:
+    async def _get_mapped_link(
+        seq_key: str, location_id: str, raw_file_path: str
+    ) -> Tuple[str, str]:
+        link = await get_file_download_url(
+            app=app,
+            location_id=location_id,
+            fileId=raw_file_path,
+            user_id=user_id,
+        )
+        return seq_key, link
+
+    tasks = deque()
+    for seq_key, data in original_files.items():
+        tasks.append(
+            _get_mapped_link(
+                seq_key=seq_key,
+                location_id=data["store"],
+                raw_file_path=data["path"],
+            )
+        )
+
+    results = await asyncio.gather(*tasks)
+
+    return {x[0]: x[1] for x in results}
+
+
+async def download_files_and_get_checksums(
+    app: aiohttp.web.Application, download_links: Dict[str, str]
+) -> Dict[str, str]:
+    with tempfile.TemporaryDirectory() as store_dir:
+        download_paths = {}
+        parallel_downloader = ParallelDownloader()
+        for seq_id, url in download_links.items():
+            download_path = Path(store_dir) / seq_id
+            await parallel_downloader.append_file(link=url, download_path=download_path)
+            download_paths[seq_id] = download_path
+
+        await parallel_downloader.download_files(app=app)
+
+        # compute checksums for each downloaded file
+        checksums = {}
+        for seq_id, download_path in download_paths.items():
+            checksums[seq_id] = await checksum(
+                file_path=download_path, algorithm=Algorithm.SHA256
+            )
+
+        return checksums
+
+
+async def get_checksmus_for_files_in_storage(
+    app: aiohttp.web.Application,
+    project: Dict[str, Any],
+    normalized_project: Dict[str, Any],
+    user_id: str,
+) -> Dict[str, str]:
+    original_files = extract_original_files_for_node_sequence(
+        project=project, normalized_project=normalized_project
+    )
+
+    download_links = await extract_download_links_from_storage(
+        app=app, original_files=original_files, user_id=user_id
+    )
+
+    files_checksums = await download_files_and_get_checksums(
+        app=app,
+        download_links=download_links,
+    )
+
+    return files_checksums
 
 
 ################ end utils
@@ -314,7 +428,7 @@ async def test_import_export_import_duplicate(
     produces the same result in the DB.
     """
 
-    _ = await login_user(client)
+    user = await login_user(client)
     export_file_name = export_version.name
     version_from_name = export_file_name.split("#")[0]
 
@@ -381,6 +495,7 @@ async def test_import_export_import_duplicate(
             condition_operator=operator.ne,
         )
 
+    # assert same structure in both directories
     assert_combined_entires_condition(
         dict_without_keys(normalized_imported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
         dict_without_keys(
@@ -389,5 +504,32 @@ async def test_import_export_import_duplicate(
         dict_without_keys(
             normalized_duplicated_project, KEYS_TO_IGNORE_FROM_COMPARISON
         ),
+        condition_operator=operator.eq,
+    )
+
+    # check files in storage fingerprint matches
+    imported_files_checksums = await get_checksmus_for_files_in_storage(
+        app=client.app,
+        project=imported_project,
+        normalized_project=normalized_imported_project,
+        user_id=user["id"],
+    )
+    reimported_files_checksums = await get_checksmus_for_files_in_storage(
+        app=client.app,
+        project=reimported_project,
+        normalized_project=normalized_reimported_project,
+        user_id=user["id"],
+    )
+    duplicated_files_checksums = await get_checksmus_for_files_in_storage(
+        app=client.app,
+        project=duplicated_project,
+        normalized_project=normalized_duplicated_project,
+        user_id=user["id"],
+    )
+
+    assert_combined_entires_condition(
+        imported_files_checksums,
+        reimported_files_checksums,
+        duplicated_files_checksums,
         condition_operator=operator.eq,
     )
