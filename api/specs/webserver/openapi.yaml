@@ -223,6 +223,20 @@ paths:
   /catalog/services/{service_key}/{service_version}:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services~1{service_key}~1{service_version}"
 
+  /catalog/services/{service_key}/{service_version}/inputs:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs"
+  /catalog/services/{service_key}/{service_version}/inputs/{input_key}:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs_input_key"
+  /catalog/services/{service_key}/{service_version}/inputs:match:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs_match"
+  /catalog/services/{service_key}/{service_version}/outputs:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs"
+  /catalog/services/{service_key}/{service_version}/outputs/{output_key}:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_output_key"
+  /catalog/services/{service_key}/{service_version}/outputs:match:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
+
+
   # VIEWER -------------------------------------------------------------------------
   /viewers:
     $ref: "./openapi-viewer.yaml#/paths/~1viewers"
