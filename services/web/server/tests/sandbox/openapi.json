@@ -8,7 +8,7 @@
     "/catalog/services/{service_key}/{service_version}/inputs": {
       "get": {
         "summary": "List Service Inputs",
-        "operationId": "list_service_inputs_catalog_services__service_key___service_version__inputs_get",
+        "operationId": "list_service_inputs_handler",
         "parameters": [
           {
             "required": true,
@@ -58,7 +58,7 @@
     "/catalog/services/{service_key}/{service_version}/inputs/{input_key}": {
       "get": {
         "summary": "Get Service Input",
-        "operationId": "get_service_input_catalog_services__service_key___service_version__inputs__input_key__get",
+        "operationId": "get_service_input_handler",
         "parameters": [
           {
             "required": true,
@@ -119,7 +119,7 @@
       "get": {
         "summary": "Get Compatible Inputs Given Source Output",
         "description": "    Filters inputs of this service that match a given service output\n\nReturns compatible input ports of the service, provided an output port of\na connected node.",
-        "operationId": "get_compatible_inputs_given_source_output_catalog_services__service_key___service_version__inputs_match_get",
+        "operationId": "get_compatible_inputs_given_source_output_handler",
         "parameters": [
           {
             "required": true,
@@ -204,7 +204,7 @@
     "/catalog/services/{service_key}/{service_version}/outputs": {
       "get": {
         "summary": "List Service Outputs",
-        "operationId": "list_service_outputs_catalog_services__service_key___service_version__outputs_get",
+        "operationId": "list_service_outputs_handler",
         "parameters": [
           {
             "required": true,
@@ -258,7 +258,7 @@
     "/catalog/services/{service_key}/{service_version}/outputs/{output_key}": {
       "get": {
         "summary": "Get Service Output",
-        "operationId": "get_service_output_catalog_services__service_key___service_version__outputs__output_key__get",
+        "operationId": "get_service_output_handler",
         "parameters": [
           {
             "required": true,
@@ -319,7 +319,7 @@
       "get": {
         "summary": "Get Compatible Outputs Given Target Input",
         "description": "Filters outputs of this service that match a given service input\n\nReturns compatible output port of a connected node for a given input",
-        "operationId": "get_compatible_outputs_given_target_input_catalog_services__service_key___service_version__outputs_match_get",
+        "operationId": "get_compatible_outputs_given_target_input_handler",
         "parameters": [
           {
             "required": true,
@@ -446,6 +446,16 @@
         ],
         "type": "object",
         "properties": {
+          "unitLong": {
+            "title": "Unitlong",
+            "type": "string",
+            "description": "Long name of the unit, if available"
+          },
+          "unitShort": {
+            "title": "Unitshort",
+            "type": "string",
+            "description": "Short name for the unit, if available"
+          },
           "displayOrder": {
             "title": "Displayorder",
             "type": "number",
@@ -510,16 +520,6 @@
             "pattern": "^[-_a-zA-Z0-9]+$",
             "type": "string",
             "description": "Unique name identifier for this input"
-          },
-          "unitLong": {
-            "title": "Unitlong",
-            "type": "string",
-            "description": "Long name of the unit, if available"
-          },
-          "unitShort": {
-            "title": "Unitshort",
-            "type": "string",
-            "description": "Short name for the unit, if available"
           }
         },
         "additionalProperties": false,
@@ -529,13 +529,12 @@
           "label": "Sleep Time",
           "description": "Time to wait before completion",
           "type": "number",
-          "fileToKeyMap": {},
           "defaultValue": 0,
           "unit": "second",
           "widget": {
             "type": "TextArea",
             "details": {
-              "minHeight": 0
+              "minHeight": 1
             }
           },
           "keyId": "input_2",
@@ -554,6 +553,16 @@
         ],
         "type": "object",
         "properties": {
+          "unitLong": {
+            "title": "Unitlong",
+            "type": "string",
+            "description": "Long name of the unit, if available"
+          },
+          "unitShort": {
+            "title": "Unitshort",
+            "type": "string",
+            "description": "Short name for the unit, if available"
+          },
           "displayOrder": {
             "title": "Displayorder",
             "type": "number",
@@ -628,13 +637,12 @@
           "label": "Sleep Time",
           "description": "Time to wait before completion",
           "type": "number",
-          "fileToKeyMap": {},
           "defaultValue": 0,
           "unit": "second",
           "widget": {
             "type": "TextArea",
             "details": {
-              "minHeight": 0
+              "minHeight": 1
             }
           },
           "keyId": "input_2",

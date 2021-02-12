@@ -21,6 +21,7 @@ app = FastAPI()
 @app.get(
     "/catalog/services/{service_key:path}/{service_version}/inputs",
     response_model=ServiceInputApiOut,
+    operation_id="list_service_inputs_handler",
 )
 def list_service_inputs(
     service_key: ServiceKey,
@@ -32,6 +33,7 @@ def list_service_inputs(
 @app.get(
     "/catalog/services/{service_key:path}/{service_version}/inputs/{input_key}",
     response_model=ServiceInputApiOut,
+    operation_id="get_service_input_handler",
 )
 def get_service_input(
     service_key: ServiceKey,
@@ -44,6 +46,7 @@ def get_service_input(
 @app.get(
     "/catalog/services/{service_key:path}/{service_version}/inputs:match",
     response_model=List[ServiceInputKey],
+    operation_id="get_compatible_inputs_given_source_output_handler",
 )
 def get_compatible_inputs_given_source_output(
     service_key: ServiceKey,
@@ -67,6 +70,7 @@ def get_compatible_inputs_given_source_output(
 @app.get(
     "/catalog/services/{service_key:path}/{service_version}/outputs",
     response_model=List[ServiceOutputApiOut],
+    operation_id="list_service_outputs_handler",
 )
 def list_service_outputs(
     service_key: ServiceKey,
@@ -78,6 +82,7 @@ def list_service_outputs(
 @app.get(
     "/catalog/services/{service_key:path}/{service_version}/outputs/{output_key}",
     response_model=ServiceOutputApiOut,
+    operation_id="get_service_output_handler",
 )
 def get_service_output(
     service_key: ServiceKey,
@@ -90,6 +95,7 @@ def get_service_output(
 @app.get(
     "/catalog/services/{service_key:path}/{service_version}/outputs:match",
     response_model=List[ServiceOutputKey],
+    operation_id="get_compatible_outputs_given_target_input_handler",
 )
 def get_compatible_outputs_given_target_input(
     service_key: ServiceKey,
