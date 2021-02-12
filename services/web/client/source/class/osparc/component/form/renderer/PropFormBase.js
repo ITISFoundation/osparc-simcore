@@ -59,7 +59,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     _gridPos: {
       label: 0,
       info: 1,
-      ctrlField: 2
+      ctrlField: 2,
+      unit: 3
     },
 
     _visibility: {
@@ -104,7 +105,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           row: this._row,
           column: this._gridPos.ctrlField
         });
-        this._row++;
         this._connectVisibility(item, label);
         // store the names for translation
         if (qx.core.Environment.get("qx.dynlocale")) {
@@ -114,6 +114,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
             item: items[i]
           });
         }
+
+        const unit = this._createUnit(item.unitShort, item.unitLong);
+        this._add(unit, {
+          row: this._row,
+          column: this._gridPos.unit
+        });
+
+        this._row++;
       }
     },
 
@@ -263,6 +271,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     _createInfoWHint: function(hint) {
       const infoWHint = new osparc.ui.hint.InfoHint(hint);
       return infoWHint;
+    },
+
+    _createUnit: function(unitShort, unitLong) {
+      const unitLabel = this.__unitLabel = new qx.ui.basic.Label().set({
+        value: unitShort || null,
+        toolTipText: unitLong || null,
+        visibility: unitShort ? "visible" : "excluded"
+      });
+      return unitLabel;
     },
 
     _getLayoutChild: function(portId, column) {

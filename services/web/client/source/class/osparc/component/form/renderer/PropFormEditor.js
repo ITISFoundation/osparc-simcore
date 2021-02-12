@@ -39,7 +39,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       label: 0,
       info: 1,
       ctrlField: 2,
-      accessLevel: 3
+      unit: 3,
+      accessLevel: 4
     },
 
     _accessLevel: {

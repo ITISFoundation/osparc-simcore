@@ -59,8 +59,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       label: 0,
       info: 1,
       ctrlField: 2,
-      retrieveStatus: 3
+      unit: 3,
+      retrieveStatus: 4
     },
+
     _retrieveStatus: {
       failed: -1,
       empty: 0,
@@ -359,15 +361,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         this._remove(child);
 
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-        hBox.add(this.getControlLink(portId), {
-          flex: 1
-        });
 
         const unlinkBtn = new qx.ui.form.Button(this.tr("Unlink"), "@FontAwesome5Solid/unlink/14");
         unlinkBtn.addListener("execute", function() {
           this.removeLink(portId);
         }, this);
         hBox.add(unlinkBtn);
+
+        hBox.add(this.getControlLink(portId), {
+          flex: 1
+        });
 
         hBox.key = portId;
 
