@@ -250,7 +250,7 @@ async def assert_same_directory_content(
 # end utils
 
 
-def test_validate_osparc_file_name_ok(loop):
+def test_validate_osparc_file_name_ok():
     algorithm, digest_sum = validate_osparc_import_name(
         "v1#SHA256=80e69a0973e15f4a9c3c180d00a39ee0b0dfafe43356f867983e1180e9b5a892.osparc"
     )
