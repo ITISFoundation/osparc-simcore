@@ -2,9 +2,12 @@
 
 """
 import logging
+import os
+from distutils.util import strtobool
 from typing import List, Optional
 
 from aiohttp import web
+from aiohttp.web_routedef import RouteDef
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import iter_path_operations
@@ -92,13 +95,15 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
 
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
 
-    exclude = []
-    # TODO: enable only if WEBSERVER_DEV_FEATURES_ENABLED=1
-    # TODO: notice that these are still not in the OAS
-    app.add_routes(catalog_api_handlers.routes)
-    exclude: List[str] = [
-        route_def.handler.__name__ for route_def in catalog_api_handlers.routes
-    ]
+    # TODO: disable when feature is released
+    exclude: List[str] = []
+    if strtobool(os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", "0")):
+        route_def: RouteDef
+        for route_def in catalog_api_handlers.routes:
+            route_def.kwargs["name"] = operation_id = route_def.handler.__name__
+            exclude.append(operation_id)
+
+        app.add_routes(catalog_api_handlers.routes)
 
     # bind the rest routes with the reverse-proxy-handler
     handler = (
