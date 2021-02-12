@@ -149,7 +149,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           nodeKey: node.getKey(),
           isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
           type: port.type,
-          unit: port.unit || null,
+          unitShort: port.unitShort || null,
+          unitLong: port.unitLong || null,
           open: false
         };
         portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);
