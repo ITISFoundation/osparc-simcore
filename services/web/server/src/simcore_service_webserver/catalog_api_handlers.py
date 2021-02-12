@@ -1,8 +1,6 @@
 import json
-import sys
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, Tuple
 
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
@@ -216,10 +214,11 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
 ###############
 # IMPLEMENTATION
 #
-# FIXME: draft and fakes
 
 
 def can_connect(from_output: ServiceOutput, to_input: ServiceInput) -> bool:
+    # FIXME: can_connect is a very very draft version
+
     # compatible units
     ok = from_output.unit == to_input.unit
     if ok:
@@ -275,6 +274,14 @@ async def get_compatible_inputs_given_source_output(
     a connected node.
     """
 
+    # 1 output
+    service_output = await get_service_output(
+        from_service_key, from_service_version, from_output_key, ctx
+    )
+    from_output: ServiceOutput = ServiceOutput.construct(
+        **service_output.dict(include=ServiceOutput.__fields_set__)
+    )
+
     # N inputs
     service_inputs = await list_service_inputs(service_key, service_version, ctx)
 
@@ -284,14 +291,7 @@ async def get_compatible_inputs_given_source_output(
                 **service_input.dict(include=ServiceInput.__fields_set__)
             )
 
-    # 1 output
-    service_output = await get_service_output(
-        from_service_key, from_service_version, from_output_key, ctx
-    )
-    from_output: ServiceOutput = ServiceOutput.construct(
-        **service_output.dict(include=ServiceOutput.__fields_set__)
-    )
-
+    # check
     matches = []
     for key_id, to_input in iter_service_inputs():
         if can_connect(from_output, to_input):
@@ -356,6 +356,7 @@ async def get_compatible_outputs_given_target_input(
         **service_input.dict(include=ServiceInput.__fields_set__)
     )
 
+    # check
     matches = []
     for key_id, from_output in iter_service_outputs():
         if can_connect(from_output, to_input):
