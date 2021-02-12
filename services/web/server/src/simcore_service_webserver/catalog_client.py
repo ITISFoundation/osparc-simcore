@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from aiohttp import ContentTypeError, web
 from servicelib.rest_responses import wrap_as_envelope
@@ -41,7 +41,7 @@ def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
     return origin.with_path(new_path).with_query(rel_url.query)
 
 
-async def make_request(
+async def make_request_and_envelope_response(
     app: web.Application,
     method: str,
     url: URL,
@@ -49,7 +49,7 @@ async def make_request(
     data: Optional[bytes] = None,
 ) -> web.Response:
     """
-    Helper to make request to catalog service
+    Helper to forward a request to the catalog service
     """
     session = get_client_session(app)
 
@@ -94,4 +94,33 @@ async def get_services_for_user_in_product(
         if resp.status >= 400:
             logger.error("Error while retrieving services for user %s", user_id)
             return
+        return await resp.json()
+
+
+async def get_service(
+    app: web.Application,
+    user_id: int,
+    service_key: str,
+    service_version: str,
+    product_name: str,
+) -> Dict[str, Any]:
+    # FIXME: encode service_key, service_version
+    url = (
+        URL(app[f"{__name__}.catalog_origin"])
+        .with_path(
+            app[f"{__name__}.catalog_version_prefix"]
+            + f"/services/{service_key}/{service_version}"
+        )
+        .with_query(
+            {
+                "user_id": user_id,
+            }
+        )
+    )
+    session = get_client_session(app)
+    async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
+        if resp.status >= 400:
+            logger.error("Error while retrieving service for user %s", user_id)
+            resp.raise_for_status()  # FIXME: check this@
+
         return await resp.json()
