@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from aiohttp import web
 from servicelib.application_keys import APP_OPENAPI_SPECS_KEY
@@ -10,7 +10,7 @@ from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import iter_path_operations
 from yarl import URL
 
-from . import catalog_client
+from . import catalog_api_handlers, catalog_client
 from .catalog_client import (
     get_services_for_user_in_product,
     is_service_responsive,
@@ -90,14 +90,22 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
 
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
 
-    # bind routes with handlers
+    exclude = []
+    # TODO: enable only if WEBSERVER_DEV_FEATURES_ENABLED=1
+    # TODO: notice that these are still not in the OAS
+    app.router.add_routes(catalog_api_handlers.routes)
+    exclude: List[str] = [
+        route_def.handler.__name__ for route_def in catalog_api_handlers.routes
+    ]
+
+    # bind ALL routes with handlers
     handler = (
         _reverse_proxy_handler.__wrapped__ if disable_auth else _reverse_proxy_handler
     )
     routes = [
         web.route(method.upper(), path, handler, name=operation_id)
         for method, path, operation_id, tags in iter_path_operations(specs)
-        if "catalog" in tags
+        if "catalog" in tags and operation_id not in exclude
     ]
     assert routes, "Got no paths tagged as catalog"  # nosec
 
