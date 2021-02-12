@@ -213,7 +213,10 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
-# IMPLEMENTATIONS -------------------------------------
+###############
+# IMPLEMENTATION
+#
+# FIXME: draft and fakes
 
 
 def can_connect(from_output: ServiceOutput, to_input: ServiceInput) -> bool:
@@ -230,7 +233,16 @@ def can_connect(from_output: ServiceOutput, to_input: ServiceInput) -> bool:
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
 ) -> List[ServiceOutputApiOut]:
-    return list()
+
+    service = await catalog_client.get_service(
+        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+    )
+
+    inputs = []
+    for input_key in service["inputs"].keys():
+        service_input = ServiceInputApiOut.from_service(service, input_key)
+        inputs.append(service_input)
+    return inputs
 
 
 async def get_service_input(
@@ -262,21 +274,30 @@ async def get_compatible_inputs_given_source_output(
     Returns keys of compatible input ports of the service, provided an output port of
     a connected node.
     """
-    # get service service_key, service_version -> to_service -> inputs
-    def iter_service_inputs() -> Iterator[Tuple[ServiceInputKey, ServiceInput]]:
-        yield "input_1", ServiceInput(**ServiceInput.Config.schema_extra["example"])
 
-    # get output of service from_service_key, from_service_version
-    from_output: ServiceOutput = ServiceOutput(
-        **ServiceOutput.Config.schema_extra["example"]
+    # N inputs
+    service_inputs = await list_service_inputs(service_key, service_version, ctx)
+
+    def iter_service_inputs() -> Iterator[Tuple[ServiceInputKey, ServiceInput]]:
+        for service_input in service_inputs:
+            yield service_input.key_id, ServiceInput.construct(
+                **service_input.dict(include=ServiceInput.__fields_set__)
+            )
+
+    # 1 output
+    service_output = await get_service_output(
+        from_service_key, from_service_version, from_output_key, ctx
+    )
+    from_output: ServiceOutput = ServiceOutput.construct(
+        **service_output.dict(include=ServiceOutput.__fields_set__)
     )
 
-    result = []
+    matches = []
     for key_id, to_input in iter_service_inputs():
         if can_connect(from_output, to_input):
-            result.append(key_id)
+            matches.append(key_id)
 
-    return list()
+    return matches
 
 
 async def list_service_outputs(
@@ -284,8 +305,15 @@ async def list_service_outputs(
     service_version: ServiceVersion,
     ctx: _RequestContext,
 ) -> List[ServiceOutputApiOut]:
-    # TODO: implement same call to catalog
-    return list()
+    service = await catalog_client.get_service(
+        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+    )
+
+    outputs = []
+    for output_key in service["outputs"].keys():
+        service_output = ServiceOutputApiOut.from_service(service, output_key)
+        outputs.append(service_output)
+    return outputs
 
 
 async def get_service_output(
@@ -294,7 +322,12 @@ async def get_service_output(
     output_key: ServiceOutputKey,
     ctx: _RequestContext,
 ) -> ServiceOutputApiOut:
-    return ServiceInputApiOut()
+    service = await catalog_client.get_service(
+        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+    )
+    service_output = ServiceOutputApiOut.from_service(service, output_key)
+
+    return service_output
 
 
 async def get_compatible_outputs_given_target_input(
@@ -306,16 +339,26 @@ async def get_compatible_outputs_given_target_input(
     ctx: _RequestContext,
 ) -> List[ServiceOutputKey]:
 
-    # get service service_key, service_version -> to_service -> inputs
+    # N outputs
+    service_outputs = await list_service_outputs(service_key, service_version, ctx)
+
     def iter_service_outputs() -> Iterator[Tuple[ServiceOutputKey, ServiceOutput]]:
-        yield "output_1", ServiceOutput(**ServiceOutput.Config.schema_extra["example"])
+        for service_output in service_outputs:
+            yield service_output.key_id, ServiceOutput.construct(
+                **service_output.dict(include=ServiceOutput.__fields_set__)
+            )
 
-    # get output of service from_service_key, from_service_version
-    to_input: ServiceInput = ServiceInput(**ServiceInput.Config.schema_extra["example"])
+    # 1 input
+    service_input = await get_service_input(
+        to_service_key, to_service_version, to_input_key, ctx
+    )
+    to_input: ServiceInput = ServiceInput.construct(
+        **service_input.dict(include=ServiceInput.__fields_set__)
+    )
 
-    result = []
+    matches = []
     for key_id, from_output in iter_service_outputs():
         if can_connect(from_output, to_input):
-            result.append(key_id)
+            matches.append(key_id)
 
-    return list()
+    return matches

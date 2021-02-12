@@ -34,10 +34,9 @@ INPUT_SAMPLE = {
     "label": "Sleep Time",
     "description": "Time to wait before completion",
     "type": "number",
-    "fileToKeyMap": {},
     "defaultValue": 0,
     "unit": "second",
-    "widget": {"type": "TextArea", "details": {"minHeight": 0}},
+    "widget": {"type": "TextArea", "details": {"minHeight": 1}},
     "keyId": "input_2",
     "unitLong": "seconds",
     "unitShort": "sec",
@@ -48,7 +47,6 @@ OUTPUT_SAMPLE = {
     "label": "Time Slept",
     "description": "Time the service waited before completion",
     "type": "number",
-    "fileToKeyMap": {},
     "defaultValue": 0,
     "unit": "second",
     "keyId": "output_2",
@@ -59,7 +57,7 @@ OUTPUT_SAMPLE = {
 FAKE_UNIT_TO_FORMATS = {"SECOND": ("s", "seconds"), "METER": ("m", "meters")}
 
 
-class _ServicePortApiExtension(BaseModel):
+class _CommonApiExtension(BaseModel):
     unit_long: Optional[str] = Field(
         None, description="Long name of the unit, if available"
     )
@@ -68,7 +66,7 @@ class _ServicePortApiExtension(BaseModel):
     )
 
 
-class ServiceInputApiOut(ServiceInput, _ServicePortApiExtension):
+class ServiceInputApiOut(ServiceInput, _CommonApiExtension):
     key_id: ServiceInputKey = Field(
         ..., description="Unique name identifier for this input"
     )
@@ -86,7 +84,7 @@ class ServiceInputApiOut(ServiceInput, _ServicePortApiExtension):
         return cls(key_id=input_key, unit_long=ulong, unit_short=ushort, **data)
 
 
-class ServiceOutputApiOut(ServiceOutput, _ServicePortApiExtension):
+class ServiceOutputApiOut(ServiceOutput, _CommonApiExtension):
     key_id: ServiceOutputKey = Field(
         ..., description="Unique name identifier for this input"
     )
