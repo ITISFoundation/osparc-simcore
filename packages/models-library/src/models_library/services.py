@@ -198,6 +198,19 @@ class ServiceInput(ServiceProperty):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
+    class Config(ServiceProperty.Config):
+        schema_extra = {
+            "example": {
+                "displayOrder": 2,
+                "label": "Sleep Time",
+                "description": "Time to wait before completion",
+                "type": "number",
+                "defaultValue": 0,
+                "unit": "second",
+                "widget": {"type": "TextArea", "details": {"minHeight": 0}},
+            }
+        }
+
 
 class ServiceOutput(ServiceProperty):
     widget: Optional[Widget] = Field(
@@ -205,6 +218,19 @@ class ServiceOutput(ServiceProperty):
         description="custom widget to use instead of the default one determined from the data-type",
         deprecated=True,
     )
+
+    class Config(ServiceProperty.Config):
+        schema_extra = {
+            "example": {
+                "displayOrder": 2,
+                "label": "Time Slept",
+                "description": "Time the service waited before completion",
+                "type": "number",
+                "defaultValue": 0,
+                "unit": "second",
+                "keyId": "output_2",
+            }
+        }
 
 
 class ServiceKeyVersion(BaseModel):
