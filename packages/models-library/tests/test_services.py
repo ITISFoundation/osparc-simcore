@@ -2,11 +2,17 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from pprint import pprint
 from typing import Any, Dict
 
 import pytest
 import yaml
-from models_library.services import ServiceCommonData, ServiceDockerData
+from models_library.services import (
+    ServiceCommonData,
+    ServiceDockerData,
+    ServiceInput,
+    ServiceOutput,
+)
 from pint import Unit, UnitRegistry
 
 
@@ -76,3 +82,17 @@ def test_service_port_units(osparc_simcore_root_dir):
         assert isinstance(valid_unit, Unit)
 
         assert valid_unit.dimensionless
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (
+        ServiceInput,
+        ServiceOutput,
+    ),
+)
+def test_service_models_examples(model_cls, model_cls_examples):
+    for example in model_cls_examples:
+        pprint(example)
+        model_instance = model_cls(**example)
+        assert model_instance

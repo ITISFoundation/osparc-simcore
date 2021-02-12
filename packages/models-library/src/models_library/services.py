@@ -207,7 +207,7 @@ class ServiceInput(ServiceProperty):
                 "type": "number",
                 "defaultValue": 0,
                 "unit": "second",
-                "widget": {"type": "TextArea", "details": {"minHeight": 0}},
+                "widget": {"type": "TextArea", "details": {"minHeight": 3}},
             }
         }
 
