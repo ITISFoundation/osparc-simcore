@@ -123,11 +123,6 @@ class MainSettings(BaseSettings):
     testing: bool = False
     studies_access_enabled: bool = False
 
-    dev_features_enabled: bool = Field(
-        False,
-        description="Enables/disables features under development to prevent exposing them to the user",
-    )
-
     class Config:
         case_sensitive = False
         env_prefix = "WEBSERVER_"
