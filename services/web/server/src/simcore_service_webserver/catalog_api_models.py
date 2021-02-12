@@ -79,9 +79,9 @@ class ServiceInputApiOut(ServiceInput, _CommonApiExtension):
     @classmethod
     def from_service(cls, service: Dict[str, Any], input_key: ServiceInputKey):
         data = service["inputs"][input_key]
-        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), "")
+        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), [None, None])
 
-        return cls(key_id=input_key, unit_long=ulong, unit_short=ushort, **data)
+        return cls(keyId=input_key, unitLong=ulong, unitShort=ushort, **data)
 
 
 class ServiceOutputApiOut(ServiceOutput, _CommonApiExtension):
@@ -97,9 +97,9 @@ class ServiceOutputApiOut(ServiceOutput, _CommonApiExtension):
     @classmethod
     def from_service(cls, service: Dict[str, Any], output_key: ServiceOutputKey):
         data = service["outputs"][output_key]
-        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), "")
+        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), [None, None])
 
-        return cls(key_id=output_key, unit_long=ulong, unit_short=ushort, **data)
+        return cls(keyId=output_key, unitLong=ulong, unitShort=ushort, **data)
 
 
 # TODO: from models_library.api_schemas_catalog

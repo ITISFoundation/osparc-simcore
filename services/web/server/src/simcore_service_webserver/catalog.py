@@ -16,7 +16,11 @@ from .catalog_client import (
     is_service_responsive,
     to_backend_service,
 )
-from .catalog_config import assert_valid_config
+from .catalog_config import (
+    KCATALOG_ORIGIN,
+    KCATALOG_VERSION_PREFIX,
+    assert_valid_config,
+)
 from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
@@ -42,8 +46,8 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     # path & queries
     backend_url = to_backend_service(
         request.rel_url,
-        request.app[f"{__name__}.catalog_origin"],
-        request.app[f"{__name__}.catalog_version_prefix"],
+        request.app[KCATALOG_ORIGIN],
+        request.app[KCATALOG_VERSION_PREFIX],
     )
     # FIXME: hack
     if "/services" in backend_url.path:
@@ -83,22 +87,20 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
     # ---------------------------------------------
 
     # resolve url
-    app[f"{__name__}.catalog_origin"] = URL.build(
-        scheme="http", host=cfg["host"], port=cfg["port"]
-    )
-    app[f"{__name__}.catalog_version_prefix"] = cfg["version"]
+    app[KCATALOG_ORIGIN] = URL.build(scheme="http", host=cfg["host"], port=cfg["port"])
+    app[KCATALOG_VERSION_PREFIX] = cfg["version"]
 
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
 
     exclude = []
     # TODO: enable only if WEBSERVER_DEV_FEATURES_ENABLED=1
     # TODO: notice that these are still not in the OAS
-    app.router.add_routes(catalog_api_handlers.routes)
+    app.add_routes(catalog_api_handlers.routes)
     exclude: List[str] = [
         route_def.handler.__name__ for route_def in catalog_api_handlers.routes
     ]
 
-    # bind ALL routes with handlers
+    # bind the rest routes with the reverse-proxy-handler
     handler = (
         _reverse_proxy_handler.__wrapped__ if disable_auth else _reverse_proxy_handler
     )

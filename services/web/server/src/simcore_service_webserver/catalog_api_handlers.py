@@ -8,6 +8,7 @@ from models_library.services import ServiceInput, ServiceOutput
 from pydantic import ValidationError
 
 from . import catalog_client
+from ._meta import api_version_prefix
 from .catalog_api_models import (
     ServiceInputApiOut,
     ServiceInputKey,
@@ -26,6 +27,9 @@ from .security_decorators import permission_required
 # - TODO: uuid instead of key+version?
 # - Take into account that part of the API is also needed in the public API so logic should
 #   live in the catalog service in his final version
+# TODO: define pruning of response policy: e.g. if None, send or not, if unset, send or not ...
+
+VX = f"/{api_version_prefix}"
 
 routes = RouteTableDef()
 
@@ -45,7 +49,7 @@ class _RequestContext:
         )
 
 
-@routes.get("/catalog/services/{service_key:path}/{service_version}/inputs")
+@routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs")
 @login_required
 @permission_required("services.catalog.*")
 async def list_service_inputs_handler(request: Request):
@@ -65,13 +69,13 @@ async def list_service_inputs_handler(request: Request):
 
     # format response
     enveloped: str = json.dumps(
-        {"data": [json.loads(m.json()) for m in response_model]}
+        {"data": [json.loads(m.json(by_alias=True)) for m in response_model]}
     )
 
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get("/catalog/services/{service_key:path}/{service_version}/inputs/{input_key}")
+@routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs/{input_key}")
 @login_required
 @permission_required("services.catalog.*")
 async def get_service_input_handler(request: Request):
@@ -90,11 +94,13 @@ async def get_service_input_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json.dumps({"data": json.loads(response_model.json())})
+    enveloped: str = json.dumps(
+        {"data": json.loads(response_model.json(by_alias=True))}
+    )
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get("/catalog/services/{service_key:path}/{service_version}/inputs:match")
+@routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs:match")
 @login_required
 @permission_required("services.catalog.*")
 async def get_compatible_inputs_given_source_output_handler(request: Request):
@@ -126,7 +132,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
 
 
 @routes.get(
-    "/catalog/services/{service_key:path}/{service_version}/outputs",
+    VX + "/catalog/services/{service_key}/{service_version}/outputs",
 )
 @login_required
 @permission_required("services.catalog.*")
@@ -146,15 +152,17 @@ async def list_service_outputs_handler(request: Request):
 
     # format response
     enveloped: str = json.dumps(
-        {"data": [json.loads(m.json()) for m in response_model]}
+        {"data": [json.loads(m.json(by_alias=True)) for m in response_model]}
     )
 
     return web.Response(text=enveloped, content_type="application/json")
 
 
 @routes.get(
-    "/catalog/services/{service_key:path}/{service_version}/outputs/{output_key}"
+    VX + "/catalog/services/{service_key}/{service_version}/outputs/{output_key}"
 )
+@login_required
+@permission_required("services.catalog.*")
 async def get_service_output_handler(request: Request):
     try:
         # match, parse and validate
@@ -171,11 +179,13 @@ async def get_service_output_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json.dumps({"data": json.loads(response_model.json())})
+    enveloped: str = json.dumps(
+        {"data": json.loads(response_model.json(by_alias=True))}
+    )
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get("/catalog/services/{service_key:path}/{service_version}/outputs:match")
+@routes.get(VX + "/catalog/services/{service_key}/{service_version}/outputs:match")
 @login_required
 @permission_required("services.catalog.*")
 async def get_compatible_outputs_given_target_input_handler(request: Request):

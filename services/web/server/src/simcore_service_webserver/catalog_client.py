@@ -2,6 +2,7 @@
 
 """
 import logging
+import urllib.parse
 from typing import Any, Dict, List, Optional, Union
 
 from aiohttp import ContentTypeError, web
@@ -9,7 +10,7 @@ from servicelib.rest_responses import wrap_as_envelope
 from yarl import URL
 
 from ._meta import api_version_prefix
-from .catalog_config import get_client_session
+from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX, get_client_session
 from .constants import X_PRODUCT_NAME_HEADER
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 async def is_service_responsive(app: web.Application):
     """ Returns true if catalog is ready """
-    origin: Optional[URL] = app.get(f"{__name__}.catalog_origin")
+    origin: Optional[URL] = app.get(KCATALOG_ORIGIN)
 
     if not origin:  # service was not enabled!
         return False
@@ -85,8 +86,8 @@ async def get_services_for_user_in_product(
     app: web.Application, user_id: int, product_name: str, *, only_key_versions: bool
 ) -> Optional[List[Dict]]:
     url = (
-        URL(app[f"{__name__}.catalog_origin"])
-        .with_path(app[f"{__name__}.catalog_version_prefix"] + "/services")
+        URL(app[KCATALOG_ORIGIN])
+        .with_path(app[KCATALOG_VERSION_PREFIX] + "/services")
         .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
     )
     session = get_client_session(app)
@@ -104,12 +105,11 @@ async def get_service(
     service_version: str,
     product_name: str,
 ) -> Dict[str, Any]:
-    # FIXME: encode service_key, service_version
     url = (
-        URL(app[f"{__name__}.catalog_origin"])
+        URL(app[KCATALOG_ORIGIN])
         .with_path(
-            app[f"{__name__}.catalog_version_prefix"]
-            + f"/services/{service_key}/{service_version}"
+            app[KCATALOG_VERSION_PREFIX]
+            + f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
         )
         .with_query(
             {
@@ -119,8 +119,7 @@ async def get_service(
     )
     session = get_client_session(app)
     async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
-        if resp.status >= 400:
-            logger.error("Error while retrieving service for user %s", user_id)
-            resp.raise_for_status()  # FIXME: check this@
+        logger.error("Error while retrieving service for user %s", user_id)
+        resp.raise_for_status()  # FIXME: check this@
 
         return await resp.json()
