@@ -82,8 +82,8 @@ def dir_with_random_content() -> Iterator[Path]:
                 max_file_count=max_file_count,
             )
 
-    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> Iterator[Path]:
-        return (path for path in path_to_scan.rglob("*") if path.is_dir())
+    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> List[Path]:
+        return [path for path in path_to_scan.rglob("*") if path.is_dir()]
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir_path = Path(temp_dir)
