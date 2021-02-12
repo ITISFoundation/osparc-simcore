@@ -25,7 +25,7 @@ def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
     return Path(str(input_path).replace(to_strip, ""))
 
 
-def _parallel_zipfile_extract_worker(
+def _zipfile_single_file_extract_worker(
     zip_file_path: Path, file_in_archive: str, destination_folder: Path
 ) -> None:
     with open(zip_file_path, "rb") as f:
@@ -65,7 +65,7 @@ async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> N
                 tasks = [
                     loop.run_in_executor(
                         pool,
-                        _parallel_zipfile_extract_worker,
+                        _zipfile_single_file_extract_worker,
                         archive_to_extract,
                         zip_entry.filename,
                         destination_folder,
