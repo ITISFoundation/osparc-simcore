@@ -218,7 +218,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (node1 && node2) {
           const port1 = node1.getOutput(port1Id);
           const port2 = node2.getInput(port2Id);
-          const compatible = osparc.utils.Ports.arePortsCompatible(port1, port2);
+          const compatible = osparc.utils.Ports.arePortsCompatible(node1, port1, node2, port2);
           return compatible;
         }
       }
