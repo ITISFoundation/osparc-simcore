@@ -275,6 +275,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     _createUnit: function(unitShort, unitLong) {
       const unitLabel = this.__unitLabel = new qx.ui.basic.Label().set({
+        alignY: "bottom",
+        paddingBottom: 1,
         value: unitShort || null,
         toolTipText: unitLong || null,
         visibility: unitShort ? "visible" : "excluded"
