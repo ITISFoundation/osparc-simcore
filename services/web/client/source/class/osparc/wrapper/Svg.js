@@ -61,7 +61,10 @@ qx.Class.define("osparc.wrapper.Svg", {
       });
     },
 
-    drawCurve: function(draw, controls, dashed, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
+    drawCurve: function(draw, controls, dashed) {
+      const edgeWidth = 3;
+      const portSphereDiameter = 4;
+      const arrowSize = 4;
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
 
       osparc.wrapper.Svg.curateCurveControls(controls);
