@@ -258,10 +258,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    __getCompatibleInputs: function(output) {
-      return this._getChildren().filter(child => child.node && child.portId && this.__arePortsCompatible(output.node.getNodeId(), output.portId, child.node.getNodeId(), child.portId));
-    },
-
     __highlightCompatibles: function(output) {
       osparc.utils.Ports.getCompatiblePorts(output.node, output.portId, this.getNode())
         .then(compatiblePorts => {

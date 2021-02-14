@@ -34,13 +34,16 @@ qx.Class.define("osparc.utils.Ports", {
         new osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
     },
 
-    arePortsCompatible: function(port1, port2) {
+    arePortsCompatible: function(node1, port1, node2, port2) {
       return new Promise(resolve => {
-        const ms = Math.random() * 1000;
-        setTimeout(() => {
-          const compatible = port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
-          resolve(compatible);
-        }, ms);
+        this.getCompatiblePorts(node1, port1, node2)
+          .then(compatiblePorts => {
+            resolve(compatiblePorts.includes(port2));
+          })
+          .catch(err => {
+            console.error(err);
+            resolve(false);
+          });
       });
     },
 
