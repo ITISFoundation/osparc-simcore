@@ -44,6 +44,27 @@ qx.Class.define("osparc.utils.Ports", {
       });
     },
 
+    getCompatiblePorts: function(node1, port1, node2) {
+      const params = {
+        url: {
+          "serviceKey2": encodeURIComponent(node2.getKey()),
+          "serviceVersion2": node2.getVersion(),
+          "serviceKey1": encodeURIComponent(node1.getKey()),
+          "serviceVersion1": node1.getVersion(),
+          "portKey1": port1
+        }
+      };
+      // return osparc.data.Resources.fetch("services", "matchInputs", params);
+      osparc.data.Resources.fetch("services", "matchInputs", params);
+      return new Promise(resolve => {
+        const ms = 2000;
+        setTimeout(() => {
+          const compatiblePorts = ["input_1"];
+          resolve(compatiblePorts);
+        }, ms);
+      });
+    },
+
     isDataALink: function(data) {
       return (data !== null && typeof data === "object" && data.nodeUuid);
     },

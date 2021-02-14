@@ -238,7 +238,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             let dropNodeId = to.node.getNodeId();
             let dropPortId = to.portId;
             if (this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)) {
-              this.__highlightCompatibles(e.getRelatedTarget());
               e.stopPropagation();
             } else {
               e.preventDefault();
@@ -265,11 +264,26 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __highlightCompatibles: function(output) {
+      /*
       const inputs = this.__getCompatibleInputs(output);
       for (let i in inputs) {
         const input = inputs[i].getField();
         input.setDecorator("material-textfield-focused");
       }
+      */
+      osparc.utils.Ports.getCompatiblePorts(output.node, output.portId, this.getNode())
+        .then(compatiblePorts => {
+          console.log(compatiblePorts);
+          this._getChildren().forEach(child => {
+            if (child.getField && compatiblePorts.includes(child.getField().portId)) {
+              const input = child.getField();
+              input.setDecorator("material-textfield-focused");
+            }
+          });
+        })
+        .catch(err => {
+          console.error(err);
+        });
     },
 
     __unhighlightAll: function() {
