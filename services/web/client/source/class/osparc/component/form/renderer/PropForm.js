@@ -260,24 +260,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __getCompatibleInputs: function(output) {
-      return this._getChildren().filter(child => child.getField && this.__arePortsCompatible(output.nodeId, output.portId, child.getField().nodeId, child.getField().portId));
+      return this._getChildren().filter(child => child.node && child.portId && this.__arePortsCompatible(output.nodeId, output.portId, child.node.getNodeId(), child.portId));
     },
 
     __highlightCompatibles: function(output) {
-      /*
-      const inputs = this.__getCompatibleInputs(output);
-      for (let i in inputs) {
-        const input = inputs[i].getField();
-        input.setDecorator("material-textfield-focused");
-      }
-      */
       osparc.utils.Ports.getCompatiblePorts(output.node, output.portId, this.getNode())
         .then(compatiblePorts => {
-          console.log(compatiblePorts);
           this._getChildren().forEach(child => {
-            if (child.getField && compatiblePorts.includes(child.getField().portId)) {
-              const input = child.getField();
-              input.setDecorator("material-textfield-focused");
+            if ("portId" in child && compatiblePorts.includes(child.portId)) {
+              child.setDecorator("material-textfield-focused");
             }
           });
         })
@@ -287,11 +278,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __unhighlightAll: function() {
-      const inputs = this._getChildren().filter(child => child.getField);
-      for (let i in inputs) {
-        const input = inputs[i];
-        input.getField().resetDecorator();
-      }
+      this._getChildren().forEach(child => {
+        if ("portId" in child) {
+          child.resetDecorator();
+        }
+      });
     },
 
     __attachDragoverHighlighter: function() {
