@@ -81,8 +81,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         // Notify focus and focus out
         const msgDataFn = (nodeId, portId) => {
-          const arePortsCompatible = this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
-          return arePortsCompatible;
+          const compatible = this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
+          return compatible;
         };
 
         item.addListener("focus", () => {
@@ -218,7 +218,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (node1 && node2) {
           const port1 = node1.getOutput(port1Id);
           const port2 = node2.getInput(port2Id);
-          return osparc.utils.Ports.arePortsCompatible(port1, port2);
+          const compatible = osparc.utils.Ports.arePortsCompatible(port1, port2);
+          return compatible;
         }
       }
       return false;
@@ -240,7 +241,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             const to = e.getCurrentTarget();
             let dropNodeId = to.node.getNodeId();
             let dropPortId = to.portId;
-            if (this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)) {
+            const compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
+            if (compatible) {
               e.stopPropagation();
             } else {
               e.preventDefault();
