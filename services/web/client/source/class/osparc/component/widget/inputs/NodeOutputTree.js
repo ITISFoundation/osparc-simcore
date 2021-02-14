@@ -109,9 +109,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         // Register supported types
         e.addType("osparc-port-link");
         e.addType("osparc-mapping");
-        item.nodeId = this.getNode().getNodeId();
-        item.nodeKey = this.getNode().getKey();
-        item.nodeVersion = this.getNode().getVersion();
+        item.node = this.getNode();
         item.portId = item.getPortKey();
         item.setNodeKey(this.getNode().getKey());
       }, this);

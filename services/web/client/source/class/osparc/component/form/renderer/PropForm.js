@@ -226,18 +226,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.set({
           droppable: true
         });
-        uiElement.nodeId = this.getNode().getNodeId();
-        uiElement.nodeKey = this.getNode().getKey();
-        uiElement.nodeVersion = this.getNode().getVersion();
+        uiElement.node = this.getNode();
         uiElement.portId = portId;
 
         uiElement.addListener("dragover", e => {
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
-            let dragNodeId = from.nodeId;
+            let dragNodeId = from.node.getNodeId();
             let dragPortId = from.portId;
             const to = e.getCurrentTarget();
-            let dropNodeId = to.nodeId;
+            let dropNodeId = to.node.getNodeId();
             let dropPortId = to.portId;
             if (this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)) {
               this.__highlightCompatibles(e.getRelatedTarget());
