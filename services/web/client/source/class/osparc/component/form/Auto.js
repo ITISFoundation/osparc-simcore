@@ -508,7 +508,7 @@ qx.Class.define("osparc.component.form.Auto", {
         }
         control.set(s.set);
       }
-      control.key = key;
+      control.portId = key;
       control.description = s.description;
       control.widgetType = s.widget.type;
       control.unitShort = s.unitShort;

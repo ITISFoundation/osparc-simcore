@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         });
 
         const field = this._createFieldWithMenu(item);
-        field.key = item.key;
+        field.portId = item.key;
         this._add(field, {
           row: this._row,
           column: this._gridPos.ctrlField
@@ -291,7 +291,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.column === this._gridPos.label &&
-          child.getBuddy().key === portId) {
+          child.getBuddy().portId === portId) {
           row = layoutProps.row;
           break;
         }
