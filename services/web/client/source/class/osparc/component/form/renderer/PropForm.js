@@ -77,10 +77,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.base(arguments, items, names, title, itemOptions, headerOptions);
 
       items.forEach(item => {
-        this.__createDropMechanism(item, item.portId);
+        this.__createDropMechanism(item, item.key);
 
         // Notify focus and focus out
-        const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.portId);
+        const msgDataFn = (nodeId, portId) => this.__arePortsCompatible(nodeId, portId, this.getNode().getNodeId(), item.key);
 
         item.addListener("focus", () => {
           if (this.getNode()) {
@@ -137,9 +137,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           let child = this._getChildren()[i];
           const layoutProps = child.getLayoutProperties();
           if (layoutProps.column === this._gridPos.ctrlField) {
-            const ctrl = this._form.getControl(child.portId);
+            const ctrl = this._form.getControl(child.key);
             if (ctrl && ctrl["link"]) {
-              this.__setRetrievingStatus(status, child.portId, i, layoutProps.row);
+              this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
             }
           }
         }
@@ -187,7 +187,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           icon = this.self().getRetrievedAtom(true);
           break;
       }
-      icon.portId = portId;
+      icon.key = portId;
 
       // remove first if any
       let children = this._getChildren();
@@ -326,7 +326,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       const controlParam = new qx.ui.form.TextField().set({
         enabled: false
       });
-      controlParam.portId = portId;
+      controlParam.key = portId;
       return controlParam;
     },
 
@@ -386,7 +386,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           flex: 1
         });
 
-        hBox.portId = portId;
+        hBox.key = portId;
 
         this._addAt(hBox, idx, {
           row: layoutProps.row,
@@ -500,7 +500,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         }, this);
         hBox.add(unparamBtn);
 
-        hBox.portId = portId;
+        hBox.key = portId;
 
         this._addAt(hBox, idx, {
           row: layoutProps.row,
