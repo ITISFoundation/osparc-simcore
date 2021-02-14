@@ -7,7 +7,6 @@ from copy import deepcopy
 
 import pytest
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.application import (
@@ -53,7 +52,7 @@ def client(loop, app_cfg, aiohttp_client, postgres_db):
 @pytest.fixture
 def mock_api_client_session(client, mocker):
     get_client_session = mocker.patch(
-        "simcore_service_webserver.catalog.get_client_session"
+        "simcore_service_webserver.catalog_client.get_client_session"
     )
 
     class MockClientSession(mocker.MagicMock):

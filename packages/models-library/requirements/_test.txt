@@ -16,13 +16,15 @@ docopt==0.6.2             # via coveralls
 icdiff==1.9.1             # via pytest-icdiff
 idna-ssl==1.1.0           # via aiohttp
 idna==2.10                # via -c requirements/_base.txt, idna-ssl, requests, yarl
-importlib-metadata==3.1.1  # via pluggy, pytest
+importlib-metadata==3.1.1  # via pint, pluggy, pytest
+importlib-resources==5.1.0  # via pint
 iniconfig==1.1.1          # via pytest
 isort==5.6.4              # via pylint
 lazy-object-proxy==1.4.3  # via astroid
 mccabe==0.6.1             # via pylint
 multidict==5.1.0          # via aiohttp, yarl
-packaging==20.7           # via pytest, pytest-sugar
+packaging==20.7           # via pint, pytest, pytest-sugar
+pint==0.16.1              # via -r requirements/_test.in
 pluggy==0.13.1            # via pytest
 pprintpp==0.4.0           # via pytest-icdiff
 py==1.9.0                 # via pytest
@@ -36,6 +38,7 @@ pytest-mock==3.3.1        # via -r requirements/_test.in
 pytest-runner==5.2        # via -r requirements/_test.in
 pytest-sugar==0.9.4       # via -r requirements/_test.in
 pytest==6.1.2             # via -r requirements/_test.in, pytest-aiohttp, pytest-cov, pytest-icdiff, pytest-instafail, pytest-mock, pytest-sugar
+pyyaml==5.4.1             # via -c requirements/../../../requirements/constraints.txt, -r requirements/_test.in
 requests==2.25.0          # via coveralls
 six==1.15.0               # via astroid
 termcolor==1.1.0          # via pytest-sugar
@@ -45,4 +48,4 @@ typing-extensions==3.7.4.3  # via aiohttp, yarl
 urllib3==1.26.2           # via -c requirements/../../../requirements/constraints.txt, requests
 wrapt==1.12.1             # via astroid
 yarl==1.6.3               # via aiohttp
-zipp==3.4.0               # via importlib-metadata
+zipp==3.4.0               # via importlib-metadata, importlib-resources
