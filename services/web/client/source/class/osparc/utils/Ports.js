@@ -34,11 +34,11 @@ qx.Class.define("osparc.utils.Ports", {
         new osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
     },
 
-    arePortsCompatible: function(node1, port1, node2, port2) {
+    arePortsCompatible: function(node1, portId1, node2, portId2) {
       return new Promise(resolve => {
-        this.getCompatiblePorts(node1, port1, node2)
+        this.getCompatiblePorts(node1, portId1, node2)
           .then(compatiblePorts => {
-            resolve(compatiblePorts.includes(port2));
+            resolve(compatiblePorts.includes(portId2));
           })
           .catch(err => {
             console.error(err);
@@ -47,7 +47,7 @@ qx.Class.define("osparc.utils.Ports", {
       });
     },
 
-    getCompatiblePorts: function(node1, port1, node2) {
+    getCompatiblePorts: function(node1, portId1, node2) {
       /*
       const params = {
         url: {
@@ -55,7 +55,7 @@ qx.Class.define("osparc.utils.Ports", {
           "serviceVersion2": node2.getVersion(),
           "serviceKey1": encodeURIComponent(node1.getKey()),
           "serviceVersion1": node1.getVersion(),
-          "portKey1": port1
+          "portKey1": portId1
         }
       };
       return osparc.data.Resources.fetch("services", "matchInputs", params);
