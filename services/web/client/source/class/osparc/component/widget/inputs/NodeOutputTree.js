@@ -117,8 +117,16 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
       const msgCb = decoratorName => msg => {
         this.getSelection().remove(item.getModel());
         const compareFn = msg.getData();
-        if (item.getPortKey() && decoratorName && compareFn(this.getNode().getNodeId(), item.getPortKey())) {
-          item.setDecorator(decoratorName);
+        if (item.getPortKey() && decoratorName) {
+          compareFn(this.getNode().getNodeId(), item.getPortKey())
+            .then(compatible => {
+              if (compatible) {
+                item.setDecorator(decoratorName);
+              } else {
+                item.resetDecorator();
+              }
+            })
+            .catch(() => item.resetDecorator());
         } else {
           item.resetDecorator();
         }

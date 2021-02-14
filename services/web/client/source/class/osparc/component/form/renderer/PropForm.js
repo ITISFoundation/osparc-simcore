@@ -206,7 +206,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    __arePortsCompatible: async function(node1Id, port1Id, node2Id, port2Id) {
+    __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
       return new Promise(resolve => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         const workbench = study.getWorkbench();
@@ -214,9 +214,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           const node1 = workbench.getNode(node1Id);
           const node2 = workbench.getNode(node2Id);
           if (node1 && node2) {
-            const compatible = osparc.utils.Ports.arePortsCompatible(node1, port1Id, node2, port2Id);
-            resolve(compatible);
-            return;
+            osparc.utils.Ports.arePortsCompatible(node1, port1Id, node2, port2Id)
+              .then(compatible => {
+                resolve(compatible);
+              })
+              .catch(err => {
+                console.error(err);
+                resolve(false);
+              });
           }
         }
         resolve(false);
