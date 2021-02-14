@@ -554,8 +554,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDuplicateStudyMenuButton: function(studyData) {
       const duplicateStudyButton = new qx.ui.menu.Button(this.tr("Duplicate"));
-      // ANE: remove this when backend is ready
-      duplicateStudyButton.setVisibility("excluded");
       osparc.utils.Utils.setIdToWidget(duplicateStudyButton, "duplicateStudy");
       duplicateStudyButton.addListener("execute", () => {
         this.__duplicateStudy(studyData);
