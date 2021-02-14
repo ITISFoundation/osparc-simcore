@@ -659,7 +659,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.data.Resources.fetch("studies", "duplicate", params)
         .then(duplicatedStudyData => {
-          this._resetStudyItem(duplicatedStudyData);
+          this._reloadStudy(duplicatedStudyData["uuid"]);
         })
         .catch(e => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Duplicating the study");
