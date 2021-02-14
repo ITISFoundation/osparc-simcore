@@ -1,9 +1,9 @@
 import asyncio
 import logging
-import shutil
-from concurrent.futures import ProcessPoolExecutor
+import zipfile
 from pathlib import Path
-from typing import Any, Callable, Tuple
+from concurrent.futures import ProcessPoolExecutor
+from typing import Tuple, Iterator
 
 from passlib import pwd
 
@@ -14,12 +14,114 @@ from .utils import rename
 log = logging.getLogger(__name__)
 
 
-def get_random_chars(length: int) -> str:
+def _full_file_path_from_dir_and_subdirs(dir_path: Path) -> Iterator[Path]:
+    for path in dir_path.rglob("*"):
+        if path.is_file():
+            yield path
+
+
+def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
+    to_strip = f"{str(to_strip)}/"
+    return Path(str(input_path).replace(to_strip, ""))
+
+
+def _zipfile_single_file_extract_worker(
+    zip_file_path: Path, file_in_archive: str, destination_folder: Path
+) -> None:
+    with open(zip_file_path, "rb") as f:
+        zf = zipfile.ZipFile(f)
+        zf.extract(file_in_archive, destination_folder)
+
+
+def ensure_destination_subdirectories_exist(
+    zip_file_handler: zipfile.ZipFile, destination_folder: Path
+) -> None:
+    # assemble full destination paths
+    full_destination_paths = {
+        destination_folder / entry.filename for entry in zip_file_handler.infolist()
+    }
+    # extract all possible subdirectories
+    subdirectories = {x.parent for x in full_destination_paths}
+    # create all subdirectories before extracting
+    for subdirectory in subdirectories:
+        Path(subdirectory).mkdir(parents=True, exist_ok=True)
+
+
+async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
+    try:
+        with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
+            with ProcessPoolExecutor() as pool:
+                loop = asyncio.get_event_loop()
+
+                # running in process poll is not ideal for concurrency issues
+                # to avoid race conditions all subdirectories where files will be extracted need to exist
+                # creating them before the extraction is under way avoids the issue
+                # the following avoids race conditions while unzippin in parallel
+                ensure_destination_subdirectories_exist(
+                    zip_file_handler=zip_file_handler,
+                    destination_folder=destination_folder,
+                )
+
+                tasks = [
+                    loop.run_in_executor(
+                        pool,
+                        _zipfile_single_file_extract_worker,
+                        archive_to_extract,
+                        zip_entry.filename,
+                        destination_folder,
+                    )
+                    for zip_entry in zip_file_handler.infolist()
+                ]
+
+                await asyncio.gather(*tasks)
+    except Exception as e:
+        message = f"There was an error while extracting directory '{archive_to_extract}' to '{destination_folder}'"
+        log.exception(message)
+        raise ExporterException(f"{message} {e}") from e
+
+
+def _serial_add_to_archive(
+    dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
+) -> None:
+    compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
+    with zipfile.ZipFile(destination, "w", compression=compression) as zip_file_handler:
+        files_to_compress_generator = _full_file_path_from_dir_and_subdirs(
+            dir_to_compress
+        )
+        for file_to_add in files_to_compress_generator:
+            try:
+                file_name_in_archive = (
+                    _strip_directory_from_path(file_to_add, dir_to_compress)
+                    if store_relative_path
+                    else file_to_add
+                )
+                zip_file_handler.write(file_to_add, file_name_in_archive)
+            except ValueError:
+                log.exception("Could write files to archive, please check logs")
+                return False
+    return True
+
+
+async def archive_dir(
+    dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
+) -> bool:
+    with ProcessPoolExecutor(max_workers=1) as pool:
+        return await asyncio.get_event_loop().run_in_executor(
+            pool,
+            _serial_add_to_archive,
+            dir_to_compress,
+            destination,
+            compress,
+            store_relative_path,
+        )
+
+
+def _get_random_chars(length: int) -> str:
     return pwd.genword(entropy=52, charset="hex")[:length]
 
 
-def get_osparc_export_name(sha256_sum: str, algorithm: Algorithm) -> str:
-    return f"{get_random_chars(4)}#{algorithm.name}={sha256_sum}.osparc"
+def _get_osparc_export_name(sha256_sum: str, algorithm: Algorithm) -> str:
+    return f"{_get_random_chars(4)}#{algorithm.name}={sha256_sum}.osparc"
 
 
 def validate_osparc_import_name(file_name: str) -> Tuple[Algorithm, str]:
@@ -59,53 +161,36 @@ def search_for_unzipped_path(search_path: Path) -> Path:
     return search_path / found_dirs[0]
 
 
-async def run_in_process_pool(function: Callable, *args: Tuple[Any]) -> Any:
-    try:
-        with ProcessPoolExecutor(max_workers=1) as pool:
-            return await asyncio.get_event_loop().run_in_executor(pool, function, *args)
-    except asyncio.CancelledError:
-        # making sure this error gets propagated correctly
-        raise
-    except Exception as e:
-        reason = str(e)
-        log.warning("During %s call there was an error: %s", function.__name__, reason)
-        raise ExporterException(reason) from e
-
-
-async def zip_folder(project_id: str, input_path: Path) -> Path:
+async def zip_folder(folder_to_zip: Path, destination_folder: Path) -> Path:
     """Zips a folder and returns the path to the new archive"""
 
-    zip_file = Path(input_path.parent) / f"{project_id}.zip"
-    if zip_file.is_file():
+    archived_file = destination_folder / "archive.zip"
+    if archived_file.is_file():
         raise ExporterException(
-            f"Cannot archive because file already exists '{str(zip_file)}'"
+            f"Cannot archive '{folder_to_zip}' because '{str(archived_file)}' already exists"
         )
 
-    await run_in_process_pool(
-        shutil.make_archive,  # callable
-        Path(input_path.parent) / project_id,  # base_name
-        "zip",  # format
-        input_path.parent,  # root_dir
-        project_id,  # base_dir
+    await archive_dir(
+        dir_to_compress=folder_to_zip,
+        destination=archived_file,
+        compress=True,
+        store_relative_path=True,
     )
 
     # compute checksum and rename
-    sha256_sum = await checksum(file_path=zip_file, algorithm=Algorithm.SHA256)
+    sha256_sum = await checksum(file_path=archived_file, algorithm=Algorithm.SHA256)
 
     # opsarc_formatted_name= "4_rand_chars#sha256_sum.osparc"
-    osparc_formatted_name = Path(input_path.parent) / get_osparc_export_name(
+    osparc_formatted_name = Path(folder_to_zip) / _get_osparc_export_name(
         sha256_sum=sha256_sum, algorithm=Algorithm.SHA256
     )
-    await rename(zip_file, osparc_formatted_name)
+    await rename(archived_file, osparc_formatted_name)
 
     return osparc_formatted_name
 
 
-async def unzip_folder(input_path: Path) -> Path:
-    await run_in_process_pool(
-        shutil.unpack_archive,  # callable
-        str(input_path),  # filename
-        str(input_path.parent),  # extract_dir
-        "zip",  # format
+async def unzip_folder(archive_to_extract: Path, destination_folder: Path) -> Path:
+    await unarchive_dir(
+        archive_to_extract=archive_to_extract, destination_folder=destination_folder
     )
-    return search_for_unzipped_path(input_path.parent)
+    return search_for_unzipped_path(destination_folder)
