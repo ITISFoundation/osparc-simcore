@@ -209,20 +209,21 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       });
     },
 
-    __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const workbench = study.getWorkbench();
-      if (workbench && node1Id && node2Id) {
-        const node1 = workbench.getNode(node1Id);
-        const node2 = workbench.getNode(node2Id);
-        if (node1 && node2) {
-          const port1 = node1.getOutput(port1Id);
-          const port2 = node2.getInput(port2Id);
-          const compatible = osparc.utils.Ports.arePortsCompatible(node1, port1, node2, port2);
-          return compatible;
+    __arePortsCompatible: async function(node1Id, port1Id, node2Id, port2Id) {
+      return new Promise(resolve => {
+        const study = osparc.store.Store.getInstance().getCurrentStudy();
+        const workbench = study.getWorkbench();
+        if (workbench && node1Id && node2Id) {
+          const node1 = workbench.getNode(node1Id);
+          const node2 = workbench.getNode(node2Id);
+          if (node1 && node2) {
+            const compatible = osparc.utils.Ports.arePortsCompatible(node1, port1Id, node2, port2Id);
+            resolve(compatible);
+            return;
+          }
         }
-      }
-      return false;
+        resolve(false);
+      });
     },
 
     __createDropMechanism: function(uiElement, portId) {
@@ -241,12 +242,17 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             const to = e.getCurrentTarget();
             let dropNodeId = to.node.getNodeId();
             let dropPortId = to.portId;
-            const compatible = this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
-            if (compatible) {
-              e.stopPropagation();
-            } else {
-              e.preventDefault();
-            }
+            this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)
+              .then(compatible => {
+                if (compatible) {
+                  e.stopPropagation();
+                } else {
+                  e.preventDefault();
+                }
+              })
+              .catch(() => {
+                e.preventDefault();
+              });
           }
         }, this);
 
