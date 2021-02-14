@@ -227,6 +227,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           droppable: true
         });
         uiElement.nodeId = this.getNode().getNodeId();
+        uiElement.nodeKey = this.getNode().getKey();
+        uiElement.nodeVersion = this.getNode().getVersion();
         uiElement.portId = portId;
 
         uiElement.addListener("dragover", e => {
