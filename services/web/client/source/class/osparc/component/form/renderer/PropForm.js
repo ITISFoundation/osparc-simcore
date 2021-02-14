@@ -248,10 +248,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.addListener("drop", e => {
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
-            let dragNodeId = from.nodeId;
+            let dragNodeId = from.node.getNodeId();
             let dragPortId = from.portId;
             const to = e.getCurrentTarget();
-            // let dropNodeId = to.nodeId;
             let dropPortId = to.portId;
             this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
           }
@@ -260,7 +259,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __getCompatibleInputs: function(output) {
-      return this._getChildren().filter(child => child.node && child.portId && this.__arePortsCompatible(output.nodeId, output.portId, child.node.getNodeId(), child.portId));
+      return this._getChildren().filter(child => child.node && child.portId && this.__arePortsCompatible(output.node.getNodeId(), output.portId, child.node.getNodeId(), child.portId));
     },
 
     __highlightCompatibles: function(output) {
