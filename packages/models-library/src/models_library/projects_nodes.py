@@ -79,7 +79,7 @@ class Node(BaseModel):
         ...,
         description="distinctive name for the node based on the docker registry path",
         regex=SERVICE_KEY_RE,
-        example=[
+        examples=[
             "simcore/services/comp/sleeper",
             "simcore/services/dynamic/3dviewer",
             "simcore/services/frontend/file-picker",
@@ -121,7 +121,7 @@ class Node(BaseModel):
     input_nodes: Optional[List[NodeID]] = Field(
         default_factory=list,
         description="node IDs of where the node is connected to",
-        example=["nodeUuid1", "nodeUuid2"],
+        examples=["nodeUuid1", "nodeUuid2"],
         alias="inputNodes",
     )
 
