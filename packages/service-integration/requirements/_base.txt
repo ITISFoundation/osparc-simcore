@@ -24,6 +24,8 @@ email-validator==1.1.2
     # via pydantic
 idna==2.10
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   email-validator
     #   requests
 importlib-metadata==3.4.0

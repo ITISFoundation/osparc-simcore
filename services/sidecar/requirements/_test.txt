@@ -9,7 +9,7 @@ aiohttp==3.7.3
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   pytest-aiohttp
-aiopg==1.0.0
+aiopg[sa]==1.0.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt

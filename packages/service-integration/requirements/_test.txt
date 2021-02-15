@@ -29,6 +29,7 @@ docopt==0.6.2
     # via coveralls
 idna==2.10
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
 importlib-metadata==3.4.0

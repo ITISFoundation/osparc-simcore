@@ -98,6 +98,8 @@ httpx==0.14.3
     #   respx
 idna==2.10
     # via
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
     #   rfc3986

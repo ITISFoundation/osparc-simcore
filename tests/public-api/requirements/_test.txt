@@ -33,6 +33,7 @@ httpx==0.14.3
     #   -r requirements/_test.in
 idna==2.10
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   requests
     #   rfc3986
 immutables==0.15
