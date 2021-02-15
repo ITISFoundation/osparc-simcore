@@ -257,7 +257,7 @@ class TutorialBase {
   }
 
   async getLoggerMessages() {
-    await auto.getLoggerMessages(this.__page);
+    return await auto.getLoggerMessages(this.__page);
   }
 
   async runPipeline(studyId, timeout = 60000) {
@@ -267,6 +267,9 @@ class TutorialBase {
     await auto.runStudy(this.__page);
     await this.waitForStudyRun(studyId, timeout);
     await this.takeScreenshot("runStudy_after");
+
+    console.log("REMOVEME: Logs from logger:");
+    console.log(this.getLoggerMessages());
   }
 
   async openNode(nodePosInTree = 0) {
