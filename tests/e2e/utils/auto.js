@@ -197,7 +197,9 @@ async function findLogMessage(page, text) {
   await utils.clearInput(page, '[osparc-test-id="logsFilterField"]');
   await page.type('[osparc-test-id="logsFilterField"]', text);
 
-  return true;
+  const found1 = await page.evaluate((text) => window.find(text), text);
+  await utils.takeScreenshot(page, 'find_' + text);
+  return found1;
 }
 
 async function runStudy(page) {
