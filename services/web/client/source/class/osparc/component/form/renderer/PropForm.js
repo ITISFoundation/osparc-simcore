@@ -210,21 +210,20 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return new Promise(resolve => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         const workbench = study.getWorkbench();
-        if (workbench && node1Id && node2Id) {
-          const node1 = workbench.getNode(node1Id);
-          const node2 = workbench.getNode(node2Id);
-          if (node1 && node2) {
-            osparc.utils.Ports.arePortsCompatible(node1, port1Id, node2, port2Id)
-              .then(compatible => {
-                resolve(compatible);
-              })
-              .catch(err => {
-                console.error(err);
-                resolve(false);
-              });
-          }
+        const node1 = workbench.getNode(node1Id);
+        const node2 = workbench.getNode(node2Id);
+        if (workbench && node1 && node2) {
+          osparc.utils.Ports.arePortsCompatible(node1, port1Id, node2, port2Id)
+            .then(compatible => {
+              resolve(compatible);
+            })
+            .catch(err => {
+              console.error(err);
+              resolve(false);
+            });
+        } else {
+          resolve(false);
         }
-        resolve(false);
       });
     },
 
