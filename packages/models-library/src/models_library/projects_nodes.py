@@ -3,7 +3,6 @@
 """
 
 from copy import deepcopy
-from enum import Enum, unique
 from typing import Dict, List, Optional, Union
 
 from pydantic import (
@@ -56,25 +55,23 @@ Inputs = Dict[InputID, InputTypes]
 Outputs = Dict[OutputID, OutputTypes]
 
 
-@unique
-class NodeIOState(str, Enum):
-    OK = "OK"
-    OUTDATED = "OUTDATED"
-
-
-@unique
-class NodeRunnableState(str, Enum):
-    WAITING_FOR_DEPENDENCIES = "WAITING_FOR_DEPENDENCIES"
-    READY = "READY"
-
-
 class NodeState(BaseModel):
-    io_state: NodeIOState = Field(
-        ..., description="represents the state of the inputs outputs"
+    modified: bool = Field(
+        True, description="true if the node's outputs need to be re-computed"
     )
-    runnable_state: NodeRunnableState = Field(
-        ..., description="represent the runnable state of the node"
+    dependencies: List[NodeID] = Field(
+        default_factory=list,
+        description="contains the node inputs dependencies if they need to be computed first",
     )
+    current_status: RunningState = Field(
+        RunningState.NOT_STARTED,
+        description="the node's current state",
+        example=["RUNNING", "FAILED"],
+        alias="currentStatus",
+    )
+
+    class Config:
+        extra = Extra.forbid
 
 
 class Node(BaseModel):
@@ -149,22 +146,8 @@ class Node(BaseModel):
     # NOTE: use projects_ui.py
     position: Optional[Position] = Field(None, deprecated=True)
 
-    io_state: Optional[NodeIOState] = Field(
-        NodeIOState.OUTDATED,
-        description="The node's inpyts/outputs state",
-        alias="ioState",
-    )
-
-    runnable_state: Optional[NodeRunnableState] = Field(
-        NodeRunnableState.READY,
-        description="The node's runnable state",
-        alias="runnableState",
-    )
-
-    state: Optional[RunningState] = Field(
-        RunningState.NOT_STARTED,
-        description="the node's running state",
-        example=["RUNNING", "FAILED"],
+    state: Optional[NodeState] = Field(
+        default_factory=NodeState, description="The node's state object"
     )
 
     @validator("thumbnail", pre=True)
@@ -174,11 +157,19 @@ class Node(BaseModel):
             return None
         return v
 
-    @validator("state", pre=True)
     @classmethod
     def convert_old_enum_name(cls, v):
         if v == "FAILURE":
             return RunningState.FAILED
+        return v
+
+    @validator("state", pre=True)
+    @classmethod
+    def convert_from_enum(cls, v):
+        if isinstance(v, str):
+            # the old version of state was a enum of RunningState
+            running_state_value = cls.convert_old_enum_name(v)
+            return NodeState(currentStatus=running_state_value)
         return v
 
     class Config:
