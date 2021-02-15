@@ -188,7 +188,7 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 py==1.10.0
     # via pytest
-pydantic[email]==1.7.3
+pydantic==1.7.3
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
