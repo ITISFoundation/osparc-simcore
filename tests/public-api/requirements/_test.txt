@@ -35,7 +35,7 @@ idna==2.10
     # via
     #   requests
     #   rfc3986
-immutables==0.14
+immutables==0.15
     # via contextvars
 importlib-metadata==3.4.0
     # via
