@@ -32,7 +32,7 @@ cached-property==1.5.2
     # via docker-compose
 certifi==2020.12.5
     # via requests
-cffi==1.14.5
+cffi==1.14.2
     # via
     #   -c requirements/_base.txt
     #   bcrypt
@@ -93,7 +93,7 @@ idna==2.10
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.4.0
+importlib-metadata==3.1.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -140,7 +140,7 @@ pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psycopg2-binary==2.8.6
+psycopg2-binary==2.8.5
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -158,7 +158,7 @@ pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
     # via packaging
-pyrsistent==0.17.3
+pyrsistent==0.16.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -198,7 +198,7 @@ python-dotenv==0.15.0
     #   docker-compose
 python-editor==1.0.4
     # via alembic
-pyyaml==5.4.1
+pyyaml==5.3.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -224,15 +224,16 @@ six==1.15.0
     #   jsonschema
     #   openapi-spec-validator
     #   pynacl
+    #   pyrsistent
     #   python-dateutil
     #   tenacity
     #   websocket-client
-sqlalchemy[postgresql_psycopg2binary]==1.3.23
+sqlalchemy[postgresql_psycopg2binary]==1.3.20
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
-tenacity==6.3.1
+tenacity==6.2.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -248,11 +249,10 @@ toml==0.10.2
     #   pytest
 typed-ast==1.4.2
     # via astroid
-typing-extensions==3.7.4.3
+typing-extensions==3.7.4.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   importlib-metadata
     #   yarl
 urllib3==1.26.3
     # via
@@ -270,7 +270,7 @@ yarl==1.5.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zipp==3.4.0
+zipp==3.1.0
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata

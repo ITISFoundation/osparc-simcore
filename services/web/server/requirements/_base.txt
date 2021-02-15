@@ -10,7 +10,7 @@ aiodebug==1.1.2
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp-jinja2==1.4.2
+aiohttp-jinja2==1.2.0
     # via -r requirements/_base.in
 aiohttp-security==0.4.0
     # via -r requirements/_base.in
@@ -28,7 +28,7 @@ aiohttp==3.6.3
     #   aiohttp-swagger
     #   aiozipkin
     #   parfive
-aiopg[sa]==1.1.0
+aiopg[sa]==1.0.0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -36,11 +36,11 @@ aioredis==1.3.1
     # via
     #   -r requirements/_base.in
     #   aioredlock
-aioredlock==0.7.0
+aioredlock==0.5.2
     # via -r requirements/_base.in
-aiormq==3.3.1
+aiormq==3.2.3
     # via aio-pika
-aiosmtplib==1.1.4
+aiosmtplib==1.1.3
     # via -r requirements/_base.in
 aiozipkin==0.7.1
     # via
@@ -49,13 +49,13 @@ aiozipkin==0.7.1
     #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
-amqp==5.0.5
+amqp==5.0.1
     # via kombu
 async-timeout==3.0.1
     # via
     #   aiohttp
     #   aioredis
-asyncpg==0.22.0
+asyncpg==0.21.0
     # via -r requirements/_base.in
 attrs==20.3.0
     # via
@@ -64,13 +64,11 @@ attrs==20.3.0
     #   aioredlock
     #   jsonschema
     #   openapi-core
-bidict==0.21.2
-    # via python-socketio
 billiard==3.6.3.0
     # via celery
-celery[redis]==5.0.5
+celery[redis]==5.0.1
     # via -r requirements/_base.in
-cffi==1.14.5
+cffi==1.14.2
     # via cryptography
 change-case==0.5.2
     # via -r requirements/_base.in
@@ -78,15 +76,12 @@ chardet==3.0.4
     # via aiohttp
 click-didyoumean==0.0.3
     # via celery
-click-plugins==1.1.1
-    # via celery
 click-repl==0.1.6
     # via celery
 click==7.1.2
     # via
     #   celery
     #   click-didyoumean
-    #   click-plugins
     #   click-repl
 cryptography==3.4.5
     # via
@@ -96,11 +91,11 @@ cryptography==3.4.5
     #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   aiohttp-session
-dataclasses==0.8
+dataclasses==0.7
     # via pydantic
-dnspython==2.1.0
+dnspython==2.0.0
     # via email-validator
-email-validator==1.1.2
+email-validator==1.1.1
     # via pydantic
 expiringdict==1.2.1
     # via -r requirements/_base.in
@@ -117,7 +112,7 @@ idna==2.10
     #   email-validator
     #   idna-ssl
     #   yarl
-importlib-metadata==3.4.0
+importlib-metadata==3.1.1
     # via
     #   jsonschema
     #   kombu
@@ -125,7 +120,7 @@ isodate==0.6.0
     # via openapi-core
 jinja-app-loader==1.0.2
     # via -r requirements/_base.in
-jinja2==2.11.3
+jinja2==2.11.2
     # via
     #   aiohttp-jinja2
     #   aiohttp-swagger
@@ -159,33 +154,33 @@ pamqp==2.3.0
     # via aiormq
 parfive==1.0.2
     # via -r requirements/_base.in
-passlib==1.7.4
+passlib==1.7.2
     # via -r requirements/_base.in
 prometheus-client==0.9.0
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
-prompt-toolkit==3.0.16
+prompt-toolkit==3.0.8
     # via click-repl
-psycopg2-binary==2.8.6
+psycopg2-binary==2.8.5
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   aiopg
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic[email]==1.7.3
+pydantic[email]==1.7.2
     # via
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-pyrsistent==0.17.3
+pyrsistent==0.16.0
     # via jsonschema
-python-engineio==4.0.0
+python-engineio==3.13.2
     # via python-socketio
-python-socketio==5.0.4
+python-socketio==4.6.0
     # via -r requirements/_base.in
-pytz==2021.1
+pytz==2020.1
     # via celery
-pyyaml==5.4.1
+pyyaml==5.3.1
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -205,8 +200,11 @@ six==1.15.0
     #   jsonschema
     #   openapi-core
     #   openapi-spec-validator
+    #   pyrsistent
+    #   python-engineio
+    #   python-socketio
     #   tenacity
-sqlalchemy[postgresql_psycopg2binary]==1.3.23
+sqlalchemy[postgresql_psycopg2binary]==1.3.20
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -217,20 +215,17 @@ sqlalchemy[postgresql_psycopg2binary]==1.3.23
     #   aiopg
 strict-rfc3339==0.7
     # via openapi-core
-tenacity==6.3.1
+tenacity==6.2.0
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
-tqdm==4.56.2
+tqdm==4.54.1
     # via parfive
-trafaret==2.1.0
+trafaret==2.0.2
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
-typing-extensions==3.7.4.3
+typing-extensions==3.7.4.2
     # via
     #   aiohttp
-    #   aiohttp-jinja2
-    #   asyncpg
-    #   importlib-metadata
     #   yarl
-ujson==4.0.2
+ujson==3.1.0
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
@@ -248,7 +243,7 @@ yarl==1.5.1
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.4.0
+zipp==3.1.0
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
