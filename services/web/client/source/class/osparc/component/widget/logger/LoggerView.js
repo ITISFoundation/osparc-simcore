@@ -155,6 +155,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         liveUpdate: true,
         placeholder: this.tr("Filter")
       });
+      osparc.utils.Utils.setIdToWidget(textFilterField, "logsFilterFieldButton");
       toolbar.add(textFilterField, {
         flex: 1
       });
@@ -213,6 +214,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         statusBarVisible: false,
         showCellFocusIndicator: false
       });
+      osparc.utils.Utils.setIdToWidget(table, "logsViewer");
       const colModel = table.getTableColumnModel();
       colModel.setDataCellRenderer(0, new qx.ui.table.cellrenderer.Html());
       colModel.setDataCellRenderer(1, new osparc.ui.table.cellrenderer.Html().set({

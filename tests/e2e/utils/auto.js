@@ -182,7 +182,7 @@ async function __filterTemplatesByText(page, templateName) {
 }
 
 async function showLogger(page, show = true) {
-  const isVisible = utils.isElementVisible(page, '[osparc-test-id="copyLogsToClipboardButton"]');
+  const isVisible = await utils.isElementVisible(page, '[osparc-test-id="copyLogsToClipboardButton"]');
 
   if (show !== isVisible) {
     await utils.clickLoggerTitle(page);
