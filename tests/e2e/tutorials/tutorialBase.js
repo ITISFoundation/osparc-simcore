@@ -273,7 +273,7 @@ class TutorialBase {
     await this.takeScreenshot("runStudy_after");
 
     console.log("REMOVEME: Logs from logger:");
-    console.log(this.getLoggerMessages());
+    console.log(await this.getLoggerMessages());
   }
 
   async openNode(nodePosInTree = 0) {
