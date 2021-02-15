@@ -14341,11 +14341,7 @@ paths:
     get:
       tags:
         - catalog
-      description: |2-
-            Filters inputs of this service that match a given service output
-
-        Returns compatible input ports of the service, provided an output port of
-        a connected node.
+      description: 'Filters inputs of this service that match a given service output. Returns compatible input ports of the service, provided an output port of a connected node.'
       operationId: get_compatible_inputs_given_source_output_handler
       parameters:
         - in: path
@@ -14821,10 +14817,7 @@ paths:
     get:
       tags:
         - catalog
-      description: |-
-        Filters outputs of this service that match a given service input
-
-        Returns compatible output port of a connected node for a given input
+      description: Filters outputs of this service that match a given service input. Returns compatible output port of a connected node for a given input
       operationId: get_compatible_outputs_given_target_input_handler
       parameters:
         - in: path

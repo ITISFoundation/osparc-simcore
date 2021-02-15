@@ -119,7 +119,5 @@ async def get_service(
     )
     session = get_client_session(app)
     async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
-        logger.error("Error while retrieving service for user %s", user_id)
-        resp.raise_for_status()  # FIXME: check this@
-
+        resp.raise_for_status()  # FIXME: error handling for session and response exceptions
         return await resp.json()
