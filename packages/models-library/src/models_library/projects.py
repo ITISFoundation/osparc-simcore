@@ -62,7 +62,7 @@ class ProjectCommons(BaseModel):
     last_change_date: datetime = Field(...)
 
     # Pipeline of nodes (SEE projects_nodes.py)
-    workbench: Workbench = ...
+    workbench: Workbench = Field(...)
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod
