@@ -19,6 +19,7 @@ cfgv==3.2.0
 click==7.1.2
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 dataclasses==0.7 ; python_version < "3.7"

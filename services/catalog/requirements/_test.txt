@@ -38,6 +38,10 @@ chardet==3.0.4
     #   aiohttp
     #   httpx
     #   requests
+click==7.1.2
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
 codecov==2.1.11
     # via -r requirements/_test.in
 contextvars==2.4
