@@ -29,10 +29,8 @@ def test_upload_file(files_api: FilesApi, tmpdir):
     assert input_file.name == input_path.name
 
     # these two are optional
-    if input_file.content_type:
-        assert input_file.content_type == "text/plain"
-    if input_file.checksum:
-        assert int(input_file.checksum)
+    assert input_file.content_type is None or input_file.content_type == "text/plain"
+    assert input_file.checksum is None or isinstance(input_file.checksum, str)
 
     same_file = files_api.get_file(input_file.id)
     assert same_file == input_file
