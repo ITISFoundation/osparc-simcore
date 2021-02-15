@@ -29,3 +29,7 @@ respx<0.13.0
 
 # Keeps all docker compose to the same version. TODO: remove when all synced
 docker-compose==1.27.4
+
+
+# requests==2.25.1->coveralls==3.0.0  Feb2021
+idna<3,>=2.5
