@@ -6,12 +6,10 @@
 #   pip install -r requirements/dev.txt
 #
 
-# tools
-bump2version
-watchdog[watchmedo]
 
 # installs base + tests requirements
--r requirements.txt
+-r test.txt
+-r tools.txt
 
 # installs this repo's packages
 -e ../../packages/s3wrapper/

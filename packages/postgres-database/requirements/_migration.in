@@ -10,5 +10,8 @@ urllib3
 
 alembic
 click
-docker # TODO: aiodocker
 tenacity
+
+# aiohttp==3.7.3 conflicting with requests==2.25.1 -> docker
+docker # TODO: aiodocker
+chardet<4.0,>=2.0
