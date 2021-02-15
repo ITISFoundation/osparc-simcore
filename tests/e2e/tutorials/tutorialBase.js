@@ -256,12 +256,8 @@ class TutorialBase {
     await auto.restoreIFrame(this.__page);
   }
 
-  async getLoggerMessages() {
-    // https://github.com/puppeteer/puppeteer/issues/2147#issuecomment-624752739
-    const context = await this.__browser.defaultBrowserContext();
-    await context.overridePermissions(this.__url, ['clipboard-read']);
-
-    return await auto.getLoggerMessages(this.__page);
+  async findLogMessage(text) {
+    return await auto.findLogMessage(this.__page, text);
   }
 
   async runPipeline(studyId, timeout = 60000) {
@@ -271,9 +267,6 @@ class TutorialBase {
     await auto.runStudy(this.__page);
     await this.waitForStudyRun(studyId, timeout);
     await this.takeScreenshot("runStudy_after");
-
-    console.log("REMOVEME: Logs from logger:");
-    console.log(await this.getLoggerMessages());
   }
 
   async openNode(nodePosInTree = 0) {

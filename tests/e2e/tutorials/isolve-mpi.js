@@ -39,8 +39,8 @@ async function runTutorial() {
 
     // check logs
     const mustHave = "Running MPI version 3.1 on 2 processes";
-    const logsMsgs = await tutorial.getLoggerMessages();
-    if (logsMsgs.includes(mustHave)) {
+    const found = await tutorial.findLogMessage(mustHave);
+    if (found) {
       console.log("Running MPI version 3.1 on 2 processes");
     }
     else {

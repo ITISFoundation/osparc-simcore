@@ -155,7 +155,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         liveUpdate: true,
         placeholder: this.tr("Filter")
       });
-      osparc.utils.Utils.setIdToWidget(textFilterField, "logsFilterFieldButton");
+      osparc.utils.Utils.setIdToWidget(textFilterField, "logsFilterField");
       toolbar.add(textFilterField, {
         flex: 1
       });

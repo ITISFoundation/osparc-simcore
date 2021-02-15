@@ -182,20 +182,22 @@ async function __filterTemplatesByText(page, templateName) {
 }
 
 async function showLogger(page, show = true) {
-  const isVisible = await utils.isElementVisible(page, '[osparc-test-id="copyLogsToClipboardButton"]');
+  const isVisible = await utils.isElementVisible(page, '[osparc-test-id="logsViewer"]');
 
   if (show !== isVisible) {
     await utils.clickLoggerTitle(page);
   }
 }
 
-async function getLoggerMessages(page) {
-  console.log("Getting Logger messages");
+async function findLogMessage(page, text) {
+  console.log("Finding Log Message");
   await this.showLogger(page, true);
 
-  await utils.waitAndClick(page, '[osparc-test-id="copyLogsToClipboardButton"]');
-  const copiedText = await page.evaluate(`(async () => await navigator.clipboard.readText())()`);
-  return copiedText;
+  await utils.waitAndClick(page, '[osparc-test-id="logsFilterField"]');
+  await utils.clearInput(page, '[osparc-test-id="logsFilterField"]');
+  await page.type('[osparc-test-id="logsFilterField"]', text);
+
+  return true;
 }
 
 async function runStudy(page) {
@@ -367,7 +369,7 @@ module.exports = {
   dashboardOpenFirstTemplate,
   dashboardOpenFirstService,
   showLogger,
-  getLoggerMessages,
+  findLogMessage,
   runStudy,
   deleteFirstStudy,
   toDashboard,
