@@ -39,3 +39,13 @@ def test_project_with_thumbnail_as_empty_string(minimal_project: Dict[str, Any])
 
     assert project
     assert project.thumbnail == None
+
+
+def test_project_type_in_models_package_same_as_in_postgres_database_package():
+    from models_library.projects import ProjectType as ml_project_type
+    from simcore_postgres_database.models.projects import ProjectType as pg_project_type
+
+    # pylint: disable=no-member
+    assert (
+        ml_project_type.__members__.values() == pg_project_type.__members__.values()
+    ), f"The enum in models_library package and postgres package shall have the same values. models_pck: {ml_project_type.__members__}, postgres_pck: {pg_project_type.__members__}"
