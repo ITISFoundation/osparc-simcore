@@ -1,4 +1,5 @@
 import json
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Iterator, List, Tuple
 
@@ -6,6 +7,7 @@ from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.services import ServiceInput, ServiceOutput
 from pydantic import ValidationError
+from servicelib.rest_codecs import jsonify
 
 from . import catalog_client
 from ._meta import api_version_prefix
@@ -49,23 +51,44 @@ class _RequestContext:
         )
 
 
+@contextmanager
+def parameters_validation(request: web.Request):
+    """Context manager to wrap match, parsing and validation of
+    request parameters (both path and queries)
+    """
+    try:
+        try:
+            context = _RequestContext.create(request)
+        except KeyError:
+            raise web.HTTPBadRequest(reason="Invalid headers")
+
+        yield context
+        #
+        # wraps match, parse and validate
+        # For instance
+        #   service_key: ServiceKey = request.match_info["service_key"]
+        #   from_service_version: ServiceVersion = request.query["fromVersion"]
+        #
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            text=jsonify({"error": exc.errors()}), content_type="application/json"
+        ) from exc
+
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
+
+
 @routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs")
 @login_required
 @permission_required("services.catalog.*")
 async def list_service_inputs_handler(request: Request):
-    try:
+    with parameters_validation(request) as ctx:
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
 
-    except (ValidationError, KeyError) as err:
-        # TODO: convert into HTTP validation error
-        raise web.HTTPUnprocessableEntity() from err
-
     # Evaluate and return validated model
-    response_model = await list_service_inputs(
-        service_key, service_version, _RequestContext.create(request)
-    )
+    response_model = await list_service_inputs(service_key, service_version, ctx)
 
     # format response
     enveloped: str = json.dumps(
@@ -79,18 +102,15 @@ async def list_service_inputs_handler(request: Request):
 @login_required
 @permission_required("services.catalog.*")
 async def get_service_input_handler(request: Request):
-    try:
+    with parameters_validation(request) as ctx:
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
         input_key: ServiceInputKey = request.match_info["input_key"]
 
-    except (ValidationError, KeyError) as err:
-        raise web.HTTPUnprocessableEntity() from err
-
     # Evaluate and return validated model
     response_model = await get_service_input(
-        service_key, service_version, input_key, _RequestContext.create(request)
+        service_key, service_version, input_key, ctx
     )
 
     # format response
@@ -104,16 +124,13 @@ async def get_service_input_handler(request: Request):
 @login_required
 @permission_required("services.catalog.*")
 async def get_compatible_inputs_given_source_output_handler(request: Request):
-    try:
+    with parameters_validation(request) as ctx:
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
         from_service_key: ServiceKey = request.query["fromService"]
         from_service_version: ServiceVersion = request.query["fromVersion"]
         from_output_key: ServiceOutputKey = request.query["fromOutput"]
-
-    except (ValidationError, KeyError) as err:
-        raise web.HTTPUnprocessableEntity() from err
 
     # Evaluate and return validated model
     response_model = await get_compatible_inputs_given_source_output(
@@ -122,7 +139,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
         from_service_key,
         from_service_version,
         from_output_key,
-        _RequestContext.create(request),
+        ctx,
     )
 
     # format response
@@ -137,18 +154,13 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
 @login_required
 @permission_required("services.catalog.*")
 async def list_service_outputs_handler(request: Request):
-    try:
+    with parameters_validation(request) as ctx:
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
 
-    except (ValidationError, KeyError) as err:
-        raise web.HTTPUnprocessableEntity() from err
-
     # Evaluate and return validated model
-    response_model = await list_service_outputs(
-        service_key, service_version, _RequestContext.create(request)
-    )
+    response_model = await list_service_outputs(service_key, service_version, ctx)
 
     # format response
     enveloped: str = json.dumps(
@@ -164,18 +176,15 @@ async def list_service_outputs_handler(request: Request):
 @login_required
 @permission_required("services.catalog.*")
 async def get_service_output_handler(request: Request):
-    try:
+    with parameters_validation(request) as ctx:
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
         output_key: ServiceOutputKey = request.match_info["output_key"]
 
-    except (ValidationError, KeyError) as err:
-        raise web.HTTPUnprocessableEntity() from err
-
     # Evaluate and return validated model
     response_model = await get_service_output(
-        service_key, service_version, output_key, _RequestContext.create(request)
+        service_key, service_version, output_key, ctx
     )
 
     # format response
@@ -194,16 +203,13 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
 
     Returns compatible output port of a connected node for a given input
     """
-    try:
+    with parameters_validation(request) as ctx:
         # match, parse and validate
         service_key: ServiceKey = request.match_info["service_key"]
         service_version: ServiceVersion = request.match_info["service_version"]
         to_service_key: ServiceKey = request.query["toService"]
         to_service_version: ServiceVersion = request.query["toVersion"]
         to_input_key: ServiceInputKey = request.query["toInput"]
-
-    except (ValidationError, KeyError) as err:
-        raise web.HTTPUnprocessableEntity() from err
 
     # Evaluate and return validated model
     response_model = await get_compatible_outputs_given_target_input(
@@ -212,7 +218,7 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
         to_service_key,
         to_service_version,
         to_input_key,
-        _RequestContext.create(request),
+        ctx,
     )
 
     # format response
@@ -232,10 +238,30 @@ def can_connect(from_output: ServiceOutput, to_input: ServiceInput) -> bool:
     # compatible units
     ok = from_output.unit == to_input.unit
     if ok:
-        # compatible types TODO: see mimetypes examples in property_type
+        # compatible types
+        # FIXME: see mimetypes examples in property_type
+        #
+        #   "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+        #   "description": "data type expected on this input glob matching for data type is allowed",
+        #   "examples": [
+        #     "number",
+        #     "boolean",
+        #     "data:*/*",
+        #     "data:text/*",
+        #     "data:[image/jpeg,image/png]",
+        #     "data:application/json",
+        #     "data:application/json;schema=https://my-schema/not/really/schema.json",
+        #     "data:application/vnd.ms-excel",
+        #     "data:text/plain",
+        #     "data:application/hdf5",
+        #     "data:application/edu.ucdavis@ceclancy.xyz"
+        #
         ok = from_output.property_type == to_input.property_type
         if not ok:
-            ok = "data:*/*" in (from_output.property_type, to_input.property_type)
+            ok = (
+                to_input.property_type == "data:*/*"
+                and from_output.property_type.startswith("data:")
+            )
     return ok
 
 
