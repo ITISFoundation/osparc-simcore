@@ -43,12 +43,12 @@ class ComputationTask(BaseModel):
                     },
                     "node_states": {
                         "2fb4808a-e403-4a46-b52c-892560d27862": {
-                            "io_state": "OUTDATED",
-                            "runnable_state": "READY",
+                            "modified": True,
+                            "dependencies": [],
                         },
                         "19a40c7b-0a40-458a-92df-c77a5df7c886": {
-                            "io_state": "OK",
-                            "runnable_state": "WAITING_FOR_DEPENDENCIES",
+                            "modified": False,
+                            "dependencies": ["2fb4808a-e403-4a46-b52c-892560d27862"],
                         },
                     },
                 },
