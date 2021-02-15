@@ -241,6 +241,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             const dragNodeId = from.node.getNodeId();
             const dragPortId = from.portId;
             const to = e.getCurrentTarget();
+            const dropNodeId = to.node.getNodeId();
+            const dropPortId = to.portId;
             this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)
               .then(compatible => {
                 if (compatible) {
