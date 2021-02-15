@@ -62,3 +62,5 @@ openapi.json: .env
 	# validates OAS file: $@
 	@cd $(CURDIR); \
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
+	# moving to api/specs
+	mv openapi.json $(REPO_BASE_DIR)/api/specs/catalog/
