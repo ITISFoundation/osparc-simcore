@@ -1,4 +1,4 @@
-// node isolve.js [url] [user] [password] [--demo]
+// node isolve-gpu.js [url] [user] [password] [--demo]
 
 // https://itisfoundation.github.io/osparc-manual-z43/#/Tutorials/GeneralTutorial
 
@@ -30,7 +30,7 @@ async function runTutorial() {
     await tutorial.waitFor(5000);
 
     await tutorial.runPipeline(studyId, 20000);
-    console.log('Checking isolve results:');
+    console.log('Checking isolve-gpu results:');
     await tutorial.openNodeFiles(1);
     const outFiles = [
       "logs.zip",
