@@ -355,7 +355,9 @@ function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
 async function typeInInputElement(page, inputSelector, text) {
   const element = await page.waitForSelector(inputSelector);
   await element.focus();
-  await page.keyboard.type(text, { delay: 100 });
+  await page.keyboard.type(text, {
+    delay: 100
+  });
 }
 
 function isElementVisible (page, selector) {
@@ -366,6 +368,7 @@ function isElementVisible (page, selector) {
 }
 
 async function clickLoggerTitle(page) {
+  console.log("Click LoggerTitle");
   await this.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
 }
 

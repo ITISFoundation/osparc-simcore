@@ -184,12 +184,7 @@ async function __filterTemplatesByText(page, templateName) {
 async function showLogger(page, show = true) {
   const isVisible = utils.isElementVisible(page, '[osparc-test-id="copyLogsToClipboardButton"]');
 
-  if (show && !isVisible) {
-    console.log("Show Logger");
-    await utils.clickLoggerTitle(page);
-  }
-  if (!show && isVisible) {
-    console.log("Show Logger");
+  if (show !== isVisible) {
     await utils.clickLoggerTitle(page);
   }
 }
