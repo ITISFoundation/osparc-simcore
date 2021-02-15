@@ -1,6 +1,4 @@
-// node isolve.js [url] [user] [password] [--demo]
-
-// https://itisfoundation.github.io/osparc-manual-z43/#/Tutorials/GeneralTutorial
+// node isolve-mpi.js [url] [user] [password] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
@@ -14,7 +12,7 @@ const {
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
-const templateName = "isolve-gpu";
+const templateName = "isolve-mpi";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
@@ -30,7 +28,7 @@ async function runTutorial() {
     await tutorial.waitFor(5000);
 
     await tutorial.runPipeline(studyId, 20000);
-    console.log('Checking isolve results:');
+    console.log('Checking isolve-mpi results:');
     await tutorial.openNodeFiles(1);
     const outFiles = [
       "logs.zip",
@@ -38,6 +36,16 @@ async function runTutorial() {
       "log.tgz"
     ];
     await tutorial.checkResults(outFiles.length);
+
+    // check logs
+    const mustHave = "Running MPI version 3.1 on 2 processes";
+    const found = await tutorial.findLogMessage(mustHave);
+    if (found) {
+      console.log("Running MPI version 3.1 on 2 processes");
+    }
+    else {
+      throw "MPI not working";
+    }
 
     await tutorial.toDashboard();
 
