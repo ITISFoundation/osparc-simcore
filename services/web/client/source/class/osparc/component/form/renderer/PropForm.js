@@ -238,8 +238,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.addListener("dragover", e => {
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
-            let dragNodeId = from.node.getNodeId();
-            let dragPortId = from.portId;
+            const dragNodeId = from.node.getNodeId();
+            const dragPortId = from.portId;
             const to = e.getCurrentTarget();
             let dropNodeId = to.node.getNodeId();
             let dropPortId = to.portId;
@@ -260,10 +260,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.addListener("drop", e => {
           if (e.supportsType("osparc-port-link")) {
             const from = e.getRelatedTarget();
-            let dragNodeId = from.node.getNodeId();
-            let dragPortId = from.portId;
+            const dragNodeId = from.node.getNodeId();
+            const dragPortId = from.portId;
             const to = e.getCurrentTarget();
-            let dropPortId = to.portId;
+            const dropPortId = to.portId;
             this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
           }
         }, this);
