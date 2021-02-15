@@ -12,13 +12,13 @@
 -r _test.txt
 
 # installs this repo's packages
-../../services/storage/client-sdk/python/
-../../packages/s3wrapper/
-../../packages/postgres-database/[migration]
-../../packages/simcore-sdk/
-../../packages/service-library/
 ../../packages/models-library/
+../../packages/postgres-database/
 ../../packages/pytest-simcore/
+../../packages/s3wrapper/
+../../packages/service-library/
+../../packages/simcore-sdk/
+../../services/storage/client-sdk/python/
 
 # installs current package
 .

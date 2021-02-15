@@ -9,10 +9,10 @@
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
 #
+-c ../../../packages/models-library/requirements/_base.in
 -c ../../../packages/postgres-database/requirements/_base.in
 -c ../../../packages/s3wrapper/requirements/_base.in
 -c ../../../packages/service-library/requirements/_base.in
--c ../../../packages/models-library/requirements/_base.in
 
 
 aio-pika

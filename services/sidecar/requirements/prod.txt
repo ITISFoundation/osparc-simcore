@@ -11,12 +11,12 @@
 -r _packages.txt
 
 # installs this repo's packages
-../../services/storage/client-sdk/python/
-../../packages/s3wrapper/
-../../packages/postgres-database/
-../../packages/simcore-sdk/
-../../packages/service-library/
 ../../packages/models-library/
+../../packages/postgres-database/
+../../packages/s3wrapper/
+../../packages/service-library/
+../../packages/simcore-sdk/
+../../services/storage/client-sdk/python/
 
 # installs current package
 .
