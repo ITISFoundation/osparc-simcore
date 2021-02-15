@@ -21,7 +21,7 @@ click==7.1.2
     #   -c requirements/_base.txt
     #   black
     #   pip-tools
-dataclasses==0.7
+dataclasses==0.7 ; python_version < "3.7"
     # via
     #   -c requirements/_base.txt
     #   black

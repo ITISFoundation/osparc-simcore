@@ -88,6 +88,7 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   idna-ssl
     #   requests
