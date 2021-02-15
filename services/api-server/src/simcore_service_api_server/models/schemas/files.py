@@ -23,7 +23,7 @@ class File(BaseModel):
     )
     name: str = Field(..., description="File with extenson")
     content_type: Optional[str] = None
-    checksum: Optional[str] = Field(..., description="MD5 hash of the file's content")
+    checksum: Optional[str] = Field(None, description="MD5 hash of the file's content")
 
     class Config:
         schema_extra = {
