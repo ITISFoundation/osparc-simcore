@@ -189,6 +189,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         toolTipText: this.tr("Copy logs to clipboard"),
         appearance: "toolbar-button"
       });
+      osparc.utils.Utils.setIdToWidget(copyToClipboardButton, "copyLogsToClipboardButton");
       copyToClipboardButton.addListener("execute", e => {
         this.__copyLogsToClipboard();
       }, this);

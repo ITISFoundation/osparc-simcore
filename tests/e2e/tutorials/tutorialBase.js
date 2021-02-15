@@ -260,6 +260,10 @@ class TutorialBase {
     await auto.clickLoggerTitle(this.__page);
   }
 
+  async getLoggerMessages() {
+    await auto.getLoggerMessages(this.__page);
+  }
+
   async runPipeline(studyId, timeout = 60000) {
     await this.clickLoggerTitle();
 
