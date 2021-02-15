@@ -358,6 +358,17 @@ async function typeInInputElement(page, inputSelector, text) {
   await page.keyboard.type(text, { delay: 100 });
 }
 
+function isElementVisible (page, selector) {
+  return page.evaluate(selector => {
+    const element = document.querySelector(selector)
+    return !!(element && (element.offsetWidth || element.offsetHeight || element.getClientRects().length))
+  }, selector);
+}
+
+async function clickLoggerTitle(page) {
+  await this.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
+}
+
 
 module.exports = {
   getUserAndPass,
@@ -384,5 +395,7 @@ module.exports = {
   parseCommandLineArguments,
   parseCommandLineArgumentsTemplate,
   getGrayLogSnapshotUrl,
-  typeInInputElement
+  typeInInputElement,
+  isElementVisible,
+  clickLoggerTitle,
 }
