@@ -189,12 +189,12 @@ qx.Class.define("osparc.data.Resources", {
           matchInputs: {
             // get_compatible_inputs_given_source_output_handler
             method: "GET",
-            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?Fromservice={serviceKey1}&Fromversion={serviceVersion1}&Fromoutput={portKey1}"
+            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
           },
           matchOutputs: {
             // get_compatible_outputs_given_target_input_handler
             method: "GET",
-            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?Fromservice={serviceKey2}&Fromversion={serviceVersion2}&Fromoutput={portKey2}"
+            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
           }
         }
       },
