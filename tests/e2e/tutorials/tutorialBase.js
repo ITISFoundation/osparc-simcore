@@ -256,12 +256,12 @@ class TutorialBase {
     await auto.restoreIFrame(this.__page);
   }
 
-  async clickLoggerTitle() {
-    await auto.clickLoggerTitle(this.__page);
+  async findLogMessage(text) {
+    return await auto.findLogMessage(this.__page, text);
   }
 
   async runPipeline(studyId, timeout = 60000) {
-    await this.clickLoggerTitle();
+    await auto.showLogger(this.__page, true);
 
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);
