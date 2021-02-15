@@ -95,17 +95,17 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
 
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
 
-    # TODO: disable when feature is released
     exclude: List[str] = []
-    if strtobool(os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", "0")):
-        route_def: RouteDef
-        for route_def in catalog_api_handlers.routes:
-            route_def.kwargs["name"] = operation_id = route_def.handler.__name__
-            exclude.append(operation_id)
+    route_def: RouteDef
+    for route_def in catalog_api_handlers.routes:
+        route_def.kwargs["name"] = operation_id = route_def.handler.__name__
+        exclude.append(operation_id)
 
+    if strtobool(os.environ.get("WEBSERVER_DEV_FEATURES_ENABLED", "0")):
         app.add_routes(catalog_api_handlers.routes)
 
     # bind the rest routes with the reverse-proxy-handler
+    # FIXME: this would reroute **anything** to the catalog service!
     handler = (
         _reverse_proxy_handler.__wrapped__ if disable_auth else _reverse_proxy_handler
     )
