@@ -191,10 +191,11 @@ async function showLogger(page, show = true) {
 
 async function getLoggerMessages(page) {
   console.log("Getting Logger messages");
+  await this.showLogger(page, true);
 
-  await utils.waitAndClick(page, '[osparc-test-id="copyLogsToClipboardButton"]')
-
-  return await page.evaluate(() => navigator.clipboard.readText())
+  await utils.waitAndClick(page, '[osparc-test-id="copyLogsToClipboardButton"]');
+  const copiedText = await page.evaluate(`(async () => await navigator.clipboard.readText())()`);
+  return copiedText;
 }
 
 async function runStudy(page) {

@@ -257,6 +257,10 @@ class TutorialBase {
   }
 
   async getLoggerMessages() {
+    // https://github.com/puppeteer/puppeteer/issues/2147#issuecomment-624752739
+    const context = await browser.defaultBrowserContext()
+    await context.overridePermissions(this.__url, ['clipboard-read'])
+
     return await auto.getLoggerMessages(this.__page);
   }
 
