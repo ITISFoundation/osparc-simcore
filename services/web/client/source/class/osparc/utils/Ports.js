@@ -48,7 +48,6 @@ qx.Class.define("osparc.utils.Ports", {
     },
 
     getCompatiblePorts: function(node1, portId1, node2) {
-      /*
       const params = {
         url: {
           "serviceKey2": encodeURIComponent(node2.getKey()),
@@ -59,14 +58,6 @@ qx.Class.define("osparc.utils.Ports", {
         }
       };
       return osparc.data.Resources.fetch("services", "matchInputs", params);
-      */
-      return new Promise(resolve => {
-        const ms = Math.random() * 1000;
-        setTimeout(() => {
-          const compatiblePorts = ["input_1"];
-          resolve(compatiblePorts);
-        }, ms);
-      });
     },
 
     isDataALink: function(data) {
