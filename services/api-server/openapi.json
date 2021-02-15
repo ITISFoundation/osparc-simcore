@@ -107,7 +107,7 @@
           "files"
         ],
         "summary": "List Files",
-        "description": "Gets metadata for all file resources ",
+        "description": "Lists all files stored in the system  ",
         "operationId": "list_files",
         "responses": {
           "200": {
@@ -118,7 +118,7 @@
                   "title": "Response List Files V0 Files Get",
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/FileMetadata"
+                    "$ref": "#/components/schemas/File"
                   }
                 }
               }
@@ -167,7 +167,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileMetadata"
+                  "$ref": "#/components/schemas/File"
                 }
               }
             }
@@ -216,7 +216,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FileMetadata"
+                  "$ref": "#/components/schemas/File"
                 }
               }
             }
@@ -852,21 +852,23 @@
           }
         }
       },
-      "FileMetadata": {
-        "title": "FileMetadata",
+      "File": {
+        "title": "File",
         "required": [
-          "filename"
+          "id",
+          "name",
+          "checksum"
         ],
         "type": "object",
         "properties": {
-          "file_id": {
-            "title": "File Id",
+          "id": {
+            "title": "Id",
             "type": "string",
             "description": "File unique identifier built upon its name and checksum",
             "format": "uuid"
           },
-          "filename": {
-            "title": "Filename",
+          "name": {
+            "title": "Name",
             "type": "string",
             "description": "File with extenson"
           },
@@ -880,10 +882,10 @@
             "description": "MD5 hash of the file's content"
           }
         },
-        "description": "Describes a file stored on the server side ",
+        "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud.",
         "example": {
-          "file_id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
-          "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
+          "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
+          "name": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
           "content_type": "application/pdf",
           "checksum": "de47d0e1229aa2dfb80097389094eadd-1"
         }

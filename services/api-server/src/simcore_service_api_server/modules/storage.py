@@ -11,7 +11,7 @@ from models_library.api_schemas_storage import FileMetaData as StorageFileMetaDa
 from models_library.api_schemas_storage import FileMetaDataArray, PresignedLink
 
 from ..core.settings import StorageSettings
-from ..models.schemas.files import FileMetadata
+from ..models.schemas.files import File
 from ..utils.client_base import BaseServiceClientApi
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
@@ -119,7 +119,7 @@ class StorageApi(BaseServiceClientApi):
 FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
-def to_file_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
+def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
     # extracts fields from api/{file_id}/{filename}
     match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
     if not match:
@@ -127,9 +127,9 @@ def to_file_metadata(stored_file_meta: StorageFileMetaData) -> FileMetadata:
 
     file_id, filename = match.groups()
 
-    meta = FileMetadata(
-        file_id=file_id,
-        filename=filename,
+    meta = File(
+        id=file_id,
+        name=filename,
         # FIXME: UploadFile gets content from the request header while here is
         # mimetypes.guess_type used. Sometimes it does not match.
         # Add column in meta_data table of storage and stop guessing :-)

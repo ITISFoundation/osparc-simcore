@@ -8,15 +8,17 @@ from typing import List, Optional
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, File, Header, UploadFile, status
+from fastapi import APIRouter, Depends
+from fastapi import File as FileParam
+from fastapi import Header, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from starlette.responses import RedirectResponse
 
 from ..._meta import api_vtag
-from ...models.schemas.files import FileMetadata
-from ...modules.storage import StorageApi, StorageFileMetaData, to_file_metadata
+from ...models.schemas.files import File
+from ...modules.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from .files_faker import the_fake_impl
@@ -39,23 +41,23 @@ common_error_responses = {
 }
 
 
-@router.get("", response_model=List[FileMetadata])
+@router.get("", response_model=List[File])
 async def list_files(
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
 ):
-    """ Gets metadata for all file resources """
+    """ Lists all files stored in the system  """
 
     stored_files: List[StorageFileMetaData] = await storage_client.list_files(user_id)
 
     # Adapts storage API model to API model
-    files_metadata = deque()
+    files_meta = deque()
     for stored_file_meta in stored_files:
         try:
             assert stored_file_meta.user_id == user_id  # nosec
             assert stored_file_meta.file_id  # nosec
 
-            meta = to_file_metadata(stored_file_meta)
+            file_meta = to_file_api_model(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
             logger.warning(
@@ -66,14 +68,14 @@ async def list_files(
             )
 
         else:
-            files_metadata.append(meta)
+            files_meta.append(file_meta)
 
-    return list(files_metadata)
+    return list(files_meta)
 
 
-@router.put("/content", response_model=FileMetadata)
+@router.put("/content", response_model=File)
 async def upload_file(
-    file: UploadFile = File(...),
+    file: UploadFile = FileParam(...),
     content_length: Optional[str] = Header(None),
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
     user_id: int = Depends(get_current_user_id),
@@ -87,31 +89,31 @@ async def upload_file(
     #
 
     # assign file_id.
-    meta: FileMetadata = await FileMetadata.create_from_uploaded(
+    file_meta: File = await File.create_from_uploaded(
         file, file_size=content_length, created_at=datetime.utcnow().isoformat()
     )
-    logger.debug("Assigned id: %s of %s bytes", meta, content_length)
+    logger.debug("Assigned id: %s of %s bytes", file_meta, content_length)
 
     # upload to S3 using pre-signed link
     presigned_upload_link = await storage_client.get_upload_link(
-        user_id, meta.file_id, meta.filename
+        user_id, file_meta.id, file_meta.name
     )
 
-    logger.info("Uploading %s to %s ...", meta, presigned_upload_link)
+    logger.info("Uploading %s to %s ...", file_meta, presigned_upload_link)
     async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, write=3600)) as client:
-        assert meta.content_type  # nosec
+        assert file_meta.content_type  # nosec
 
         resp = await client.put(presigned_upload_link, data=await file.read())
         resp.raise_for_status()
 
     # update checksum
     entity_tag = json.loads(resp.headers.get("Etag"))
-    meta.checksum = entity_tag
-    return meta
+    file_meta.checksum = entity_tag
+    return file_meta
 
 
 # DISABLED @router.post(":upload-multiple", response_model=List[FileMetadata])
-async def upload_files(files: List[UploadFile] = File(...)):
+async def upload_files(files: List[UploadFile] = FileParam(...)):
     """ Uploads multiple files to the system """
     # MaG suggested a single function that can upload one or multiple files instead of having
     # two of them. Tried something like upload_file( files: Union[List[UploadFile], File] ) but it
@@ -127,9 +129,7 @@ async def upload_files(files: List[UploadFile] = File(...)):
     return uploaded
 
 
-@router.get(
-    "/{file_id}", response_model=FileMetadata, responses={**common_error_responses}
-)
+@router.get("/{file_id}", response_model=File, responses={**common_error_responses})
 async def get_file(
     file_id: UUID,
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
@@ -149,8 +149,8 @@ async def get_file(
         assert stored_file_meta.file_id  # nosec
 
         # Adapts storage API model to API model
-        meta = to_file_metadata(stored_file_meta)
-        return meta
+        file_meta = to_file_api_model(stored_file_meta)
+        return file_meta
 
     except (ValueError, ValidationError) as err:
         logger.debug("File %d not found: %s", file_id, err)
@@ -183,14 +183,14 @@ async def download_file(
 ):
     # NOTE: application/octet-stream is defined as "arbitrary binary data" in RFC 2046,
     # gets meta
-    meta: FileMetadata = await get_file(file_id, storage_client, user_id)
+    file_meta: File = await get_file(file_id, storage_client, user_id)
 
     # download from S3 using pre-signed link
     presigned_download_link = await storage_client.get_download_link(
-        user_id, meta.file_id, meta.filename
+        user_id, file_meta.id, file_meta.name
     )
 
-    logger.info("Downloading %s to %s ...", meta, presigned_download_link)
+    logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
     return RedirectResponse(presigned_download_link)
 
 
