@@ -303,7 +303,9 @@ async def update_project_node_state(
     if project["workbench"][node_id].get("state", {}).get("currentStatus") == new_state:
         # nothing to do here
         return project
-    project["workbench"][node_id]["state"].update({"currentStatus": new_state})
+    project["workbench"][node_id].setdefault("state", {}).update(
+        {"currentStatus": new_state}
+    )
     if RunningState(new_state) in [
         RunningState.PUBLISHED,
         RunningState.PENDING,
@@ -531,7 +533,7 @@ async def add_project_states_for_user(
                         by_alias=True, exclude_unset=True, exclude={"current_status"}
                     )
                 )
-                prj_node["state"].update(node_state_dict)
+                prj_node.setdefault("state", {}).update(node_state_dict)
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
