@@ -271,7 +271,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     highlightCompatibles: function(node1, port1Id) {
-      osparc.utils.Ports.getCompatiblePorts(node1, port1Id, this.getNode())
+      osparc.data.Resources.getCompatibleInputs(node1, port1Id, this.getNode())
         .then(compatiblePorts => {
           this._getChildren().forEach(child => {
             if ("portId" in child && compatiblePorts.includes(child.portId)) {
