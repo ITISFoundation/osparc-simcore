@@ -196,7 +196,7 @@ async def upload_file_to_storage(
             raise ExporterException(
                 f"Client replied with status={resp.status} and body '{upload_result}'"
             )
-        e_tag = resp.headers.get("Etag", None)
+        e_tag = json.loads(resp.headers.get("Etag", None))
         log.debug(
             "Upload status=%s, result: '%s', Etag %s", resp.status, upload_result, e_tag
         )
