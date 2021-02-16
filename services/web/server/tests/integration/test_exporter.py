@@ -70,10 +70,9 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
     "uuid",
     "creation_date",
     "last_change_date",
-    REMAPPING_KEY,
     "runHash",  # this changes after import, but the runnable states should remain the same
     "eTag",  # this must change
-    "runnableState",  # this should actually not be in the DB
+    REMAPPING_KEY,
 }
 
 
