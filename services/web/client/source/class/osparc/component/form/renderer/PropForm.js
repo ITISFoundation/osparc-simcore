@@ -275,7 +275,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       osparc.data.Resources.getCompatibleInputs(node1, port1Id, this.getNode())
         .then(compatiblePorts => {
           this._getChildren().forEach(child => {
-            if ("portId" in child && compatiblePorts.includes(child.key)) {
+            if ("key" in child && compatiblePorts.includes(child.key)) {
               child.setDecorator("material-textfield-focused");
             }
           });
@@ -287,7 +287,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __unhighlightAll: function() {
       this._getChildren().forEach(child => {
-        if ("portId" in child) {
+        if ("key" in child) {
           child.resetDecorator();
         }
       });
