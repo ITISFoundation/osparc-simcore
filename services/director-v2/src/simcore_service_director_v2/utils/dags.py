@@ -3,12 +3,7 @@ from typing import Any, Dict, List, Set
 
 import networkx as nx
 from models_library.projects import Workbench
-from models_library.projects_nodes import (
-    NodeID,
-    NodeIOState,
-    NodeRunnableState,
-    NodeState,
-)
+from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_nodes_io import PortLink
 from models_library.projects_pipeline import PipelineDetails
 from models_library.utils.nodes import compute_node_hash
@@ -65,52 +60,60 @@ def create_complete_dag_from_tasks(tasks: List[CompTaskAtDB]) -> nx.DiGraph:
     return dag_graph
 
 
-async def compute_node_io_state(
+async def compute_node_modified_state(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> NodeIOState:
+) -> bool:
     node = nodes_data_view[str(node_id)]
     # if the node has no output it is outdated for sure
     if not node["outputs"]:
-        return NodeIOState.OUTDATED
+        return True
     for output_port in node["outputs"]:
         if output_port is None:
-            return NodeIOState.OUTDATED
+            return True
     # maybe our inputs changed? let's compute the node hash and compare with the saved one
     async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
         return nodes_data_view[str(node_id)]
 
     computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
     if computed_hash != node["run_hash"]:
-        return NodeIOState.OUTDATED
-    return NodeIOState.OK
+        return True
+    return False
 
 
-async def compute_node_runnable_state(nodes_data_view, node_id) -> NodeRunnableState:
+async def compute_node_dependencies_state(nodes_data_view, node_id) -> List[NodeID]:
     node = nodes_data_view[str(node_id)]
     # check if the previous node is outdated or waits for dependencies... in which case this one has to wait
+    non_computed_dependencies: List[NodeID] = []
     for input_port in node.get("inputs", {}).values():
         if isinstance(input_port, PortLink):
             if node_needs_computation(nodes_data_view, input_port.node_uuid):
-                return NodeRunnableState.WAITING_FOR_DEPENDENCIES
+                non_computed_dependencies.append(input_port.node_uuid)
     # all good. ready
-    return NodeRunnableState.READY
+    return non_computed_dependencies
+
+
+kNODE_MODIFIED_STATE = "modified_state"
+kNODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
 
 
 async def compute_node_states(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ):
     node = nodes_data_view[str(node_id)]
-    node["io_state"] = await compute_node_io_state(nodes_data_view, node_id)
-    node["runnable_state"] = await compute_node_runnable_state(nodes_data_view, node_id)
+    node[kNODE_MODIFIED_STATE] = await compute_node_modified_state(
+        nodes_data_view, node_id
+    )
+    node[kNODE_DEPENDENCIES_TO_COMPUTE] = await compute_node_dependencies_state(
+        nodes_data_view, node_id
+    )
 
 
 def node_needs_computation(
     nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
 ) -> bool:
     node = nodes_data_view[str(node_id)]
-    return (node.get("io_state", NodeIOState.OK) == NodeIOState.OUTDATED) or (
-        node.get("runnable_state", NodeRunnableState.READY)
-        == NodeRunnableState.WAITING_FOR_DEPENDENCIES
+    return node.get(kNODE_MODIFIED_STATE, False) or node.get(
+        kNODE_DEPENDENCIES_TO_COMPUTE, None
     )
 
 
@@ -173,8 +176,8 @@ async def compute_pipeline_details(
         adjacency_list=nx.to_dict_of_lists(pipeline_dag),
         node_states={
             node_id: NodeState(
-                io_state=node_data.get("io_state"),
-                runnable_state=node_data.get("runnable_state"),
+                modified=node_data.get(kNODE_MODIFIED_STATE),
+                dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE),
             )
             for node_id, node_data in complete_dag.nodes.data()
             if node_id in pipeline_dag.nodes
