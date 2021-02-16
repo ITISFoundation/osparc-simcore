@@ -19,17 +19,21 @@ class File(BaseModel):
     # NOTE: see https://ant.apache.org/manual/Tasks/checksum.html
 
     id: UUID = Field(
-        ..., description="File unique identifier built upon its name and checksum"
+        ..., description="Unique identifier for a file stored in the system"
     )
-    name: str = Field(..., description="File with extenson")
-    content_type: Optional[str] = None
-    checksum: Optional[str] = Field(None, description="MD5 hash of the file's content")
+    filename: str = Field(..., description="Name of the file with extension")
+    content_type: Optional[str] = Field(
+        None, description="Guess of type content [EXPERIMENTAL]"
+    )
+    checksum: Optional[str] = Field(
+        None, description="MD5 hash of the file's content [EXPERIMENTAL]"
+    )
 
     class Config:
         schema_extra = {
             "example": {
                 "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
-                "name": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
+                "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
                 "content_type": "application/pdf",
                 "checksum": "de47d0e1229aa2dfb80097389094eadd-1",
             }
@@ -43,7 +47,7 @@ class File(BaseModel):
         mime_content_type, _ = guess_type(path.name)
         return cls(
             id=cls.create_id(md5check, path.name),
-            name=path.name,
+            filename=path.name,
             content_type=mime_content_type,
             checksum=md5check,
         )
@@ -63,7 +67,7 @@ class File(BaseModel):
 
         return cls(
             id=cls.create_id(md5check or file_size, file.filename, created_at),
-            name=file.filename,
+            filename=file.filename,
             content_type=file.content_type,
             checksum=md5check,
         )

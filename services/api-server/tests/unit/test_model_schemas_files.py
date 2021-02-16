@@ -81,7 +81,7 @@ def test_convert_between_file_models():
     apiserver_file_meta = to_file_api_model(storage_file_meta)
 
     assert apiserver_file_meta.id
-    assert apiserver_file_meta.name == "extensionless"
+    assert apiserver_file_meta.filename == "extensionless"
     assert apiserver_file_meta.content_type == "application/octet-stream"  # default
     assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
 

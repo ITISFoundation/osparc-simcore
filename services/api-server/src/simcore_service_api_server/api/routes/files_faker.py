@@ -128,7 +128,7 @@ async def download_file_fake_implementation(file_id: UUID):
         return FileResponse(
             str(file_path),
             media_type=metadata.content_type,
-            filename=metadata.name,
+            filename=metadata.filename,
         )
     except KeyError as err:
         raise HTTPException(

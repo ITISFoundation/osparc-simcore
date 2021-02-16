@@ -129,7 +129,7 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
 
     meta = File(
         id=file_id,
-        name=filename,
+        filename=filename,
         # FIXME: UploadFile gets content from the request header while here is
         # mimetypes.guess_type used. Sometimes it does not match.
         # Add column in meta_data table of storage and stop guessing :-)

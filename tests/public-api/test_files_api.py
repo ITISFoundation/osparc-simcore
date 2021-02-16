@@ -26,11 +26,11 @@ def test_upload_file(files_api: FilesApi, tmpdir):
     time.sleep(2)  # let time to upload to S3
 
     assert UUID(input_file.id), "Valid uuid ir required"
-    assert input_file.name == input_path.name
+    assert input_file.filename == input_path.name
 
-    # these two are optional
+    # these two are EXPERIMENTAL. Not reliable!
     assert input_file.content_type is None or input_file.content_type == "text/plain"
-    ## DISABLED: assert input_file.checksum is None or isinstance(input_file.checksum, str)
+    assert input_file.checksum is None or isinstance(input_file.checksum, str)
 
     same_file = files_api.get_file(input_file.id)
     assert same_file == input_file
@@ -41,8 +41,6 @@ def test_upload_file(files_api: FilesApi, tmpdir):
     # and doing direct upload?
     same_file = files_api.upload_file(file=input_path)
     # FIXME: assert input_file.checksum == same_file.checksum
-    # this checksum is therefore disabled for the moment
-    assert not hasattr(input_file, "check_sum"), "Remove until S3 problem is solved"
 
 
 def test_upload_list_and_download(files_api: FilesApi, tmpdir):
@@ -53,7 +51,7 @@ def test_upload_list_and_download(files_api: FilesApi, tmpdir):
     assert isinstance(input_file, File)
     time.sleep(2)  # let time to upload to S3 ??? <-- WHY???
 
-    assert input_file.name == input_path.name
+    assert input_file.filename == input_path.name
 
     myfiles = files_api.list_files()
     assert myfiles

@@ -35,7 +35,6 @@ router = APIRouter()
 #
 #
 
-
 common_error_responses = {
     404: {"description": "File not found"},
 }
@@ -57,7 +56,7 @@ async def list_files(
             assert stored_file_meta.user_id == user_id  # nosec
             assert stored_file_meta.file_id  # nosec
 
-            file_meta = to_file_api_model(stored_file_meta)
+            file_meta: File = to_file_api_model(stored_file_meta)
 
         except (ValidationError, ValueError, AttributeError) as err:
             logger.warning(
@@ -86,7 +85,6 @@ async def upload_file(
     # passby service for all uploaded data which can be a lot.
     # Next refactor should consider a solution that directly uploads from the client to S3
     # avoiding the data trafic via this service
-    #
 
     # assign file_id.
     file_meta: File = await File.create_from_uploaded(
@@ -96,7 +94,7 @@ async def upload_file(
 
     # upload to S3 using pre-signed link
     presigned_upload_link = await storage_client.get_upload_link(
-        user_id, file_meta.id, file_meta.name
+        user_id, file_meta.id, file_meta.filename
     )
 
     logger.info("Uploading %s to %s ...", file_meta, presigned_upload_link)
@@ -187,7 +185,7 @@ async def download_file(
 
     # download from S3 using pre-signed link
     presigned_download_link = await storage_client.get_download_link(
-        user_id, file_meta.id, file_meta.name
+        user_id, file_meta.id, file_meta.filename
     )
 
     logger.info("Downloading %s to %s ...", file_meta, presigned_download_link)
