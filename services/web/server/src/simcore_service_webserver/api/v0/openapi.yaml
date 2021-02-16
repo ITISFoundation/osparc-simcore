@@ -6374,37 +6374,40 @@ paths:
                                           example:
                                             - '15'
                                       deprecated: true
-                                    ioState:
-                                      title: IO State
-                                      description: the node's Inputs/Outputs state
-                                      default: OUTDATED
-                                      type: string
-                                      enum:
-                                        - OUTDATED
-                                        - OK
-                                    runnableState:
-                                      title: Runnable State
-                                      description: the node's runnable state
-                                      default: READY
-                                      type: string
-                                      enum:
-                                        - READY
-                                        - WAITING_FOR_DEPENDENCIES
                                     state:
-                                      title: RunningState
-                                      description: the node's running state
-                                      default: NOT_STARTED
-                                      enum:
-                                        - UNKNOWN
-                                        - NOT_STARTED
-                                        - PUBLISHED
-                                        - PENDING
-                                        - STARTED
-                                        - RETRY
-                                        - SUCCESS
-                                        - FAILED
-                                        - ABORTED
-                                      type: string
+                                      title: NodeState
+                                      type: object
+                                      properties:
+                                        modified:
+                                          title: Modified
+                                          description: true if the node's outputs need to be re-computed
+                                          default: true
+                                          type: boolean
+                                        dependencies:
+                                          title: Dependencies
+                                          description: contains the node inputs dependencies if they need to be computed first
+                                          type: array
+                                          items:
+                                            type: string
+                                            format: uuid
+                                        currentStatus:
+                                          description: the node's current state
+                                          default: NOT_STARTED
+                                          example:
+                                            - RUNNING
+                                            - FAILED
+                                          enum:
+                                            - UNKNOWN
+                                            - PUBLISHED
+                                            - NOT_STARTED
+                                            - PENDING
+                                            - STARTED
+                                            - RETRY
+                                            - SUCCESS
+                                            - FAILED
+                                            - ABORTED
+                                          type: string
+                                      additionalProperties: false
                               additionalProperties: true
                             ui:
                               type: object
@@ -6965,37 +6968,40 @@ paths:
                               example:
                                 - '15'
                           deprecated: true
-                        ioState:
-                          title: IO State
-                          description: the node's Inputs/Outputs state
-                          default: OUTDATED
-                          type: string
-                          enum:
-                            - OUTDATED
-                            - OK
-                        runnableState:
-                          title: Runnable State
-                          description: the node's runnable state
-                          default: READY
-                          type: string
-                          enum:
-                            - READY
-                            - WAITING_FOR_DEPENDENCIES
                         state:
-                          title: RunningState
-                          description: the node's running state
-                          default: NOT_STARTED
-                          enum:
-                            - UNKNOWN
-                            - NOT_STARTED
-                            - PUBLISHED
-                            - PENDING
-                            - STARTED
-                            - RETRY
-                            - SUCCESS
-                            - FAILED
-                            - ABORTED
-                          type: string
+                          title: NodeState
+                          type: object
+                          properties:
+                            modified:
+                              title: Modified
+                              description: true if the node's outputs need to be re-computed
+                              default: true
+                              type: boolean
+                            dependencies:
+                              title: Dependencies
+                              description: contains the node inputs dependencies if they need to be computed first
+                              type: array
+                              items:
+                                type: string
+                                format: uuid
+                            currentStatus:
+                              description: the node's current state
+                              default: NOT_STARTED
+                              example:
+                                - RUNNING
+                                - FAILED
+                              enum:
+                                - UNKNOWN
+                                - PUBLISHED
+                                - NOT_STARTED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILED
+                                - ABORTED
+                              type: string
+                          additionalProperties: false
                   additionalProperties: true
                 ui:
                   type: object
@@ -7436,37 +7442,40 @@ paths:
                                         example:
                                           - '15'
                                     deprecated: true
-                                  ioState:
-                                    title: IO State
-                                    description: the node's Inputs/Outputs state
-                                    default: OUTDATED
-                                    type: string
-                                    enum:
-                                      - OUTDATED
-                                      - OK
-                                  runnableState:
-                                    title: Runnable State
-                                    description: the node's runnable state
-                                    default: READY
-                                    type: string
-                                    enum:
-                                      - READY
-                                      - WAITING_FOR_DEPENDENCIES
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -8025,37 +8034,40 @@ paths:
                                         example:
                                           - '15'
                                     deprecated: true
-                                  ioState:
-                                    title: IO State
-                                    description: the node's Inputs/Outputs state
-                                    default: OUTDATED
-                                    type: string
-                                    enum:
-                                      - OUTDATED
-                                      - OK
-                                  runnableState:
-                                    title: Runnable State
-                                    description: the node's runnable state
-                                    default: READY
-                                    type: string
-                                    enum:
-                                      - READY
-                                      - WAITING_FOR_DEPENDENCIES
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -8620,37 +8632,40 @@ paths:
                                         example:
                                           - '15'
                                     deprecated: true
-                                  ioState:
-                                    title: IO State
-                                    description: the node's Inputs/Outputs state
-                                    default: OUTDATED
-                                    type: string
-                                    enum:
-                                      - OUTDATED
-                                      - OK
-                                  runnableState:
-                                    title: Runnable State
-                                    description: the node's runnable state
-                                    default: READY
-                                    type: string
-                                    enum:
-                                      - READY
-                                      - WAITING_FOR_DEPENDENCIES
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -9206,37 +9221,40 @@ paths:
                               example:
                                 - '15'
                           deprecated: true
-                        ioState:
-                          title: IO State
-                          description: the node's Inputs/Outputs state
-                          default: OUTDATED
-                          type: string
-                          enum:
-                            - OUTDATED
-                            - OK
-                        runnableState:
-                          title: Runnable State
-                          description: the node's runnable state
-                          default: READY
-                          type: string
-                          enum:
-                            - READY
-                            - WAITING_FOR_DEPENDENCIES
                         state:
-                          title: RunningState
-                          description: the node's running state
-                          default: NOT_STARTED
-                          enum:
-                            - UNKNOWN
-                            - NOT_STARTED
-                            - PUBLISHED
-                            - PENDING
-                            - STARTED
-                            - RETRY
-                            - SUCCESS
-                            - FAILED
-                            - ABORTED
-                          type: string
+                          title: NodeState
+                          type: object
+                          properties:
+                            modified:
+                              title: Modified
+                              description: true if the node's outputs need to be re-computed
+                              default: true
+                              type: boolean
+                            dependencies:
+                              title: Dependencies
+                              description: contains the node inputs dependencies if they need to be computed first
+                              type: array
+                              items:
+                                type: string
+                                format: uuid
+                            currentStatus:
+                              description: the node's current state
+                              default: NOT_STARTED
+                              example:
+                                - RUNNING
+                                - FAILED
+                              enum:
+                                - UNKNOWN
+                                - PUBLISHED
+                                - NOT_STARTED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILED
+                                - ABORTED
+                              type: string
+                          additionalProperties: false
                   additionalProperties: true
                 ui:
                   type: object
@@ -9677,37 +9695,40 @@ paths:
                                         example:
                                           - '15'
                                     deprecated: true
-                                  ioState:
-                                    title: IO State
-                                    description: the node's Inputs/Outputs state
-                                    default: OUTDATED
-                                    type: string
-                                    enum:
-                                      - OUTDATED
-                                      - OK
-                                  runnableState:
-                                    title: Runnable State
-                                    description: the node's runnable state
-                                    default: READY
-                                    type: string
-                                    enum:
-                                      - READY
-                                      - WAITING_FOR_DEPENDENCIES
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -10288,37 +10309,40 @@ paths:
                                         example:
                                           - '15'
                                     deprecated: true
-                                  ioState:
-                                    title: IO State
-                                    description: the node's Inputs/Outputs state
-                                    default: OUTDATED
-                                    type: string
-                                    enum:
-                                      - OUTDATED
-                                      - OK
-                                  runnableState:
-                                    title: Runnable State
-                                    description: the node's runnable state
-                                    default: READY
-                                    type: string
-                                    enum:
-                                      - READY
-                                      - WAITING_FOR_DEPENDENCIES
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -12027,37 +12051,40 @@ paths:
                                         example:
                                           - '15'
                                     deprecated: true
-                                  ioState:
-                                    title: IO State
-                                    description: the node's Inputs/Outputs state
-                                    default: OUTDATED
-                                    type: string
-                                    enum:
-                                      - OUTDATED
-                                      - OK
-                                  runnableState:
-                                    title: Runnable State
-                                    description: the node's runnable state
-                                    default: READY
-                                    type: string
-                                    enum:
-                                      - READY
-                                      - WAITING_FOR_DEPENDENCIES
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -12615,37 +12642,40 @@ paths:
                                         example:
                                           - '15'
                                     deprecated: true
-                                  ioState:
-                                    title: IO State
-                                    description: the node's Inputs/Outputs state
-                                    default: OUTDATED
-                                    type: string
-                                    enum:
-                                      - OUTDATED
-                                      - OK
-                                  runnableState:
-                                    title: Runnable State
-                                    description: the node's runnable state
-                                    default: READY
-                                    type: string
-                                    enum:
-                                      - READY
-                                      - WAITING_FOR_DEPENDENCIES
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
