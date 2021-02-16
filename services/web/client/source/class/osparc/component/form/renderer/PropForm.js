@@ -237,23 +237,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         uiElement.addListener("dragover", e => {
           if (e.supportsType("osparc-port-link")) {
+            // stop propagation, so that the form doesn't attend it
+            e.stopPropagation();
+
             const from = e.getRelatedTarget();
             const dragNodeId = from.node.getNodeId();
             const dragPortId = from.portId;
             const to = e.getCurrentTarget();
             const dropNodeId = to.node.getNodeId();
             const dropPortId = to.portId;
-            this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)
-              .then(compatible => {
-                if (compatible) {
-                  e.stopPropagation();
-                } else {
-                  e.preventDefault();
-                }
-              })
-              .catch(() => {
-                e.preventDefault();
-              });
+            this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
           }
         }, this);
 
@@ -263,8 +256,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             const dragNodeId = from.node.getNodeId();
             const dragPortId = from.portId;
             const to = e.getCurrentTarget();
+            const dropNodeId = to.node.getNodeId();
             const dropPortId = to.portId;
-            this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
+            this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)
+              .then(compatible => {
+                if (compatible) {
+                  this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
+                } else {
+                  osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Ports are not compatible"), "ERROR");
+                }
+              });
           }
         }, this);
       }
