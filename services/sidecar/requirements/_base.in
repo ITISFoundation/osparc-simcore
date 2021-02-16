@@ -9,24 +9,23 @@
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
 #
+-c ../../../packages/models-library/requirements/_base.in
 -c ../../../packages/postgres-database/requirements/_base.in
 -c ../../../packages/s3wrapper/requirements/_base.in
 -c ../../../packages/service-library/requirements/_base.in
--c ../../../packages/models-library/requirements/_base.in
-#
 
 
-urllib3
-aiofile
 aio-pika
 aiodocker
+aiofile
 aiofiles
 aiopg
-click
-sqlalchemy[postgresql_psycopg2binary]
+aioredlock
 celery[redis]
+click
 networkx
 packaging
 pydantic
+sqlalchemy[postgresql_psycopg2binary]
 tenacity
-aioredlock
+urllib3
