@@ -112,7 +112,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         e.addData("osparc-port-link", {
           "node1": this.getNode(),
           "port1Key": item.getPortKey(),
-          "compatiblePorts": []
+          "destinations": {}
         });
       }, this);
 

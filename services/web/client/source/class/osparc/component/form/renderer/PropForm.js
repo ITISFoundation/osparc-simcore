@@ -237,17 +237,35 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         uiElement.addListener("dragover", e => {
           if (e.supportsType("osparc-port-link")) {
-            // stop propagation, so that the form doesn't attend it
-            e.stopPropagation();
-
             const data = e.getData("osparc-port-link");
             const dragNodeId = data["node1"].getNodeId();
             const dragPortId = data["port1Key"];
+            const destinations = data["destinations"];
 
             const to = e.getCurrentTarget();
-            const dropNodeId = to.node.getNodeId();
-            const dropPortId = to.portId;
-            this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId);
+            const port2Key = to.portId;
+
+            const node2Id = this.getNode().getNodeId();
+            if (!(node2Id in destinations)) {
+              destinations[node2Id] = {};
+            }
+            if (!(port2Key in destinations[node2Id])) {
+              destinations[node2Id][port2Key] = "fetching";
+              const dropNodeId = to.node.getNodeId();
+              const dropPortId = to.portId;
+              this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)
+                .then(compatible => {
+                  destinations[node2Id][port2Key] = compatible;
+                });
+              return;
+            }
+
+            const compatible = destinations[node2Id][portId];
+            if (compatible === true) {
+              // stop propagation, so that the form doesn't attend it
+              e.stopPropagation();
+              this.__highlightCompatibles(portId);
+            }
           }
         }, this);
 
@@ -273,18 +291,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    __highlightCompatibles: function(node1, port1Id) {
-      osparc.data.Resources.getCompatibleInputs(node1, port1Id, this.getNode())
-        .then(compatiblePorts => {
-          this._getChildren().forEach(child => {
-            if ("key" in child && compatiblePorts.includes(child.key)) {
-              child.setDecorator("material-textfield-focused");
-            }
-          });
-        })
-        .catch(err => {
-          console.error(err);
-        });
+    __highlightCompatibles: function(compatiblePorts) {
+      this._getChildren().forEach(child => {
+        if ("key" in child && compatiblePorts.includes(child.key)) {
+          child.setDecorator("material-textfield-focused");
+        }
+      });
     },
 
     __unhighlightAll: function() {
@@ -301,7 +313,29 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           const data = e.getData("osparc-port-link");
           const node1 = data["node1"];
           const dragPortId = data["port1Key"];
-          this.__highlightCompatibles(node1, dragPortId);
+
+          const destinations = data["destinations"];
+          const node2Id = this.getNode().getNodeId();
+          if (!(node2Id in destinations)) {
+            destinations[node2Id] = {};
+          }
+          this.__getPortKeys().forEach(portKey => {
+            if (!(portKey in destinations[node2Id])) {
+              destinations[node2Id][portKey] = "fetching";
+            }
+          });
+
+          osparc.data.Resources.getCompatibleInputs(node1, dragPortId, this.getNode())
+            .then(compatiblePorts => {
+              this.__getPortKeys().forEach(portKey => {
+                destinations[node2Id][portKey] = compatiblePorts.includes(portKey);
+              });
+              this.__highlightCompatibles(compatiblePorts);
+            })
+            .catch(err => {
+              console.error(err);
+            });
+
           e.preventDefault();
         }
       }, this);
@@ -354,6 +388,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return false;
     },
 
+    __getPortKeys: function() {
+      return Object.keys(this._form.getControls());
+    },
+
     /* LINKS */
     getControlLink: function(key) {
       return this.__ctrlLinkMap[key];
@@ -365,7 +403,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __addLinkCtrls: function() {
-      Object.keys(this._form.getControls()).forEach(portId => {
+      this.__getPortKeys().forEach(portId => {
         this.__addLinkCtrl(portId);
       });
     },
@@ -480,7 +518,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __addParamCtrls: function() {
-      Object.keys(this._form.getControls()).forEach(portId => {
+      this.__getPortKeys().forEach(portId => {
         this.__addParamCtrl(portId);
       });
     },
