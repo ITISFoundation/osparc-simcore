@@ -240,9 +240,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             // stop propagation, so that the form doesn't attend it
             e.stopPropagation();
 
-            const from = e.getRelatedTarget();
-            const dragNodeId = from.node.getNodeId();
-            const dragPortId = from.portId;
+            const data = e.getData("osparc-port-link");
+            const dragNodeId = data["node1"].getNodeId();
+            const dragPortId = data["port1Key"];
+
             const to = e.getCurrentTarget();
             const dropNodeId = to.node.getNodeId();
             const dropPortId = to.portId;
@@ -252,9 +253,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         uiElement.addListener("drop", e => {
           if (e.supportsType("osparc-port-link")) {
-            const from = e.getRelatedTarget();
-            const dragNodeId = from.node.getNodeId();
-            const dragPortId = from.portId;
+            const data = e.getData("osparc-port-link");
+            const dragNodeId = data["node1"].getNodeId();
+            const dragPortId = data["port1Key"];
+
             const to = e.getCurrentTarget();
             const dropNodeId = to.node.getNodeId();
             const dropPortId = to.portId;
@@ -296,8 +298,10 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __attachDragoverHighlighter: function() {
       this.addListener("dragover", e => {
         if (e.supportsType("osparc-port-link")) {
-          const target = e.getRelatedTarget();
-          this.__highlightCompatibles(target.node, target.portId);
+          const data = e.getData("osparc-port-link");
+          const node1 = data["node1"];
+          const dragPortId = data["port1Key"];
+          this.__highlightCompatibles(node1, dragPortId);
           e.preventDefault();
         }
       }, this);

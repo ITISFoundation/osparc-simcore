@@ -108,10 +108,12 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         e.addAction("copy");
         // Register supported types
         e.addType("osparc-port-link");
-        e.addType("osparc-mapping");
-        item.node = this.getNode();
-        item.portId = item.getPortKey();
-        item.setNodeKey(this.getNode().getKey());
+
+        e.addData("osparc-port-link", {
+          "node1": this.getNode(),
+          "port1Key": item.getPortKey(),
+          "compatiblePorts": []
+        });
       }, this);
 
       const msgCb = decoratorName => msg => {
