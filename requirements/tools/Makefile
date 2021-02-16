@@ -61,8 +61,8 @@ reqs: _check_py36_version ## updates requirements of all package libraries
 
 
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
-.PHONY: build
-build build-nc:
+.PHONY: build	
+build build-nc: ## builds a container which can be used to upgrade depnencies
 	docker build $(if $(findstring -nc,$@),--no-cache,) --tag local/python-devkit:latest .
 
 
@@ -81,7 +81,7 @@ run: build ## Runs upgrade in a container
 
 
 .PHONY: shell
-shell:
+shell:	## mount the currrent project inside the container to update the requirements
 	docker run -it \
 		--workdir="/home/$(USER)/requirements/tools" \
     --volume="/etc/group:/etc/group:ro" \
@@ -98,5 +98,5 @@ shell:
 help: ## this colorful help
 	@echo "Recipes for '$(notdir $(CURDIR))':"
 	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""

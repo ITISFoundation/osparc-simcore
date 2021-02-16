@@ -104,6 +104,26 @@ In **windows**, it works under [WSL] (windows subsystem for linux). Some details
 
 In **MacOS**, [replacing the MacOS utilities with GNU utils](https://apple.stackexchange.com/a/69332) might be required.
 
+#### Upgrading services requirements
+
+Updates are upgraded using a docker container and pip-sync.
+Build and start the container:
+
+    cd requirements/tools
+    make build
+    make shell
+
+Once inside the container navigate to the service's requirements directory.
+
+To upgrade all requirements run:
+
+    make reqs
+
+To upgrade a single requirement named `fastapi`run:
+
+    make reqs upgrade=fastapi
+
+
 ## Releases
 
 **WARNING** This application is **still under development**.
