@@ -83,13 +83,13 @@ async def compute_node_modified_state(
 async def compute_node_dependencies_state(nodes_data_view, node_id) -> List[NodeID]:
     node = nodes_data_view[str(node_id)]
     # check if the previous node is outdated or waits for dependencies... in which case this one has to wait
-    non_computed_dependencies: List[NodeID] = []
+    non_computed_dependencies: Set[NodeID] = set()
     for input_port in node.get("inputs", {}).values():
         if isinstance(input_port, PortLink):
             if node_needs_computation(nodes_data_view, input_port.node_uuid):
-                non_computed_dependencies.append(input_port.node_uuid)
+                non_computed_dependencies.add(input_port.node_uuid)
     # all good. ready
-    return non_computed_dependencies
+    return list(non_computed_dependencies)
 
 
 kNODE_MODIFIED_STATE = "modified_state"
