@@ -20,10 +20,6 @@ from .config import APP_CLIENT_SESSION_KEY
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 from .utils import get_swarm_network
-from .service_sidecar import (
-    start_service_sidecar_stack_for_service,
-    stop_service_sidecar_stack_for_service,
-)
 
 log = logging.getLogger(__name__)
 
@@ -746,10 +742,10 @@ async def _create_node(
             inter_docker_network_id,
         )
         # TODO: call into director-v2 to start it
-        service_sidecar_start_result = await start_service_sidecar_stack_for_service(
-            app, user_id, project_id, service["key"], service["tag"], node_uuid
-        )
-        log.debug("Result of service-sidecar start %s", service_sidecar_start_result)
+        # service_sidecar_start_result = await start_service_sidecar_stack_for_service(
+        #    app, user_id, project_id, service["key"], service["tag"], node_uuid
+        # )
+        # log.debug("Result of service-sidecar start %s", service_sidecar_start_result)
         containers_meta_data.append(service_meta_data)
 
     return containers_meta_data
@@ -991,9 +987,10 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         try:
             log.debug("removing services...")
             for service in list_running_services_with_uuid:
-                await stop_service_sidecar_stack_for_service(
-                    app=app, node_uuid=node_uuid
-                )
+                # TODO: call into director-v2 to stop
+                # await stop_service_sidecar_stack_for_service(
+                #    app=app, node_uuid=node_uuid
+                # )
                 await client.services.delete(service["Spec"]["Name"])
             log.debug("removed services, now removing network...")
         except aiodocker.exceptions.DockerError as err:
