@@ -234,15 +234,23 @@ async def _fix_node_run_hashes_based_on_old_project(
         new_node_id = node_mapping.get(old_node_id)
         if new_node_id is None:
             # this should not happen
+            log.warning("could not find new node id %s", new_node_id)
             continue
         new_node = project.workbench.get(new_node_id)
         if new_node is None:
             # this should also not happen
+            log.warning("could not find new node data from id %s", new_node_id)
             continue
 
         # check the node status in the old project
         old_computed_hash = await compute_node_hash(
             old_node_id, project_node_io_payload_cb(original_project)
+        )
+        log.debug(
+            "node %s old run hash: %s, computed old hash: %s",
+            old_node_id,
+            old_node.run_hash,
+            old_computed_hash,
         )
         node_needs_update = old_computed_hash != old_node.run_hash
         # set the new node hash
