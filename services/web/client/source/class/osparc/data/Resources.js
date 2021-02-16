@@ -192,16 +192,19 @@ qx.Class.define("osparc.data.Resources", {
        * PORT COMPATIBILITY
        */
       "portsCompatibility": {
-        matchInputs: {
-          // get_compatible_inputs_given_source_output_handler
-          method: "GET",
-          url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
-        },
-        matchOutputs: {
-          useCache: false,
-          // get_compatible_outputs_given_target_input_handler
-          method: "GET",
-          url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
+        useCache: true,
+        endpoints: {
+          matchInputs: {
+            // get_compatible_inputs_given_source_output_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
+          },
+          matchOutputs: {
+            useCache: false,
+            // get_compatible_outputs_given_target_input_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
+          }
         }
       },
       /*
@@ -735,7 +738,7 @@ qx.Class.define("osparc.data.Resources", {
     getCompatibleInputs: function(node1, portId1, node2) {
       const url = this.__getMatchInputsUrl(node1, portId1, node2);
 
-      const storedCPs = this.__getCached("portsCompatibility");
+      const storedCPs = this.getInstance().__getCached("portsCompatibility");
       if (storedCPs) {
         const stored = storedCPs.find(storedCP => storedCP[0] === JSON.stringify(url));
         if (stored) {
@@ -747,11 +750,11 @@ qx.Class.define("osparc.data.Resources", {
       };
       return this.fetch("portsCompatibility", "matchInputs", params)
         .then(data => {
-          this.__setCached("portsCompatibility", [JSON.stringify(url), data]);
+          this.getInstance().__setCached("portsCompatibility", [JSON.stringify(url), data]);
         });
     },
 
-    getMatchInputsUrl: function(node1, portId1, node2) {
+    __getMatchInputsUrl: function(node1, portId1, node2) {
       return {
         "serviceKey2": encodeURIComponent(node2.getKey()),
         "serviceVersion2": node2.getVersion(),
