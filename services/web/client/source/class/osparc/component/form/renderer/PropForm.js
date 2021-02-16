@@ -276,16 +276,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             const dragPortId = data["port1Key"];
 
             const to = e.getCurrentTarget();
-            const dropNodeId = to.node.getNodeId();
             const dropPortId = to.portId;
-            this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)
-              .then(compatible => {
-                if (compatible) {
-                  this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
-                } else {
-                  osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Ports are not compatible"), "ERROR");
-                }
-              });
+            this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
           }
         }, this);
       }
