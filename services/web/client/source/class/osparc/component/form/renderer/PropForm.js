@@ -270,11 +270,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    highlightCompatibles: function(node1, port1Id) {
+    __highlightCompatibles: function(node1, port1Id) {
       osparc.data.Resources.getCompatibleInputs(node1, port1Id, this.getNode())
         .then(compatiblePorts => {
           this._getChildren().forEach(child => {
-            if ("portId" in child && compatiblePorts.includes(child.portId)) {
+            if ("portId" in child && compatiblePorts.includes(child.key)) {
               child.setDecorator("material-textfield-focused");
             }
           });
@@ -296,7 +296,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.addListener("dragover", e => {
         if (e.supportsType("osparc-port-link")) {
           const target = e.getRelatedTarget();
-          this.highlightCompatibles(target.node, target.portId);
+          this.__highlightCompatibles(target.node, target.portId);
           e.preventDefault();
         }
       }, this);
