@@ -8,6 +8,7 @@
 """
 # pylint: disable=too-many-arguments
 
+import json
 import logging
 from collections import defaultdict
 from pprint import pformat
@@ -291,15 +292,18 @@ async def update_project_node_state(
     app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
 ) -> Dict:
     log.debug(
-        "updating node %s state in project %s for user %s", node_id, project_id, user_id
+        "updating node %s current state in project %s for user %s",
+        node_id,
+        project_id,
+        user_id,
     )
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
-    if project["workbench"][node_id].get("state") == new_state:
+    if project["workbench"][node_id].get("state", {}).get("currentStatus") == new_state:
         # nothing to do here
         return project
-    project["workbench"][node_id]["state"] = new_state
+    project["workbench"][node_id]["state"].update({"currentStatus": new_state})
     if RunningState(new_state) in [
         RunningState.PUBLISHED,
         RunningState.PENDING,
@@ -522,8 +526,10 @@ async def add_project_states_for_user(
                 prj_node = project["workbench"].get(str(node_id))
                 if prj_node is None:
                     continue
-                prj_node["ioState"] = node_state.io_state
-                prj_node["runnableState"] = node_state.runnable_state
+                node_state_dict = json.loads(
+                    node_state.json(by_alias=True, exclude_unset=True)
+                )
+                prj_node["state"].update(node_state_dict)
 
     project["state"] = ProjectState(
         locked=lock_state, state=ProjectRunningState(value=running_state)
