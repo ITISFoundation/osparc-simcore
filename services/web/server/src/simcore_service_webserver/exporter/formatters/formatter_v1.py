@@ -210,7 +210,12 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
     db = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: Dict = json.loads(project.json(exclude_none=True, by_alias=True))
+    project_in: Dict = json.loads(
+        project.json(
+            exclude_none=True,
+            by_alias=True,
+        )
+    )
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: Dict = await db.add_project(
@@ -275,6 +280,12 @@ async def _fix_file_e_tags(
         for output in node.outputs.values():
             if isinstance(output, BaseFileLink) and output.path == str(file_path):
                 output.e_tag = e_tag
+
+
+async def _remove_runtime_states(project: Project):
+    for node_data in project.workbench.values():
+        node_data.state.modified = None
+        node_data.state.dependencies = None
 
 
 async def import_files_and_validate_project(
@@ -355,6 +366,7 @@ async def import_files_and_validate_project(
             project, project_file, shuffled_data
         )
         await _fix_file_e_tags(project, links_to_new_e_tags)
+        await _remove_runtime_states(project)
         await add_new_project(app, project, user_id)
     except Exception as e:
         log.warning(
