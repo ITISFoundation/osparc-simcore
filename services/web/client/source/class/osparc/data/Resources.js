@@ -749,8 +749,9 @@ qx.Class.define("osparc.data.Resources", {
       };
       return this.fetch("portsCompatibility", "matchInputs", params)
         .then(data => {
+          cachedCPs[strUrl] = data;
           // eslint-disable-next-line no-underscore-dangle
-          this.getInstance().__setCached("portsCompatibility", cachedCPs[strUrl] = data);
+          this.getInstance().__setCached("portsCompatibility", cachedCPs);
           return data;
         });
     },
