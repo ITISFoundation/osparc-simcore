@@ -46,16 +46,16 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       event: "changeInteractiveStatus"
     },
 
-    ioState: {
-      check: ["OUTDATED", "OK"],
+    modifiedStatus: {
+      check: "Boolean",
       nullable: true,
-      event: "changeIoStateStatus"
+      event: "changeModifiedStatus"
     },
 
-    runnableState: {
-      check: ["READY", "WAITING_FOR_DEPENDENCIES"],
+    dependenciesStatus: {
+      check: "Array",
       nullable: true,
-      event: "changeRunnableStateStatus"
+      event: "changeDependenciesStatus"
     }
   }
 });
