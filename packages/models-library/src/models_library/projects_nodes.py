@@ -3,7 +3,7 @@
 """
 
 from copy import deepcopy
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 from pydantic import (
     BaseModel,
@@ -59,7 +59,7 @@ class NodeState(BaseModel):
     modified: bool = Field(
         True, description="true if the node's outputs need to be re-computed"
     )
-    dependencies: List[NodeID] = Field(
+    dependencies: Set[NodeID] = Field(
         default_factory=list,
         description="contains the node inputs dependencies if they need to be computed first",
     )

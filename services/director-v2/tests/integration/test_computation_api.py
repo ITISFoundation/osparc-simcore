@@ -16,7 +16,7 @@ from uuid import UUID, uuid4
 import pytest
 import sqlalchemy as sa
 from models_library.projects import ProjectAtDB
-from models_library.projects_nodes import NodeIOState, NodeRunnableState, NodeState
+from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
@@ -278,8 +278,8 @@ def fake_workbench_computational_pipeline_details_completed(
 ) -> PipelineDetails:
     completed_pipeline_details = deepcopy(fake_workbench_computational_pipeline_details)
     for node_state in completed_pipeline_details.node_states.values():
-        node_state.io_state = NodeIOState.OK
-        node_state.runnable_state = NodeRunnableState.READY
+        node_state.modified = False
+        node_state.dependencies = []
     return completed_pipeline_details
 
 
@@ -344,10 +344,10 @@ PartialComputationParams = namedtuple(
                 subgraph_elements=[0, 1],
                 exp_pipeline_adj_list={1: []},
                 exp_node_states={
-                    1: NodeState(
-                        io_state=NodeIOState.OUTDATED,
-                        runnable_state=NodeRunnableState.READY,
-                    )
+                    1: {
+                        "modified": True,
+                        "dependencies": [],
+                    }
                 },
             ),
             id="element 0,1",
@@ -357,22 +357,22 @@ PartialComputationParams = namedtuple(
                 subgraph_elements=[1, 2, 4],
                 exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
                 exp_node_states={
-                    1: NodeState(
-                        io_state=NodeIOState.OUTDATED,
-                        runnable_state=NodeRunnableState.READY,
-                    ),
-                    2: NodeState(
-                        io_state=NodeIOState.OUTDATED,
-                        runnable_state=NodeRunnableState.WAITING_FOR_DEPENDENCIES,
-                    ),
-                    3: NodeState(
-                        io_state=NodeIOState.OUTDATED,
-                        runnable_state=NodeRunnableState.READY,
-                    ),
-                    4: NodeState(
-                        io_state=NodeIOState.OUTDATED,
-                        runnable_state=NodeRunnableState.WAITING_FOR_DEPENDENCIES,
-                    ),
+                    1: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [1],
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                    },
                 },
             ),
             id="element 1,2,4",
@@ -387,14 +387,14 @@ def test_run_partial_computation(
     fake_workbench_without_outputs: Dict[str, Any],
     subgraph_elements: List[int],
     exp_pipeline_adj_list: Dict[int, List[str]],
-    exp_node_states: Dict[int, NodeState],
+    exp_node_states: Dict[int, Dict[str, Any]],
 ):
     sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
 
     def _convert_to_pipeline_details(
         project: ProjectAtDB,
         exp_pipeline_adj_list: Dict[int, List[str]],
-        exp_node_states: Dict[int, NodeState],
+        exp_node_states: Dict[int, Dict[str, Any]],
     ) -> PipelineDetails:
         workbench_node_uuids = list(project.workbench.keys())
         converted_adj_list: Dict[NodeID, Dict[NodeID, List[NodeID]]] = {}
@@ -403,7 +403,13 @@ def test_run_partial_computation(
                 NodeID(workbench_node_uuids[n]) for n in next_nodes
             ]
         converted_node_states: Dict[NodeID, NodeState] = {
-            NodeID(workbench_node_uuids[n]): s for n, s in exp_node_states.items()
+            NodeID(workbench_node_uuids[n]): NodeState(
+                modified=s["modified"],
+                dependencies={
+                    workbench_node_uuids[dep_n] for dep_n in s["dependencies"]
+                },
+            )
+            for n, s in exp_node_states.items()
         }
         return PipelineDetails(
             adjacency_list=converted_adj_list, node_states=converted_node_states
@@ -444,12 +450,7 @@ def test_run_partial_computation(
     expected_pipeline_details = _convert_to_pipeline_details(
         sleepers_project,
         exp_pipeline_adj_list,
-        {
-            n: NodeState(
-                io_state=NodeIOState.OK, runnable_state=NodeRunnableState.READY
-            )
-            for n in exp_node_states
-        },
+        {n: {"modified": False, "dependencies": []} for n in exp_node_states},
     )
     _assert_computation_task_out_obj(
         client,
