@@ -726,6 +726,16 @@ qx.Class.define("osparc.data.Resources", {
       };
     },
 
+    getMatchInputsUrl: function(node1, portId1, node2) {
+      return {
+        "serviceKey2": encodeURIComponent(node2.getKey()),
+        "serviceVersion2": node2.getVersion(),
+        "serviceKey1": encodeURIComponent(node1.getKey()),
+        "serviceVersion1": node1.getVersion(),
+        "portKey1": portId1
+      };
+    },
+
     getErrorMsg: function(resp) {
       const error = resp["error"];
       return error ? error["errors"][0].message : null;
