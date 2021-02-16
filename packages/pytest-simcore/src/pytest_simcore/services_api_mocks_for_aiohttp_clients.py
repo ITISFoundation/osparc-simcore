@@ -22,25 +22,26 @@ FULL_PROJECT_PIPELINE_ADJACENCY: Dict[str, List[str]] = {
 }
 
 FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, str]] = {
-    "62bca361-8594-48c8-875e-b8577e868aec": {
-        "io_state": "OUTDATED",
-        "runnable_state": "READY",
-    },
+    "62bca361-8594-48c8-875e-b8577e868aec": {"modified": True, "dependencies": []},
     "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd": {
-        "io_state": "OUTDATED",
-        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+        "modified": True,
+        "dependencies": ["62bca361-8594-48c8-875e-b8577e868aec"],
     },
     "5284bb5b-b068-4d0e-9075-3d5d8eec5060": {
-        "io_state": "OK",
-        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+        "modified": True,
+        "dependencies": ["62bca361-8594-48c8-875e-b8577e868aec"],
     },
     "750454a8-b450-43ce-a012-40b669f7d28c": {
-        "io_state": "OUTDATED",
-        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+        "modified": True,
+        "dependencies": ["62bca361-8594-48c8-875e-b8577e868aec"],
     },
     "e83a359a-1efe-41d3-83aa-a285afbfaf12": {
-        "io_state": "OK",
-        "runnable_state": "WAITING_FOR_DEPENDENCIES",
+        "modified": True,
+        "dependencies": [
+            "e0d7a1a5-0700-42c7-b033-97f72ac4a5cd",
+            "5284bb5b-b068-4d0e-9075-3d5d8eec5060",
+            "750454a8-b450-43ce-a012-40b669f7d28c",
+        ],
     },
 }
 
@@ -67,14 +68,17 @@ def creation_cb(url, **kwargs) -> CallbackResult:
                 "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
                 "0bdf824f-57cb-4e38-949e-fd12c184f000",
             ]
-            node_states[node_id] = {"io_state": "OUTDATED", "runnable_state": "READY"}
+            node_states[node_id] = {"state": {"modified": True, "dependencies": []}}
         node_states["62237c33-8d6c-4709-aa92-c3cf693dd6d2"] = {
-            "io_state": "OUTDATED",
-            "runnable_state": "WAITING_FOR_DEPENDENCIES",
+            "modified": True,
+            "dependencies": ["2f493631-30b4-4ad8-90f2-a74e4b46fe73"],
         }
         node_states["0bdf824f-57cb-4e38-949e-fd12c184f000"] = {
-            "io_state": "OUTDATED",
-            "runnable_state": "WAITING_FOR_DEPENDENCIES",
+            "modified": True,
+            "dependencies": [
+                "2f493631-30b4-4ad8-90f2-a74e4b46fe73",
+                "62237c33-8d6c-4709-aa92-c3cf693dd6d2",
+            ],
         }
 
     return CallbackResult(
