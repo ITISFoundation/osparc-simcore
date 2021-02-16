@@ -47,15 +47,11 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     project_id: str,
     service_key: str,
     service_tag: str,
-    main_service: bool,
     node_uuid: str,
-    node_base_path: str,
-    internal_network_id: Optional[str],
 ) -> Dict:
     debug_message = (
         f"SERVICE_SIDECAR: user_id={user_id}, project_id={project_id}, service_key={service_key}, "
-        f"service_tag={service_tag}, main_service={main_service}, node_uuid={node_uuid}, "
-        f"node_base_path={node_base_path}, internal_network_id={internal_network_id}"
+        f"service_tag={service_tag}, node_uuid={node_uuid}"
     )
     # TODO: change the current interface , parameters will be ignored by this service
     # - internal_network_id
