@@ -732,6 +732,7 @@ async def _create_node(
     containers_meta_data = list()
     for service in list_of_services:
         log.debug("Service to start info %s", service)
+        # TODO: based on the integration version need to start with sidervice-sidecar or old pattern
         service_meta_data = await _start_docker_service(
             app,
             client,
@@ -744,6 +745,7 @@ async def _create_node(
             node_base_path,
             inter_docker_network_id,
         )
+        # TODO: call into director-v2 to start it
         service_sidecar_start_result = await start_service_sidecar_stack_for_service(
             app, user_id, project_id, service["key"], service["tag"], node_uuid
         )

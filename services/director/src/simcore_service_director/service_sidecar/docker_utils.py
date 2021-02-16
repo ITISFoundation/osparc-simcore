@@ -130,3 +130,18 @@ async def get_service_sidecars_to_monitor(
         service_sidecar_services.append(entry)
 
     return service_sidecar_services
+
+
+async def get_swarm_container_for_service(service_id: str) -> Dict[str, Any]:
+    # pylint: disable=not-async-context-manager
+    async with docker_client() as client:
+        running_services = await client.tasks.list(filters={"service": service_id})
+
+    service_container_count = len(running_services)
+    if service_container_count != 1:
+        raise ServiceSidecarError(
+            f"Expected to find 1 container for service '{service_id}', "
+            f"but '{service_container_count}' were found!"
+        )
+
+    return running_services

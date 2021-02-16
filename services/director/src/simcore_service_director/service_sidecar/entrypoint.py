@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from aiohttp import web
 
@@ -10,7 +10,12 @@ from .constants import (
     FIXED_SERVICE_NAME_SIDECAR,
     SERVICE_SIDECAR_PREFIX,
 )
-from .docker_utils import create_network, create_service_and_get_id, get_swarm_network
+from .docker_utils import (
+    create_network,
+    create_service_and_get_id,
+    get_swarm_network,
+    get_swarm_container_for_service,
+)
 from .monitor import get_monitor
 from .utils import unused_port
 
@@ -101,23 +106,8 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
 
-    service_sidecar_proxy_meta_data = await _dyn_proxy_entrypoint_assembly(
-        service_sidecar_settings=service_sidecar_settings,
-        node_uuid=node_uuid,
-        io_simcore_zone=io_simcore_zone,
-        service_sidecar_network_name=service_sidecar_network_name,
-        service_sidecar_network_id=service_sidecar_network_id,
-        service_name=service_name_proxy,
-        swarm_network_id=swarm_network_id,
-        swarm_network_name=swarm_network_name,
-        user_id=user_id,
-        project_id=project_id,
-    )
-
-    service_sidecar_proxy_id = await create_service_and_get_id(
-        service_sidecar_proxy_meta_data
-    )
-    logging.debug("sidecar-service-proxy id %s", service_sidecar_proxy_id)
+    # TODO: invert order of service startup
+    # - start the service and then position the sidecar side to side on the same node
 
     service_sidecar_meta_data = await _dyn_service_sidecar_assembly(
         service_sidecar_settings=service_sidecar_settings,
@@ -135,6 +125,28 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
 
     service_sidecar_id = await create_service_and_get_id(service_sidecar_meta_data)
     logging.debug("sidecar-service id %s", service_sidecar_id)
+
+    # TODO: finish here once migrated to director-v2
+    task_data = await get_swarm_container_for_service(service_sidecar_id)
+    logging.debug("Task inspect data %s", task_data)
+
+    service_sidecar_proxy_meta_data = await _dyn_proxy_entrypoint_assembly(
+        service_sidecar_settings=service_sidecar_settings,
+        node_uuid=node_uuid,
+        io_simcore_zone=io_simcore_zone,
+        service_sidecar_network_name=service_sidecar_network_name,
+        service_sidecar_network_id=service_sidecar_network_id,
+        service_name=service_name_proxy,
+        swarm_network_id=swarm_network_id,
+        swarm_network_name=swarm_network_name,
+        user_id=user_id,
+        project_id=project_id,
+    )
+
+    service_sidecar_proxy_id = await create_service_and_get_id(
+        service_sidecar_proxy_meta_data
+    )
+    logging.debug("sidecar-service-proxy id %s", service_sidecar_proxy_id)
 
     # services where successfully started and they can be monitored
     monitor = get_monitor(app)
