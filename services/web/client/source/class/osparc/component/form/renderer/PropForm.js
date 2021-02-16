@@ -232,18 +232,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.set({
           droppable: true
         });
-        uiElement.node = this.getNode();
-        uiElement.portId = portId;
 
         uiElement.addListener("dragover", e => {
           if (e.supportsType("osparc-port-link")) {
             const data = e.getData("osparc-port-link");
-            const dragNodeId = data["node1"].getNodeId();
-            const dragPortId = data["port1Key"];
+            const node1Id = data["node1"].getNodeId();
+            const port1Key = data["port1Key"];
             const destinations = data["destinations"];
-
-            const to = e.getCurrentTarget();
-            const port2Key = to.portId;
+            const port2Key = portId;
 
             const node2Id = this.getNode().getNodeId();
             if (!(node2Id in destinations)) {
@@ -251,9 +247,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             }
             if (!(port2Key in destinations[node2Id])) {
               destinations[node2Id][port2Key] = "fetching";
-              const dropNodeId = to.node.getNodeId();
-              const dropPortId = to.portId;
-              this.__arePortsCompatible(dragNodeId, dragPortId, dropNodeId, dropPortId)
+              this.__arePortsCompatible(node1Id, port1Key, node2Id, port2Key)
                 .then(compatible => {
                   destinations[node2Id][port2Key] = compatible;
                 });
@@ -271,13 +265,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         uiElement.addListener("drop", e => {
           if (e.supportsType("osparc-port-link")) {
+            const port2Key = portId;
             const data = e.getData("osparc-port-link");
-            const dragNodeId = data["node1"].getNodeId();
-            const dragPortId = data["port1Key"];
-
-            const to = e.getCurrentTarget();
-            const dropPortId = to.portId;
-            this.getNode().addPortLink(dropPortId, dragNodeId, dragPortId);
+            const node1Id = data["node1"].getNodeId();
+            const port1Key = data["port1Key"];
+            this.getNode().addPortLink(port2Key, node1Id, port1Key);
           }
         }, this);
       }
