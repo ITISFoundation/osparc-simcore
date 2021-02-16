@@ -822,12 +822,14 @@
             },
             "node_states": {
               "2fb4808a-e403-4a46-b52c-892560d27862": {
-                "io_state": "OUTDATED",
-                "runnable_state": "READY"
+                "modified": true,
+                "dependencies": []
               },
               "19a40c7b-0a40-458a-92df-c77a5df7c886": {
-                "io_state": "OK",
-                "runnable_state": "WAITING_FOR_DEPENDENCIES"
+                "modified": false,
+                "dependencies": [
+                  "2fb4808a-e403-4a46-b52c-892560d27862"
+                ]
               }
             }
           }
@@ -896,15 +898,6 @@
           }
         }
       },
-      "NodeIOState": {
-        "title": "NodeIOState",
-        "enum": [
-          "OK",
-          "OUTDATED"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
       "NodeRequirement": {
         "title": "NodeRequirement",
         "enum": [
@@ -915,40 +908,37 @@
         "type": "string",
         "description": "An enumeration."
       },
-      "NodeRunnableState": {
-        "title": "NodeRunnableState",
-        "enum": [
-          "WAITING_FOR_DEPENDENCIES",
-          "READY"
-        ],
-        "type": "string",
-        "description": "An enumeration."
-      },
       "NodeState": {
         "title": "NodeState",
-        "required": [
-          "io_state",
-          "runnable_state"
-        ],
         "type": "object",
         "properties": {
-          "io_state": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/NodeIOState"
-              }
-            ],
-            "description": "represents the state of the inputs outputs"
+          "modified": {
+            "title": "Modified",
+            "type": "boolean",
+            "description": "true if the node's outputs need to be re-computed",
+            "default": true
           },
-          "runnable_state": {
+          "dependencies": {
+            "title": "Dependencies",
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "contains the node inputs dependencies if they need to be computed first"
+          },
+          "currentStatus": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/NodeRunnableState"
+                "$ref": "#/components/schemas/RunningState"
               }
             ],
-            "description": "represent the runnable state of the node"
+            "description": "the node's current state",
+            "default": "NOT_STARTED"
           }
-        }
+        },
+        "additionalProperties": false
       },
       "PipelineDetails": {
         "title": "PipelineDetails",
@@ -1102,7 +1092,7 @@
                 "$ref": "#/components/schemas/ServiceState"
               }
             ],
-            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start\n"
+            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start"
           },
           "service_message": {
             "title": "Service Message",
@@ -1188,7 +1178,7 @@
         }
       },
       "ServiceDockerData": {
-        "title": "simcore node",
+        "title": "ServiceDockerData",
         "required": [
           "name",
           "description",
