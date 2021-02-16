@@ -279,7 +279,7 @@ def fake_workbench_computational_pipeline_details_completed(
     completed_pipeline_details = deepcopy(fake_workbench_computational_pipeline_details)
     for node_state in completed_pipeline_details.node_states.values():
         node_state.modified = False
-        node_state.dependencies = []
+        node_state.dependencies = set()
     return completed_pipeline_details
 
 
