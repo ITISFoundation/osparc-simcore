@@ -6387,6 +6387,7 @@ paths:
                                           title: Dependencies
                                           description: contains the node inputs dependencies if they need to be computed first
                                           type: array
+                                          uniqueItems: true
                                           items:
                                             type: string
                                             format: uuid
@@ -6981,6 +6982,7 @@ paths:
                               title: Dependencies
                               description: contains the node inputs dependencies if they need to be computed first
                               type: array
+                              uniqueItems: true
                               items:
                                 type: string
                                 format: uuid
@@ -7455,6 +7457,7 @@ paths:
                                         title: Dependencies
                                         description: contains the node inputs dependencies if they need to be computed first
                                         type: array
+                                        uniqueItems: true
                                         items:
                                           type: string
                                           format: uuid
@@ -8047,6 +8050,7 @@ paths:
                                         title: Dependencies
                                         description: contains the node inputs dependencies if they need to be computed first
                                         type: array
+                                        uniqueItems: true
                                         items:
                                           type: string
                                           format: uuid
@@ -8645,6 +8649,7 @@ paths:
                                         title: Dependencies
                                         description: contains the node inputs dependencies if they need to be computed first
                                         type: array
+                                        uniqueItems: true
                                         items:
                                           type: string
                                           format: uuid
@@ -9234,6 +9239,7 @@ paths:
                               title: Dependencies
                               description: contains the node inputs dependencies if they need to be computed first
                               type: array
+                              uniqueItems: true
                               items:
                                 type: string
                                 format: uuid
@@ -9708,6 +9714,7 @@ paths:
                                         title: Dependencies
                                         description: contains the node inputs dependencies if they need to be computed first
                                         type: array
+                                        uniqueItems: true
                                         items:
                                           type: string
                                           format: uuid
@@ -10322,6 +10329,7 @@ paths:
                                         title: Dependencies
                                         description: contains the node inputs dependencies if they need to be computed first
                                         type: array
+                                        uniqueItems: true
                                         items:
                                           type: string
                                           format: uuid
@@ -12064,6 +12072,7 @@ paths:
                                         title: Dependencies
                                         description: contains the node inputs dependencies if they need to be computed first
                                         type: array
+                                        uniqueItems: true
                                         items:
                                           type: string
                                           format: uuid
@@ -12655,6 +12664,7 @@ paths:
                                         title: Dependencies
                                         description: contains the node inputs dependencies if they need to be computed first
                                         type: array
+                                        uniqueItems: true
                                         items:
                                           type: string
                                           format: uuid
