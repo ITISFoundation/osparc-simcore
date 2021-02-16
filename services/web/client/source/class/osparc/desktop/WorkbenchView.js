@@ -535,7 +535,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (node && nodeData) {
             node.setOutputData(nodeData.outputs);
             if ("state" in nodeData && node.isComputational()) {
-              node.getStatus().setRunningStatus(nodeData["state"]);
+              node.getStatus().setRunningStatus(nodeData["state"]["currentStatus"]);
             }
             if ("progress" in nodeData) {
               const progress = Number.parseInt(nodeData["progress"]);
