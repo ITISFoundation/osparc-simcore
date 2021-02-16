@@ -270,8 +270,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       }
     },
 
-    __highlightCompatibles: function(output) {
-      osparc.utils.Ports.getCompatiblePorts(output.node, output.portId, this.getNode())
+    highlightCompatibles: function(node1, port1Id) {
+      osparc.utils.Ports.getCompatiblePorts(node1, port1Id, this.getNode())
         .then(compatiblePorts => {
           this._getChildren().forEach(child => {
             if ("portId" in child && compatiblePorts.includes(child.portId)) {
@@ -295,7 +295,8 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __attachDragoverHighlighter: function() {
       this.addListener("dragover", e => {
         if (e.supportsType("osparc-port-link")) {
-          this.__highlightCompatibles(e.getRelatedTarget());
+          const target = e.getRelatedTarget();
+          this.highlightCompatibles(target.node, target.portId);
           e.preventDefault();
         }
       }, this);
