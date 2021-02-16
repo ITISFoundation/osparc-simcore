@@ -856,35 +856,36 @@
         "title": "File",
         "required": [
           "id",
-          "name"
+          "filename"
         ],
         "type": "object",
         "properties": {
           "id": {
             "title": "Id",
             "type": "string",
-            "description": "File unique identifier built upon its name and checksum",
+            "description": "Unique identifier for a file stored in the system",
             "format": "uuid"
           },
-          "name": {
-            "title": "Name",
+          "filename": {
+            "title": "Filename",
             "type": "string",
-            "description": "File with extenson"
+            "description": "Name of the file with extension"
           },
           "content_type": {
             "title": "Content Type",
-            "type": "string"
+            "type": "string",
+            "description": "Guess of type content [EXPERIMENTAL]"
           },
           "checksum": {
             "title": "Checksum",
             "type": "string",
-            "description": "MD5 hash of the file's content"
+            "description": "MD5 hash of the file's content [EXPERIMENTAL]"
           }
         },
         "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud.",
         "example": {
           "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
-          "name": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
+          "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
           "content_type": "application/pdf",
           "checksum": "de47d0e1229aa2dfb80097389094eadd-1"
         }
