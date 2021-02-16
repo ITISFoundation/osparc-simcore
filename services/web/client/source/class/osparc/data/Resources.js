@@ -192,7 +192,7 @@ qx.Class.define("osparc.data.Resources", {
        * PORT COMPATIBILITY
        */
       "portsCompatibility": {
-        useCache: true,
+        useCache: false, // It has its own cache handler
         endpoints: {
           matchInputs: {
             // get_compatible_inputs_given_source_output_handler
@@ -738,19 +738,20 @@ qx.Class.define("osparc.data.Resources", {
     getCompatibleInputs: function(node1, portId1, node2) {
       const url = this.__getMatchInputsUrl(node1, portId1, node2);
 
-      const storedCPs = this.getInstance().__getCached("portsCompatibility");
-      if (storedCPs) {
-        const stored = storedCPs.find(storedCP => storedCP[0] === JSON.stringify(url));
-        if (stored) {
-          return Promise.resolve(stored);
-        }
+      // eslint-disable-next-line no-underscore-dangle
+      const cachedCPs = this.getInstance().__getCached("portsCompatibility") || {};
+      const strUrl = JSON.stringify(url);
+      if (strUrl in cachedCPs) {
+        return Promise.resolve(cachedCPs[strUrl]);
       }
       const params = {
         url
       };
       return this.fetch("portsCompatibility", "matchInputs", params)
         .then(data => {
-          this.getInstance().__setCached("portsCompatibility", [JSON.stringify(url), data]);
+          // eslint-disable-next-line no-underscore-dangle
+          this.getInstance().__setCached("portsCompatibility", cachedCPs[strUrl] = data);
+          return data;
         });
     },
 
