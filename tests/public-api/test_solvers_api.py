@@ -4,7 +4,7 @@
 
 
 from http import HTTPStatus
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import pytest
 from osparc.api.solvers_api import SolversApi
@@ -14,9 +14,9 @@ from packaging.version import parse as parse_version
 
 
 def test_get_latest_solver(solvers_api: SolversApi):
-    solvers: List[Solver] = solvers_api.list_solvers()
+    solvers: List[Solver] = solvers_api.list_solvers()  # all solvers and all versions
 
-    latest = None
+    latest: Optional[Solver] = None
     for solver in solvers:
         if "sleeper" in solver.name:
             assert isinstance(solver, Solver)
@@ -55,7 +55,7 @@ def test_get_solver(solvers_api: SolversApi, services_registry: Dict[str, Any]):
     assert same_solver.name == solver.name
     assert same_solver.version == solver.version
 
-    # FIXME: same uuid returns different maintener, title and description (probably bug in catalog since it shows "nodetails" tags)
+    # FIXME: same uuid returns different maintainer, title and description (probably bug in catalog since it shows "nodetails" tags)
     assert solver == same_solver
 
 
@@ -68,3 +68,45 @@ def test_solvers_not_found(solvers_api):
         )
     assert excinfo.value.status == HTTPStatus.NOT_FOUND  # 404
     assert "not found" in excinfo.value.reason.lower()
+
+
+def test_solver_collection_and_subresources(
+    solvers_api, services_registry: Dict[str, Any]
+):
+    # image in registry
+    repository_name = services_registry["sleeper_service"]["name"]
+    tag = services_registry["sleeper_service"]["version"]
+
+    # map image to solver ids:
+    #
+    #  repository_name -> solver_name
+    #  tag -> version
+    #
+
+    # A collection of solvers: /solvers/*.  Each solver has the following resources:
+    #
+    # - A collection of released solvers: /solvers/*/releases/*
+    #     typically:
+    #
+    # Now, in principle, each release is absolutley independent but
+    # most people use it as an extension
+    #
+
+    # considering solvers and releases separate collections ... does make the interface strange!
+    # /solvers/*/releases/*
+    # because if forces us to refer to a specific solver as "solver-release"
+    #
+    # assert solvers_api.get_solver_release(release_name=f"{repository_name}:{tag}")
+    #
+    # instead, let us consider a flat collection of all solvers ()
+    #
+    # /solvers/{name} -> /solvers/{name}/latest
+    # /solvers/{name}/{version}
+
+    # get solver w/o specifying version refers always to the latest
+    assert solvers_api.get_solver(
+        name=f"{repository_name}:{tag}"
+    ) == solvers_api.get_solver_by_name_and_version(name=repository_name, version=tag)
+    assert solvers_api.get_solver(name=f"{repository_name}") == solvers_api.get_solver(
+        name=f"{repository_name}:latest"
+    )
