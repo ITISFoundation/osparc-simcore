@@ -66,7 +66,7 @@ class NodeState(BaseModel):
     current_status: RunningState = Field(
         RunningState.NOT_STARTED,
         description="the node's current state",
-        example=["RUNNING", "FAILED"],
+        examples=["RUNNING", "FAILED"],
         alias="currentStatus",
     )
 
@@ -89,10 +89,10 @@ class Node(BaseModel):
         ...,
         description="semantic version number of the node",
         regex=VERSION_RE,
-        example=["1.0.0", "0.0.1"],
+        examples=["1.0.0", "0.0.1"],
     )
     label: str = Field(
-        ..., description="The short name of the node", example=["JupyterLab"]
+        ..., description="The short name of the node", examples=["JupyterLab"]
     )
     progress: Optional[float] = Field(
         None, ge=0, le=100, description="the node progress value"
@@ -100,14 +100,14 @@ class Node(BaseModel):
     thumbnail: Optional[HttpUrl] = Field(
         None,
         description="url of the latest screenshot of the node",
-        example=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+        examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
 
     # RUN HASH
     run_hash: Optional[str] = Field(
         None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
-        example=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
+        examples=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
         alias="runHash",
     )
 
@@ -133,14 +133,14 @@ class Node(BaseModel):
     output_nodes: Optional[List[NodeID]] = Field(
         None,
         description="Used in group-nodes. Node IDs of those connected to the output",
-        example=["nodeUuid1", "nodeUuid2"],
+        examples=["nodeUuid1", "nodeUuid2"],
         alias="outputNodes",
     )
 
     parent: Optional[NodeID] = Field(
         None,
         description="Parent's (group-nodes') node ID s. Used to group",
-        example=["nodeUUid1", "nodeUuid2"],
+        examples=["nodeUUid1", "nodeUuid2"],
     )
 
     # NOTE: use projects_ui.py
@@ -181,7 +181,7 @@ class Node(BaseModel):
         def schema_extra(schema, _model: "Node"):
             # NOTE: the variant with anyOf[{type: null}, { other }] is compatible with OpenAPI
             # The other as type = [null, other] is only jsonschema compatible
-            for prop_name in ["runHash"]:
+            for prop_name in ["parent", "runHash"]:
                 if prop_name in schema.get("properties", {}):
                     was = deepcopy(schema["properties"][prop_name])
                     schema["properties"][prop_name] = {"anyOf": [{"type": "null"}, was]}
