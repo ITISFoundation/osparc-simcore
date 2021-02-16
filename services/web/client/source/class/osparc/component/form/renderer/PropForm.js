@@ -236,7 +236,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         uiElement.addListener("dragover", e => {
           if (e.supportsType("osparc-port-link")) {
             const data = e.getData("osparc-port-link");
-            const node1Id = data["node1"].getNodeId();
+            const node1 = data["node1"];
             const port1Key = data["port1Key"];
             const destinations = data["destinations"];
             const port2Key = portId;
@@ -247,16 +247,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             }
             if (!(port2Key in destinations[node2Id])) {
               destinations[node2Id][port2Key] = "fetching";
-              this.__arePortsCompatible(node1Id, port1Key, node2Id, port2Key)
+              osparc.utils.Ports.arePortsCompatible(node1, port1Key, this.getNode(), port2Key)
                 .then(compatible => {
                   destinations[node2Id][port2Key] = compatible;
                 });
-              return;
             }
 
             const compatible = destinations[node2Id][portId];
             if (compatible === true) {
-              // stop propagation, so that the form doesn't attend it
+              // stop propagation, so that the form doesn't attend it (and preventDefault it)
               e.stopPropagation();
               this.__highlightCompatibles(portId);
             }
@@ -308,7 +307,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
               destinations[node2Id][portKey] = "fetching";
             }
           });
-
           osparc.data.Resources.getCompatibleInputs(node1, dragPortId, this.getNode())
             .then(compatiblePorts => {
               this.__getPortKeys().forEach(portKey => {
