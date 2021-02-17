@@ -222,13 +222,23 @@ class ServiceOutput(ServiceProperty):
 
     class Config(ServiceProperty.Config):
         schema_extra = {
+            "examples": [
+                # version 1
+                {
+                    "displayOrder": 2,
+                    "label": "Time Slept",
+                    "description": "Time the service waited before completion",
+                    "type": "number",
+                },
+            ],
+            # latest
             "example": {
                 "displayOrder": 2,
                 "label": "Time Slept",
                 "description": "Time the service waited before completion",
                 "type": "number",
                 "unit": "second",
-            }
+            },
         }
 
 
