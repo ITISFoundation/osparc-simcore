@@ -14,7 +14,7 @@ from .docker_utils import (
     create_network,
     create_service_and_get_id,
     get_swarm_network,
-    get_swarm_container_for_service,
+    get_service_task_node_id,
 )
 from .monitor import get_monitor
 from .utils import unused_port
@@ -124,11 +124,12 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     )
 
     service_sidecar_id = await create_service_and_get_id(service_sidecar_meta_data)
-    logging.debug("sidecar-service id %s", service_sidecar_id)
+    logging.debug("sidecar-service service_id=%s", service_sidecar_id)
 
-    # TODO: finish here once migrated to director-v2
-    task_data = await get_swarm_container_for_service(service_sidecar_id)
-    logging.debug("Task inspect data %s", task_data)
+    service_sidecar_node_id = await get_service_task_node_id(
+        service_sidecar_id, service_sidecar_settings
+    )
+    logging.debug("sidecar-service node_id=%s", service_sidecar_node_id)
 
     service_sidecar_proxy_meta_data = await _dyn_proxy_entrypoint_assembly(
         service_sidecar_settings=service_sidecar_settings,
@@ -141,6 +142,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         swarm_network_name=swarm_network_name,
         user_id=user_id,
         project_id=project_id,
+        service_sidecar_node_id=service_sidecar_node_id,
     )
 
     service_sidecar_proxy_id = await create_service_and_get_id(
@@ -175,6 +177,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     swarm_network_name: str,
     user_id: str,
     project_id: str,
+    service_sidecar_node_id: str,
 ) -> Dict[str, Any]:
     """This is the entrypoint to the network and needs to be configured properly"""
 
@@ -233,7 +236,12 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
                 "Mounts": mounts,
             },
             # TODO: maybe remove these constraints? ask SAN
-            "Placement": {"Constraints": ["node.platform.os == linux"]},
+            "Placement": {
+                "Constraints": [
+                    "node.platform.os == linux",
+                    f"node.id == {service_sidecar_node_id}",
+                ]
+            },
             "Resources": {
                 "Limits": {"MemoryBytes": 1073741824, "NanoCPUs": 2000000000},
                 "Reservations": {"MemoryBytes": 524288000, "NanoCPUs": 100000000},

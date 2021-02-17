@@ -1,5 +1,7 @@
 # wraps all calls to underlying docker engine
+import asyncio
 import logging
+import time
 from typing import Any, Deque, Dict, Tuple
 
 import aiodocker
@@ -133,16 +135,40 @@ async def get_service_sidecars_to_monitor(
     return service_sidecar_services
 
 
-async def get_swarm_container_for_service(service_id: str) -> Dict[str, Any]:
+async def get_service_task_node_id(
+    service_id: str, service_sidecar_settings: ServiceSidecarSettings
+) -> Dict[str, Any]:
     # pylint: disable=not-async-context-manager
-    async with docker_client() as client:
-        running_services = await client.tasks.list(filters={"service": service_id})
 
-    service_container_count = len(running_services)
-    if service_container_count != 1:
+    async with docker_client() as client:
+        service_state = None
+        started = time.time()
+
+        while service_state != "running":
+            running_services = await client.tasks.list(filters={"service": service_id})
+
+            service_container_count = len(running_services)
+            if service_container_count != 1:
+                raise ServiceSidecarError(
+                    f"Expected to find 1 container for service '{service_id}', "
+                    f"but '{service_container_count}' were found!"
+                )
+
+            task = running_services[0]
+            service_state = task["Status"]["State"]
+
+            await asyncio.sleep(1)
+            elapsed = time.time() - started
+            if elapsed > service_sidecar_settings.timeout_fetch_service_sidecar_node_id:
+                raise ServiceSidecarError(
+                    "Timed out while serarching for an assigned NodeID for "
+                    f"service_id={service_id}. Last task inspect result: {task}"
+                )
+
+    if "NodeID" not in task:
         raise ServiceSidecarError(
-            f"Expected to find 1 container for service '{service_id}', "
-            f"but '{service_container_count}' were found!"
+            f"Could not find an assigned NodeID for service_id={service_id}. "
+            f"Last task inspect result: {task}"
         )
 
-    return running_services
+    return task["NodeID"]

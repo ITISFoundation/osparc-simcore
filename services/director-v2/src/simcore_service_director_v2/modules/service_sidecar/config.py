@@ -95,6 +95,14 @@ class ServiceSidecarSettings(BaseSettings):
         "", description="url to the docker registry", env="REGISTRY_URL"
     )
 
+    timeout_fetch_service_sidecar_node_id: float = Field(
+        60,
+        description=(
+            "when starting the service-sidecar proxy, the NodeID of the service-sidecar container "
+            "is required; If something goes wrong timeout and do not wait forever in a loop"
+        ),
+    )
+
     @property
     def resolved_registry_url(self) -> str:
         # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine
