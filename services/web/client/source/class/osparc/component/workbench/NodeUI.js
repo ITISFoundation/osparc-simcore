@@ -193,24 +193,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
       node.getStatus().bind("running", this, "decorator", {
-        converter: state => {
-          switch (state) {
-            case "SUCCESS":
-              return "border-ok";
-            case "FAILED":
-            case "ABORTED":
-              return "border-error";
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-            case "RETRY":
-              return "border-busy";
-            case "UNKNOWN":
-            case "NOT_STARTED":
-            default:
-              return "no-border";
-          }
-        }
+        converter: state => osparc.utils.StatusUI.getBorderDecorator(state);
       });
     },
 
