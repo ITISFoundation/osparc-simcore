@@ -36,3 +36,6 @@ idna<3,>=2.5
 
 # vulnerability https://github.com/advisories/GHSA-rhm9-p9w5-fwm7  Feb.2021
 cryptography>=3.3.2
+
+# constraint since https://github.com/MagicStack/uvloop/releases/tag/v0.15.0: drops support for 3.5/3.6  Feb.2021
+uvloop<0.15.0 ; python_version < '3.7'
