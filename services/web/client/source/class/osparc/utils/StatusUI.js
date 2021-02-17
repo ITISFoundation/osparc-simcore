@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 /**
- * Collection of methods for dealing with ports.
+ * Collection of methods for dealing status decorators.
  *
  */
 
@@ -37,6 +37,9 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "STARTED":
         case "RETRY":
           return "@FontAwesome5Solid/circle-notch/12";
+        case "UNKNOWN":
+        case "NOT_STARTED":
+          return "";
 
         // dynamics
         case "ready":
@@ -49,8 +52,6 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "connecting":
           return "@FontAwesome5Solid/circle-notch/12";
 
-        case "UNKNOWN":
-        case "NOT_STARTED":
         default:
           return "";
       }
@@ -58,18 +59,24 @@ qx.Class.define("osparc.utils.StatusUI", {
 
     getLabelValue: function(state) {
       switch (state) {
+        // computationals
+        case "STARTED":
+          return qx.locale.Manager.tr("Running");
+
+        // dynamics
         case "ready":
-          return this.tr("Ready");
+          return qx.locale.Manager.tr("Ready");
         case "failed":
-          return this.tr("Error");
+          return qx.locale.Manager.tr("Error");
         case "starting":
-          return this.tr("Starting...");
+          return qx.locale.Manager.tr("Starting...");
         case "pending":
-          return this.tr("Pending...");
+          return qx.locale.Manager.tr("Pending...");
         case "pulling":
-          return this.tr("Pulling...");
+          return qx.locale.Manager.tr("Pulling...");
         case "connecting":
-          return this.tr("Connecting...");
+          return qx.locale.Manager.tr("Connecting...");
+
         default:
           return state;
       }
@@ -83,6 +90,14 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "FAILED":
         case "ABORTED":
           return "failed-red";
+        case "PENDING":
+        case "PUBLISHED":
+        case "STARTED":
+        case "RETRY":
+          return "busy-orange";
+        case "UNKNOWN":
+        case "NOT_STARTED":
+          return "text";
 
         // dynamics
         case "ready":
@@ -91,7 +106,7 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "failed-red";
 
         default:
-          return null;
+          return "text";
       }
     },
 
@@ -109,6 +124,8 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "border-busy";
         case "UNKNOWN":
         case "NOT_STARTED":
+          return "no-border";
+
         default:
           return "no-border";
       }

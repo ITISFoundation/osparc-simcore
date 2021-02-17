@@ -59,13 +59,15 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         converter: state => {
           if (state) {
             this.show();
-            if (state === "STARTED") {
-              state = "Running";
-            }
-            return qx.lang.String.firstUp(state.toLowerCase());
+            const labelValue = osparc.utils.StatusUI.getLabelValue(state);
+            return qx.lang.String.firstUp(labelValue.toLowerCase());
           }
           this.exclude();
           return null;
+        },
+        onUpdate: (source, target) => {
+          const state = source.getRunning();
+          target.setTextColor(osparc.utils.StatusUI.getColor(state));
         }
       });
 
@@ -100,7 +102,11 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
 
     __setupInteractive: function() {
       this.__node.getStatus().bind("interactive", this.__label, "value", {
-        converter: state => osparc.utils.StatusUI.getLabelValue(state)
+        converter: state => osparc.utils.StatusUI.getLabelValue(state),
+        onUpdate: (source, target) => {
+          const state = source.getInteractive();
+          target.setTextColor(osparc.utils.StatusUI.getColor(state));
+        }
       });
 
       this.__node.getStatus().bind("interactive", this.__icon, "source", {
