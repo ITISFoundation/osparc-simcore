@@ -67,8 +67,10 @@ DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(f
 
 
 def config_all_loggers():
+    manager: logging.Manager = logging.Logger.manager
+
     loggers = [logging.getLogger()] + [
-        logging.getLogger(name) for name in logging.root.manager.loggerDict
+        logging.getLogger(name) for name in manager.loggerDict
     ]
     for logger in loggers:
         set_logging_handler(logger)
