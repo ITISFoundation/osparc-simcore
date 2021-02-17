@@ -9,6 +9,7 @@ from servicelib.tracing import setup_tracing
 from simcore_service_director import config, registry_cache_task, resources
 from simcore_service_director.rest import routing
 from simcore_service_director.monitoring import setup_app_monitoring
+from simcore_service_director.directorv2_proxy import setup_director_v2
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +36,8 @@ def setup_app() -> web.Application:
     setup_app_monitoring(app, "simcore_service_director")
 
     setup_app_tracing(app, "simcore_service_director")
+
+    setup_director_v2(app)
 
     return app
 
