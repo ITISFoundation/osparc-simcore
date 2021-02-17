@@ -9,6 +9,8 @@ install() {
     bash ci/helpers/ensure_python_pip.bash
     bash ci/helpers/install_pylint.bash
     pip list -v
+    echo "Copy paste next to reproduce python environment"
+    pip freeze
 }
 
 test() {

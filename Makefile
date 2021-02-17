@@ -386,6 +386,9 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 .PHONY: pylint
 
 pylint: ## Runs python linter framework's wide
+	# version
+	/bin/bash -c "pylint --version"
+	# run
 	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
 											-not -path "*egg*" \
 											-not -path "*migration*" \
