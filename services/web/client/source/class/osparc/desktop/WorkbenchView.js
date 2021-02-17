@@ -534,12 +534,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
             node.setOutputData(nodeData.outputs);
-            if ("state" in nodeData && node.isComputational()) {
-              node.getStatus().setRunningStatus(nodeData["state"]["currentStatus"]);
-            }
             if ("progress" in nodeData) {
               const progress = Number.parseInt(nodeData["progress"]);
               node.getStatus().setProgress(progress);
+            }
+            if ("state" in nodeData && node.isComputational()) {
+              node.getStatus().setRunning(nodeData["state"]["currentStatus"]);
             }
           } else if (osparc.data.Permissions.getInstance().isTester()) {
             console.log("Ignored ws 'nodeUpdated' msg", d);

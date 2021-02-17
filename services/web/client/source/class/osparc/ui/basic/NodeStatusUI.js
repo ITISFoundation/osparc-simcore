@@ -55,7 +55,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupComputational: function() {
-      this.__node.getStatus().bind("runningStatus", this.__label, "value", {
+      this.__node.getStatus().bind("running", this.__label, "value", {
         converter: state => {
           if (state) {
             this.show();
@@ -69,7 +69,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.__node.getStatus().bind("runningStatus", this.__icon, "source", {
+      this.__node.getStatus().bind("running", this.__icon, "source", {
         converter: state => {
           switch (state) {
             case "SUCCESS":
@@ -90,7 +90,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         },
         onUpdate: (source, target) => {
           target.show();
-          const state = source.getRunningStatus();
+          const state = source.getRunning();
           switch (state) {
             case "SUCCESS":
               this.__removeClass(this.__icon.getContentElement(), "rotate");
@@ -119,7 +119,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupInteractive: function() {
-      this.__node.getStatus().bind("interactiveStatus", this.__label, "value", {
+      this.__node.getStatus().bind("interactive", this.__label, "value", {
         converter: status => {
           if (status === "ready") {
             return this.tr("Ready");
@@ -138,7 +138,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.__node.getStatus().bind("interactiveStatus", this.__icon, "source", {
+      this.__node.getStatus().bind("interactive", this.__icon, "source", {
         converter: status => {
           if (status === "ready") {
             return "@FontAwesome5Solid/check/12";
@@ -156,12 +156,12 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           return "";
         },
         onUpdate: (source, target) => {
-          if (source.getInteractiveStatus() == null) {
+          if (source.getInteractive() == null) {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
-          } else if (source.getInteractiveStatus() === "ready") {
+          } else if (source.getInteractive() === "ready") {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
             target.setTextColor("ready-green");
-          } else if (source.getInteractiveStatus() === "failed") {
+          } else if (source.getInteractive() === "failed") {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
             target.setTextColor("failed-red");
           } else {

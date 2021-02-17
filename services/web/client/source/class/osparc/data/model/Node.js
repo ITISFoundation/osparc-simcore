@@ -332,13 +332,13 @@ qx.Class.define("osparc.data.model.Node", {
 
         if (nodeData.state) {
           if (nodeData.state.currentStatus) {
-            this.getStatus().setRunningStatus(nodeData.state.currentStatus);
+            this.getStatus().setRunning(nodeData.state.currentStatus);
           }
           if (nodeData.state.modified) {
-            this.getStatus().setModifiedStatus(nodeData.state.modified);
+            this.getStatus().setModified(nodeData.state.modified);
           }
           if (nodeData.state.dependencies) {
-            this.getStatus().setDependenciesStatus(nodeData.state.dependencies);
+            this.getStatus().setDependencies(nodeData.state.dependencies);
           }
         }
 
@@ -422,7 +422,7 @@ qx.Class.define("osparc.data.model.Node", {
             msg: errorMsg
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          this.getStatus().setInteractiveStatus("failed");
+          this.getStatus().setInteractive("failed");
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
         });
     },
@@ -751,7 +751,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __getLoadingPageHeader: function() {
-      const status = this.getStatus().getInteractiveStatus();
+      const status = this.getStatus().getInteractive();
       const label = this.getLabel();
       if (status) {
         const sta = status.charAt(0).toUpperCase() + status.slice(1);
@@ -766,7 +766,7 @@ qx.Class.define("osparc.data.model.Node", {
       this.addListener("changeLabel", e => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
       }, this);
-      this.getStatus().addListener("changeInteractiveStatus", e => {
+      this.getStatus().addListener("changeInteractive", e => {
         loadingPage.setHeader(this.__getLoadingPageHeader());
       }, this);
       this.setLoadingPage(loadingPage);
@@ -905,7 +905,7 @@ qx.Class.define("osparc.data.model.Node", {
 
         const status = this.getStatus();
         status.setProgress(0);
-        status.setInteractiveStatus("starting");
+        status.setInteractive("starting");
 
         this.__nodeState();
       }
@@ -915,20 +915,20 @@ qx.Class.define("osparc.data.model.Node", {
       const status = this.getStatus();
       switch (serviceState) {
         case "idle": {
-          status.setInteractiveStatus("idle");
+          status.setInteractive("idle");
           const interval = 1000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
         case "starting":
         case "pulling": {
-          status.setInteractiveStatus(serviceState);
+          status.setInteractive(serviceState);
           const interval = 5000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
         case "pending": {
-          status.setInteractiveStatus("pending");
+          status.setInteractive("pending");
           const interval = 10000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
@@ -950,7 +950,7 @@ qx.Class.define("osparc.data.model.Node", {
         case "complete":
           break;
         case "failed": {
-          status.setInteractiveStatus("failed");
+          status.setInteractive("failed");
           const msg = "Service failed: " + data["service_message"];
           const msgData = {
             nodeId: this.getNodeId(),
@@ -991,7 +991,7 @@ qx.Class.define("osparc.data.model.Node", {
             msg: errorMsg
           };
           this.fireDataEvent("showInLogger", errorMsgData);
-          this.getStatus().setInteractiveStatus("failed");
+          this.getStatus().setInteractive("failed");
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while starting the node."), "ERROR");
         });
     },
@@ -1021,7 +1021,7 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
       pingRequest.addListenerOnce("fail", e => {
         const error = e.getTarget().getResponse();
-        this.getStatus().setInteractiveStatus("connecting");
+        this.getStatus().setInteractive("connecting");
         console.log("service not ready yet, waiting... " + error);
         // Check if node is still there
         const study = osparc.store.Store.getInstance().getCurrentStudy();
@@ -1035,7 +1035,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
-      this.getStatus().setInteractiveStatus("ready");
+      this.getStatus().setInteractive("ready");
       const msg = "Service ready on " + srvUrl;
       const msgData = {
         nodeId: this.getNodeId(),
