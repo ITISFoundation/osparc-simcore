@@ -81,8 +81,8 @@ async def create_or_update_pipeline(
         )
         return computation_task_out
 
-    except _DirectorServiceError:
-        log.error("could not create pipeline from project %s", project_id)
+    except _DirectorServiceError as exc:
+        log.error("could not create pipeline from project %s: %s", project_id, exc)
 
 
 @log_decorator(logger=log)
@@ -102,11 +102,8 @@ async def get_computation_task(
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
         return task_out
-    except _DirectorServiceError:
-        log.warning(
-            "getting pipeline for project %s failed.",
-            project_id,
-        )
+    except _DirectorServiceError as exc:
+        log.warning("getting pipeline for project %s failed: %s.", project_id, exc)
 
 
 @log_decorator(logger=log)
