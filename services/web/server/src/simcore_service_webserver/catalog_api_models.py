@@ -27,8 +27,8 @@ ServiceOutputKey = PropertyName
 #    backwards compatibility
 #   - schema samples could have multiple schemas to tests backwards compatibility
 #
-# TODO: uuid instead of key+version?
-
+# TODO: reduce to a minimum returned input/output models (ask OM)
+#
 INPUT_SAMPLE = {
     "displayOrder": 2,
     "label": "Sleep Time",
@@ -47,8 +47,9 @@ OUTPUT_SAMPLE = {
     "label": "Time Slept",
     "description": "Time the service waited before completion",
     "type": "number",
-    "defaultValue": 0,
     "unit": "second",
+    "unitLong": "seconds",
+    "unitShort": "sec",
     "keyId": "output_2",
 }
 
@@ -92,7 +93,7 @@ class ServiceOutputApiOut(ServiceOutput, _CommonApiExtension):
     class Config:
         extra = Extra.forbid
         alias_generator = snake_to_camel
-        schema_extra = {"example": INPUT_SAMPLE}
+        schema_extra = {"example": OUTPUT_SAMPLE}
 
     @classmethod
     def from_service(cls, service: Dict[str, Any], output_key: ServiceOutputKey):
