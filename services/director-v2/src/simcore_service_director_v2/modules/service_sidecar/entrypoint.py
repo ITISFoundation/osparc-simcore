@@ -14,7 +14,7 @@ from .docker_utils import (
     create_network,
     create_service_and_get_id,
     get_swarm_network,
-    get_service_task_node_id,
+    get_node_id_from_task_for_service,
 )
 from .monitor import get_monitor
 from .utils import unused_port
@@ -126,7 +126,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     service_sidecar_id = await create_service_and_get_id(service_sidecar_meta_data)
     logging.debug("sidecar-service service_id=%s", service_sidecar_id)
 
-    service_sidecar_node_id = await get_service_task_node_id(
+    service_sidecar_node_id = await get_node_id_from_task_for_service(
         service_sidecar_id, service_sidecar_settings
     )
     logging.debug("sidecar-service node_id=%s", service_sidecar_node_id)

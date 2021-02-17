@@ -135,12 +135,10 @@ async def get_service_sidecars_to_monitor(
     return service_sidecar_services
 
 
-async def get_service_task_node_id(
+async def get_node_id_from_task_for_service(
     service_id: str, service_sidecar_settings: ServiceSidecarSettings
 ) -> Dict[str, Any]:
-    # pylint: disable=not-async-context-manager
-
-    async with docker_client() as client:
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
         service_state = None
         started = time.time()
 
