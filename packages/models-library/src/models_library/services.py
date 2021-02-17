@@ -201,15 +201,25 @@ class ServiceInput(ServiceProperty):
 
     class Config(ServiceProperty.Config):
         schema_extra = {
-            "example": {
-                "displayOrder": 2,
-                "label": "Sleep Time",
-                "description": "Time to wait before completion",
-                "type": "number",
-                "defaultValue": 0,
-                "unit": "second",
-                "widget": {"type": "TextArea", "details": {"minHeight": 3}},
-            }
+            "examples": [
+                # file-wo-widget:
+                {
+                    "displayOrder": 1,
+                    "label": "Input files",
+                    "description": "Files downloaded from service connected at the input",
+                    "type": "data:*/*",
+                },
+                # latest:
+                {
+                    "displayOrder": 2,
+                    "label": "Sleep Time",
+                    "description": "Time to wait before completion",
+                    "type": "number",
+                    "defaultValue": 0,
+                    "unit": "second",
+                    "widget": {"type": "TextArea", "details": {"minHeight": 3}},
+                },
+            ],
         }
 
 
@@ -222,21 +232,23 @@ class ServiceOutput(ServiceProperty):
 
     class Config(ServiceProperty.Config):
         schema_extra = {
-            "examples": {
-                "version-1": {
+            "examples": [
+                # previously:
+                {
                     "displayOrder": 2,
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
                 },
-                "latest": {
+                # latest:
+                {
                     "displayOrder": 2,
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
                     "unit": "second",
                 },
-            }
+            ]
         }
 
 

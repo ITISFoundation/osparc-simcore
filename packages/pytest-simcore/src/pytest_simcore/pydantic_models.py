@@ -20,9 +20,12 @@ def model_cls_examples(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, Any]]:
     )
 
     # checks exampleS setup in schema_extra
-    examples_dict = model_cls.Config.schema_extra.get("examples", {})
-    assert isinstance(examples_dict, dict), (
-        "OpenAPI expects examples: {example-name: example-body, ...}. "
+    examples_list = model_cls.Config.schema_extra.get("examples", [])
+    assert isinstance(examples_list, list), (
+        "OpenAPI and json-schema differ regarding the format for exampleS."
+        "The former is a dict and the latter an array. "
+        "We follow json-schema here"
+        "SEE https://json-schema.org/understanding-json-schema/reference/generic.html"
         "SEE https://swagger.io/docs/specification/adding-examples/"
     )
 
@@ -31,8 +34,8 @@ def model_cls_examples(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, Any]]:
 
     # collect all examples and creates fixture -> {example-name: example, ...}
     examples = {
-        f"{model_cls.__name__}.example[{name}]": example
-        for name, example in examples_dict.items()
+        f"{model_cls.__name__}.example[{index}]": example
+        for index, example in enumerate(examples_list)
     }
     if example:
         examples[f"{model_cls.__name__}.example"] = example
