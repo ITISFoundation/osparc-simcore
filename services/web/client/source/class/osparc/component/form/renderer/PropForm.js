@@ -219,7 +219,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
             })
             .catch(err => {
               console.error(err);
-              resolve(false);
+              reject(err);
             });
         } else {
           resolve(false);
