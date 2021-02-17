@@ -34,7 +34,6 @@ class _DirectorServiceError(Exception):
         super().__init__(f"forwarded call failed with status {status}, reason {reason}")
 
 
-@log_decorator(logger=log)
 async def _request_director_v2(
     app: web.Application,
     method: str,
