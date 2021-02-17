@@ -60,7 +60,7 @@ class NodeState(BaseModel):
         True, description="true if the node's outputs need to be re-computed"
     )
     dependencies: Set[NodeID] = Field(
-        default_factory=list,
+        default_factory=set,
         description="contains the node inputs dependencies if they need to be computed first",
     )
     current_status: RunningState = Field(
