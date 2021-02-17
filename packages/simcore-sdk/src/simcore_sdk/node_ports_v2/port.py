@@ -25,6 +25,7 @@ class Port(ServiceProperty):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
     widget: Optional[Dict[str, Any]] = None
 
+    default_value: Optional[DataItemValue] = None
     value: Optional[DataItemValue]
 
     _py_value_type: Tuple[Type[ItemConcreteValue]] = PrivateAttr()
@@ -102,7 +103,7 @@ class Port(ServiceProperty):
         # don't atempt conversion of None it fails
         if value is None:
             return None
-        
+
         return self._py_value_converter(value)
 
     async def set(self, new_value: ItemConcreteValue) -> None:

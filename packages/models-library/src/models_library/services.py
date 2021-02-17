@@ -174,9 +174,6 @@ class ServiceProperty(BaseModel):
         description="Place the data associated with the named keys in files",
         examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
-    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
-        None, alias="defaultValue", examples=["Dog", True]
-    )
 
     # TODO: use discriminators
     unit: Optional[str] = Field(
@@ -192,6 +189,10 @@ class ServiceInput(ServiceProperty):
     """
     Metadata on a service input port
     """
+
+    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
+        None, alias="defaultValue", examples=["Dog", True]
+    )
 
     widget: Optional[Widget] = Field(
         None,
@@ -226,7 +227,6 @@ class ServiceOutput(ServiceProperty):
                 "label": "Time Slept",
                 "description": "Time the service waited before completion",
                 "type": "number",
-                "defaultValue": 0,
                 "unit": "second",
             }
         }
