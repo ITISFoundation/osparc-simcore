@@ -5,7 +5,7 @@
 import hashlib
 import tempfile
 from pathlib import Path
-from pprint import pprint
+from pprint import pformat
 from uuid import uuid4
 
 import pytest
@@ -96,7 +96,7 @@ def test_convert_filemetadata():
 
 @pytest.mark.parametrize("model_cls", (FileMetadata,))
 def test_file_model_examples(model_cls, model_cls_examples):
-    for example in model_cls_examples:
-        pprint(example)
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
         model_instance = model_cls(**example)
-        assert model_instance
+        assert model_instance, f"Failed with {name}"
