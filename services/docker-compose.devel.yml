@@ -28,7 +28,6 @@ services:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
       - LOGLEVEL=debug
-      - DEV_SIMCORE_SERVICE_SIDECAR_PATH=${PWD}/services/service-sidecar
     volumes:
       - ./director:/devel/services/director
       - ../packages:/devel/packages
@@ -39,6 +38,7 @@ services:
       - SC_BOOT_MODE=debug-ptvsd
       - LOG_LEVEL=debug
       - DEBUG=true
+      - DEV_SIMCORE_SERVICE_SIDECAR_PATH=${PWD}/services/service-sidecar
     volumes:
       - ./director-v2:/devel/services/director-v2
       - ../packages:/devel/packages
