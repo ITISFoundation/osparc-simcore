@@ -285,6 +285,21 @@ def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, 
     return project
 
 
+def dict_with_keys(dict_data: Dict[str, Any], kept_keys: Set[str]) -> Dict[str, Any]:
+    modified_dict = {}
+    for key, value in dict_data.items():
+        if key in kept_keys:
+            # keep the whole object
+            modified_dict[key] = deepcopy(value)
+        # if it's a nested dict go deeper
+        elif isinstance(value, dict):
+            possible_nested_dict = dict_with_keys(value, kept_keys)
+            if possible_nested_dict:
+                modified_dict[key] = possible_nested_dict
+
+    return modified_dict
+
+
 def dict_without_keys(
     dict_data: Dict[str, Any], skipped_keys: Set[str]
 ) -> Dict[str, Any]:
@@ -495,13 +510,12 @@ async def test_import_export_import_duplicate(
     normalized_duplicated_project = replace_uuids_with_sequences(duplicated_project)
 
     # ensure values are different
-    for key in KEYS_TO_IGNORE_FROM_COMPARISON:
-        assert_combined_entires_condition(
-            normalized_imported_project[key],
-            normalized_reimported_project[key],
-            normalized_duplicated_project[key],
-            condition_operator=operator.ne,
-        )
+    assert_combined_entires_condition(
+        dict_with_keys(normalized_imported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        dict_with_keys(normalized_reimported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        dict_with_keys(normalized_duplicated_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        condition_operator=operator.ne,
+    )
 
     # assert same structure in both directories
     assert_combined_entires_condition(
