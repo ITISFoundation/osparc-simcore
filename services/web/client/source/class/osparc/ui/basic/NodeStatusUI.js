@@ -70,24 +70,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       });
 
       this.__node.getStatus().bind("running", this.__icon, "source", {
-        converter: state => {
-          switch (state) {
-            case "SUCCESS":
-              return "@FontAwesome5Solid/check/12";
-            case "FAILED":
-            case "ABORTED":
-              return "@FontAwesome5Solid/exclamation-circle/12";
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-            case "RETRY":
-              return "@FontAwesome5Solid/circle-notch/12";
-            case "UNKNOWN":
-            case "NOT_STARTED":
-            default:
-              return "";
-          }
-        },
+        converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
           target.show();
           const state = source.getRunning();
@@ -120,41 +103,11 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
 
     __setupInteractive: function() {
       this.__node.getStatus().bind("interactive", this.__label, "value", {
-        converter: status => {
-          if (status === "ready") {
-            return this.tr("Ready");
-          } else if (status === "failed") {
-            return this.tr("Error");
-          } else if (status === "starting") {
-            return this.tr("Starting...");
-          } else if (status === "pending") {
-            return this.tr("Pending...");
-          } else if (status === "pulling") {
-            return this.tr("Pulling...");
-          } else if (status === "connecting") {
-            return this.tr("Connecting...");
-          }
-          return status;
-        }
+        converter: state => osparc.utils.StatusUI.getLabelValue(state)
       });
 
       this.__node.getStatus().bind("interactive", this.__icon, "source", {
-        converter: status => {
-          if (status === "ready") {
-            return "@FontAwesome5Solid/check/12";
-          } else if (status === "failed") {
-            return "@FontAwesome5Solid/exclamation-circle/12";
-          } else if (status === "starting") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "pending") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "pulling") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "connecting") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          }
-          return "";
-        },
+        converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
           if (source.getInteractive() == null) {
             this.__removeClass(this.__icon.getContentElement(), "rotate");
