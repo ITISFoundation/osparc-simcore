@@ -74,7 +74,6 @@ services:
       - TRAEFIK_SIMCORE_ZONE=${TRAEFIK_SIMCORE_ZONE:-internal_simcore_stack}
       - LOGLEVEL=${LOG_LEVEL:-WARNING}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - SERVICE_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/service-sidecar:${DOCKER_IMAGE_TAG:-latest}
       - SERVICE_SIDECAR_DEV_EXPOSE_SERVICE_SIDECAR=true
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
@@ -102,6 +101,7 @@ services:
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
       - POSTGRES_MAXSIZE=30
+      - SERVICE_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/service-sidecar:${DOCKER_IMAGE_TAG:-latest}
     env_file:
       - ../.env
     volumes:
@@ -308,6 +308,7 @@ services:
     command:
       - "--api=true"
       - "--api.dashboard=true"
+      - "--log.level=DEBUG"
       - "--accesslog=false"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.addEntryPointsLabels=true"

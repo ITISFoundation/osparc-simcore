@@ -8,6 +8,7 @@ from .routes import (
     meta,
     running_interactive,
     services,
+    dynamic_sidecar,
 )
 
 # Info
@@ -33,6 +34,7 @@ v2_router.include_router(
 v2_router.include_router(
     dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services"
 )
+v2_router.include_router(dynamic_sidecar.router, tags=["service-sidecar"])
 
 # root
 api_router = APIRouter()
