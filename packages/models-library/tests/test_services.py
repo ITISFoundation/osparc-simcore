@@ -65,6 +65,7 @@ def test_service_port_units(osparc_simcore_root_dir):
             osparc_simcore_root_dir / "packages/models-library/tests/image-meta.yaml"
         ).read_text()
     )
+    print(ServiceDockerData.schema_json(indent=2))
 
     service_meta = ServiceDockerData.parse_obj(data)
     for input_nameid, input_meta in service_meta.inputs.items():
