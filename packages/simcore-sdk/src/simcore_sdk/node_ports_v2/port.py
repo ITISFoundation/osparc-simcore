@@ -25,7 +25,7 @@ class Port(ServiceProperty):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
     widget: Optional[Dict[str, Any]] = None
 
-    default_value: Optional[DataItemValue] = None
+    default_value: Optional[DataItemValue] = Field(None, alias="defaultValue")
     value: Optional[DataItemValue]
 
     _py_value_type: Tuple[Type[ItemConcreteValue]] = PrivateAttr()
