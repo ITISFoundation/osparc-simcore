@@ -1,25 +1,11 @@
-from typing import Dict, List, Optional
-from uuid import UUID
+from typing import List, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.projects_state import RunningState
+from models_library.projects_pipeline import ComputationTask
 from pydantic import AnyHttpUrl, BaseModel, Field
 
 from ..schemas.constants import UserID
-
-TaskID = UUID
-
-
-class ComputationTask(BaseModel):
-    id: TaskID = Field(..., description="the id of the computation task")
-    state: RunningState = Field(..., description="the state of the computational task")
-    result: Optional[str] = Field(
-        None, description="the result of the computational task"
-    )
-    pipeline: Dict[NodeID, List[NodeID]] = Field(
-        ..., description="the corresponding pipeline in terms of node uuids"
-    )
 
 
 class ComputationTaskOut(ComputationTask):

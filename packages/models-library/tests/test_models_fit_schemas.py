@@ -27,6 +27,10 @@ def test_generated_schema_same_as_original(
     generated_schema = json.loads(pydantic_model.schema_json(indent=2))
     original_schema = json_schema_dict(original_json_schema)
 
+    # NOTE: A change is considered an addition when the destination schema has become more permissive relative to the source schema. For example {"type": "string"} -> {"type": ["string", "number"]}.
+    # A change is considered a removal when the destination schema has become more restrictive relative to the source schema. For example {"type": ["string", "number"]} -> {"type": "string"}.
+    # The addition and removal changes detected are returned in JsonSchema format. These schemas represent the set of values that have been added or removed.
+
     # run one direction original schema encompass generated one
     process_completion = diff_json_schemas(original_schema, generated_schema)
 

@@ -1,17 +1,18 @@
+import asyncio
+
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
 import cgi
+import itertools
 import json
 import logging
+import operator
 import sys
-import asyncio
 import tempfile
+from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
-import operator
-import itertools
 from pathlib import Path
-from typing import Any, Dict, List, Set, Callable, Tuple
-from collections import deque
+from typing import Any, Callable, Dict, List, Set, Tuple
 
 import aiofiles
 import aiohttp
@@ -27,6 +28,8 @@ from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.director import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.exporter import setup_exporter
+from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
+from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
@@ -35,11 +38,9 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
-from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.storage_handlers import get_file_download_url
 from simcore_service_webserver.storage import setup_storage
-from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
-from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
+from simcore_service_webserver.storage_handlers import get_file_download_url
+from simcore_service_webserver.users import setup_users
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -69,6 +70,8 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
     "uuid",
     "creation_date",
     "last_change_date",
+    "runHash",  # this changes after import, but the runnable states should remain the same
+    "eTag",  # this must change
     REMAPPING_KEY,
 }
 
@@ -282,11 +285,33 @@ def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, 
     return project
 
 
-def dict_without_keys(dict_data: Dict[str, Any], keys: Set[str]) -> Dict[str, Any]:
-    result = deepcopy(dict_data)
-    for key in keys:
-        result.pop(key, None)
-    return result
+def dict_with_keys(dict_data: Dict[str, Any], kept_keys: Set[str]) -> Dict[str, Any]:
+    modified_dict = {}
+    for key, value in dict_data.items():
+        if key in kept_keys:
+            # keep the whole object
+            modified_dict[key] = deepcopy(value)
+        # if it's a nested dict go deeper
+        elif isinstance(value, dict):
+            possible_nested_dict = dict_with_keys(value, kept_keys)
+            if possible_nested_dict:
+                modified_dict[key] = possible_nested_dict
+
+    return modified_dict
+
+
+def dict_without_keys(
+    dict_data: Dict[str, Any], skipped_keys: Set[str]
+) -> Dict[str, Any]:
+
+    modified_dict = {}
+    for key, value in dict_data.items():
+        if key not in skipped_keys:
+            if isinstance(value, dict):
+                modified_dict[key] = dict_without_keys(value, skipped_keys)
+            else:
+                modified_dict[key] = deepcopy(value)
+    return modified_dict
 
 
 def assert_combined_entires_condition(
@@ -485,13 +510,12 @@ async def test_import_export_import_duplicate(
     normalized_duplicated_project = replace_uuids_with_sequences(duplicated_project)
 
     # ensure values are different
-    for key in KEYS_TO_IGNORE_FROM_COMPARISON:
-        assert_combined_entires_condition(
-            normalized_imported_project[key],
-            normalized_reimported_project[key],
-            normalized_duplicated_project[key],
-            condition_operator=operator.ne,
-        )
+    assert_combined_entires_condition(
+        dict_with_keys(normalized_imported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        dict_with_keys(normalized_reimported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        dict_with_keys(normalized_duplicated_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        condition_operator=operator.ne,
+    )
 
     # assert same structure in both directories
     assert_combined_entires_condition(

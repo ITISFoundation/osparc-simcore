@@ -5,11 +5,13 @@ import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Dict
+from typing import Deque, Dict, List, Tuple
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
 from models_library.projects import AccessRights, Project
+from models_library.projects_nodes_io import BaseFileLink, NodeID
+from models_library.utils.nodes import compute_node_hash, project_node_io_payload_cb
 from simcore_service_webserver.director_v2 import create_or_update_pipeline
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
@@ -155,12 +157,15 @@ async def generate_directory_contents(
     await ProjectFile.model_to_file(root_dir=root_folder, **project_data)
 
 
+ETag = str
+
+
 async def upload_file_to_storage(
     app: web.Application,
     link_and_path: LinkAndPath2,
     user_id: int,
     session: ClientSession,
-) -> None:
+) -> Tuple[LinkAndPath2, ETag]:
     try:
         upload_url = await get_file_upload_url(
             app=app,
@@ -191,8 +196,11 @@ async def upload_file_to_storage(
             raise ExporterException(
                 f"Client replied with status={resp.status} and body '{upload_result}'"
             )
-
-        log.debug("Upload status=%s, result: '%s'", resp.status, upload_result)
+        e_tag = json.loads(resp.headers.get("Etag", None))
+        log.debug(
+            "Upload status=%s, result: '%s', Etag %s", resp.status, upload_result, e_tag
+        )
+        return (link_and_path, e_tag)
 
 
 async def add_new_project(app: web.Application, project: Project, user_id: int):
@@ -202,7 +210,9 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
     db = app[APP_PROJECT_DBAPI]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: Dict = json.loads(project.json(exclude_none=True, by_alias=True))
+    project_in: Dict = json.loads(
+        project.json(exclude_none=True, by_alias=True, exclude_unset=True)
+    )
 
     # update metadata (uuid, timestamps, ownership) and save
     _project_db: Dict = await db.add_project(
@@ -212,6 +222,75 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
         raise ExporterException("Project uuid dose nto match after validation")
 
     await create_or_update_pipeline(app, user_id, project.uuid)
+
+
+async def _fix_node_run_hashes_based_on_old_project(
+    project: Project, original_project: Project, node_mapping: Dict[NodeID, NodeID]
+) -> None:
+    for old_node_id, old_node in original_project.workbench.items():
+        new_node_id = node_mapping.get(old_node_id)
+        if new_node_id is None:
+            # this should not happen
+            log.warning("could not find new node id %s", new_node_id)
+            continue
+        new_node = project.workbench.get(new_node_id)
+        if new_node is None:
+            # this should also not happen
+            log.warning("could not find new node data from id %s", new_node_id)
+            continue
+
+        # check the node status in the old project
+        old_computed_hash = await compute_node_hash(
+            old_node_id, project_node_io_payload_cb(original_project)
+        )
+        log.debug(
+            "node %s old run hash: %s, computed old hash: %s",
+            old_node_id,
+            old_node.run_hash,
+            old_computed_hash,
+        )
+        node_needs_update = old_computed_hash != old_node.run_hash
+        # set the new node hash
+        new_node.run_hash = (
+            None
+            if node_needs_update
+            else await compute_node_hash(
+                new_node_id, project_node_io_payload_cb(project)
+            )
+        )
+
+
+async def _fix_file_e_tags(
+    project: Project, links_to_etags: List[Tuple[LinkAndPath2, ETag]]
+) -> None:
+    for link_and_path, e_tag in links_to_etags:
+        file_path = link_and_path.relative_path_to_file
+        if len(file_path.parts) < 3:
+            log.warning(
+                "fixing eTag while importing issue: the path is not expected, skipping %s",
+                file_path,
+            )
+            continue
+        node_id = file_path.parts[-2]
+
+        # now try to fix the eTag if any
+        node = project.workbench.get(node_id)
+        if node is None:
+            log.warning(
+                "node %s could not be found in project, skipping eTag fix",
+                node_id,
+            )
+            continue
+        # find the file in the outputs if any
+        for output in node.outputs.values():
+            if isinstance(output, BaseFileLink) and output.path == str(file_path):
+                output.e_tag = e_tag
+
+
+async def _remove_runtime_states(project: Project):
+    for node_data in project.workbench.values():
+        node_data.state.modified = None
+        node_data.state.dependencies = None
 
 
 async def import_files_and_validate_project(
@@ -266,7 +345,7 @@ async def import_files_and_validate_project(
                     session=session,
                 )
             )
-        await asyncio.gather(*run_in_parallel)
+        links_to_new_e_tags = await asyncio.gather(*run_in_parallel)
 
     # finally create and add the project
     project = Project(
@@ -288,6 +367,13 @@ async def import_files_and_validate_project(
     project_uuid = str(project.uuid)
 
     try:
+        await _fix_file_e_tags(project, links_to_new_e_tags)
+        # NOTE: first fix the file eTags, and then the run hashes
+        await _fix_node_run_hashes_based_on_old_project(
+            project, project_file, shuffled_data
+        )
+
+        await _remove_runtime_states(project)
         await add_new_project(app, project, user_id)
     except Exception as e:
         log.warning(
@@ -298,7 +384,7 @@ async def import_files_and_validate_project(
         )
         try:
             await delete_project(app=app, project_uuid=project_uuid, user_id=user_id)
-        except ProjectsException as e:
+        except ProjectsException:
             # no need to raise an error here
             log.exception(
                 "Could not find project %s while trying to revert actions", project_uuid
