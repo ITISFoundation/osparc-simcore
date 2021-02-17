@@ -76,13 +76,10 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           const state = source.getRunning();
           switch (state) {
             case "SUCCESS":
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
-              target.setTextColor("ready-green");
-              return;
             case "FAILED":
             case "ABORTED":
               this.__removeClass(this.__icon.getContentElement(), "rotate");
-              target.setTextColor("failed-red");
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "PENDING":
             case "PUBLISHED":
@@ -109,17 +106,20 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__node.getStatus().bind("interactive", this.__icon, "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
-          if (source.getInteractive() == null) {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-          } else if (source.getInteractive() === "ready") {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-            target.setTextColor("ready-green");
-          } else if (source.getInteractive() === "failed") {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-            target.setTextColor("failed-red");
-          } else {
-            this.__addClass(this.__icon.getContentElement(), "rotate");
-            target.resetTextColor();
+          const state = source.getInteractive();
+          switch (state) {
+            case null:
+              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              break;
+            case "ready":
+            case "failed":
+              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
+              break;
+            default:
+              this.__addClass(this.__icon.getContentElement(), "rotate");
+              target.resetTextColor();
+              break;
           }
         }
       });

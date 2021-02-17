@@ -75,6 +75,26 @@ qx.Class.define("osparc.utils.StatusUI", {
       }
     },
 
+    getColor: function(state) {
+      switch (state) {
+        // computationals
+        case "SUCCESS":
+          return "ready-green";
+        case "FAILED":
+        case "ABORTED":
+          return "failed-red";
+
+        // dynamics
+        case "ready":
+          return "ready-green";
+        case "failed":
+          return "failed-red";
+
+        default:
+          return null;
+      }
+    },
+
     getBorderDecorator: function(state) {
       switch (state) {
         case "SUCCESS":
