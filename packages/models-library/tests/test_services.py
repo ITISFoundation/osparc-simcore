@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from pprint import pprint
+from pprint import pformat
 from typing import Any, Dict
 
 import pytest
@@ -92,7 +92,7 @@ def test_service_port_units(osparc_simcore_root_dir):
     ),
 )
 def test_service_models_examples(model_cls, model_cls_examples):
-    for example in model_cls_examples:
-        pprint(example)
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
         model_instance = model_cls(**example)
-        assert model_instance
+        assert model_instance, f"Failed with {name}"
