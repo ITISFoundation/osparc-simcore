@@ -193,7 +193,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
       node.getStatus().bind("running", this, "decorator", {
-        converter: state => osparc.utils.StatusUI.getBorderDecorator(state);
+        converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
       });
     },
 
