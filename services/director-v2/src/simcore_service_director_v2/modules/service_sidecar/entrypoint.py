@@ -194,7 +194,6 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
         # "endpoint_spec": {"Mode": "dnsrr"},
         "labels": {
             "io.simcore.zone": f"{service_sidecar_settings.traefik_simcore_zone}",
-            "port": "80",
             "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",

@@ -45,7 +45,8 @@ class ServiceSidecarSettings(BaseSettings):
     )
 
     web_service_port: int = Field(
-        8000, description="port on which the webserver is exposed"
+        8000,
+        description="port on which the webserver for the service-sidecar is exposed",
     )
 
     simcore_services_network_name: str = Field(
