@@ -215,6 +215,15 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         isInput: isInput,
         ui: portLabel
       };
+      if (isInput) {
+        this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
+          converter: dependencies => osparc.utils.StatusUI.getColor(dependencies.length ? "ready" : "failed")
+        });
+      } else {
+        this.getNode().getStatus().bind("modified", portLabel, "textColor", {
+          converter: modified => osparc.utils.StatusUI.getColor(modified ? "failed" : "ready")
+        });
+      }
       label.ui.isInput = isInput;
       this.__addDragDropMechanism(label.ui, isInput);
       if (isInput) {

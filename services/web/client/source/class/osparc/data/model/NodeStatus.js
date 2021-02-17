@@ -46,16 +46,16 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       event: "changeInteractive"
     },
 
-    modified: {
-      check: "Boolean",
-      nullable: true,
-      event: "changeModified"
-    },
-
     dependencies: {
       check: "Array",
       nullable: true,
       event: "changeDependencies"
+    },
+
+    modified: {
+      check: "Boolean",
+      nullable: true,
+      event: "changeModified"
     }
   }
 });
