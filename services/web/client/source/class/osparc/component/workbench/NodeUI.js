@@ -217,7 +217,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       };
       if (isInput) {
         this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
-          converter: dependencies => osparc.utils.StatusUI.getColor(dependencies.length ? "ready" : "failed")
+          converter: dependencies => osparc.utils.StatusUI.getColor(dependencies.length ? "failed" : "ready")
         });
       } else {
         this.getNode().getStatus().bind("modified", portLabel, "textColor", {
