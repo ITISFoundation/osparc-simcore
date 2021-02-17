@@ -1,0 +1,51 @@
+name: sleeper
+key: simcore/services/comp/itis/sleeper
+type: computational
+integration-version: 1.0.0
+version: 2.0.2
+description: A service which awaits for time to pass.
+contact: neagu@itis.swiss
+authors:
+  - name: "Manuel Guidon"
+    email: guidon@itis.swiss
+    affiliation: "IT'IS Foundation"
+  - name: "Odei Maiz"
+    email: maiz@itis.swiss
+    affiliation: "IT'IS Foundation"
+  - name: "Andrei Neagu"
+    email: neagu@itis.swiss
+    affiliation: "IT'IS Foundation"
+inputs:
+  input_1:
+    displayOrder: 1
+    label: File with int number
+    description: Pick a file containing only one integer
+    type: "data:text/plain"
+    fileToKeyMap:
+      single_number.txt: input_1
+  input_2:
+    displayOrder: 2
+    label: Sleep interval
+    description: Choose an amount of time to sleep
+    type: integer
+    defaultValue: 2
+  input_3:
+    displayOrder: 3
+    label: Fail after sleep
+    description: If set to true will cause service to fail after it sleeps
+    type: boolean
+    defaultValue: false
+
+outputs:
+  output_1:
+    displayOrder: 1
+    label: File containing one random integer
+    description: Integer is generated in range [1-9]
+    type: "data:text/plain"
+    fileToKeyMap:
+      single_number.txt: output_1
+  output_2:
+    displayOrder: 2
+    label: Random sleep interval
+    description: Interval is generated in range [1-9]
+    type: integer

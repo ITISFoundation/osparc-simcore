@@ -189,6 +189,10 @@ class ServiceProperty(BaseModel):
 
 
 class ServiceInput(ServiceProperty):
+    """
+    Metadata on a service input port
+    """
+
     widget: Optional[Widget] = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
