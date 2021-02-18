@@ -194,7 +194,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __requestStartPipeline: function(studyId, selectedNodeIDs = []) {
+    __requestStartPipeline: function(studyId, selectedNodeIDs = [], forceRestart = false) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
@@ -210,20 +210,30 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.getLogger().error(null, "Pipeline is already running");
         } else if (e.getTarget().getStatus() == "422") {
           this.getLogger().info(null, "The pipeline is up-to-date");
+          const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
+          const win = new osparc.ui.window.Confirmation(msg);
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__requestStartPipeline(studyId, selectedNodeIDs, true);
+            }
+          }, this);
         } else {
           this.getLogger().error(null, "Failed submitting pipeline");
         }
         startStopButtonsWB.setRunning(false);
         startStopButtonsSS.setRunning(false);
       }, this);
+
+      req.setRequestData({
+        "subgraph": selectedNodeIDs,
+        "force_restart": forceRestart
+      });
+      req.send();
       if (selectedNodeIDs.length) {
-        req.setRequestData({
-          "subgraph": selectedNodeIDs
-        });
-        req.send();
         this.getLogger().info(null, "Starting partial pipeline");
       } else {
-        req.send();
         this.getLogger().info(null, "Starting pipeline");
       }
 
