@@ -11,7 +11,7 @@ from models_library.services import ServiceDockerData, ServiceType
 from pydantic import EmailStr, Extra, ValidationError
 
 from ..core.settings import CatalogSettings
-from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverName, VersionStr
+from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
 from ..utils.client_base import BaseServiceClientApi
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
@@ -43,7 +43,7 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-SolverNameVersionPair = Tuple[SolverName, str]
+SolverNameVersionPair = Tuple[SolverKeyId, str]
 
 
 class TruncatedServiceOut(ServiceDockerData):
@@ -138,7 +138,7 @@ class CatalogApi(BaseServiceClientApi):
         return solvers
 
     async def get_solver(
-        self, user_id: int, name: SolverName, version: VersionStr
+        self, user_id: int, name: SolverKeyId, version: VersionStr
     ) -> Solver:
 
         assert version != LATEST_VERSION  # nosec
@@ -160,9 +160,12 @@ class CatalogApi(BaseServiceClientApi):
 
         return service.to_solver()
 
-    async def get_latest_solver(self, user_id: int, name: SolverName) -> Solver:
+    async def list_latest_releases(self, user_id: int):
+        raise NotImplementedError()
+
+    async def get_latest_release(self, user_id: int, name: SolverKeyId) -> Solver:
         def _this_solver(solver: Solver) -> bool:
-            return solver.name == name
+            return solver.id == name
 
         solvers = await self.list_solvers(user_id, _this_solver)
 

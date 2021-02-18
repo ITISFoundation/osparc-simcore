@@ -5,7 +5,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from starlette import status
 
-from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus
+from ...models.schemas.jobs import Job, JobInput, JobOutput, JobStatus
+from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ..dependencies.application import get_reverse_url_mapper
 from .jobs_faker import the_fake_impl
 
@@ -19,29 +20,33 @@ router = APIRouter()
 #
 # - Similar to docker container's API design (container = job and image = solver)
 #
+# - TODO: solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus) disabled since MAG is not convinced it is necessary for now
+#
 
 
 async def list_jobs_impl(
-    solver_id: UUID,
+    solver_key: SolverKeyId,
+    version: VersionStr,
     url_for: Callable,
 ):
+    solver_resource_name = f"solvers/{solver_key}/releases/{version}"
     return [
         job.copy(
             update={
                 "url": url_for("get_job", job_id=job.id),
                 "solver_url": url_for(
-                    "get_solver",
-                    solver_id=job.solver_id,
+                    "get_solver_release", solver_key=solver_key, version=version
                 ),
                 "outputs_url": url_for("list_job_outputs", job_id=job.id),
             }
         )
-        for job in the_fake_impl.job_values(solver_id)
+        for job in the_fake_impl.job_values(solver_resource_name)
     ]
 
 
 async def create_job_impl(
-    solver_id: UUID,
+    solver_key: SolverKeyId,
+    version: VersionStr,
     inputs: List[JobInput],
     url_for: Callable,
 ):
@@ -52,33 +57,16 @@ async def create_job_impl(
     # TODO: validate inputs against solver specs
     # TODO: create a unique identifier of job based on solver_id and inputs
 
-    job = the_fake_impl.create_job(solver_id, inputs)
+    job = the_fake_impl.create_job(f"{solver_key}:{version}", inputs)
     return job.copy(
         update={
             "url": url_for("get_job", job_id=job.id),
             "solver_url": url_for(
-                "get_solver",
-                solver_id=job.solver_id,
+                "get_solver_release", solver_key=solver_key, version=version
             ),
             "outputs_url": url_for("list_job_outputs", job_id=job.id),
         }
     )
-
-
-#
-# TODO: disabled since MAG is not convinced it is necessary for now
-#
-
-# pylint: disable=dangerous-default-value
-# @solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus)
-async def _run_job(
-    solver_id: UUID,
-    inputs: List[JobInput] = [],
-):
-    """ create + start job in a single call """
-    job = the_fake_impl.create_job(solver_id, inputs)
-    job_state = the_fake_impl.start_job(job.id)
-    return job_state
 
 
 @router.get("", response_model=List[Job])
@@ -91,8 +79,9 @@ async def list_all_jobs(
             update={
                 "url": url_for("get_job", job_id=job.id),
                 "solver_url": url_for(
-                    "get_solver",
-                    solver_id=job.solver_id,
+                    "get_solver_release",
+                    solver_key=job.solver_key,
+                    version=job.solver_version,
                 ),
                 "outputs_url": url_for("list_job_outputs", job_id=job.id),
             }
@@ -112,8 +101,9 @@ async def get_job(
             update={
                 "url": url_for("get_job", job_id=job.id),
                 "solver_url": url_for(
-                    "get_solver",
-                    solver_id=job.solver_id,
+                    "get_solver_release",
+                    solver_key=job.solver_key,
+                    version=job.solver_version,
                 ),
                 "outputs_url": url_for("list_job_outputs", job_id=job.id),
             }
@@ -148,8 +138,9 @@ async def stop_job(
             update={
                 "url": url_for("get_job", job_id=job.id),
                 "solver_url": url_for(
-                    "get_solver",
-                    solver_id=job.solver_id,
+                    "get_solver_release",
+                    solver_key=job.solver_key,
+                    version=job.solver_version,
                 ),
                 "outputs_url": url_for("list_job_outputs", job_id=job.id),
             }

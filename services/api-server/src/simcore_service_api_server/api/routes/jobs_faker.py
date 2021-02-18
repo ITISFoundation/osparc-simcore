@@ -9,10 +9,10 @@ import logging
 import random
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List
 from uuid import UUID
 
-from ...models.schemas.solvers import Job, JobInput, JobOutput, JobStatus, TaskStates
+from ...models.schemas.jobs import Job, JobInput, JobOutput, JobStatus, TaskStates
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +30,16 @@ class JobsFaker:
     job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
     job_outputs: Dict[UUID, List[JobOutput]] = field(default_factory=dict)
 
-    def job_values(self, solver_id: Optional[UUID] = None) -> Iterator[Job]:
+    def job_values(self, solver_id: str = None) -> Iterator[Job]:
         if solver_id:
             for job in self.jobs.values():
-                if job.solver_id == solver_id:
+                if job.runner_name == solver_id:
                     yield job
         else:
             for job in self.jobs.values():
                 yield job
 
-    def create_job(self, solver_id: UUID, inputs: List[JobInput]) -> Job:
+    def create_job(self, solver_id: str, inputs: List[JobInput]) -> Job:
         # TODO: validate inputs against solver definition
         inputs_checksum = hashlib.sha256(
             " ".join(input.json() for input in inputs).encode("utf-8")

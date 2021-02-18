@@ -5,18 +5,16 @@
 import sys
 from operator import attrgetter
 from pprint import pformat
-from uuid import uuid4
 
 import pytest
 from simcore_service_api_server.api.routes.solvers_faker import SolversFaker
-from simcore_service_api_server.models.schemas.solvers import (
+from simcore_service_api_server.models.schemas.jobs import (
     Job,
     JobInput,
     JobOutput,
-    Solver,
-    Version,
     _compose_job_id,
 )
+from simcore_service_api_server.models.schemas.solvers import Solver, Version
 
 
 @pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
@@ -37,7 +35,7 @@ def test_create_solver_from_image_metadata():
 
 
 def test_create_job_model():
-    job = Job.create_now(uuid4(), "12345")
+    job = Job.create_now("solvers/isolve/releases/1.3.4", "12345")
 
     print(job.json(indent=2))
     assert job.id is not None
@@ -56,36 +54,33 @@ def test_solvers_sorting_by_name_and_version(faker):
     # SEE https://packaging.pypa.io/en/latest/version.html
 
     # have a solver
-    solver0 = Solver(**Solver.Config.schema_extra["example"])
+    one_solver = Solver(**Solver.Config.schema_extra["example"])
 
-    assert isinstance(solver0.pep404_version, Version)
-    major, minor, micro = solver0.pep404_version.release
-    solver0.version = f"{major}.{minor}.{micro}"
+    assert isinstance(one_solver.pep404_version, Version)
+    major, minor, micro = one_solver.pep404_version.release
+    one_solver.version = f"{major}.{minor}.{micro}"
 
     # and a different version of the same
     # NOTE: that id=None so that it can be re-coputed
-    solver1 = solver0.copy(
-        update={"version": f"{solver0.version}beta", "id": None}, deep=True
+    earlier_release = one_solver.copy(
+        update={"version": f"{one_solver.version}beta"}, deep=True
     )
-    assert solver1.pep404_version.is_prerelease
-    assert solver1.pep404_version < solver0.pep404_version
-    assert solver0.id != solver1.id, "changing vesion should automaticaly change id"
+    assert earlier_release.pep404_version.is_prerelease
+    assert earlier_release.pep404_version < one_solver.pep404_version
 
     # and yet a completely different solver
-    other_solver = solver0.copy(
-        update={"name": f"simcore/services/comp/{faker.name()}", "id": None}
-    )
-    assert (
-        solver0.id != other_solver.id
-    ), "changing vesion should automaticaly change id"
+    another_solver = one_solver.copy(update={"id": "simcore/services/comp/zSolve"})
+    assert one_solver.id != another_solver.id
+    assert one_solver.pep404_version == another_solver.pep404_version
 
     # let's sort a list of solvers by name and then by version
     sorted_solvers = sorted(
-        [solver0, other_solver, solver1], key=attrgetter("name", "pep404_version")
+        [one_solver, another_solver, earlier_release],
+        key=attrgetter("id", "pep404_version"),
     )
 
-    # dont' really know reference solver name so...
-    if solver0.name < other_solver.name:
-        assert sorted_solvers == [solver1, solver0, other_solver]
-    else:
-        assert sorted_solvers == [other_solver, solver1, solver0]
+    assert [s.name for s in sorted_solvers] == [
+        earlier_release.name,
+        one_solver.name,
+        another_solver.name,
+    ]
