@@ -371,14 +371,14 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
-      this.populateNodesData(workbenchData, workbenchUIData);
+      this.__populateNodesData(workbenchData, workbenchUIData);
 
       nodeIds.forEach(nodeId => {
         this.getNode(nodeId).giveUniqueName();
       });
     },
 
-    populateNodesData: function(workbenchData, workbenchUIData) {
+    __populateNodesData: function(workbenchData, workbenchUIData) {
       Object.entries(workbenchData).forEach(([nodeId, nodeData]) => {
         this.getNode(nodeId).populateNodeData(nodeData);
         if ("position" in nodeData) {
