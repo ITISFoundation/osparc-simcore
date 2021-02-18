@@ -21,27 +21,12 @@ click==7.1.2
     #   -c requirements/_base.txt
     #   black
     #   pip-tools
-dataclasses==0.8
-    # via
-    #   -c requirements/_base.txt
-    #   black
 distlib==0.3.2
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
 identify==2.2.9
     # via pre-commit
-importlib-metadata==4.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
-    #   pep517
-    #   pre-commit
-    #   virtualenv
-importlib-resources==5.1.4
-    # via
-    #   pre-commit
-    #   virtualenv
 isort==5.8.0
     # via
     #   -c requirements/_test.txt
@@ -92,13 +77,6 @@ virtualenv==20.4.7
     # via pre-commit
 watchdog[watchmedo]==2.1.2
     # via -r requirements/_tools.in
-zipp==3.4.1
-    # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
-    #   importlib-metadata
-    #   importlib-resources
-    #   pep517
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
