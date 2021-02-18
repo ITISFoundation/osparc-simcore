@@ -54,7 +54,3 @@ def assert_valid_config(app: web.Application) -> Dict:
     cfg = get_config(app)
     _settings = CatalogSettings(**cfg)
     return cfg
-
-
-def get_client_session(app: web.Application) -> ClientSession:
-    return app[APP_CLIENT_SESSION_KEY]

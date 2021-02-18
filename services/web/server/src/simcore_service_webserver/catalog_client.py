@@ -5,13 +5,18 @@ import logging
 import urllib.parse
 from typing import Any, Dict, List, Optional
 
-from aiohttp import web
-from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
+from aiohttp import ClientSession, web
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ClientResponseError,
+    InvalidURL,
+)
+from servicelib.client_session import get_client_session
 from servicelib.rest_responses import wrap_as_envelope
 from yarl import URL
 
 from ._meta import api_version_prefix
-from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX, get_client_session
+from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
 from .constants import X_PRODUCT_NAME_HEADER
 
 logger = logging.getLogger(__name__)
@@ -19,16 +24,21 @@ logger = logging.getLogger(__name__)
 
 async def is_service_responsive(app: web.Application):
     """ Returns true if catalog is ready """
-    origin: Optional[URL] = app.get(KCATALOG_ORIGIN)
+    try:
+        origin: Optional[URL] = app.get(KCATALOG_ORIGIN)
+        if not origin:
+            raise ValueError(
+                "KCATALOG_ORIGIN was not initialized (app module was not enabled?)"
+            )
 
-    if not origin:  # service was not enabled!
+        client: ClientSession = get_client_session(app)
+        await client.get(origin, ssl=False, raise_for_status=True)
+
+    except (ClientConnectionError, ClientResponseError, InvalidURL, ValueError) as err:
+        logger.warning("Catalog service unresponsive: %s", err)
         return False
-
-    client = get_client_session(app)
-
-    # call to health-check entry-point
-    async with client.get(origin, ssl=False) as resp:
-        return resp.status == 200
+    else:
+        return True
 
 
 def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
