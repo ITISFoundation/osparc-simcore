@@ -330,21 +330,11 @@ qx.Class.define("osparc.data.model.Node", {
 
         this.populateInputOutputData(nodeData);
 
-        if (nodeData.state) {
-          if (nodeData.state.currentStatus) {
-            this.getStatus().setRunning(nodeData.state.currentStatus);
-          }
-          if (nodeData.state.modified) {
-            this.getStatus().setModified(nodeData.state.modified);
-          }
-          if (nodeData.state.dependencies) {
-            this.getStatus().setDependencies(nodeData.state.dependencies);
-          }
-        }
-
         if ("progress" in nodeData) {
           this.getStatus().setProgress(nodeData.progress);
         }
+
+        this.populateStates(nodeData);
 
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
@@ -376,6 +366,20 @@ qx.Class.define("osparc.data.model.Node", {
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
+    },
+
+    populateStates: function(nodeData) {
+      if (nodeData.state) {
+        if (nodeData.state.currentStatus) {
+          this.getStatus().setRunning(nodeData.state.currentStatus);
+        }
+        if (nodeData.state.modified) {
+          this.getStatus().setModified(nodeData.state.modified);
+        }
+        if (nodeData.state.dependencies) {
+          this.getStatus().setDependencies(nodeData.state.dependencies);
+        }
+      }
     },
 
     giveUniqueName: function() {
