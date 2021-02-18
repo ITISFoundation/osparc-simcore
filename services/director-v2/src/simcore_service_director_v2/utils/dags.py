@@ -198,7 +198,7 @@ async def compute_pipeline_details(
 
 
 @log_decorator(logger=logger)
-def topological_sort_grouping(dag_graph: nx.DiGraph) -> List:
+def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[List[str]]:
     # copy the graph
     graph_copy = dag_graph.copy()
     res = []
