@@ -31,12 +31,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     }
   },
 
-  members: {
-    __node: null,
-    __label: null,
-    __icon: null,
-
-    __addClass: function(element, className) {
+  statics: {
+    addClass: function(element, className) {
       if (element) {
         const currentClass = element.getAttribute("class");
         if (currentClass && currentClass.includes(className.trim())) {
@@ -46,13 +42,19 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       }
     },
 
-    __removeClass: function(element, className) {
+    removeClass: function(element, className) {
       const currentClass = element.getAttribute("class");
       if (currentClass) {
         const regex = new RegExp(className.trim(), "g");
         element.setAttribute("class", currentClass.replace(regex, ""));
       }
     },
+  },
+
+  members: {
+    __node: null,
+    __label: null,
+    __icon: null,
 
     __setupComputational: function() {
       this.__node.getStatus().bind("running", this.__label, "value", {
@@ -80,14 +82,14 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "SUCCESS":
             case "FAILED":
             case "ABORTED":
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":
             case "RETRY":
-              this.__addClass(this.__icon.getContentElement(), "rotate");
+              this.self().addClass(this.__icon.getContentElement(), "rotate");
               target.resetTextColor();
               return;
             case "UNKNOWN":
@@ -116,22 +118,22 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
           switch (state) {
             case "ready":
             case "failed":
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               break;
             case "idle":
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               break;
             case "starting":
             case "pulling":
             case "pending":
             case "connecting":
-              this.__addClass(this.__icon.getContentElement(), "rotate");
+              this.self().addClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               break;
             default:
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
               target.resetTextColor();
               break;
           }
