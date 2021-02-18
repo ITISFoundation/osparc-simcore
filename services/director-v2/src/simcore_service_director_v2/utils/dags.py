@@ -3,9 +3,11 @@ from typing import Any, Dict, List, Set
 
 import networkx as nx
 from models_library.projects import Workbench
-from models_library.projects_nodes import NodeID
+from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_nodes_io import PortLink
+from models_library.projects_pipeline import PipelineDetails
 from models_library.utils.nodes import compute_node_hash
+from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 
 from .computations import NodeClass, to_node_class
 from .logging_utils import log_decorator
@@ -17,49 +19,8 @@ def _is_node_computational(node_key: str) -> bool:
     return to_node_class(node_key) == NodeClass.COMPUTATIONAL
 
 
-def _mark_node_as_dirty(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-):
-    nodes_data_view[str(node_id)]["dirty"] = True
-
-
-def _is_node_dirty(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
-    return nodes_data_view[str(node_id)].get("dirty", False)
-
-
-async def _is_node_outdated(
-    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
-    """this function will return whether a node is outdated:
-    - if it has no outputs
-    - if one of the output ports in the outputs is missing
-    - if, after *resolving the inputs if linked to other nodes* these nodes are dirty (outdated themselves)
-    - if the last run_hash does not fit with the current one
-    """
-    node = nodes_data_view[str(node_id)]
-    # if the node has no output it is outdated for sure
-    if not node["outputs"]:
-        return True
-    for output_port in node["outputs"]:
-        if output_port is None:
-            return True
-    # check if the previous node (if any) are dirty... in which case this one is too
-    for input_port in node["inputs"].values():
-        if isinstance(input_port, PortLink):
-            if _is_node_dirty(nodes_data_view, input_port.node_uuid):
-                return True
-    # maybe our inputs changed? let's compute the node hash and compare with the saved one
-    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
-        return nodes_data_view[str(node_id)]
-
-    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
-    return computed_hash != node["run_hash"]
-
-
 @log_decorator(logger=logger)
-def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
+def create_complete_dag(workbench: Workbench) -> nx.DiGraph:
     """creates a complete graph out of the project workbench"""
     dag_graph = nx.DiGraph()
     for node_id, node in workbench.items():
@@ -81,48 +42,147 @@ def create_complete_dag_graph(workbench: Workbench) -> nx.DiGraph:
 
 
 @log_decorator(logger=logger)
+def create_complete_dag_from_tasks(tasks: List[CompTaskAtDB]) -> nx.DiGraph:
+    dag_graph = nx.DiGraph()
+    for task in tasks:
+        dag_graph.add_node(
+            str(task.node_id),
+            name=task.job_id,
+            key=task.image.name,
+            version=task.image.tag,
+            inputs=task.inputs,
+            run_hash=task.run_hash,
+            outputs=task.outputs,
+        )
+        for input_data in task.inputs.values():
+            if isinstance(input_data, PortLink):
+                dag_graph.add_edge(str(input_data.node_uuid), str(task.node_id))
+    return dag_graph
+
+
+async def compute_node_modified_state(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+) -> bool:
+    node = nodes_data_view[str(node_id)]
+    # if the node has no output it is outdated for sure
+    if not node["outputs"]:
+        return True
+    for output_port in node["outputs"]:
+        if output_port is None:
+            return True
+    # maybe our inputs changed? let's compute the node hash and compare with the saved one
+    async def get_node_io_payload_cb(node_id: NodeID) -> Dict[str, Any]:
+        return nodes_data_view[str(node_id)]
+
+    computed_hash = await compute_node_hash(node_id, get_node_io_payload_cb)
+    if computed_hash != node["run_hash"]:
+        return True
+    return False
+
+
+async def compute_node_dependencies_state(nodes_data_view, node_id) -> Set[NodeID]:
+    node = nodes_data_view[str(node_id)]
+    # check if the previous node is outdated or waits for dependencies... in which case this one has to wait
+    non_computed_dependencies: Set[NodeID] = set()
+    for input_port in node.get("inputs", {}).values():
+        if isinstance(input_port, PortLink):
+            if node_needs_computation(nodes_data_view, input_port.node_uuid):
+                non_computed_dependencies.add(input_port.node_uuid)
+    # all good. ready
+    return non_computed_dependencies
+
+
+kNODE_MODIFIED_STATE = "modified_state"
+kNODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
+
+
+async def compute_node_states(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+):
+    node = nodes_data_view[str(node_id)]
+    node[kNODE_MODIFIED_STATE] = await compute_node_modified_state(
+        nodes_data_view, node_id
+    )
+    node[kNODE_DEPENDENCIES_TO_COMPUTE] = await compute_node_dependencies_state(
+        nodes_data_view, node_id
+    )
+
+
+def node_needs_computation(
+    nodes_data_view: nx.classes.reportviews.NodeDataView, node_id: NodeID
+) -> bool:
+    node = nodes_data_view[str(node_id)]
+    return node.get(kNODE_MODIFIED_STATE, False) or node.get(
+        kNODE_DEPENDENCIES_TO_COMPUTE, None
+    )
+
+
+@log_decorator(logger=logger)
+async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
+    nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
+    for node in nx.topological_sort(complete_dag):
+        if _is_node_computational(nodes_data_view[node]["key"]):
+            await compute_node_states(nodes_data_view, node)
+
+
+@log_decorator(logger=logger)
 async def create_minimal_computational_graph_based_on_selection(
-    full_dag_graph: nx.DiGraph, selected_nodes: List[NodeID], force_restart: bool
+    complete_dag: nx.DiGraph, selected_nodes: List[NodeID], force_restart: bool
 ) -> nx.DiGraph:
-    nodes_data_view: nx.classes.reportviews.NodeDataView = full_dag_graph.nodes.data()
+    nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
 
     try:
-
-        # first pass, find the nodes that are dirty (outdated)
-        for node in nx.topological_sort(full_dag_graph):
-            if _is_node_computational(
-                nodes_data_view[node]["key"]
-            ) and await _is_node_outdated(nodes_data_view, node):
-                _mark_node_as_dirty(nodes_data_view, node)
+        # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
+        await _set_computational_nodes_states(complete_dag)
     except nx.NetworkXUnfeasible:
         # not acyclic, return an empty graph
         return nx.DiGraph()
 
     # second pass, detect all the nodes that need to be run
-    minimal_selection_nodes: Set[NodeID] = set()
+    minimal_nodes_selection: Set[NodeID] = set()
     if not selected_nodes:
-        # fully automatic detection, we want anything that is outdated or depending on outdated nodes
-        minimal_selection_nodes.update(
+        # fully automatic detection, we want anything that is waiting for dependencies or outdated
+        minimal_nodes_selection.update(
             {
                 n
                 for n, _ in nodes_data_view
                 if _is_node_computational(nodes_data_view[n]["key"])
-                and (force_restart or _is_node_dirty(nodes_data_view, n))
+                and (force_restart or node_needs_computation(nodes_data_view, n))
             }
         )
     else:
         # we want all the outdated nodes that are in the tree leading to the selected nodes
         for node in selected_nodes:
-            minimal_selection_nodes.update(
+            minimal_nodes_selection.update(
                 set(
                     n
-                    for n in nx.bfs_tree(full_dag_graph, str(node), reverse=True)
+                    for n in nx.bfs_tree(complete_dag, str(node), reverse=True)
                     if _is_node_computational(nodes_data_view[n]["key"])
-                    and (force_restart or _is_node_dirty(nodes_data_view, n))
+                    and (force_restart or node_needs_computation(nodes_data_view, n))
                 )
             )
 
-    return full_dag_graph.subgraph(minimal_selection_nodes)
+    return complete_dag.subgraph(minimal_nodes_selection)
+
+
+@log_decorator(logger=logger)
+async def compute_pipeline_details(
+    complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph
+) -> PipelineDetails:
+
+    # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
+    await _set_computational_nodes_states(complete_dag)
+    return PipelineDetails(
+        adjacency_list=nx.to_dict_of_lists(pipeline_dag),
+        node_states={
+            node_id: NodeState(
+                modified=node_data.get(kNODE_MODIFIED_STATE),
+                dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE),
+            )
+            for node_id, node_data in complete_dag.nodes.data()
+            if node_id in pipeline_dag.nodes
+        },
+    )
 
 
 @log_decorator(logger=logger)

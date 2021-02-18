@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from models_library.projects import ProjectID
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -17,7 +17,6 @@ from models_library.services import (
 from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
-from ....models.domains.projects import ProjectAtDB
 from ....models.schemas.services import NodeRequirement, ServiceExtras
 from ....utils.async_utils import run_sequentially_in_context
 from ....utils.computations import to_node_class
@@ -122,6 +121,20 @@ async def _generate_tasks_list_from_project(
 
 
 class CompTasksRepository(BaseRepository):
+    @log_decorator(logger=logger)
+    async def get_all_tasks(
+        self,
+        project_id: ProjectID,
+    ) -> List[CompTaskAtDB]:
+        tasks: List[CompTaskAtDB] = []
+        async for row in self.connection.execute(
+            sa.select([comp_tasks]).where((comp_tasks.c.project_id == str(project_id)))
+        ):
+            task_db = CompTaskAtDB.from_orm(row)
+            tasks.append(task_db)
+
+        return tasks
+
     @log_decorator(logger=logger)
     async def get_comp_tasks(
         self,

@@ -10,14 +10,14 @@ aio-pika
 alembic
 click
 coverage
+docker
 pytest
 pytest-aiohttp
 pytest-cov
-python-dotenv
 pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-docker
-tenacity
+python-dotenv
 pyyaml
+tenacity

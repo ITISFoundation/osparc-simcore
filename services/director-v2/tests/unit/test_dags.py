@@ -11,7 +11,7 @@ import networkx as nx
 import pytest
 from models_library.projects import Workbench
 from simcore_service_director_v2.utils.dags import (
-    create_complete_dag_graph,
+    create_complete_dag,
     create_minimal_computational_graph_based_on_selection,
 )
 
@@ -20,7 +20,7 @@ def test_create_complete_dag_graph(
     fake_workbench: Workbench,
     fake_workbench_complete_adjacency: Dict[str, List[str]],
 ):
-    dag_graph = create_complete_dag_graph(fake_workbench)
+    dag_graph = create_complete_dag(fake_workbench)
     assert nx.is_directed_acyclic_graph(dag_graph)
     assert nx.to_dict_of_lists(dag_graph) == fake_workbench_complete_adjacency
 
@@ -149,12 +149,12 @@ async def test_create_minimal_graph(
     force_exp_dag: Dict[str, List[str]],
     not_forced_exp_dag: Dict[str, List[str]],
 ):
-    full_dag_graph: nx.DiGraph = create_complete_dag_graph(fake_workbench)
+    complete_dag: nx.DiGraph = create_complete_dag(fake_workbench)
 
     # everything is outdated in that case
     reduced_dag: nx.DiGraph = (
         await create_minimal_computational_graph_based_on_selection(
-            full_dag_graph, subgraph, force_restart=True
+            complete_dag, subgraph, force_restart=True
         )
     )
     assert nx.to_dict_of_lists(reduced_dag) == force_exp_dag
@@ -162,7 +162,7 @@ async def test_create_minimal_graph(
     # only the outdated stuff shall be found here
     reduced_dag_with_auto_detect: nx.DiGraph = (
         await create_minimal_computational_graph_based_on_selection(
-            full_dag_graph, subgraph, force_restart=False
+            complete_dag, subgraph, force_restart=False
         )
     )
     assert nx.to_dict_of_lists(reduced_dag_with_auto_detect) == not_forced_exp_dag

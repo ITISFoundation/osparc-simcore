@@ -33,3 +33,4 @@ json2html
 parfive
 
 pydantic[email]
+orjson

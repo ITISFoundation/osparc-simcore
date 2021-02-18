@@ -3,14 +3,20 @@
 """
 import logging
 import urllib.parse
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from aiohttp import ContentTypeError, web
+from aiohttp import ClientSession, web
+from aiohttp.client_exceptions import (
+    ClientConnectionError,
+    ClientResponseError,
+    InvalidURL,
+)
+from servicelib.client_session import get_client_session
 from servicelib.rest_responses import wrap_as_envelope
 from yarl import URL
 
 from ._meta import api_version_prefix
-from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX, get_client_session
+from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
 from .constants import X_PRODUCT_NAME_HEADER
 
 logger = logging.getLogger(__name__)
@@ -18,16 +24,21 @@ logger = logging.getLogger(__name__)
 
 async def is_service_responsive(app: web.Application):
     """ Returns true if catalog is ready """
-    origin: Optional[URL] = app.get(KCATALOG_ORIGIN)
+    try:
+        origin: Optional[URL] = app.get(KCATALOG_ORIGIN)
+        if not origin:
+            raise ValueError(
+                "KCATALOG_ORIGIN was not initialized (app module was not enabled?)"
+            )
 
-    if not origin:  # service was not enabled!
+        client: ClientSession = get_client_session(app)
+        await client.get(origin, ssl=False, raise_for_status=True)
+
+    except (ClientConnectionError, ClientResponseError, InvalidURL, ValueError) as err:
+        logger.warning("Catalog service unresponsive: %s", err)
         return False
-
-    client = get_client_session(app)
-
-    # call to health-check entry-point
-    async with client.get(origin, ssl=False) as resp:
-        return resp.status == 200
+    else:
+        return True
 
 
 def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
@@ -56,27 +67,26 @@ async def make_request_and_envelope_response(
 
     try:
         async with session.request(method, url, headers=headers, data=data) as resp:
+            payload = await resp.json()
 
-            is_error = resp.status >= 400
-            # catalog backend sometimes sends error in plan=in text
-            payload: Union[Dict, str] = {}
             try:
-                payload = await resp.json()
-            except ContentTypeError:
-                payload = await resp.text()
-                is_error = True
+                resp.raise_for_status()
+                resp_data = wrap_as_envelope(data=payload)
 
-            if is_error:
-                # Only if error, it wraps since catalog service does
-                # not return (for the moment) enveloped
-                data = wrap_as_envelope(error=payload)
-            else:
-                data = wrap_as_envelope(data=payload)
+            except ClientResponseError as err:
+                if 500 <= err.status:
+                    raise err
+                resp_data = wrap_as_envelope(error=payload["errors"])
 
-            return web.json_response(data, status=resp.status)
+            return web.json_response(resp_data, status=resp.status)
 
-    except (TimeoutError,) as err:
-        raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
+    except (TimeoutError, ClientConnectionError, ClientResponseError) as err:
+        logger.warning(
+            "Catalog service errors upon request %s %s: %s", method, url.relative(), err
+        )
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable"
+        ) from err
 
 
 ## API ------------------------

@@ -27,8 +27,8 @@ ServiceOutputKey = PropertyName
 #    backwards compatibility
 #   - schema samples could have multiple schemas to tests backwards compatibility
 #
-# TODO: uuid instead of key+version?
-
+# TODO: reduce to a minimum returned input/output models (ask OM)
+#
 INPUT_SAMPLE = {
     "displayOrder": 2,
     "label": "Sleep Time",
@@ -47,14 +47,22 @@ OUTPUT_SAMPLE = {
     "label": "Time Slept",
     "description": "Time the service waited before completion",
     "type": "number",
-    "defaultValue": 0,
     "unit": "second",
+    "unitLong": "seconds",
+    "unitShort": "sec",
     "keyId": "output_2",
 }
 
 
 # TODO: will be replaced by pynt functionality
 FAKE_UNIT_TO_FORMATS = {"SECOND": ("s", "seconds"), "METER": ("m", "meters")}
+
+
+def get_formatted_unit(data: dict):
+    unit = data.get("unit")
+    if unit:
+        return FAKE_UNIT_TO_FORMATS.get(unit.upper(), [None, None])
+    return [None, None]
 
 
 class _CommonApiExtension(BaseModel):
@@ -79,7 +87,7 @@ class ServiceInputApiOut(ServiceInput, _CommonApiExtension):
     @classmethod
     def from_service(cls, service: Dict[str, Any], input_key: ServiceInputKey):
         data = service["inputs"][input_key]
-        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), [None, None])
+        ushort, ulong = get_formatted_unit(data)
 
         return cls(keyId=input_key, unitLong=ulong, unitShort=ushort, **data)
 
@@ -92,12 +100,12 @@ class ServiceOutputApiOut(ServiceOutput, _CommonApiExtension):
     class Config:
         extra = Extra.forbid
         alias_generator = snake_to_camel
-        schema_extra = {"example": INPUT_SAMPLE}
+        schema_extra = {"example": OUTPUT_SAMPLE}
 
     @classmethod
     def from_service(cls, service: Dict[str, Any], output_key: ServiceOutputKey):
         data = service["outputs"][output_key]
-        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), [None, None])
+        ushort, ulong = get_formatted_unit(data)
 
         return cls(keyId=output_key, unitLong=ulong, unitShort=ushort, **data)
 

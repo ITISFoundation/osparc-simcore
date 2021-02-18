@@ -31,7 +31,7 @@ install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
 ]
 
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt") + [
-    "simcore-postgres-database[migration]"
+    "simcore-postgres-database"
 ]
 
 

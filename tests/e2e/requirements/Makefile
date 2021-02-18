@@ -6,14 +6,14 @@ VENV_DIR ?= $(realpath $(ROOT_DIR)/.venv)
 .PHONY: reqs
 requirements.txt: requirements.in
 	# pip compiling $<
-	@$(VENV_DIR)/bin/pip-compile --upgrade --build-isolation --output-file $@ $<
+	@pip-compile --upgrade --build-isolation --output-file $@ $<
 
 reqs: requirements.txt ## alias to compile requirements.txt
 
 .PHONY: install
 install: $(VENV_DIR) requirements.txt ## installs dependencies
 	# installing requirements
-	@$</bin/pip3 install -r requirements.txt
+	@pip install -r requirements.txt
 
 
 .PHONY: help

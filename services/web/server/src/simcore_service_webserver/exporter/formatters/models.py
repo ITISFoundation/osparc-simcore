@@ -120,7 +120,9 @@ class ProjectFile(BaseLoadingModel, Project):
     def new_instance_from_shuffled_data(
         self, shuffled_data: ShuffledData
     ) -> "ProjectFile":
-        project_as_string = self.json(exclude={"storage_path"}, by_alias=True)
+        project_as_string = self.json(
+            exclude={"storage_path"}, by_alias=True, exclude_unset=True
+        )
 
         for old_uuid, new_uuid in shuffled_data.items():
             project_as_string = project_as_string.replace(old_uuid, new_uuid)

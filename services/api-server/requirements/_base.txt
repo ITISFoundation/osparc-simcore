@@ -34,8 +34,12 @@ click==7.1.2
     # via uvicorn
 contextvars==2.4
     # via sniffio
-cryptography==3.3.1
-    # via -r requirements/_base.in
+cryptography==3.4.5
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 dataclasses==0.8
     # via pydantic
 dnspython==2.1.0
@@ -70,6 +74,9 @@ httpx==0.14.3
     #   -r requirements/_base.in
 idna==2.10
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   email-validator
     #   requests
     #   rfc3986
@@ -128,7 +135,6 @@ rx==1.6.1
     # via graphql-core
 six==1.15.0
     # via
-    #   cryptography
     #   graphene
     #   graphql-core
     #   graphql-relay

@@ -6180,7 +6180,7 @@ paths:
                                     key:
                                       type: string
                                       description: distinctive name for the node based on the docker registry path
-                                      pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                      pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                       example:
                                         - simcore/services/comp/sleeper
                                         - simcore/services/dynamic/3dviewer
@@ -6375,20 +6375,40 @@ paths:
                                             - '15'
                                       deprecated: true
                                     state:
-                                      title: RunningState
-                                      description: the node's running state
-                                      default: NOT_STARTED
-                                      enum:
-                                        - UNKNOWN
-                                        - NOT_STARTED
-                                        - PUBLISHED
-                                        - PENDING
-                                        - STARTED
-                                        - RETRY
-                                        - SUCCESS
-                                        - FAILED
-                                        - ABORTED
-                                      type: string
+                                      title: NodeState
+                                      type: object
+                                      properties:
+                                        modified:
+                                          title: Modified
+                                          description: true if the node's outputs need to be re-computed
+                                          default: true
+                                          type: boolean
+                                        dependencies:
+                                          title: Dependencies
+                                          description: contains the node inputs dependencies if they need to be computed first
+                                          type: array
+                                          uniqueItems: true
+                                          items:
+                                            type: string
+                                            format: uuid
+                                        currentStatus:
+                                          description: the node's current state
+                                          default: NOT_STARTED
+                                          example:
+                                            - RUNNING
+                                            - FAILED
+                                          enum:
+                                            - UNKNOWN
+                                            - PUBLISHED
+                                            - NOT_STARTED
+                                            - PENDING
+                                            - STARTED
+                                            - RETRY
+                                            - SUCCESS
+                                            - FAILED
+                                            - ABORTED
+                                          type: string
+                                      additionalProperties: false
                               additionalProperties: true
                             ui:
                               type: object
@@ -6755,7 +6775,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -6950,20 +6970,40 @@ paths:
                                 - '15'
                           deprecated: true
                         state:
-                          title: RunningState
-                          description: the node's running state
-                          default: NOT_STARTED
-                          enum:
-                            - UNKNOWN
-                            - NOT_STARTED
-                            - PUBLISHED
-                            - PENDING
-                            - STARTED
-                            - RETRY
-                            - SUCCESS
-                            - FAILED
-                            - ABORTED
-                          type: string
+                          title: NodeState
+                          type: object
+                          properties:
+                            modified:
+                              title: Modified
+                              description: true if the node's outputs need to be re-computed
+                              default: true
+                              type: boolean
+                            dependencies:
+                              title: Dependencies
+                              description: contains the node inputs dependencies if they need to be computed first
+                              type: array
+                              uniqueItems: true
+                              items:
+                                type: string
+                                format: uuid
+                            currentStatus:
+                              description: the node's current state
+                              default: NOT_STARTED
+                              example:
+                                - RUNNING
+                                - FAILED
+                              enum:
+                                - UNKNOWN
+                                - PUBLISHED
+                                - NOT_STARTED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILED
+                                - ABORTED
+                              type: string
+                          additionalProperties: false
                   additionalProperties: true
                 ui:
                   type: object
@@ -7210,7 +7250,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7405,20 +7445,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -7783,7 +7843,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7978,20 +8038,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -8362,7 +8442,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -8557,20 +8637,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -8932,7 +9032,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -9127,20 +9227,40 @@ paths:
                                 - '15'
                           deprecated: true
                         state:
-                          title: RunningState
-                          description: the node's running state
-                          default: NOT_STARTED
-                          enum:
-                            - UNKNOWN
-                            - NOT_STARTED
-                            - PUBLISHED
-                            - PENDING
-                            - STARTED
-                            - RETRY
-                            - SUCCESS
-                            - FAILED
-                            - ABORTED
-                          type: string
+                          title: NodeState
+                          type: object
+                          properties:
+                            modified:
+                              title: Modified
+                              description: true if the node's outputs need to be re-computed
+                              default: true
+                              type: boolean
+                            dependencies:
+                              title: Dependencies
+                              description: contains the node inputs dependencies if they need to be computed first
+                              type: array
+                              uniqueItems: true
+                              items:
+                                type: string
+                                format: uuid
+                            currentStatus:
+                              description: the node's current state
+                              default: NOT_STARTED
+                              example:
+                                - RUNNING
+                                - FAILED
+                              enum:
+                                - UNKNOWN
+                                - PUBLISHED
+                                - NOT_STARTED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILED
+                                - ABORTED
+                              type: string
+                          additionalProperties: false
                   additionalProperties: true
                 ui:
                   type: object
@@ -9387,7 +9507,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -9582,20 +9702,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -9982,7 +10122,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -10177,20 +10317,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -11029,7 +11189,7 @@ paths:
                   description: the uuid to assign to the service
                 service_key:
                   type: string
-                  pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                   description: The key (url) of the service
                 service_version:
                   type: string
@@ -11201,7 +11361,7 @@ paths:
                       service_key:
                         type: string
                         description: distinctive name for the node based on the docker registry path
-                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                         example:
                           - simcore/services/comp/itis/sleeper
                           - simcore/services/dynamic/3dviewer
@@ -11705,7 +11865,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -11900,20 +12060,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -12277,7 +12457,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -12472,20 +12652,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object

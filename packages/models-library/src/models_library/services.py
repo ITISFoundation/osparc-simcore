@@ -174,8 +174,15 @@ class ServiceProperty(BaseModel):
         description="Place the data associated with the named keys in files",
         examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
-    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
-        None, alias="defaultValue", examples=["Dog", True]
+
+    # TODO: use discriminators
+    unit: Optional[str] = Field(
+        None, description="Units, when it refers to a physical quantity"
+    )
+
+    # TODO: use discriminators
+    unit: Optional[str] = Field(
+        None, description="Units, when it refers to a physical quantity"
     )
 
     # TODO: use discriminators
@@ -193,6 +200,10 @@ class ServiceInput(ServiceProperty):
     Metadata on a service input port
     """
 
+    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
+        None, alias="defaultValue", examples=["Dog", True]
+    )
+
     widget: Optional[Widget] = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
@@ -200,15 +211,25 @@ class ServiceInput(ServiceProperty):
 
     class Config(ServiceProperty.Config):
         schema_extra = {
-            "example": {
-                "displayOrder": 2,
-                "label": "Sleep Time",
-                "description": "Time to wait before completion",
-                "type": "number",
-                "defaultValue": 0,
-                "unit": "second",
-                "widget": {"type": "TextArea", "details": {"minHeight": 3}},
-            }
+            "examples": [
+                # file-wo-widget:
+                {
+                    "displayOrder": 1,
+                    "label": "Input files",
+                    "description": "Files downloaded from service connected at the input",
+                    "type": "data:*/*",
+                },
+                # latest:
+                {
+                    "displayOrder": 2,
+                    "label": "Sleep Time",
+                    "description": "Time to wait before completion",
+                    "type": "number",
+                    "defaultValue": 0,
+                    "unit": "second",
+                    "widget": {"type": "TextArea", "details": {"minHeight": 3}},
+                },
+            ],
         }
 
 
@@ -221,14 +242,23 @@ class ServiceOutput(ServiceProperty):
 
     class Config(ServiceProperty.Config):
         schema_extra = {
-            "example": {
-                "displayOrder": 2,
-                "label": "Time Slept",
-                "description": "Time the service waited before completion",
-                "type": "number",
-                "defaultValue": 0,
-                "unit": "second",
-            }
+            "examples": [
+                # previously:
+                {
+                    "displayOrder": 2,
+                    "label": "Time Slept",
+                    "description": "Time the service waited before completion",
+                    "type": "number",
+                },
+                # latest:
+                {
+                    "displayOrder": 2,
+                    "label": "Time Slept",
+                    "description": "Time the service waited before completion",
+                    "type": "number",
+                    "unit": "second",
+                },
+            ]
         }
 
 

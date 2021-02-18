@@ -12,12 +12,12 @@ from typing import Dict, List, Optional, Tuple
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
-from models_library.settings.services_common import ServicesCommonSettings
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.monitor_services import service_started, service_stopped
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import APP_CLIENT_SESSION_KEY
+from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 
 log = logging.getLogger(__name__)
