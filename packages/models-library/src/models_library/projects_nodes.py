@@ -60,18 +60,36 @@ class NodeState(BaseModel):
         True, description="true if the node's outputs need to be re-computed"
     )
     dependencies: Set[NodeID] = Field(
-        default_factory=list,
+        default_factory=set,
         description="contains the node inputs dependencies if they need to be computed first",
     )
     current_status: RunningState = Field(
         RunningState.NOT_STARTED,
         description="the node's current state",
-        examples=["RUNNING", "FAILED"],
         alias="currentStatus",
     )
 
     class Config:
         extra = Extra.forbid
+        schema_extra = {
+            "examples": [
+                {
+                    "modified": True,
+                    "dependencies": [],
+                    "current_status": "NOT_STARTED",
+                },
+                {
+                    "modified": True,
+                    "dependencies": ["42838344-03de-4ce2-8d93-589a5dcdfd05"],
+                    "current_status": "ABORTED",
+                },
+                {
+                    "modified": False,
+                    "dependencies": [],
+                    "current_status": "SUCCESS",
+                },
+            ]
+        }
 
 
 class Node(BaseModel):
@@ -80,7 +98,7 @@ class Node(BaseModel):
         description="distinctive name for the node based on the docker registry path",
         regex=SERVICE_KEY_RE,
         examples=[
-            "simcore/services/comp/sleeper",
+            "simcore/services/comp/itis/sleeper",
             "simcore/services/dynamic/3dviewer",
             "simcore/services/frontend/file-picker",
         ],

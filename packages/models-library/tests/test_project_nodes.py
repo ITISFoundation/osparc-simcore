@@ -26,7 +26,7 @@ def test_create_minimal_node(minimal_node_data_sample: Dict[str, Any]):
     assert node.outputs == {}
     assert node.state.current_status == RunningState.NOT_STARTED
     assert node.state.modified is True
-    assert node.state.dependencies == []
+    assert node.state.dependencies == set()
 
     assert node.parent is None
     assert node.progress is None
@@ -54,7 +54,7 @@ def test_create_minimal_node_with_new_data_type(
 
     assert node.state.current_status == RunningState.STARTED
     assert node.state.modified is True
-    assert node.state.dependencies == []
+    assert node.state.dependencies == set()
 
 
 def test_backwards_compatibility_node_data(minimal_node_data_sample: Dict[str, Any]):
@@ -67,6 +67,6 @@ def test_backwards_compatibility_node_data(minimal_node_data_sample: Dict[str, A
     assert node.thumbnail is None
     assert node.state.current_status == RunningState.FAILED
     assert node.state.modified is True
-    assert node.state.dependencies == []
+    assert node.state.dependencies == set()
 
     assert node.dict(exclude_unset=True) != old_node_data

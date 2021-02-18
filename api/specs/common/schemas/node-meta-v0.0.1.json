@@ -248,6 +248,11 @@
                 true
               ]
             },
+            "unit": {
+              "title": "Unit",
+              "description": "Units of this input value, if a physical quantity",
+              "type": "string"
+            },
             "widget": {
               "description": "custom widget to use instead of the default one determined from the data-type",
               "anyOf": [
@@ -398,6 +403,11 @@
                   "dir33/input2.txt": "key2"
                 }
               ]
+            },
+            "unit": {
+              "title": "Unit",
+              "description": "Units of the output value, if a physical quantity",
+              "type": "string"
             }
           }
         }

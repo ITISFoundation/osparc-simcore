@@ -8,7 +8,7 @@ IFS=$'\n\t'
 install() {
     bash ci/helpers/ensure_python_pip.bash
     bash ci/helpers/install_pylint.bash
-    pip list -v
+    pip freeze
 }
 
 test() {

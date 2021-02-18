@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Type, Union
+from typing import Callable, Dict, Iterator, Union
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
@@ -23,7 +23,6 @@ from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
-from pydantic import BaseModel
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
@@ -33,6 +32,7 @@ pytestmark = pytest.mark.asyncio
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
+    "pytest_simcore.pydantic_models",
 ]
 
 
@@ -266,21 +266,3 @@ async def test_api_key(loop, initialized_app, test_user_id) -> ApiKeyInDB:
             "test-api-key", api_key="key", api_secret="secret", user_id=test_user_id
         )
         return apikey
-
-
-## PYDANTIC MODELS & SCHEMAS -----------------------------------------------------
-
-
-@pytest.fixture
-def model_cls_examples(model_cls: Type[BaseModel]) -> List[Dict[str, Any]]:
-    # Extracts examples from pydantic model class
-    # Use by defining model_cls as test parametrization
-    # SEE https://pydantic-docs.helpmanual.io/usage/schema/#schema-customization
-    examples = model_cls.Config.schema_extra.get("examples", [])
-    example = model_cls.Config.schema_extra.get("example")
-    if example:
-        examples.append(example)
-
-    assert model_cls_examples, f"{model_cls} has NO examples. Add them in Config class"
-
-    return examples

@@ -211,10 +211,7 @@ async def add_new_project(app: web.Application, project: Project, user_id: int):
 
     # validated project is transform in dict via json to use only primitive types
     project_in: Dict = json.loads(
-        project.json(
-            exclude_none=True,
-            by_alias=True,
-        )
+        project.json(exclude_none=True, by_alias=True, exclude_unset=True)
     )
 
     # update metadata (uuid, timestamps, ownership) and save
@@ -370,10 +367,12 @@ async def import_files_and_validate_project(
     project_uuid = str(project.uuid)
 
     try:
+        await _fix_file_e_tags(project, links_to_new_e_tags)
+        # NOTE: first fix the file eTags, and then the run hashes
         await _fix_node_run_hashes_based_on_old_project(
             project, project_file, shuffled_data
         )
-        await _fix_file_e_tags(project, links_to_new_e_tags)
+
         await _remove_runtime_states(project)
         await add_new_project(app, project, user_id)
     except Exception as e:
