@@ -16,7 +16,5 @@ sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-typing-extensions==3.10.0.0
-    # via yarl
 yarl==1.6.3
     # via -r requirements/_base.in
