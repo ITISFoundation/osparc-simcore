@@ -89,11 +89,7 @@ click==7.1.2
     #   click-repl
 codecov==2.1.11
     # via -r requirements/_test.in
-contextvars==2.4
-    # via
-    #   -c requirements/_base.txt
-    #   sniffio
-coverage==5.5
+coverage==5.4
     # via
     #   codecov
     #   coveralls
@@ -140,28 +136,12 @@ httpx==0.18.1
     #   respx
 icdiff==1.9.1
     # via pytest-icdiff
-idna-ssl==1.1.0
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 idna==2.10
     # via
     #   -c requirements/_base.txt
-    #   idna-ssl
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.14
-    # via
-    #   -c requirements/_base.txt
-    #   contextvars
-importlib-metadata==2.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
-    #   kombu
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via pytest
 isort==5.8.0
@@ -314,8 +294,6 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-typed-ast==1.4.3
-    # via astroid
 typing-extensions==3.7.4.3
     # via
     #   -c requirements/_base.txt
@@ -347,10 +325,6 @@ yarl==1.6.2
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.4.0
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
