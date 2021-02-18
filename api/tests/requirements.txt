@@ -22,21 +22,12 @@ coverage==5.5
     # via
     #   -r requirements.in
     #   pytest-cov
-dataclasses==0.8
-    # via werkzeug
 dictpath==0.1.3
     # via openapi-core
-idna-ssl==1.1.0
-    # via aiohttp
 idna==3.1
     # via
     #   idna-ssl
     #   yarl
-importlib-metadata==4.0.1
-    # via
-    #   jsonschema
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via pytest
 isodate==0.6.0
@@ -116,8 +107,6 @@ werkzeug==2.0.0
     # via openapi-core
 yarl==1.6.3
     # via aiohttp
-zipp==3.4.1
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
