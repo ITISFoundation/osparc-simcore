@@ -348,11 +348,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
         if (delta) {
           let deltaKeys = Object.keys(delta);
-          // lastChangeDate should not be taken into account as data change
-          const index = deltaKeys.indexOf("lastChangeDate");
-          if (index > -1) {
-            deltaKeys.splice(index, 1);
-          }
+          // lastChangeDate and creationDate should not be taken into account as data change
+          [
+            "creationDate",
+            "lastChangeDate"
+          ].forEach(prop => {
+            const index = deltaKeys.indexOf(prop);
+            if (index > -1) {
+              deltaKeys.splice(index, 1);
+            }
+          });
           if (deltaKeys.length > 0) {
             this.updateStudyDocument(false);
           }
