@@ -1174,7 +1174,7 @@
         "additionalProperties": false
       },
       "ServiceOut": {
-        "title": "simcore node",
+        "title": "ServiceOut",
         "required": [
           "name",
           "description",

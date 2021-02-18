@@ -5,8 +5,6 @@
 from asyncio import Future
 
 import pytest
-from yarl import URL
-
 from servicelib.application import create_safe_application
 from servicelib.client_session import APP_CLIENT_SESSION_KEY
 from simcore_service_webserver._meta import api_version_prefix
@@ -17,15 +15,19 @@ from simcore_service_webserver.catalog import (
     to_backend_service,
 )
 from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, load_openapi_specs
+from yarl import URL
 
 
 @pytest.fixture
-def client(loop, aiohttp_client):
+def client(loop, aiohttp_client, monkeypatch):
+    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
+
     cfg = load_default_config()
     app = create_safe_application(cfg)
 
     app[APP_OPENAPI_SPECS_KEY] = load_openapi_specs()
 
+    # __wrapped__ avoids app modules dependency checks
     setup_catalog.__wrapped__(app, disable_auth=True)
 
     # needs to start application ...
@@ -77,7 +79,6 @@ def test_catalog_routing(client):
     assert any(client.app.router.resources()), "No routes detected?"
 
     for resource in client.app.router.resources():
-        assert "catalog" in resource.name, f"info:{resource.get_info()}"
         assert resource.canonical.startswith(f"/{api_version_prefix}/catalog")
 
 

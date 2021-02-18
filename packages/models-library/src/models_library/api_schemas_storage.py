@@ -1,7 +1,9 @@
 """
-    Models used in storage API
+    Models used in storage API:
 
-    IMPORTANT: do NOT couple these schemas until storage is refactored
+    Specifically services/storage/src/simcore_service_storage/api/v0/openapi.yaml#/components/schemas
+
+    IMPORTANT: DO NOT COUPLE these schemas until storage is refactored
 """
 
 from datetime import datetime
