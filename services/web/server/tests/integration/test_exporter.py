@@ -285,6 +285,21 @@ def replace_uuids_with_sequences(original_project: Dict[str, Any]) -> Dict[str, 
     return project
 
 
+def dict_with_keys(dict_data: Dict[str, Any], kept_keys: Set[str]) -> Dict[str, Any]:
+    modified_dict = {}
+    for key, value in dict_data.items():
+        if key in kept_keys:
+            # keep the whole object
+            modified_dict[key] = deepcopy(value)
+        # if it's a nested dict go deeper
+        elif isinstance(value, dict):
+            possible_nested_dict = dict_with_keys(value, kept_keys)
+            if possible_nested_dict:
+                modified_dict[key] = possible_nested_dict
+
+    return modified_dict
+
+
 def dict_without_keys(
     dict_data: Dict[str, Any], skipped_keys: Set[str]
 ) -> Dict[str, Any]:
