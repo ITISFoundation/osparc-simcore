@@ -97,6 +97,8 @@ class BaseLoadingModel(BaseModel):
                 ),
             )
         )
-        to_store = model_obj.json(exclude={"storage_path"}, by_alias=True)
+        to_store = model_obj.json(
+            exclude={"storage_path"}, by_alias=True, exclude_unset=True
+        )
         await model_obj.storage_path.data_to_file(to_store)
         return model_obj

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
 from aiohttp import ClientTimeout, web
-from models_library.projects_state import RunningState
+from models_library.projects_pipeline import ComputationTask
 from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.logging_utils import log_decorator
@@ -34,11 +34,11 @@ class _DirectorServiceError(Exception):
         super().__init__(f"forwarded call failed with status {status}, reason {reason}")
 
 
-@log_decorator(logger=log)
 async def _request_director_v2(
     app: web.Application,
     method: str,
     url: URL,
+    expected_status: web.HTTPSuccessful = web.HTTPOk,
     headers: Optional[Dict[str, str]] = None,
     data: Optional[bytes] = None,
     **kwargs,
@@ -48,7 +48,7 @@ async def _request_director_v2(
         async with session.request(
             method, url, headers=headers, json=data, **kwargs
         ) as resp:
-            if resp.status >= 400:
+            if resp.status != expected_status.status_code:
                 # in some cases the director answers with plain text
                 payload: Union[Dict, str] = (
                     await resp.json()
@@ -58,7 +58,7 @@ async def _request_director_v2(
                 raise _DirectorServiceError(resp.status, payload)
 
             payload: Dict = await resp.json()
-            return (payload, resp.status)
+            return payload
 
     except TimeoutError as err:
         raise web.HTTPServiceUnavailable(
@@ -69,26 +69,26 @@ async def _request_director_v2(
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> Optional[Dict[str, Any]]:
+) -> Dict[str, Any]:
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(f"{director2_settings.endpoint}/computations")
     body = {"user_id": user_id, "project_id": str(project_id)}
     # request to director-v2
     try:
-        computation_task_out, _ = await _request_director_v2(
-            app, "POST", backend_url, data=body
+        computation_task_out = await _request_director_v2(
+            app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
         )
         return computation_task_out
 
-    except _DirectorServiceError:
-        log.error("could not create pipeline from project %s", project_id)
+    except _DirectorServiceError as exc:
+        log.error("could not create pipeline from project %s: %s", project_id, exc)
 
 
 @log_decorator(logger=log)
-async def get_pipeline_state(
+async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> RunningState:
+) -> Optional[ComputationTask]:
     director2_settings: Directorv2Settings = get_settings(app)
 
     backend_url = URL(
@@ -97,16 +97,13 @@ async def get_pipeline_state(
 
     # request to director-v2
     try:
-        computation_task_out, _ = await _request_director_v2(app, "GET", backend_url)
-    except _DirectorServiceError:
-        log.warning(
-            "getting pipeline state for project %s failed. state is then %s",
-            project_id,
-            RunningState.UNKNOWN,
+        computation_task_out_dict = await _request_director_v2(
+            app, "GET", backend_url, expected_status=web.HTTPAccepted
         )
-        return RunningState.UNKNOWN
-
-    return RunningState(computation_task_out["state"])
+        task_out = ComputationTask.parse_obj(computation_task_out_dict)
+        return task_out
+    except _DirectorServiceError as exc:
+        log.warning("getting pipeline for project %s failed: %s.", project_id, exc)
 
 
 @log_decorator(logger=log)
@@ -119,7 +116,9 @@ async def delete_pipeline(
     body = {"user_id": user_id, "force": True}
 
     # request to director-v2
-    await _request_director_v2(app, "DELETE", backend_url, data=body)
+    await _request_director_v2(
+        app, "DELETE", backend_url, expected_status=web.HTTPNoContent, data=body
+    )
 
 
 @login_required
@@ -150,12 +149,14 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
     # request to director-v2
     try:
-        computation_task_out, resp_status = await _request_director_v2(
-            request.app, "POST", backend_url, data=body
+        computation_task_out = await _request_director_v2(
+            request.app, "POST", backend_url, expected_status=web.HTTPCreated, data=body
         )
         data = {"pipeline_id": computation_task_out["id"]}
 
-        return web.json_response(data=wrap_as_envelope(data=data), status=resp_status)
+        return web.json_response(
+            data=wrap_as_envelope(data=data), status=web.HTTPCreated.status_code
+        )
     except _DirectorServiceError as exc:
         return web.json_response(
             data=wrap_as_envelope(error=exc.reason), status=exc.status
@@ -178,15 +179,14 @@ async def stop_pipeline(request: web.Request) -> web.Response:
 
     # request to director-v2
     try:
-        _, resp_status = await _request_director_v2(
-            request.app, "POST", backend_url, data=body
+        await _request_director_v2(
+            request.app,
+            "POST",
+            backend_url,
+            expected_status=web.HTTPAccepted,
+            data=body,
         )
         data = {}
-        # director responds with a 202
-        if resp_status != web.HTTPAccepted.status_code:
-            raise _DirectorServiceError(
-                resp_status, "Unexpected response from director-v2"
-            )
         return web.json_response(
             data=wrap_as_envelope(data=data), status=web.HTTPNoContent.status_code
         )

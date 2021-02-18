@@ -11,20 +11,14 @@ from typing import Tuple
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
+from aioresponses import aioresponses
+from models_library.projects_state import ProjectLocked
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
-from yarl import URL
-
-from models_library.projects_state import (
-    Owner,
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    RunningState,
-)
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
+from yarl import URL
 
 
 @pytest.fixture
@@ -79,6 +73,13 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
     cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
 
     return cfg
+
+
+@pytest.fixture(autouse=True)
+async def director_v2_automock(
+    director_v2_service_mock: aioresponses,
+) -> aioresponses:
+    yield director_v2_service_mock
 
 
 # REST-API -----------------------------------------------------------------------------------------------
@@ -179,16 +180,9 @@ def mocks_on_projects_api(mocker):
     """
     All projects in this module are UNLOCKED
     """
-    state = ProjectState(
-        locked=ProjectLocked(
-            value=False,
-            owner=Owner(user_id=2, first_name="Speedy", last_name="Gonzalez"),
-        ),
-        state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    ).dict(by_alias=True, exclude_unset=True)
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
-        return_value=future_with_result(state),
+        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
+        return_value=future_with_result(ProjectLocked(value=False)),
     )
 
 

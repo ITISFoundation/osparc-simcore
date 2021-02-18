@@ -4,7 +4,7 @@
 
 import sys
 from operator import attrgetter
-from pprint import pprint
+from pprint import pformat
 from uuid import uuid4
 
 import pytest
@@ -21,10 +21,10 @@ from simcore_service_api_server.models.schemas.solvers import (
 
 @pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
 def test_solvers_model_examples(model_cls, model_cls_examples):
-    for example in model_cls_examples:
-        pprint(example)
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
         model_instance = model_cls(**example)
-        assert model_instance
+        assert model_instance, f"Failed with {name}"
 
 
 def test_create_solver_from_image_metadata():

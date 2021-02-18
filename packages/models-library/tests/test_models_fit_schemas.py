@@ -6,10 +6,9 @@ import json
 from typing import Callable
 
 import pytest
-from pydantic.main import BaseModel
-
 from models_library.projects import Project
 from models_library.services import ServiceDockerData
+from pydantic.main import BaseModel
 
 
 @pytest.mark.parametrize(
@@ -22,8 +21,15 @@ def test_generated_schema_same_as_original(
     diff_json_schemas: Callable,
     json_schema_dict: Callable,
 ):
+    # TODO: create instead a fixture that returns a Callable and do these checks
+    # on separate test_* files that follow the same package submodule's hierarchy
+    #
     generated_schema = json.loads(pydantic_model.schema_json(indent=2))
     original_schema = json_schema_dict(original_json_schema)
+
+    # NOTE: A change is considered an addition when the destination schema has become more permissive relative to the source schema. For example {"type": "string"} -> {"type": ["string", "number"]}.
+    # A change is considered a removal when the destination schema has become more restrictive relative to the source schema. For example {"type": ["string", "number"]} -> {"type": "string"}.
+    # The addition and removal changes detected are returned in JsonSchema format. These schemas represent the set of values that have been added or removed.
 
     # run one direction original schema encompass generated one
     process_completion = diff_json_schemas(original_schema, generated_schema)

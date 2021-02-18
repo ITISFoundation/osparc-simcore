@@ -331,7 +331,15 @@ qx.Class.define("osparc.data.model.Node", {
         this.populateInputOutputData(nodeData);
 
         if (nodeData.state) {
-          this.getStatus().setRunningStatus(nodeData.state);
+          if (nodeData.state.currentStatus) {
+            this.getStatus().setRunningStatus(nodeData.state.currentStatus);
+          }
+          if (nodeData.state.modified) {
+            this.getStatus().setModifiedStatus(nodeData.state.modified);
+          }
+          if (nodeData.state.dependencies) {
+            this.getStatus().setDependenciesStatus(nodeData.state.dependencies);
+          }
         }
 
         if ("progress" in nodeData) {

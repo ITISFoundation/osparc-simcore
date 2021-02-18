@@ -3,6 +3,7 @@ import logging
 from celery.signals import worker_ready, worker_shutting_down
 
 from .__version__ import __version__
+from .boot_mode import get_boot_mode
 from .celery_configurator import create_celery_app
 from .celery_task_utils import cancel_task
 from .cli import run_sidecar
@@ -23,9 +24,9 @@ WELCOME_MSG = r"""
  '..`''.)  |  |(_/|  |   ' |(|  '--.  /_) |OO  )\| |_.'  | |  |_.' |
 .-._)   \ ,|  |_.'|  |   / : |  .--'  ||  |`-'|  |  .-.  | |  .  '.'
 \       /(_|  |   |  '--'  / |  `---.(_'  '--'\  |  | |  | |  |\  \
- `-----'   `--'   `-------'  `------'   `-----'  `--' `--' `--' '--' {0}
+ `-----'   `--'   `-------'  `------'   `-----'  `--' `--' `--' '--' {0} - {1}
 """.format(
-    __version__
+    __version__, get_boot_mode().value
 )
 
 

@@ -22,3 +22,8 @@ pytest-sugar
 # tools
 pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 coveralls
+
+
+# to test units tools
+pyyaml
+pint
