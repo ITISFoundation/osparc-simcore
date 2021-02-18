@@ -381,21 +381,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
       }
 
-      this.getStudy().setLastChangeDate(new Date());
       const newObj = this.getStudy().serialize();
-      const prjUuid = this.getStudy().getUuid();
-
-      const params = {
-        url: {
-          projectId: prjUuid,
-          run
-        },
-        data: newObj
-      };
-      return osparc.data.Resources.fetch("studies", "put", params)
+      return this.getStudy().updateStudy(newObj, run)
         .then(data => {
           this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
-        }).catch(error => {
+        })
+        .catch(error => {
           console.error(error);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
           this.getLogger().error(null, "Error updating pipeline");

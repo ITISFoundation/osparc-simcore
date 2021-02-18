@@ -189,20 +189,6 @@ qx.Class.define("osparc.data.model.Study", {
       return myNewStudyObject;
     },
 
-    updateStudy: function(params) {
-      return new Promise(resolve => {
-        osparc.data.Resources.fetch("studies", "put", {
-          url: {
-            projectId: params.uuid
-          },
-          data: params
-        }).then(data => {
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
-          resolve(data);
-        });
-      });
-    },
-
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Study));
     },
@@ -313,16 +299,22 @@ qx.Class.define("osparc.data.model.Study", {
       return jsonObject;
     },
 
-    updateStudy: function(params) {
+    updateStudy: function(params, run = false) {
       return new Promise(resolve => {
-        this.self().updateStudy({
-          ...this.serialize(),
-          ...params
-        })
-          .then(data => {
-            this.__updateModel(data);
-            resolve(data);
-          });
+        osparc.data.Resources.fetch("studies", "put", {
+          url: {
+            projectId: this.getUuid(),
+            run
+          },
+          data: {
+            ...this.serialize(),
+            ...params
+          }
+        }).then(data => {
+          this.__updateModel(data);
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+          resolve(data);
+        });
       });
     },
 
