@@ -21,6 +21,9 @@ def test_generated_schema_same_as_original(
     diff_json_schemas: Callable,
     json_schema_dict: Callable,
 ):
+    # TODO: create instead a fixture that returns a Callable and do these checks
+    # on separate test_* files that follow the same package submodule's hierarchy
+    #
     generated_schema = json.loads(pydantic_model.schema_json(indent=2))
     original_schema = json_schema_dict(original_json_schema)
 

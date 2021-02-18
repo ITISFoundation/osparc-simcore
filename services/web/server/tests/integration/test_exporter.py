@@ -495,13 +495,12 @@ async def test_import_export_import_duplicate(
     normalized_duplicated_project = replace_uuids_with_sequences(duplicated_project)
 
     # ensure values are different
-    for key in KEYS_TO_IGNORE_FROM_COMPARISON:
-        assert_combined_entires_condition(
-            normalized_imported_project[key],
-            normalized_reimported_project[key],
-            normalized_duplicated_project[key],
-            condition_operator=operator.ne,
-        )
+    assert_combined_entires_condition(
+        dict_with_keys(normalized_imported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        dict_with_keys(normalized_reimported_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        dict_with_keys(normalized_duplicated_project, KEYS_TO_IGNORE_FROM_COMPARISON),
+        condition_operator=operator.ne,
+    )
 
     # assert same structure in both directories
     assert_combined_entires_condition(

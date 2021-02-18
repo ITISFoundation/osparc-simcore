@@ -11,8 +11,7 @@
 -r _test.txt
 
 # installs this repo's packages
-../pytest-simcore/
-../postgres-database/[migration]
+../postgres-database/
 
 # current module
 .
