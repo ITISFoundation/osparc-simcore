@@ -192,9 +192,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
+      /*
       node.getStatus().bind("running", this, "decorator", {
+        // Paint borders
         converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
       });
+      */
     },
 
     getInputPort: function() {
