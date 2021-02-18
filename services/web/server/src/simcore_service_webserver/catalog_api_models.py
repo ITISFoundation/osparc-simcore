@@ -58,6 +58,13 @@ OUTPUT_SAMPLE = {
 FAKE_UNIT_TO_FORMATS = {"SECOND": ("s", "seconds"), "METER": ("m", "meters")}
 
 
+def get_formatted_unit(data: dict):
+    unit = data.get("unit")
+    if unit:
+        return FAKE_UNIT_TO_FORMATS.get(unit.upper(), [None, None])
+    return [None, None]
+
+
 class _CommonApiExtension(BaseModel):
     unit_long: Optional[str] = Field(
         None, description="Long name of the unit, if available"
@@ -80,7 +87,7 @@ class ServiceInputApiOut(ServiceInput, _CommonApiExtension):
     @classmethod
     def from_service(cls, service: Dict[str, Any], input_key: ServiceInputKey):
         data = service["inputs"][input_key]
-        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), [None, None])
+        ushort, ulong = get_formatted_unit(data)
 
         return cls(keyId=input_key, unitLong=ulong, unitShort=ushort, **data)
 
@@ -98,7 +105,7 @@ class ServiceOutputApiOut(ServiceOutput, _CommonApiExtension):
     @classmethod
     def from_service(cls, service: Dict[str, Any], output_key: ServiceOutputKey):
         data = service["outputs"][output_key]
-        ushort, ulong = FAKE_UNIT_TO_FORMATS.get(data.get("unit", ""), [None, None])
+        ushort, ulong = get_formatted_unit(data)
 
         return cls(keyId=output_key, unitLong=ulong, unitShort=ushort, **data)
 
