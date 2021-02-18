@@ -66,6 +66,7 @@ async def make_request_and_envelope_response(
     session = get_client_session(app)
 
     try:
+
         async with session.request(method, url, headers=headers, data=data) as resp:
             payload = await resp.json()
 
