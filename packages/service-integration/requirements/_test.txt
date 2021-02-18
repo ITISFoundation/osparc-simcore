@@ -31,11 +31,6 @@ idna==2.10
     # via
     #   -c requirements/_base.txt
     #   requests
-importlib-metadata==4.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   pluggy
-    #   pytest
 iniconfig==1.1.1
     # via
     #   -c requirements/_base.txt
@@ -91,12 +86,6 @@ toml==0.10.2
     #   -c requirements/_base.txt
     #   pylint
     #   pytest
-typed-ast==1.4.3
-    # via astroid
-typing-extensions==3.10.0.0
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
 urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -104,7 +93,3 @@ urllib3==1.26.4
     #   requests
 wrapt==1.12.1
     # via astroid
-zipp==3.4.1
-    # via
-    #   -c requirements/_base.txt
-    #   importlib-metadata
