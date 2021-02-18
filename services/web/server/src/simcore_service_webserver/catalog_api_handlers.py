@@ -1,13 +1,12 @@
-import json
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Iterator, List, Tuple
 
+import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.services import ServiceInput, ServiceOutput
 from pydantic import ValidationError
-from servicelib.rest_codecs import jsonify
 
 from . import catalog_client
 from ._meta import api_version_prefix
@@ -22,6 +21,12 @@ from .catalog_api_models import (
 from .constants import RQ_PRODUCT_KEY
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
+
+
+def json_dumps(v) -> str:
+    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
+    return orjson.dumps(v).decode()
+
 
 ###############
 # API HANDLERS
@@ -59,8 +64,8 @@ def parameters_validation(request: web.Request):
     try:
         try:
             context = _RequestContext.create(request)
-        except KeyError:
-            raise web.HTTPBadRequest(reason="Invalid headers")
+        except KeyError as err:
+            raise web.HTTPBadRequest(reason="Invalid headers") from err
 
         yield context
         #
@@ -69,10 +74,10 @@ def parameters_validation(request: web.Request):
         #   service_key: ServiceKey = request.match_info["service_key"]
         #   from_service_version: ServiceVersion = request.query["fromVersion"]
         #
-    except ValidationError as exc:
+    except ValidationError as err:
         raise web.HTTPUnprocessableEntity(
-            text=jsonify({"error": exc.errors()}), content_type="application/json"
-        ) from exc
+            text=json_dumps({"error": err.errors()}), content_type="application/json"
+        ) from err
 
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
@@ -91,8 +96,8 @@ async def list_service_inputs_handler(request: Request):
     response_model = await list_service_inputs(service_key, service_version, ctx)
 
     # format response
-    enveloped: str = json.dumps(
-        {"data": [json.loads(m.json(by_alias=True)) for m in response_model]}
+    enveloped: str = json_dumps(
+        {"data": [m.dict(by_alias=True) for m in response_model]}
     )
 
     return web.Response(text=enveloped, content_type="application/json")
@@ -114,9 +119,7 @@ async def get_service_input_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json.dumps(
-        {"data": json.loads(response_model.json(by_alias=True))}
-    )
+    enveloped: str = json_dumps({"data": response_model.dict(by_alias=True)})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -143,7 +146,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json.dumps({"data": response_model})
+    enveloped: str = json_dumps({"data": response_model})
 
     return web.Response(text=enveloped, content_type="application/json")
 
@@ -163,8 +166,8 @@ async def list_service_outputs_handler(request: Request):
     response_model = await list_service_outputs(service_key, service_version, ctx)
 
     # format response
-    enveloped: str = json.dumps(
-        {"data": [json.loads(m.json(by_alias=True)) for m in response_model]}
+    enveloped: str = json_dumps(
+        {"data": [m.dict(by_alias=True) for m in response_model]}
     )
 
     return web.Response(text=enveloped, content_type="application/json")
@@ -188,9 +191,7 @@ async def get_service_output_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json.dumps(
-        {"data": json.loads(response_model.json(by_alias=True))}
-    )
+    enveloped: str = json_dumps({"data": response_model.dict(by_alias=True)})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -222,7 +223,7 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json.dumps({"data": response_model})
+    enveloped: str = json_dumps({"data": response_model})
 
     return web.Response(text=enveloped, content_type="application/json")
 
