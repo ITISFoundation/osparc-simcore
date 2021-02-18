@@ -3,9 +3,10 @@
 """
 import logging
 import urllib.parse
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from aiohttp import ContentTypeError, web
+from aiohttp import web
+from aiohttp.client_exceptions import ClientConnectionError, ClientResponseError
 from servicelib.rest_responses import wrap_as_envelope
 from yarl import URL
 
@@ -55,28 +56,28 @@ async def make_request_and_envelope_response(
     session = get_client_session(app)
 
     try:
+
         async with session.request(method, url, headers=headers, data=data) as resp:
+            payload = await resp.json()
 
-            is_error = resp.status >= 400
-            # catalog backend sometimes sends error in plan=in text
-            payload: Union[Dict, str] = {}
             try:
-                payload = await resp.json()
-            except ContentTypeError:
-                payload = await resp.text()
-                is_error = True
+                resp.raise_for_status()
+                resp_data = wrap_as_envelope(data=payload)
 
-            if is_error:
-                # Only if error, it wraps since catalog service does
-                # not return (for the moment) enveloped
-                data = wrap_as_envelope(error=payload)
-            else:
-                data = wrap_as_envelope(data=payload)
+            except ClientResponseError as err:
+                if 500 <= err.status:
+                    raise err
+                resp_data = wrap_as_envelope(error=payload["errors"])
 
-            return web.json_response(data, status=resp.status)
+            return web.json_response(resp_data, status=resp.status)
 
-    except (TimeoutError,) as err:
-        raise web.HTTPServiceUnavailable(reason="unavailable catalog service") from err
+    except (TimeoutError, ClientConnectionError, ClientResponseError) as err:
+        logger.warning(
+            "Catalog service errors upon request %s %s: %s", method, url.relative(), err
+        )
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable"
+        ) from err
 
 
 ## API ------------------------
