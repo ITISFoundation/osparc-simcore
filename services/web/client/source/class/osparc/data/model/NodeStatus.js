@@ -37,24 +37,28 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     running: {
       check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED"],
       nullable: true,
+      init: null,
       event: "changeRunning"
     },
 
     interactive: {
       check: ["idle", "starting", "pulling", "pending", "connecting", "ready", "failed"],
       nullable: true,
+      init: null,
       event: "changeInteractive"
     },
 
     dependencies: {
       check: "Array",
       nullable: true,
+      init: null,
       event: "changeDependencies"
     },
 
     modified: {
       check: "Boolean",
       nullable: true,
+      init: null,
       event: "changeModified"
     }
   }
