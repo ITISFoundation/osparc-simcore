@@ -320,7 +320,7 @@ paths:
                   description: the uuid to assign to the service
                 service_key:
                   type: string
-                  pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                   description: The key (url) of the service
                 service_version:
                   type: string

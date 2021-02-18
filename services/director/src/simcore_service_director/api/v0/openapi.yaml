@@ -159,7 +159,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                           example: simcore/services/comp/itis/sleeper
                         integration-version:
                           type: string
@@ -506,7 +506,7 @@ paths:
           schema:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+            pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
             example:
               - simcore/services/comp/itis/sleeper
               - simcore/services/dynamic/3dviewer
@@ -552,7 +552,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                           example: simcore/services/comp/itis/sleeper
                         integration-version:
                           type: string
@@ -933,7 +933,7 @@ paths:
           schema:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+            pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
             example:
               - simcore/services/comp/itis/sleeper
               - simcore/services/dynamic/3dviewer
@@ -1141,7 +1141,7 @@ paths:
                         service_key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/itis/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -1245,7 +1245,7 @@ paths:
           schema:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+            pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
             example:
               - simcore/services/comp/itis/sleeper
               - simcore/services/dynamic/3dviewer
@@ -1313,7 +1313,7 @@ paths:
                       service_key:
                         type: string
                         description: distinctive name for the node based on the docker registry path
-                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                         example:
                           - simcore/services/comp/itis/sleeper
                           - simcore/services/dynamic/3dviewer
@@ -1579,7 +1579,7 @@ paths:
                       service_key:
                         type: string
                         description: distinctive name for the node based on the docker registry path
-                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                         example:
                           - simcore/services/comp/itis/sleeper
                           - simcore/services/dynamic/3dviewer
@@ -1877,7 +1877,7 @@ components:
       schema:
         type: string
         description: distinctive name for the node based on the docker registry path
-        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
         example:
           - simcore/services/comp/itis/sleeper
           - simcore/services/dynamic/3dviewer
@@ -1889,7 +1889,7 @@ components:
       schema:
         type: string
         description: distinctive name for the node based on the docker registry path
-        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
         example:
           - simcore/services/comp/itis/sleeper
           - simcore/services/dynamic/3dviewer
@@ -2012,7 +2012,7 @@ components:
             service_key:
               type: string
               description: distinctive name for the node based on the docker registry path
-              pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+              pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
               example:
                 - simcore/services/comp/itis/sleeper
                 - simcore/services/dynamic/3dviewer
@@ -2090,7 +2090,7 @@ components:
               service_key:
                 type: string
                 description: distinctive name for the node based on the docker registry path
-                pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                 example:
                   - simcore/services/comp/itis/sleeper
                   - simcore/services/dynamic/3dviewer
@@ -2159,7 +2159,7 @@ components:
               key:
                 type: string
                 description: distinctive name for the node based on the docker registry path
-                pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                 example: simcore/services/comp/itis/sleeper
               integration-version:
                 type: string

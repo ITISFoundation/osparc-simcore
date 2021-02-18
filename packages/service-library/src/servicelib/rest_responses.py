@@ -1,7 +1,7 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
-from typing import Dict, List, Mapping, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import attr
 from aiohttp import web
@@ -11,6 +11,8 @@ from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
 ENVELOPE_KEYS = ("data", "error")
 JSON_CONTENT_TYPE = "application/json"
+
+JsonLikeModel = Union[Dict[str, Any], List[Dict[str, Any]]]
 
 
 def is_enveloped_from_map(payload: Mapping) -> bool:
@@ -25,7 +27,7 @@ def is_enveloped_from_text(text: str) -> bool:
     return is_enveloped_from_map(payload)
 
 
-def is_enveloped(payload) -> bool:
+def is_enveloped(payload: Union[Mapping, str]) -> bool:
     if isinstance(payload, Mapping):
         return is_enveloped_from_map(payload)
     if isinstance(payload, str):
@@ -33,7 +35,11 @@ def is_enveloped(payload) -> bool:
     return False
 
 
-def wrap_as_envelope(data=None, error=None, as_null=True):
+def wrap_as_envelope(
+    data: Optional[JsonLikeModel] = None,
+    error: Optional[JsonLikeModel] = None,
+    as_null: bool = True,
+) -> Dict[str, Any]:
     """
     as_null: if True, keys for null values are created and assigned to None
     """
@@ -45,9 +51,9 @@ def wrap_as_envelope(data=None, error=None, as_null=True):
     return payload
 
 
-def unwrap_envelope(payload: Dict) -> Tuple:
+def unwrap_envelope(payload: Dict[str, Any]) -> Tuple:
     """
-        Safe returns (data, error) tuple from a response payload
+    Safe returns (data, error) tuple from a response payload
     """
     return tuple(payload.get(k) for k in ENVELOPE_KEYS) if payload else (None, None)
 
@@ -55,7 +61,9 @@ def unwrap_envelope(payload: Dict) -> Tuple:
 # RESPONSES FACTORIES -------------------------------
 
 
-def create_data_response(data, *, skip_internal_error_details=False) -> web.Response:
+def create_data_response(
+    data: Union[Mapping, str], *, skip_internal_error_details=False
+) -> web.Response:
     response = None
     try:
         if not is_enveloped(data):
@@ -66,7 +74,9 @@ def create_data_response(data, *, skip_internal_error_details=False) -> web.Resp
         response = web.json_response(payload, dumps=jsonify)
     except (TypeError, ValueError) as err:
         response = create_error_response(
-            [err,],
+            [
+                err,
+            ],
             str(err),
             web.HTTPInternalServerError,
             skip_internal_error_details=skip_internal_error_details,
@@ -77,14 +87,14 @@ def create_data_response(data, *, skip_internal_error_details=False) -> web.Resp
 def create_error_response(
     errors: List[Exception],
     reason: Optional[str] = None,
-    error_cls: Optional[web.HTTPError] = None,
+    error_cls: Optional[Type[web.HTTPError]] = None,
     *,
     skip_internal_error_details=False
 ) -> web.HTTPError:
     """
-        - Response body conforms OAS schema model
-        - Can skip internal details when 500 status e.g. to avoid transmitting server 
-        exceptions to the client in production
+    - Response body conforms OAS schema model
+    - Can skip internal details when 500 status e.g. to avoid transmitting server
+    exceptions to the client in production
     """
     # TODO: guarantee no throw!
     if error_cls is None:
@@ -93,7 +103,10 @@ def create_error_response(
     is_internal_error: bool = error_cls == web.HTTPInternalServerError
 
     if is_internal_error and skip_internal_error_details:
-        error = ErrorType(errors=[], status=error_cls.status_code,)
+        error = ErrorType(
+            errors=[],
+            status=error_cls.status_code,
+        )
     else:
         error = ErrorType(
             errors=[ErrorItemType.from_error(err) for err in errors],
@@ -110,7 +123,7 @@ def create_error_response(
 
 
 def create_log_response(msg: str, level: str) -> web.Response:
-    """ Produces an enveloped response with a log message
+    """Produces an enveloped response with a log message
 
     Analogous to  aiohttp's web.json_response
     """
