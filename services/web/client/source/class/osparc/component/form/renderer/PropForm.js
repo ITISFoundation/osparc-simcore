@@ -207,7 +207,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __arePortsCompatible: function(node1Id, port1Id, node2Id, port2Id) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         const study = osparc.store.Store.getInstance().getCurrentStudy();
         const workbench = study.getWorkbench();
         const node1 = workbench.getNode(node1Id);
