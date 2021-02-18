@@ -27,6 +27,8 @@ cryptography>=3.3.2
 uvloop<0.15.0 ; python_version < '3.7'
 
 # All backports libraries add environ markers
+# NOTE: If >second dependency, this will annotate a marker in the compiled requirements file
+#
 async-exit-stack ; python_version < '3.7'
 async-generator ; python_version < '3.7'
 contextvars ; python_version < '3.7'
@@ -34,3 +36,4 @@ dataclasses ; python_version < '3.7'
 importlib-metadata ; python_version < '3.8'
 importlib-resources ; python_version < '3.9'
 typing-extensions ; python_version < '3.7'
+zipp ; python_version < '3.7'
