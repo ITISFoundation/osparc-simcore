@@ -12,7 +12,6 @@ from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
-from .jobs import Job, JobInput, create_job_impl, list_jobs_impl
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +45,7 @@ async def list_solvers(
     return sorted(solvers, key=attrgetter("id"))
 
 
-@router.get("/releases", response_model=List[Solver])
+@router.get("/releases", response_model=List[Solver], summary="Lists All Releases")
 async def list_solvers_releases(
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
@@ -65,7 +64,9 @@ async def list_solvers_releases(
     return sorted(solvers, key=attrgetter("id", "pep404_version"))
 
 
-@router.get("/{solver_key}", response_model=Solver)
+@router.get(
+    "/{solver_key}", response_model=Solver, summary="Get Latest Release of a Solver"
+)
 async def get_solver(
     solver_key: SolverKeyId,
     user_id: int = Depends(get_current_user_id),
@@ -90,33 +91,44 @@ async def get_solver(
         ) from err
 
 
-@router.get("/{solver_key}/jobs", response_model=List[Job])
-async def list_jobs(
+# @router.get("/{solver_key}/jobs", response_model=List[Job], summary="List Jobs of Latest Solver")
+# async def list_jobs(
+#     solver_key: SolverKeyId,
+#     user_id: int = Depends(get_current_user_id),
+#     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+#     url_for: Callable = Depends(get_reverse_url_mapper),
+# ):
+#     """ List of all jobs on a given solver """
+#     solver = await catalog_client.get_latest_release(user_id, solver_key)
+#     return await list_jobs_impl(solver.id, solver.version, url_for)
+
+
+# # pylint: disable=dangerous-default-value
+# @router.post("/{solver_key}/jobs", response_model=Job)
+# async def create_job(
+#     solver_key: SolverKeyId,
+#     user_id: int = Depends(get_current_user_id),
+#     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+#     inputs: List[JobInput] = [],
+#     url_for: Callable = Depends(get_reverse_url_mapper),
+# ):
+#     """Creates a job on a solver with given inputs.
+
+#     NOTE: This operation does **not** start the job
+#     """
+#     solver = await catalog_client.get_latest_release(user_id, solver_key)
+#     return await create_job_impl(solver.id, solver.version, inputs, url_for)
+
+
+@router.get("/{solver_key}/releases", response_model=List[Solver])
+async def list_solver_releases(
     solver_key: SolverKeyId,
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    """ List of all jobs on a given solver """
-    solver = await catalog_client.get_latest_release(user_id, solver_key)
-    return await list_jobs_impl(solver.id, solver.version, url_for)
-
-
-# pylint: disable=dangerous-default-value
-@router.post("/{solver_key}/jobs", response_model=Job)
-async def create_job(
-    solver_key: SolverKeyId,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    inputs: List[JobInput] = [],
-    url_for: Callable = Depends(get_reverse_url_mapper),
-):
-    """Creates a job on a solver with given inputs.
-
-    NOTE: This operation does **not** start the job
-    """
-    solver = await catalog_client.get_latest_release(user_id, solver_key)
-    return await create_job_impl(solver.id, solver.version, inputs, url_for)
+    """ Lists all releases of a given solver """
+    raise NotImplementedError()
 
 
 @router.get("/{solver_key}/releases/{version}", response_model=Solver)
@@ -148,34 +160,3 @@ async def get_solver_release(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_key}:{version} not found",
         ) from err
-
-
-@router.get("/{solver_key}/releases/{version}/jobs", response_model=List[Job])
-async def list_jobs_in_release(
-    solver_key: SolverKeyId,
-    version: str,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-):
-    """ List of all jobs in a specific released solver """
-    solver = await catalog_client.get_solver(user_id, solver_key, version)
-    return await list_jobs_impl(solver.id, solver.version, url_for)
-
-
-# pylint: disable=dangerous-default-value
-@router.post("/{solver_key}/releases/{version}/jobs", response_model=Job)
-async def create_job_in_release(
-    solver_key: SolverKeyId,
-    version: str,
-    inputs: List[JobInput] = [],
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-):
-    """Creates a job in a specific release with given inputs.
-
-    NOTE: This operation does **not** start the job
-    """
-    solver = await catalog_client.get_solver(user_id, solver_key, version)
-    return await create_job_impl(solver.id, solver.version, inputs, url_for)
