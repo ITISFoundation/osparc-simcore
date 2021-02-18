@@ -104,6 +104,12 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "ready-green";
         case "failed":
           return "failed-red";
+        case "idle":
+        case "starting":
+        case "pulling":
+        case "pending":
+        case "connecting":
+          return "busy-orange";
 
         default:
           return "text";

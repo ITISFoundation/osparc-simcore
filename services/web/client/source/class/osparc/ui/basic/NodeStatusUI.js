@@ -114,17 +114,21 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         onUpdate: (source, target) => {
           const state = source.getInteractive();
           switch (state) {
-            case null:
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
-              break;
             case "ready":
             case "failed":
               this.__removeClass(this.__icon.getContentElement(), "rotate");
               target.setTextColor(osparc.utils.StatusUI.getColor(state));
               break;
-            default:
+            case "idle":
+            case "starting":
+            case "pulling":
+            case "pending":
+            case "connecting":
               this.__addClass(this.__icon.getContentElement(), "rotate");
               target.resetTextColor();
+              break;
+            default:
+              this.__removeClass(this.__icon.getContentElement(), "rotate");
               break;
           }
         }
