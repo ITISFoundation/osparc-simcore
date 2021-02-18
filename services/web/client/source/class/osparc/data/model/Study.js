@@ -330,6 +330,14 @@ qx.Class.define("osparc.data.model.Study", {
         ui: this.getUi(),
         sweeper: this.getSweeper()
       });
+
+      const nodes = this.getWorkbench().getNodes(true);
+      nodes.forEach(node => {
+        const nodeId = node.getNodeId();
+        if (nodeId in data.workbench) {
+          node.populateStates(data.workbench[nodeId]);
+        }
+      });
     }
   }
 });
