@@ -370,14 +370,14 @@ qx.Class.define("osparc.data.model.Node", {
 
     populateStates: function(nodeData) {
       if (nodeData.state) {
+        if (nodeData.state.dependencies) {
+          this.getStatus().setDependencies(nodeData.state.dependencies);
+        }
         if (nodeData.state.currentStatus) {
           this.getStatus().setRunning(nodeData.state.currentStatus);
         }
         if (nodeData.state.modified) {
           this.getStatus().setModified(nodeData.state.modified);
-        }
-        if (nodeData.state.dependencies) {
-          this.getStatus().setDependencies(nodeData.state.dependencies);
         }
       }
     },
