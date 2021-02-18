@@ -3,7 +3,7 @@
 """
 import json
 import logging
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
@@ -93,14 +93,17 @@ async def create_projects(request: web.Request):
         project = await db.add_project(
             project, user_id, force_as_template=as_template is not None
         )
-        # This is a new project and every new graph needs to be reflected in the pipeline db
+        # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2.create_or_update_pipeline(
             request.app, user_id, project["uuid"]
         )
 
         # Appends state
-        project["state"] = await projects_api.get_project_state_for_user(
-            user_id, project["uuid"], request.app
+        project = await projects_api.add_project_states_for_user(
+            user_id=user_id,
+            project=project,
+            is_template=as_template is not None,
+            app=request.app,
         )
 
     except ValidationError as exc:
@@ -125,12 +128,30 @@ async def list_projects(request: web.Request):
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     # TODO: improve dbapi to list project
+    async def set_all_project_states(projects: List[Dict[str, Any]], is_template: bool):
+        await logged_gather(
+            *[
+                projects_api.add_project_states_for_user(
+                    user_id=user_id,
+                    project=prj,
+                    is_template=is_template,
+                    app=request.app,
+                )
+                for prj in projects
+            ],
+            reraise=True,
+        )
+
     projects_list = []
     if ptype in ("template", "all"):
-        projects_list += await db.load_template_projects(user_id=user_id)
+        template_projects = await db.load_template_projects(user_id=user_id)
+        await set_all_project_states(template_projects, is_template=True)
+        projects_list += template_projects
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        projects_list += await db.load_user_projects(user_id=user_id)
+        user_projects = await db.load_user_projects(user_id=user_id)
+        await set_all_project_states(user_projects, is_template=False)
+        projects_list += user_projects
 
     start = int(request.query.get("start", 0))
     count = int(request.query.get("count", len(projects_list)))
@@ -144,11 +165,8 @@ async def list_projects(request: web.Request):
     )
 
     # validate response
-    async def validate_project(prj: Dict) -> Optional[Dict]:
+    async def validate_project(prj: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            prj["state"] = await projects_api.get_project_state_for_user(
-                user_id, project_uuid=prj["uuid"], app=request.app
-            )
             projects_api.validate_project(request.app, prj)
             if await project_uses_available_services(prj, user_available_services):
                 return prj
@@ -258,8 +276,11 @@ async def replace_project(request: web.Request):
         )
         await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)
         # Appends state
-        new_project["state"] = await projects_api.get_project_state_for_user(
-            user_id, project_uuid, request.app
+        new_project = await projects_api.add_project_states_for_user(
+            user_id=user_id,
+            project=new_project,
+            is_template=False,
+            app=request.app,
         )
 
     except ValidationError as exc:
@@ -368,8 +389,11 @@ async def open_project(request: web.Request) -> web.Response:
         await projects_api.start_project_interactive_services(request, project, user_id)
 
         # notify users that project is now locked
-        project["state"] = await projects_api.get_project_state_for_user(
-            user_id, project_uuid, request.app
+        project = await projects_api.add_project_states_for_user(
+            user_id=user_id,
+            project=project,
+            is_template=False,
+            app=request.app,
         )
 
         await projects_api.notify_project_state_update(request.app, project)
@@ -397,7 +421,7 @@ async def close_project(request: web.Request) -> web.Response:
             include_state=False,
         )
         # if we are the only user left we can safely remove the services
-        async def _close_project_task() -> None:
+        async def _close_project_task(project: Dict[str, Any]) -> None:
             try:
                 project_opened_by_others: bool = False
                 with managed_resource(user_id, client_session_id, request.app) as rt:
@@ -416,12 +440,15 @@ async def close_project(request: web.Request) -> web.Response:
                     # now we can remove the lock
                     await rt.remove("project_id")
                 # ensure we notify the user whatever happens, the GC should take care of dangling services in case of issue
-                project["state"] = await projects_api.get_project_state_for_user(
-                    user_id, project_uuid, request.app
+                project = await projects_api.add_project_states_for_user(
+                    user_id=user_id,
+                    project=project,
+                    is_template=False,
+                    app=request.app,
                 )
                 await projects_api.notify_project_state_update(request.app, project)
 
-        fire_and_forget_task(_close_project_task())
+        fire_and_forget_task(_close_project_task(project))
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError as exc:

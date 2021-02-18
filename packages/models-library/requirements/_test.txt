@@ -42,8 +42,11 @@ idna==2.10
     #   yarl
 importlib-metadata==3.4.0
     # via
+    #   pint
     #   pluggy
     #   pytest
+importlib-resources==5.1.0
+    # via pint
 iniconfig==1.1.1
     # via pytest
 isort==5.7.0
@@ -58,8 +61,11 @@ multidict==5.1.0
     #   yarl
 packaging==20.9
     # via
+    #   pint
     #   pytest
     #   pytest-sugar
+pint==0.16.1
+    # via -r requirements/_test.in
 pluggy==0.13.1
     # via pytest
 pprintpp==0.4.0
@@ -93,6 +99,10 @@ pytest==6.2.2
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
+pyyaml==5.4.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 requests==2.25.1
     # via coveralls
 six==1.15.0
@@ -119,4 +129,6 @@ wrapt==1.12.1
 yarl==1.6.3
     # via aiohttp
 zipp==3.4.0
-    # via importlib-metadata
+    # via
+    #   importlib-metadata
+    #   importlib-resources

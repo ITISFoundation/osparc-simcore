@@ -13,6 +13,7 @@
 
 # installs this repo's packages
 -e ../pytest-simcore/
+-e ../postgres-database/[migration]
 
 # current module
 -e .

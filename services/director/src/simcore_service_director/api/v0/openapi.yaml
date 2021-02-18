@@ -307,6 +307,10 @@ paths:
                                   example:
                                     - Dog
                                     - true
+                                unit:
+                                  title: Unit
+                                  description: 'Units of this input value, if a physical quantity'
+                                  type: string
                                 widget:
                                   description: custom widget to use instead of the default one determined from the data-type
                                   anyOf:
@@ -411,6 +415,10 @@ paths:
                                   example:
                                     - dir/input1.txt: key_1
                                       dir33/input2.txt: key2
+                                unit:
+                                  title: Unit
+                                  description: 'Units of the output value, if a physical quantity'
+                                  type: string
                           additionalProperties: true
                   error:
                     nullable: true
@@ -692,6 +700,10 @@ paths:
                                   example:
                                     - Dog
                                     - true
+                                unit:
+                                  title: Unit
+                                  description: 'Units of this input value, if a physical quantity'
+                                  type: string
                                 widget:
                                   description: custom widget to use instead of the default one determined from the data-type
                                   anyOf:
@@ -796,6 +808,10 @@ paths:
                                   example:
                                     - dir/input1.txt: key_1
                                       dir33/input2.txt: key2
+                                unit:
+                                  title: Unit
+                                  description: 'Units of the output value, if a physical quantity'
+                                  type: string
                           additionalProperties: true
                   error:
                     nullable: true
@@ -2291,6 +2307,10 @@ components:
                         example:
                           - Dog
                           - true
+                      unit:
+                        title: Unit
+                        description: 'Units of this input value, if a physical quantity'
+                        type: string
                       widget:
                         description: custom widget to use instead of the default one determined from the data-type
                         anyOf:
@@ -2395,6 +2415,10 @@ components:
                         example:
                           - dir/input1.txt: key_1
                             dir33/input2.txt: key2
+                      unit:
+                        title: Unit
+                        description: 'Units of the output value, if a physical quantity'
+                        type: string
                 additionalProperties: true
         error:
           nullable: true

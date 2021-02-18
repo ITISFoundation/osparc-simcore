@@ -3,7 +3,7 @@ from typing import Any, List
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
-from models_library.projects import ProjectID
+from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from starlette import status
@@ -17,7 +17,6 @@ from tenacity import (
 )
 
 from ...models.domains.comp_tasks import CompTaskAtDB
-from ...models.domains.projects import ProjectAtDB
 from ...models.schemas.comp_tasks import (
     ComputationTaskCreate,
     ComputationTaskDelete,
@@ -36,7 +35,9 @@ from ...utils.computations import (
     is_pipeline_stopped,
 )
 from ...utils.dags import (
-    create_complete_dag_graph,
+    compute_pipeline_details,
+    create_complete_dag,
+    create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
@@ -119,10 +120,10 @@ async def create_computation(
             )
 
         # create the complete DAG graph
-        complete_dag = create_complete_dag_graph(project.workbench)
+        complete_dag = create_complete_dag(project.workbench)
         # find the minimal viable graph to be run
         computational_dag = await create_minimal_computational_graph_based_on_selection(
-            full_dag_graph=complete_dag,
+            complete_dag=complete_dag,
             selected_nodes=job.subgraph or [],
             force_restart=job.force_restart,
         )
@@ -159,7 +160,9 @@ async def create_computation(
             state=RunningState.PUBLISHED
             if job.start_pipeline
             else RunningState.NOT_STARTED,
-            pipeline=nx.to_dict_of_lists(computational_dag),
+            pipeline_details=await compute_pipeline_details(
+                complete_dag, computational_dag
+            ),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"
             if job.start_pipeline
@@ -192,22 +195,25 @@ async def get_computation(
     log.debug("User %s getting computation status for project %s", user_id, project_id)
     try:
         # check that project actually exists
-        # TODO: get a copy of the project and process it here instead!
         await project_repo.get_project(project_id)
 
+        # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
         # get the project pipeline
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
         )
+        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
+            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
+        )
 
         # get the project task states
-        comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
-            project_id
-        )
-        dag_graph: nx.DiGraph = nx.from_dict_of_lists(pipeline_at_db.dag_adjacency_list)
+        tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(project_id)
+        # create the complete DAG graph
+        complete_dag = create_complete_dag_from_tasks(tasks)
+
         # filter the tasks by the effective pipeline
         filtered_tasks = [
-            t for t in comp_tasks if str(t.node_id) in list(dag_graph.nodes())
+            t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(
             filtered_tasks, celery_client.settings.publication_timeout
@@ -223,7 +229,7 @@ async def get_computation(
         task_out = ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline=pipeline_at_db.dag_adjacency_list,
+            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag),
             url=f"{request.url.remove_query_params('user_id')}",
             stop_url=f"{request.url.remove_query_params('user_id')}:stop"
             if is_pipeline_running(pipeline_state)
@@ -278,22 +284,29 @@ async def stop_computation_project(
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
         )
-        # check if current state allow to stop the computation
-        comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
-            project_id
+        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
+            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
         )
+        # get the project task states
+        tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(project_id)
+        # create the complete DAG graph
+        complete_dag = create_complete_dag_from_tasks(tasks)
+        # filter the tasks by the effective pipeline
+        filtered_tasks = [
+            t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
+        ]
         pipeline_state = get_pipeline_state_from_task_states(
-            comp_tasks, celery_client.settings.publication_timeout
+            filtered_tasks, celery_client.settings.publication_timeout
         )
 
         if is_pipeline_running(pipeline_state):
             await _abort_pipeline_tasks(
-                project, comp_tasks, computation_tasks, celery_client
+                project, filtered_tasks, computation_tasks, celery_client
             )
         return ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline=pipeline_at_db.dag_adjacency_list,
+            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag),
             url=f"{str(request.url).rstrip(':stop')}",
         )
 
