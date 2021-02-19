@@ -85,8 +85,7 @@ def make_up_prod(
 
 
 @pytest.fixture(scope="module")
-def registered_user():
-    # def registered_user(make_up_prod):
+def registered_user(make_up_prod):
 
     user = {
         "email": "first.last@mymail.com",
