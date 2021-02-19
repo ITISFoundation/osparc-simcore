@@ -33,22 +33,30 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   properties: {
     score: {
       check: "Number",
-      init: 1,
+      init: 0,
       nullable: false,
       event: "changeScore",
       apply: "__render"
     },
 
+    targetScore: {
+      check: "Number",
+      init: 4,
+      nullable: false,
+      event: "changeTargetScore",
+      apply: "__render"
+    },
+
     maxScore: {
       check: "Number",
-      init: 5,
+      init: 4,
       nullable: false,
       apply: "__render"
     },
 
     nStars: {
       check: "Number",
-      init: 5,
+      init: 4,
       nullable: false,
       apply: "__render"
     },
@@ -94,6 +102,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
           break;
         case "score-text": {
           control = new qx.ui.basic.Label().set({
+            rich: true,
             font: "text-12"
           });
           this._add(control);
@@ -182,8 +191,9 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       const scoreText = this.getChildControl("score-text");
       if (this.getShowScore()) {
         const score = this.getScore().toString();
+        const targetScore = this.getTargetScore().toString();
         const maxScore = this.getMaxScore().toString();
-        scoreText.setValue(`${score}/${maxScore}`);
+        scoreText.setValue(`${score}/${targetScore}/<small>${maxScore}</small>`);
         scoreText.show();
       } else {
         scoreText.exclude();

@@ -180,34 +180,37 @@ domain and the intended context of use",
           "references": ""
         },
         "r07": {
-          "level": 4,
+          "level": 3,
           "references": ""
         },
         "r08": {
-          "level": 4,
+          "level": 2,
           "references": ""
         },
         "r09": {
-          "level": 4,
+          "level": 1,
           "references": ""
         },
         "r10": {
-          "level": 4,
+          "level": 0,
           "references": ""
         }
       };
       return defaultTargetTSR;
     },
 
-    computeTSRScore: function(metadataTSR) {
+    computeTSRScore: function(currentTSR, targetTSR) {
       let score = 0;
+      let targetScore = 0;
       let maxScore = 0;
-      Object.values(metadataTSR).forEach(rule => {
-        score += rule.level;
+      Object.entries(currentTSR).forEach(([tsrKey, cTSR]) => {
+        score += cTSR.level;
+        targetScore += targetTSR[tsrKey].level;
         maxScore += 4;
       });
       return {
         score,
+        targetScore,
         maxScore
       };
     }

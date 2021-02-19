@@ -299,17 +299,19 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRDataView: function() {
-      const metadataTSR = this.__copyResourceData["quality"]["tsr_current"];
+      const currentTSR = this.__copyResourceData["quality"]["tsr_current"];
+      const targetTSR = this.__copyResourceData["quality"]["tsr_target"];
       let row = 1;
-      Object.values(metadataTSR).forEach(rule => {
+      Object.entries(currentTSR).forEach(([tsrKey, cTSR]) => {
         const ruleRating = new osparc.ui.basic.StarsRating();
         ruleRating.set({
-          score: rule.level,
+          score: cTSR.level,
           maxScore: 4,
-          nStars: 4,
+          nStars: targetTSR[tsrKey].level,
+          showEmptyStars: true,
           marginTop: 5
         });
-        const confLevel = osparc.component.metadata.Quality.findConformanceLevel(rule.level);
+        const confLevel = osparc.component.metadata.Quality.findConformanceLevel(cTSR.level);
         const hint = confLevel.title + "<br>" + confLevel.description;
         const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
           hintPosition: "left"
@@ -319,7 +321,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           column: 1
         });
 
-        const referenceMD = new osparc.ui.markdown.Markdown(rule.references);
+        const referenceMD = new osparc.ui.markdown.Markdown(cTSR.references);
         this.__tsrGrid.add(referenceMD, {
           row,
           column: 2
@@ -329,11 +331,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       const {
         score,
+        targetScore,
         maxScore
-      } = osparc.component.metadata.Quality.computeTSRScore(metadataTSR);
+      } = osparc.component.metadata.Quality.computeTSRScore(currentTSR, targetTSR);
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         score,
+        targetScore,
         maxScore,
         nStars: 4,
         showScore: true,
@@ -357,11 +361,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const updateTSRScore = () => {
         const {
           score,
+          targetScore,
           maxScore
         } = osparc.component.metadata.Quality.computeTSRScore(copyTSRCurrent);
 
         tsrRating.set({
           score,
+          targetScore,
           maxScore
         });
       };

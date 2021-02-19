@@ -159,11 +159,13 @@ qx.Class.define("osparc.studycard.Utils", {
         if (osparc.component.metadata.Quality.isEnabled(quality)) {
           const {
             score,
+            targetScore,
             maxScore
-          } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr_current"]);
+          } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr_current"], quality["tsr_target"]);
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
             score,
+            targetScore,
             maxScore,
             nStars: 4,
             showScore: true
