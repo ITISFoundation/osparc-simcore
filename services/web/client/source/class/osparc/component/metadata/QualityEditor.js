@@ -194,11 +194,10 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       box.add(helpTextMD);
 
       const grid = new qx.ui.layout.Grid(10, 6);
-      grid.setColumnAlign(0, "left", "middle");
-      grid.setColumnAlign(1, "left", "middle");
-      grid.setColumnAlign(2, "left", "middle");
-      grid.setColumnAlign(3, "left", "middle");
-      grid.setColumnFlex(2, 1);
+      Object.values(this.__tsrGridPos).forEach(gridPos => {
+        grid.setColumnAlign(gridPos, "left", "middle");
+      });
+      grid.setColumnFlex(this.__tsrGridPos.reference, 1);
       this.__tsrGrid = new qx.ui.container.Composite(grid);
       box.add(this.__tsrGrid);
 
@@ -256,13 +255,28 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         row: 0,
         column: this.__tsrGridPos.rule
       });
-      const headerCL = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
+
+      const headerCL = new qx.ui.basic.Label(this.tr("Conf. Level")).set({
+        toolTipText: this.tr("Conformance Level"),
         font: "title-14"
       });
       this.__tsrGrid.add(headerCL, {
         row: 0,
         column: this.__tsrGridPos.clCurrent
       });
+
+      const headerTargetCL = new qx.ui.basic.Label(this.tr("Target")).set({
+        toolTipText: this.tr("Conformance Level Target"),
+        font: "title-14"
+      });
+      this.bind("mode", headerTargetCL, "visibility", {
+        converter: mode => mode === "edit" ? "visible" : "excluded"
+      });
+      this.__tsrGrid.add(headerTargetCL, {
+        row: 0,
+        column: this.__tsrGridPos.clTarget
+      });
+
       const headerRef = new qx.ui.basic.Label(this.tr("References")).set({
         font: "title-14"
       });
@@ -357,8 +371,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       tsrRating.set({
         nStars: 4,
         showScore: true,
-        marginTop: 5,
-        mode: "edit"
+        marginTop: 5
       });
       const updateTSRScore = () => {
         osparc.ui.basic.StarsRating.scoreToStarsRating(copyTSRCurrent, copyTSRTarget, tsrRating);
@@ -367,13 +380,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       let row = 1;
       Object.keys(copyTSRCurrent).forEach(ruleKey => {
-        const rule = copyTSRCurrent[ruleKey];
-        const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        const currentRule = copyTSRCurrent[ruleKey];
+
+        const currentRulelayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
           alignY: "middle"
         }));
-
-        const updateLevel = value => {
-          layout.removeAll();
+        const updateCurrentLevel = value => {
+          currentRulelayout.removeAll();
           const ruleRating = new osparc.ui.basic.StarsRating();
           ruleRating.set({
             maxScore: 4,
@@ -383,8 +396,8 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             mode: "edit"
           });
           ruleRating.addListener("changeScore", e => {
-            rule.level = e.getData();
-            updateLevel(rule.level);
+            currentRule.level = e.getData();
+            updateCurrentLevel(currentRule.level);
             updateTSRScore();
           }, this);
           const confLevel = osparc.component.metadata.Quality.findConformanceLevel(value);
@@ -392,17 +405,48 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
             hintPosition: "left"
           });
-          layout.add(ruleRatingWHint);
+          currentRulelayout.add(ruleRatingWHint);
         };
-
-        updateLevel(rule.level);
-
-        this.__tsrGrid.add(layout, {
+        updateCurrentLevel(currentRule.level);
+        this.__tsrGrid.add(currentRulelayout, {
           row,
           column: this.__tsrGridPos.clCurrent
         });
 
-        const referenceMD = new osparc.ui.markdown.Markdown(rule.references);
+        const targetRule = copyTSRTarget[ruleKey];
+        const targerRulelayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+          alignY: "middle"
+        }));
+        const updateTargetLevel = value => {
+          targerRulelayout.removeAll();
+          const ruleRating = new osparc.ui.basic.StarsRating();
+          ruleRating.set({
+            maxScore: 4,
+            nStars: 4,
+            score: value,
+            marginTop: 5,
+            mode: "edit"
+          });
+          ruleRating.addListener("changeScore", e => {
+            targetRule.level = e.getData();
+            updateTargetLevel(targetRule.level);
+            updateTSRScore();
+          }, this);
+          const confLevel = osparc.component.metadata.Quality.findConformanceLevel(value);
+          const hint = confLevel.title + "<br>" + confLevel.description;
+          const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
+            hintPosition: "left"
+          });
+          targerRulelayout.add(ruleRatingWHint);
+        };
+        updateTargetLevel(targetRule.level);
+
+        this.__tsrGrid.add(targerRulelayout, {
+          row,
+          column: this.__tsrGridPos.clTarget
+        });
+
+        const referenceMD = new osparc.ui.markdown.Markdown(currentRule.references);
         this.__tsrGrid.add(referenceMD, {
           row,
           column: this.__tsrGridPos.reference
@@ -412,12 +456,12 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         button.addListener("execute", () => {
           const title = this.tr("Edit References");
           const subtitle = this.tr("Supports Markdown");
-          const textEditor = new osparc.component.widget.TextEditor(rule.references, subtitle, title);
+          const textEditor = new osparc.component.widget.TextEditor(currentRule.references, subtitle, title);
           const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
           textEditor.addListener("textChanged", e => {
             const newText = e.getData();
             referenceMD.setValue(newText);
-            rule.references = newText;
+            currentRule.references = newText;
             win.close();
           }, this);
           textEditor.addListener("cancel", () => {
