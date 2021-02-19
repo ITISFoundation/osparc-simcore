@@ -542,7 +542,12 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         if (annotationKey === "certificationStatus") {
           return;
         }
-        const annotationMD = new osparc.ui.markdown.Markdown(copyMetadataAnnotations[annotationKey]);
+        let serviceLimitations = "";
+        if (annotationKey === "limitations") {
+          serviceLimitations += "<br>Sleeper:<br>I like to sleep";
+        }
+        const annotationMD = new osparc.ui.markdown.Markdown();
+        annotationMD.setValue(copyMetadataAnnotations[annotationKey] + serviceLimitations);
         this.__annotationsGrid.add(annotationMD, {
           row,
           column: 1
@@ -557,7 +562,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
             textEditor.addListener("textChanged", e => {
               const newText = e.getData();
-              annotationMD.setValue(newText);
+              annotationMD.setValue(newText + serviceLimitations);
               copyMetadataAnnotations[annotationKey] = newText;
               win.close();
             }, this);
