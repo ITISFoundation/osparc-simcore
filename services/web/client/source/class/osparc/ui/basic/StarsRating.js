@@ -204,10 +204,16 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     __renderScore: function() {
       const scoreText = this.getChildControl("score-text");
       if (this.getShowScore()) {
-        const score = this.getScore().toString();
-        const targetScore = this.getTargetScore().toString();
-        const maxScore = this.getMaxScore().toString();
-        scoreText.setValue(`${score}/${targetScore}<small>/${maxScore}</small>`);
+        const score = this.getScore();
+        const targetScore = this.getTargetScore();
+        const maxScore = this.getMaxScore();
+        let text = "";
+        if (targetScore && targetScore !== maxScore) {
+          text += score+"/"+targetScore+"<small>/"+maxScore+"</small>";
+        } else {
+          text += score+"/"+maxScore;
+        }
+        scoreText.setValue(text);
         scoreText.show();
       } else {
         scoreText.exclude();
