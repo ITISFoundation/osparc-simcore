@@ -93,29 +93,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     // overridden
     setAccessLevel: function(data) {
-      for (const key in data) {
-        const label = this._getLabelFieldChild(key);
-        if (label) {
-          this.__changeControlVisibility(label.child, data[key]);
-        }
-
-        const info = this._getInfoFieldChild(key);
-        if (info) {
-          this.__changeControlVisibility(info.child, data[key]);
-        }
-
-        const controlLink = this._getCtrlFieldChild(key);
-        if (controlLink) {
-          this.__changeControlVisibility(controlLink.child, data[key]);
-        }
-
-        const retrieveField = this.__getRetrieveFieldChild(key);
-        if (retrieveField) {
-          this.__changeControlVisibility(retrieveField.child, data[key]);
-        }
-
-        this.fireEvent("changeChildVisibility");
-      }
+      const entry = this.self().gridPos;
+      Object.entries(data).forEach(([portId, visibility]) => {
+        Object.values(entry).forEach(entryVal => {
+          const layoutElement = this._getLayoutChild(portId, entryVal);
+          if (layoutElement) {
+            this.__changeControlVisibility(layoutElement.child, visibility);
+          }
+        });
+      });
+      this.fireEvent("changeChildVisibility");
     },
 
     retrievingPortData: function(portId) {
@@ -593,15 +580,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
       switch (visibility) {
         case this._visibility.hidden:
-          control.setEnabled(false);
           control.setVisibility("excluded");
           break;
         case this._visibility.readOnly:
-          control.setEnabled(false);
           control.setVisibility("visible");
           break;
         case this._visibility.readWrite:
-          control.setEnabled(true);
           control.setVisibility("visible");
           break;
       }
