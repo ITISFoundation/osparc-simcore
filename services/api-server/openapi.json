@@ -361,7 +361,7 @@
         ]
       }
     },
-    "/v0/solvers/{solver_key}": {
+    "/v0/solvers/{solver_key}/latest": {
       "get": {
         "tags": [
           "solvers"

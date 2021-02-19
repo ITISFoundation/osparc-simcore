@@ -76,6 +76,8 @@ async def get_solver(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ) -> Solver:
     """ Gets latest release of a solver """
+    # IMPORTANT: by adding /latest, we avoid changing the order of this entry in the router list
+    # otherwise, {solver_key:path} will override and consume any of the paths that follow.
     try:
 
         solver = await catalog_client.get_latest_release(user_id, solver_key)
@@ -133,32 +135,3 @@ async def get_solver_release(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver {solver_key}:{version} not found",
         ) from err
-
-
-# @router.get("/{solver_key}/jobs", response_model=List[Job], summary="List Jobs of Latest Solver")
-# async def list_jobs(
-#     solver_key: SolverKeyId,
-#     user_id: int = Depends(get_current_user_id),
-#     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-#     url_for: Callable = Depends(get_reverse_url_mapper),
-# ):
-#     """ List of all jobs on a given solver """
-#     solver = await catalog_client.get_latest_release(user_id, solver_key)
-#     return await list_jobs_impl(solver.id, solver.version, url_for)
-
-
-# # pylint: disable=dangerous-default-value
-# @router.post("/{solver_key}/jobs", response_model=Job)
-# async def create_job(
-#     solver_key: SolverKeyId,
-#     user_id: int = Depends(get_current_user_id),
-#     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-#     inputs: List[JobInput] = [],
-#     url_for: Callable = Depends(get_reverse_url_mapper),
-# ):
-#     """Creates a job on a solver with given inputs.
-
-#     NOTE: This operation does **not** start the job
-#     """
-#     solver = await catalog_client.get_latest_release(user_id, solver_key)
-#     return await create_job_impl(solver.id, solver.version, inputs, url_for)
