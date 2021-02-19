@@ -101,11 +101,8 @@ domain and the intended context of use",
       const defaultAnnotations = {
         "certificationStatus": "Uncertified",
         "certificationLink": "",
-        "purpose": "",
         "vandv": "",
-        "limitations": "",
-        "documentation": "",
-        "standards": ""
+        "limitations": ""
       };
       return defaultAnnotations;
     },

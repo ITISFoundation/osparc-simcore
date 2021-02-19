@@ -176,11 +176,8 @@
             "required": [
                 "certificationStatus", 
                 "certificationLink",
-                "purpose",
                 "vandv",
-                "limitations",
-                "documentation",
-                "standards"
+                "limitations"
             ],
             "properties": {
                 "certificationStatus": {
@@ -196,12 +193,6 @@
                     "type": "string",
                     "default": ""
                 },
-                "purpose": {
-                    "title": "Intended purpose/context",
-                    "description": "Description of the field of application and associated research initiatives (if any)",
-                    "type": "string",
-                    "default": ""
-                },
                 "vandv": {
                     "title": "Verification & Validation",
                     "description": "Description of verification and validation testing performed for the model and/or code submitted, or a link to these tests",
@@ -211,18 +202,6 @@
                 "limitations": {
                     "title": "Known limitations",
                     "description": "",
-                    "type": "string",
-                    "default": ""
-                },
-                "documentation": {
-                    "title": "Documentation",
-                    "description": "Link to documentation to use this service",
-                    "type": "string",
-                    "default": ""
-                },
-                "standards": {
-                    "title": "Relevant standards",
-                    "description": "List or links of any data management, coding, experimental, or other standards implemented",
                     "type": "string",
                     "default": ""
                 }
