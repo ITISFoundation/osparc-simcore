@@ -49,20 +49,16 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     getRetrievedEmpty: function() {
       const icon = "@FontAwesome5Solid/dot-circle/10";
       return new qx.ui.basic.Atom("", icon);
+    },
+
+    gridPos: {
+      ...osparc.component.form.renderer.PropFormBase.gridPos,
+      retrieveStatus: Object.keys(osparc.component.form.renderer.PropFormBase.gridPos).length
     }
   },
 
   // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
-    // overridden
-    _gridPos: {
-      label: 0,
-      info: 1,
-      ctrlField: 2,
-      unit: 3,
-      retrieveStatus: 4
-    },
-
     _retrieveStatus: {
       failed: -1,
       empty: 0,
@@ -136,7 +132,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         for (let i = this._getChildren().length; i--;) {
           let child = this._getChildren()[i];
           const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this._gridPos.ctrlField) {
+          if (layoutProps.column === this.self().gridPos.ctrlField) {
             const ctrl = this._form.getControl(child.key);
             if (ctrl && ctrl["link"]) {
               this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
@@ -164,7 +160,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         for (let i=0; i<children.length; i++) {
           let child = children[i];
           const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this._gridPos.retrieveStatus) {
+          if (layoutProps.column === this.self().gridPos.retrieveStatus) {
             this.__setRetrievingStatus(status, portId, i, layoutProps.row);
           }
         }
@@ -195,14 +191,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         let child = children[i];
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.row === row &&
-          layoutProps.column === this._gridPos.retrieveStatus) {
+          layoutProps.column === this.self().gridPos.retrieveStatus) {
           this._remove(child);
         }
       }
 
       this._addAt(icon, idx, {
         row: row,
-        column: this._gridPos.retrieveStatus
+        column: this.self().gridPos.retrieveStatus
       });
     },
 
@@ -355,15 +351,15 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (data) {
         const {child, idx} = data;
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.ctrlField) {
+        if (layoutProps.column === this.self().gridPos.ctrlField) {
           this._remove(child);
           const item = this._form.getControl(portId);
 
-          const field = this._createFieldWithMenu(item);
-          this._addAt(field, idx, {
+          this._addAt(item, idx, {
             row: layoutProps.row,
-            column: this._gridPos.ctrlField
+            column: this.self().gridPos.ctrlField
           });
+
           return true;
         }
       }
@@ -414,8 +410,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         this._addAt(hBox, idx, {
           row: layoutProps.row,
-          column: this._gridPos.ctrlField
+          column: this.self().gridPos.ctrlField
         });
+
+        // disable menu button
+        const menu = this._getCtrlMenuChild(portId);
+        if (menu) {
+          menu.child.setEnabled(false);
+        }
 
         const linkFieldModified = {
           portId,
@@ -429,6 +431,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __linkRemoved: function(portId) {
       if (this.__resetCtrlField(portId)) {
+        // enable menu button
+        const menu = this._getCtrlMenuChild(portId);
+        if (menu) {
+          menu.child.setEnabled(true);
+        }
+
         const linkFieldModified = {
           portId,
           added: false
@@ -528,7 +536,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
         this._addAt(hBox, idx, {
           row: layoutProps.row,
-          column: this._gridPos.ctrlField
+          column: this.self().gridPos.ctrlField
         });
       }
     },
@@ -600,7 +608,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     },
 
     __getRetrieveFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this._gridPos.retrieveStatus);
+      return this._getLayoutChild(portId, this.self().gridPos.retrieveStatus);
     }
   }
 });

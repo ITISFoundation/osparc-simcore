@@ -33,16 +33,15 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     this.__addAccessLevelRBs();
   },
 
+  statics: {
+    gridPos: {
+      ...osparc.component.form.renderer.PropFormBase.gridPos,
+      accessLevel: Object.keys(osparc.component.form.renderer.PropFormBase.gridPos).length
+    }
+  },
+
   // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
-    _gridPos: {
-      label: 0,
-      info: 1,
-      ctrlField: 2,
-      unit: 3,
-      accessLevel: 4
-    },
-
     _accessLevel: {
       hidden: 0,
       readOnly: 1,
@@ -85,7 +84,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         this._removeAt(idx);
         this._addAt(controlLink, idx, {
           row: layoutProps.row,
-          column: this._gridPos.ctrlField
+          column: this.self().gridPos.ctrlField
         });
       }
     },
@@ -99,7 +98,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         this._removeAt(idx);
         this._addAt(child.oldCtrl, idx, {
           row: layoutProps.row,
-          column: this._gridPos.ctrlField
+          column: this.self().gridPos.ctrlField
         });
       }
     },
@@ -138,7 +137,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
         const layoutProps = child.getLayoutProperties();
         this._addAt(groupBox, idx, {
           row: layoutProps.row,
-          column: this._gridPos.accessLevel
+          column: this.self().gridPos.accessLevel
         });
       }
     },
@@ -208,7 +207,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     },
 
     __getRadioButtonsFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this._gridPos.accessLevel);
+      return this._getLayoutChild(portId, this.self().gridPos.accessLevel);
     }
   }
 });
