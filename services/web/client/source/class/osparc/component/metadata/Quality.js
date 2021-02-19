@@ -23,11 +23,21 @@ qx.Class.define("osparc.component.metadata.Quality", {
       if (!("quality" in obj)) {
         obj["quality"] = {};
       }
-      if (Object.keys(obj["quality"]).length === 0) {
-        obj["quality"] = osparc.component.metadata.Quality.getDefaultQuality();
-      }
       if (!("enabled" in obj["quality"])) {
         obj["quality"]["enabled"] = true;
+      }
+      if (!("tsr_current" in obj["quality"])) {
+        obj["quality"]["tsr_current"] = osparc.component.metadata.Quality.getDefaultCurrentQualityTSR();
+      }
+      if (!("tsr_target" in obj["quality"])) {
+        obj["quality"]["tsr_target"] = osparc.component.metadata.Quality.getDefaultTargetQualityTSR();
+      }
+      if (!("annotations" in obj["quality"])) {
+        obj["quality"]["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
+      }
+      if ("tsr" in obj["quality"]) {
+        obj["quality"]["tsr_current"] = obj["quality"]["tsr"];
+        delete obj["quality"]["tsr"];
       }
     },
 
@@ -87,14 +97,6 @@ domain and the intended context of use",
       return confLevel;
     },
 
-    getDefaultQuality: function() {
-      const defaultQuality = {};
-      defaultQuality["enabled"] = true;
-      defaultQuality["tsr"] = osparc.component.metadata.Quality.getDefaultQualityTSR();
-      defaultQuality["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
-      return defaultQuality;
-    },
-
     getDefaultQualityAnnotations: function() {
       const defaultAnnotations = {
         "certificationStatus": "Uncertified",
@@ -108,8 +110,8 @@ domain and the intended context of use",
       return defaultAnnotations;
     },
 
-    getDefaultQualityTSR: function() {
-      const defaultTSR = {
+    getDefaultCurrentQualityTSR: function() {
+      const defaultCurrentTSR = {
         "r01": {
           "level": 0,
           "references": ""
@@ -151,7 +153,53 @@ domain and the intended context of use",
           "references": ""
         }
       };
-      return defaultTSR;
+      return defaultCurrentTSR;
+    },
+
+    getDefaultTargetQualityTSR: function() {
+      const defaultTargetTSR = {
+        "r01": {
+          "level": 4,
+          "references": ""
+        },
+        "r02": {
+          "level": 4,
+          "references": ""
+        },
+        "r03": {
+          "level": 4,
+          "references": ""
+        },
+        "r04": {
+          "level": 4,
+          "references": ""
+        },
+        "r05": {
+          "level": 4,
+          "references": ""
+        },
+        "r06": {
+          "level": 4,
+          "references": ""
+        },
+        "r07": {
+          "level": 4,
+          "references": ""
+        },
+        "r08": {
+          "level": 4,
+          "references": ""
+        },
+        "r09": {
+          "level": 4,
+          "references": ""
+        },
+        "r10": {
+          "level": 4,
+          "references": ""
+        }
+      };
+      return defaultTargetTSR;
     },
 
     computeTSRScore: function(metadataTSR) {

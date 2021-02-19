@@ -160,7 +160,7 @@ qx.Class.define("osparc.studycard.Utils", {
           const {
             score,
             maxScore
-          } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
+          } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr_current"]);
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
             score,

@@ -67,8 +67,11 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       }
 
       this.__resourceData = resourceData;
-      if (!("tsr" in resourceData["quality"])) {
-        resourceData["quality"]["tsr"] = osparc.component.metadata.Quality.getDefaultQualityTSR();
+      if (!("tsr_current" in resourceData["quality"])) {
+        resourceData["quality"]["tsr_current"] = resourceData["quality"]["tsr"] || osparc.component.metadata.Quality.getDefaultCurrentQualityTSR();
+      }
+      if (!("tsr_target" in resourceData["quality"])) {
+        resourceData["quality"]["tsr_target"] = osparc.component.metadata.Quality.getDefaultTargetQualityTSR();
       }
       if (!("annotations" in resourceData["quality"])) {
         resourceData["quality"]["annotations"] = osparc.component.metadata.Quality.getDefaultQualityAnnotations();
@@ -300,7 +303,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRDataView: function() {
-      const metadataTSR = this.__copyResourceData["quality"]["tsr"];
+      const metadataTSR = this.__copyResourceData["quality"]["tsr_current"];
       let row = 1;
       Object.values(metadataTSR).forEach(rule => {
         const ruleRating = new osparc.ui.basic.StarsRating();
@@ -347,7 +350,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRDataEdit: function() {
-      const copyMetadataTSR = this.__copyResourceData["quality"]["tsr"];
+      const copyTSRCurrent = this.__copyResourceData["quality"]["tsr_current"];
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         nStars: 4,
@@ -359,7 +362,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         const {
           score,
           maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(copyMetadataTSR);
+        } = osparc.component.metadata.Quality.computeTSRScore(copyTSRCurrent);
 
         tsrRating.set({
           score,
@@ -369,8 +372,8 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       updateTSRScore();
 
       let row = 1;
-      Object.keys(copyMetadataTSR).forEach(ruleKey => {
-        const rule = copyMetadataTSR[ruleKey];
+      Object.keys(copyTSRCurrent).forEach(ruleKey => {
+        const rule = copyTSRCurrent[ruleKey];
         const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
           alignY: "middle"
         }));
@@ -574,7 +577,8 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         "quality" : {}
       };
       data["quality"]["enabled"] = this.__copyResourceData["quality"]["enabled"];
-      data["quality"]["tsr"] = this.__copyResourceData["quality"]["tsr"];
+      data["quality"]["tsr_current"] = this.__copyResourceData["quality"]["tsr_current"];
+      data["quality"]["tsr_target"] = this.__copyResourceData["quality"]["tsr_target"];
       data["quality"]["annotations"] = this.__copyResourceData["quality"]["annotations"];
       if (this.__validate(this.__schema, data["quality"])) {
         btn.setFetching(true);

@@ -440,7 +440,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
         const {
           score,
           maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
+        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr_current"]);
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
           score,
