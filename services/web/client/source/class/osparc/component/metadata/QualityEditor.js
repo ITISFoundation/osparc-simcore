@@ -256,8 +256,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         column: this.__tsrGridPos.rule
       });
 
-      const headerCL = new qx.ui.basic.Label(this.tr("Conf. Level")).set({
-        toolTipText: this.tr("Conformance Level"),
+      const headerCL = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
         font: "title-14"
       });
       this.__tsrGrid.add(headerCL, {
@@ -389,7 +388,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           currentRulelayout.removeAll();
           const ruleRating = new osparc.ui.basic.StarsRating();
           ruleRating.set({
-            maxScore: 4,
+            maxScore: copyTSRTarget[ruleKey].level,
             nStars: copyTSRTarget[ruleKey].level,
             score: value,
             marginTop: 5,
@@ -431,8 +430,9 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           ruleRating.addListener("changeScore", e => {
             const newMaxScore = e.getData();
             copyTSRTarget[ruleKey].level = newMaxScore;
+            copyTSRCurrent[ruleKey].level = Math.min(newMaxScore, copyTSRCurrent[ruleKey].level);
             updateTargetLevel(newMaxScore);
-            updateCurrentLevel(Math.min(newMaxScore, copyTSRCurrent[ruleKey].level));
+            updateCurrentLevel(copyTSRCurrent[ruleKey].level);
             updateTotalTSR();
           }, this);
           const confLevel = osparc.component.metadata.Quality.findConformanceLevel(value);
