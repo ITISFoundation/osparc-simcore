@@ -351,11 +351,6 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRDataEdit: function() {
-      this.__populateTSRCurrentDataEdit();
-      this.__populateTSRTargetDataEdit();
-    },
-
-    __populateTSRCurrentDataEdit: function() {
       const copyTSRCurrent = this.__copyResourceData["quality"]["tsr_current"];
       const copyTSRTarget = this.__copyResourceData["quality"]["tsr_target"];
       const tsrRating = new osparc.ui.basic.StarsRating();
