@@ -35,16 +35,8 @@ qx.Class.define("osparc.utils.Ports", {
     },
 
     arePortsCompatible: function(node1, portId1, node2, portId2) {
-      return new Promise(resolve => {
-        osparc.data.Resources.getCompatibleInputs(node1, portId1, node2)
-          .then(compatiblePorts => {
-            resolve(compatiblePorts.includes(portId2));
-          })
-          .catch(err => {
-            console.error(err);
-            resolve(false);
-          });
-      });
+      return osparc.data.Resources.getCompatibleInputs(node1, portId1, node2)
+          .then(compatiblePorts => compatiblePorts.includes(portId2));
     },
 
     isDataALink: function(data) {
