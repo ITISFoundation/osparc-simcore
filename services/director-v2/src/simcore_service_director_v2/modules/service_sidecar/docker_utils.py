@@ -83,9 +83,14 @@ async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
     return service_start_result["ID"]
 
 
+async def inspect_service(service_id: str) -> Dict[str, Any]:
+    async with docker_client() as client:  # pylint: disable=not-async-context-manager
+        return await client.services.inspect(service_id)
+
+
 async def get_service_sidecars_to_monitor(
     service_sidecar_settings: ServiceSidecarSettings,
-) -> Deque[Tuple[str, str, str, str, str]]:
+) -> Deque[Tuple[str, str, str, str, str, int]]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         running_services = await client.services.list(
             filters={
@@ -121,6 +126,7 @@ async def get_service_sidecars_to_monitor(
             "traefik.docker.network"
         ]
         simcore_traefik_zone = service["Spec"]["Labels"]["io.simcore.zone"]
+        service_port = service["Spec"]["Labels"]["service_port"]
 
         entry = (
             service_name,
@@ -129,6 +135,7 @@ async def get_service_sidecars_to_monitor(
             service_tag,
             service_sidecar_network_name,
             simcore_traefik_zone,
+            service_port,
         )
         service_sidecar_services.append(entry)
 
@@ -138,6 +145,20 @@ async def get_service_sidecars_to_monitor(
 async def get_node_id_from_task_for_service(
     service_id: str, service_sidecar_settings: ServiceSidecarSettings
 ) -> Dict[str, Any]:
+    """Awaits until the service has a running task and returns the
+    node's ID where it is running"""
+
+    async def sleep_or_error(started: float, task: Dict):
+        await asyncio.sleep(1.0)
+        elapsed = time.time() - started
+        if elapsed > service_sidecar_settings.timeout_fetch_service_sidecar_node_id:
+            raise ServiceSidecarError(
+                msg=(
+                    "Timed out while serarching for an assigned NodeID for "
+                    f"service_id={service_id}. Last task inspect result: {task}"
+                )
+            )
+
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         service_state = None
         started = time.time()
@@ -146,27 +167,31 @@ async def get_node_id_from_task_for_service(
             running_services = await client.tasks.list(filters={"service": service_id})
 
             service_container_count = len(running_services)
+
+            # the service could not be started yet, let's wait for the next iteration?
+            if service_container_count == 0:
+                await sleep_or_error(started=started, task={})
+                continue
+
             if service_container_count != 1:
                 raise ServiceSidecarError(
-                    f"Expected to find 1 container for service '{service_id}', "
-                    f"but '{service_container_count}' were found!"
+                    msg=(
+                        f"Expected to find 1 container for service '{service_id}', "
+                        f"but '{service_container_count}' were found!"
+                    )
                 )
 
             task = running_services[0]
             service_state = task["Status"]["State"]
 
-            await asyncio.sleep(1)
-            elapsed = time.time() - started
-            if elapsed > service_sidecar_settings.timeout_fetch_service_sidecar_node_id:
-                raise ServiceSidecarError(
-                    "Timed out while serarching for an assigned NodeID for "
-                    f"service_id={service_id}. Last task inspect result: {task}"
-                )
+            await sleep_or_error(started=started, task=task)
 
     if "NodeID" not in task:
         raise ServiceSidecarError(
-            f"Could not find an assigned NodeID for service_id={service_id}. "
-            f"Last task inspect result: {task}"
+            msg=(
+                f"Could not find an assigned NodeID for service_id={service_id}. "
+                f"Last task inspect result: {task}"
+            )
         )
 
     return task["NodeID"]
