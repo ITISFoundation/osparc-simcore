@@ -41,8 +41,8 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
 
     targetScore: {
       check: "Number",
-      init: 4,
-      nullable: false,
+      init: null,
+      nullable: true,
       event: "changeTargetScore",
       apply: "__render"
     },
@@ -152,7 +152,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       starsLayout.removeAll();
 
       const score = this.getScore();
-      const maxScore = this.getMaxScore();
+      const maxScore = this.getTargetScore() || this.getMaxScore();
       const maxStars = this.getNStars();
       const normScore = score/maxScore;
 
