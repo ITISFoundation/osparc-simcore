@@ -55,7 +55,8 @@ async function runTutorial() {
       await tutorial.takeScreenshot("pressRunNB_" + (i+1));
     }
 
-    await tutorial.retrieve();
+    // TODO: Better check that the kernel is finished
+    await tutorial.waitFor(3000);
 
     console.log('Checking results for the notebook:');
     await tutorial.openNodeFiles(1);
@@ -68,8 +69,6 @@ async function runTutorial() {
 
     // open jupyter lab
     await tutorial.openNode(2);
-
-    await tutorial.retrieve();
 
     const iframeHandles2 = await tutorial.getIframe();
     // expected three iframes = loading + jupyterNB + jupyterLab
