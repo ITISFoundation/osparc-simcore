@@ -3,7 +3,15 @@ import time
 from typing import Callable, Optional
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from starlette import status
+from starlette.exceptions import HTTPException
 
+from ..api.errors.http_error import (
+    http_error_handler,
+    make_http_error_handler_for_exception,
+)
+from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
 from ..meta import api_version, api_vtag
@@ -14,13 +22,6 @@ from .events import (
     on_startup,
 )
 from .settings import AppSettings, BootModeEnum
-
-# from fastapi.exceptions import RequestValidationError
-# from starlette.exceptions import HTTPException
-
-# from ..api.errors.http_error import http_error_handler
-# from ..api.errors.validation_error import http422_error_handler
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app = FastAPI(
         debug=settings.debug,
         title="Components Catalog Service",
-        # TODO: get here extended description from setup or the other way around
         description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
         version=api_version,
         openapi_url=f"/api/{api_vtag}/openapi.json",
@@ -46,15 +46,29 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     logger.debug("App settings:%s", settings.json(indent=2))
     app.state.settings = settings
 
+    # events
+    app.add_event_handler("startup", on_startup)
     app.add_event_handler("startup", create_start_app_handler(app))
+
+    app.add_event_handler("shutdown", on_shutdown)
     app.add_event_handler("shutdown", create_stop_app_handler(app))
 
-    # setup app --
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
-
-    # app.add_exception_handler(HTTPException, http_error_handler)
-    # app.add_exception_handler(RequestValidationError, http422_error_handler)
+    # exception handlers
+    app.add_exception_handler(HTTPException, http_error_handler)
+    app.add_exception_handler(RequestValidationError, http422_error_handler)
+    # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
+    app.add_exception_handler(
+        NotImplementedError,
+        make_http_error_handler_for_exception(
+            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError
+        ),
+    )
+    app.add_exception_handler(
+        Exception,
+        make_http_error_handler_for_exception(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
+        ),
+    )
 
     # Routing
 
