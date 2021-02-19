@@ -90,7 +90,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
             case "STARTED":
             case "RETRY":
               this.self().addClass(this.__icon.getContentElement(), "rotate");
-              target.resetTextColor();
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "UNKNOWN":
             case "NOT_STARTED":
