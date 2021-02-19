@@ -1,27 +1,25 @@
-import functools
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
-from uuid import UUID, uuid3, uuid4
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
 
 from ..api_resources import RelativeResourceName
 
-NAMESPACE_JOB_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
-
-
-@functools.lru_cache(maxsize=1024)
-def _compose_job_id(solver_id: str, inputs_sha: str, created_at: str) -> UUID:
-    # NOTE: the date is part of the composition so maxsize to 1000 * sys.getsizeof(UUID) = 1000 * 56bytes elements
-    return uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
-
-
 # JOBS ----------
 #  - A job can be create on a specific solver or other type of future runner (e.g. a pipeline)
+#  - For that reason it also uses global UUIDs as resource identifier
 #
-#  TODO: add discriminator to identify Job's parent entity (here only solver)
-#  - JobData (domain) vs Job (schema) ??
+#   A job.name from a solver
+#    "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c"
+#
+#   A job.name from a pipeline
+#     "pipelines/mySuperDupper/versions/4/jobs/c2789bd2-7385-4e00-91d3-2f100df41185"
+#
+#   But then both could be also retrieved as a global job resource (perhaps)
+#     "jobs/f622946d-fd29-35b9-a193-abdd1095167c"
+#     "jobs/c2789bd2-7385-4e00-91d3-2f100df41185"
 #
 
 
@@ -38,18 +36,22 @@ class Job(BaseModel):
     )
 
     # Get links to other resources
-    url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
-    runner_url: Optional[HttpUrl] = Field(..., description="Link to the solver's job")
-    outputs_url: Optional[HttpUrl] = Field(..., description="Link to the job outputs")
+    url: Optional[HttpUrl] = Field(..., description="Link to get this resource (self)")
+    runner_url: Optional[HttpUrl] = Field(
+        ..., description="Link to the solver's job (parent collection)"
+    )
+    outputs_url: Optional[HttpUrl] = Field(
+        ..., description="Link to the job outputs (sub-collection"
+    )
 
     class Config:
         schema_extra = {
             "example": {
+                "id": "f622946d-fd29-35b9-a193-abdd1095167c",
+                "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
                 "runner_name": "solvers/isolve/releases/1.3.4",
                 "inputs_checksum": "12345",
                 "created_at": "2021-01-22T23:59:52.322176",
-                "id": "f622946d-fd29-35b9-a193-abdd1095167c",
-                "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
                 "url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
                 "runner_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4",
                 "outputs_url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs",
@@ -60,8 +62,9 @@ class Job(BaseModel):
     @classmethod
     def check_name(cls, v, values):
         _id = str(values["id"])
-        if not v.endswith(_id):
+        if not v.endswith(f"/{_id}"):
             raise ValueError(f"Resource name [{v}] and id [{_id}] do not match")
+        return v
 
     @classmethod
     def create_now(cls, parent: RelativeResourceName, inputs_checksum: str) -> "Job":
