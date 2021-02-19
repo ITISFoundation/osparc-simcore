@@ -6,7 +6,7 @@ from uuid import UUID, uuid3, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
 
-from .solvers import SOLVER_RESOURCE_NAME_RE
+from ..api_resources import RelativeResourceName
 
 NAMESPACE_JOB_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
 
@@ -27,13 +27,13 @@ def _compose_job_id(solver_id: str, inputs_sha: str, created_at: str) -> UUID:
 
 class Job(BaseModel):
     id: UUID
-    name: str
+    name: RelativeResourceName
 
     inputs_checksum: str = Field(..., description="Input's checksum")
     created_at: datetime = Field(..., description="Job creation timestamp")
 
     # parent
-    runner_name: constr(regex=SOLVER_RESOURCE_NAME_RE) = Field(
+    runner_name: RelativeResourceName = Field(
         ..., description="Runner that executes job"
     )
 
@@ -49,6 +49,7 @@ class Job(BaseModel):
                 "inputs_checksum": "12345",
                 "created_at": "2021-01-22T23:59:52.322176",
                 "id": "f622946d-fd29-35b9-a193-abdd1095167c",
+                "name": "solvers/isolve/releases/1.3.4/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
                 "url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c",
                 "runner_url": "https://api.osparc.io/v0/solvers/isolve/releases/1.3.4",
                 "outputs_url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs",
@@ -63,28 +64,19 @@ class Job(BaseModel):
             raise ValueError(f"Resource name [{v}] and id [{_id}] do not match")
 
     @classmethod
-    def create_now(cls, parent_name: str, inputs_checksum: str) -> "Job":
+    def create_now(cls, parent: RelativeResourceName, inputs_checksum: str) -> "Job":
         _id = uuid4()
 
         return cls(
-            name=f"/{parent_name.strip('/')}/{str(_id)}",
+            name=f"{parent}/{str(_id)}",
             id=_id,
-            runner_name=parent_name,
+            runner_name=parent,
             inputs_checksum=inputs_checksum,
             created_at=datetime.utcnow(),
             url=None,
             runner_url=None,
             outputs_url=None,
         )
-
-    # only for solver's job
-    @property
-    def solver_key(self):
-        return self.runner_name.split("/")[1]
-
-    @property
-    def solver_version(self):
-        return self.runner_name.split("/")[-1]
 
 
 # TODO: these need to be in sync with celery task states
