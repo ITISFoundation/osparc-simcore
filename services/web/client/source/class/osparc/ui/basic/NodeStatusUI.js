@@ -48,7 +48,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         const regex = new RegExp(className.trim(), "g");
         element.setAttribute("class", currentClass.replace(regex, ""));
       }
-    },
+    }
   },
 
   members: {
