@@ -4,8 +4,6 @@ pytest
 pytest-cov
 pytest-asyncio
 
-osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@is1865/enh-solvers-api
-
 python-dotenv
 httpx
 
