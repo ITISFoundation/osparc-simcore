@@ -243,7 +243,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     },
 
     __populateTSRHeaders: function() {
-      const schemaRules = this.__schema["properties"]["tsr"]["properties"];
+      const schemaRules = this.__schema["properties"]["tsr_current"]["properties"];
 
       const headerTSR = new qx.ui.basic.Label(this.tr("Rules")).set({
         font: "title-14"
