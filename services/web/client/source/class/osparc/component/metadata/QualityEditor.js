@@ -520,7 +520,6 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       let row = 0;
       Object.keys(schemaAnnotations).forEach(annotationKey => {
-        const annotationKey = annoKeys[i];
         if (annotationKey === "certificationStatus") {
           const certificationBox = new qx.ui.form.SelectBox().set({
             allowGrowX: false,
