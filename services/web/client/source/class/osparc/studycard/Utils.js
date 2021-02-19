@@ -157,19 +157,12 @@ qx.Class.define("osparc.studycard.Utils", {
         tsrLayout.removeAll();
         const quality = model.getQuality();
         if (osparc.component.metadata.Quality.isEnabled(quality)) {
-          const {
-            score,
-            targetScore,
-            maxScore
-          } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr_current"], quality["tsr_target"]);
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
-            score,
-            targetScore,
-            maxScore,
             nStars: 4,
             showScore: true
           });
+          osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
           tsrLayout.add(tsrRating);
         } else {
           tsrLayout.exclude();

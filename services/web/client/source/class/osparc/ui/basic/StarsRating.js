@@ -86,7 +86,21 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   statics: {
     StarFull: "@FontAwesome5Solid/star/12",
     StarHalf: "@FontAwesome5Solid/star-half/12", // Todo: upgrade FontAwesome for star-half-alt
-    StarEmpty: "@FontAwesome5Regular/star/12"
+    StarEmpty: "@FontAwesome5Regular/star/12",
+
+    scoreToStarsRating: function(currentTSR, targetTSR, starsRating) {
+      const {
+        score,
+        targetScore,
+        maxScore
+      } = osparc.component.metadata.Quality.computeTSRScore(currentTSR, targetTSR);
+
+      starsRating.set({
+        score,
+        targetScore,
+        maxScore
+      });
+    }
   },
 
   members: {
@@ -193,7 +207,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
         const score = this.getScore().toString();
         const targetScore = this.getTargetScore().toString();
         const maxScore = this.getMaxScore().toString();
-        scoreText.setValue(`${score}/${targetScore}/<small>${maxScore}</small>`);
+        scoreText.setValue(`${score}/${targetScore}<small>/${maxScore}</small>`);
         scoreText.show();
       } else {
         scoreText.exclude();

@@ -329,20 +329,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
         row++;
       });
-      const {
-        score,
-        targetScore,
-        maxScore
-      } = osparc.component.metadata.Quality.computeTSRScore(currentTSR, targetTSR);
-      const tsrRating = new osparc.ui.basic.StarsRating();
-      tsrRating.set({
-        score,
-        targetScore,
-        maxScore,
+
+      const tsrRating = new osparc.ui.basic.StarsRating().set({
         nStars: 4,
         showScore: true,
         marginTop: 5
       });
+      osparc.ui.basic.StarsRating.scoreToStarsRating(currentTSR, targetTSR, tsrRating);
       this.__tsrGrid.add(tsrRating, {
         row,
         column: 1
@@ -351,6 +344,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
     __populateTSRDataEdit: function() {
       const copyTSRCurrent = this.__copyResourceData["quality"]["tsr_current"];
+      const copyTSRTarget = this.__copyResourceData["quality"]["tsr_target"];
       const tsrRating = new osparc.ui.basic.StarsRating();
       tsrRating.set({
         nStars: 4,
@@ -359,17 +353,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         mode: "edit"
       });
       const updateTSRScore = () => {
-        const {
-          score,
-          targetScore,
-          maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(copyTSRCurrent);
-
-        tsrRating.set({
-          score,
-          targetScore,
-          maxScore
-        });
+        osparc.ui.basic.StarsRating.scoreToStarsRating(copyTSRCurrent, copyTSRTarget, tsrRating);
       };
       updateTSRScore();
 
