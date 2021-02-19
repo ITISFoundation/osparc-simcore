@@ -176,7 +176,7 @@ class ServiceSidecarsMonitor:
         """Computes the service sidecar """
 
         def make_error_status():
-            #TODO: check if this is correct and the frontend understands what it is
+            # TODO: check if this is correct and the frontend understands what it is
             return dict(
                 service_state="error",
                 service_message=f"Could not find a service for node_uuid={node_uuid}",
