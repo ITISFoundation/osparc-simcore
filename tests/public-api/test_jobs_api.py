@@ -23,12 +23,15 @@ from osparc.rest import ApiException
 def sleeper_solver(
     solvers_api: SolversApi,
     services_registry: Dict[str, Any],
-):
+) -> Solver:
+    # this part is tested in test_solvers_api so it becomes a fixture here
+
     sleeper = services_registry["sleeper_service"]
 
     solver: Solver = solvers_api.get_solver_release(
         solver_key=sleeper["name"], version=sleeper["version"]
     )
+
     # returns Dict[SolverInputSchema] and SolverInputSchema is a schema?
     # solvers_api.get_solver_inputs(name = solver.name, )
     # "inputs":

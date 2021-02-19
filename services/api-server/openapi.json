@@ -1074,7 +1074,7 @@
           "id": {
             "title": "Id",
             "type": "string",
-            "description": "Unique identifier for a file stored in the system",
+            "description": "Resource identifier",
             "format": "uuid"
           },
           "filename": {

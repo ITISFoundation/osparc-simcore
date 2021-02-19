@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 
+import random
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
 from osparc.api.solvers_api import SolversApi
@@ -13,46 +14,69 @@ from osparc.models import Solver
 from packaging.version import parse as parse_version
 
 
+@pytest.fixture
+def sleeper_key_and_version(services_registry: Dict[str, Any]) -> Tuple[str, str]:
+    # image in registry
+    repository_name = services_registry["sleeper_service"]["name"]
+    tag = services_registry["sleeper_service"]["version"]
+
+    # this is how image info map into solvers identifiers
+    #
+    #  repository_name -> solver_key
+    #  tag -> version
+    #
+    return repository_name, tag
+
+
 def test_get_latest_solver(solvers_api: SolversApi):
-    solvers: List[Solver] = solvers_api.list_solvers()  # all solvers and all versions
+    solvers: List[Solver] = solvers_api.list_solvers()  # latest versions of all solvers
+
+    solver_names = []
+    for latest in solvers:
+        assert solvers_api.get_solver(latest.id, latest.version) == latest
+
+        solver_names.append(latest.id)
+
+    assert sorted(solver_names) == sorted(set(solver_names))
+
+
+def test_get_all_releases(solvers_api: SolversApi):
+
+    all_releases: List[Solver] = solvers_api.list_solvers_releases()
+
+    one_solver = random.choice(all_releases)
+
+    all_releases_of_given_solver: List[Solver] = solvers_api.list_solver_releases(
+        one_solver.id
+    )
 
     latest: Optional[Solver] = None
-    for solver in solvers:
-        if "sleeper" in solver.name:
+    for solver in all_releases_of_given_solver:
+        if one_solver.id == solver.id:
             assert isinstance(solver, Solver)
 
             if not latest:
                 latest = solver
 
             elif parse_version(latest.version) < parse_version(solver.version):
-                latest = solvers_api.get_solver(solver.id)
+                latest = solvers_api.get_solver(solver.id, solver.version)
 
     print(latest)
     assert latest
-
-    assert (
-        solvers_api.get_solver_by_name_and_version(
-            solver_name=latest.name, version="latest"
-        )
-        == latest
-    )
+    assert latest == all_releases_of_given_solver[-1]
 
 
-def test_get_solver(solvers_api: SolversApi, services_registry: Dict[str, Any]):
-    expected_name = services_registry["sleeper_service"]["name"]
-    expected_version = services_registry["sleeper_service"]["version"]
+def test_get_solver(solvers_api: SolversApi, sleeper_key_and_version):
+    expected_name, expected_version = sleeper_key_and_version
 
-    solver = solvers_api.get_solver_by_name_and_version(
-        solver_name=expected_name, version=expected_version
-    )
+    solver = solvers_api.get_solver(solver_key=expected_name, version=expected_version)
 
-    assert solver.name == expected_name
+    assert solver.id == expected_name
     assert solver.version == expected_version
 
-    same_solver = solvers_api.get_solver(solver.id)
+    same_solver = solvers_api.get_solver(solver.id, solver.version)
 
     assert same_solver.id == solver.id
-    assert same_solver.name == solver.name
     assert same_solver.version == solver.version
 
     # FIXME: same uuid returns different maintainer, title and description (probably bug in catalog since it shows "nodetails" tags)
@@ -62,51 +86,9 @@ def test_get_solver(solvers_api: SolversApi, services_registry: Dict[str, Any]):
 def test_solvers_not_found(solvers_api):
 
     with pytest.raises(ApiException) as excinfo:
-        solvers_api.get_solver_by_name_and_version(
+        solvers_api.get_solver(
             solver_name="simcore/services/comp/something-not-in-this-registry",
             version="1.4.55",
         )
     assert excinfo.value.status == HTTPStatus.NOT_FOUND  # 404
     assert "not found" in excinfo.value.reason.lower()
-
-
-def test_solver_collection_and_subresources(
-    solvers_api, services_registry: Dict[str, Any]
-):
-    # image in registry
-    repository_name = services_registry["sleeper_service"]["name"]
-    tag = services_registry["sleeper_service"]["version"]
-
-    # map image to solver ids:
-    #
-    #  repository_name -> solver_name
-    #  tag -> version
-    #
-
-    # A collection of solvers: /solvers/*.  Each solver has the following resources:
-    #
-    # - A collection of released solvers: /solvers/*/releases/*
-    #     typically:
-    #
-    # Now, in principle, each release is absolutley independent but
-    # most people use it as an extension
-    #
-
-    # considering solvers and releases separate collections ... does make the interface strange!
-    # /solvers/*/releases/*
-    # because if forces us to refer to a specific solver as "solver-release"
-    #
-    # assert solvers_api.get_solver_release(release_name=f"{repository_name}:{tag}")
-    #
-    # instead, let us consider a flat collection of all solvers ()
-    #
-    # /solvers/{name} -> /solvers/{name}/latest
-    # /solvers/{name}/{version}
-
-    # get solver w/o specifying version refers always to the latest
-    assert solvers_api.get_solver(
-        name=f"{repository_name}:{tag}"
-    ) == solvers_api.get_solver_by_name_and_version(name=repository_name, version=tag)
-    assert solvers_api.get_solver(name=f"{repository_name}") == solvers_api.get_solver(
-        name=f"{repository_name}:latest"
-    )
