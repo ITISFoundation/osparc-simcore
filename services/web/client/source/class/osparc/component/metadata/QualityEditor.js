@@ -543,8 +543,15 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           return;
         }
         let serviceLimitations = "";
-        if (annotationKey === "limitations") {
-          serviceLimitations += "<br>Sleeper:<br>I like to sleep";
+        if ("workbench" in this.__resourceData && annotationKey === "limitations") {
+          const services = osparc.utils.Services.getUniqueServicesFromWorkbench(this.__resourceData["workbench"]);
+          services.forEach(service => {
+            const metaData = osparc.utils.Services.getMetaData(service.key, service.version);
+            const knownLimitations = osparc.component.metadata.Quality.getKnownLimitations(metaData);
+            if (knownLimitations !== "") {
+              serviceLimitations += "<br>"+metaData.name+":<br>"+knownLimitations;
+            }
+          });
         }
         const annotationMD = new osparc.ui.markdown.Markdown();
         annotationMD.setValue(copyMetadataAnnotations[annotationKey] + serviceLimitations);

@@ -168,7 +168,7 @@ qx.Class.define("osparc.utils.Services", {
           key: node["key"],
           version: node["version"]
         };
-        const idx = services.indexOf(existingSrv => existingSrv.key === service.key && existingSrv.version === service.version);
+        const idx = services.findIndex(existingSrv => existingSrv.key === service.key && existingSrv.version === service.version);
         if (idx === -1) {
           services.push(service);
         }
