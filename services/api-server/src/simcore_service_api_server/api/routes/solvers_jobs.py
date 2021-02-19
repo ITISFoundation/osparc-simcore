@@ -34,7 +34,7 @@ async def list_all_jobs(
 
 
 @router.get(
-    "/{solver_key}/releases/{version}/jobs",
+    "/{solver_key:path}/releases/{version}/jobs",
     response_model=List[Job],
 )
 async def list_jobs(
@@ -53,7 +53,7 @@ async def list_jobs(
 
 # pylint: disable=dangerous-default-value
 @router.post(
-    "/{solver_key}/releases/{version}/jobs",
+    "/{solver_key:path}/releases/{version}/jobs",
     response_model=Job,
 )
 async def create_job(
@@ -74,7 +74,7 @@ async def create_job(
     return await create_job_impl(solver.id, solver.version, inputs, url_for)
 
 
-@router.get("/{solver_key}/releases/{version}/jobs/{job_id}", response_model=Job)
+@router.get("/{solver_key:path}/releases/{version}/jobs/{job_id}", response_model=Job)
 async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
@@ -88,7 +88,8 @@ async def get_job(
 
 
 @router.post(
-    "/{solver_key}/releases/{version}/jobs/{job_id}:start", response_model=JobStatus
+    "/{solver_key:path}/releases/{version}/jobs/{job_id}:start",
+    response_model=JobStatus,
 )
 async def start_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
     from .jobs_faker import start_job_impl
@@ -96,7 +97,9 @@ async def start_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
     return await start_job_impl(solver_key, version, job_id)
 
 
-@router.post("/{solver_key}/releases/{version}/jobs/{job_id}:stop", response_model=Job)
+@router.post(
+    "/{solver_key:path}/releases/{version}/jobs/{job_id}:stop", response_model=Job
+)
 async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
@@ -109,7 +112,8 @@ async def stop_job(
 
 
 @router.post(
-    "/{solver_key}/releases/{version}/jobs/{job_id}:inspect", response_model=JobStatus
+    "/{solver_key:path}/releases/{version}/jobs/{job_id}:inspect",
+    response_model=JobStatus,
 )
 async def inspect_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
     from .jobs_faker import inspect_job_impl
@@ -118,7 +122,7 @@ async def inspect_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID
 
 
 @router.get(
-    "/{solver_key}/releases/{version}/jobs/{job_id}/outputs",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs",
     response_model=List[JobOutput],
 )
 async def list_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
@@ -128,7 +132,7 @@ async def list_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id:
 
 
 @router.get(
-    "/{solver_key}/releases/{version}/jobs/{job_id}/outputs/{output_key}",
+    "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs/{output_key}",
     response_model=JobOutput,
 )
 async def get_job_output(

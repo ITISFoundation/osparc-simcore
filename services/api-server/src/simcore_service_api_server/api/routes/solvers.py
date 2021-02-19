@@ -65,7 +65,9 @@ async def list_solvers_releases(
 
 
 @router.get(
-    "/{solver_key}", response_model=Solver, summary="Get Latest Release of a Solver"
+    "/{solver_key:path}/latest",
+    response_model=Solver,
+    summary="Get Latest Release of a Solver",
 )
 async def get_solver(
     solver_key: SolverKeyId,
@@ -88,6 +90,48 @@ async def get_solver(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver with id={solver_key} not found",
+        ) from err
+
+
+@router.get("/{solver_key:path}/releases", response_model=List[Solver])
+async def list_solver_releases(
+    solver_key: SolverKeyId,
+    user_id: int = Depends(get_current_user_id),
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+    url_for: Callable = Depends(get_reverse_url_mapper),
+):
+    """ Lists all releases of a given solver """
+    raise NotImplementedError()
+
+
+@router.get("/{solver_key:path}/releases/{version}", response_model=Solver)
+async def get_solver_release(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    user_id: int = Depends(get_current_user_id),
+    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
+    url_for: Callable = Depends(get_reverse_url_mapper),
+) -> Solver:
+    """ Gets a specific release of a solver """
+    try:
+        solver = await catalog_client.get_solver(user_id, solver_key, version)
+
+        solver.url = url_for(
+            "get_solver_release", solver_key=solver.id, version=solver.version
+        )
+
+        return solver
+
+    except (
+        ValueError,
+        IndexError,
+        ValidationError,
+        HTTPStatusError,
+        PydanticValueError,
+    ) as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Solver {solver_key}:{version} not found",
         ) from err
 
 
@@ -118,45 +162,3 @@ async def get_solver(
 #     """
 #     solver = await catalog_client.get_latest_release(user_id, solver_key)
 #     return await create_job_impl(solver.id, solver.version, inputs, url_for)
-
-
-@router.get("/{solver_key}/releases", response_model=List[Solver])
-async def list_solver_releases(
-    solver_key: SolverKeyId,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-):
-    """ Lists all releases of a given solver """
-    raise NotImplementedError()
-
-
-@router.get("/{solver_key}/releases/{version}", response_model=Solver)
-async def get_solver_release(
-    solver_key: SolverKeyId,
-    version: VersionStr,
-    user_id: int = Depends(get_current_user_id),
-    catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
-) -> Solver:
-    """ Gets a specific release of a solver """
-    try:
-        solver = await catalog_client.get_solver(user_id, solver_key, version)
-
-        solver.url = url_for(
-            "get_solver_release", solver_key=solver.id, version=solver.version
-        )
-
-        return solver
-
-    except (
-        ValueError,
-        IndexError,
-        ValidationError,
-        HTTPStatusError,
-        PydanticValueError,
-    ) as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Solver {solver_key}:{version} not found",
-        ) from err
