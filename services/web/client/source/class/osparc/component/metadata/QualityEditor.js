@@ -50,6 +50,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     }
   },
 
+  // eslint-disable-next-line qx-rules/no-refs-in-members
   members: {
     __resourceData: null,
     __copyResourceData: null,
@@ -59,6 +60,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __annotationsSection: null,
     __tsrGrid: null,
     __annotationsGrid: null,
+    __tsrGridPos: {
+      rule: 0,
+      clCurrent: 1,
+      clTarget: 2,
+      reference: 3,
+      edit: 4
+    },
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
@@ -246,21 +254,21 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       this.__tsrGrid.add(headerTSR, {
         row: 0,
-        column: 0
+        column: this.__tsrGridPos.rule
       });
       const headerCL = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
         font: "title-14"
       });
       this.__tsrGrid.add(headerCL, {
         row: 0,
-        column: 1
+        column: this.__tsrGridPos.clCurrent
       });
       const headerRef = new qx.ui.basic.Label(this.tr("References")).set({
         font: "title-14"
       });
       this.__tsrGrid.add(headerRef, {
         row: 0,
-        column: 2
+        column: this.__tsrGridPos.reference
       });
 
       let row = 1;
@@ -273,7 +281,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         });
         this.__tsrGrid.add(ruleWHint, {
           row,
-          column: 0
+          column: this.__tsrGridPos.rule
         });
         row++;
       });
@@ -282,7 +290,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       this.__tsrGrid.add(label, {
         row,
-        column: 0
+        column: this.__tsrGridPos.rule
       });
       row++;
     },
@@ -318,13 +326,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         });
         this.__tsrGrid.add(ruleRatingWHint, {
           row,
-          column: 1
+          column: this.__tsrGridPos.clCurrent
         });
 
         const referenceMD = new osparc.ui.markdown.Markdown(cTSR.references);
         this.__tsrGrid.add(referenceMD, {
           row,
-          column: 2
+          column: this.__tsrGridPos.reference
         });
 
         row++;
@@ -338,11 +346,16 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       osparc.ui.basic.StarsRating.scoreToStarsRating(currentTSR, targetTSR, tsrRating);
       this.__tsrGrid.add(tsrRating, {
         row,
-        column: 1
+        column: this.__tsrGridPos.clCurrent
       });
     },
 
     __populateTSRDataEdit: function() {
+      this.__populateTSRCurrentDataEdit();
+      this.__populateTSRTargetDataEdit();
+    },
+
+    __populateTSRCurrentDataEdit: function() {
       const copyTSRCurrent = this.__copyResourceData["quality"]["tsr_current"];
       const copyTSRTarget = this.__copyResourceData["quality"]["tsr_target"];
       const tsrRating = new osparc.ui.basic.StarsRating();
@@ -391,13 +404,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
         this.__tsrGrid.add(layout, {
           row,
-          column: 1
+          column: this.__tsrGridPos.clCurrent
         });
 
         const referenceMD = new osparc.ui.markdown.Markdown(rule.references);
         this.__tsrGrid.add(referenceMD, {
           row,
-          column: 2
+          column: this.__tsrGridPos.reference
         });
 
         const button = osparc.utils.Utils.getEditButton();
@@ -418,7 +431,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         }, this);
         this.__tsrGrid.add(button, {
           row,
-          column: 3
+          column: this.__tsrGridPos.edit
         });
 
         row++;
@@ -426,7 +439,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       this.__tsrGrid.add(tsrRating, {
         row,
-        column: 1
+        column: this.__tsrGridPos.clCurrent
       });
     },
 
