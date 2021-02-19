@@ -350,7 +350,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + orgMemberEmail);
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMemberEmail + this.tr(" added"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })
