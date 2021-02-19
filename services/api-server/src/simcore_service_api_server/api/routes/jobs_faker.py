@@ -15,10 +15,14 @@ from uuid import UUID
 from fastapi import HTTPException
 from starlette import status
 
+from ...models.api_resources import RelativeResourceName
 from ...models.schemas.jobs import Job, JobInput, JobOutput, JobStatus, TaskStates
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 
 logger = logging.getLogger(__name__)
+
+
+JobName = RelativeResourceName
 
 
 @dataclass
@@ -28,55 +32,55 @@ class JobsFaker:
     # TODO: preload JobsFaker configuration emulating a particular scenario (e.g. all jobs failed, ...)
     #
 
-    jobs: Dict[UUID, Job] = field(default_factory=dict)
+    jobs: Dict[JobName, Job] = field(default_factory=dict)
     job_status: Dict[UUID, JobStatus] = field(default_factory=dict)
     job_inputs: Dict[UUID, List[JobInput]] = field(default_factory=dict)
     job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
     job_outputs: Dict[UUID, List[JobOutput]] = field(default_factory=dict)
 
-    def job_values(self, solver_id: str = None) -> Iterator[Job]:
-        if solver_id:
+    def job_values(self, solver_name: str = None) -> Iterator[Job]:
+        if solver_name:
             for job in self.jobs.values():
-                if job.runner_name == solver_id:
+                if job.runner_name == solver_name:
                     yield job
         else:
             for job in self.jobs.values():
                 yield job
 
-    def create_job(self, solver_id: str, inputs: List[JobInput]) -> Job:
+    def create_job(self, solver_name: str, inputs: List[JobInput]) -> Job:
         # TODO: validate inputs against solver definition
         inputs_checksum = hashlib.sha256(
             " ".join(input.json() for input in inputs).encode("utf-8")
         ).hexdigest()
 
         # TODO: check if job exists already?? Do not consider date??
-        job = Job.create_now(solver_id, inputs_checksum)
+        job = Job.create_now(solver_name, inputs_checksum)
 
-        self.jobs[job.id] = job
+        self.jobs[job.mame] = job
         self.job_inputs[job.id] = inputs
         return job
 
-    def start_job(self, job_id: UUID) -> JobStatus:
+    def start_job(self, job_name: JobName) -> JobStatus:
         # check job was created?
-        job = self.jobs[job_id]
+        job = self.jobs[job_name]
 
         # why not getting inputs from here?
         inputs = self.job_inputs[job.id]
 
-        job_status = self.job_status.get(job_id)
+        job_status = self.job_status.get(job.id)
         if not job_status:
             job_status = JobStatus(
-                job_id=job_id,
+                job_id=job.id,
                 state=TaskStates.UNDEFINED,
                 progress=0,
                 submitted_at=datetime.utcnow(),
             )
-            self.job_status[job_id] = job_status
-            self.job_tasks[job_id] = asyncio.ensure_future(
-                self._start_job_task(job_id, inputs)
+            self.job_status[job.id] = job_status
+            self.job_tasks[job.id] = asyncio.ensure_future(
+                self._start_job_task(job.id, inputs)
             )
 
-        return self.job_status[job_id]
+        return self.job_status[job.id]
 
     async def _start_job_task(self, job_id, inputs):
         MOCK_PULLING_TIME = 1, 2
@@ -157,10 +161,10 @@ class JobsFaker:
                 )
             ]
 
-    def stop_job(self, job_id) -> Job:
-        job = self.jobs[job_id]
+    def stop_job(self, job_name) -> Job:
+        job = self.jobs[job_name]
         try:
-            task = self.job_tasks[job_id]
+            task = self.job_tasks[job.id]
             task.cancel()  # not sure it will actually task.cancelling
         except KeyError:
             logger.debug("Stopping job {job_id} that was never started")
@@ -226,7 +230,7 @@ async def create_job_impl(
     # TODO: validate inputs against solver specs
     # TODO: create a unique identifier of job based on solver_id and inputs
 
-    job = the_fake_impl.create_job(f"{solver_key}:{version}", inputs)
+    job = the_fake_impl.create_job(f"solvers/{solver_key}/releases/{version}", inputs)
     return job.copy(
         update={
             "url": url_for("get_job", job_id=job.id),
@@ -251,8 +255,8 @@ async def get_job_impl(
                 "url": url_for("get_job", job_id=job.id),
                 "solver_url": url_for(
                     "get_solver_release",
-                    solver_key=job.solver_key,
-                    version=job.solver_version,
+                    solver_key=solver_key,
+                    version=version,
                 ),
                 "outputs_url": url_for("list_job_outputs", job_id=job.id),
             }
@@ -288,8 +292,8 @@ async def stop_job_impl(
                 "url": url_for("get_job", job_id=job.id),
                 "solver_url": url_for(
                     "get_solver_release",
-                    solver_key=job.solver_key,
-                    version=job.solver_version,
+                    solver_key=solver_key,
+                    version=version,
                 ),
                 "outputs_url": url_for("list_job_outputs", job_id=job.id),
             }

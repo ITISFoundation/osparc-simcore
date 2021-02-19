@@ -2,7 +2,7 @@ import functools
 from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
-from uuid import UUID, uuid3
+from uuid import UUID, uuid3, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
 
@@ -26,15 +26,16 @@ def _compose_job_id(solver_id: str, inputs_sha: str, created_at: str) -> UUID:
 
 
 class Job(BaseModel):
+    id: UUID
+    name: str
+
     inputs_checksum: str = Field(..., description="Input's checksum")
     created_at: datetime = Field(..., description="Job creation timestamp")
 
     # parent
     runner_name: constr(regex=SOLVER_RESOURCE_NAME_RE) = Field(
-        ..., description="Resource name of runner that executes job, e.g. a solver_name"
+        ..., description="Runner that executes job"
     )
-
-    id: UUID
 
     # Get links to other resources
     url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
@@ -54,28 +55,29 @@ class Job(BaseModel):
             }
         }
 
-    @validator("id", pre=True, always=True)
+    @validator("name", pre=True)
     @classmethod
-    def compose_id_with_solver_and_input(cls, v, values):
-        jid = _compose_job_id(
-            values["runner_name"], values["inputs_checksum"], values["created_at"]
-        )
-        if v and str(v) != str(jid):
-            raise ValueError(f"Invalid id: {v}!={jid} is incompatible with composition")
-        return jid
+    def check_name(cls, v, values):
+        _id = str(values["id"])
+        if not v.endswith(_id):
+            raise ValueError(f"Resource name [{v}] and id [{_id}] do not match")
 
     @classmethod
-    def create_now(cls, runner_name: str, inputs_checksum: str) -> "Job":
+    def create_now(cls, parent_name: str, inputs_checksum: str) -> "Job":
+        _id = uuid4()
+
         return cls(
-            runner_name=runner_name,
+            name=f"/{parent_name.strip('/')}/{str(_id)}",
+            id=_id,
+            runner_name=parent_name,
             inputs_checksum=inputs_checksum,
             created_at=datetime.utcnow(),
             url=None,
             runner_url=None,
             outputs_url=None,
-            id=None,
         )
 
+    # only for solver's job
     @property
     def solver_key(self):
         return self.runner_name.split("/")[1]
