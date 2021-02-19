@@ -367,16 +367,16 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __populateTSRDataEdit: function() {
       const copyTSRCurrent = this.__copyResourceData["quality"]["tsr_current"];
       const copyTSRTarget = this.__copyResourceData["quality"]["tsr_target"];
-      const tsrRating = new osparc.ui.basic.StarsRating();
-      tsrRating.set({
+      const tsrTotalRating = new osparc.ui.basic.StarsRating();
+      tsrTotalRating.set({
         nStars: 4,
         showScore: true,
         marginTop: 5
       });
-      const updateTSRScore = () => {
-        osparc.ui.basic.StarsRating.scoreToStarsRating(copyTSRCurrent, copyTSRTarget, tsrRating);
+      const updateTotalTSR = () => {
+        osparc.ui.basic.StarsRating.scoreToStarsRating(copyTSRCurrent, copyTSRTarget, tsrTotalRating);
       };
-      updateTSRScore();
+      updateTotalTSR();
 
       let row = 1;
       Object.keys(copyTSRCurrent).forEach(ruleKey => {
@@ -390,15 +390,16 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           const ruleRating = new osparc.ui.basic.StarsRating();
           ruleRating.set({
             maxScore: 4,
-            nStars: 4,
+            nStars: copyTSRTarget[ruleKey].level,
             score: value,
             marginTop: 5,
             mode: "edit"
           });
           ruleRating.addListener("changeScore", e => {
-            currentRule.level = e.getData();
-            updateCurrentLevel(currentRule.level);
-            updateTSRScore();
+            const newScore = e.getData();
+            copyTSRCurrent[ruleKey].level = newScore;
+            updateCurrentLevel(newScore);
+            updateTotalTSR();
           }, this);
           const confLevel = osparc.component.metadata.Quality.findConformanceLevel(value);
           const hint = confLevel.title + "<br>" + confLevel.description;
@@ -428,9 +429,11 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             mode: "edit"
           });
           ruleRating.addListener("changeScore", e => {
-            targetRule.level = e.getData();
-            updateTargetLevel(targetRule.level);
-            updateTSRScore();
+            const newMaxScore = e.getData();
+            copyTSRTarget[ruleKey].level = newMaxScore;
+            updateTargetLevel(newMaxScore);
+            updateCurrentLevel(Math.min(newMaxScore, copyTSRCurrent[ruleKey].level));
+            updateTotalTSR();
           }, this);
           const confLevel = osparc.component.metadata.Quality.findConformanceLevel(value);
           const hint = confLevel.title + "<br>" + confLevel.description;
@@ -476,7 +479,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         row++;
       });
 
-      this.__tsrGrid.add(tsrRating, {
+      this.__tsrGrid.add(tsrTotalRating, {
         row,
         column: this.__tsrGridPos.clCurrent
       });
