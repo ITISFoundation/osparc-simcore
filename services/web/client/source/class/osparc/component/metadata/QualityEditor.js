@@ -518,69 +518,69 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       const isEditMode = this.getMode() === "edit";
 
-      const certificationBox = new qx.ui.form.SelectBox().set({
-        allowGrowX: false,
-        enabled: isEditMode
-      });
-      schemaAnnotations["certificationStatus"]["enum"].forEach(certStatus => {
-        const certItem = new qx.ui.form.ListItem(certStatus);
-        certificationBox.add(certItem);
-        if (copyMetadataAnnotations.certificationStatus === certStatus) {
-          certificationBox.setSelection([certItem]);
-        }
-      });
-      certificationBox.addListener("changeSelection", e => {
-        copyMetadataAnnotations.certificationStatus = e.getData()[0].getLabel();
-      }, this);
-      this.__annotationsGrid.add(certificationBox, {
-        row: 0,
-        column: 1
-      });
-
-      let row = 1;
-      Object.keys(copyMetadataAnnotations).forEach(annotationKey => {
+      let row = 0;
+      Object.keys(schemaAnnotations).forEach(annotationKey => {
+        const annotationKey = annoKeys[i];
         if (annotationKey === "certificationStatus") {
-          return;
-        }
-        let serviceLimitations = "";
-        if ("workbench" in this.__resourceData && annotationKey === "limitations") {
-          const services = osparc.utils.Services.getUniqueServicesFromWorkbench(this.__resourceData["workbench"]);
-          services.forEach(service => {
-            const metaData = osparc.utils.Services.getMetaData(service.key, service.version);
-            const knownLimitations = osparc.component.metadata.Quality.getKnownLimitations(metaData);
-            if (knownLimitations !== "") {
-              serviceLimitations += "<br>"+metaData.name+":<br>"+knownLimitations;
+          const certificationBox = new qx.ui.form.SelectBox().set({
+            allowGrowX: false,
+            enabled: isEditMode
+          });
+          schemaAnnotations[annotationKey]["enum"].forEach(certStatus => {
+            const certItem = new qx.ui.form.ListItem(certStatus);
+            certificationBox.add(certItem);
+            if (copyMetadataAnnotations.certificationStatus === certStatus) {
+              certificationBox.setSelection([certItem]);
             }
           });
-        }
-        const annotationMD = new osparc.ui.markdown.Markdown();
-        annotationMD.setValue(copyMetadataAnnotations[annotationKey] + serviceLimitations);
-        this.__annotationsGrid.add(annotationMD, {
-          row,
-          column: 1
-        });
-
-        if (isEditMode) {
-          const button = osparc.utils.Utils.getEditButton();
-          button.addListener("execute", () => {
-            const title = this.tr("Edit Annotations");
-            const subtitle = this.tr("Supports Markdown");
-            const textEditor = new osparc.component.widget.TextEditor(copyMetadataAnnotations[annotationKey], subtitle, title);
-            const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
-            textEditor.addListener("textChanged", e => {
-              const newText = e.getData();
-              annotationMD.setValue(newText + serviceLimitations);
-              copyMetadataAnnotations[annotationKey] = newText;
-              win.close();
-            }, this);
-            textEditor.addListener("cancel", () => {
-              win.close();
-            }, this);
+          certificationBox.addListener("changeSelection", e => {
+            copyMetadataAnnotations.certificationStatus = e.getData()[0].getLabel();
           }, this);
-          this.__annotationsGrid.add(button, {
+          this.__annotationsGrid.add(certificationBox, {
             row,
-            column: 2
+            column: 1
           });
+        } else {
+          let serviceLimitations = "";
+          if ("workbench" in this.__resourceData && annotationKey === "limitations") {
+            const services = osparc.utils.Services.getUniqueServicesFromWorkbench(this.__resourceData["workbench"]);
+            services.forEach(service => {
+              const metaData = osparc.utils.Services.getMetaData(service.key, service.version);
+              const knownLimitations = osparc.component.metadata.Quality.getKnownLimitations(metaData);
+              if (knownLimitations !== "") {
+                serviceLimitations += "<br>"+metaData.name+":<br>"+knownLimitations;
+              }
+            });
+          }
+          const annotationMD = new osparc.ui.markdown.Markdown();
+          annotationMD.setValue(copyMetadataAnnotations[annotationKey] + serviceLimitations);
+          this.__annotationsGrid.add(annotationMD, {
+            row,
+            column: 1
+          });
+
+          if (isEditMode) {
+            const button = osparc.utils.Utils.getEditButton();
+            button.addListener("execute", () => {
+              const title = this.tr("Edit Annotations");
+              const subtitle = this.tr("Supports Markdown");
+              const textEditor = new osparc.component.widget.TextEditor(copyMetadataAnnotations[annotationKey], subtitle, title);
+              const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
+              textEditor.addListener("textChanged", e => {
+                const newText = e.getData();
+                annotationMD.setValue(newText + serviceLimitations);
+                copyMetadataAnnotations[annotationKey] = newText;
+                win.close();
+              }, this);
+              textEditor.addListener("cancel", () => {
+                win.close();
+              }, this);
+            }, this);
+            this.__annotationsGrid.add(button, {
+              row,
+              column: 2
+            });
+          }
         }
         row++;
       });
