@@ -67,11 +67,13 @@ def test_get_all_releases(solvers_api: SolversApi):
 
 
 def test_get_solver(solvers_api: SolversApi, sleeper_key_and_version):
-    expected_name, expected_version = sleeper_key_and_version
+    expected_solver_key, expected_version = sleeper_key_and_version
 
-    solver = solvers_api.get_solver(solver_key=expected_name, version=expected_version)
+    solver = solvers_api.get_solver(
+        solver_key=expected_solver_key, version=expected_version
+    )
 
-    assert solver.id == expected_name
+    assert solver.id == expected_solver_key
     assert solver.version == expected_version
 
     same_solver = solvers_api.get_solver(solver.id, solver.version)

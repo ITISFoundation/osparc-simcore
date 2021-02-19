@@ -12,11 +12,6 @@ from osparc.api.files_api import FilesApi
 from osparc.models import File
 
 
-@pytest.fixture()
-def files_api(api_client):
-    return FilesApi(api_client)
-
-
 def test_upload_file(files_api: FilesApi, tmpdir):
     input_path = Path(tmpdir) / "some-text-file.txt"
     input_path.write_text("demo")

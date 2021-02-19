@@ -9,6 +9,7 @@
 # pylint:disable=redefined-outer-name
 
 import time
+import urllib.parse
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict, List
@@ -27,7 +28,6 @@ def sleeper_solver(
     # this part is tested in test_solvers_api so it becomes a fixture here
 
     sleeper = services_registry["sleeper_service"]
-
     solver: Solver = solvers_api.get_solver_release(
         solver_key=sleeper["name"], version=sleeper["version"]
     )
