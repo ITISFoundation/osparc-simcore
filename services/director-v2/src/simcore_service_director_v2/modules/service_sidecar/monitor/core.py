@@ -8,8 +8,9 @@
 
 import asyncio
 import logging
+import os
 from asyncio import Lock, sleep
-from typing import Deque, Dict, Tuple
+from typing import Deque, Dict, Tuple, Any
 
 from aiohttp.web import Application
 from async_timeout import timeout
@@ -110,6 +111,7 @@ class ServiceSidecarsMonitor:
         service_tag: str,
         service_sidecar_network_name: str,
         simcore_traefik_zone: str,
+        service_port: int,
     ) -> None:
         """Invoked before the service is started
 
@@ -136,11 +138,12 @@ class ServiceSidecarsMonitor:
                     service_tag=service_tag,
                     service_sidecar_network_name=service_sidecar_network_name,
                     simcore_traefik_zone=simcore_traefik_zone,
+                    service_port=service_port,
                 ),
             )
             logger.debug("Added service '%s' to monitor", service_name)
 
-    async def remove_service_from_monitor(self, node_uuid) -> None:
+    async def remove_service_from_monitor(self, node_uuid: str) -> None:
         # invoked before the service is removed
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
@@ -168,6 +171,41 @@ class ServiceSidecarsMonitor:
             del self._to_monitor[service_name]
             del self._inverse_search_mapping[node_uuid]
             logger.debug("Removed service '%s' from monitoring", service_name)
+
+    async def get_stack_status(self, node_uuid: str) -> Dict[str, Any]:
+        """Computes the service sidecar """
+
+        def make_error_status():
+            #TODO: check if this is correct and the frontend understands what it is
+            return dict(
+                service_state="error",
+                service_message=f"Could not find a service for node_uuid={node_uuid}",
+            )
+
+        async with self._lock:
+            if node_uuid not in self._inverse_search_mapping:
+                return make_error_status()
+
+            service_name = self._inverse_search_mapping[node_uuid]
+            if service_name not in self._to_monitor:
+                return make_error_status()
+
+            monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
+
+            return dict(
+                dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
+                published_port=80,  # default for the proxy
+                entry_point="",  # TODO: remove it? not used by any service (commented in all our services), the frontend still supports it
+                service_uuid=node_uuid,
+                service_key=monitor_data.service_key,
+                service_version=monitor_data.service_tag,
+                service_host=os.environ["HOSTNAME"],
+                service_port=monitor_data.service_port,
+                service_basepath="",  # not needed here
+                # TODO: fill these from the status
+                service_state="idle",
+                service_message="STILL PASSIVE CONFIGURATION need to pulll",
+            )
 
     async def _runner(self):
         """This code runs under a lock and can safely change the Monitor data of all entries"""
@@ -227,7 +265,7 @@ class ServiceSidecarsMonitor:
         # discover all services which were started before and add them to the monitor
         service_sidecar_settings: ServiceSidecarSettings = get_settings(self._app)
         services_to_monitor: Deque[
-            Tuple[str, str, str, str, str]
+            Tuple[str, str, str, str, str, int]
         ] = await get_service_sidecars_to_monitor(service_sidecar_settings)
 
         logging.info(
@@ -242,6 +280,7 @@ class ServiceSidecarsMonitor:
                 service_tag,
                 service_sidecar_network_name,
                 simcore_traefik_zone,
+                service_port,
             ) = service_to_monitor
 
             await self.add_service_to_monitor(
@@ -253,6 +292,7 @@ class ServiceSidecarsMonitor:
                 service_tag=service_tag,
                 service_sidecar_network_name=service_sidecar_network_name,
                 simcore_traefik_zone=simcore_traefik_zone,
+                service_port=service_port,
             )
 
     async def shutdown(self):
