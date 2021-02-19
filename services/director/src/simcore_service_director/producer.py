@@ -7,7 +7,7 @@ import re
 from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union, Any
 
 import aiodocker
 import tenacity
@@ -20,7 +20,11 @@ from .config import APP_CLIENT_SESSION_KEY
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 from .utils import get_swarm_network
-from .directorv2_proxy import start_service_sidecar_stack, stop_service_sidecar_stack
+from .directorv2_proxy import (
+    start_service_sidecar_stack,
+    stop_service_sidecar_stack,
+    get_service_sidecar_stack_status,
+)
 
 log = logging.getLogger(__name__)
 
@@ -249,7 +253,9 @@ async def _create_docker_service_params(
             dummy_string = dummy_string.replace("%service_uuid%", node_uuid)
             param["value"] = json.loads(dummy_string)
 
-        if param["type"] == "Resources":
+        # NOTE: the below capitalize addresses a bug in a lot of already in use services
+        # where Resources was written in lower case
+        if param["type"].capitalize() == "Resources":
             # python-API compatible for backward compatibility
             if "mem_limit" in param["value"]:
                 docker_params["task_template"]["Resources"]["Limits"][
@@ -667,19 +673,18 @@ async def _start_docker_service(
                 service_name, published_port, service_boot_parameters_labels, session
             )
 
-        container_meta_data = {
-            "published_port": published_port,
-            "entry_point": service_entrypoint,
-            "service_uuid": node_uuid,
-            "service_key": service_key,
-            "service_version": service_tag,
-            "service_host": service_name,
-            "service_port": target_port,
-            "service_basepath": node_base_path,
-            "service_state": service_state.value,
-            "service_message": service_msg,
-        }
-        return container_meta_data
+        return format_node_details_for_frontend(
+            published_port=published_port,
+            entry_point=service_entrypoint,
+            service_uuid=node_uuid,
+            service_key=service_key,
+            service_version=service_tag,
+            service_host=service_name,
+            service_port=target_port,
+            service_basepath=node_base_path,
+            service_state=service_state,
+            service_message=service_msg,
+        )
 
     except exceptions.ServiceStartTimeoutError as err:
         log.exception("Service failed to start")
@@ -698,6 +703,71 @@ async def _silent_service_cleanup(app: web.Application, node_uuid: str) -> None:
         pass
 
 
+def _get_value_from_label(labels: Dict[str, Any], key: str) -> Any:
+    """
+    If a value is empty string it will be treated as None
+    'null' values in yaml spec are converted to empty string.
+    """
+    value = labels.get(key, None)
+    return None if value == "" else value
+
+
+async def _start_docker_service_with_dynamic_service(
+    app: web.Application,
+    client: aiodocker.docker.Docker,
+    user_id: str,
+    project_id: str,
+    node_uuid: str,
+    service: Dict[str, Any],
+    image_labels: Dict[str, str],
+):
+    """
+    Assembles and passes on all the required information for the service
+    to be ran by the service-sidecar.
+    """
+    # paths_mapping express how to map service-sidecar paths to the compose-spec volumes
+    # where the service expects to find its certain folders
+
+    log.info("Processing labels %s", image_labels)
+    paths_mapping = _get_value_from_label(image_labels, "simcore.service.paths-mapping")
+    if paths_mapping is None:
+        raise exceptions.DirectorException(
+            f"No label 'simcore.service.paths-mapping' defined for service {service}"
+        )
+    paths_mapping: Dict[str, Any] = json.loads(paths_mapping)
+
+    # if not provided, one will be automatically generated
+    compose_spec = _get_value_from_label(image_labels, "simcore.service.compose-spec")
+    if compose_spec is not None:
+        compose_spec = json.loads(compose_spec)
+
+    target_container = _get_value_from_label(
+        image_labels, "simcore.service.target-container"
+    )
+
+    settings: List[Dict[str, Any]] = json.loads(
+        image_labels["simcore.service.settings"]
+    )
+
+    # calls into director-v2 to start
+    proxy_service_create_results = await start_service_sidecar_stack(
+        app=app,
+        user_id=user_id,
+        project_id=project_id,
+        service_key=service["key"],
+        service_tag=service["tag"],
+        node_uuid=node_uuid,
+        settings=settings,
+        paths_mapping=paths_mapping,
+        compose_spec=compose_spec,
+        target_container=target_container,
+    )
+
+    return await _get_node_details(
+        app=app, client=client, service=proxy_service_create_results
+    )
+
+
 async def _create_node(
     app: web.Application,
     client: aiodocker.docker.Docker,
@@ -707,7 +777,6 @@ async def _create_node(
     node_uuid: str,
     node_base_path: str,
 ) -> List[Dict]:  # pylint: disable=R0913, R0915
-    # TODO: attach here and spawn proxy and more stuff
     log.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
         len(list_of_services),
@@ -729,24 +798,47 @@ async def _create_node(
     containers_meta_data = list()
     for service in list_of_services:
         log.debug("Service to start info %s", service)
-        # TODO: based on the integration version need to start with sidervice-sidecar or old pattern
-        service_meta_data = await _start_docker_service(
-            app,
-            client,
-            user_id,
-            project_id,
-            service["key"],
-            service["tag"],
-            list_of_services.index(service) == 0,
-            node_uuid,
-            node_base_path,
-            inter_docker_network_id,
+
+        # The platform currently supports 2 boot modes, legacy(which will be deprecated in the future)
+        # dynamic-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
+        # "service-sidecar", the dynamic sidecar will be used in place of the current system
+
+        image_labels = await registry_proxy.get_image_labels(
+            app=app, image=service["key"], tag=service["tag"]
         )
-        # calls into director-v2 to start
-        service_sidecar_start_result = await start_service_sidecar_stack(
-            app, user_id, project_id, service["key"], service["tag"], node_uuid
+
+        boot_as_dynamic_sidecar = (
+            image_labels.get("simcore.service.boot-mode") == "service-sidecar"
         )
-        log.debug("Result of service-sidecar start %s", service_sidecar_start_result)
+        if boot_as_dynamic_sidecar:
+            service_meta_data = await _start_docker_service_with_dynamic_service(
+                app=app,
+                client=client,
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                service=service,
+                image_labels=image_labels,
+            )
+        else:
+            service_meta_data = await _start_docker_service(
+                app,
+                client,
+                user_id,
+                project_id,
+                service["key"],
+                service["tag"],
+                list_of_services.index(service) == 0,
+                node_uuid,
+                node_base_path,
+                inter_docker_network_id,
+            )
+
+        log.debug(
+            "Result of service start is_dynamic_sidecar=%s %s",
+            boot_as_dynamic_sidecar,
+            service_meta_data,
+        )
         containers_meta_data.append(service_meta_data)
 
     return containers_meta_data
@@ -823,9 +915,61 @@ async def start_service(
         return node_details
 
 
+def format_node_details_for_frontend(
+    published_port: int,
+    entry_point: str,
+    service_uuid: str,
+    service_key: str,
+    service_version: str,
+    service_host: str,
+    service_port: int,
+    service_basepath: str,
+    service_state: ServiceState,
+    service_message: str,
+    dynamic_type: Optional[str] = None,
+) -> Dict[str, Union[str, int]]:
+    node_status = {
+        "published_port": published_port,
+        "entry_point": entry_point,
+        "service_uuid": service_uuid,
+        "service_key": service_key,
+        "service_version": service_version,
+        "service_host": service_host,
+        "service_port": service_port,
+        "service_basepath": service_basepath,
+        "service_state": (
+            service_state if isinstance(service_state, str) else service_state.value
+        ),
+        "service_message": service_message,
+    }
+
+    if dynamic_type is not None:
+        # if this field is preset the service will be served via dynamic-sidecar
+        node_status["dynamic_type"] = dynamic_type
+
+    return node_status
+
+
+async def _compute_dynamic_sidecar_node_details(
+    app: web.Application, node_uuid: str
+) -> Dict[str, Union[str, int]]:
+    # pull all the details from the service-sidecar via an API call and pass it forward
+    status_result = await get_service_sidecar_stack_status(app=app, node_uuid=node_uuid)
+    return format_node_details_for_frontend(**status_result)
+
+
 async def _get_node_details(
     app: web.Application, client: aiodocker.docker.Docker, service: Dict
 ) -> Dict:
+    is_dynamic_sidecar = (
+        service["Spec"]["Labels"].get("dynamic_type") == "dynamic-sidecar"
+    )
+    if is_dynamic_sidecar:
+        return await _compute_dynamic_sidecar_node_details(
+            app=app, node_uuid=service["Spec"]["Labels"]["uuid"]
+        )
+
+    # legacy node details computation
     service_key, service_tag = await _get_service_key_version_from_docker_service(
         service
     )
@@ -848,19 +992,18 @@ async def _get_node_details(
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
-    node_details = {
-        "published_port": published_port,
-        "entry_point": service_entrypoint,
-        "service_uuid": service_uuid,
-        "service_key": service_key,
-        "service_version": service_tag,
-        "service_host": service_name,
-        "service_port": target_port,
-        "service_basepath": service_basepath,
-        "service_state": service_state.value,
-        "service_message": service_msg,
-    }
-    return node_details
+    return format_node_details_for_frontend(
+        published_port=published_port,
+        entry_point=service_entrypoint,
+        service_uuid=service_uuid,
+        service_key=service_key,
+        service_version=service_tag,
+        service_host=service_name,
+        service_port=target_port,
+        service_basepath=service_basepath,
+        service_state=service_state,
+        service_message=service_msg,
+    )
 
 
 async def get_services_details(

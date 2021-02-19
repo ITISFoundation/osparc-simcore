@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Dict, Tuple, Union, Any
+from typing import Optional, Dict, Tuple, Union, Any, List
 
 from aiohttp import web, ClientSession, ClientTimeout, ClientResponse
 from pydantic import AnyHttpUrl, BaseSettings, Field, validator, conint, constr
@@ -88,10 +88,10 @@ async def _request_director_v2(
         ) as resp:
             if resp.status >= 400:
                 # in some cases the director-v2 answers with plain text
-                payload: Union[Dict, str] = _get_decoded_body(resp)
+                payload: Union[Dict, str] = await _get_decoded_body(resp)
                 raise _DirectorServiceError(resp.status, payload)
 
-            payload: Dict = _get_decoded_body(resp)
+            payload: Dict = await _get_decoded_body(resp)
             return (payload, resp.status)
 
     except TimeoutError as err:
@@ -100,6 +100,7 @@ async def _request_director_v2(
         ) from err
 
 
+# pylint: disable=too-many-arguments
 async def start_service_sidecar_stack(
     app: web.Application,
     user_id: str,
@@ -107,6 +108,10 @@ async def start_service_sidecar_stack(
     service_key: str,
     service_tag: str,
     node_uuid: str,
+    settings: List[Dict[str, Any]],
+    paths_mapping: Dict[str, Any],
+    compose_spec: Optional[Dict[str, Any]],
+    target_container: Optional[str],
 ) -> Dict[str, Any]:
     director2_settings: Directorv2Settings = _get_settings(app)
 
@@ -119,11 +124,17 @@ async def start_service_sidecar_stack(
         service_key=service_key,
         service_tag=service_tag,
         node_uuid=node_uuid,
+        settings=settings,
+        paths_mapping=paths_mapping,
+        compose_spec=compose_spec,
+        target_container=target_container,
     )
+
+    log.debug("starting sidecar stack with data=%s", data)
 
     result, status = await _request_director_v2(app, "POST", url, data=data)
     if status != 200:
-        message = f"Received unexpected result result {result}"
+        message = f"Received unexpected result result (while starting; node_uuid={node_uuid}) {result}"
         log.warning(message)
         raise _DirectorServiceError(status, message)
 
@@ -141,7 +152,7 @@ async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
     try:
         result, status = await _request_director_v2(app, "POST", url, data=data)
         if status != 204:
-            message = f"Received unexpected result result {result}"
+            message = f"Received unexpected result result (while stopping; node_uuid={node_uuid}) {result}"
             log.warning(message)
             raise _DirectorServiceError(status, message)
 
@@ -149,6 +160,30 @@ async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
 
     except _DirectorServiceError:
         log.error("Could not stop service-sidecar stack for node_uuid=%s", node_uuid)
+
+
+async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str):
+    director2_settings: Directorv2Settings = _get_settings(app)
+
+    url = URL(
+        f"{director2_settings.endpoint}/dynamic-sidecar/service-sidecar-stack-status"
+    )
+    data = dict(node_uuid=node_uuid)
+
+    try:
+        result, status = await _request_director_v2(app, "POST", url, data=data)
+        if status != 200:
+            message = f"Received unexpected result result (while getting state; node_uuid={node_uuid}) {result}"
+            log.warning(message)
+            raise _DirectorServiceError(status, message)
+
+        return result
+
+    except _DirectorServiceError:
+        log.error(
+            "Could not retrive status for service-sidecar stack for node_uuid=%s",
+            node_uuid,
+        )
 
 
 __all__ = ["setup_director_v2", "start_service_sidecar_stack"]
