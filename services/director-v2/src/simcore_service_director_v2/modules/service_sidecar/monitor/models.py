@@ -134,6 +134,9 @@ class MonitorData(BaseModel):
         ...,
         description="required for Traefik to correctly route requests to the spawned container",
     )
+    service_port: int = Field(
+        ..., description="port where the service is exposed defined by the service"
+    )
 
     @classmethod
     def assemble(
@@ -145,6 +148,7 @@ class MonitorData(BaseModel):
         service_tag: str,
         service_sidecar_network_name: str,
         simcore_traefik_zone: str,
+        service_port: int,
     ) -> "MonitorData":
         payload = dict(
             service_name=service_name,
@@ -152,6 +156,7 @@ class MonitorData(BaseModel):
             service_tag=service_tag,
             service_sidecar_network_name=service_sidecar_network_name,
             simcore_traefik_zone=simcore_traefik_zone,
+            service_port=service_port,
             service_sidecar=dict(
                 hostname=hostname,
                 port=port,
