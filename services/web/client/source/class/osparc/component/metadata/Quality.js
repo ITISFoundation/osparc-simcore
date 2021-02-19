@@ -39,6 +39,15 @@ qx.Class.define("osparc.component.metadata.Quality", {
         obj["quality"]["tsr_current"] = obj["quality"]["tsr"];
         delete obj["quality"]["tsr"];
       }
+      [
+        "purpose",
+        "documentation",
+        "standards"
+      ].forEach(fieldToDelete => {
+        if (fieldToDelete in obj["quality"]["annotations"]) {
+          delete obj["quality"]["annotations"][fieldToDelete];
+        }
+      });
     },
 
     isEnabled: function(quality) {
@@ -180,19 +189,19 @@ domain and the intended context of use",
           "references": ""
         },
         "r07": {
-          "level": 3,
+          "level": 4,
           "references": ""
         },
         "r08": {
-          "level": 2,
+          "level": 4,
           "references": ""
         },
         "r09": {
-          "level": 1,
+          "level": 4,
           "references": ""
         },
         "r10": {
-          "level": 0,
+          "level": 4,
           "references": ""
         }
       };
