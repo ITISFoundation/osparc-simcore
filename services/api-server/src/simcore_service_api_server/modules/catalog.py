@@ -46,7 +46,7 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
 SolverNameVersionPair = Tuple[SolverKeyId, str]
 
 
-class TruncatedServiceOut(ServiceDockerData):
+class TruncatedCatalogServiceOut(ServiceDockerData):
     """
     This model is used to truncate the response of the catalog, whose schema is
     in services/catalog/src/simcore_service_catalog/models/schemas/services.py::ServiceOut
@@ -73,12 +73,11 @@ class TruncatedServiceOut(ServiceDockerData):
         )
 
         return Solver(
-            name=data.pop("key"),
+            id=data.pop("key"),
             version=data.pop("version"),
             title=data.pop("name"),
             maintainer=data.pop("owner") or data.pop("contact"),
             url=None,
-            id=None,  # auto-generated
             **data,
         )
 
@@ -120,7 +119,7 @@ class CatalogApi(BaseServiceClientApi):
         solvers = []
         for data in resp.json():
             try:
-                service = TruncatedServiceOut.parse_obj(data)
+                service = TruncatedCatalogServiceOut.parse_obj(data)
                 if service.service_type == ServiceType.COMPUTATIONAL:
                     solver = service.to_solver()
                     if predicate is None or predicate(solver):
@@ -153,7 +152,7 @@ class CatalogApi(BaseServiceClientApi):
         )
         resp.raise_for_status()
 
-        service = TruncatedServiceOut.parse_obj(resp.json())
+        service = TruncatedCatalogServiceOut.parse_obj(resp.json())
         assert (
             service.service_type == ServiceType.COMPUTATIONAL
         ), "Expected by SolverName regex"  # nosec
