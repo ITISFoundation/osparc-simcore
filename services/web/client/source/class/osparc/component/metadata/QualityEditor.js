@@ -192,13 +192,9 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       grid.setColumnAlign(3, "left", "middle");
       grid.setColumnFlex(2, 1);
       this.__tsrGrid = new qx.ui.container.Composite(grid);
-      box.add(this.__tsrGrid, {
-        flex: 1
-      });
+      box.add(this.__tsrGrid);
 
-      this._add(box, {
-        flex: 1
-      });
+      this._add(box);
     },
 
     __createAnnotationsSection: function() {

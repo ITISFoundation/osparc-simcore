@@ -314,7 +314,7 @@ qx.Class.define("osparc.studycard.Utils", {
     openQuality: function(resourceData) {
       const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
       const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
-      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 770);
+      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;
     }
   }
