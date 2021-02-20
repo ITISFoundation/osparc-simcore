@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from ...models.schemas.jobs import Job, JobInputs, JobResults, JobStatus
+from ...models.schemas.jobs import Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
@@ -122,12 +122,12 @@ async def inspect_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs",
-    response_model=JobResults,
+    response_model=JobOutputs,
 )
-async def get_job_results(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    from .jobs_faker import get_job_results_impl
+async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
+    from .jobs_faker import get_job_outputs_impl
 
-    return await get_job_results_impl(solver_key, version, job_id)
+    return await get_job_outputs_impl(solver_key, version, job_id)
 
 
 # @router.get(

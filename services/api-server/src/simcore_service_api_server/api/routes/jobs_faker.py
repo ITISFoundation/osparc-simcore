@@ -7,6 +7,7 @@ import asyncio
 import hashlib
 import logging
 import random
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Callable, Dict, Iterator
@@ -16,7 +17,8 @@ from fastapi import HTTPException
 from starlette import status
 
 from ...models.api_resources import RelativeResourceName, compose_resource_name
-from ...models.schemas.jobs import Job, JobInputs, JobResults, JobStatus, TaskStates
+from ...models.schemas.files import File
+from ...models.schemas.jobs import Job, JobInputs, JobOutputs, JobStatus, TaskStates
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ class JobsFaker:
     job_status: Dict[UUID, JobStatus] = field(default_factory=dict)
     job_inputs: Dict[UUID, JobInputs] = field(default_factory=dict)
     job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
-    job_outputs: Dict[UUID, JobResults] = field(default_factory=dict)
+    job_outputs: Dict[UUID, JobOutputs] = field(default_factory=dict)
 
     def job_values(self, solver_name: str = None) -> Iterator[Job]:
         if solver_name:
@@ -126,8 +128,7 @@ class JobsFaker:
 
             # TODO: temporary A fixed output MOCK
             # TODO: temporary writes error in value!
-            results = JobResults.parse_obj(JobResults.Config.schema_extra["example"])
-            results.job_id = job_id
+            results = self.create_job_results(job_id)
             if job_status.state == TaskStates.SUCCESS:
                 self.job_outputs[job_id] = results
             else:
@@ -143,7 +144,7 @@ class JobsFaker:
 
             # TODO: an error with the job state??
             # TODO: logs??
-            results = JobResults(job_id=job_id, outputs={})
+            results = self.create_job_results(job_id, {})
             self.job_outputs[job_id] = results
 
     def stop_job(self, job_name) -> Job:
@@ -155,6 +156,22 @@ class JobsFaker:
             logger.debug("Stopping job {job_id} that was never started")
         return job
 
+    def create_job_results(jid, res=None):
+        # These are outputs by sleeper service
+        results = JobOutputs.parse_obj(
+            job_id=jid,
+            results=res
+            if res is not None
+            else {
+                "output_1": File(
+                    filename="file_with_int.txt",
+                    id="1460b7c8-70d7-42ee-9eb2-e2de2a9b7b37",
+                ),
+                "output_2": 42,
+            },
+        )
+        return results
+
 
 the_fake_impl = JobsFaker()
 
@@ -162,19 +179,39 @@ the_fake_impl = JobsFaker()
 # */jobs/*  API fake implementations ---------------------
 
 
-async def list_all_jobs_impl(
-    url_for: Callable,
-):
-    """ List of all jobs created by user """
-    return [
-        job.copy(
-            update={
-                "url": url_for("get_job", job_id=job.id),
-                "outputs_url": url_for("list_job_outputs", job_id=job.id),
-            }
-        )
-        for job in the_fake_impl.job_values()
-    ]
+@contextmanager
+def job_context(solver_key, version, job_id):
+    job_name = compose_resource_name(
+        "solvers", solver_key, "releases", version, "jobs", job_id
+    )
+    try:
+        yield job_name
+    except KeyError as err:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Job {job_name} does not exists",
+        ) from err
+
+
+def _copy_n_update(job: Job, url_for, solver_key, version):
+    return job.copy(
+        update={
+            "url": url_for(
+                "get_job", solver_key=solver_key, version=version, job_id=job.id
+            ),
+            "runner_url": url_for(
+                "get_solver_release",
+                solver_key=solver_key,
+                version=version,
+            ),
+            "outputs_url": url_for(
+                "get_job_results",
+                solver_key=solver_key,
+                version=version,
+                job_id=job.id,
+            ),
+        }
+    )
 
 
 async def list_jobs_impl(
@@ -184,15 +221,7 @@ async def list_jobs_impl(
 ):
     solver_resource_name = f"solvers/{solver_key}/releases/{version}"
     return [
-        job.copy(
-            update={
-                "url": url_for("get_job", job_id=job.id),
-                "solver_url": url_for(
-                    "get_solver_release", solver_key=solver_key, version=version
-                ),
-                "outputs_url": url_for("list_job_outputs", job_id=job.id),
-            }
-        )
+        _copy_n_update(job, url_for, solver_key, version)
         for job in the_fake_impl.job_values(solver_resource_name)
     ]
 
@@ -211,15 +240,7 @@ async def create_job_impl(
     # TODO: create a unique identifier of job based on solver_id and inputs
     solver_name = compose_resource_name("solvers", solver_key, "releases", version)
     job = the_fake_impl.create_job(solver_name, inputs)
-    return job.copy(
-        update={
-            "url": url_for("get_job", job_id=job.id),
-            "solver_url": url_for(
-                "get_solver_release", solver_key=solver_key, version=version
-            ),
-            "outputs_url": url_for("list_job_outputs", job_id=job.id),
-        }
-    )
+    return _copy_n_update(job, url_for, solver_key, version)
 
 
 async def get_job_impl(
@@ -228,45 +249,15 @@ async def get_job_impl(
     job_id: UUID,
     url_for: Callable,
 ):
-    job_name = compose_resource_name(
-        "solvers", solver_key, "releases", version, "jobs", job_id
-    )
-    try:
-
+    with job_context(solver_key, version, job_id) as job_name:
         job = the_fake_impl.jobs[job_name]
-        return job.copy(
-            update={
-                "url": url_for("get_job", job_id=job.id),
-                "solver_url": url_for(
-                    "get_solver_release",
-                    solver_key=solver_key,
-                    version=version,
-                ),
-                "outputs_url": url_for("list_job_outputs", job_id=job.id),
-            }
-        )
-
-    except KeyError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Job {job_name} does not exists",
-        ) from err
+        return _copy_n_update(job, url_for, solver_key, version)
 
 
 async def start_job_impl(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    job_name = compose_resource_name(
-        "solvers", solver_key, "releases", version, "jobs", job_id
-    )
-    try:
-
+    with job_context(solver_key, version, job_id) as job_name:
         job_state = the_fake_impl.start_job(job_name)
         return job_state
-
-    except KeyError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Job {job_name} does not exists",
-        ) from err
 
 
 async def stop_job_impl(
@@ -275,62 +266,27 @@ async def stop_job_impl(
     job_id: UUID,
     url_for: Callable,
 ):
-    try:
-        job_name = compose_resource_name(
-            "solvers", solver_key, "releases", version, "jobs", job_id
-        )
-
+    with job_context(solver_key, version, job_id) as job_name:
         job = the_fake_impl.stop_job(job_name)
-        return job.copy(
-            update={
-                "url": url_for("get_job", job_id=job.id),
-                "solver_url": url_for(
-                    "get_solver_release",
-                    solver_key=solver_key,
-                    version=version,
-                ),
-                "outputs_url": url_for("list_job_outputs", job_id=job.id),
-            }
-        )
-
-    except KeyError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Job {job_id} does not exists"
-        ) from err
+        return _copy_n_update(job, url_for, solver_key, version)
 
 
 async def inspect_job_impl(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
     job_name = compose_resource_name(
         "solvers", solver_key, "releases", version, "jobs", job_id
     )
-    try:
+    with job_context(solver_key, version, job_id):
         # here we should use job_name ..
         state = the_fake_impl.job_status[job_id]
         return state
 
-    except KeyError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job {job_name} does not exists",
-        ) from err
 
-
-async def get_job_results_impl(
+async def get_job_outputs_impl(
     solver_key: SolverKeyId, version: VersionStr, job_id: UUID
 ):
-    job_name = compose_resource_name(
-        "solvers", solver_key, "releases", version, "jobs", job_id
-    )
-
-    try:
+    with job_context(solver_key, version, job_id) as job_name:
         outputs = the_fake_impl.job_outputs[job_id]
         return outputs
-
-    except KeyError as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No outputs found in job '{job_name}'",
-        ) from err
 
 
 async def get_job_output_impl(

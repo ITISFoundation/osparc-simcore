@@ -908,8 +908,8 @@
         "tags": [
           "solvers"
         ],
-        "summary": "Get Job Results",
-        "operationId": "get_job_results",
+        "summary": "Get Job Outputs",
+        "operationId": "get_job_outputs",
         "parameters": [
           {
             "required": true,
@@ -948,7 +948,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobResults"
+                  "$ref": "#/components/schemas/JobOutputs"
                 }
               }
             }
@@ -1137,39 +1137,50 @@
       },
       "JobInputs": {
         "title": "JobInputs",
+        "required": [
+          "values"
+        ],
         "type": "object",
-        "additionalProperties": {
-          "anyOf": [
-            {
-              "$ref": "#/components/schemas/File"
-            },
-            {
-              "type": "number"
-            },
-            {
-              "type": "integer"
-            },
-            {
-              "type": "string"
+        "properties": {
+          "values": {
+            "title": "Values",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/File"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
-          ]
+          }
         },
         "example": {
-          "x": 4.33,
-          "n": 55,
-          "title": "Temperature",
-          "enabled": true,
-          "input_file": {
-            "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-            "filename": "input.txt"
+          "values": {
+            "x": 4.33,
+            "n": 55,
+            "title": "Temperature",
+            "enabled": true,
+            "input_file": {
+              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+              "filename": "input.txt"
+            }
           }
         }
       },
-      "JobResults": {
-        "title": "JobResults",
+      "JobOutputs": {
+        "title": "JobOutputs",
         "required": [
           "job_id",
-          "outputs"
+          "results"
         ],
         "type": "object",
         "properties": {
@@ -1179,8 +1190,8 @@
             "description": "Job that produced this output",
             "format": "uuid"
           },
-          "outputs": {
-            "title": "Outputs",
+          "results": {
+            "title": "Results",
             "type": "object",
             "additionalProperties": {
               "anyOf": [
@@ -1202,7 +1213,7 @@
         },
         "example": {
           "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
-          "outputs": {
+          "results": {
             "maxSAR": 4.33,
             "n": 55,
             "title": "Specific Absorption Rate",

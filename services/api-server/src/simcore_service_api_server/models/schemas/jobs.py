@@ -130,31 +130,41 @@ PositionalArguments = List[ArgumentType]
 
 class JobInputs(BaseModel):
     # NOTE: this is different from the resource JobInput (TBD)
-    __root__: KeywordArguments
+    values: KeywordArguments
 
     class Config:
         schema_extra = {
             "example": {
-                "x": 4.33,
-                "n": 55,
-                "title": "Temperature",
-                "enabled": True,
-                "input_file": File(
-                    filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
-                ),
+                "values": {
+                    "x": 4.33,
+                    "n": 55,
+                    "title": "Temperature",
+                    "enabled": True,
+                    "input_file": File(
+                        filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
+                    ),
+                }
             }
         }
 
 
-class JobResults(BaseModel):
+class JobOutputs(BaseModel):
+    # TODO: JobOutput could be a resource?
+
     job_id: UUID = Field(..., description="Job that produced this output")
-    outputs: KeywordArguments
+
+    # TODO: an output could be computed before than the others? has a state? not-ready/ready?
+    results: KeywordArguments
+
+    # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
+    # on one specific output.
+    # errors: List[JobErrors] = []
 
     class Config:
         schema_extra = {
             "example": {
                 "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
-                "outputs": {
+                "results": {
                     "maxSAR": 4.33,
                     "n": 55,
                     "title": "Specific Absorption Rate",
