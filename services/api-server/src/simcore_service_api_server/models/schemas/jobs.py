@@ -1,10 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union
+from typing import Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, HttpUrl, conint, constr, validator
+from pydantic import BaseModel, Field, HttpUrl, conint, validator
 
+from ...models.schemas.files import File
 from ..api_resources import RelativeResourceName
 
 # JOBS ----------
@@ -20,7 +21,6 @@ from ..api_resources import RelativeResourceName
 #   But then both could be also retrieved as a global job resource (perhaps)
 #     "jobs/f622946d-fd29-35b9-a193-abdd1095167c"
 #     "jobs/c2789bd2-7385-4e00-91d3-2f100df41185"
-#
 
 
 class Job(BaseModel):
@@ -92,18 +92,15 @@ class TaskStates(str, Enum):
 
 
 class JobStatus(BaseModel):
-    """
-
-    NOTE About naming. The result of an inspection on X returns a Status object
-        What is the status of X? What sort of state is X in?
-        SEE https://english.stackexchange.com/questions/12958/status-vs-state
-    """
+    # NOTE: About naming. The result of an inspection on X returns a Status object
+    #  What is the status of X? What sort of state is X in?
+    #  SEE https://english.stackexchange.com/questions/12958/status-vs-state
 
     job_id: UUID
     state: TaskStates
     progress: conint(ge=0, le=100) = 0
 
-    # Timestamps to some of the states
+    # Timestamps on states
     # TODO: sync state events and timestamps
     submitted_at: datetime
     started_at: Optional[datetime] = Field(
@@ -115,67 +112,57 @@ class JobStatus(BaseModel):
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
 
-    def timestamp(self, event: str = "submitted"):
+    def snapshot(self, event: str = "submitted"):
         setattr(self, f"{event}_at", datetime.utcnow())
+        return getattr(self, f"{event}_at")
 
 
 # INPUTS/OUTPUTS ----------
 #
-#
-#
 
 
-class PortValue(BaseModel):
-    __root__: Union[float, str, int, HttpUrl, None]
+# FIXME: all ints and bools will be floats
+
+ArgumentType = Union[File, float, int, bool, str, None]
+KeywordArguments = Dict[str, ArgumentType]
+PositionalArguments = List[ArgumentType]
 
 
-class SolverPort(BaseModel):
-    name: str = Field(
-        ...,
-        description="Name given to the input/output in solver specs (see solver metadata.yml)",
-    )
-
-    # TODO: define more specifically
-    #   - api/specs/common/schemas/node-meta-v0.0.1.json
-    #   - http://www.iana.org/assignments/media-types/media-types.xhtml
-    type: constr(
-        strict=True,
-        regex=r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$",
-    ) = Field(None, description="Data type expected on this input/ouput")
-
-    title: Optional[str] = Field(
-        None, description="Short human readable name to identify input/output"
-    )
-
-
-class JobInput(SolverPort):
-    value: Optional[PortValue] = None
-
-    # TODO: validate one or the other but not both
+class Inputs(BaseModel):
+    # NOTE: this is different from the resource JobInput (TBD)
+    __root__: KeywordArguments
 
     class Config:
         schema_extra = {
             "example": {
-                "name": "T",
-                "type": "number",
+                "x": 4.33,
+                "n": 55,
                 "title": "Temperature",
-                "value": "33",
+                "enabled": True,
+                "input_file": File(
+                    filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
+                ),
             }
         }
 
 
-class JobOutput(SolverPort):
-    value: PortValue
-
+class JobResults(BaseModel):
     job_id: UUID = Field(..., description="Job that produced this output")
+    outputs: KeywordArguments
 
     class Config:
         schema_extra = {
             "example": {
-                "name": "SAR",
-                "type": "data:application/hdf5",
-                "title": "SAR field output file-id",
-                "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
                 "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
+                "outputs": {
+                    "maxSAR": 4.33,
+                    "n": 55,
+                    "title": "Specific Absorption Rate",
+                    "enabled": False,
+                    "output_file": File(
+                        filename="sar_matrix.txt",
+                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+                    ),
+                },
             }
         }

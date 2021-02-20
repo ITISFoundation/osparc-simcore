@@ -615,15 +615,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "title": "Inputs",
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/JobInput"
-                },
-                "default": []
+                "$ref": "#/components/schemas/Inputs"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -912,8 +908,8 @@
         "tags": [
           "solvers"
         ],
-        "summary": "List Job Outputs",
-        "operationId": "list_job_outputs",
+        "summary": "Get Job Results",
+        "operationId": "get_job_results",
         "parameters": [
           {
             "required": true,
@@ -952,83 +948,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response List Job Outputs V0 Solvers  Solver Key  Releases  Version  Jobs  Job Id  Outputs Get",
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobOutput"
-                  }
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs/{output_key}": {
-      "get": {
-        "tags": [
-          "solvers"
-        ],
-        "summary": "Get Job Output",
-        "operationId": "get_job_output",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Solver Key",
-              "pattern": "^(simcore)/(services)/comp(/[\\w/-]+)+$",
-              "type": "string"
-            },
-            "name": "solver_key",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Version",
-              "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
-              "type": "string"
-            },
-            "name": "version",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Job Id",
-              "type": "string",
-              "format": "uuid"
-            },
-            "name": "job_id",
-            "in": "path"
-          },
-          {
-            "required": true,
-            "schema": {
-              "title": "Output Key",
-              "type": "string"
-            },
-            "name": "output_key",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobOutput"
+                  "$ref": "#/components/schemas/JobResults"
                 }
               }
             }
@@ -1138,6 +1058,37 @@
           }
         }
       },
+      "Inputs": {
+        "title": "Inputs",
+        "type": "object",
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/File"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "description": "Job input arguments ",
+        "example": {
+          "x": 4.33,
+          "n": 55,
+          "title": "Temperature",
+          "enabled": true,
+          "input_file": {
+            "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+            "filename": "input.txt"
+          }
+        }
+      },
       "Job": {
         "title": "Job",
         "required": [
@@ -1215,73 +1166,39 @@
           "outputs_url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs"
         }
       },
-      "JobInput": {
-        "title": "JobInput",
+      "JobResults": {
+        "title": "JobResults",
         "required": [
-          "name"
+          "job_id",
+          "outputs"
         ],
         "type": "object",
         "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "Name given to the input/output in solver specs (see solver metadata.yml)"
-          },
-          "type": {
-            "title": "Type",
-            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-            "type": "string",
-            "description": "Data type expected on this input/ouput"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string",
-            "description": "Short human readable name to identify input/output"
-          },
-          "value": {
-            "$ref": "#/components/schemas/PortValue"
-          }
-        },
-        "example": {
-          "name": "T",
-          "type": "number",
-          "title": "Temperature",
-          "value": "33"
-        }
-      },
-      "JobOutput": {
-        "title": "JobOutput",
-        "required": [
-          "name",
-          "value",
-          "job_id"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "title": "Name",
-            "type": "string",
-            "description": "Name given to the input/output in solver specs (see solver metadata.yml)"
-          },
-          "type": {
-            "title": "Type",
-            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-            "type": "string",
-            "description": "Data type expected on this input/ouput"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string",
-            "description": "Short human readable name to identify input/output"
-          },
-          "value": {
-            "$ref": "#/components/schemas/PortValue"
-          },
           "job_id": {
             "title": "Job Id",
             "type": "string",
             "description": "Job that produced this output",
             "format": "uuid"
+          },
+          "outputs": {
+            "title": "Outputs",
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/File"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
           }
         },
         "example": {
@@ -1389,20 +1306,6 @@
           "doc_url": "https://api.osparc.io/doc",
           "doc_dev_url": "https://api.osparc.io/dev/doc"
         }
-      },
-      "PortValue": {
-        "title": "PortValue",
-        "anyOf": [
-          {
-            "type": "number"
-          },
-          {
-            "type": "string"
-          },
-          {
-            "type": "integer"
-          }
-        ]
       },
       "Profile": {
         "title": "Profile",
