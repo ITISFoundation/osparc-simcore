@@ -128,7 +128,7 @@ KeywordArguments = Dict[str, ArgumentType]
 PositionalArguments = List[ArgumentType]
 
 
-class Inputs(BaseModel):
+class JobInputs(BaseModel):
     # NOTE: this is different from the resource JobInput (TBD)
     __root__: KeywordArguments
 

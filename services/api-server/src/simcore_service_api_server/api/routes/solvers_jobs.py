@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from ...models.schemas.jobs import Inputs, Job, JobResults, JobStatus
+from ...models.schemas.jobs import Job, JobInputs, JobResults, JobStatus
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
@@ -58,7 +58,7 @@ async def list_jobs(
 async def create_job(
     solver_key: SolverKeyId,
     version: str,
-    inputs: Inputs,
+    inputs: JobInputs,
     user_id: int = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),

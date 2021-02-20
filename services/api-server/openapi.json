@@ -615,7 +615,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Inputs"
+                "$ref": "#/components/schemas/JobInputs"
               }
             }
           },
@@ -1058,37 +1058,6 @@
           }
         }
       },
-      "Inputs": {
-        "title": "Inputs",
-        "type": "object",
-        "additionalProperties": {
-          "anyOf": [
-            {
-              "$ref": "#/components/schemas/File"
-            },
-            {
-              "type": "number"
-            },
-            {
-              "type": "integer"
-            },
-            {
-              "type": "string"
-            }
-          ]
-        },
-        "description": "Job input arguments ",
-        "example": {
-          "x": 4.33,
-          "n": 55,
-          "title": "Temperature",
-          "enabled": true,
-          "input_file": {
-            "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-            "filename": "input.txt"
-          }
-        }
-      },
       "Job": {
         "title": "Job",
         "required": [
@@ -1166,6 +1135,36 @@
           "outputs_url": "https://api.osparc.io/v0/jobs/f622946d-fd29-35b9-a193-abdd1095167c/outputs"
         }
       },
+      "JobInputs": {
+        "title": "JobInputs",
+        "type": "object",
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/File"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "example": {
+          "x": 4.33,
+          "n": 55,
+          "title": "Temperature",
+          "enabled": true,
+          "input_file": {
+            "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+            "filename": "input.txt"
+          }
+        }
+      },
       "JobResults": {
         "title": "JobResults",
         "required": [
@@ -1202,11 +1201,17 @@
           }
         },
         "example": {
-          "name": "SAR",
-          "type": "data:application/hdf5",
-          "title": "SAR field output file-id",
-          "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
-          "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b"
+          "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
+          "outputs": {
+            "maxSAR": 4.33,
+            "n": 55,
+            "title": "Specific Absorption Rate",
+            "enabled": false,
+            "output_file": {
+              "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+              "filename": "sar_matrix.txt"
+            }
+          }
         }
       },
       "JobStatus": {
@@ -1250,8 +1255,7 @@
             "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur",
             "format": "date-time"
           }
-        },
-        "description": "NOTE About naming. The result of an inspection on X returns a Status object\n    What is the status of X? What sort of state is X in?\n    SEE https://english.stackexchange.com/questions/12958/status-vs-state"
+        }
       },
       "Meta": {
         "title": "Meta",

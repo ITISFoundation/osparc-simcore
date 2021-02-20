@@ -9,14 +9,14 @@ import logging
 import random
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable, Dict, Iterator, List
+from typing import Callable, Dict, Iterator
 from uuid import UUID
 
 from fastapi import HTTPException
 from starlette import status
 
 from ...models.api_resources import RelativeResourceName, compose_resource_name
-from ...models.schemas.jobs import Job, JobInput, JobOutput, JobStatus, TaskStates
+from ...models.schemas.jobs import Job, JobInputs, JobResults, JobStatus, TaskStates
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 
 logger = logging.getLogger(__name__)
@@ -33,9 +33,9 @@ class JobsFaker:
 
     jobs: Dict[JobName, Job] = field(default_factory=dict)
     job_status: Dict[UUID, JobStatus] = field(default_factory=dict)
-    job_inputs: Dict[UUID, List[JobInput]] = field(default_factory=dict)
+    job_inputs: Dict[UUID, JobInputs] = field(default_factory=dict)
     job_tasks: Dict[UUID, asyncio.Future] = field(default_factory=dict)
-    job_outputs: Dict[UUID, List[JobOutput]] = field(default_factory=dict)
+    job_outputs: Dict[UUID, JobResults] = field(default_factory=dict)
 
     def job_values(self, solver_name: str = None) -> Iterator[Job]:
         if solver_name:
@@ -46,10 +46,13 @@ class JobsFaker:
             for job in self.jobs.values():
                 yield job
 
-    def create_job(self, solver_name: str, inputs: List[JobInput]) -> Job:
+    def create_job(self, solver_name: str, inputs: JobInputs) -> Job:
         # TODO: validate inputs against solver definition
+        # NOTE: how can be sure that inputs.json() will be identical everytime? str
+        # representation might truncate e.g. a number which does not guarantee
+        # in all cases that is the same!?
         inputs_checksum = hashlib.sha256(
-            " ".join(input.json() for input in inputs).encode("utf-8")
+            " ".join(inputs.json()).encode("utf-8")
         ).hexdigest()
 
         # TODO: check if job exists already?? Do not consider date??
@@ -101,7 +104,7 @@ class JobsFaker:
 
             # -------------------------------------------------
             job_status.state = TaskStates.RUNNING
-            job_status.timestamp("started")
+            job_status.snapshot("started")
             logger.info(job_status)
 
             job_status.progress = 0
@@ -118,47 +121,30 @@ class JobsFaker:
             done_states = [TaskStates.SUCCESS, TaskStates.FAILED]
             job_status.state = random.choice(done_states)  # nosec
             job_status.progress = 100
-            job_status.timestamp("stopped")
+            job_status.snapshot("stopped")
             logger.info(job_status)
 
             # TODO: temporary A fixed output MOCK
             # TODO: temporary writes error in value!
+            results = JobResults.parse_obj(JobResults.Config.schema_extra["example"])
+            results.job_id = job_id
             if job_status.state == TaskStates.SUCCESS:
-                self.job_outputs[job_id] = [
-                    JobOutput(
-                        name="Temp",
-                        type="number",
-                        title="Resulting Temperature",
-                        value=33,
-                        job_id=job_id,
-                    ),
-                ]
+                self.job_outputs[job_id] = results
             else:
-                # TODO: some kind of error
-                self.job_outputs[job_id] = [
-                    JobOutput(
-                        name="Temp",
-                        type="string",
-                        title="Resulting Temperature",
-                        value="ERROR: simulation diverged",
-                        job_id=job_id,
-                    )
-                ]
+                failed = random.choice(list(results.outputs.keys()))
+                results.outputs[failed] = None
+                # TODO: some kind of error ckass results.error = ResultError(loc, field, message) .. . similar to ValidatinError? For one field or generic job error?
+                self.job_outputs[job_id] = results
 
         except asyncio.CancelledError:
-
             logging.debug("Task for job %s was cancelled", job_id)
             job_status.state = TaskStates.FAILED
-            job_status.timestamp("stopped")
-            self.job_outputs[job_id] = [
-                JobOutput(
-                    name="Temp",
-                    type="string",
-                    title="Resulting Temperature",
-                    value="ERROR: Cancelled",
-                    job_id=job_id,
-                )
-            ]
+            job_status.snapshot("stopped")
+
+            # TODO: an error with the job state??
+            # TODO: logs??
+            results = JobResults(job_id=job_id, outputs={})
+            self.job_outputs[job_id] = results
 
     def stop_job(self, job_name) -> Job:
         job = self.jobs[job_name]
@@ -214,7 +200,7 @@ async def list_jobs_impl(
 async def create_job_impl(
     solver_key: SolverKeyId,
     version: VersionStr,
-    inputs: List[JobInput],
+    inputs: JobInputs,
     url_for: Callable,
 ):
     """Creates a job for a solver with given inputs.
@@ -329,7 +315,7 @@ async def inspect_job_impl(solver_key: SolverKeyId, version: VersionStr, job_id:
         ) from err
 
 
-async def list_job_outputs_impl(
+async def get_job_results_impl(
     solver_key: SolverKeyId, version: VersionStr, job_id: UUID
 ):
     job_name = compose_resource_name(
