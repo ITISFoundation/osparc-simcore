@@ -21,16 +21,7 @@ router = APIRouter()
 # - Similar to docker container's API design (container = job and image = solver)
 # - TODO: solvers_router.post("/{solver_id}/jobs:run", response_model=JobStatus) disabled since MAG is not convinced it is necessary for now
 #
-
-
 # @router.get("/releases/jobs", response_model=List[Job])
-async def list_all_jobs(
-    url_for: Callable = Depends(get_reverse_url_mapper),
-):
-    """ List of all solver jobs created by user """
-    from .jobs_faker import list_all_jobs_impl
-
-    return await list_all_jobs_impl(url_for)
 
 
 @router.get(
@@ -125,18 +116,7 @@ async def inspect_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID
     response_model=JobOutputs,
 )
 async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
+    # Outputs is NOT a collection but a sub-resource of a jobid
     from .jobs_faker import get_job_outputs_impl
 
     return await get_job_outputs_impl(solver_key, version, job_id)
-
-
-# @router.get(
-#     "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs/{output_key}",
-#     response_model=JobOutput,
-# )
-# async def get_job_output(
-#     solver_key: SolverKeyId, version: VersionStr, job_id: UUID, output_key: str
-# ):
-#     from .jobs_faker import get_job_output_impl
-
-#     return await get_job_output_impl(solver_key, version, job_id, output_key)

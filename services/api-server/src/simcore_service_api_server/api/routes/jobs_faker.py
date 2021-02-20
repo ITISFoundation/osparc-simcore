@@ -89,12 +89,21 @@ class JobsFaker:
     async def _start_job_task(self, job_id, inputs):
         MOCK_PULLING_TIME = 1, 2
         MOCK_PENDING_TIME = 1, 3
-        MOCK_RUNNING_TIME = 1, 5 + len(inputs)
-
-        # TODO: this should feel like a
-        # TODO: how to cancel?
+        MOCK_RUNNING_TIME = 1, 5 + len(inputs.values)
 
         job_status = self.job_status[job_id]
+
+        # Fake results ready
+        results = JobOutputs(
+            job_id=job_id,
+            results={
+                "output_1": File(
+                    filename="file_with_int.txt",
+                    id="1460b7c8-70d7-42ee-9eb2-e2de2a9b7b37",
+                ),
+                "output_2": 42,
+            },
+        )
 
         try:
             await asyncio.sleep(random.randint(*MOCK_PULLING_TIME))  # nosec
@@ -106,7 +115,7 @@ class JobsFaker:
 
             # -------------------------------------------------
             job_status.state = TaskStates.RUNNING
-            job_status.snapshot("started")
+            job_status.take_snapshot("started")
             logger.info(job_status)
 
             job_status.progress = 0
@@ -123,73 +132,72 @@ class JobsFaker:
             done_states = [TaskStates.SUCCESS, TaskStates.FAILED]
             job_status.state = random.choice(done_states)  # nosec
             job_status.progress = 100
-            job_status.snapshot("stopped")
+            job_status.take_snapshot("stopped")
             logger.info(job_status)
 
             # TODO: temporary A fixed output MOCK
             # TODO: temporary writes error in value!
-            results = self.create_job_results(job_id)
-            if job_status.state == TaskStates.SUCCESS:
-                self.job_outputs[job_id] = results
-            else:
+            if job_status.state == TaskStates.FAILED:
                 failed = random.choice(list(results.outputs.keys()))
                 results.outputs[failed] = None
-                # TODO: some kind of error ckass results.error = ResultError(loc, field, message) .. . similar to ValidatinError? For one field or generic job error?
-                self.job_outputs[job_id] = results
+                # TODO: some kind of error ckass results.error = ResultError(loc, field, message) .. .
+                # similar to ValidatinError? For one field or generic job error?
 
         except asyncio.CancelledError:
             logging.debug("Task for job %s was cancelled", job_id)
             job_status.state = TaskStates.FAILED
-            job_status.snapshot("stopped")
+            job_status.take_snapshot("stopped")
+
+            # all fail
+            for name in results.outputs:
+                results.outputs[name] = None
 
             # TODO: an error with the job state??
             # TODO: logs??
-            results = self.create_job_results(job_id, {})
+
+        except Exception as err:
+            logger.exception(f"Job {job_id} failed")
+            job_status.state = TaskStates.FAILED
+            job_status.take_snapshot("stopped")
+            for name in results.outputs:
+                results.outputs[name] = None
+
+        finally:
             self.job_outputs[job_id] = results
 
     def stop_job(self, job_name) -> Job:
         job = self.jobs[job_name]
         try:
             task = self.job_tasks[job.id]
-            task.cancel()  # not sure it will actually task.cancelling
-        except KeyError:
-            logger.debug("Stopping job {job_id} that was never started")
-        return job
+            if not task.cancelled():
+                task.cancel()
 
-    def create_job_results(jid, res=None):
-        # These are outputs by sleeper service
-        results = JobOutputs.parse_obj(
-            job_id=jid,
-            results=res
-            if res is not None
-            else {
-                "output_1": File(
-                    filename="file_with_int.txt",
-                    id="1460b7c8-70d7-42ee-9eb2-e2de2a9b7b37",
-                ),
-                "output_2": 42,
-            },
-        )
-        return results
+        except KeyError:
+            logger.warning("Stopping job {job_id} that was never started")
+        return job
 
 
 the_fake_impl = JobsFaker()
 
-
-# */jobs/*  API fake implementations ---------------------
+#####################################################
+# */jobs/*  API FAKE implementations
+#
 
 
 @contextmanager
-def job_context(solver_key, version, job_id):
-    job_name = compose_resource_name(
-        "solvers", solver_key, "releases", version, "jobs", job_id
-    )
+def resource_context(**kwargs):
+    args = []
+    for key, value in kwargs.items():
+        args += [str(key), value]
+    resource_name = compose_resource_name(*args)
+    resource_display_name = args[-2]
+
     try:
-        yield job_name
+        yield resource_name
     except KeyError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job {job_name} does not exists",
+            detail=f"{resource_display_name.capitalize().rstrip('s')} {resource_name} does not exists",
         ) from err
 
 
@@ -205,7 +213,7 @@ def _copy_n_update(job: Job, url_for, solver_key, version):
                 version=version,
             ),
             "outputs_url": url_for(
-                "get_job_results",
+                "get_job_outputs",
                 solver_key=solver_key,
                 version=version,
                 job_id=job.id,
@@ -238,9 +246,9 @@ async def create_job_impl(
     """
     # TODO: validate inputs against solver specs
     # TODO: create a unique identifier of job based on solver_id and inputs
-    solver_name = compose_resource_name("solvers", solver_key, "releases", version)
-    job = the_fake_impl.create_job(solver_name, inputs)
-    return _copy_n_update(job, url_for, solver_key, version)
+    with resource_context(solvers=solver_key, releases=version) as solver_name:
+        job = the_fake_impl.create_job(solver_name, inputs)
+        return _copy_n_update(job, url_for, solver_key, version)
 
 
 async def get_job_impl(
@@ -249,13 +257,17 @@ async def get_job_impl(
     job_id: UUID,
     url_for: Callable,
 ):
-    with job_context(solver_key, version, job_id) as job_name:
+    with resource_context(
+        solvers=solver_key, releases=version, jobs=job_id
+    ) as job_name:
         job = the_fake_impl.jobs[job_name]
         return _copy_n_update(job, url_for, solver_key, version)
 
 
 async def start_job_impl(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    with job_context(solver_key, version, job_id) as job_name:
+    with resource_context(
+        solvers=solver_key, releases=version, jobs=job_id
+    ) as job_name:
         job_state = the_fake_impl.start_job(job_name)
         return job_state
 
@@ -266,16 +278,15 @@ async def stop_job_impl(
     job_id: UUID,
     url_for: Callable,
 ):
-    with job_context(solver_key, version, job_id) as job_name:
+    with resource_context(
+        solvers=solver_key, releases=version, jobs=job_id
+    ) as job_name:
         job = the_fake_impl.stop_job(job_name)
         return _copy_n_update(job, url_for, solver_key, version)
 
 
 async def inspect_job_impl(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    job_name = compose_resource_name(
-        "solvers", solver_key, "releases", version, "jobs", job_id
-    )
-    with job_context(solver_key, version, job_id):
+    with resource_context(solvers=solver_key, releases=version, jobs=job_id):
         # here we should use job_name ..
         state = the_fake_impl.job_status[job_id]
         return state
@@ -284,31 +295,8 @@ async def inspect_job_impl(solver_key: SolverKeyId, version: VersionStr, job_id:
 async def get_job_outputs_impl(
     solver_key: SolverKeyId, version: VersionStr, job_id: UUID
 ):
-    with job_context(solver_key, version, job_id) as job_name:
-        outputs = the_fake_impl.job_outputs[job_id]
+    with resource_context(
+        solvers=solver_key, releases=version, jobs=job_id, outputs="*"
+    ):
+        outputs: JobOutputs = the_fake_impl.job_outputs[job_id]
         return outputs
-
-
-async def get_job_output_impl(
-    solver_key: SolverKeyId, version: VersionStr, job_id: UUID, output_key: str
-):
-    output_name = compose_resource_name(
-        "solvers",
-        solver_key,
-        "releases",
-        version,
-        "jobs",
-        job_id,
-        "outputs",
-        output_key,
-    )
-
-    try:
-        outputs = the_fake_impl.job_outputs[job_id]
-        return next(output for output in outputs if output.name == output_key)
-
-    except (KeyError, StopIteration) as err:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No output '{output_name}' was not found",
-        ) from err

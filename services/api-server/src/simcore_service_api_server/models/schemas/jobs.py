@@ -68,11 +68,11 @@ class Job(BaseModel):
 
     @classmethod
     def create_now(cls, parent: RelativeResourceName, inputs_checksum: str) -> "Job":
-        _id = uuid4()
+        global_uuid = uuid4()
 
         return cls(
-            name=f"{parent}/{str(_id)}",
-            id=_id,
+            name=f"{parent}/jobs/{str(global_uuid)}",
+            id=global_uuid,
             runner_name=parent,
             inputs_checksum=inputs_checksum,
             created_at=datetime.utcnow(),
@@ -112,7 +112,7 @@ class JobStatus(BaseModel):
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
 
-    def snapshot(self, event: str = "submitted"):
+    def take_snapshot(self, event: str = "submitted"):
         setattr(self, f"{event}_at", datetime.utcnow())
         return getattr(self, f"{event}_at")
 
@@ -122,7 +122,6 @@ class JobStatus(BaseModel):
 
 
 # FIXME: all ints and bools will be floats
-
 ArgumentType = Union[File, float, int, bool, str, None]
 KeywordArguments = Dict[str, ArgumentType]
 PositionalArguments = List[ArgumentType]
@@ -131,6 +130,8 @@ PositionalArguments = List[ArgumentType]
 class JobInputs(BaseModel):
     # NOTE: this is different from the resource JobInput (TBD)
     values: KeywordArguments
+
+    # TODO: gibt es platz fuer metadata?
 
     class Config:
         schema_extra = {
@@ -149,7 +150,7 @@ class JobInputs(BaseModel):
 
 
 class JobOutputs(BaseModel):
-    # TODO: JobOutput could be a resource?
+    # TODO: JobOutputs is a resources!
 
     job_id: UUID = Field(..., description="Job that produced this output")
 
