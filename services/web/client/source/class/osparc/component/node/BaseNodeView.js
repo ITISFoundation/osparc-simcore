@@ -67,17 +67,17 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _mapperLayout: null,
     _iFrameLayout: null,
     __buttonContainer: null,
-    __filesButton: null,
+    __outFilesButton: null,
 
     populateLayout: function() {
       this.__cleanLayout();
 
       this.getNode().bind("label", this.__title, "value");
+      this._addButtons();
       this.__addInputPortsUIs();
       this.__addOutputPortsUIs();
       this._addSettings();
       this._addIFrame();
-      this._addButtons();
     },
 
     __buildLayout: function() {
@@ -238,7 +238,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       header.addSpacer();
 
       const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
-      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
+      const filesBtn = this.__outFilesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsPart.add(filesBtn);
@@ -334,7 +334,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         retrieveBtn.setEnabled(Boolean(this.getNode().getServiceUrl()));
         this.__buttonContainer.add(retrieveBtn);
       }
-      this.__buttonContainer.add(this.__filesButton);
+      this.__buttonContainer.add(this.__outFilesButton);
       this.__header.add(this.__buttonContainer);
     },
 
