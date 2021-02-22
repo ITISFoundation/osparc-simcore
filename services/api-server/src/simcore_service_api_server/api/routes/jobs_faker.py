@@ -94,7 +94,7 @@ class JobsFaker:
         job_status = self.job_status[job_id]
 
         # Fake results ready
-        results = JobOutputs(
+        outputs = JobOutputs(
             job_id=job_id,
             results={
                 "output_1": File(
@@ -138,8 +138,8 @@ class JobsFaker:
             # TODO: temporary A fixed output MOCK
             # TODO: temporary writes error in value!
             if job_status.state == TaskStates.FAILED:
-                failed = random.choice(list(results.outputs.keys()))
-                results.outputs[failed] = None
+                failed = random.choice(list(outputs.results.keys()))
+                outputs.results[failed] = None
                 # TODO: some kind of error ckass results.error = ResultError(loc, field, message) .. .
                 # similar to ValidatinError? For one field or generic job error?
 
@@ -149,21 +149,21 @@ class JobsFaker:
             job_status.take_snapshot("stopped")
 
             # all fail
-            for name in results.outputs:
-                results.outputs[name] = None
+            for name in outputs.results:
+                outputs.results[name] = None
 
             # TODO: an error with the job state??
             # TODO: logs??
 
-        except Exception as err:
-            logger.exception(f"Job {job_id} failed")
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Job %s failed", job_id)
             job_status.state = TaskStates.FAILED
             job_status.take_snapshot("stopped")
-            for name in results.outputs:
-                results.outputs[name] = None
+            for name in outputs.results:
+                outputs.results[name] = None
 
         finally:
-            self.job_outputs[job_id] = results
+            self.job_outputs[job_id] = outputs
 
     def stop_job(self, job_name) -> Job:
         job = self.jobs[job_name]

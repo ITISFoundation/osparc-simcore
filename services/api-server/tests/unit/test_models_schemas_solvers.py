@@ -7,11 +7,11 @@ from pprint import pformat
 
 import pytest
 from simcore_service_api_server.api.routes.solvers_faker import SolversFaker
-from simcore_service_api_server.models.schemas.jobs import Job, JobInput, JobOutput
+from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobOutputs
 from simcore_service_api_server.models.schemas.solvers import Solver, Version
 
 
-@pytest.mark.parametrize("model_cls", (Job, Solver, JobInput, JobOutput))
+@pytest.mark.parametrize("model_cls", (Job, Solver, JobInputs, JobOutputs))
 def test_solvers_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
