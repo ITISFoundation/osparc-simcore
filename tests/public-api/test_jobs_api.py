@@ -195,4 +195,4 @@ def test_sugar_syntax_to_setup_solver(
     )
     assert isinstance(job, Job)
 
-    assert job.runner_name == "solvers/{}/releases/{}".format(solver_tag)
+    assert job.runner_name == "solvers/{}/releases/{}".format(*solver_tag)
