@@ -170,7 +170,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__doStartPipeline(runAll);
         })
         .catch(() => {
-          this.getLogger().error(null, "Run failed");
+          this.__getStudyLogger().error(null, "Run failed");
           startStopButtonsWB.setRunning(false);
           startStopButtonsSS.setRunning(false);
         });
@@ -201,15 +201,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const startStopButtonsSS = this.__slideshowView.getStartStopButtons();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error submitting pipeline");
+        this.__getStudyLogger().error(null, "Error submitting pipeline");
         startStopButtonsWB.setRunning(false);
         startStopButtonsSS.setRunning(false);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getStatus() == "403") {
-          this.getLogger().error(null, "Pipeline is already running");
+          this.__getStudyLogger().error(null, "Pipeline is already running");
         } else if (e.getTarget().getStatus() == "422") {
-          this.getLogger().info(null, "The pipeline is up-to-date");
+          this.__getStudyLogger().info(null, "The pipeline is up-to-date");
           const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
           const win = new osparc.ui.window.Confirmation(msg);
           win.center();
@@ -220,7 +220,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             }
           }, this);
         } else {
-          this.getLogger().error(null, "Failed submitting pipeline");
+          this.__getStudyLogger().error(null, "Failed submitting pipeline");
         }
         startStopButtonsWB.setRunning(false);
         startStopButtonsSS.setRunning(false);
@@ -232,9 +232,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       });
       req.send();
       if (selectedNodeIDs.length) {
-        this.getLogger().info(null, "Starting partial pipeline");
+        this.__getStudyLogger().info(null, "Starting partial pipeline");
       } else {
-        this.getLogger().info(null, "Starting pipeline");
+        this.__getStudyLogger().info(null, "Starting pipeline");
       }
 
       return true;
@@ -243,12 +243,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["pipeline_id"];
-      this.getLogger().debug(null, "Pipeline ID " + pipelineId);
+      this.__getStudyLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
-        this.getLogger().error(null, "Submission failed");
+        this.__getStudyLogger().error(null, "Submission failed");
       } else {
-        this.getLogger().info(null, "Pipeline started");
+        this.__getStudyLogger().info(null, "Pipeline started");
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
         const timer = setTimeout(() => {
@@ -287,17 +287,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":stop";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       req.addListener("success", e => {
-        this.getLogger().debug(null, "Pipeline aborting");
+        this.__getStudyLogger().debug(null, "Pipeline aborting");
       }, this);
       req.addListener("error", e => {
-        this.getLogger().error(null, "Error stopping pipeline");
+        this.__getStudyLogger().error(null, "Error stopping pipeline");
       }, this);
       req.addListener("fail", e => {
-        this.getLogger().error(null, "Failed stopping pipeline");
+        this.__getStudyLogger().error(null, "Failed stopping pipeline");
       }, this);
       req.send();
 
-      this.getLogger().info(null, "Stopping pipeline");
+      this.__getStudyLogger().info(null, "Stopping pipeline");
       return true;
     },
     // ------------------ START/STOP PIPELINE ------------------
@@ -305,12 +305,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(false)
         .then(() => {
-          this.getLogger().debug(null, "Retrieveing inputs");
+          this.__getStudyLogger().debug(null, "Retrieveing inputs");
           if (node) {
             node.retrieveInputs(portKey);
           }
         });
-      this.getLogger().debug(null, "Updating pipeline");
+      this.__getStudyLogger().debug(null, "Updating pipeline");
     },
 
     // overridden
@@ -331,7 +331,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__slideshowView.nodeSelected(nodeId);
     },
 
-    getLogger: function() {
+    __getStudyLogger: function() {
       return this.__workbenchView.getLogger();
     },
 
@@ -399,7 +399,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .catch(error => {
           console.error(error);
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
-          this.getLogger().error(null, "Error updating pipeline");
+          this.__getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later
           throw error;
         });
