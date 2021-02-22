@@ -43,15 +43,17 @@ async def list_services(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You have unsufficient rights to access the services",
         )
+
     # now get the executable services
+    _services = await services_repo.list_services(
+        gids=[group.gid for group in user_groups],
+        execute_access=True,
+        product_name=x_simcore_products_name,
+    )
     executable_services: Set[Tuple[str, str]] = {
-        (service.key, service.version)
-        for service in await services_repo.list_services(
-            gids=[group.gid for group in user_groups],
-            execute_access=True,
-            product_name=x_simcore_products_name,
-        )
+        (service.key, service.version) for service in _services
     }
+
     # get the writable services
     _services = await services_repo.list_services(
         gids=[group.gid for group in user_groups],
@@ -62,6 +64,7 @@ async def list_services(
         (service.key, service.version) for service in _services
     }
     visible_services = executable_services | writable_services
+
     if not details:
         # only return a stripped down version
         services = [
