@@ -77,20 +77,12 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     this.__textFilterField.addListener("changeValue", this.__applyFilters, this);
   },
 
-  events: {},
-
   properties: {
     logLevel: {
       apply : "__applyFilters",
       nullable: false,
       check : "Number",
       init: LOG_LEVEL[0].debug
-    },
-
-    caseSensitive: {
-      nullable: false,
-      check : "Boolean",
-      init: false
     },
 
     currentNodeId: {
@@ -200,7 +192,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __createTableLayout: function() {
-      const tableModel = this.__logModel = new osparc.component.widget.logger.RemoteTableModel();
+      const tableModel = this.__logModel = new osparc.component.widget.logger.LoggerTable();
 
       const custom = {
         tableColumnModel : function(obj) {
