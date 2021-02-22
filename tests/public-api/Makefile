@@ -39,3 +39,13 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	--durations=10 \
 	--pdb \
 	$(CURDIR)
+
+
+.PHONY: test-dev
+test-ci:
+	@pytest \
+	-vv \
+	--color=yes \
+	--durations=10 \
+	--cov-report=term-missing \
+	$(CURDIR)
