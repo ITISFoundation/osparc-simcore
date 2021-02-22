@@ -24,6 +24,8 @@ from ..dependencies.director import DirectorApi, get_director_api
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+ServicesSelection = Set[Tuple[str, str]]
+
 
 @router.get("", response_model=List[ServiceOut])
 async def list_services(
@@ -35,7 +37,7 @@ async def list_services(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(...),
 ):
-    # get user groups
+    # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
         # deny access
@@ -45,12 +47,13 @@ async def list_services(
         )
 
     # now get the executable services
-    _services = await services_repo.list_services(
+    _services: List[ServiceMetaDataAtDB] = await services_repo.list_services(
         gids=[group.gid for group in user_groups],
         execute_access=True,
         product_name=x_simcore_products_name,
     )
-    executable_services: Set[Tuple[str, str]] = {
+    # TODO: get this directly in DB
+    executable_services: ServicesSelection = {
         (service.key, service.version) for service in _services
     }
 
@@ -60,14 +63,16 @@ async def list_services(
         write_access=True,
         product_name=x_simcore_products_name,
     )
-    writable_services: Set[Tuple[str, str]] = {
+    writable_services: ServicesSelection = {
         (service.key, service.version) for service in _services
     }
     visible_services = executable_services | writable_services
 
+    # Non-detailed views from the services_repo database
     if not details:
         # only return a stripped down version
-        services = [
+        # FIXME: add name, ddescription, type, etc...
+        services_overview = [
             ServiceOut(
                 key=key,
                 version=version,
@@ -81,16 +86,18 @@ async def list_services(
             )
             for key, version in visible_services
         ]
-        return services
+        return services_overview
+
+    # Detailed view re-directing to
 
     # get the services from the registry and filter them out
     frontend_services = [s.dict(by_alias=True) for s in get_frontend_services()]
     registry_services = await director_client.get("/services")
-    data = frontend_services + registry_services
-    services: List[ServiceOut] = []
-    for x in data:
+    detailed_services_metadata = frontend_services + registry_services
+    detailed_services: List[ServiceOut] = []
+    for detailed_metadata in detailed_services_metadata:
         try:
-            service = ServiceOut.parse_obj(x)
+            service = ServiceOut.parse_obj(detailed_metadata)
 
             if not (service.key, service.version) in visible_services:
                 # no access to that service
@@ -115,6 +122,7 @@ async def list_services(
                     service.version,
                 )
                 continue
+
             service = service.copy(
                 update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
             )
@@ -124,18 +132,18 @@ async def list_services(
                     service_in_db.owner
                 )
 
-            services.append(service)
+            detailed_services.append(service)
 
         # services = parse_obj_as(List[ServiceOut], data) this does not work since if one service has an issue it fails
         except ValidationError as exc:
             logger.warning(
                 "skip service %s:%s that has invalid fields\n%s",
-                x["key"],
-                x["version"],
+                detailed_metadata.get("key"),
+                detailed_metadata.get("version"),
                 exc,
             )
 
-    return services
+    return detailed_services
 
 
 @router.get("/{service_key:path}/{service_version}", response_model=ServiceOut)
