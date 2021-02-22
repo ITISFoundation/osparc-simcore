@@ -35,26 +35,7 @@ CELERY_APP_CONFIGS = {
 }
 
 
-def celery_adapter(app: Celery) -> Callable:
-    """this decorator allows passing additional paramters to celery tasks.
-    This allows to create a task of type `def function(*args, **kwargs, app: Celery)
-    """
-
-    def decorator(func) -> Callable:
-        @wraps(func)
-        def wrapped(*args, **kwargs) -> Callable:
-            return func(*args, **kwargs, app=app)
-
-        return wrapped
-
-    return decorator
-
-
 def define_celery_task(app: Celery, name: str) -> None:
-    # we need to have the app in the entrypoint
-    # TODO: use functools.partial instead
-    partial_entrypoint = celery_adapter(app)(entrypoint)
-
     task = app.task(
         name=name,
         base=AbortableTask,
@@ -65,7 +46,7 @@ def define_celery_task(app: Celery, name: str) -> None:
         on_retry=on_task_retry_handler,
         on_success=on_task_success_handler,
         track_started=True,
-    )(partial_entrypoint)
+    )(entrypoint)
     log.debug("Created task %s", task.name)
 
 
