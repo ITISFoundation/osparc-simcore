@@ -88,7 +88,7 @@ async def get_solver(
 
         return solver
 
-    except (KeyError, HTTPStatusError) as err:
+    except (KeyError, HTTPStatusError, IndexError) as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Solver with id={solver_key} not found",

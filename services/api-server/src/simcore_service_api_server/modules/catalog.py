@@ -107,7 +107,7 @@ class CatalogApi(BaseServiceClientApi):
     ) -> List[Solver]:
         resp = await self.client.get(
             "/services",
-            params={"user_id": user_id, "details": False},
+            params={"user_id": user_id, "details": True},
             headers={"x-simcore-products-name": "osparc"},
         )
         resp.raise_for_status()
