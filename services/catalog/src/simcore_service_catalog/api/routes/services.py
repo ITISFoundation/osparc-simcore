@@ -97,13 +97,17 @@ async def list_services(
     detailed_services: List[ServiceOut] = []
     for detailed_metadata in detailed_services_metadata:
         try:
-            service = ServiceOut.parse_obj(detailed_metadata)
-
-            if not (service.key, service.version) in visible_services:
+            service_key, service_version = (
+                detailed_metadata.get("key"),
+                detailed_metadata.get("version"),
+            )
+            if (service_key, service_version) not in visible_services:
                 # no access to that service
                 continue
 
-            # we have write access for that service, fill in the service rights
+            service = ServiceOut.parse_obj(detailed_metadata)
+
+            # Write Access Granted: fill in the service rights
             access_rights: List[
                 ServiceAccessRightsAtDB
             ] = await services_repo.get_service_access_rights(
@@ -111,7 +115,7 @@ async def list_services(
             )
             service.access_rights = {rights.gid: rights for rights in access_rights}
 
-            # access is allowed, override some of the values with what is in the db
+            # Write Access Granted: override some of the values with what is in the db
             service_in_db: Optional[
                 ServiceMetaDataAtDB
             ] = await services_repo.get_service(service.key, service.version)
