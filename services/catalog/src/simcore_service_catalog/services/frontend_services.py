@@ -4,6 +4,7 @@ from models_library.services import ServiceDockerData
 
 
 def _file_picker_service() -> ServiceDockerData:
+    # TODO: create once and just create copies here
     return ServiceDockerData(
         key="simcore/services/frontend/file-picker",
         version="1.0.0",
