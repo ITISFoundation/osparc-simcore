@@ -139,20 +139,24 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     __applyStudy: function(study) {
       this.__checkButtonsVisible();
-      this.__updateRunButtonsStatus();
+
+      study.addListener("changeState", () => {
+        this.__updateRunButtonsStatus();
+      }, this);
     },
 
     __checkButtonsVisible: function() {
       this.setVisibility(this.getStudy().isReadOnly() ? "excluded" : "visible");
     },
 
-    __updateRunButtonsStatus: function(study) {
+    __updateRunButtonsStatus: function() {
+      const study = this.getStudy();
       if (study) {
         const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
         const stopButton = this.__stopButton;
         if (study.getState() && study.getState().state) {
-          const pipelineState = study.getState().state;
-          switch (pipelineState.value) {
+          const pipelineState = study.getState().state.value;
+          switch (pipelineState) {
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":
