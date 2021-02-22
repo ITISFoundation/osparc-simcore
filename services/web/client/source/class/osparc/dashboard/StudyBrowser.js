@@ -554,8 +554,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getDuplicateStudyMenuButton: function(studyData) {
       const duplicateStudyButton = new qx.ui.menu.Button(this.tr("Duplicate"));
-      // ANE: remove this when backend is ready
-      duplicateStudyButton.setVisibility("excluded");
       osparc.utils.Utils.setIdToWidget(duplicateStudyButton, "duplicateStudy");
       duplicateStudyButton.addListener("execute", () => {
         this.__duplicateStudy(studyData);
@@ -661,7 +659,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.data.Resources.fetch("studies", "duplicate", params)
         .then(duplicatedStudyData => {
-          this._resetStudyItem(duplicatedStudyData);
+          this._reloadStudy(duplicatedStudyData["uuid"]);
         })
         .catch(e => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Duplicating the study");

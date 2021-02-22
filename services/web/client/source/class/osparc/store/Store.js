@@ -98,6 +98,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    portsCompatibility: {
+      check: "Object",
+      init: {}
+    },
     dags: {
       check: "Array",
       init: []

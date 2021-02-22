@@ -80,7 +80,10 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           appearance: "dashboard-page"
         });
         const tabButton = tabPage.getChildControl("button");
-        tabButton.setFont("text-16");
+        tabButton.set({
+          font: "text-16",
+          minWidth: 70
+        });
         const id = tuple[0].getMessageId().toLowerCase() + "TabBtn";
         osparc.utils.Utils.setIdToWidget(tabButton, id);
         tabPage.setLayout(new qx.ui.layout.Grow());

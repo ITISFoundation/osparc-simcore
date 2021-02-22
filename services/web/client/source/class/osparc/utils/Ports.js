@@ -34,12 +34,9 @@ qx.Class.define("osparc.utils.Ports", {
         new osparc.data.MimeType(mtA).match(new osparc.data.MimeType(mtB));
     },
 
-    areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return topLevelPort1.isInput !== topLevelPort2.isInput;
-    },
-
-    arePortsCompatible: function(port1, port2) {
-      return port1.type && port2.type && this.__matchPortType(port1.type, port2.type);
+    arePortsCompatible: function(node1, portId1, node2, portId2) {
+      return osparc.data.Resources.getCompatibleInputs(node1, portId1, node2)
+        .then(compatiblePorts => compatiblePorts.includes(portId2));
     },
 
     isDataALink: function(data) {

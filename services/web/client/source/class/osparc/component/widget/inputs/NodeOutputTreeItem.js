@@ -78,6 +78,18 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     type: {
       check: "String",
       nullable: false
+    },
+
+    unitShort: {
+      check: "String",
+      nullable: true,
+      event: "changeUnitShort"
+    },
+
+    unitLong: {
+      check: "String",
+      nullable: true,
+      event: "changeUnitLong"
     }
   },
 
@@ -93,24 +105,34 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       this.addIcon();
 
       // Add the port label
-      const label = this.__label = new qx.ui.basic.Label();
-      this.addWidget(label);
+      const label = this.__label = new qx.ui.basic.Label().set({
+        allowGrowX: true
+      });
+      this.addWidget(label, {
+        flex: 1
+      });
       this.bind("value", label, "visibility", {
         converter: val => typeof val === "string" ? "visible" : "excluded"
       });
 
       const labelLink = this.__labelLink = new osparc.ui.basic.LinkLabel("", null).set({
-        alignY: "middle"
+        alignY: "middle",
+        allowGrowX: true
       });
-      this.addWidget(labelLink);
+      this.addWidget(labelLink, {
+        flex: 1
+      });
       this.bind("value", labelLink, "visibility", {
         converter: val => typeof val === "string" ? "excluded" : "visible"
       });
 
-      // All else should be right justified
-      this.addWidget(new qx.ui.core.Spacer(), {
-        flex: 1
+      const unitLabel = this.__unitLabel = new qx.ui.basic.Label();
+      this.addWidget(unitLabel);
+      unitLabel.bind("value", unitLabel, "visibility", {
+        converter: val => val === null ? "excluded" : "visible"
       });
+      this.bind("unitShort", unitLabel, "value");
+      this.bind("unitLong", unitLabel, "toolTipText");
     },
 
     _applyValue: async function(value) {

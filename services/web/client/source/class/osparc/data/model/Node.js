@@ -128,6 +128,12 @@ qx.Class.define("osparc.data.model.Node", {
       init: ""
     },
 
+    portsConnected: {
+      check: "Array",
+      init: [],
+      event: "changePortsConnected"
+    },
+
     outputs: {
       check: "Object",
       nullable: false,
@@ -496,6 +502,27 @@ qx.Class.define("osparc.data.model.Node", {
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
         const portId = linkFieldModified.portId;
+
+        const oldPortsConnected = this.getPortsConnected();
+        const portConnected = oldPortsConnected.find(connection => Object.keys(connection)[0] === portId);
+        if (linkFieldModified.added && !(portConnected)) {
+          const newConnection = {};
+          newConnection[portId] = linkFieldModified.fromNodeId;
+          const portsConnected = [];
+          oldPortsConnected.forEach(oldPortConnected => portsConnected.push(oldPortConnected));
+          portsConnected.push(newConnection);
+          this.setPortsConnected(portsConnected);
+        }
+        if (!linkFieldModified.added && portConnected) {
+          const idx = oldPortsConnected.indexOf(portConnected);
+          if (idx > -1) {
+            oldPortsConnected.splice(idx, 1);
+          }
+          const portsConnected = [];
+          oldPortsConnected.forEach(oldPortConnected => portsConnected.push(oldPortConnected));
+          this.setPortsConnected(portsConnected);
+        }
+
         this.callRetrieveInputs(portId);
       }, this);
     },
@@ -637,7 +664,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     // Iterate over output ports and connect them to first compatible input port
-    __createAutoPortConnection: function(node1, node2) {
+    __createAutoPortConnection: async function(node1, node2) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (!preferencesSettings.getAutoConnectPorts()) {
         return;
@@ -649,7 +676,8 @@ qx.Class.define("osparc.data.model.Node", {
       const inPorts = node2.getInputs();
       for (const outPort in outPorts) {
         for (const inPort in inPorts) {
-          if (osparc.utils.Ports.arePortsCompatible(outPorts[outPort], inPorts[inPort])) {
+          const compatible = await osparc.utils.Ports.arePortsCompatible(node1, outPort, node2, inPort);
+          if (compatible) {
             if (node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
               autoConnections++;
               break;
