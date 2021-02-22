@@ -103,7 +103,14 @@ async def list_solver_releases(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ Lists all releases of a given solver """
-    raise NotImplementedError()
+    solvers: List[Solver] = await catalog_client.list_latest_releases(user_id)
+
+    for solver in solvers:
+        solver.url = url_for(
+            "get_solver_release", solver_key=solver.id, version=solver.version
+        )
+
+    return sorted(solvers, key=attrgetter("title"))
 
 
 @router.get("/{solver_key:path}/releases/{version}", response_model=Solver)

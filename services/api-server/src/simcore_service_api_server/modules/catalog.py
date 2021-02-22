@@ -101,8 +101,6 @@ class CatalogApi(BaseServiceClientApi):
     It abstracts request to the catalog API service
     """
 
-    ids_cache_map: Dict[UUID, SolverNameVersionPair] = field(default_factory=dict)
-
     async def list_solvers(
         self,
         user_id: int,
@@ -160,7 +158,15 @@ class CatalogApi(BaseServiceClientApi):
         return service.to_solver()
 
     async def list_latest_releases(self, user_id: int):
-        raise NotImplementedError()
+        solvers: List[Solver] = await self.list_solvers(user_id)
+
+        latest_releases = {}
+        for solver in solvers:
+            latest = latest_releases.setdefault(solver.id, solver)
+            if latest.pep404_version < solver.pep404_version:
+                latest_releases[solver.id] = solver
+
+        return list(latest_releases.values())
 
     async def get_latest_release(self, user_id: int, name: SolverKeyId) -> Solver:
         def _this_solver(solver: Solver) -> bool:
