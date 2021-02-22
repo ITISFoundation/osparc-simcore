@@ -92,9 +92,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         visibility: "excluded"
       });
       this._add(startSplitButton);
-
-      const stateLabel = this.__dummyLabel = new qx.ui.basic.Label();
-      this._add(stateLabel);
     },
 
     __createStartButton: function() {
