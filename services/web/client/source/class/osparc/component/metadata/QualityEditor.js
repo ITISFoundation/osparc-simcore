@@ -327,7 +327,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         const ruleRating = new osparc.ui.basic.StarsRating();
         ruleRating.set({
           score: cTSR.level,
-          maxScore: 4,
+          maxScore: targetTSR[tsrKey].level,
           nStars: targetTSR[tsrKey].level,
           showEmptyStars: true,
           marginTop: 5
@@ -485,6 +485,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
     },
 
+    // ANNOTATIONS //
     __populateAnnotations: function() {
       this.__annotationsGrid.removeAll();
       this.__populateAnnotationsHeaders();
@@ -584,6 +585,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         row++;
       });
     },
+    // ANNOTATIONS //
 
     __createEditBtns: function() {
       const editButton = new qx.ui.toolbar.Button(this.tr("Edit")).set({
