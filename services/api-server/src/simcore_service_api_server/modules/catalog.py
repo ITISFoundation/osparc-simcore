@@ -2,7 +2,7 @@ import logging
 import urllib.parse
 from dataclasses import dataclass, field
 from operator import attrgetter
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 from uuid import UUID
 
 import httpx
@@ -157,7 +157,7 @@ class CatalogApi(BaseServiceClientApi):
 
         return service.to_solver()
 
-    async def list_latest_releases(self, user_id: int):
+    async def list_latest_releases(self, user_id: int) -> List[Solver]:
         solvers: List[Solver] = await self.list_solvers(user_id)
 
         latest_releases = {}
@@ -168,12 +168,18 @@ class CatalogApi(BaseServiceClientApi):
 
         return list(latest_releases.values())
 
-    async def get_latest_release(self, user_id: int, name: SolverKeyId) -> Solver:
+    async def list_solver_releases(
+        self, user_id: int, solver_key: SolverKeyId
+    ) -> List[Solver]:
         def _this_solver(solver: Solver) -> bool:
-            return solver.id == name
+            return solver.id == solver_key
 
-        solvers = await self.list_solvers(user_id, _this_solver)
+        releases: List[Solver] = await self.list_solvers(user_id, _this_solver)
+        return releases
 
-        # raise IndexError if None
-        latest = sorted(solvers, key=attrgetter("pep404_version"))[-1]
+    async def get_latest_release(self, user_id: int, solver_key: SolverKeyId) -> Solver:
+        releases = await self.list_solver_releases(user_id, solver_key)
+
+        # raises IndexError if None
+        latest = sorted(releases, key=attrgetter("pep404_version"))[-1]
         return latest

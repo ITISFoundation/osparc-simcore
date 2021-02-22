@@ -103,14 +103,16 @@ async def list_solver_releases(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ Lists all releases of a given solver """
-    solvers: List[Solver] = await catalog_client.list_latest_releases(user_id)
+    releases: List[Solver] = await catalog_client.list_solver_releases(
+        user_id, solver_key
+    )
 
-    for solver in solvers:
+    for solver in releases:
         solver.url = url_for(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    return sorted(solvers, key=attrgetter("title"))
+    return sorted(releases, key=attrgetter("pep404_version"))
 
 
 @router.get("/{solver_key:path}/releases/{version}", response_model=Solver)
