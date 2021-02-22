@@ -35,7 +35,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let loggerView = new osparc.component.widget.logger.LoggerView(workbench);
+ *   let loggerView = new osparc.component.widget.logger.LoggerView();
  *   this.getRoot().add(loggerView);
  *   loggerView.info(null, "Hello world");
  * </pre>
