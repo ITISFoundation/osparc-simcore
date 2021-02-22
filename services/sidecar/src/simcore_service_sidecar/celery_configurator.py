@@ -18,7 +18,11 @@ from kombu import Queue
 from . import config
 from .boot_mode import BootMode, get_boot_mode, set_boot_mode
 from .celery_task import entrypoint
-from .celery_task_utils import on_task_failure_handler, on_task_success_handler
+from .celery_task_utils import (
+    on_task_failure_handler,
+    on_task_retry_handler,
+    on_task_success_handler,
+)
 from .utils import is_gpu_node, start_as_mpi_node
 
 log = logging.getLogger(__name__)
@@ -58,6 +62,7 @@ def define_celery_task(app: Celery, name: str) -> None:
         autoretry_for=(Exception,),
         retry_kwargs={"max_retries": 2, "countdown": 2},
         on_failure=on_task_failure_handler,
+        on_retry=on_task_retry_handler,
         on_success=on_task_success_handler,
         track_started=True,
     )(partial_entrypoint)
