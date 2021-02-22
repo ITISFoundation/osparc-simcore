@@ -136,14 +136,15 @@ qx.Class.define("osparc.component.node.NodeView", {
       this._loggerLayout.removeAll();
 
       const loggerView = this.__loggerView = this.getNode().getLogger().set({
-        maxHeight: 150
+        maxHeight: 250
       });
       loggerView.getChildControl("pin-node").exclude();
       const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
-        collapsed: true
+        collapsed: true,
+        backgroundColor: "background-main-lighter"
       });
       osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "nodeLoggerTitleLabel");
-      this._loggerLayout.add(loggerView);
+      this._loggerLayout.add(loggerPanel);
 
       this._addToMainView(this._loggerLayout);
     },
