@@ -199,7 +199,7 @@ async def inspect(
             )
             if (retry + 1) < max_retries and run_result == StateType.FAILED:
                 # try again!
-                run_result = StateType.PENDING
+                run_result = StateType.PUBLISHED
             await _set_task_state(connection, project_id, node_id, run_result)
             if run_result == StateType.FAILED:
                 # set the successive tasks as ABORTED
