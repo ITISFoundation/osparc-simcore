@@ -11,7 +11,57 @@ from pydantic.main import BaseModel
 
 # OpenAPI models (contain both service metadata and access rights)
 class ServiceUpdate(ServiceMetaData, ServiceAccessRights):
-    pass
+    class Config:
+        schema_extra = {
+            "examples": [
+                {
+                    # ServiceAccessRights
+                    "access_rights": {
+                        1: {
+                            "execute_access": False,
+                            "write_access": False,
+                        },
+                        2: {
+                            "execute_access": True,
+                            "write_access": True,
+                        },
+                        44: {
+                            "execute_access": False,
+                            "write_access": False,
+                        },
+                    },
+                    # ServiceMetaData = ServiceCommonData +
+                    "name": "My Human Readable Service Name",
+                    "thumbnail": None,
+                    "description": "An interesting service that does something",
+                    "classifiers": ["RRID:SCR_018997", "RRID:SCR_019001"],
+                    "quality": {
+                        "tsr": {
+                            "r01": {"level": 3, "references": ""},
+                            "r02": {"level": 2, "references": ""},
+                            "r03": {"level": 0, "references": ""},
+                            "r04": {"level": 0, "references": ""},
+                            "r05": {"level": 2, "references": ""},
+                            "r06": {"level": 0, "references": ""},
+                            "r07": {"level": 0, "references": ""},
+                            "r08": {"level": 1, "references": ""},
+                            "r09": {"level": 0, "references": ""},
+                            "r10": {"level": 0, "references": ""},
+                        },
+                        "enabled": True,
+                        "annotations": {
+                            "vandv": "",
+                            "purpose": "",
+                            "standards": "",
+                            "limitations": "",
+                            "documentation": "",
+                            "certificationLink": "",
+                            "certificationStatus": "Uncertified",
+                        },
+                    },
+                }
+            ]
+        }
 
 
 class ServiceOut(
