@@ -11,7 +11,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.settings.celery import CeleryConfig
 
 from ..models.schemas.constants import UserID
-from ..utils.client_decorators import handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -52,21 +51,6 @@ class CeleryClient:
     def instance(cls, app: FastAPI) -> "CeleryClient":
         return app.state.celery_client
 
-    @handle_retry(logger)
-    def send_task(self, task_name: str, *args, **kwargs) -> Task:
-        # TODO: check what can happen when exceptions are thrown (see [https://docs.celeryproject.org/en/2.4-archived/reference/celery.exceptions.html?highlight=exceptions#module-celery.exceptions])
-        return self.client.send_task(task_name, *args, **kwargs)
-
-    def send_computation_task(self, user_id: UserID, project_id: ProjectID) -> Task:
-        s = signature(
-            self.settings.task_name,
-            kwargs={"user_id": user_id, "project_id": str(project_id)},
-            immutable=True,  # this prevents the result to be added to the next task
-        )
-        return s.apply_async(
-            expires=self.settings.publication_timeout,
-        )
-
     def send_computation_tasks(
         self,
         user_id: UserID,
@@ -92,6 +76,7 @@ class CeleryClient:
             )
             return task_signature
 
+        # create the // tasks
         celery_groups = []
         for node_group in topologically_sorted_nodes:
             celery_groups.append(
@@ -107,10 +92,11 @@ class CeleryClient:
                 )
             )
 
+        # chain the tasks into a flow
         celery_flow = chain(celery_groups)
-        task = celery_flow.apply_async(
-            expires=self.settings.publication_timeout,
-        )
+
+        # publish the tasks through Celery
+        task = celery_flow.apply_async()
         logger.debug("created celery workflow %s", str(celery_flow))
         return task
 
