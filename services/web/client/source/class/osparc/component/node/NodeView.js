@@ -135,9 +135,10 @@ qx.Class.define("osparc.component.node.NodeView", {
     _addLogger: function() {
       this._loggerLayout.removeAll();
 
-      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView().set({
+      const loggerView = this.__loggerView = this.getNode().getLogger().set({
         maxHeight: 150
       });
+      loggerView.getChildControl("pin-node").exclude();
       const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
         collapsed: true
       });

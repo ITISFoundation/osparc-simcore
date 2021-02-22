@@ -132,6 +132,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return this.__loggerView;
     },
 
+    __getNodeLogger: function(nodeId) {
+      const nodes = this.getStudy().getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        if (nodeId === node.getNodeId()) {
+          return node.getLogger();
+        }
+      }
+      return null;
+    },
+
     __editSlides: function() {
       const uiData = this.getStudy().getUi();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
@@ -501,7 +511,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             // Filtering out logs from other studies
             return;
           }
-          this.getLogger().infos(data["Node"], data["Messages"]);
+          const nodeId = data["Node"];
+          const messages = data["Messages"];
+          this.getLogger().infos(nodeId, messages);
+          const nodeLogger = this.__getNodeLogger(nodeId);
+          if (nodeLogger) {
+            nodeLogger.infos(nodeId, messages);
+          }
         }, this);
       }
       socket.emit(slotName);

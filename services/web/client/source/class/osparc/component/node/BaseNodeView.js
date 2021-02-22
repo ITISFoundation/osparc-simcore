@@ -350,6 +350,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
       this._mapperLayout.setVisibility(othersStatus);
+      this._loggerLayout.setVisibility(othersStatus);
       this.__header.setVisibility(othersStatus);
     },
 
@@ -477,6 +478,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       */
     _addIFrame: function() {
       throw new Error("Abstract method called!");
+    },
+
+    _addLogger: function() {
+      return;
     },
 
     /**

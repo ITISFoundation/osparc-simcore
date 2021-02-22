@@ -135,6 +135,12 @@ qx.Class.define("osparc.data.model.Node", {
       event: "changeOutputs"
     },
 
+    status: {
+      check: "osparc.data.model.NodeStatus",
+      nullable: false
+    },
+
+    // GUI elements //
     propsForm: {
       check: "osparc.component.form.renderer.PropForm",
       init: null,
@@ -165,10 +171,12 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
-    status: {
-      check: "osparc.data.model.NodeStatus",
-      nullable: false
+    logger: {
+      check: "osparc.component.widget.logger.LoggerView",
+      init: null,
+      nullable: true
     }
+    // GUI elements //
   },
 
   events: {
@@ -347,6 +355,8 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
+
+      this.__initLogger();
 
       if (this.isDynamic()) {
         this.__initLoadingIPage();
@@ -752,6 +762,10 @@ qx.Class.define("osparc.data.model.Node", {
       }
       this.setLabel(newLabel);
       return true;
+    },
+
+    __initLogger: function() {
+      this.setLogger(new osparc.component.widget.logger.LoggerView());
     },
 
     __getLoadingPageHeader: function() {
