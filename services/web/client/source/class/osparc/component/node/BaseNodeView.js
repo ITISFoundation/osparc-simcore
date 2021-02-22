@@ -66,6 +66,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _settingsLayout: null,
     _mapperLayout: null,
     _iFrameLayout: null,
+    _loggerLayout: null,
     __buttonContainer: null,
     __outFilesButton: null,
 
@@ -73,11 +74,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__cleanLayout();
 
       this.getNode().bind("label", this.__title, "value");
-      this._addButtons();
       this.__addInputPortsUIs();
       this.__addOutputPortsUIs();
       this._addSettings();
       this._addIFrame();
+      this._addLogger();
+
+      this._addButtons();
     },
 
     __buildLayout: function() {
@@ -193,6 +196,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
       this._mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      this._loggerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       return mainView;
     },

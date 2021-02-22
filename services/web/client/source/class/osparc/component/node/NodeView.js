@@ -128,6 +128,21 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
+    _addLogger: function() {
+      this._loggerLayout.removeAll();
+
+      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView().set({
+        maxHeight: 150
+      });
+      const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
+        collapsed: true
+      });
+      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "nodeLoggerTitleLabel");
+      this._loggerLayout.add(loggerView);
+
+      this._addToMainView(this._loggerLayout);
+    },
+
     _openEditAccessLevel: function() {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       const propsFormEditor = this.getNode().getPropsFormEditor();
