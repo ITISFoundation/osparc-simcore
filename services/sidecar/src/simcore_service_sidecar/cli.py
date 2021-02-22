@@ -52,11 +52,11 @@ async def run_sidecar(
     job_id: str,
     user_id: str,
     project_id: str,
-    node_id: Optional[str] = None,
+    node_id: str,
     is_aborted_cb: Optional[Callable[[], bool]] = None,
     retry: int = 1,
     max_retries: int = 1,
-) -> Optional[List[str]]:
+) -> None:
     abortion_task = (
         asyncio.get_event_loop().create_task(
             perdiodicaly_check_if_aborted(is_aborted_cb)
@@ -66,7 +66,7 @@ async def run_sidecar(
     )
     try:
         async with DBContextManager() as db_engine, RabbitMQ() as rabbit_mq:
-            next_task_nodes: Optional[List[str]] = await inspect(
+            await inspect(
                 db_engine,
                 rabbit_mq,
                 job_id,
@@ -76,7 +76,6 @@ async def run_sidecar(
                 retry=retry,
                 max_retries=max_retries,
             )
-            return next_task_nodes
     finally:
         if abortion_task:
             abortion_task.cancel()

@@ -1,8 +1,7 @@
 import asyncio
 import logging
-import traceback
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Optional
 
 import networkx as nx
 from aiopg.sa import Engine, SAConnection
@@ -17,49 +16,17 @@ from simcore_sdk.node_ports_v2 import log as node_port_v2_log
 from sqlalchemy import and_, literal_column
 
 from . import config, exceptions
-from .db import DBContextManager
 from .executor import Executor
 from .rabbitmq import RabbitMQ
-from .utils import execution_graph, find_entry_point, is_node_ready
+from .utils import execution_graph
 
 log = logging.getLogger(__name__)
 log.setLevel(config.SIDECAR_LOGLEVEL)
 node_port_v2_log.setLevel(config.SIDECAR_LOGLEVEL)
 
 
-async def task_required_resources(node_id: str) -> Union[Dict[str, bool], None]:
-    """Checks if the comp_task's image field if it requires to use the GPU"""
-    try:
-        async with DBContextManager() as db_engine:
-            async with db_engine.acquire() as db_connection:
-                result = await db_connection.execute(
-                    query=comp_tasks.select().where(comp_tasks.c.node_id == node_id)
-                )
-                task = await result.fetchone()
-
-                if not task:
-                    log.warning("Task for node_id %s was not found", node_id)
-                    raise exceptions.TaskNotFound("Could not find a relative task")
-
-                # Image has to following format
-                # {"name": "simcore/services/comp/itis/sleeper", "tag": "1.0.0", "requires_gpu": false, "requires_mpi": false}
-                return {
-                    "requires_gpu": task["image"]["requires_gpu"],
-                    "requires_mpi": task["image"]["requires_mpi"],
-                }
-    except Exception:  # pylint: disable=broad-except
-        log.error(
-            "%s\nThe above exception ocurred because it could not be "
-            "determined if task requires GPU, MPI  MPI for node_id %s",
-            traceback.format_exc(),
-            node_id,
-        )
-        return None
-
-
 async def _try_get_task_from_db(
     db_connection: SAConnection,
-    graph: nx.DiGraph,
     job_request_id: str,
     project_id: str,
     node_id: str,
@@ -76,11 +43,6 @@ async def _try_get_task_from_db(
 
     if not task:
         log.debug("No task found")
-        return
-
-    # Check if node's dependecies are there
-    if not await is_node_ready(task, graph, db_connection):
-        log.debug("TASK %s NOT YET READY", task.internal_id)
         return
 
     # the task is ready!
@@ -163,10 +125,10 @@ async def inspect(
     job_request_id: str,
     user_id: str,
     project_id: str,
-    node_id: Optional[str],
+    node_id: str,
     retry: int,
     max_retries: int,
-) -> Optional[List[str]]:
+) -> None:
 
     async with db_engine.acquire() as connection:
         task: Optional[RowProxy] = None
@@ -181,28 +143,25 @@ async def inspect(
 
             pipeline: RowProxy = await _get_pipeline_from_db(connection, project_id)
             graph = execution_graph(pipeline)
-            if not node_id:
-                log.debug("NODE id was zero, this was the entry node id")
-                await _set_tasks_state(connection, project_id, graph, StateType.PENDING)
-                return find_entry_point(graph)
             log.debug("NODE id is %s, getting the task from DB...", node_id)
             task = await _try_get_task_from_db(
-                connection, graph, job_request_id, project_id, node_id
+                connection, job_request_id, project_id, node_id
             )
 
             if not task:
-                log.debug("no task at hand, let's rest...")
+                log.warning(
+                    "Worker received task for user %s, project %s, node %s, but the task is already taken! this should not happen. going back to sleep...",
+                    user_id,
+                    project_id,
+                    node_id,
+                )
                 return
         except asyncio.CancelledError:
             log.warning("Task has been cancelled")
-            if node_id:
-                await _set_task_state(
-                    connection, project_id, node_id, StateType.ABORTED
-                )
+            await _set_task_state(connection, project_id, node_id, StateType.ABORTED)
             raise
 
         run_result = StateType.FAILED
-        next_task_nodes = []
         try:
             await rabbit_mq.post_log_message(
                 user_id,
@@ -225,7 +184,6 @@ async def inspect(
                 user_id=user_id,
             )
             await executor.run()
-            next_task_nodes = list(graph.successors(node_id))
             run_result = StateType.SUCCESS
         except asyncio.CancelledError:
             log.warning("Task has been cancelled")
@@ -233,25 +191,22 @@ async def inspect(
             raise
 
         finally:
-            if node_id:
-                await rabbit_mq.post_log_message(
-                    user_id,
+            await rabbit_mq.post_log_message(
+                user_id,
+                project_id,
+                node_id,
+                f"[sidecar]Task completed with result: {run_result.name} [Trial {retry+1}/{max_retries}]",
+            )
+            if (retry + 1) < max_retries and run_result == StateType.FAILED:
+                # try again!
+                run_result = StateType.PENDING
+            await _set_task_state(connection, project_id, node_id, run_result)
+            if run_result == StateType.FAILED:
+                # set the successive tasks as ABORTED
+                await _set_tasks_state(
+                    connection,
                     project_id,
-                    node_id,
-                    f"[sidecar]Task completed with result: {run_result.name} [Trial {retry+1}/{max_retries}]",
+                    nx.bfs_tree(graph, node_id),
+                    StateType.ABORTED,
+                    offset=1,
                 )
-                if (retry + 1) < max_retries and run_result == StateType.FAILED:
-                    # try again!
-                    run_result = StateType.PENDING
-                await _set_task_state(connection, project_id, node_id, run_result)
-                if run_result == StateType.FAILED:
-                    # set the successive tasks as ABORTED
-                    await _set_tasks_state(
-                        connection,
-                        project_id,
-                        nx.bfs_tree(graph, node_id),
-                        StateType.ABORTED,
-                        offset=1,
-                    )
-
-    return next_task_nodes

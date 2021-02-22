@@ -1,6 +1,5 @@
 import logging
 from asyncio import CancelledError
-from typing import Optional
 
 from .cli import run_sidecar
 from .utils import wrap_async_call
@@ -8,16 +7,14 @@ from .utils import wrap_async_call
 log = logging.getLogger(__name__)
 
 
-def entrypoint(
-    self, *, user_id: str, project_id: str, node_id: Optional[str] = None
-) -> None:
+def entrypoint(self, *, user_id: str, project_id: str, node_id: str) -> None:
     log.info("Received task %s", self.request.id)
     _shared_task_dispatch(self, user_id, project_id, node_id)
     log.info("Completed task %s", self.request.id)
 
 
 def _shared_task_dispatch(
-    celery_request, user_id: str, project_id: str, node_id: Optional[str]
+    celery_request, user_id: str, project_id: str, node_id: str
 ) -> None:
     log.info(
         "Run sidecar for user %s, project %s, node %s retry [%s/%s]",
