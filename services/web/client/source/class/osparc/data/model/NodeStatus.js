@@ -52,14 +52,36 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       check: "Array",
       nullable: true,
       init: null,
-      event: "changeDependencies"
+      event: "changeDependencies",
+      apply: "__applyDependencies"
     },
 
     modified: {
       check: "Boolean",
       nullable: true,
       init: null,
-      event: "changeModified"
+      event: "changeModified",
+      apply: "__applyModified"
+    }
+  },
+
+  members: {
+    hasDependencies: function() {
+      const dependencies = this.getDependencies();
+      if (dependencies && dependencies.length) {
+        return true;
+      }
+      return false;
+    },
+
+    __applyDependencies: function() {
+      this.setModified(this.hasDependencies());
+    },
+
+    __applyModified: function(modified) {
+      if (modified === false) {
+        this.setModified(this.hasDependencies());
+      }
     }
   }
 });
