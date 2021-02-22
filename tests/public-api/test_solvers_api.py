@@ -33,7 +33,7 @@ def test_get_latest_solver(solvers_api: SolversApi):
 
     solver_names = []
     for latest in solvers:
-        assert solvers_api.get_solver(latest.id, latest.version) == latest
+        assert solvers_api.get_solver_release(latest.id, latest.version) == latest
 
         solver_names.append(latest.id)
 
@@ -42,10 +42,11 @@ def test_get_latest_solver(solvers_api: SolversApi):
 
 def test_get_all_releases(solvers_api: SolversApi):
 
-    all_releases: List[Solver] = solvers_api.list_solvers_releases()
+    all_releases: List[
+        Solver
+    ] = solvers_api.list_solvers_releases()  # all release of all solvers
 
     one_solver = random.choice(all_releases)
-
     all_releases_of_given_solver: List[Solver] = solvers_api.list_solver_releases(
         one_solver.id
     )
@@ -59,24 +60,24 @@ def test_get_all_releases(solvers_api: SolversApi):
                 latest = solver
 
             elif parse_version(latest.version) < parse_version(solver.version):
-                latest = solvers_api.get_solver(solver.id, solver.version)
+                latest = solvers_api.get_solver_release(solver.id, solver.version)
 
     print(latest)
     assert latest
     assert latest == all_releases_of_given_solver[-1]
 
 
-def test_get_solver(solvers_api: SolversApi, sleeper_key_and_version):
+def test_get_solver_release(solvers_api: SolversApi, sleeper_key_and_version):
     expected_solver_key, expected_version = sleeper_key_and_version
 
-    solver = solvers_api.get_solver(
+    solver = solvers_api.get_solver_release(
         solver_key=expected_solver_key, version=expected_version
     )
 
     assert solver.id == expected_solver_key
     assert solver.version == expected_version
 
-    same_solver = solvers_api.get_solver(solver.id, solver.version)
+    same_solver = solvers_api.get_solver(solver.id)  # latest
 
     assert same_solver.id == solver.id
     assert same_solver.version == solver.version
@@ -88,9 +89,9 @@ def test_get_solver(solvers_api: SolversApi, sleeper_key_and_version):
 def test_solvers_not_found(solvers_api):
 
     with pytest.raises(ApiException) as excinfo:
-        solvers_api.get_solver(
-            solver_name="simcore/services/comp/something-not-in-this-registry",
-            version="1.4.55",
+        solvers_api.get_solver_release(
+            "simcore/services/comp/something-not-in-this-registry",
+            "1.4.55",
         )
     assert excinfo.value.status == HTTPStatus.NOT_FOUND  # 404
     assert "not found" in excinfo.value.reason.lower()

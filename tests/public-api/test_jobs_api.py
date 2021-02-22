@@ -152,6 +152,8 @@ def test_run_job(
     assert status.started_at < status.stopped_at
 
     # check solver outputs
+    # FIXME: client auto-generator does not support polymorphism in responses(i.e response)
+    # https://openapi-generator.tech/docs/generators/python-legacy#schema-support-feature
     outputs: JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
     assert isinstance(outputs, JobOutputs)
     assert outputs.job_id == job.id
@@ -177,7 +179,7 @@ def test_run_job(
     assert isinstance(number, float)
 
     # file exists in the cloud
-    # TODO: when this works
+    # FIXME: when director-v2 is connected instead of fake
     # assert files_api.get_file(output_file.id) == output_file
 
 
@@ -189,7 +191,7 @@ def test_sugar_syntax_to_setup_solver(
     solver_tag = solver.id, solver.version
 
     job = solvers_api.create_job(
-        JobInputs({"input_2": 33, "input_3": False}), *solver_tag
+        job_inputs=JobInputs({"input_2": 33, "input_3": False}), *solver_tag
     )
     assert isinstance(job, Job)
 
