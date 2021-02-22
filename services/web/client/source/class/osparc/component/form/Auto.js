@@ -511,6 +511,8 @@ qx.Class.define("osparc.component.form.Auto", {
       control.key = key;
       control.description = s.description;
       control.widgetType = s.widget.type;
+      control.unitShort = s.unitShort;
+      control.unitLong = s.unitLong;
 
       return control;
     }

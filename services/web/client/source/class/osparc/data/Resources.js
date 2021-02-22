@@ -189,6 +189,25 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
+       * PORT COMPATIBILITY
+       */
+      "portsCompatibility": {
+        useCache: false, // It has its own cache handler
+        endpoints: {
+          matchInputs: {
+            // get_compatible_inputs_given_source_output_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
+          },
+          matchOutputs: {
+            useCache: false,
+            // get_compatible_outputs_given_target_input_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
+          }
+        }
+      },
+      /*
        * GROUPS/DAGS
        */
       "dags": {
@@ -713,6 +732,37 @@ qx.Class.define("osparc.data.Resources", {
       return {
         "serviceKey": encodeURIComponent(serviceKey),
         "serviceVersion": serviceVersion
+      };
+    },
+
+    getCompatibleInputs: function(node1, portId1, node2) {
+      const url = this.__getMatchInputsUrl(node1, portId1, node2);
+
+      // eslint-disable-next-line no-underscore-dangle
+      const cachedCPs = this.getInstance().__getCached("portsCompatibility") || {};
+      const strUrl = JSON.stringify(url);
+      if (strUrl in cachedCPs) {
+        return Promise.resolve(cachedCPs[strUrl]);
+      }
+      const params = {
+        url
+      };
+      return this.fetch("portsCompatibility", "matchInputs", params)
+        .then(data => {
+          cachedCPs[strUrl] = data;
+          // eslint-disable-next-line no-underscore-dangle
+          this.getInstance().__setCached("portsCompatibility", cachedCPs);
+          return data;
+        });
+    },
+
+    __getMatchInputsUrl: function(node1, portId1, node2) {
+      return {
+        "serviceKey2": encodeURIComponent(node2.getKey()),
+        "serviceVersion2": node2.getVersion(),
+        "serviceKey1": encodeURIComponent(node1.getKey()),
+        "serviceVersion1": node1.getVersion(),
+        "portKey1": portId1
       };
     },
 

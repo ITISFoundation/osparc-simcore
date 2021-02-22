@@ -484,7 +484,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y1 = pointList[0] ? pointList[0][1] : 0;
         const x2 = pointList[1] ? pointList[1][0] : 0;
         const y2 = pointList[1] ? pointList[1][1] : 0;
-        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, !edge.getIsPortConnected());
+        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
+
+        edge.addListener("changePortConnected", e => {
+          const portConnected = e.getData();
+          osparc.component.workbench.SvgWidget.updateDashes(edgeRepresentation, !portConnected);
+        }, this);
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
         this.__edgesUI.push(edgeUI);
@@ -558,7 +563,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const dropNode = this.getNodeUI(dropNodeId);
           const dragPortTarget = dragIsInput ? dragNode.getInputPort() : dragNode.getOutputPort();
           const dropPortTarget = dropIsInput ? dropNode.getInputPort() : dropNode.getOutputPort();
-          compatible = this.__areNodesCompatible(dragPortTarget, dropPortTarget);
+          compatible = dragPortTarget.isInput !== dropPortTarget.isInput;
         }
 
         if (!compatible) {
@@ -673,10 +678,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __areNodesCompatible: function(topLevelPort1, topLevelPort2) {
-      return osparc.utils.Ports.areNodesCompatible(topLevelPort1, topLevelPort2);
-    },
-
     __findCompatiblePort: function(nodeB, portA) {
       if (portA.isInput && nodeB.getOutputPort()) {
         return nodeB.getOutputPort();
@@ -726,7 +727,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const y1 = pointList[0][1];
           const x2 = pointList[1][0];
           const y2 = pointList[1][1];
-          osparc.component.workbench.SvgWidget.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2, !edgeUI.getEdge().getIsPortConnected());
+          osparc.component.workbench.SvgWidget.updateCurve(edgeUI.getRepresentation(), x1, y1, x2, y2);
         }
       });
     },
@@ -799,7 +800,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       if (this.__tempEdgeRepr === null) {
-        this.__tempEdgeRepr = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2);
+        this.__tempEdgeRepr = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, true);
       } else {
         osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
