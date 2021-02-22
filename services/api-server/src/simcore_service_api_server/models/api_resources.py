@@ -6,9 +6,9 @@ from pydantic import BaseModel, Field, constr
 # RESOURCE NAMES https://cloud.google.com/apis/design/resource_names
 #
 #
-# API Service Name	        Collection ID	Resource ID	        Collection ID	Resource ID
-# //storage.googleapis.com	/buckets	    /bucket-id	        /objects	    /object-id
-# //mail.googleapis.com	    /users	        /name@example.com	/settings	    /customFrom
+# API Service Name          Collection ID   Resource ID         Collection ID  Resource ID
+# //storage.googleapis.com  /buckets        /bucket-id          /objects       /object-id
+# //mail.googleapis.com     /users          /name@example.com   /settings      /customFrom
 #
 #
 # - Relative Resource Name:

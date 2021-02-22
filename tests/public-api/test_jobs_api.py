@@ -183,7 +183,7 @@ def test_run_job(
     # assert files_api.get_file(output_file.id) == output_file
 
 
-def test_sugar_syntax_to_setup_solver(
+def test_sugar_syntax_on_solver_setup(
     solvers_api: SolversApi,
     sleeper_solver: Solver,
 ):
@@ -195,4 +195,6 @@ def test_sugar_syntax_to_setup_solver(
     )
     assert isinstance(job, Job)
 
-    assert job.runner_name == "solvers/{}/releases/{}".format(*solver_tag)
+    assert job.runner_name == "solvers/{}/releases/{}".format(
+        quote_plus(str(solver.id)), solver.version
+    )
