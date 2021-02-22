@@ -843,7 +843,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
       const confirmationWin = new osparc.ui.window.Confirmation(msg);
-      const confirmButton = confirmationWin.getControlChild("confirm-button");
+      const confirmButton = confirmationWin.getChildControl("confirm-button");
       osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDeleteStudyBtn");
       return confirmationWin;
     }
