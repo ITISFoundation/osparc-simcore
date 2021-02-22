@@ -2,7 +2,8 @@
 import asyncio
 import logging
 import time
-from typing import Any, Deque, Dict, Tuple
+from enum import Enum
+from typing import Any, Deque, Dict, Tuple, Set
 
 import aiodocker
 from asyncio_extras import async_contextmanager
@@ -12,6 +13,31 @@ from .constants import FIXED_SERVICE_NAME_SIDECAR, SERVICE_SIDECAR_PREFIX
 from .exceptions import GenericDockerError, ServiceSidecarError
 
 log = logging.getLogger(__name__)
+
+TASK_STATES_FAILED: Set[str] = {"failed", "rejected"}
+TASK_STATES_PENDING: Set[str] = {"pending"}
+TASK_STATES_PULLING: Set[str] = {"assigned", "accepted", "preparing"}
+TASK_STATES_STARTING: Set[str] = {"ready", "starting"}
+TASK_STATES_RUNNING: Set[str] = {"running"}
+TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown"}
+
+TASK_STATES_ALL: Set[str] = (
+    TASK_STATES_FAILED
+    | TASK_STATES_PENDING
+    | TASK_STATES_PULLING
+    | TASK_STATES_STARTING
+    | TASK_STATES_RUNNING
+    | TASK_STATES_COMPLETE
+)
+
+
+class ServiceState(Enum):
+    PENDING = "pending"
+    PULLING = "pulling"
+    STARTING = "starting"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    FAILED = "failed"
 
 
 @async_contextmanager
@@ -142,11 +168,13 @@ async def get_service_sidecars_to_monitor(
     return service_sidecar_services
 
 
-async def get_node_id_from_task_for_service(
-    service_id: str, service_sidecar_settings: ServiceSidecarSettings
+async def _extract_task_data_from_service_for_state(
+    service_id: str,
+    service_sidecar_settings: ServiceSidecarSettings,
+    target_statuses: Set[str],
 ) -> Dict[str, Any]:
-    """Awaits until the service has a running task and returns the
-    node's ID where it is running"""
+    """Waits until the service-sidcar task is in one of the target_statuses
+    and then returns the task"""
 
     async def sleep_or_error(started: float, task: Dict):
         await asyncio.sleep(1.0)
@@ -160,10 +188,10 @@ async def get_node_id_from_task_for_service(
             )
 
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
-        service_state = None
+        service_state: str = None
         started = time.time()
 
-        while service_state != "running":
+        while service_state not in target_statuses:
             running_services = await client.tasks.list(filters={"service": service_id})
 
             service_container_count = len(running_services)
@@ -186,6 +214,22 @@ async def get_node_id_from_task_for_service(
 
             await sleep_or_error(started=started, task=task)
 
+    return task
+
+
+async def get_node_id_from_task_for_service(
+    service_id: str, service_sidecar_settings: ServiceSidecarSettings
+) -> str:
+    """Awaits until the service has a running task and returns the
+    node's ID where it is running. When in a running state, the service
+    is most certainly has a NodeID assigned"""
+
+    task = await _extract_task_data_from_service_for_state(
+        service_id=service_id,
+        service_sidecar_settings=service_sidecar_settings,
+        target_statuses=TASK_STATES_RUNNING,
+    )
+
     if "NodeID" not in task:
         raise ServiceSidecarError(
             msg=(
@@ -195,3 +239,36 @@ async def get_node_id_from_task_for_service(
         )
 
     return task["NodeID"]
+
+
+async def get_service_sidecar_state(
+    service_id: str, service_sidecar_settings: ServiceSidecarSettings
+) -> Tuple[ServiceState, str]:
+
+    last_task = await _extract_task_data_from_service_for_state(
+        service_id=service_id,
+        service_sidecar_settings=service_sidecar_settings,
+        target_statuses=TASK_STATES_ALL,
+    )
+
+    task_state = last_task["Status"]["State"]
+
+    # default
+    last_task_state = ServiceState.STARTING
+    last_task_error_msg = (
+        last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
+    )
+
+    if task_state in TASK_STATES_FAILED:
+        last_task_state = ServiceState.FAILED
+    elif task_state in TASK_STATES_PENDING:
+        last_task_state = ServiceState.PENDING
+    elif task_state in TASK_STATES_PULLING:
+        last_task_state = ServiceState.PULLING
+    elif task_state in TASK_STATES_STARTING:
+        last_task_state = ServiceState.STARTING
+    elif task_state in TASK_STATES_RUNNING:
+        last_task_state = ServiceState.RUNNING
+    elif task_state in TASK_STATES_COMPLETE:
+        last_task_state = ServiceState.COMPLETE
+    return (last_task_state, last_task_error_msg)
