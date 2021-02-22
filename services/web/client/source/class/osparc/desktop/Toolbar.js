@@ -73,15 +73,15 @@ qx.Class.define("osparc.desktop.Toolbar", {
         }
         case "start-stop-btns": {
           control = new osparc.desktop.StartStopButtons();
-          control.addListener("startPipeline", () => {
-            this.fireEvent("startPipeline");
-          }, this);
-          control.addListener("startPartialPipeline", () => {
-            this.fireEvent("startPartialPipeline");
-          }, this);
-          control.addListener("stopPipeline", () => {
-            this.fireEvent("stopPipeline");
-          }, this);
+          [
+            "startPipeline",
+            "startPartialPipeline",
+            "stopPipeline"
+          ].forEach(signalName => {
+            control.addListener(signalName, () => {
+              this.fireEvent(signalName);
+            }, this);
+          });
           this._add(control);
           break;
         }
@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.Toolbar", {
         study.getUi().addListener("changeCurrentNodeId", () => {
           this._populateNodesNavigationLayout();
         });
-        this._startStopBtns.setVisibility(study.isReadOnly() ? "excluded" : "visible");
+        this._startStopBtns.setStudy(study);
 
         this._populateNodesNavigationLayout();
       }

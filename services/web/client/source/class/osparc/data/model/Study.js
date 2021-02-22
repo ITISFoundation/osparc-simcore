@@ -154,7 +154,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     state: {
       check: "Object",
-      nullable: true
+      nullable: true,
+      event: "changeState"
     },
 
     quality: {
