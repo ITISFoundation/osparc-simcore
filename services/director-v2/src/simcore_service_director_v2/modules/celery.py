@@ -78,11 +78,11 @@ class CeleryClient:
             user_id: UserID,
             project_id: ProjectID,
             node_id: NodeID,
-            queue_suffix: str,
+            routing_queue: str,
         ) -> Signature:
             task_signature = signature(
-                f"{self.settings.task_name}",
-                queue=f"{self.settings.task_name}.{queue_suffix}",
+                self.settings.task_name,
+                queue=f"{self.settings.task_name}.{routing_queue}",
                 kwargs={
                     "user_id": user_id,
                     "project_id": str(project_id),

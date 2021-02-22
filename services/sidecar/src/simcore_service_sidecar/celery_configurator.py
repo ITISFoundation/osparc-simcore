@@ -57,22 +57,15 @@ def configure_node(bootmode: BootMode) -> Celery:
         broker=config.CELERY_CONFIG.broker_url,
         backend=config.CELERY_CONFIG.result_backend,
     )
+    app.control.enable_events()
 
     app.conf.task_default_queue = "celery"
     app.conf.task_queues = [
         Queue("celery"),
-        Queue(config.MAIN_QUEUE_NAME),
         Queue(CELERY_APP_CONFIGS[bootmode]["queue_name"]),
     ]
-    app.conf.task_routes = {
-        config.MAIN_QUEUE_NAME: config.MAIN_QUEUE_NAME,
-        config.CPU_QUEUE_NAME: config.CPU_QUEUE_NAME,
-        config.GPU_QUEUE_NAME: config.GPU_QUEUE_NAME,
-        config.MPI_QUEUE_NAME: config.MPI_QUEUE_NAME,
-    }
 
-    define_celery_task(app, config.MAIN_QUEUE_NAME)
-    define_celery_task(app, CELERY_APP_CONFIGS[bootmode]["queue_name"])
+    define_celery_task(app, config.CELERY_CONFIG.task_name)
     set_boot_mode(bootmode)
     log.info("Initialized celery app in %s", get_boot_mode())
     return app
