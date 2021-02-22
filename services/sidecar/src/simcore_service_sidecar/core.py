@@ -69,7 +69,7 @@ async def _try_get_task_from_db(
         query=comp_tasks.select(for_update=True).where(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
-            & (comp_tasks.c.state == StateType.PENDING)
+            & (comp_tasks.c.state == StateType.PUBLISHED)
         ),
     )
     task: RowProxy = await result.fetchone()
