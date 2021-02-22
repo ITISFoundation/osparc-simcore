@@ -17,17 +17,12 @@ from .catalog_api_models import (
     ServiceOutputApiOut,
     ServiceOutputKey,
     ServiceVersion,
+    json_dumps,
     replace_service_input_outputs,
 )
 from .constants import RQ_PRODUCT_KEY
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
-
-
-def json_dumps(v) -> str:
-    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return orjson.dumps(v).decode()
-
 
 ###############
 # API HANDLERS

@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional
 
+import orjson
 from models_library.services import (
     KEY_RE,
     VERSION_RE,
@@ -29,6 +30,11 @@ def get_formatted_unit(data: dict):
     return [None, None]
 
 
+def json_dumps(v, *, default=None) -> str:
+    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
+    return orjson.dumps(v, default=default).decode()
+
+
 #####
 #
 #  API models specifics to front-end needs
@@ -49,15 +55,19 @@ class _BaseCommonApiExtension(BaseModel):
         None, description="Short name for the unit, if available"
     )
 
+    class Config:
+        extra = Extra.forbid
+        alias_generator = snake_to_camel
+        json_loads = orjson.loads
+        json_dumps = json_dumps
+
 
 class ServiceInputApiOut(ServiceInput, _BaseCommonApiExtension):
     key_id: ServiceInputKey = Field(
         ..., description="Unique name identifier for this input"
     )
 
-    class Config:
-        extra = Extra.forbid
-        alias_generator = snake_to_camel
+    class Config(_BaseCommonApiExtension.Config):
         schema_extra = {
             "example": {
                 "displayOrder": 2,
@@ -86,9 +96,7 @@ class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
         ..., description="Unique name identifier for this input"
     )
 
-    class Config:
-        extra = Extra.forbid
-        alias_generator = snake_to_camel
+    class Config(_BaseCommonApiExtension.Config):
         schema_extra = {
             "example": {
                 "displayOrder": 2,
