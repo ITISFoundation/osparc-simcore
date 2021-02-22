@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import Any, Dict, List
 
 from celery import Celery, Task, chain, group, signature
 from celery.canvas import Signature
@@ -68,11 +68,21 @@ class CeleryClient:
         )
 
     def send_computation_tasks(
-        self, user_id: UserID, project_id: ProjectID, node_ids: List[List[NodeID]]
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        topologically_sorted_nodes: List[Dict[str, Dict[str, Any]]],
     ) -> Task:
-        def _create_task_signature(self, user_id, project_id, node_id) -> Signature:
+        def _create_task_signature(
+            self,
+            user_id: UserID,
+            project_id: ProjectID,
+            node_id: NodeID,
+            queue_suffix: str,
+        ) -> Signature:
             task_signature = signature(
-                self.settings.task_name,
+                f"{self.settings.task_name}",
+                queue=f"{self.settings.task_name}.{queue_suffix}",
                 kwargs={
                     "user_id": user_id,
                     "project_id": str(project_id),
@@ -83,11 +93,17 @@ class CeleryClient:
             return task_signature
 
         celery_groups = []
-        for node_group in node_ids:
+        for node_group in topologically_sorted_nodes:
             celery_groups.append(
                 group(
-                    _create_task_signature(self, user_id, project_id, n)
-                    for n in node_group
+                    _create_task_signature(
+                        self,
+                        user_id,
+                        project_id,
+                        node_id,
+                        node_data["runtime_requirements"],
+                    )
+                    for node_id, node_data in node_group.items()
                 )
             )
 

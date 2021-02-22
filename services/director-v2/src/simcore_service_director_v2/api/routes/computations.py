@@ -1,11 +1,12 @@
 import logging
-from typing import Any, List
-from models_library.projects_nodes_io import NodeID
+from typing import Any, Dict, List
 
 import networkx as nx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from starlette import status
 from starlette.requests import Request
@@ -25,6 +26,7 @@ from ...models.schemas.comp_tasks import (
     ComputationTaskStop,
 )
 from ...models.schemas.constants import UserID
+from ...models.schemas.services import NodeRequirement
 from ...modules.celery import CeleryClient
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
@@ -39,7 +41,8 @@ from ...utils.dags import (
     compute_pipeline_details,
     create_complete_dag,
     create_complete_dag_from_tasks,
-    create_minimal_computational_graph_based_on_selection, topological_sort_grouping,
+    create_minimal_computational_graph_based_on_selection,
+    topological_sort_grouping,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import get_celery_client
@@ -147,12 +150,43 @@ async def create_computation(
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
 
-            # find how to start this pipeline
-            topologically_sorted_grouped_nodes: List[List[NodeID]] = topological_sort_grouping(computational_dag)
+            # find how to run this pipeline
+            topologically_sorted_grouped_nodes: List[
+                Dict[str, Dict[str, Any]]
+            ] = topological_sort_grouping(computational_dag)
             log.warning("THE grouped nodes: %s", topologically_sorted_grouped_nodes)
 
+            # find what are the nodes requirements
+            async def _set_nodes_requirements(
+                grouped_nodes: List[Dict[str, Dict[str, Any]]]
+            ) -> None:
+                for nodes_group in grouped_nodes:
+                    for node in nodes_group.values():
+                        service_key_version = ServiceKeyVersion(
+                            key=node["key"],
+                            version=node["version"],
+                        )
+                        service_extras = await director_client.get_service_extras(
+                            service_key_version
+                        )
+                        node["runtime_requirements"] = "cpu"
+                        if service_extras:
+                            requires_gpu = (
+                                NodeRequirement.GPU in service_extras.node_requirements
+                            )
+                            if requires_gpu:
+                                node["runtime_requirements"] = "gpu"
+                            requires_mpi = (
+                                NodeRequirement.MPI in service_extras.node_requirements
+                            )
+                            if requires_mpi:
+                                node["runtime_requirements"] = "mpi"
+
+            await _set_nodes_requirements(topologically_sorted_grouped_nodes)
             # trigger celery
-            task = celery_client.send_computation_tasks(job.user_id, job.project_id, topologically_sorted_grouped_nodes)
+            task = celery_client.send_computation_tasks(
+                job.user_id, job.project_id, topologically_sorted_grouped_nodes
+            )
             background_tasks.add_task(background_on_message, task)
             log.debug(
                 "Started computational task %s for user %s based on project %s",

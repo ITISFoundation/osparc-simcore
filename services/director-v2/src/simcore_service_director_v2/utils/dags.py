@@ -198,12 +198,15 @@ async def compute_pipeline_details(
 
 
 @log_decorator(logger=logger)
-def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[List[str]]:
+def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Dict[str, Dict[str, Any]]]:
     # copy the graph
     graph_copy = dag_graph.copy()
     res = []
     while graph_copy:
-        zero_indegree = [v for v, d in graph_copy.in_degree() if d == 0]
+        zero_indegree = {
+            v: graph_copy.nodes[v] for v, d in graph_copy.in_degree() if d == 0
+        }
+
         res.append(zero_indegree)
-        graph_copy.remove_nodes_from(zero_indegree)
+        graph_copy.remove_nodes_from(zero_indegree.keys())
     return res
