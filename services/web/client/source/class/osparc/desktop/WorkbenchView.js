@@ -318,7 +318,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView(study.getWorkbench());
       const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView);
-      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "loggerTitleLabel");
+      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "studyLoggerTitleLabel");
       this.__sidePanel.addOrReplaceAt(loggerPanel, 2, {
         flex: 1
       });
