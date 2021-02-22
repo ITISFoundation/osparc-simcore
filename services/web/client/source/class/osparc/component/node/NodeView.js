@@ -100,28 +100,32 @@ qx.Class.define("osparc.component.node.NodeView", {
 
       const loadingPage = this.getNode().getLoadingPage();
       const iFrame = this.getNode().getIFrame();
-      if (loadingPage === null && iFrame === null) {
-        return;
-      }
-      [
-        loadingPage,
-        iFrame
-      ].forEach(widget => {
-        if (widget) {
-          widget.addListener("maximize", e => {
-            this._maximizeIFrame(true);
-          }, this);
-          widget.addListener("restore", e => {
-            this._maximizeIFrame(false);
-          }, this);
-          this._maximizeIFrame(widget.hasState("maximized"));
-        }
-      });
-      this.__iFrameChanged();
-
-      iFrame.addListener("load", () => {
+      if (loadingPage && iFrame) {
+        [
+          loadingPage,
+          iFrame
+        ].forEach(widget => {
+          if (widget) {
+            widget.addListener("maximize", e => {
+              this._maximizeIFrame(true);
+            }, this);
+            widget.addListener("restore", e => {
+              this._maximizeIFrame(false);
+            }, this);
+            this._maximizeIFrame(widget.hasState("maximized"));
+          }
+        });
         this.__iFrameChanged();
-      });
+
+        iFrame.addListener("load", () => {
+          this.__iFrameChanged();
+        });
+      } else {
+        // This will keep what comes after at the bottom
+        this._iFrameLayout.add(new qx.ui.core.Spacer(), {
+          flex: 1
+        });
+      }
 
       this._addToMainView(this._iFrameLayout, {
         flex: 1
