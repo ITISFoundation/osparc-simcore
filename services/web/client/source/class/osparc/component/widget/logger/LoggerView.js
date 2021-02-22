@@ -62,8 +62,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const filterToolbar = this.__createFilterToolbar();
-    this._add(filterToolbar);
+    this.__createFilterToolbar();
 
     const table = this.__createTableLayout();
     this._add(table, {
@@ -71,10 +70,6 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     });
 
     this.__messengerColors = new Set();
-
-    this.__createInitMsg();
-
-    this.__textFilterField.addListener("changeValue", this.__applyFilters, this);
   },
 
   properties: {
@@ -121,68 +116,99 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
   },
 
   members: {
-    __currentNodeButton: null,
     __textFilterField: null,
-    __logModel: null,
+    __loggerModel: null,
     __logView: null,
     __messengerColors: null,
 
-    __createFilterToolbar: function() {
-      const toolbar = new qx.ui.toolbar.ToolBar();
-
-      const currentNodeButton = this.__currentNodeButton = new qx.ui.form.ToggleButton().set({
-        icon: "@FontAwesome5Solid/thumbtack/14",
-        toolTipText: this.tr("Show logs only from current node"),
-        appearance: "toolbar-button"
-      });
-      currentNodeButton.addListener("changeValue", e => {
-        // this.currectNodeClicked(currentNodeButton.getValue());
-        this.currectNodeClicked(e.getData());
-      }, this);
-      toolbar.add(currentNodeButton);
-
-      toolbar.add(new qx.ui.toolbar.Separator());
-      const textFilterField = this.__textFilterField = new qx.ui.form.TextField().set({
-        appearance: "toolbar-textfield",
-        liveUpdate: true,
-        placeholder: this.tr("Filter")
-      });
-      osparc.utils.Utils.setIdToWidget(textFilterField, "logsFilterField");
-      toolbar.add(textFilterField, {
-        flex: 1
-      });
-
-      const logLevelSelectBox = new qx.ui.form.SelectBox().set({
-        appearance: "toolbar-selectbox",
-        maxWidth: 80
-      });
-      let logLevelSet = false;
-      for (let i=0; i<LOG_LEVEL.length; i++) {
-        const level = Object.keys(LOG_LEVEL[i])[0];
-        const logLevel = LOG_LEVEL[i][level];
-        if (level === "debug" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
-          continue;
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "toolbar":
+          control = new qx.ui.toolbar.ToolBar();
+          this._add(control);
+          break;
+        case "pin-node": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.ToggleButton().set({
+            icon: "@FontAwesome5Solid/thumbtack/14",
+            toolTipText: this.tr("Show logs only from current node"),
+            appearance: "toolbar-button"
+          });
+          toolbar.add(control);
+          break;
         }
-        const label = qx.lang.String.firstUp(level);
-        const listItem = new qx.ui.form.ListItem(label);
-        logLevelSelectBox.add(listItem);
-        listItem.logLevel = logLevel;
-        if (!logLevelSet) {
-          this.setLogLevel(logLevel);
-          logLevelSet = true;
+        case "filter-text": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.TextField().set({
+            appearance: "toolbar-textfield",
+            liveUpdate: true,
+            placeholder: this.tr("Filter")
+          });
+          osparc.utils.Utils.setIdToWidget(control, "logsFilterField");
+          toolbar.add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "log-level": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.SelectBox().set({
+            appearance: "toolbar-selectbox",
+            maxWidth: 80
+          });
+          let logLevelSet = false;
+          for (let i=0; i<LOG_LEVEL.length; i++) {
+            const level = Object.keys(LOG_LEVEL[i])[0];
+            const logLevel = LOG_LEVEL[i][level];
+            if (level === "debug" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+              continue;
+            }
+            const label = qx.lang.String.firstUp(level);
+            const listItem = new qx.ui.form.ListItem(label);
+            control.add(listItem);
+            listItem.logLevel = logLevel;
+            if (!logLevelSet) {
+              this.setLogLevel(logLevel);
+              logLevelSet = true;
+            }
+          }
+          toolbar.add(control);
+          break;
+        }
+        case "copy-to-clipboard": {
+          const toolbar = this.getChildControl("toolbar");
+          control = new qx.ui.form.Button().set({
+            icon: "@FontAwesome5Solid/copy/14",
+            toolTipText: this.tr("Copy logs to clipboard"),
+            appearance: "toolbar-button"
+          });
+          osparc.utils.Utils.setIdToWidget(control, "copyLogsToClipboardButton");
+          toolbar.add(control);
+          break;
         }
       }
+      return control || this.base(arguments, id);
+    },
+
+    __createFilterToolbar: function() {
+      const toolbar = this.getChildControl("toolbar");
+
+      const pinNode = this.getChildControl("pin-node");
+      pinNode.addListener("changeValue", e => {
+        this.currectNodeClicked(e.getData());
+      }, this);
+
+      const textFilterField = this.__textFilterField = this.getChildControl("filter-text");
+      textFilterField.addListener("changeValue", this.__applyFilters, this);
+
+      const logLevelSelectBox = this.getChildControl("log-level");
       logLevelSelectBox.addListener("changeValue", e => {
         this.setLogLevel(e.getData().logLevel);
       }, this);
       toolbar.add(logLevelSelectBox);
 
-      const copyToClipboardButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/copy/14",
-        toolTipText: this.tr("Copy logs to clipboard"),
-        appearance: "toolbar-button"
-      });
-      osparc.utils.Utils.setIdToWidget(copyToClipboardButton, "copyLogsToClipboardButton");
+      const copyToClipboardButton = this.getChildControl("copy-to-clipboard");
       copyToClipboardButton.addListener("execute", e => {
         this.__copyLogsToClipboard();
       }, this);
@@ -192,7 +218,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __createTableLayout: function() {
-      const tableModel = this.__logModel = new osparc.component.widget.logger.LoggerTable();
+      const loggerModel = this.__loggerModel = new osparc.component.widget.logger.LoggerTable();
 
       const custom = {
         tableColumnModel : function(obj) {
@@ -201,7 +227,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       };
 
       // table
-      const table = this.__logView = new qx.ui.table.Table(tableModel, custom).set({
+      const table = this.__logView = new qx.ui.table.Table(loggerModel, custom).set({
         selectable: true,
         statusBarVisible: false,
         showCellFocusIndicator: false
@@ -222,7 +248,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __currentNodeIdChanged: function() {
-      this.__currentNodeButton.setValue(false);
+      this.getChildControl("pin-node").setValue(false);
     },
 
     currectNodeClicked: function(checked) {
@@ -246,7 +272,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
     __copyLogsToClipboard: function() {
       let logs = "";
-      this.__logModel.getRows().forEach(row => {
+      this.__loggerModel.getRows().forEach(row => {
         logs += `(${row.nodeId}) ${row.label}: ${row.msg} \n`;
       });
       osparc.utils.Utils.copyTextToClipboard(logs);
@@ -285,7 +311,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         label = node.getLabel();
         node.addListener("changeLabel", e => {
           const newLabel = e.getData();
-          this.__logModel.nodeLabelChanged(nodeId, newLabel);
+          this.__loggerModel.nodeLabelChanged(nodeId, newLabel);
           this.__updateTable();
         }, this);
       } else {
@@ -306,14 +332,14 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
         };
         msgLogs.push(msgLog);
       }
-      this.__logModel.addRows(msgLogs);
+      this.__loggerModel.addRows(msgLogs);
 
       this.__updateTable();
     },
 
     __updateTable: function() {
-      this.__logModel.reloadData();
-      const nFilteredRows = this.__logModel.getFilteredRowCount();
+      this.__loggerModel.reloadData();
+      const nFilteredRows = this.__loggerModel.getFilteredRowCount();
       this.__logView.scrollCellVisible(0, nFilteredRows);
     },
 
@@ -329,19 +355,13 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     __applyFilters: function() {
-      if (this.__logModel === null) {
+      if (this.__loggerModel === null) {
         return;
       }
 
-      this.__logModel.setFilterString(this.__textFilterField.getValue());
-      this.__logModel.setFilterLogLevel(this.getLogLevel());
-      this.__logModel.reloadData();
-    },
-
-    __createInitMsg: function() {
-      const nodeId = null;
-      const msg = "Logger initialized";
-      this.debug(nodeId, msg);
+      this.__loggerModel.setFilterString(this.__textFilterField.getValue());
+      this.__loggerModel.setFilterLogLevel(this.getLogLevel());
+      this.__loggerModel.reloadData();
     }
   }
 });
