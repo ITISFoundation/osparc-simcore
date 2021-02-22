@@ -16,7 +16,7 @@ from aiohttp.web import Application
 from async_timeout import timeout
 
 from ..config import ServiceSidecarSettings, get_settings
-from ..docker_utils import get_service_sidecars_to_monitor
+from ..docker_utils import get_service_sidecars_to_monitor, get_service_sidecar_state
 from ..exceptions import ServiceSidecarError
 from .handlers import REGISTERED_HANDLERS
 from .models import (
@@ -192,6 +192,15 @@ class ServiceSidecarsMonitor:
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
 
+            service_sidecar_settings = get_settings(self._app)
+
+            service_state, service_message = await get_service_sidecar_state(
+                # the service_name is unique and will not collide with other names
+                # it can be used in place of the service_id here, as the docker API accepts both
+                service_id=monitor_data.service_name,
+                service_sidecar_settings=service_sidecar_settings,
+            )
+
             return dict(
                 dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
                 published_port=80,  # default for the proxy
@@ -202,9 +211,8 @@ class ServiceSidecarsMonitor:
                 service_host=os.environ["HOSTNAME"],
                 service_port=monitor_data.service_port,
                 service_basepath="",  # not needed here
-                # TODO: fill these from the status
-                service_state="idle",
-                service_message="STILL PASSIVE CONFIGURATION need to pulll",
+                service_state=service_state.value,
+                service_message=service_message,
             )
 
     async def _runner(self):
