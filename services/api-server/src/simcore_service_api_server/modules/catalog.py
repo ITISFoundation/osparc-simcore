@@ -1,9 +1,8 @@
 import logging
 import urllib.parse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from operator import attrgetter
 from typing import Callable, List, Optional, Tuple
-from uuid import UUID
 
 import httpx
 from fastapi import FastAPI
