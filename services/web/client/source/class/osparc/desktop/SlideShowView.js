@@ -59,7 +59,6 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     __isNodeReady: function(node, oldCurrentNodeId) {
       const dependencies = node.getStatus().getDependencies();
       if (dependencies && dependencies.length) {
-        console.log(dependencies);
         const msg = this.tr("Do you want to run the required steps?");
         const win = new osparc.ui.window.Confirmation(msg);
         win.center();
