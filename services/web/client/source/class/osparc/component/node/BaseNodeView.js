@@ -58,6 +58,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __pane2: null,
     __title: null,
     __serviceInfoLayout: null,
+    __nodeStatusUI: null,
     __header: null,
     _mainView: null,
     __inputsView: null,
@@ -238,6 +239,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const nameVersionPart = this.__serviceInfoLayout = new qx.ui.toolbar.Part();
       header.add(nameVersionPart);
+
+      header.addSpacer();
+
+      // just a placeholder until the node is set
+      const nodeStatusUI = this.__nodeStatusUI = new qx.ui.core.Widget();
+      header.add(nodeStatusUI);
 
       header.addSpacer();
 
@@ -507,6 +514,15 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const infoButton = this.__getInfoButton();
         this.__serviceInfoLayout.add(infoButton);
       }
+
+      const nsUIidx = this.__header.indexOf(this.__nodeStatusUI);
+      if (nsUIidx > -1) {
+        this.__header.remove(this.__nodeStatusUI);
+      }
+      this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node).set({
+        backgroundColor: "material-button-background"
+      });
+      this.__header.addAt(this.__nodeStatusUI, nsUIidx);
     }
   }
 });
