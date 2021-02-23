@@ -50,21 +50,10 @@ qx.Class.define("osparc.component.widget.NodePorts", {
     node.bind("label", this, "title");
 
     node.getStatus().bind("modified", this.getChildControl("icon"), "source", {
-      converter: modified => {
-        if (modified === true) {
-          return osparc.utils.StatusUI.getIconSource("modified");
-        }
-        return osparc.utils.StatusUI.getIconSource("up-to-date");
-      },
-      onUpdate: (source, target) => {
-        const modified = source.getModified();
-        if (modified === true) {
-          console.log("modified");
-          target.setTextColor(osparc.utils.StatusUI.getColor("modified"));
-        }
-        console.log("up-to-date");
-        target.setTextColor(osparc.utils.StatusUI.getColor("up-to-date"));
-      }
+      converter: modified => osparc.utils.StatusUI.getIconSource(modified === true ? "modified" : "up-to-date")
+    }, this);
+    node.getStatus().bind("modified", this.getChildControl("icon"), "textColor", {
+      converter: modified => osparc.utils.StatusUI.getColor(modified === true ? "modified" : "up-to-date")
     }, this);
   },
 
