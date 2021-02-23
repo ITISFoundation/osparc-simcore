@@ -70,7 +70,7 @@ shell: ## runs shell inside $(APP_NAME) container
 
 .PHONY: tail
 tail: ## tails log of $(APP_NAME) container
-	docker logs --follow $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}}) 2>&1
+	docker logs --follow $(shell docker ps --filter "name=$(APP_NAME)*" --format {{.ID}}) 2>&1
 
 
 .PHONY: stats
