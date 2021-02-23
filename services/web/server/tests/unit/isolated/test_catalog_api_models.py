@@ -64,6 +64,7 @@ def test_from_catalog_to_webapi_service():
             "outFile": {
                 "displayOrder": 0,
                 "label": "File",
+                "unit": "second",
                 "description": "Chosen File",
                 "type": "data:*/*",
                 "fileToKeyMap": None,
@@ -78,13 +79,14 @@ def test_from_catalog_to_webapi_service():
     replace_service_input_outputs(webapi_service, **RESPONSE_MODEL_POLICY)
 
     # TODO: dev checks... generalize
-    assert webapi_service["outputs"]["outFile"]["unit"] is None
-    assert webapi_service["outputs"]["outFile"]["unitShort"] is None
-    assert webapi_service["outputs"]["outFile"]["unitLong"] is None
+    assert webapi_service["outputs"]["outFile"]["unit"] is "second"
+    assert webapi_service["outputs"]["outFile"]["unitShort"] is "s"
+    assert webapi_service["outputs"]["outFile"]["unitLong"] is "seconds"
 
+    # Trimmed!
     assert "defaultValue" not in webapi_service["outputs"]["outFile"]
 
-    # the rest must be the same
+    # All None are trimmed
     for field, value in catalog_service["outputs"]["outFile"].items():
-        if field != "defaultValue":
+        if field != "defaultValue" and value is not None:
             assert webapi_service["outputs"]["outFile"][field] == value
