@@ -4,10 +4,9 @@
 
 import sys
 from pathlib import Path
+from typing import Dict
 
 import pytest
-import yaml
-
 import servicelib
 from servicelib.openapi import create_openapi_specs
 
@@ -18,14 +17,14 @@ def here():
 
 
 @pytest.fixture(scope="session")
-def package_dir():
+def package_dir() -> Path:
     pdir = Path(servicelib.__file__).resolve().parent
     assert pdir.exists()
     return pdir
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here):
+def osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
     assert any(root_dir.glob("packages/service-library")), (
@@ -35,13 +34,13 @@ def osparc_simcore_root_dir(here):
 
 
 @pytest.fixture
-def petstore_spec_file(here):
+def petstore_spec_file(here) -> Path:
     filepath = here / "data/oas3/petstore.yaml"
     assert filepath.exists()
     return filepath
 
 
 @pytest.fixture
-async def petstore_specs(loop, petstore_spec_file):
+async def petstore_specs(loop, petstore_spec_file) -> Dict:
     specs = await create_openapi_specs(petstore_spec_file)
     return specs

@@ -13,41 +13,40 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Tuple, Dict
+from typing import Dict, Iterator, Tuple
+
 import dotenv
-
 import pytest
-from aiohttp import web
-from aiopg.sa import create_engine
-
 import simcore_service_storage
 import utils
+from aiohttp import web
+from aiopg.sa import create_engine
 from servicelib.application import create_safe_application
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import SIMCORE_S3_STR
-from utils import (ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER,
-                   USER_ID)
+from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER, USER_ID
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 # TODO: replace by pytest_simcore
 sys.path.append(str(current_dir / "helpers"))
 
+
 @pytest.fixture(scope="session")
-def here():
+def here() -> Path:
     return current_dir
 
 
 @pytest.fixture(scope="session")
-def package_dir(here):
+def package_dir(here) -> Path:
     dirpath = Path(simcore_service_storage.__file__).parent
     assert dirpath.exists()
     return dirpath
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here):
+def osparc_simcore_root_dir(here) -> Path:
     root_dir = here.parent.parent.parent
     assert root_dir.exists() and any(
         root_dir.glob("services")
@@ -56,7 +55,7 @@ def osparc_simcore_root_dir(here):
 
 
 @pytest.fixture(scope="session")
-def osparc_api_specs_dir(osparc_simcore_root_dir):
+def osparc_api_specs_dir(osparc_simcore_root_dir) -> Path:
     dirpath = osparc_simcore_root_dir / "api" / "specs"
     assert dirpath.exists()
     return dirpath
@@ -80,15 +79,14 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 
 
 @pytest.fixture(scope="function")
-def project_env_devel_environment(project_env_devel_dict, monkeypatch):
+def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(here):
-    """ Overrides pytest-docker fixture
-    """
+def docker_compose_file(here) -> Iterator[str]:
+    """Overrides pytest-docker fixture"""
     old = os.environ.copy()
 
     # docker-compose reads these environs
@@ -119,7 +117,9 @@ def postgres_service(docker_services, docker_ip):
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: utils.is_postgres_responsive(url), timeout=30.0, pause=0.1,
+        check=lambda: utils.is_postgres_responsive(url),
+        timeout=30.0,
+        pause=0.1,
     )
 
     postgres_service = {
@@ -138,12 +138,14 @@ def postgres_service(docker_services, docker_ip):
 
 @pytest.fixture(scope="session")
 def postgres_service_url(postgres_service, docker_services, docker_ip):
-    postgres_service_url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=USER,
-        password=PASS,
-        database=DATABASE,
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
+    postgres_service_url = (
+        "postgresql://{user}:{password}@{host}:{port}/{database}".format(
+            user=USER,
+            password=PASS,
+            database=DATABASE,
+            host=docker_ip,
+            port=docker_services.port_for("postgres", 5432),
+        )
     )
 
     return postgres_service_url
@@ -164,11 +166,16 @@ async def postgres_engine(loop, postgres_service_url):
 def minio_service(docker_services, docker_ip):
 
     # Build URL to service listening on random port.
-    url = "http://%s:%d/" % (docker_ip, docker_services.port_for("minio", 9000),)
+    url = "http://%s:%d/" % (
+        docker_ip,
+        docker_services.port_for("minio", 9000),
+    )
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: utils.is_responsive(url, 403), timeout=30.0, pause=0.1,
+        check=lambda: utils.is_responsive(url, 403),
+        timeout=30.0,
+        pause=0.1,
     )
 
     return {

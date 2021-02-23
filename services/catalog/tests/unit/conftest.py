@@ -29,7 +29,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(scope="session")
-def project_slug_dir():
+def project_slug_dir() -> Path:
     folder = current_dir.parent.parent
     assert folder.exists()
     assert any(folder.glob("src/simcore_service_catalog"))
@@ -37,7 +37,7 @@ def project_slug_dir():
 
 
 @pytest.fixture(scope="session")
-def package_dir():
+def package_dir() -> Path:
     """Notice that this might be under src (if installed as edit mode)
     or in the installation folder
     """
