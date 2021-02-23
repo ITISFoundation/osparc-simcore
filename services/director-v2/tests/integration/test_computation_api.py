@@ -284,6 +284,17 @@ def fake_workbench_computational_pipeline_details_completed(
     return completed_pipeline_details
 
 
+@pytest.fixture(scope="session")
+def fake_workbench_computational_pipeline_details_not_started(
+    fake_workbench_computational_pipeline_details: PipelineDetails,
+) -> PipelineDetails:
+    completed_pipeline_details = deepcopy(fake_workbench_computational_pipeline_details)
+    for node_state in completed_pipeline_details.node_states.values():
+        node_state.modified = True
+        node_state.current_status = RunningState.NOT_STARTED
+    return completed_pipeline_details
+
+
 # TESTS ---------------------------------------
 
 
@@ -723,6 +734,7 @@ def test_update_and_delete_computation(
     user_id: PositiveInt,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
@@ -742,7 +754,7 @@ def test_update_and_delete_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
     )
 
     # update the pipeline
@@ -761,7 +773,7 @@ def test_update_and_delete_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
     )
 
     # update the pipeline
@@ -780,7 +792,7 @@ def test_update_and_delete_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
     )
 
     # start it now
