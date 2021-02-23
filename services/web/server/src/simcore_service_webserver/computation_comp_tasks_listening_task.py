@@ -21,12 +21,9 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
-from services.web.server.src.simcore_service_webserver.projects.projects_utils import (
-    project_get_depending_nodes,
-)
-
 from .computation_api import convert_state_from_db
 from .projects import projects_api, projects_exceptions
+from .projects.projects_utils import project_get_depending_nodes
 
 log = logging.getLogger(__name__)
 
