@@ -39,12 +39,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     this.base(arguments, form);
 
     const fl = this._getLayout();
-    fl.setColumnFlex(this._gridPos.label, 0);
-    fl.setColumnAlign(this._gridPos.label, "left", "top");
-    fl.setColumnFlex(this._gridPos.info, 0);
-    fl.setColumnAlign(this._gridPos.info, "left", "middle");
-    fl.setColumnFlex(this._gridPos.ctrlField, 1);
-    fl.setColumnMinWidth(this._gridPos.ctrlField, 130);
+    fl.setColumnFlex(this.self().gridPos.label, 0);
+    fl.setColumnAlign(this.self().gridPos.label, "left", "top");
+    fl.setColumnFlex(this.self().gridPos.info, 0);
+    fl.setColumnAlign(this.self().gridPos.info, "left", "middle");
+    fl.setColumnFlex(this.self().gridPos.ctrlField, 1);
+    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 130);
   },
 
   properties: {
@@ -54,14 +54,18 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     }
   },
 
-  // eslint-disable-next-line qx-rules/no-refs-in-members
-  members: {
-    _gridPos: {
+  statics: {
+    gridPos: {
       label: 0,
       info: 1,
-      ctrlField: 2
-    },
+      ctrlField: 2,
+      unit: 3,
+      menu: 4
+    }
+  },
 
+  // eslint-disable-next-line qx-rules/no-refs-in-members
+  members: {
     _visibility: {
       hidden: "Invisible",
       readOnly: "ReadOnly",
@@ -74,8 +78,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         this._add(
           this._createHeader(title), {
             row: this._row,
-            column: this._gridPos.label,
-            colSpan: Object.keys(this._gridPos).length
+            column: this.self().gridPos.label,
+            colSpan: Object.keys(this.self().gridPos).length
           }
         );
         this._row++;
@@ -89,22 +93,34 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         label.setBuddy(item);
         this._add(label, {
           row: this._row,
-          column: this._gridPos.label
+          column: this.self().gridPos.label
         });
 
         const info = this._createInfoWHint(item.description);
         this._add(info, {
           row: this._row,
-          column: this._gridPos.info
+          column: this.self().gridPos.info
         });
 
-        const field = this._createFieldWithMenu(item);
-        field.key = item.key;
-        this._add(field, {
+        this._add(item, {
           row: this._row,
-          column: this._gridPos.ctrlField
+          column: this.self().gridPos.ctrlField
         });
-        this._row++;
+
+        const unit = this._createUnit(item.unitShort, item.unitLong);
+        this._add(unit, {
+          row: this._row,
+          column: this.self().gridPos.unit
+        });
+
+        const menu = this._createMenu(item);
+        if (menu) {
+          this._add(menu, {
+            row: this._row,
+            column: this.self().gridPos.menu
+          });
+        }
+
         this._connectVisibility(item, label);
         // store the names for translation
         if (qx.core.Environment.get("qx.dynlocale")) {
@@ -114,6 +130,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
             item: items[i]
           });
         }
+
+        this._row++;
       }
     },
 
@@ -141,22 +159,22 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return filteredData;
     },
 
-    __getMenuButton: function(field) {
+    __getMenuButton: function(portId) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
       newParamBtn.addListener("execute", () => {
-        this.__createNewParameter(field.key);
+        this.__createNewParameter(portId);
       }, this);
       menu.add(newParamBtn);
 
       const existingParamMenu = new qx.ui.menu.Menu();
-      this.__populateExistingParamsMenu(field.key, existingParamMenu);
+      this.__populateExistingParamsMenu(portId, existingParamMenu);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       study.getSweeper().addListener("changeParameters", () => {
-        this.__populateExistingParamsMenu(field.key, existingParamMenu);
+        this.__populateExistingParamsMenu(portId, existingParamMenu);
       }, this);
 
       const existingParamBtn = new qx.ui.menu.Button(this.tr("Set existing parameter"), null, null, existingParamMenu);
@@ -208,7 +226,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       for (let i=0; i<children.length; i++) {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.label && child.getBuddy().isVisible()) {
+        if (layoutProps.column === this.self().gridPos.label && child.getBuddy().isVisible()) {
           return true;
         }
       }
@@ -240,29 +258,34 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       throw new Error("Abstract method called!");
     },
 
-    _createFieldWithMenu: function(field) {
-      if (["Number", "Spinner"].includes(field.widgetType)) {
-        const fieldWMenu = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-        fieldWMenu.add(field, {
-          flex: 1
-        });
+    _createInfoWHint: function(hint) {
+      const infoWHint = new osparc.ui.hint.InfoHint(hint);
+      return infoWHint;
+    },
 
-        const menuBtn = this.__getMenuButton(field).set({
+    _createUnit: function(unitShort, unitLong) {
+      const unitLabel = this.__unitLabel = new qx.ui.basic.Label().set({
+        alignY: "bottom",
+        paddingBottom: 1,
+        value: unitShort || null,
+        toolTipText: unitLong || null,
+        visibility: unitShort ? "visible" : "excluded"
+      });
+      return unitLabel;
+    },
+
+    _createMenu: function(field) {
+      if (["Number", "Spinner"].includes(field.widgetType)) {
+        const menuBtn = this.__getMenuButton(field.key).set({
           visibility: "excluded"
         });
         osparc.data.model.Sweeper.isSweeperEnabled()
           .then(isSweeperEnabled => {
             menuBtn.setVisibility(isSweeperEnabled ? "visible" : "excluded");
           });
-        fieldWMenu.add(menuBtn);
-        return fieldWMenu;
+        return menuBtn;
       }
-      return field;
-    },
-
-    _createInfoWHint: function(hint) {
-      const infoWHint = new osparc.ui.hint.InfoHint(hint);
-      return infoWHint;
+      return null;
     },
 
     _getLayoutChild: function(portId, column) {
@@ -271,7 +294,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       for (let i=0; i<children.length; i++) {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this._gridPos.label &&
+        if (layoutProps.column === this.self().gridPos.label &&
           child.getBuddy().key === portId) {
           row = layoutProps.row;
           break;
@@ -294,15 +317,19 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     _getLabelFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this._gridPos.label);
+      return this._getLayoutChild(portId, this.self().gridPos.label);
     },
 
     _getInfoFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this._gridPos.info);
+      return this._getLayoutChild(portId, this.self().gridPos.info);
     },
 
     _getCtrlFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this._gridPos.ctrlField);
+      return this._getLayoutChild(portId, this.self().gridPos.ctrlField);
+    },
+
+    _getCtrlMenuChild: function(portId) {
+      return this._getLayoutChild(portId, this.self().gridPos.menu);
     }
   }
 });

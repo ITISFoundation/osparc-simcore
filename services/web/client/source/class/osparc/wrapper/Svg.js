@@ -61,7 +61,10 @@ qx.Class.define("osparc.wrapper.Svg", {
       });
     },
 
-    drawCurve: function(draw, controls, dashed, edgeWidth = 3, portSphereDiameter = 4, arrowSize = 4) {
+    drawCurve: function(draw, controls, dashed) {
+      const edgeWidth = 3;
+      const portSphereDiameter = 4;
+      const arrowSize = 4;
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
 
       osparc.wrapper.Svg.curateCurveControls(controls);
@@ -93,7 +96,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       return path;
     },
 
-    updateCurve: function(curve, controls, dashed) {
+    updateCurve: function(curve, controls) {
       if (curve.type === "path") {
         let mSegment = curve.getSegment(0);
         mSegment.coords = [controls[0].x, controls[0].y];
@@ -102,10 +105,6 @@ qx.Class.define("osparc.wrapper.Svg", {
         let cSegment = curve.getSegment(1);
         cSegment.coords = [controls[1].x, controls[1].y, controls[2].x, controls[2].y, controls[3].x, controls[3].y];
         curve.replaceSegment(1, cSegment);
-
-        curve.attr({
-          "stroke-dasharray": dashed ? 5 : 0
-        });
       }
     },
 
@@ -134,6 +133,12 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     removeRect: function(rect) {
       rect.remove();
+    },
+
+    updateDashes: function(curve, dashed) {
+      curve.attr({
+        "stroke-dasharray": dashed ? 5 : 0
+      });
     },
 
     updateCurveColor: function(curve, color) {
