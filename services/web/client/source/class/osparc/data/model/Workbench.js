@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     getNodes: function(recursive = false) {
       let nodes = Object.assign({}, this.__rootNodes);
-      if (recursive) {
+      if (recursive && this.__rootNodes) {
         let topLevelNodes = Object.values(this.__rootNodes);
         for (const topLevelNode of topLevelNodes) {
           let innerNodes = topLevelNode.getInnerNodes(true);
