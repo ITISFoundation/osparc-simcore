@@ -23,11 +23,16 @@ ServiceOutputKey = PropertyName
 FAKE_UNIT_TO_FORMATS = {"SECOND": ("s", "seconds"), "METER": ("m", "meters")}
 
 
+class CannotFormatUnitError(ValueError):
+    """ Either unit is not provided or is invalid or is not registered """
+
+
 def get_formatted_unit(data: dict):
-    unit = data.get("unit")
-    if unit:
-        return FAKE_UNIT_TO_FORMATS.get(unit.upper(), [None, None])
-    return [None, None]
+    try:
+        unit = data["unit"]
+        return FAKE_UNIT_TO_FORMATS[unit.upper()]
+    except KeyError as err:
+        raise CannotFormatUnitError() from err
 
 
 def json_dumps(v, *, default=None) -> str:
@@ -86,9 +91,11 @@ class ServiceInputApiOut(ServiceInput, _BaseCommonApiExtension):
     @classmethod
     def from_catalog_service(cls, service: Dict[str, Any], input_key: ServiceInputKey):
         data = service["inputs"][input_key]
-        ushort, ulong = get_formatted_unit(data)
-
-        return cls(keyId=input_key, unitLong=ulong, unitShort=ushort, **data)
+        try:
+            ushort, ulong = get_formatted_unit(data)
+            return cls(keyId=input_key, unitLong=ulong, unitShort=ushort, **data)
+        except CannotFormatUnitError:
+            return cls(keyId=input_key, **data)
 
 
 class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
@@ -116,14 +123,16 @@ class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
     ):
         data = service["outputs"][output_key]
 
-        # NOTE: prunes invalid field that might have remained in database
-        # TODO: remove from root and remove this cleanup operation
-        if "defaultValue" in data:
-            data.pop("defaultValue")
+        try:
+            # NOTE: prunes invalid field that might have remained in database
+            # TODO: remove from root and remove this cleanup operation
+            if "defaultValue" in data:
+                data.pop("defaultValue")
 
-        ushort, ulong = get_formatted_unit(data)
-
-        return cls(keyId=output_key, unitLong=ulong, unitShort=ushort, **data)
+            ushort, ulong = get_formatted_unit(data)
+            return cls(keyId=output_key, unitLong=ulong, unitShort=ushort, **data)
+        except CannotFormatUnitError:
+            return cls(keyId=output_key, **data)
 
 
 #######################

@@ -31,9 +31,9 @@ ServicesSelection = Set[Tuple[str, str]]
 # SEE https://fastapi.tiangolo.com/tutorial/response-model/#use-the-response_model_exclude_unset-parameter
 RESPONSE_MODEL_POLICY = {
     "response_model_by_alias": True,
-    "response_model_exclude_unset": False,
+    "response_model_exclude_unset": True,
     "response_model_exclude_defaults": False,
-    "response_model_exclude_none": True,
+    "response_model_exclude_none": False,
 }
 
 

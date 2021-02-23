@@ -3,6 +3,7 @@
 # pylint:disable=no-name-in-module
 
 
+import json
 from copy import deepcopy
 from pprint import pformat
 
@@ -59,7 +60,15 @@ def test_from_catalog_to_webapi_service():
             }
         ],
         "contact": "maiz@itis.swiss",
-        "inputs": {},
+        "inputs": {
+            "uno": {
+                "displayOrder": 0,
+                "label": "num",
+                "description": "Chosen int",
+                "type": "number",
+                "defaultValue": 33,
+            }
+        },
         "outputs": {
             "outFile": {
                 "displayOrder": 0,
@@ -78,15 +87,21 @@ def test_from_catalog_to_webapi_service():
     webapi_service = deepcopy(catalog_service)
     replace_service_input_outputs(webapi_service, **RESPONSE_MODEL_POLICY)
 
-    # TODO: dev checks... generalize
+    print(json.dumps(webapi_service, indent=2))
+
+    # If units are defined, I want unitShort and unitLong
     assert webapi_service["outputs"]["outFile"]["unit"] is "second"
     assert webapi_service["outputs"]["outFile"]["unitShort"] is "s"
     assert webapi_service["outputs"]["outFile"]["unitLong"] is "seconds"
+
+    # if units are NOT defined => must NOT set Long/Short units
+    fields = set(webapi_service["inputs"]["uno"].keys())
+    assert not fields.intersection({"unit", "unitShort", "unitLong"})
 
     # Trimmed!
     assert "defaultValue" not in webapi_service["outputs"]["outFile"]
 
     # All None are trimmed
     for field, value in catalog_service["outputs"]["outFile"].items():
-        if field != "defaultValue" and value is not None:
+        if field != "defaultValue":
             assert webapi_service["outputs"]["outFile"][field] == value
