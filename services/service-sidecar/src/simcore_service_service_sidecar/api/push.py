@@ -5,19 +5,13 @@ from fastapi import APIRouter, Request
 
 logger = logging.getLogger(__name__)
 
-state_router = APIRouter()
+push_router = APIRouter()
 
 
-@state_router.get("/state")
-async def get_api(request: Request) -> str:
-    logger.warning("TODO: still need to implement")
-    return ""
-
-
-@state_router.post("/state")
+@push_router.post("/push")
 async def post_api(request: Request) -> str:
     logger.warning("TODO: still need to implement")
     return ""
 
 
-__all__ = ["state_router"]
+__all__ = ["push_router"]
