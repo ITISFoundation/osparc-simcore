@@ -78,7 +78,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__addOutputPortsUIs();
       this._addSettings();
       this._addIFrame();
-      this._addLogger();
+      // this._addLogger();
 
       this._addButtons();
     },
