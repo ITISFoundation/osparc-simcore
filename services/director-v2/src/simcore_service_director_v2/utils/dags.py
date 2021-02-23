@@ -176,11 +176,11 @@ async def compute_pipeline_details(
         adjacency_list=nx.to_dict_of_lists(pipeline_dag),
         node_states={
             node_id: NodeState(
-                modified=node_data.get(kNODE_MODIFIED_STATE),
-                dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE),
+                modified=node_data.get(kNODE_MODIFIED_STATE, False),
+                dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
             )
             for node_id, node_data in complete_dag.nodes.data()
-            if node_id in pipeline_dag.nodes
+            if _is_node_computational(node_data["key"])
         },
     )
 
