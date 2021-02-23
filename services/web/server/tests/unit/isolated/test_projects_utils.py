@@ -12,7 +12,7 @@ import pytest
 from jsonschema import ValidationError
 from simcore_service_webserver.projects.projects_utils import (
     clone_project_document,
-    project_get_dependent_nodes,
+    project_get_depending_nodes,
 )
 from simcore_service_webserver.resources import resources
 
@@ -83,7 +83,7 @@ def fake_project_data(fake_data_dir: Path) -> Dict[str, Any]:
 async def test_project_get_depending_nodes(
     fake_project_data: Dict[str, Any], node_uuid: str, expected_dependencies: Set[str]
 ):
-    set_of_depending_nodes = await project_get_dependent_nodes(
+    set_of_depending_nodes = await project_get_depending_nodes(
         fake_project_data, node_uuid
     )
     assert set_of_depending_nodes == expected_dependencies
