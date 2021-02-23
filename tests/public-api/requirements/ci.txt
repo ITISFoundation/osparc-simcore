@@ -10,7 +10,7 @@
 -r _test.txt
 
 # NOTE: this has to be frozen to specific comment
-osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@is1865/enh-solvers-api
+osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@master
 
 # installs this repo's packages
 ../../packages/pytest-simcore/
