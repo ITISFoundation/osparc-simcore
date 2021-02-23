@@ -2,7 +2,6 @@
 
 """
 import logging
-from distutils.util import strtobool
 from typing import List, Optional
 
 from aiohttp import web
