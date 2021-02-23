@@ -24,7 +24,7 @@ from fastapi import UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse
 
-from ...models.schemas.files import FileMetadata
+from ...models.schemas.files import File
 from ...utils.hash import CHUNK_4KB
 
 logger = logging.getLogger(__name__)
@@ -51,9 +51,9 @@ class StorageFaker:
     """
 
     storage_dir: Path
-    files: Dict[UUID, FileMetadata]
+    files: Dict[UUID, File]
 
-    def list_meta(self) -> List[FileMetadata]:
+    def list_meta(self) -> List[File]:
         return list(self.files.values())
 
     def get_storage_path(self, metadata) -> Path:
@@ -61,15 +61,15 @@ class StorageFaker:
             self.storage_dir.mkdir(parents=True, exist_ok=True)
         return self.storage_dir / f"{metadata.checksum}"
 
-    async def save(self, uploaded_file: UploadFile) -> FileMetadata:
+    async def save(self, uploaded_file: UploadFile) -> File:
 
-        metadata = await FileMetadata.create_from_uploaded(uploaded_file)
+        metadata = await File.create_from_uploaded(uploaded_file)
         await uploaded_file.seek(0)  # NOTE: create_from_uploaded moved cursor
 
         path = self.get_storage_path(metadata)
 
         if not path.exists():
-            assert metadata.file_id not in self.files, str(metadata)  # nosec
+            assert metadata.id not in self.files, str(metadata)  # nosec
 
             # store
             logger.info("Saving %s  -> %s", metadata, path.name)
@@ -84,7 +84,7 @@ class StorageFaker:
 
         assert path.exists()  # nosec
 
-        self.files[metadata.file_id] = metadata
+        self.files[metadata.id] = metadata
         return metadata
 
 

@@ -1,70 +1,134 @@
+"""
+    NOTE: All tests in this module run against the same simcore deployed stack. Which means that the results in one
+    might affect the others. E.g. files uploaded in one test can be listed in rext
+
+"""
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
 import time
 from datetime import timedelta
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any, Dict
+from urllib.parse import quote_plus
 
 import pytest
-from osparc import ApiClient, JobsApi, SolversApi
-from osparc.models import Job, JobOutput, JobStatus, Solver
-from osparc.rest import ApiException
+from osparc import FilesApi, SolversApi
+from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
+
+
+@pytest.fixture
+def sleeper_solver(
+    solvers_api: SolversApi,
+    services_registry: Dict[str, Any],
+) -> Solver:
+    # this part is tested in test_solvers_api so it becomes a fixture here
+
+    sleeper = services_registry["sleeper_service"]
+    solver: Solver = solvers_api.get_solver_release(
+        solver_key=sleeper["name"], version=sleeper["version"]
+    )
+
+    # returns Dict[SolverInputSchema] and SolverInputSchema is a schema?
+    # solvers_api.get_solver_inputs(name = solver.name, )
+    # "inputs":
+    #  {
+    #    "input_1": {
+    #         "displayOrder": 1,
+    #         "label": "File with int number",
+    #         "description": "Pick a file containing only one integer",
+    #         "type": "data:text/plain",
+    #         },
+    #     "input_2": {
+    #         "displayOrder": 2,
+    #         "label": "Sleep interval",
+    #         "description": "Choose an amount of time to sleep",
+    #         "type": "integer",
+    #         "defaultValue": 2,
+    #         "unit": null,
+    #         },
+    #     "input_3": {
+    #         "displayOrder": 3,
+    #         "label": "Fail after sleep",
+    #         "description": "If set to true will cause service to fail after it sleeps",
+    #         "type": "boolean",
+    #         "defaultValue": false,
+    #         "unit": null,
+    #         }
+    #     },
+
+    assert isinstance(solver, Solver)
+    return solver
 
 
 @pytest.fixture()
-def jobs_api(api_client: ApiClient):
-    return JobsApi(api_client)
+def uploaded_input_file(tmpdir, files_api: FilesApi) -> File:
+
+    # produce an input file in place
+    input_path = Path(tmpdir) / "file-with-number.txt"
+    input_path.write_text("33")
+
+    # upload resource to server
+    # server returns a model of the resource: File
+    input_file: File = files_api.upload_file(file=input_path)
+    assert isinstance(input_file, File)
+    assert input_file.filename == input_path.name
+
+    return input_file
 
 
 def test_create_job(
-    solvers_api: SolversApi, jobs_api: JobsApi, services_registry: Dict[str, Any]
+    uploaded_input_file: File,
+    solvers_api: SolversApi,
+    sleeper_solver: Solver,
 ):
+    solver = sleeper_solver
 
-    sleeper = services_registry["sleeper_service"]
-
-    solver = solvers_api.get_solver_by_name_and_version(
-        solver_name=sleeper["name"], version=sleeper["version"]
+    # we know the solver has three inputs
+    #
+    job = solvers_api.create_job(
+        solver.id,
+        solver.version,
+        JobInputs({"input_1": uploaded_input_file, "input_2": 33, "input_3": False}),
     )
-    assert isinstance(solver, Solver)
-
-    # requests resources for a job with given inputs
-    job = solvers_api.create_job(solver.id, job_input=[])
     assert isinstance(job, Job)
 
     assert job.id
-    assert job == jobs_api.get_job(job.id)
+    assert job == solvers_api.get_job(solver.id, solver.version, job.id)
 
-    # gets jobs granted for user with a given solver
-    solver_jobs = solvers_api.list_jobs(solver.id)
-    assert job in solver_jobs
+    # with positional arguments (repects displayOrder ?)
+    # inputs=[input_file, 33, False] TODO: later, if time
+    job2 = solvers_api.create_job(
+        solver.id,
+        solver.version,
+        JobInputs({"input_1": uploaded_input_file, "input_2": 33, "input_3": False}),
+    )
+    assert isinstance(job2, Job)
 
-    # I only have jobs from this solver ?
-    all_jobs = jobs_api.list_all_jobs()
-    assert len(solver_jobs) <= len(all_jobs)
-    assert all(job in all_jobs for job in solver_jobs)
+    # in principle, it create separate instances even if has the same inputs
+    assert job.id != job2.id
 
 
 def test_run_job(
-    solvers_api: SolversApi, jobs_api: JobsApi, services_registry: Dict[str, Any]
+    uploaded_input_file: File,
+    files_api: FilesApi,
+    solvers_api: SolversApi,
+    sleeper_solver: Solver,
 ):
+    # get solver
+    solver = sleeper_solver
 
-    sleeper = services_registry["sleeper_service"]
-
-    solver = solvers_api.get_solver_by_name_and_version(
-        solver_name=sleeper["name"], version=sleeper["version"]
+    # create job
+    job = solvers_api.create_job(
+        solver.id,
+        solver.version,
+        JobInputs({"input_1": uploaded_input_file, "input_2": 35, "input_3": True}),
     )
-    assert isinstance(solver, Solver)
 
-    # requests resources for a job with given inputs
-    job = solvers_api.create_job(solver.id, job_input=[])
-    assert isinstance(job, Job)
-
-    assert job.id
-    assert job == jobs_api.get_job(job.id)
-
-    # let's do it!
-    status: JobStatus = jobs_api.start_job(job.id)
+    # start job
+    status: JobStatus = solvers_api.start_job(solver.id, solver.version, job.id)
     assert isinstance(status, JobStatus)
 
     assert status.state == "undefined"
@@ -76,7 +140,7 @@ def test_run_job(
     # poll stop time-stamp
     while not status.stopped_at:
         time.sleep(0.5)
-        status: JobStatus = jobs_api.inspect_job(job.id)
+        status: JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
         assert isinstance(status, JobStatus)
 
         print("Solver progress", f"{status.progress}/100", flush=True)
@@ -87,19 +151,50 @@ def test_run_job(
     assert status.submitted_at < status.started_at
     assert status.started_at < status.stopped_at
 
-    # let's get the results
-    try:
-        outputs: List[JobOutput] = jobs_api.list_job_outputs(job.id)
-        assert outputs
+    # check solver outputs
+    # FIXME: client auto-generator does not support polymorphism in responses(i.e response)
+    # https://openapi-generator.tech/docs/generators/python-legacy#schema-support-feature
+    outputs: JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
+    assert isinstance(outputs, JobOutputs)
+    assert outputs.job_id == job.id
+    assert len(outputs.results) == 2
 
-        for output in outputs:
-            print(output)
-            assert isinstance(output, JobOutput)
+    # "output_1": {
+    #   "displayOrder": 1,
+    #   "label": "File containing one random integer",
+    #   "description": "Integer is generated in range [1-9]",
+    #   "type": "data:text/plain",
+    # },
+    # "output_2": {
+    #   "displayOrder": 2,
+    #   "label": "Random sleep interval",
+    #   "description": "Interval is generated in range [1-9]",
+    #   "type": "integer",
+    #   "defaultValue": null,
+    #   "unit": null,
+    # }
+    output_file = outputs.results["output_1"]
+    number = outputs.results["output_2"]
+    assert isinstance(output_file, File)
+    assert isinstance(number, float)
 
-            assert output.job_id == job.id
-            assert output == jobs_api.get_job_output(job.id, output.name)
+    # file exists in the cloud
+    # FIXME: when director-v2 is connected instead of fake
+    # assert files_api.get_file(output_file.id) == output_file
 
-    except ApiException as err:
-        assert (
-            status.state == "failed" and err.status == 404
-        ), f"No outputs if solver run failed {err}"
+
+def test_sugar_syntax_on_solver_setup(
+    solvers_api: SolversApi,
+    sleeper_solver: Solver,
+):
+    solver = sleeper_solver
+    solver_tag = solver.id, solver.version
+
+    job = solvers_api.create_job(
+        job_inputs=JobInputs({"input_2": 33, "input_3": False}), *solver_tag
+    )
+    assert isinstance(job, Job)
+
+    assert job.runner_name == "solvers/{}/releases/{}".format(
+        quote_plus(str(solver.id)), solver.version
+    )

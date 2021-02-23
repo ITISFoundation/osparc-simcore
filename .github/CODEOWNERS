@@ -28,6 +28,7 @@ Makefile                                  @pcrespov, @sanderegg
 /services/web/client/                     @odeimaiz, @oetiker, @ignapas
 /services/web/server/                     @pcrespov
 /services/storage/                        @mguidon
+/tests/public-api/                        @pcrespov
 
 requirements/*                            @pcrespov
 tools/*                                   @pcrespov

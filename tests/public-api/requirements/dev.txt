@@ -6,6 +6,16 @@
 #   pip install -r requirements/dev.txt
 #
 
+# NOTE: This folder must be previously generated as follows
+#
+# make devenv
+# source .venv/bin/activate
+# cd services/api-server
+# make install-dev
+# make python-client
+#
+-e ../../services/api-server/client
+
 # installs base + tests requirements
 -r _test.txt
 -r _tools.txt
