@@ -30,6 +30,8 @@ class CannotFormatUnitError(ValueError):
 def get_formatted_unit(data: dict):
     try:
         unit = data["unit"]
+        if unit is None:
+            raise CannotFormatUnitError()
         return FAKE_UNIT_TO_FORMATS[unit.upper()]
     except KeyError as err:
         raise CannotFormatUnitError() from err
