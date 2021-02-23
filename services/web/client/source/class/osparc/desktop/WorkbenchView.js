@@ -85,7 +85,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     getSelectedNodeIDs: function() {
-      return this.__workbenchUI.getSelectedNodeIDs();
+      if (this.__mainPanel.getMainView() === this.__workbenchUI) {
+        return this.__workbenchUI.getSelectedNodeIDs();
+      }
+      return [this.__currentNodeId];
     },
 
     nodeSelected: function(nodeId) {
