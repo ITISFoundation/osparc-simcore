@@ -48,6 +48,15 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}- ${val}`
         });
+        node.getStatus().bind("dependencies", btn, "enabled", {
+          converter: dependencies => {
+            if (dependencies !== null) {
+              const waiting = Boolean(dependencies.length);
+              return !waiting;
+            }
+            return true;
+          }
+        });
         node.getStatus().bind("modified", btn, "label", {
           converter: modified => {
             const label = btn.getLabel();
