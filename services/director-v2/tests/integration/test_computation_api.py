@@ -519,7 +519,7 @@ def test_run_partial_computation(
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
-    expected_pipeline_details = _convert_to_pipeline_details(
+    expected_pipeline_details_after_run = _convert_to_pipeline_details(
         sleepers_project, exp_pipeline_adj_list, exp_node_states_after_run
     )
     _assert_computation_task_out_obj(
@@ -527,7 +527,7 @@ def test_run_partial_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=expected_pipeline_details,
+        exp_pipeline_details=expected_pipeline_details_after_run,
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
@@ -548,6 +548,12 @@ def test_run_partial_computation(
     )
 
     # force run it this time.
+    # the task are up-to-date but we force run them
+    expected_pipeline_details_forced = deepcopy(expected_pipeline_details_after_run)
+    for node_id, node_data in expected_pipeline_details_forced.node_states.items():
+        node_data.current_status = expected_pipeline_details.node_states[
+            node_id
+        ].current_status
     response = _create_pipeline(
         client,
         project=sleepers_project,
@@ -568,7 +574,7 @@ def test_run_partial_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details,
+        exp_pipeline_details=expected_pipeline_details_forced,
     )
 
     # now wait for the computation to finish
@@ -631,6 +637,16 @@ def test_run_computation(
     )
 
     # now force run again
+    # the task are up-to-date but we force run them
+    expected_pipeline_details_forced = deepcopy(
+        fake_workbench_computational_pipeline_details_completed
+    )
+    for node_id, node_data in expected_pipeline_details_forced.node_states.items():
+        node_data.current_status = (
+            fake_workbench_computational_pipeline_details.node_states[
+                node_id
+            ].current_status
+        )
     response = _create_pipeline(
         client,
         project=sleepers_project,
@@ -646,7 +662,7 @@ def test_run_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,  # NOTE: here the pipeline already ran so its states are different
+        exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
     )
 
     # wait for the computation to finish
