@@ -31,6 +31,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     this._add(slideShowToolbar);
   },
 
+  events: {
+    "startPartialPipeline": "qx.event.type.Data"
+  },
+
   properties: {
     study: {
       check: "osparc.data.model.Study",
@@ -63,9 +67,9 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         win.addListener("close", () => {
           if (win.getConfirmed()) {
             console.log("Run this", dependencies);
-          } else {
-            this.nodeSelected(oldCurrentNodeId);
+            this.fireDataEvent("startPartialPipeline", dependencies);
           }
+          this.nodeSelected(oldCurrentNodeId);
         }, this);
         return false;
       }

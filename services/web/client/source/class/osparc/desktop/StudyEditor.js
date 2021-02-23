@@ -34,12 +34,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideShowView();
     viewsStack.add(slideshowView);
 
+    slideshowView.addListener("startPartialPipeline", e => {
+      const partialPipeline = e.getData();
+      this.__startPipeline(partialPipeline);
+    }, this);
+
     [
       workbenchView.getStartStopButtons(),
       slideshowView.getStartStopButtons()
     ].forEach(startStopButtons => {
-      startStopButtons.addListener("startPipeline", this.__startPipeline, this);
-      startStopButtons.addListener("startPartialPipeline", () => this.__startPipeline(false), this);
+      startStopButtons.addListener("startPipeline", () => {
+        this.__startPipeline([]);
+      }, this);
+      startStopButtons.addListener("startPartialPipeline", () => {
+        const partialPipeline = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodeIDs() : this.__slideshowView.getSelectedNodeIDs();
+        this.__startPipeline(partialPipeline);
+      }, this);
       startStopButtons.addListener("stopPipeline", this.__stopPipeline, this);
     });
 
@@ -156,7 +166,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
 
     // ------------------ START/STOP PIPELINE ------------------
-    __startPipeline: function(runAll = true) {
+    __startPipeline: function(partialPipeline = []) {
       if (!osparc.data.Permissions.getInstance().canDo("study.start", true)) {
         return;
       }
@@ -167,7 +177,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       startStopButtonsSS.setRunning(true);
       this.updateStudyDocument(true)
         .then(() => {
-          this.__doStartPipeline(runAll);
+          this.__doStartPipeline(partialPipeline);
         })
         .catch(() => {
           this.__getStudyLogger().error(null, "Run failed");
@@ -176,25 +186,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    __doStartPipeline: function(runAll) {
+    __doStartPipeline: function(partialPipeline) {
       if (this.getStudy().getSweeper().hasSecondaryStudies()) {
         const secondaryStudyIds = this.getStudy().getSweeper().getSecondaryStudyIds();
         secondaryStudyIds.forEach(secondaryStudyId => {
           this.__requestStartPipeline(secondaryStudyId);
         });
-      } else if (runAll) {
-        this.__requestStartPipeline(this.getStudy().getUuid());
       } else {
-        const selectedNodeIDs = this.getPageContext() === "workbench" ? this.__workbenchView.getSelectedNodeIDs() : this.__slideshowView.getSelectedNodeIDs();
-        if (selectedNodeIDs === null || selectedNodeIDs.length === 0) {
-          this.__requestStartPipeline(this.getStudy().getUuid());
-        } else {
-          this.__requestStartPipeline(this.getStudy().getUuid(), selectedNodeIDs);
-        }
+        this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
       }
     },
 
-    __requestStartPipeline: function(studyId, selectedNodeIDs = [], forceRestart = false) {
+    __requestStartPipeline: function(studyId, partialPipeline = [], forceRestart = false) {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
@@ -216,7 +219,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              this.__requestStartPipeline(studyId, selectedNodeIDs, true);
+              this.__requestStartPipeline(studyId, partialPipeline, true);
             }
           }, this);
         } else {
@@ -227,11 +230,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }, this);
 
       req.setRequestData({
-        "subgraph": selectedNodeIDs,
+        "subgraph": partialPipeline,
         "force_restart": forceRestart
       });
       req.send();
-      if (selectedNodeIDs.length) {
+      if (partialPipeline.length) {
         this.__getStudyLogger().info(null, "Starting partial pipeline");
       } else {
         this.__getStudyLogger().info(null, "Starting pipeline");
