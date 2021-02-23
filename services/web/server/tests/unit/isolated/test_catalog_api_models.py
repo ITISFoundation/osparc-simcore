@@ -7,7 +7,7 @@ from copy import deepcopy
 from pprint import pformat
 
 import pytest
-from simcore_service_webserver.catalog_api_handlers import EXPORT_POLICY
+from simcore_service_webserver.catalog_api_handlers import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.catalog_api_models import (
     ServiceInputApiOut,
     ServiceOutputApiOut,
@@ -29,7 +29,7 @@ def test_webserver_catalog_api_models(model_cls, model_cls_examples):
         assert model_instance, f"Failed with {name}"
 
         # tests export policy w/o errors
-        data = model_instance.dict(**EXPORT_POLICY)
+        data = model_instance.dict(**RESPONSE_MODEL_POLICY)
         assert model_cls(**data) == model_instance
 
 
@@ -75,7 +75,7 @@ def test_from_catalog_to_webapi_service():
     }
 
     webapi_service = deepcopy(catalog_service)
-    replace_service_input_outputs(webapi_service, **EXPORT_POLICY)
+    replace_service_input_outputs(webapi_service, **RESPONSE_MODEL_POLICY)
 
     # TODO: dev checks... generalize
     assert webapi_service["outputs"]["outFile"]["unit"] is None

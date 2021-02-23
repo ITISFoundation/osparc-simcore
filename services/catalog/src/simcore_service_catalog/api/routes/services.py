@@ -26,8 +26,18 @@ logger = logging.getLogger(__name__)
 
 ServicesSelection = Set[Tuple[str, str]]
 
+# These are equivalent to pydantic export models but for responses
+# SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
+# SEE https://fastapi.tiangolo.com/tutorial/response-model/#use-the-response_model_exclude_unset-parameter
+RESPONSE_MODEL_POLICY = {
+    "response_model_by_alias": True,
+    "response_model_exclude_unset": False,
+    "response_model_exclude_defaults": False,
+    "response_model_exclude_none": True,
+}
 
-@router.get("", response_model=List[ServiceOut])
+
+@router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
 async def list_services(
     # pylint: disable=too-many-arguments
     user_id: PositiveInt,
@@ -150,7 +160,11 @@ async def list_services(
     return detailed_services
 
 
-@router.get("/{service_key:path}/{service_version}", response_model=ServiceOut)
+@router.get(
+    "/{service_key:path}/{service_version}",
+    response_model=ServiceOut,
+    **RESPONSE_MODEL_POLICY,
+)
 async def get_service(
     # pylint: disable=too-many-arguments
     user_id: int,
@@ -220,7 +234,11 @@ async def get_service(
     return service
 
 
-@router.patch("/{service_key:path}/{service_version}", response_model=ServiceOut)
+@router.patch(
+    "/{service_key:path}/{service_version}",
+    response_model=ServiceOut,
+    **RESPONSE_MODEL_POLICY,
+)
 async def modify_service(
     # pylint: disable=too-many-arguments
     user_id: int,

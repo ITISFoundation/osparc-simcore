@@ -36,11 +36,11 @@ VX = f"/{api_version_prefix}"
 
 
 # SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
-EXPORT_POLICY = {
+RESPONSE_MODEL_POLICY = {
     "by_alias": True,
     "exclude_unset": False,
     "exclude_defaults": False,
-    "exclude_none": False,
+    "exclude_none": True,
 }
 
 routes = RouteTableDef()
@@ -151,7 +151,7 @@ async def list_service_inputs_handler(request: Request):
 
     # format response
     enveloped: str = json_dumps(
-        {"data": [m.dict(**EXPORT_POLICY) for m in response_model]}
+        {"data": [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]}
     )
     return web.Response(text=enveloped, content_type="application/json")
 
@@ -172,7 +172,7 @@ async def get_service_input_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json_dumps({"data": response_model.dict(**EXPORT_POLICY)})
+    enveloped: str = json_dumps({"data": response_model.dict(**RESPONSE_MODEL_POLICY)})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -219,7 +219,7 @@ async def list_service_outputs_handler(request: Request):
 
     # format response
     enveloped: str = json_dumps(
-        {"data": [m.dict(**EXPORT_POLICY) for m in response_model]}
+        {"data": [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]}
     )
     return web.Response(text=enveloped, content_type="application/json")
 
@@ -242,7 +242,7 @@ async def get_service_output_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json_dumps({"data": response_model.dict(**EXPORT_POLICY)})
+    enveloped: str = json_dumps({"data": response_model.dict(**RESPONSE_MODEL_POLICY)})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -321,7 +321,7 @@ async def list_services(ctx: _RequestContext):
         ctx.app, ctx.user_id, ctx.product_name, only_key_versions=False
     )
     for service in services:
-        replace_service_input_outputs(service, **EXPORT_POLICY)
+        replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
     return services
 
 
@@ -331,7 +331,7 @@ async def get_service(
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    replace_service_input_outputs(service, **EXPORT_POLICY)
+    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
     return service
 
 
@@ -349,7 +349,7 @@ async def update_service(
         ctx.product_name,
         update_data,
     )
-    replace_service_input_outputs(service, **EXPORT_POLICY)
+    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
     return service
 
 
