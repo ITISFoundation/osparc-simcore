@@ -55,6 +55,9 @@ qx.Class.define("osparc.component.widget.NodePorts", {
     node.getStatus().bind("modified", this.getChildControl("icon"), "textColor", {
       converter: modified => osparc.utils.StatusUI.getColor(modified === true ? "modified" : "up-to-date")
     }, this);
+    node.getStatus().bind("modified", this.getChildControl("icon"), "toolTipText", {
+      converter: modified => modified === true ? this.tr("Out of date") : ""
+    }, this);
   },
 
   properties: {
