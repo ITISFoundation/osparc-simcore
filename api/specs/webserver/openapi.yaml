@@ -218,11 +218,11 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags"
   /catalog/dags/{dag_id}:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}"
-  /catalog/services:
-    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services"
-  /catalog/services/{service_key}/{service_version}:
-    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services~1{service_key}~1{service_version}"
 
+  /catalog/services:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services"
+  /catalog/services/{service_key}/{service_version}:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version"
   /catalog/services/{service_key}/{service_version}/inputs:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs"
   /catalog/services/{service_key}/{service_version}/inputs/{input_key}:
