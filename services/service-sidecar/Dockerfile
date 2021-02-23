@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION="3.8.4"
+ARG PYTHON_VERSION="3.8.6"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
@@ -59,7 +59,7 @@ RUN apt-get update &&\
 RUN python -m venv ${VIRTUAL_ENV}
 
 RUN pip install --upgrade --no-cache-dir \
-    pip~=20.2.2  \
+    pip~=21.0.1  \
     wheel \
     setuptools
 
@@ -109,8 +109,8 @@ WORKDIR /home/scu
 COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=scu:scu services/scheduler/docker services/scheduler/docker
-RUN chmod +x services/scheduler/docker/*.sh
+COPY --chown=scu:scu services/service-sidecar/docker services/service-sidecar/docker
+RUN chmod +x services/service-sidecar/docker/*.sh
 
 HEALTHCHECK --interval=30s \
     --timeout=20s \
