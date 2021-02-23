@@ -59,18 +59,6 @@ qx.Class.define("osparc.desktop.Toolbar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "breadcrumb-navigation": {
-          const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbNavigation();
-          breadcrumbNavigation.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
-          control = new qx.ui.container.Scroll();
-          control.add(breadcrumbNavigation);
-          this._add(control, {
-            flex: 1
-          });
-          break;
-        }
         case "start-stop-btns": {
           control = new osparc.desktop.StartStopButtons();
           [
