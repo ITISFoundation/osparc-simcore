@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
         }
         case "title": {
           const header = this.getChildControl("header");
-          control = new qx.ui.basic.Atom(this.getTitle());
+          control = new qx.ui.basic.Label(this.getTitle());
           header.addAt(control, 1);
           // Attach handler
           this.__attachToggler(control);
@@ -187,12 +187,12 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
       }
     },
 
-    _applyTitle: function(title) {
-      this.getChildControl("title").setLabel(title);
-    },
-
     _applyCaretSize: function(size) {
       this.getChildControl("caret").setSource(this.__getCaretId(this.getCollapsed()));
+    },
+
+    _applyTitle: function(title) {
+      this.getChildControl("title").setValue(title);
     },
 
     __getCaretId: function(collapsed) {

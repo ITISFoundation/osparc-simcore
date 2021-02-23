@@ -44,6 +44,9 @@ qx.Class.define("osparc.component.widget.NodePorts", {
 
     this.base(arguments, node.getLabel());
 
+    this.getTitleBar().set({
+      height: 30
+    });
     node.bind("label", this, "title");
   },
 
