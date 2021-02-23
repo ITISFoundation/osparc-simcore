@@ -103,7 +103,6 @@ class ServiceOut(
                         "description": "Chosen File",
                         "type": "data:*/*",
                         "fileToKeyMap": None,
-                        "defaultValue": None,
                         "widget": None,
                     }
                 },
@@ -112,6 +111,7 @@ class ServiceOut(
         }
 
 
+# TODO: prototype for next iteration
 # Items are non-detailed version of resources listed
 class ServiceItem(BaseModel):
     class Config:
