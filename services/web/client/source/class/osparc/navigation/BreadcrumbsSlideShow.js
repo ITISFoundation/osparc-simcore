@@ -69,22 +69,16 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
             return label;
           }
         });
-        node.bind("label", btn, "toolTipText");
 
         const statusUI = new osparc.ui.basic.NodeStatusUI(node);
+        const statusLabel = statusUI.getChildControl("label");
         const statusIcon = statusUI.getChildControl("icon");
         // eslint-disable-next-line no-underscore-dangle
         btn._add(statusIcon);
-        const statusLabel = statusUI.getChildControl("label");
-        statusLabel.addListener("changeValue", e => {
-          const newStatusLabel = e.getData();
-          if (newStatusLabel) {
-            btn.setToolTipText(`${node.getLabel()} - ${newStatusLabel}`);
-          }
-        }, this);
-        if (statusLabel.getValue()) {
-          btn.setToolTipText(`${node.getLabel()} - ${statusLabel.getValue()}`);
-        }
+
+        statusLabel.bind("value", btn, "toolTipText", {
+          converter: status => `${node.getLabel()} - ${status}`
+        });
       }
       return btn;
     }
