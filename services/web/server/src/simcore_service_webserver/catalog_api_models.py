@@ -115,6 +115,12 @@ class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
         cls, service: Dict[str, Any], output_key: ServiceOutputKey
     ):
         data = service["outputs"][output_key]
+
+        # NOTE: prunes invalid field that might have remained in database
+        # TODO: remove from root and remove this cleanup operation
+        if "defaultValue" in data:
+            data.pop("defaultValue")
+
         ushort, ulong = get_formatted_unit(data)
 
         return cls(keyId=output_key, unitLong=ulong, unitShort=ushort, **data)
@@ -128,7 +134,6 @@ class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
 def replace_service_input_outputs(service: Dict[str, Any], **export_options):
     """ Thin wrapper to replace i/o ports in returned service model """
     # This is a fast solution until proper models are available for the web API
-    # TODO: from models_library.api_schemas_catalog
 
     for input_key in service["inputs"]:
         new_input = ServiceInputApiOut.from_catalog_service(service, input_key)

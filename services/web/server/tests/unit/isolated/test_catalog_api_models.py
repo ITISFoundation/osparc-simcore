@@ -67,7 +67,7 @@ def test_from_catalog_to_webapi_service():
                 "description": "Chosen File",
                 "type": "data:*/*",
                 "fileToKeyMap": None,
-                "defaultValue": None,
+                "defaultValue": None,  # <<<<< --- on purpose to emulate old datasets with this invalid field in db
                 "widget": None,
             }
         },
@@ -75,9 +75,16 @@ def test_from_catalog_to_webapi_service():
     }
 
     webapi_service = deepcopy(catalog_service)
-    replace_service_input_outputs(webapi_service)
+    replace_service_input_outputs(webapi_service, **EXPORT_POLICY)
 
     # TODO: dev checks... generalize
     assert webapi_service["outputs"]["outFile"]["unit"] is None
     assert webapi_service["outputs"]["outFile"]["unitShort"] is None
     assert webapi_service["outputs"]["outFile"]["unitLong"] is None
+
+    assert "defaultValue" not in webapi_service["outputs"]["outFile"]
+
+    # the rest must be the same
+    for field, value in catalog_service["outputs"]["outFile"].items():
+        if field != "defaultValue":
+            assert webapi_service["outputs"]["outFile"][field] == value
