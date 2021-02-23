@@ -48,13 +48,13 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}- ${val}`
         });
-        node.getStatus().bind("dependencies", btn, "enabled", {
+        node.getStatus().bind("dependencies", btn.getChildControl("label"), "textColor", {
           converter: dependencies => {
-            if (dependencies !== null) {
-              const waiting = Boolean(dependencies.length);
-              return !waiting;
+            let textColor = "material-button-text";
+            if (dependencies && dependencies.length) {
+              textColor = "material-button-text-disabled";
             }
-            return true;
+            return textColor;
           }
         });
         node.getStatus().bind("modified", btn, "label", {
