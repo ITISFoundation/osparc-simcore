@@ -280,6 +280,7 @@ def fake_workbench_computational_pipeline_details_completed(
     for node_state in completed_pipeline_details.node_states.values():
         node_state.modified = False
         node_state.dependencies = set()
+        node_state.current_status = RunningState.SUCCESS
     return completed_pipeline_details
 
 
