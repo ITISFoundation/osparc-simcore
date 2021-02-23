@@ -207,13 +207,15 @@ async def get_computation(
         )
 
         # get the project task states
-        tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(project_id)
+        all_comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(
+            project_id
+        )
         # create the complete DAG graph
-        complete_dag = create_complete_dag_from_tasks(tasks)
+        complete_dag = create_complete_dag_from_tasks(all_comp_tasks)
 
         # filter the tasks by the effective pipeline
         filtered_tasks = [
-            t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
+            t for t in all_comp_tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(
             filtered_tasks, celery_client.settings.publication_timeout

@@ -332,12 +332,12 @@ def test_start_empty_computation(
 
 PartialComputationParams = namedtuple(
     "PartialComputationParams",
-    "subgraph_elements, exp_pipeline_adj_list, exp_node_states",
+    "subgraph_elements, exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
 )
 
 
 @pytest.mark.parametrize(
-    "subgraph_elements,exp_pipeline_adj_list, exp_node_states",
+    "subgraph_elements,exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
     [
         pytest.param(
             *PartialComputationParams(
@@ -347,7 +347,37 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                    }
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [1],
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                    },
+                },
+                exp_node_states_after_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                    },
                 },
             ),
             id="element 0,1",
@@ -374,6 +404,24 @@ PartialComputationParams = namedtuple(
                         "dependencies": [2, 3],
                     },
                 },
+                exp_node_states_after_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                    },
+                    2: {
+                        "modified": False,
+                        "dependencies": [],
+                    },
+                    3: {
+                        "modified": False,
+                        "dependencies": [],
+                    },
+                    4: {
+                        "modified": False,
+                        "dependencies": [],
+                    },
+                },
             ),
             id="element 1,2,4",
         ),
@@ -388,6 +436,7 @@ def test_run_partial_computation(
     subgraph_elements: List[int],
     exp_pipeline_adj_list: Dict[int, List[str]],
     exp_node_states: Dict[int, Dict[str, Any]],
+    exp_node_states_after_run: Dict[int, Dict[str, Any]],
 ):
     sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
 
@@ -448,9 +497,7 @@ def test_run_partial_computation(
         client, task_out.url, user_id, sleepers_project.uuid
     )
     expected_pipeline_details = _convert_to_pipeline_details(
-        sleepers_project,
-        exp_pipeline_adj_list,
-        {n: {"modified": False, "dependencies": []} for n in exp_node_states},
+        sleepers_project, exp_pipeline_adj_list, exp_node_states_after_run
     )
     _assert_computation_task_out_obj(
         client,
