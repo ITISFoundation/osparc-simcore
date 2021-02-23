@@ -1,4 +1,5 @@
 include ../../scripts/common.Makefile
+include ../../scripts/common-service.Makefile
 
 APP_NAME := $(notdir $(CURDIR))
 
