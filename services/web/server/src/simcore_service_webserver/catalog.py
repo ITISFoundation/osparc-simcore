@@ -98,7 +98,8 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
     for route_def in catalog_api_handlers.routes:
         route_def.kwargs["name"] = operation_id = route_def.handler.__name__
         exclude.append(operation_id)
-        app.add_routes(catalog_api_handlers.routes)
+
+    app.add_routes(catalog_api_handlers.routes)
 
     # bind the rest routes with the reverse-proxy-handler
     # FIXME: this would reroute **anything** to the catalog service!
