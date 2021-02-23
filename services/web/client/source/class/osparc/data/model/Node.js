@@ -341,15 +341,11 @@ qx.Class.define("osparc.data.model.Node", {
         if (nodeData.label) {
           this.setLabel(nodeData.label);
         }
-
         this.populateInputOutputData(nodeData);
-
         if ("progress" in nodeData) {
           this.getStatus().setProgress(nodeData.progress);
         }
-
         this.populateStates(nodeData);
-
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
         }
@@ -363,9 +359,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       this.__initLogger();
-
       if (this.isDynamic()) {
-        this.__initLoadingIPage();
         this.__initIFrame();
       }
     },
@@ -819,6 +813,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initIFrame: function() {
+      this.__initLoadingIPage();
+
       const iframe = new osparc.component.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
       iframe.addListener("restart", () => {

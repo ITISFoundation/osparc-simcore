@@ -23,9 +23,7 @@ qx.Class.define("osparc.viewer.NodeViewer", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this.__initLoadingPage();
     this.__initIFrame();
-
     this.__iFrameChanged();
 
     this.set({
@@ -85,6 +83,8 @@ qx.Class.define("osparc.viewer.NodeViewer", {
     },
 
     __initIFrame: function() {
+      this.__initLoadingPage();
+
       const iframe = new osparc.component.widget.PersistentIframe().set({
         showActionButton: false,
         showRestartButton: false
