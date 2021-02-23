@@ -66,10 +66,14 @@ qx.Class.define("osparc.desktop.SlideShowView", {
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            console.log("Run this", dependencies);
             this.fireDataEvent("startPartialPipeline", dependencies);
           }
-          this.nodeSelected(oldCurrentNodeId);
+          // bring the user back to the old node or to the first dependency
+          if (oldCurrentNodeId === this.__currentNodeId) {
+            this.nodeSelected(dependencies[0]);
+          } else {
+            this.nodeSelected(oldCurrentNodeId);
+          }
         }, this);
         return false;
       }
