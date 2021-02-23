@@ -106,6 +106,12 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
           this.__attachToggler(control);
           break;
         }
+        case "icon": {
+          const header = this.getChildControl("header");
+          control = new qx.ui.basic.Image();
+          header.addAt(control, 2);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -193,6 +199,10 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
 
     _applyTitle: function(title) {
       this.getChildControl("title").setValue(title);
+    },
+
+    _applyIcon: function(icon) {
+      this.getChildControl("icon").setSource(icon);
     },
 
     __getCaretId: function(collapsed) {

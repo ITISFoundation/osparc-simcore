@@ -48,6 +48,24 @@ qx.Class.define("osparc.component.widget.NodePorts", {
       height: 30
     });
     node.bind("label", this, "title");
+
+    node.getStatus().bind("modified", this.getChildControl("icon"), "source", {
+      converter: modified => {
+        if (modified === true) {
+          return osparc.utils.StatusUI.getIconSource("modified");
+        }
+        return osparc.utils.StatusUI.getIconSource("up-to-date");
+      },
+      onUpdate: (source, target) => {
+        const modified = source.getModified();
+        if (modified === true) {
+          console.log("modified");
+          target.setTextColor(osparc.utils.StatusUI.getColor("modified"));
+        }
+        console.log("up-to-date");
+        target.setTextColor(osparc.utils.StatusUI.getColor("up-to-date"));
+      }
+    }, this);
   },
 
   properties: {

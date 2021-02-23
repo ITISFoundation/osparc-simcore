@@ -52,6 +52,12 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "connecting":
           return "@FontAwesome5Solid/circle-notch/12";
 
+        // ports
+        case "modified":
+          return "@FontAwesome5Solid/exclamation-circle/12";
+        case "up-to-date":
+          return "@FontAwesome5Solid/check/12";
+
         default:
           return "";
       }
@@ -110,6 +116,12 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "pending":
         case "connecting":
           return "busy-orange";
+
+        // ports
+        case "modified":
+          return "busy-orange";
+        case "up-to-date":
+          return "ready-green";
 
         default:
           return "text";
