@@ -498,6 +498,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       throw new Error("Abstract method called!");
     },
 
+    __createNodeStatusUI: function(node) {
+      const nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node).set({
+        backgroundColor: "material-button-background"
+      });
+      nodeStatusUI.getChildControl("label").set({
+        font: "text-16"
+      });
+      return nodeStatusUI;
+    },
+
     /**
       * @param node {osparc.data.model.Node} node
       */
@@ -515,14 +525,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__serviceInfoLayout.add(infoButton);
       }
 
-      const nsUIidx = this.__header.indexOf(this.__nodeStatusUI);
-      if (nsUIidx > -1) {
+      const idx = this.__header.indexOf(this.__nodeStatusUI);
+      if (idx > -1) {
         this.__header.remove(this.__nodeStatusUI);
       }
-      this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node).set({
-        backgroundColor: "material-button-background"
-      });
-      this.__header.addAt(this.__nodeStatusUI, nsUIidx);
+      this.__nodeStatusUI = this.__createNodeStatusUI(node);
+      this.__header.addAt(this.__nodeStatusUI, idx);
     }
   }
 });
