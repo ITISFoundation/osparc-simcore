@@ -353,8 +353,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __startAutoSaveTimer: function() {
       let diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
-      // Save every 5 seconds
-      const interval = 5000;
+      // Save every 3 seconds
+      const interval = 3000;
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
         const newObj = this.getStudy().serialize();
