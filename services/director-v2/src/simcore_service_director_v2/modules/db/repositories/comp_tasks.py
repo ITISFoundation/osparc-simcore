@@ -199,7 +199,9 @@ class CompTasksRepository(BaseRepository):
                 **comp_task_db.dict(by_alias=True, exclude_unset=True)
             )
 
-            exclusion_rule = {"state"}
+            exclusion_rule = (
+                {"state"} if str(comp_task_db.node_id) not in published_nodes else set()
+            )
             if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
                 exclusion_rule.add("outputs")
             on_update_stmt = insert_stmt.on_conflict_do_update(
