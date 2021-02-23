@@ -161,7 +161,7 @@ async def create_computation(
             if job.start_pipeline
             else RunningState.NOT_STARTED,
             pipeline_details=await compute_pipeline_details(
-                complete_dag, computational_dag
+                complete_dag, computational_dag, comp_tasks
             ),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"
@@ -231,7 +231,9 @@ async def get_computation(
         task_out = ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag),
+            pipeline_details=await compute_pipeline_details(
+                complete_dag, pipeline_dag, all_comp_tasks
+            ),
             url=f"{request.url.remove_query_params('user_id')}",
             stop_url=f"{request.url.remove_query_params('user_id')}:stop"
             if is_pipeline_running(pipeline_state)
@@ -308,7 +310,9 @@ async def stop_computation_project(
         return ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag),
+            pipeline_details=await compute_pipeline_details(
+                complete_dag, pipeline_dag, tasks
+            ),
             url=f"{str(request.url).rstrip(':stop')}",
         )
 
