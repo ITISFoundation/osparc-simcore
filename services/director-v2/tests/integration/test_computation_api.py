@@ -347,6 +347,7 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     2: {
                         "modified": True,
@@ -365,6 +366,7 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": False,
                         "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
                     },
                     2: {
                         "modified": True,
@@ -390,36 +392,44 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                 },
                 exp_node_states_after_run={
                     1: {
                         "modified": False,
                         "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
                     },
                     2: {
                         "modified": False,
                         "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
                     },
                     3: {
                         "modified": False,
                         "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
                     },
                     4: {
                         "modified": False,
                         "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
                     },
                 },
             ),
@@ -457,6 +467,7 @@ def test_run_partial_computation(
                 dependencies={
                     workbench_node_uuids[dep_n] for dep_n in s["dependencies"]
                 },
+                currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
             )
             for n, s in exp_node_states.items()
         }

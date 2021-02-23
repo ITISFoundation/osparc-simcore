@@ -132,7 +132,7 @@ async def create_computation(
         await computation_pipelines.upsert_pipeline(
             project.uuid, computational_dag, job.start_pipeline
         )
-        await computation_tasks.upsert_tasks_from_project(
+        inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
             director_client,
             list(computational_dag.nodes()) if job.start_pipeline else [],
@@ -161,7 +161,7 @@ async def create_computation(
             if job.start_pipeline
             else RunningState.NOT_STARTED,
             pipeline_details=await compute_pipeline_details(
-                complete_dag, computational_dag, comp_tasks
+                complete_dag, computational_dag, inserted_comp_tasks
             ),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"
