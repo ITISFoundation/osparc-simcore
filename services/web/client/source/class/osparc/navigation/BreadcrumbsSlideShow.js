@@ -46,24 +46,35 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
       if (node && nodeId in slideShow) {
         const pos = slideShow[nodeId].position;
         node.bind("label", btn, "label", {
-          converter: val => (pos+1).toString() + "- " + val
+          converter: val => `${pos+1}- ${val}`
+        });
+        node.getStatus().bind("modified", btn, "label", {
+          converter: modified => {
+            const label = btn.getLabel();
+            const lastCharacter = label.slice(-1);
+            if (modified === true && lastCharacter !== "*") {
+              return label + "*"; // add star suffix
+            } else if (modified === false && lastCharacter === "*") {
+              return label.slice(0, -1); // remove star suffix
+            }
+            return label;
+          }
         });
         node.bind("label", btn, "toolTipText");
 
-        const nsUI = new osparc.ui.basic.NodeStatusUI(node);
-        const nsUIIcon = nsUI.getChildControl("icon");
-        // Hacky, aber schön
+        const statusUI = new osparc.ui.basic.NodeStatusUI(node);
+        const statusIcon = statusUI.getChildControl("icon");
         // eslint-disable-next-line no-underscore-dangle
-        btn._add(nsUIIcon);
-        const nsUILabel = nsUI.getChildControl("label");
-        nsUILabel.addListener("changeValue", e => {
-          const statusLabel = e.getData();
-          if (statusLabel) {
-            btn.setToolTipText(`${node.getLabel()} - ${statusLabel}`);
+        btn._add(statusIcon);
+        const statusLabel = statusUI.getChildControl("label");
+        statusLabel.addListener("changeValue", e => {
+          const newStatusLabel = e.getData();
+          if (newStatusLabel) {
+            btn.setToolTipText(`${node.getLabel()} - ${newStatusLabel}`);
           }
         }, this);
-        if (nsUILabel.getValue()) {
-          btn.setToolTipText(`${node.getLabel()} - ${nsUILabel.getValue()}`);
+        if (statusLabel.getValue()) {
+          btn.setToolTipText(`${node.getLabel()} - ${statusLabel.getValue()}`);
         }
       }
       return btn;
