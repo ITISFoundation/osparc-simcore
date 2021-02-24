@@ -100,6 +100,10 @@ async def _generate_tasks_list_from_project(
             requires_mpi=requires_mpi,
         )
 
+        task_state = node.state.current_status
+        if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
+            task_state = RunningState.PUBLISHED
+
         task_db = CompTaskAtDB(
             project_id=project.uuid,
             node_id=node_id,
@@ -108,11 +112,7 @@ async def _generate_tasks_list_from_project(
             outputs=node.outputs,
             image=image,
             submit=datetime.utcnow(),
-            state=(
-                RunningState.PUBLISHED
-                if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL
-                else RunningState.NOT_STARTED
-            ),
+            state=task_state,
             internal_id=internal_id,
             node_class=node_class,
         )
