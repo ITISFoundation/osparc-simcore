@@ -120,7 +120,7 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getNodeMetaData: function(key, version) {
+    getMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
         const services = osparc.utils.Services.servicesCached;
@@ -159,6 +159,21 @@ qx.Class.define("osparc.utils.Services", {
           }
         });
       });
+    },
+
+    getUniqueServicesFromWorkbench: function(workbench) {
+      const services = [];
+      Object.values(workbench).forEach(node => {
+        const service = {
+          key: node["key"],
+          version: node["version"]
+        };
+        const idx = services.findIndex(existingSrv => existingSrv.key === service.key && existingSrv.version === service.version);
+        if (idx === -1) {
+          services.push(service);
+        }
+      });
+      return services;
     }
   }
 });

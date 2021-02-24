@@ -65,7 +65,7 @@ qx.Class.define("osparc.data.model.Node", {
       status: new osparc.data.model.NodeStatus()
     });
 
-    const metaData = this.__metaData = osparc.utils.Services.getNodeMetaData(key, version);
+    const metaData = this.__metaData = osparc.utils.Services.getMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
         this.setLabel(metaData.name);

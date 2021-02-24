@@ -437,17 +437,12 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
 
     _applyQuality: function(quality) {
       if (osparc.component.metadata.Quality.isEnabled(quality)) {
-        const {
-          score,
-          maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
-          score,
-          maxScore,
           nStars: 4,
           showScore: true
         });
+        osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
         // Stop propagation of the pointer event in case the tag is inside a button that we don't want to trigger
         tsrRating.addListener("tap", e => {
           e.stopPropagation();
