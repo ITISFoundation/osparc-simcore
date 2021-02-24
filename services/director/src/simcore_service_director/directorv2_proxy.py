@@ -112,6 +112,8 @@ async def start_service_sidecar_stack(
     paths_mapping: Dict[str, Any],
     compose_spec: Optional[Dict[str, Any]],
     target_container: Optional[str],
+    request_scheme: str,
+    request_dns: str,
 ) -> Dict[str, Any]:
     director2_settings: Directorv2Settings = _get_settings(app)
 
@@ -128,6 +130,8 @@ async def start_service_sidecar_stack(
         paths_mapping=paths_mapping,
         compose_spec=compose_spec,
         target_container=target_container,
+        request_scheme=request_scheme,
+        request_dns=request_dns,
     )
 
     log.debug("starting sidecar stack with data=%s", data)

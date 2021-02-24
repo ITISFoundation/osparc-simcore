@@ -30,6 +30,8 @@ async def start_service_sidecar(
         service_tag=start_service_sidecar_model.service_tag,
         node_uuid=start_service_sidecar_model.node_uuid,
         settings=start_service_sidecar_model.settings,
+        request_scheme=start_service_sidecar_model.request_scheme,
+        request_dns=start_service_sidecar_model.request_dns,
     )
 
 

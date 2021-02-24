@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
+from yarl import URL
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -128,6 +129,11 @@ async def clone_project(
     return updated_project
 
 
+def _extract_dns_without_default_port(url: URL) -> str:
+    port = "" if url.port == 80 else f":{url.port}"
+    return f"{url.host}{port}"
+
+
 async def start_project_interactive_services(
     request: web.Request, project: Dict, user_id: str
 ) -> None:
@@ -160,6 +166,8 @@ async def start_project_interactive_services(
             service_key=service["key"],
             service_version=service["version"],
             service_uuid=service_uuid,
+            request_dns=_extract_dns_without_default_port(request.url),
+            request_scheme=request.url.scheme,
         )
         for service_uuid, service in project_needed_services.items()
     ]
@@ -243,7 +251,14 @@ async def add_project_node(
     node_uuid = service_id if service_id else str(uuid4())
     if _is_node_dynamic(service_key):
         await director_api.start_service(
-            request.app, user_id, project_uuid, service_key, service_version, node_uuid
+            request.app,
+            user_id,
+            project_uuid,
+            service_key,
+            service_version,
+            node_uuid,
+            _extract_dns_without_default_port(request.url),
+            request.url.scheme,
         )
     return node_uuid
 

@@ -58,6 +58,8 @@ async def start_service(
     service_key: str,
     service_version: str,
     service_uuid: str,
+    request_dns: str,
+    request_scheme: str,
 ) -> Optional[Dict]:
     session, api_endpoint = _get_director_client(app)
 
@@ -70,8 +72,13 @@ async def start_service(
         "service_basepath": f"/x/{service_uuid}",
     }
 
+    headers = {
+        "X-Service-Sidecar-Request-DNS": request_dns,
+        "X-Service-Sidecar-Request-Scheme": request_scheme,
+    }
+
     url = (api_endpoint / "running_interactive_services").with_query(params)
-    async with session.post(url, ssl=False) as resp:
+    async with session.post(url, ssl=False, headers=headers) as resp:
         payload = await resp.json()
         return payload["data"]
 

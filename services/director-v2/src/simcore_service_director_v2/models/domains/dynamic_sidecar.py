@@ -27,6 +27,13 @@ class StartServiceSidecarModel(BaseModel):
     service_key: str
     service_tag: str
     node_uuid: str
+
+    # these come from the webserver via the director
+    request_scheme: str = Field(
+        ..., description="Used for the proxy configuration either http or https"
+    )
+    request_dns: str = Field(..., description="Used for the proxy configuration")
+
     settings: List[Dict[str, Any]] = Field(
         ...,
         description="settings for the services define by the service maintainer in the labels",
@@ -56,6 +63,16 @@ class StartServiceSidecarModel(BaseModel):
         cls, v, values, **kwargs
     ):  # pylint: disable=unused-argument
         if values.get("compose_spec", None) is not None and v is None:
+            raise ValueError(
+                "target_container is required when compose_spec is defined. "
+                f"The following compose spec was defined: {values['compose_spec']}"
+            )
+        return v
+
+    @validator("request_scheme")
+    @classmethod
+    def validate_protocol(cls, v, values, **kwargs):
+        if v not in {"http", "https"}:
             raise ValueError(
                 "target_container is required when compose_spec is defined. "
                 f"The following compose spec was defined: {values['compose_spec']}"

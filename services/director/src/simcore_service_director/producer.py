@@ -720,6 +720,8 @@ async def _start_docker_service_with_dynamic_service(
     node_uuid: str,
     service: Dict[str, Any],
     image_labels: Dict[str, str],
+    request_scheme: str,
+    request_dns: str,
 ):
     """
     Assembles and passes on all the required information for the service
@@ -761,6 +763,8 @@ async def _start_docker_service_with_dynamic_service(
         paths_mapping=paths_mapping,
         compose_spec=compose_spec,
         target_container=target_container,
+        request_scheme=request_scheme,
+        request_dns=request_dns,
     )
 
     return await _get_node_details(
@@ -776,6 +780,8 @@ async def _create_node(
     list_of_services: List[Dict],
     node_uuid: str,
     node_base_path: str,
+    request_scheme: str,
+    request_dns: str,
 ) -> List[Dict]:  # pylint: disable=R0913, R0915
     log.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
@@ -819,6 +825,8 @@ async def _create_node(
                 node_uuid=node_uuid,
                 service=service,
                 image_labels=image_labels,
+                request_scheme=request_scheme,
+                request_dns=request_dns,
             )
         else:
             service_meta_data = await _start_docker_service(
@@ -871,6 +879,8 @@ async def start_service(
     service_tag: str,
     node_uuid: str,
     node_base_path: str,
+    request_dns: str,
+    request_scheme: str,
 ) -> Dict:
     # pylint: disable=C0103
     log.debug(
@@ -901,6 +911,8 @@ async def start_service(
             list_of_services_to_start,
             node_uuid,
             node_base_path,
+            request_scheme,
+            request_dns,
         )
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
