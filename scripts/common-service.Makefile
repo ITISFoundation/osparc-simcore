@@ -62,15 +62,20 @@ build build-nc build-devel build-devel-nc build-cache build-cache-nc: ## builds 
 	# building docker image for ${APP_NAME} ...
 	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
 
+
 .PHONY: shell
-shell: ## runs shell in production container
-	# runs ${APP_NAME}:production shell
-	docker run -it --name="${APP_NAME}_${APP_VERSION}_shell" local/${APP_NAME}:production /bin/bash
+shell: ## runs shell inside $(APP_NAME) container
+	docker exec -it $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}}) /bin/bash
 
 
 .PHONY: tail
 tail: ## tails log of $(APP_NAME) container
-	docker logs --follow $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}}) 2>&1
+	docker logs --follow $(shell docker ps --filter "name=$(APP_NAME)*" --format {{.ID}}) 2>&1
+
+
+.PHONY: stats
+stats: ## display live stream of $(APP_NAME) container resource usage statistics
+	docker stats $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}})
 
 
 .PHONY: info

@@ -75,7 +75,7 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch):
 
 
 @pytest.fixture(scope="session")
-def project_slug_dir():
+def project_slug_dir() -> Path:
     folder = current_dir.parent.parent
     assert folder.exists()
     assert any(folder.glob("src/simcore_service_api_server"))
@@ -83,7 +83,7 @@ def project_slug_dir():
 
 
 @pytest.fixture(scope="session")
-def package_dir():
+def package_dir() -> Path:
     """Notice that this might be under src (if installed as edit mode)
     or in the installation folder
     """

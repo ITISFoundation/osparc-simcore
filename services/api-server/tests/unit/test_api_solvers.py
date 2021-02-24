@@ -44,6 +44,7 @@ def mocked_catalog_service_api(app: FastAPI):
         respx_mock.get(
             "/v0/services?user_id=1&details=false", name="list_services"
         ).mock(
+            # WARNING: this seems to be an old version of httpx that has no json parameter!!
             return_value=Response(
                 status_code=200,
                 json=[
@@ -103,9 +104,9 @@ def test_list_solvers(sync_client: TestClient, mocked_catalog_service_api, mocke
         # assert Solver(**resp1.json()) == solver
 
         # get_solver_latest_version_by_name
-        resp2 = cli.get(f"/v0/solvers/{solver.name}/latest")
+        resp2 = cli.get(f"/v0/solvers/{solver.id}/latest")
 
         assert resp2.status_code == status.HTTP_501_NOT_IMPLEMENTED
-        assert f"GET latest {solver.name}" in resp2.json()["errors"][0]
+        assert f"GET latest {solver.id}" in resp2.json()["errors"][0]
 
         # assert Solver(**resp2.json()) == Solver(**resp3.json())

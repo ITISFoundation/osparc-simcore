@@ -1,9 +1,8 @@
 import logging
 import urllib.parse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from operator import attrgetter
-from typing import Callable, Dict, List, Optional, Tuple
-from uuid import UUID
+from typing import Callable, List, Optional, Tuple
 
 import httpx
 from fastapi import FastAPI
@@ -11,7 +10,7 @@ from models_library.services import ServiceDockerData, ServiceType
 from pydantic import EmailStr, Extra, ValidationError
 
 from ..core.settings import CatalogSettings
-from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverName, VersionStr
+from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
 from ..utils.client_base import BaseServiceClientApi
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
@@ -43,10 +42,10 @@ def setup(app: FastAPI, settings: CatalogSettings) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
-SolverNameVersionPair = Tuple[SolverName, str]
+SolverNameVersionPair = Tuple[SolverKeyId, str]
 
 
-class TruncatedServiceOut(ServiceDockerData):
+class TruncatedCatalogServiceOut(ServiceDockerData):
     """
     This model is used to truncate the response of the catalog, whose schema is
     in services/catalog/src/simcore_service_catalog/models/schemas/services.py::ServiceOut
@@ -73,12 +72,11 @@ class TruncatedServiceOut(ServiceDockerData):
         )
 
         return Solver(
-            name=data.pop("key"),
+            id=data.pop("key"),
             version=data.pop("version"),
             title=data.pop("name"),
             maintainer=data.pop("owner") or data.pop("contact"),
             url=None,
-            id=None,  # auto-generated
             **data,
         )
 
@@ -102,8 +100,6 @@ class CatalogApi(BaseServiceClientApi):
     It abstracts request to the catalog API service
     """
 
-    ids_cache_map: Dict[UUID, SolverNameVersionPair] = field(default_factory=dict)
-
     async def list_solvers(
         self,
         user_id: int,
@@ -111,7 +107,7 @@ class CatalogApi(BaseServiceClientApi):
     ) -> List[Solver]:
         resp = await self.client.get(
             "/services",
-            params={"user_id": user_id, "details": False},
+            params={"user_id": user_id, "details": True},
             headers={"x-simcore-products-name": "osparc"},
         )
         resp.raise_for_status()
@@ -120,7 +116,7 @@ class CatalogApi(BaseServiceClientApi):
         solvers = []
         for data in resp.json():
             try:
-                service = TruncatedServiceOut.parse_obj(data)
+                service = TruncatedCatalogServiceOut.parse_obj(data)
                 if service.service_type == ServiceType.COMPUTATIONAL:
                     solver = service.to_solver()
                     if predicate is None or predicate(solver):
@@ -138,7 +134,7 @@ class CatalogApi(BaseServiceClientApi):
         return solvers
 
     async def get_solver(
-        self, user_id: int, name: SolverName, version: VersionStr
+        self, user_id: int, name: SolverKeyId, version: VersionStr
     ) -> Solver:
 
         assert version != LATEST_VERSION  # nosec
@@ -153,19 +149,36 @@ class CatalogApi(BaseServiceClientApi):
         )
         resp.raise_for_status()
 
-        service = TruncatedServiceOut.parse_obj(resp.json())
+        service = TruncatedCatalogServiceOut.parse_obj(resp.json())
         assert (
             service.service_type == ServiceType.COMPUTATIONAL
         ), "Expected by SolverName regex"  # nosec
 
         return service.to_solver()
 
-    async def get_latest_solver(self, user_id: int, name: SolverName) -> Solver:
+    async def list_latest_releases(self, user_id: int) -> List[Solver]:
+        solvers: List[Solver] = await self.list_solvers(user_id)
+
+        latest_releases = {}
+        for solver in solvers:
+            latest = latest_releases.setdefault(solver.id, solver)
+            if latest.pep404_version < solver.pep404_version:
+                latest_releases[solver.id] = solver
+
+        return list(latest_releases.values())
+
+    async def list_solver_releases(
+        self, user_id: int, solver_key: SolverKeyId
+    ) -> List[Solver]:
         def _this_solver(solver: Solver) -> bool:
-            return solver.name == name
+            return solver.id == solver_key
 
-        solvers = await self.list_solvers(user_id, _this_solver)
+        releases: List[Solver] = await self.list_solvers(user_id, _this_solver)
+        return releases
 
-        # raise IndexError if None
-        latest = sorted(solvers, key=attrgetter("pep404_version"))[-1]
+    async def get_latest_release(self, user_id: int, solver_key: SolverKeyId) -> Solver:
+        releases = await self.list_solver_releases(user_id, solver_key)
+
+        # raises IndexError if None
+        latest = sorted(releases, key=attrgetter("pep404_version"))[-1]
         return latest

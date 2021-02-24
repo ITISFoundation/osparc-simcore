@@ -5,7 +5,6 @@ from typing import List, Optional
 
 import attr
 from aiohttp import web
-
 from servicelib.incidents import LimitedOrderedStack, SlowCallback
 
 log = logging.getLogger(__name__)
@@ -34,8 +33,8 @@ class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
 @attr.s(auto_attribs=True)
 class DelayWindowProbe:
     """
-        Collects a window of delay samples that satisfy
-        some conditions (see observe code)
+    Collects a window of delay samples that satisfy
+    some conditions (see observe code)
     """
 
     min_threshold_secs: int = 0.3
@@ -56,27 +55,33 @@ class DelayWindowProbe:
         return 0
 
 
+logged_once = False
+
+
 def is_sensing_enabled(app: web.Application):
-    """ Diagnostics will not activate sensing inmediatly but after some
-        time since the app started
+    """Diagnostics will not activate sensing inmediatly but after some
+    time since the app started
     """
+    global logged_once  # pylint: disable=global-statement
+
     time_elapsed_since_setup = time.time() - app[kPLUGIN_START_TIME]
     enabled = time_elapsed_since_setup > app[kSTART_SENSING_DELAY_SECS]
-    if enabled:
+    if enabled and not logged_once:
         log.debug(
             "Diagnostics starts sensing after waiting %3.2f secs [> %3.2f secs] since submodule init",
             time_elapsed_since_setup,
             app[kSTART_SENSING_DELAY_SECS],
         )
+        logged_once = True
     return enabled
 
 
 def assert_healthy_app(app: web.Application) -> None:
-    """ Diagnostics function that determins whether
-        current application is healthy based on incidents
-        occured up to now
+    """Diagnostics function that determins whether
+    current application is healthy based on incidents
+    occured up to now
 
-        raises DiagnosticError if any incient detected
+    raises DiagnosticError if any incient detected
     """
     # CRITERIA 1:
     incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
@@ -98,7 +103,8 @@ def assert_healthy_app(app: web.Application) -> None:
 
         if max_delay > max_delay_allowed:
             msg = "{:3.1f} secs delay [at most {:3.1f} secs allowed]".format(
-                max_delay, max_delay_allowed,
+                max_delay,
+                max_delay_allowed,
             )
             raise HealthError(msg)
 
