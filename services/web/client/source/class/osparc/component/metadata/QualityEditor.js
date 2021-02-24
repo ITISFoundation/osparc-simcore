@@ -414,37 +414,30 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         });
 
         const targetRule = copyTSRTarget[ruleKey];
-        const targerRulelayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-          alignY: "middle"
-        }));
-        const updateTargetLevel = value => {
-          targerRulelayout.removeAll();
-          const ruleRating = new osparc.ui.basic.StarsRating();
-          ruleRating.set({
-            maxScore: 4,
-            nStars: 4,
-            score: value,
-            marginTop: 5,
-            mode: "edit"
-          });
-          ruleRating.addListener("changeScore", e => {
-            const newMaxScore = e.getData();
-            copyTSRTarget[ruleKey].level = newMaxScore;
-            copyTSRCurrent[ruleKey].level = Math.min(newMaxScore, copyTSRCurrent[ruleKey].level);
-            updateTargetLevel(newMaxScore);
-            updateCurrentLevel(copyTSRCurrent[ruleKey].level);
-            updateTotalTSR();
-          }, this);
-          const confLevel = osparc.component.metadata.Quality.findConformanceLevel(value);
-          const hint = confLevel.title + "<br>" + confLevel.description;
-          const ruleRatingWHint = new osparc.component.form.FieldWHint(null, hint, ruleRating).set({
-            hintPosition: "left"
-          });
-          targerRulelayout.add(ruleRatingWHint);
-        };
-        updateTargetLevel(targetRule.level);
-
-        this.__tsrGrid.add(targerRulelayout, {
+        const targetsBox = new qx.ui.form.SelectBox();
+        const conformanceLevels = osparc.component.metadata.Quality.getConformanceLevel();
+        Object.values(conformanceLevels).forEach(conformanceLevel => {
+          let text = `${conformanceLevel.level} - `;
+          if (conformanceLevel.level === 0) {
+            text += "Not applicable";
+          } else {
+            text += conformanceLevel.title;
+          }
+          const targetItem = new qx.ui.form.ListItem(text);
+          targetItem.level = conformanceLevel.level;
+          targetsBox.add(targetItem);
+          if (targetRule.level === conformanceLevel.level) {
+            targetsBox.setSelection([targetItem]);
+          }
+        });
+        targetsBox.addListener("changeSelection", e => {
+          const newMaxScore = e.getData()[0].level;
+          copyTSRTarget[ruleKey].level = newMaxScore;
+          copyTSRCurrent[ruleKey].level = Math.min(newMaxScore, copyTSRCurrent[ruleKey].level);
+          updateCurrentLevel(copyTSRCurrent[ruleKey].level);
+          updateTotalTSR();
+        }, this);
+        this.__tsrGrid.add(targetsBox, {
           row,
           column: this.__tsrGridPos.clTarget
         });
