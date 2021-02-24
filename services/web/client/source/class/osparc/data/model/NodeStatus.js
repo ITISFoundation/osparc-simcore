@@ -81,12 +81,14 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     __applyDependencies: function() {
-      this.setModified(this.hasDependencies());
+      this.__applyModified(this.hasDependencies());
     },
 
     __applyModified: function(modified) {
-      if (modified === false) {
-        this.setModified(this.hasDependencies());
+      if (this.getHasOutputs()) {
+        this.setModified(modified || this.hasDependencies());
+      } else {
+        this.setModified(null);
       }
     }
   }
