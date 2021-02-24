@@ -529,9 +529,7 @@ async def add_project_states_for_user(
                 if prj_node is None:
                     continue
                 node_state_dict = json.loads(
-                    node_state.json(
-                        by_alias=True, exclude_unset=True, exclude={"current_status"}
-                    )
+                    node_state.json(by_alias=True, exclude_unset=True)
                 )
                 prj_node.setdefault("state", {}).update(node_state_dict)
 

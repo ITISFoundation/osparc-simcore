@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Extra, Field, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
 
-from ...utils.db import DB_TO_RUNNING_STATE
+from ...utils.db import DB_TO_RUNNING_STATE, RUNNING_STATE_TO_DB
 
 
 class Image(BaseModel):
@@ -54,7 +54,19 @@ class CompTaskAtDB(BaseModel):
     def convert_state_if_needed(cls, v):
         if isinstance(v, StateType):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
+        if isinstance(v, str):
+            try:
+                state_type = StateType(v)
+                return RunningState(DB_TO_RUNNING_STATE[state_type])
+            except ValueError:
+                pass
         return v
+
+    def to_db_model(self, **exclusion_rules) -> Dict[str, Any]:
+        comp_task_dict = self.dict(by_alias=True, exclude_unset=True, **exclusion_rules)
+        if "state" in comp_task_dict:
+            comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
+        return comp_task_dict
 
     class Config:
         extra = Extra.forbid
