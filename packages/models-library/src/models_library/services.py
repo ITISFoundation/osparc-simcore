@@ -363,10 +363,13 @@ class ServiceAccessRights(BaseModel):
 
 
 class ServiceMetaData(ServiceCommonData):
-    # for a partial update all members must be Optional
+    # Overrides all fields of ServiceCommonData:
+    #    - for a partial update all members must be Optional
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
+
+    # user-defined metatada
     classifiers: Optional[List[str]]
     quality: Dict[str, Any] = {}
 

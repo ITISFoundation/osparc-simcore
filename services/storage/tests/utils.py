@@ -7,7 +7,6 @@ import pandas as pd
 import pytest
 import requests
 import sqlalchemy as sa
-
 from simcore_service_storage.models import (
     FileMetaData,
     file_meta_data,
@@ -31,11 +30,11 @@ BUCKET_NAME = "simcore-testing-bucket"
 USER_ID = "0"
 
 
-def current_dir():
+def current_dir() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-def data_dir():
+def data_dir() -> Path:
     return current_dir() / Path("data")
 
 
@@ -50,7 +49,7 @@ def has_datcore_tokens() -> bool:
     return True
 
 
-def is_responsive(url, code=200):
+def is_responsive(url, code=200) -> bool:
     """Check if something responds to ``url`` syncronously"""
     try:
         response = requests.get(url)
@@ -62,7 +61,7 @@ def is_responsive(url, code=200):
     return False
 
 
-def is_postgres_responsive(url):
+def is_postgres_responsive(url) -> bool:
     """Check if something responds to ``url`` """
     try:
         engine = sa.create_engine(url)
@@ -126,11 +125,24 @@ def create_full_tables(url):
 
     meta.drop_all(
         bind=engine,
-        tables=[user_to_groups, file_meta_data, projects, users, groups,],
+        tables=[
+            user_to_groups,
+            file_meta_data,
+            projects,
+            users,
+            groups,
+        ],
         checkfirst=True,
     )
     meta.create_all(
-        bind=engine, tables=[file_meta_data, projects, users, groups, user_to_groups,],
+        bind=engine,
+        tables=[
+            file_meta_data,
+            projects,
+            users,
+            groups,
+            user_to_groups,
+        ],
     )
 
     for t in ["users", "file_meta_data", "projects"]:
@@ -176,6 +188,13 @@ def drop_all_tables(url):
     engine = sa.create_engine(url)
 
     meta.drop_all(
-        bind=engine, tables=[file_meta_data, projects, users, groups, user_to_groups,],
+        bind=engine,
+        tables=[
+            file_meta_data,
+            projects,
+            users,
+            groups,
+            user_to_groups,
+        ],
     )
     engine.dispose()

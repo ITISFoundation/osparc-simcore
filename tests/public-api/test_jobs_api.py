@@ -152,8 +152,6 @@ def test_run_job(
     assert status.started_at < status.stopped_at
 
     # check solver outputs
-    # FIXME: client auto-generator does not support polymorphism in responses(i.e response)
-    # https://openapi-generator.tech/docs/generators/python-legacy#schema-support-feature
     outputs: JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
     assert isinstance(outputs, JobOutputs)
     assert outputs.job_id == job.id
@@ -175,8 +173,13 @@ def test_run_job(
     # }
     output_file = outputs.results["output_1"]
     number = outputs.results["output_2"]
-    assert isinstance(output_file, File)
-    assert isinstance(number, float)
+
+    if status.state == "success":
+        assert isinstance(output_file, File)
+        assert isinstance(number, float)
+    else:
+        # one of them is not finished
+        assert output_file is None or number is None
 
     # file exists in the cloud
     # FIXME: when director-v2 is connected instead of fake
