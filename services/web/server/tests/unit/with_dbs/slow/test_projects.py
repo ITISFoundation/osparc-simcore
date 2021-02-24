@@ -6,11 +6,12 @@ import json
 import time
 import unittest.mock as mock
 import uuid as uuidlib
-from asyncio import Future, sleep
+from asyncio import Future
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from unittest.mock import call
 
+import aiohttp
 import pytest
 import socketio
 from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
@@ -209,7 +210,9 @@ async def project_db_cleaner(client):
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch):
+async def catalog_subsystem_mock(
+    monkeypatch,
+) -> Callable[[Optional[Union[List[Dict], Dict]]], None]:
     services_in_project = []
 
     def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
@@ -520,13 +523,13 @@ async def _delete_project(client, project: Dict, expected: web.Response) -> None
     ],
 )
 async def test_list_projects(
-    client,
-    logged_user,
-    user_project,
-    template_project,
-    expected,
-    catalog_subsystem_mock,
-    director_v2_service_mock,
+    client: aiohttp.test_utils.TestClient,
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    template_project: Dict[str, Any],
+    expected: aiohttp.web.HTTPException,
+    catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
+    director_v2_service_mock: aioresponses,
 ):
     catalog_subsystem_mock([user_project, template_project])
     data = await _list_projects(client, expected)

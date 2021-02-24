@@ -132,7 +132,7 @@ async def create_computation(
         await computation_pipelines.upsert_pipeline(
             project.uuid, computational_dag, job.start_pipeline
         )
-        await computation_tasks.upsert_tasks_from_project(
+        inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
             director_client,
             list(computational_dag.nodes()) if job.start_pipeline else [],
@@ -161,7 +161,7 @@ async def create_computation(
             if job.start_pipeline
             else RunningState.NOT_STARTED,
             pipeline_details=await compute_pipeline_details(
-                complete_dag, computational_dag
+                complete_dag, computational_dag, inserted_comp_tasks
             ),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"
@@ -207,13 +207,15 @@ async def get_computation(
         )
 
         # get the project task states
-        tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(project_id)
+        all_comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(
+            project_id
+        )
         # create the complete DAG graph
-        complete_dag = create_complete_dag_from_tasks(tasks)
+        complete_dag = create_complete_dag_from_tasks(all_comp_tasks)
 
         # filter the tasks by the effective pipeline
         filtered_tasks = [
-            t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
+            t for t in all_comp_tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(
             filtered_tasks, celery_client.settings.publication_timeout
@@ -229,7 +231,9 @@ async def get_computation(
         task_out = ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag),
+            pipeline_details=await compute_pipeline_details(
+                complete_dag, pipeline_dag, all_comp_tasks
+            ),
             url=f"{request.url.remove_query_params('user_id')}",
             stop_url=f"{request.url.remove_query_params('user_id')}:stop"
             if is_pipeline_running(pipeline_state)
@@ -306,7 +310,9 @@ async def stop_computation_project(
         return ComputationTaskOut(
             id=project_id,
             state=pipeline_state,
-            pipeline_details=await compute_pipeline_details(complete_dag, pipeline_dag),
+            pipeline_details=await compute_pipeline_details(
+                complete_dag, pipeline_dag, tasks
+            ),
             url=f"{str(request.url).rstrip(':stop')}",
         )
 

@@ -280,6 +280,18 @@ def fake_workbench_computational_pipeline_details_completed(
     for node_state in completed_pipeline_details.node_states.values():
         node_state.modified = False
         node_state.dependencies = set()
+        node_state.current_status = RunningState.SUCCESS
+    return completed_pipeline_details
+
+
+@pytest.fixture(scope="session")
+def fake_workbench_computational_pipeline_details_not_started(
+    fake_workbench_computational_pipeline_details: PipelineDetails,
+) -> PipelineDetails:
+    completed_pipeline_details = deepcopy(fake_workbench_computational_pipeline_details)
+    for node_state in completed_pipeline_details.node_states.values():
+        node_state.modified = True
+        node_state.current_status = RunningState.NOT_STARTED
     return completed_pipeline_details
 
 
@@ -332,12 +344,12 @@ def test_start_empty_computation(
 
 PartialComputationParams = namedtuple(
     "PartialComputationParams",
-    "subgraph_elements, exp_pipeline_adj_list, exp_node_states",
+    "subgraph_elements, exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
 )
 
 
 @pytest.mark.parametrize(
-    "subgraph_elements,exp_pipeline_adj_list, exp_node_states",
+    "subgraph_elements,exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
     [
         pytest.param(
             *PartialComputationParams(
@@ -347,19 +359,7 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                    }
-                },
-            ),
-            id="element 0,1",
-        ),
-        pytest.param(
-            *PartialComputationParams(
-                subgraph_elements=[1, 2, 4],
-                exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
-                exp_node_states={
-                    1: {
-                        "modified": True,
-                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     2: {
                         "modified": True,
@@ -372,6 +372,76 @@ PartialComputationParams = namedtuple(
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
+                    },
+                },
+                exp_node_states_after_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                    },
+                },
+            ),
+            id="element 0,1",
+        ),
+        pytest.param(
+            *PartialComputationParams(
+                subgraph_elements=[1, 2, 4],
+                exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
+                exp_node_states={
+                    1: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [1],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                },
+                exp_node_states_after_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    2: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    3: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    4: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
                     },
                 },
             ),
@@ -388,6 +458,7 @@ def test_run_partial_computation(
     subgraph_elements: List[int],
     exp_pipeline_adj_list: Dict[int, List[str]],
     exp_node_states: Dict[int, Dict[str, Any]],
+    exp_node_states_after_run: Dict[int, Dict[str, Any]],
 ):
     sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
 
@@ -408,6 +479,7 @@ def test_run_partial_computation(
                 dependencies={
                     workbench_node_uuids[dep_n] for dep_n in s["dependencies"]
                 },
+                currentStatus=s.get("currentStatus", RunningState.NOT_STARTED),
             )
             for n, s in exp_node_states.items()
         }
@@ -447,17 +519,15 @@ def test_run_partial_computation(
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
-    expected_pipeline_details = _convert_to_pipeline_details(
-        sleepers_project,
-        exp_pipeline_adj_list,
-        {n: {"modified": False, "dependencies": []} for n in exp_node_states},
+    expected_pipeline_details_after_run = _convert_to_pipeline_details(
+        sleepers_project, exp_pipeline_adj_list, exp_node_states_after_run
     )
     _assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
-        exp_pipeline_details=expected_pipeline_details,
+        exp_pipeline_details=expected_pipeline_details_after_run,
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
@@ -478,6 +548,12 @@ def test_run_partial_computation(
     )
 
     # force run it this time.
+    # the task are up-to-date but we force run them
+    expected_pipeline_details_forced = deepcopy(expected_pipeline_details_after_run)
+    for node_id, node_data in expected_pipeline_details_forced.node_states.items():
+        node_data.current_status = expected_pipeline_details.node_states[
+            node_id
+        ].current_status
     response = _create_pipeline(
         client,
         project=sleepers_project,
@@ -498,7 +574,7 @@ def test_run_partial_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details,
+        exp_pipeline_details=expected_pipeline_details_forced,
     )
 
     # now wait for the computation to finish
@@ -561,6 +637,16 @@ def test_run_computation(
     )
 
     # now force run again
+    # the task are up-to-date but we force run them
+    expected_pipeline_details_forced = deepcopy(
+        fake_workbench_computational_pipeline_details_completed
+    )
+    for node_id, node_data in expected_pipeline_details_forced.node_states.items():
+        node_data.current_status = (
+            fake_workbench_computational_pipeline_details.node_states[
+                node_id
+            ].current_status
+        )
     response = _create_pipeline(
         client,
         project=sleepers_project,
@@ -576,7 +662,7 @@ def test_run_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,  # NOTE: here the pipeline already ran so its states are different
+        exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
     )
 
     # wait for the computation to finish
@@ -664,6 +750,7 @@ def test_update_and_delete_computation(
     user_id: PositiveInt,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
+    fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
@@ -683,7 +770,7 @@ def test_update_and_delete_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
     )
 
     # update the pipeline
@@ -702,7 +789,7 @@ def test_update_and_delete_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
     )
 
     # update the pipeline
@@ -721,7 +808,7 @@ def test_update_and_delete_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
-        exp_pipeline_details=fake_workbench_computational_pipeline_details,
+        exp_pipeline_details=fake_workbench_computational_pipeline_details_not_started,
     )
 
     # start it now
