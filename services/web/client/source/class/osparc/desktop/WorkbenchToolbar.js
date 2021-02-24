@@ -32,6 +32,18 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "breadcrumb-navigation": {
+          const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbsWorkbench();
+          breadcrumbNavigation.addListener("nodeSelected", e => {
+            this.fireDataEvent("nodeSelected", e.getData());
+          }, this);
+          control = new qx.ui.container.Scroll();
+          control.add(breadcrumbNavigation);
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        }
         case "sweeper-btn": {
           control = new qx.ui.form.Button(this.tr("Sweeper"), "@FontAwesome5Solid/paw/14").set({
             toolTipText: this.tr("Sweeper"),

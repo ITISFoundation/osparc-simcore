@@ -369,7 +369,7 @@ function isElementVisible (page, selector) {
 
 async function clickLoggerTitle(page) {
   console.log("Click LoggerTitle");
-  await this.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
+  await this.waitAndClick(page, '[osparc-test-id="studyLoggerTitleLabel"]')
 }
 
 

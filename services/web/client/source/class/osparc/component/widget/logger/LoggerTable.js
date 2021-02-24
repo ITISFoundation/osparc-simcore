@@ -25,7 +25,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let tableModel = this.__logModel = new osparc.component.widget.logger.RemoteTableModel();
+ *   let tableModel = this.__logModel = new osparc.component.widget.logger.LoggerTable();
  *   tableModel.setColumns(["Origin", "Message"], ["whoRich", "whatRich"]);
  *   let custom = {
  *     tableColumnModel : function(obj) {
@@ -42,14 +42,19 @@
  * @asset(demobrowser/backend/remote_table.php)
  */
 
-qx.Class.define("osparc.component.widget.logger.RemoteTableModel", {
-
+qx.Class.define("osparc.component.widget.logger.LoggerTable", {
   extend : qx.ui.table.model.Remote,
 
   construct : function() {
     this.base(arguments);
 
-    this.setColumns(["Origin", "Message"], ["whoRich", "msgRich"]);
+    this.setColumns([
+      "Origin",
+      "Message"
+    ], [
+      "whoRich",
+      "msgRich"
+    ]);
 
     this.__rawData = [];
   },
@@ -60,15 +65,11 @@ qx.Class.define("osparc.component.widget.logger.RemoteTableModel", {
       check : "Number",
       init: -1
     },
+
     filterString: {
       nullable: true,
       check : "String",
       init: ""
-    },
-    caseSensitive: {
-      nullable: false,
-      check : "Boolean",
-      init: false
     }
   },
 
@@ -85,8 +86,8 @@ qx.Class.define("osparc.component.widget.logger.RemoteTableModel", {
     addRows: function(newRows) {
       for (let i=0; i<newRows.length; i++) {
         const newRow = newRows[i];
-        newRow["whoRich"] = osparc.component.widget.logger.RemoteTableModel.addColorTag(newRow.label, newRow.nodeColor);
-        newRow["msgRich"] = osparc.component.widget.logger.RemoteTableModel.addColorTag(newRow.msg, newRow.msgColor);
+        newRow["whoRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(newRow.label, newRow.nodeColor);
+        newRow["msgRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(newRow.msg, newRow.msgColor);
         this.__rawData.push(newRow);
       }
     },
@@ -100,7 +101,7 @@ qx.Class.define("osparc.component.widget.logger.RemoteTableModel", {
         const row = this.__rawData[i];
         if (row.nodeId === nodeId) {
           row.label = newLabel;
-          row["whoRich"] = osparc.component.widget.logger.RemoteTableModel.addColorTag(row.label, row.nodeColor);
+          row["whoRich"] = osparc.component.widget.logger.LoggerTable.addColorTag(row.label, row.nodeColor);
         }
       }
     },
@@ -143,13 +144,9 @@ qx.Class.define("osparc.component.widget.logger.RemoteTableModel", {
       if (searchString === null || searchString === "") {
         return true;
       }
-      if (searchString && !this.isCaseSensitive()) {
-        searchString = searchString.toUpperCase();
-      }
-      if (msg !== null && msg !== undefined) {
-        if (!this.isCaseSensitive()) {
-          msg = msg.toUpperCase();
-        }
+      searchString = searchString.toUpperCase();
+      if (msg) {
+        msg = msg.toUpperCase();
         return msg.includes(searchString);
       }
       return false;

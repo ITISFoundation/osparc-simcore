@@ -157,17 +157,12 @@ qx.Class.define("osparc.studycard.Utils", {
         tsrLayout.removeAll();
         const quality = model.getQuality();
         if (osparc.component.metadata.Quality.isEnabled(quality)) {
-          const {
-            score,
-            maxScore
-          } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
-            score,
-            maxScore,
             nStars: 4,
             showScore: true
           });
+          osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
           tsrLayout.add(tsrRating);
         } else {
           tsrLayout.exclude();
@@ -314,7 +309,7 @@ qx.Class.define("osparc.studycard.Utils", {
     openQuality: function(resourceData) {
       const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
       const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
-      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 770);
+      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;
     }
   }

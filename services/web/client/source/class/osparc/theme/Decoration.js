@@ -143,6 +143,41 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "border-status": {
+      decorator: qx.ui.decoration.MSingleBorder,
+      style: {
+        width: 1
+      }
+    },
+
+    "border-ok": {
+      include: "border-status",
+      style: {
+        color: "ready-green"
+      }
+    },
+
+    "border-warning": {
+      include: "border-status",
+      style: {
+        color: "warning-yellow"
+      }
+    },
+
+    "border-error": {
+      include: "border-status",
+      style: {
+        color: "failed-red"
+      }
+    },
+
+    "border-busy": {
+      include: "border-status",
+      style: {
+        color: "busy-orange"
+      }
+    },
+
     "border-editable": {
       style: {
         width: 1,

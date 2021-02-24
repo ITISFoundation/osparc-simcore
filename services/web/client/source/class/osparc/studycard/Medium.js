@@ -105,7 +105,10 @@ qx.Class.define("osparc.studycard.Medium", {
         this._add(extraInfoLayout);
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        this._add(thumbnail);
+        if (thumbnail.getChildControl("image").getSource() !== osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON) {
+          // Only show if not default thumbnail
+          this._add(thumbnail);
+        }
       } else {
         const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center"
@@ -114,9 +117,12 @@ qx.Class.define("osparc.studycard.Medium", {
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        hBox.add(thumbnail, {
-          flex: 1
-        });
+        if (thumbnail.getChildControl("image").getSource() !== osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON) {
+          // Only show if not default thumbnail
+          hBox.add(thumbnail, {
+            flex: 1
+          });
+        }
         this._add(hBox);
       }
 
