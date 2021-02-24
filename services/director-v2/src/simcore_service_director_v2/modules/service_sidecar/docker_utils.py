@@ -201,15 +201,12 @@ async def _extract_task_data_from_service_for_state(
                 await sleep_or_error(started=started, task={})
                 continue
 
-            if service_container_count != 1:
-                raise ServiceSidecarError(
-                    msg=(
-                        f"Expected to find 1 container for service '{service_id}', "
-                        f"but '{service_container_count}' were found!"
-                    )
-                )
+            # The service might have more then one task because the previous might have died out
+            # Only interested in the latest Task/container as only 1 container per service
+            # is being run
+            sorted_tasks = sorted(running_services, key=lambda task: task["UpdatedAt"])
+            task = sorted_tasks[-1]
 
-            task = running_services[0]
             service_state = task["Status"]["State"]
 
             await sleep_or_error(started=started, task=task)
