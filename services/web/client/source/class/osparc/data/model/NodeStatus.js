@@ -34,28 +34,62 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       event: "changeProgress"
     },
 
-    runningStatus: {
+    running: {
       check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED"],
       nullable: true,
-      event: "changeRunningStatus"
+      init: null,
+      event: "changeRunning"
     },
 
-    interactiveStatus: {
+    interactive: {
       check: ["idle", "starting", "pulling", "pending", "connecting", "ready", "failed"],
       nullable: true,
-      event: "changeInteractiveStatus"
+      init: null,
+      event: "changeInteractive"
     },
 
-    modifiedStatus: {
-      check: "Boolean",
-      nullable: true,
-      event: "changeModifiedStatus"
-    },
-
-    dependenciesStatus: {
+    dependencies: {
       check: "Array",
       nullable: true,
-      event: "changeDependenciesStatus"
+      init: null,
+      event: "changeDependencies",
+      apply: "__applyDependencies"
+    },
+
+    modified: {
+      check: "Boolean",
+      nullable: true,
+      init: null,
+      event: "changeModified",
+      apply: "__applyModified"
+    },
+
+    hasOutputs: {
+      check: "Boolean",
+      init: false,
+      apply: "__applyModified"
+    }
+  },
+
+  members: {
+    hasDependencies: function() {
+      const dependencies = this.getDependencies();
+      if (dependencies && dependencies.length) {
+        return true;
+      }
+      return false;
+    },
+
+    __applyDependencies: function() {
+      this.__applyModified(this.hasDependencies());
+    },
+
+    __applyModified: function(modified) {
+      if (this.getHasOutputs()) {
+        this.setModified(modified || this.hasDependencies());
+      } else {
+        this.setModified(null);
+      }
     }
   }
 });

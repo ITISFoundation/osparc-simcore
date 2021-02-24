@@ -154,7 +154,8 @@ qx.Class.define("osparc.data.model.Study", {
 
     state: {
       check: "Object",
-      nullable: true
+      nullable: true,
+      event: "changeState"
     },
 
     quality: {
@@ -187,20 +188,6 @@ qx.Class.define("osparc.data.model.Study", {
         }
       }
       return myNewStudyObject;
-    },
-
-    updateStudy: function(params) {
-      return new Promise(resolve => {
-        osparc.data.Resources.fetch("studies", "put", {
-          url: {
-            projectId: params.uuid
-          },
-          data: params
-        }).then(data => {
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
-          resolve(data);
-        });
-      });
     },
 
     getProperties: function() {
@@ -313,16 +300,22 @@ qx.Class.define("osparc.data.model.Study", {
       return jsonObject;
     },
 
-    updateStudy: function(params) {
+    updateStudy: function(params, run = false) {
       return new Promise(resolve => {
-        this.self().updateStudy({
-          ...this.serialize(),
-          ...params
-        })
-          .then(data => {
-            this.__updateModel(data);
-            resolve(data);
-          });
+        osparc.data.Resources.fetch("studies", "put", {
+          url: {
+            projectId: this.getUuid(),
+            run
+          },
+          data: {
+            ...this.serialize(),
+            ...params
+          }
+        }).then(data => {
+          this.__updateModel(data);
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+          resolve(data);
+        });
       });
     },
 
@@ -337,6 +330,14 @@ qx.Class.define("osparc.data.model.Study", {
         workbench: this.getWorkbench(),
         ui: this.getUi(),
         sweeper: this.getSweeper()
+      });
+
+      const nodes = this.getWorkbench().getNodes(true);
+      Object.values(nodes).forEach(node => {
+        const nodeId = node.getNodeId();
+        if (nodeId in data.workbench) {
+          node.populateStates(data.workbench[nodeId]);
+        }
       });
     }
   }

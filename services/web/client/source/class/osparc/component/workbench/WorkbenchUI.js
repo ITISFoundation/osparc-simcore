@@ -969,17 +969,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const oldId = this.__selectedItemId;
       if (oldId) {
         if (this.__isSelectedItemAnEdge()) {
-          const unselectedEdge = this.__getEdgeUI(oldId);
-          const unselectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
-          osparc.component.workbench.SvgWidget.updateCurveColor(unselectedEdge.getRepresentation(), unselectedColor);
+          const edge = this.__getEdgeUI(oldId);
+          edge.setSelected(false);
         }
       }
 
       this.__selectedItemId = newID;
       if (this.__isSelectedItemAnEdge()) {
-        const selectedEdge = this.__getEdgeUI(newID);
-        const selectedColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-selected"];
-        osparc.component.workbench.SvgWidget.updateCurveColor(selectedEdge.getRepresentation(), selectedColor);
+        const edge = this.__getEdgeUI(newID);
+        edge.setSelected(true);
       } else if (newID) {
         this.fireDataEvent("changeSelectedNode", newID);
       }
