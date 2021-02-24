@@ -33,22 +33,30 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   properties: {
     score: {
       check: "Number",
-      init: 1,
+      init: 0,
       nullable: false,
       event: "changeScore",
       apply: "__render"
     },
 
+    targetScore: {
+      check: "Number",
+      init: null,
+      nullable: true,
+      event: "changeTargetScore",
+      apply: "__render"
+    },
+
     maxScore: {
       check: "Number",
-      init: 5,
+      init: 4,
       nullable: false,
       apply: "__render"
     },
 
     nStars: {
       check: "Number",
-      init: 5,
+      init: 4,
       nullable: false,
       apply: "__render"
     },
@@ -78,7 +86,21 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
   statics: {
     StarFull: "@FontAwesome5Solid/star/12",
     StarHalf: "@FontAwesome5Solid/star-half/12", // Todo: upgrade FontAwesome for star-half-alt
-    StarEmpty: "@FontAwesome5Regular/star/12"
+    StarEmpty: "@FontAwesome5Regular/star/12",
+
+    scoreToStarsRating: function(currentTSR, targetTSR, starsRating) {
+      const {
+        score,
+        targetScore,
+        maxScore
+      } = osparc.component.metadata.Quality.computeTSRScore(currentTSR, targetTSR);
+
+      starsRating.set({
+        score,
+        targetScore,
+        maxScore
+      });
+    }
   },
 
   members: {
@@ -94,6 +116,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
           break;
         case "score-text": {
           control = new qx.ui.basic.Label().set({
+            rich: true,
             font: "text-12"
           });
           this._add(control);
@@ -129,7 +152,7 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
       starsLayout.removeAll();
 
       const score = this.getScore();
-      const maxScore = this.getMaxScore();
+      const maxScore = this.getTargetScore() || this.getMaxScore();
       const maxStars = this.getNStars();
       const normScore = score/maxScore;
 
@@ -181,9 +204,16 @@ qx.Class.define("osparc.ui.basic.StarsRating", {
     __renderScore: function() {
       const scoreText = this.getChildControl("score-text");
       if (this.getShowScore()) {
-        const score = this.getScore().toString();
-        const maxScore = this.getMaxScore().toString();
-        scoreText.setValue(`${score}/${maxScore}`);
+        const score = this.getScore();
+        const targetScore = this.getTargetScore();
+        const maxScore = this.getMaxScore();
+        let text = "";
+        if (targetScore && targetScore !== maxScore) {
+          text += score+"/"+targetScore+"<small>/"+maxScore+"</small>";
+        } else {
+          text += score+"/"+maxScore;
+        }
+        scoreText.setValue(text);
         scoreText.show();
       } else {
         scoreText.exclude();
