@@ -10,3 +10,5 @@ DB_TO_RUNNING_STATE = {
     StateType.RUNNING: RunningState.STARTED,
     StateType.ABORTED: RunningState.ABORTED,
 }
+
+RUNNING_STATE_TO_DB = {v: k for k, v in DB_TO_RUNNING_STATE.items()}

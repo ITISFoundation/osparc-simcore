@@ -195,9 +195,7 @@ class CompTasksRepository(BaseRepository):
         inserted_comp_tasks_db: List[CompTaskAtDB] = []
         for comp_task_db in list_of_comp_tasks_in_project:
 
-            insert_stmt = insert(comp_tasks).values(
-                **comp_task_db.dict(by_alias=True, exclude_unset=True)
-            )
+            insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
 
             exclusion_rule = (
                 {"state"} if str(comp_task_db.node_id) not in published_nodes else set()
@@ -206,9 +204,7 @@ class CompTasksRepository(BaseRepository):
                 exclusion_rule.add("outputs")
             on_update_stmt = insert_stmt.on_conflict_do_update(
                 index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                set_=comp_task_db.dict(
-                    by_alias=True, exclude_unset=True, exclude=exclusion_rule
-                ),
+                set_=comp_task_db.to_db_model(exclude=exclusion_rule),
             ).returning(literal_column("*"))
             result = await self.connection.execute(on_update_stmt)
             row: RowProxy = await result.fetchone()
