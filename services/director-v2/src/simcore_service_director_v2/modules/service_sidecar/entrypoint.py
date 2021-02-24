@@ -219,19 +219,26 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
         }
     ]
 
+    # TODO: forward these for the request from webserver -> director -> director-v2(here)
+    request_protocol = "http"
+    request_host = "10.43.103.168.xip.io:9081"
+
     return {
         "labels": {
             "io.simcore.zone": f"{service_sidecar_settings.traefik_simcore_zone}",
             "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
-            f"traefik.http.routers.{service_name}.entrypoints": "http",
-            f"traefik.http.routers.{service_name}.middlewares": "master-simcore_gzip@docker",
-            f"traefik.http.routers.{service_name}.priority": "10",
-            # http://91d7e754-609f-4ab5-9d77-c441aa46c601.services.10.43.103.168.xip.io:9081
-            # TODO: should the below url not be `{project_id}_{node_uuid}.services.{{host:.+}}` to avoid collisions?nea
-            f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
+            f"traefik.http.middlewares.{service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {request_host}",
+            f"traefik.http.middlewares.{service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
+            f"traefik.http.middlewares.{service_name}-security-headers.headers.accessControlAllowOriginList": f"{request_protocol}://{request_host}",
+            f"traefik.http.middlewares.{service_name}-security-headers.headers.accesscontrolmaxage": "100",
+            f"traefik.http.middlewares.{service_name}-security-headers.headers.addvaryheader": "true",
             f"traefik.http.services.{service_name}.loadbalancer.server.port": "80",
+            f"traefik.http.routers.{service_name}.entrypoints": "http",
+            f"traefik.http.routers.{service_name}.priority": "10",
+            f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
+            f"traefik.http.routers.{service_name}.middlewares": f"master-simcore_gzip@docker, {service_name}-security-headers",
             "type": "main",  # main is required to be monitored by the frontend
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
             "study_id": project_id,
