@@ -208,7 +208,7 @@ class ServiceSidecarsMonitor:
                 service_uuid=node_uuid,
                 service_key=monitor_data.service_key,
                 service_version=monitor_data.service_tag,
-                service_host=os.environ["HOSTNAME"],
+                service_host=monitor_data.service_name,
                 service_port=monitor_data.service_port,
                 service_basepath="",  # not needed here
                 service_state=service_state.value,
