@@ -36,7 +36,7 @@ async def _try_get_task_from_db(
         query=comp_tasks.select(for_update=True).where(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
-            & (comp_tasks.c.state == StateType.PUBLISHED)
+            & ((comp_tasks.c.state == StateType.PENDING) | (comp_tasks.c.state == StateType.PUBLISHED))
         ),
     )
     task: RowProxy = await result.fetchone()
@@ -199,7 +199,7 @@ async def inspect(
             )
             if (retry + 1) < max_retries and run_result == StateType.FAILED:
                 # try again!
-                run_result = StateType.PUBLISHED
+                run_result = StateType.PENDING
             await _set_task_state(connection, project_id, node_id, run_result)
             if run_result == StateType.FAILED:
                 # set the successive tasks as ABORTED
