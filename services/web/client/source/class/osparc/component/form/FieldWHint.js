@@ -102,10 +102,6 @@ qx.Class.define("osparc.component.form.FieldWHint", {
           top: this.self().TOP_MARGIN
         });
       }
-    },
-
-    getField: function() {
-      return this.__field;
     }
   }
 });

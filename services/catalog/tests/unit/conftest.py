@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
-
 import simcore_service_catalog
 
 pytest_plugins = [
@@ -19,12 +18,14 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.postgres_service",
+    "pytest_simcore.pydantic_models",
 ]
+
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-## FOLDER LAYOUT ------
+## FOLDER LAYOUT ---------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
@@ -36,7 +37,10 @@ def project_slug_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def installed_package_dir() -> Path:
+def package_dir() -> Path:
+    """Notice that this might be under src (if installed as edit mode)
+    or in the installation folder
+    """
     dirpath = Path(simcore_service_catalog.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath

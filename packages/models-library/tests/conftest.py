@@ -7,9 +7,8 @@ import sys
 from pathlib import Path
 from typing import Callable, Dict
 
-import pytest
-
 import models_library
+import pytest
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -49,4 +48,4 @@ def diff_json_schemas(json_diff_script: Path, tmp_path_factory: Path) -> Callabl
             cwd=tmp_path,
         )
 
-    yield _run_diff
+    return _run_diff

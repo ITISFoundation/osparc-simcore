@@ -17,11 +17,13 @@ from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import log_decorator
+from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
 from .computation_api import convert_state_from_db
 from .projects import projects_api, projects_exceptions
+from .projects.projects_utils import project_get_depending_nodes
 
 log = logging.getLogger(__name__)
 
@@ -73,6 +75,15 @@ async def _update_project_outputs(
     )
 
     await projects_api.notify_project_node_update(app, project, node_uuid)
+    # get depending node and notify for these ones as well
+    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
+    await logged_gather(
+        *[
+            projects_api.notify_project_node_update(app, project, n)
+            for n in depending_node_uuids
+        ]
+    )
+    # notifiy
     await projects_api.post_trigger_connected_service_retrieve(
         app=app, project=project, updated_node_uuid=node_uuid, changed_keys=changed_keys
     )

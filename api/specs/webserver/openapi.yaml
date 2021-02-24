@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: "osparc-simcore RESTful API"
+  title: "osparc-simcore web API"
   version: 0.6.0
-  description: "RESTful API designed for web clients"
+  description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
     email: support@simcore.io
@@ -43,7 +43,7 @@ tags:
       defines the protocol for the frontend to interact with the node.
   - name: configuration
   - name: maintenance
-  - name: publications
+  - name: publication
     description: |
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
@@ -218,10 +218,24 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags"
   /catalog/dags/{dag_id}:
     $ref: "./openapi-catalog.yaml#/paths/~1catalog~1dags~1{dag_id}"
+
   /catalog/services:
-    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services"
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services"
   /catalog/services/{service_key}/{service_version}:
-    $ref: "./openapi-catalog.yaml#/paths/~1catalog~1services~1{service_key}~1{service_version}"
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version"
+  /catalog/services/{service_key}/{service_version}/inputs:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs"
+  /catalog/services/{service_key}/{service_version}/inputs/{input_key}:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs_input_key"
+  /catalog/services/{service_key}/{service_version}/inputs:match:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_inputs_match"
+  /catalog/services/{service_key}/{service_version}/outputs:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs"
+  /catalog/services/{service_key}/{service_version}/outputs/{output_key}:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_output_key"
+  /catalog/services/{service_key}/{service_version}/outputs:match:
+    $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
+
 
   # VIEWER -------------------------------------------------------------------------
   /viewers:

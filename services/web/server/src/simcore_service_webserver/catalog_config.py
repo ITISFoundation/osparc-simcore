@@ -7,14 +7,15 @@ import os
 from typing import Dict
 
 import trafaret as T
-from aiohttp import ClientSession, web
-from pydantic import BaseSettings, Field
-
+from aiohttp import web
 from models_library.basic_types import PortInt, VersionTag
-from servicelib.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
+from pydantic import BaseSettings, Field
+from servicelib.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "catalog"
 
+KCATALOG_ORIGIN = f"{__name__}.catalog_origin"
+KCATALOG_VERSION_PREFIX = f"{__name__}.catalog_version_prefix"
 
 _default_values = {
     "host": os.environ.get("CATALOG_HOST", "catalog"),
@@ -53,7 +54,3 @@ def assert_valid_config(app: web.Application) -> Dict:
     cfg = get_config(app)
     _settings = CatalogSettings(**cfg)
     return cfg
-
-
-def get_client_session(app: web.Application) -> ClientSession:
-    return app[APP_CLIENT_SESSION_KEY]

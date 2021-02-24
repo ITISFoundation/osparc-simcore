@@ -12,8 +12,8 @@ import pytest
 from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
 from pydantic import ValidationError
-from simcore_service_api_server.models.schemas.files import FileMetadata
-from simcore_service_api_server.modules.storage import to_file_metadata
+from simcore_service_api_server.models.schemas.files import File
+from simcore_service_api_server.modules.storage import to_file_api_model
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,7 +39,7 @@ def expected_md5sum():
 
 
 async def test_create_filemetadata_from_path(mock_filepath, expected_md5sum):
-    file_meta = await FileMetadata.create_from_path(mock_filepath)
+    file_meta = await File.create_from_path(mock_filepath)
     assert file_meta.checksum == expected_md5sum
 
 
@@ -53,7 +53,7 @@ async def test_create_filemetadata_from_starlette_uploadfile(
         upload = UploadFile(mock_filepath.name, file)
 
         assert upload.file.tell() == 0
-        file_meta = await FileMetadata.create_from_uploaded(upload)
+        file_meta = await File.create_from_uploaded(upload)
         assert upload.file.tell() > 0, "modifies current position is at the end"
 
         assert file_meta.checksum == expected_md5sum
@@ -68,33 +68,33 @@ async def test_create_filemetadata_from_starlette_uploadfile(
     await upload_in_memory.seek(0)
     assert upload_in_memory.file.tell() == 0
 
-    file_meta = await FileMetadata.create_from_uploaded(upload_in_memory)
+    file_meta = await File.create_from_uploaded(upload_in_memory)
     assert upload_in_memory.file.tell() > 0, "modifies current position is at the end"
 
 
-def test_convert_filemetadata():
+def test_convert_between_file_models():
 
     storage_file_meta = StorageFileMetaData(
         **StorageFileMetaData.Config.schema_extra["examples"][1]
     )
     storage_file_meta.file_id = f"api/{uuid4()}/extensionless"
-    apiserver_file_meta = to_file_metadata(storage_file_meta)
+    apiserver_file_meta = to_file_api_model(storage_file_meta)
 
-    assert apiserver_file_meta.file_id
+    assert apiserver_file_meta.id
     assert apiserver_file_meta.filename == "extensionless"
     assert apiserver_file_meta.content_type == "application/octet-stream"  # default
     assert apiserver_file_meta.checksum == storage_file_meta.entity_tag
 
     with pytest.raises(ValueError):
         storage_file_meta.file_id = f"{uuid4()}/{uuid4()}/foo.txt"
-        to_file_metadata(storage_file_meta)
+        to_file_api_model(storage_file_meta)
 
     with pytest.raises(ValidationError):
         storage_file_meta.file_id = "api/NOTUUID/foo.txt"
-        to_file_metadata(storage_file_meta)
+        to_file_api_model(storage_file_meta)
 
 
-@pytest.mark.parametrize("model_cls", (FileMetadata,))
+@pytest.mark.parametrize("model_cls", (File,))
 def test_file_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
