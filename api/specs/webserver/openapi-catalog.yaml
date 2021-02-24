@@ -66,18 +66,18 @@ paths:
         "422":
           description: Validation Error
 
-  /catalog/services:
+  catalog_services:
     get:
       tags:
         - catalog
       summary: List Services
-      operationId: list_catalog_services
+      operationId: list_services_handler
       responses:
         "200":
           description: Returns list of services from the catalog
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
-  /catalog/services/{service_key}/{service_version}:
+  catalog_services_service_key_service_version:
     parameters:
       - in: path
         name: service_key
@@ -97,7 +97,7 @@ paths:
       tags:
         - catalog
       summary: Get Service
-      operationId: get_catalog_service
+      operationId: get_service_handler
       responses:
         "200":
           description: Returns service
@@ -107,7 +107,7 @@ paths:
       tags:
         - catalog
       summary: Update Service
-      operationId: update_catalog_service
+      operationId: update_service_handler
       requestBody:
         content:
           application/json:

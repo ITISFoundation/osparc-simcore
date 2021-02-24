@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple
 
 import orjson
 from aiohttp import web
@@ -17,16 +17,12 @@ from .catalog_api_models import (
     ServiceOutputApiOut,
     ServiceOutputKey,
     ServiceVersion,
+    json_dumps,
+    replace_service_input_outputs,
 )
 from .constants import RQ_PRODUCT_KEY
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
-
-
-def json_dumps(v) -> str:
-    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return orjson.dumps(v).decode()
-
 
 ###############
 # API HANDLERS
@@ -37,6 +33,15 @@ def json_dumps(v) -> str:
 # TODO: define pruning of response policy: e.g. if None, send or not, if unset, send or not ...
 
 VX = f"/{api_version_prefix}"
+
+
+# SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
+RESPONSE_MODEL_POLICY = {
+    "by_alias": True,
+    "exclude_unset": True,
+    "exclude_defaults": False,
+    "exclude_none": False,
+}
 
 routes = RouteTableDef()
 
@@ -68,11 +73,13 @@ def parameters_validation(request: web.Request):
             raise web.HTTPBadRequest(reason="Invalid headers") from err
 
         yield context
+
         #
         # wraps match, parse and validate
         # For instance
         #   service_key: ServiceKey = request.match_info["service_key"]
         #   from_service_version: ServiceVersion = request.query["fromVersion"]
+        #   body = await request.json()
         #
     except ValidationError as err:
         raise web.HTTPUnprocessableEntity(
@@ -81,6 +88,53 @@ def parameters_validation(request: web.Request):
 
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
+
+
+@routes.get(VX + "/catalog/services")
+@login_required
+@permission_required("services.catalog.*")
+async def list_services_handler(request: Request):
+    with parameters_validation(request) as ctx:
+        # match, parse and validate
+        data_array = await list_services(ctx)
+
+    enveloped: str = json_dumps({"data": data_array})
+    return web.Response(text=enveloped, content_type="application/json")
+
+
+@routes.get(VX + "/catalog/services/{service_key}/{service_version}")
+@login_required
+@permission_required("services.catalog.*")
+async def get_service_handler(request: Request):
+    with parameters_validation(request) as ctx:
+        # match, parse and validate
+        service_key: ServiceKey = request.match_info["service_key"]
+        service_version: ServiceVersion = request.match_info["service_version"]
+
+    # Evaluate and return validated model
+    data = await get_service(service_key, service_version, ctx)
+
+    # format response
+    enveloped: str = json_dumps({"data": data})
+    return web.Response(text=enveloped, content_type="application/json")
+
+
+@routes.patch(VX + "/catalog/services/{service_key}/{service_version}")
+@login_required
+@permission_required("services.catalog.*")
+async def update_service_handler(request: Request):
+    with parameters_validation(request) as ctx:
+        # match, parse and validate
+        service_key: ServiceKey = request.match_info["service_key"]
+        service_version: ServiceVersion = request.match_info["service_version"]
+        update_data: Dict[str, Any] = await request.json(loads=orjson.loads)
+
+    # Evaluate and return validated model
+    data = await update_service(service_key, service_version, update_data, ctx)
+
+    # format response
+    enveloped: str = json_dumps({"data": data})
+    return web.Response(text=enveloped, content_type="application/json")
 
 
 @routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs")
@@ -97,9 +151,8 @@ async def list_service_inputs_handler(request: Request):
 
     # format response
     enveloped: str = json_dumps(
-        {"data": [m.dict(by_alias=True) for m in response_model]}
+        {"data": [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]}
     )
-
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -119,7 +172,7 @@ async def get_service_input_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json_dumps({"data": response_model.dict(by_alias=True)})
+    enveloped: str = json_dumps({"data": response_model.dict(**RESPONSE_MODEL_POLICY)})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -136,7 +189,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
         from_output_key: ServiceOutputKey = request.query["fromOutput"]
 
     # Evaluate and return validated model
-    response_model = await get_compatible_inputs_given_source_output(
+    data = await get_compatible_inputs_given_source_output(
         service_key,
         service_version,
         from_service_key,
@@ -146,8 +199,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json_dumps({"data": response_model})
-
+    enveloped: str = json_dumps({"data": data})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -167,9 +219,8 @@ async def list_service_outputs_handler(request: Request):
 
     # format response
     enveloped: str = json_dumps(
-        {"data": [m.dict(by_alias=True) for m in response_model]}
+        {"data": [m.dict(**RESPONSE_MODEL_POLICY) for m in response_model]}
     )
-
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -191,7 +242,7 @@ async def get_service_output_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json_dumps({"data": response_model.dict(by_alias=True)})
+    enveloped: str = json_dumps({"data": response_model.dict(**RESPONSE_MODEL_POLICY)})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -213,7 +264,7 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
         to_input_key: ServiceInputKey = request.query["toInput"]
 
     # Evaluate and return validated model
-    response_model = await get_compatible_outputs_given_target_input(
+    data = await get_compatible_outputs_given_target_input(
         service_key,
         service_version,
         to_service_key,
@@ -223,8 +274,7 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
     )
 
     # format response
-    enveloped: str = json_dumps({"data": response_model})
-
+    enveloped: str = json_dumps({"data": data})
     return web.Response(text=enveloped, content_type="application/json")
 
 
@@ -266,6 +316,43 @@ def can_connect(from_output: ServiceOutput, to_input: ServiceInput) -> bool:
     return ok
 
 
+async def list_services(ctx: _RequestContext):
+    services = await catalog_client.get_services_for_user_in_product(
+        ctx.app, ctx.user_id, ctx.product_name, only_key_versions=False
+    )
+    for service in services:
+        replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+    return services
+
+
+async def get_service(
+    service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
+) -> Dict[str, Any]:
+    service = await catalog_client.get_service(
+        ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
+    )
+    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+    return service
+
+
+async def update_service(
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    update_data: Dict[str, Any],
+    ctx: _RequestContext,
+):
+    service = await catalog_client.update_service(
+        ctx.app,
+        ctx.user_id,
+        service_key,
+        service_version,
+        ctx.product_name,
+        update_data,
+    )
+    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+    return service
+
+
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
 ) -> List[ServiceOutputApiOut]:
@@ -276,7 +363,7 @@ async def list_service_inputs(
 
     inputs = []
     for input_key in service["inputs"].keys():
-        service_input = ServiceInputApiOut.from_service(service, input_key)
+        service_input = ServiceInputApiOut.from_catalog_service(service, input_key)
         inputs.append(service_input)
     return inputs
 
@@ -291,7 +378,7 @@ async def get_service_input(
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_input = ServiceInputApiOut.from_service(service, input_key)
+    service_input = ServiceInputApiOut.from_catalog_service(service, input_key)
 
     return service_input
 
@@ -349,7 +436,7 @@ async def list_service_outputs(
 
     outputs = []
     for output_key in service["outputs"].keys():
-        service_output = ServiceOutputApiOut.from_service(service, output_key)
+        service_output = ServiceOutputApiOut.from_catalog_service(service, output_key)
         outputs.append(service_output)
     return outputs
 
@@ -363,7 +450,7 @@ async def get_service_output(
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output = ServiceOutputApiOut.from_service(service, output_key)
+    service_output = ServiceOutputApiOut.from_catalog_service(service, output_key)
 
     return service_output
 

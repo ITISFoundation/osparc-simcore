@@ -806,8 +806,8 @@
         "title": "HTTPValidationError",
         "type": "object",
         "properties": {
-          "detail": {
-            "title": "Detail",
+          "errors": {
+            "title": "Validation errors",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
@@ -864,30 +864,18 @@
             "title": "Key",
             "pattern": "^(simcore)/(services)/(comp|dynamic|frontend)(/[\\w/-]+)+$",
             "type": "string",
-            "description": "distinctive name for the node based on the docker registry path",
-            "example": [
-              "simcore/services/comp/sleeper",
-              "simcore/services/dynamic/3dviewer",
-              "simcore/services/frontend/file-picker"
-            ]
+            "description": "distinctive name for the node based on the docker registry path"
           },
           "version": {
             "title": "Version",
             "pattern": "^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$",
             "type": "string",
-            "description": "semantic version number of the node",
-            "example": [
-              "1.0.0",
-              "0.0.1"
-            ]
+            "description": "semantic version number of the node"
           },
           "label": {
             "title": "Label",
             "type": "string",
-            "description": "The short name of the node",
-            "example": [
-              "JupyterLab"
-            ]
+            "description": "The short name of the node"
           },
           "progress": {
             "title": "Progress",
@@ -902,10 +890,7 @@
             "minLength": 1,
             "type": "string",
             "description": "url of the latest screenshot of the node",
-            "format": "uri",
-            "example": [
-              "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
-            ]
+            "format": "uri"
           },
           "runHash": {
             "anyOf": [
@@ -915,9 +900,6 @@
               {
                 "title": "Runhash",
                 "description": "the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
-                "example": [
-                  "a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"
-                ],
                 "type": "string"
               }
             ]
@@ -938,11 +920,7 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "node IDs of where the node is connected to",
-            "example": [
-              "nodeUuid1",
-              "nodeUuid2"
-            ]
+            "description": "node IDs of where the node is connected to"
           },
           "outputs": {
             "title": "Outputs",
@@ -961,30 +939,20 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "Used in group-nodes. Node IDs of those connected to the output",
-            "example": [
-              "nodeUuid1",
-              "nodeUuid2"
-            ]
+            "description": "Used in group-nodes. Node IDs of those connected to the output"
           },
           "parent": {
-            "title": "Parent",
-            "type": "string",
-            "description": "Parent's (group-nodes') node ID s. Used to group",
-            "format": "uuid",
-            "example": [
-              "nodeUUid1",
-              "nodeUuid2"
-            ]
-          },
-          "state": {
-            "allOf": [
+            "anyOf": [
               {
-                "$ref": "#/components/schemas/RunningState"
+                "type": "null"
+              },
+              {
+                "title": "Parent",
+                "description": "Parent's (group-nodes') node ID s. Used to group",
+                "type": "string",
+                "format": "uuid"
               }
-            ],
-            "description": "the node's running state",
-            "default": "NOT_STARTED"
+            ]
           },
           "position": {
             "title": "Position",
@@ -994,6 +962,47 @@
               }
             ],
             "deprecated": true
+          },
+          "state": {
+            "title": "State",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NodeState"
+              }
+            ],
+            "description": "The node's state object"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NodeState": {
+        "title": "NodeState",
+        "type": "object",
+        "properties": {
+          "modified": {
+            "title": "Modified",
+            "type": "boolean",
+            "description": "true if the node's outputs need to be re-computed",
+            "default": true
+          },
+          "dependencies": {
+            "title": "Dependencies",
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "contains the node inputs dependencies if they need to be computed first"
+          },
+          "currentStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunningState"
+              }
+            ],
+            "description": "the node's current state",
+            "default": "NOT_STARTED"
           }
         },
         "additionalProperties": false
@@ -1144,6 +1153,11 @@
             "type": "object",
             "description": "Place the data associated with the named keys in files"
           },
+          "unit": {
+            "title": "Unit",
+            "type": "string",
+            "description": "Units, when it refers to a physical quantity"
+          },
           "defaultValue": {
             "title": "Defaultvalue",
             "anyOf": [
@@ -1171,7 +1185,8 @@
             "description": "custom widget to use instead of the default one determined from the data-type"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Metadata on a service input port"
       },
       "ServiceOut": {
         "title": "ServiceOut",
@@ -1290,8 +1305,43 @@
             "format": "email"
           }
         },
-        "additionalProperties": false,
-        "description": "Service base schema (used for docker labels on docker images)"
+        "description": "Service base schema (used for docker labels on docker images)",
+        "example": {
+          "name": "File Picker",
+          "description": "File Picker",
+          "classifiers": [],
+          "quality": {},
+          "access_rights": {
+            "1": {
+              "execute_access": true,
+              "write_access": false
+            },
+            "4": {
+              "execute_access": true,
+              "write_access": true
+            }
+          },
+          "key": "simcore/services/frontend/file-picker",
+          "version": "1.0.0",
+          "type": "dynamic",
+          "authors": [
+            {
+              "name": "Odei Maiz",
+              "email": "maiz@itis.swiss"
+            }
+          ],
+          "contact": "maiz@itis.swiss",
+          "inputs": {},
+          "outputs": {
+            "outFile": {
+              "displayOrder": 0,
+              "label": "File",
+              "description": "Chosen File",
+              "type": "data:*/*"
+            }
+          },
+          "owner": "maiz@itis.swiss"
+        }
       },
       "ServiceOutput": {
         "title": "ServiceOutput",
@@ -1331,22 +1381,10 @@
             "type": "object",
             "description": "Place the data associated with the named keys in files"
           },
-          "defaultValue": {
-            "title": "Defaultvalue",
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "integer"
-              },
-              {
-                "type": "number"
-              },
-              {
-                "type": "string"
-              }
-            ]
+          "unit": {
+            "title": "Unit",
+            "type": "string",
+            "description": "Units, when it refers to a physical quantity"
           },
           "widget": {
             "title": "Widget",
@@ -1359,7 +1397,8 @@
             "deprecated": true
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Metadata on a service input or output port"
       },
       "ServiceType": {
         "title": "ServiceType",
@@ -1409,6 +1448,82 @@
             "title": "Quality",
             "type": "object",
             "default": {}
+          }
+        },
+        "example": {
+          "access_rights": {
+            "1": {
+              "execute_access": false,
+              "write_access": false
+            },
+            "2": {
+              "execute_access": true,
+              "write_access": true
+            },
+            "44": {
+              "execute_access": false,
+              "write_access": false
+            }
+          },
+          "name": "My Human Readable Service Name",
+          "description": "An interesting service that does something",
+          "classifiers": [
+            "RRID:SCR_018997",
+            "RRID:SCR_019001"
+          ],
+          "quality": {
+            "tsr": {
+              "r01": {
+                "level": 3,
+                "references": ""
+              },
+              "r02": {
+                "level": 2,
+                "references": ""
+              },
+              "r03": {
+                "level": 0,
+                "references": ""
+              },
+              "r04": {
+                "level": 0,
+                "references": ""
+              },
+              "r05": {
+                "level": 2,
+                "references": ""
+              },
+              "r06": {
+                "level": 0,
+                "references": ""
+              },
+              "r07": {
+                "level": 0,
+                "references": ""
+              },
+              "r08": {
+                "level": 1,
+                "references": ""
+              },
+              "r09": {
+                "level": 0,
+                "references": ""
+              },
+              "r10": {
+                "level": 0,
+                "references": ""
+              }
+            },
+            "enabled": true,
+            "annotations": {
+              "vandv": "",
+              "purpose": "",
+              "standards": "",
+              "limitations": "",
+              "documentation": "",
+              "certificationLink": "",
+              "certificationStatus": "Uncertified"
+            }
           }
         }
       },

@@ -1,3 +1,5 @@
+from typing import Iterator
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -5,21 +7,20 @@
 import pytest
 import respx
 from fastapi import FastAPI
-from starlette.testclient import TestClient
-
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.core.settings import (
     AppSettings,
+    ClientRequestSettings,
     DirectorSettings,
     PostgresSettings,
-    ClientRequestSettings,
 )
 from simcore_service_catalog.services.director import DirectorApi
+from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def minimal_app(loop, devel_environ) -> FastAPI:
+def minimal_app(loop, devel_environ) -> Iterator[FastAPI]:
     # TODO: auto generate fakes
 
     # avoid init of pg or director API clients
