@@ -387,7 +387,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setRunning(nodeData.state.currentStatus);
         }
         if ("modified" in nodeData.state) {
-          this.getStatus().setModified(nodeData.state.modified);
+          this.getStatus().setModified((nodeData.state.modified || this.getStatus().hasDependencies()) && this.getNodeStatus().getHasOutputs());
         }
       }
     },
@@ -649,6 +649,8 @@ qx.Class.define("osparc.data.model.Node", {
             this.getOutputs()[outputKey]["value"] = "";
           }
         }
+        this.getNodeStatus().setHasOutputs(true);
+
         this.fireDataEvent("changeOutputs", this.getOutputs());
       }
     },
