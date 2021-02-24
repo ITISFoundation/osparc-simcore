@@ -180,10 +180,11 @@ async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str)
         return result
 
     except _DirectorServiceError:
-        log.error(
+        log.exception(
             "Could not retrive status for service-sidecar stack for node_uuid=%s",
             node_uuid,
         )
+        return None
 
 
 __all__ = ["setup_director_v2", "start_service_sidecar_stack"]
