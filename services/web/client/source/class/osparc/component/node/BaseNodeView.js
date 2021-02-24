@@ -58,6 +58,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __pane2: null,
     __title: null,
     __serviceInfoLayout: null,
+    __nodeStatusUI: null,
     __header: null,
     _mainView: null,
     __inputsView: null,
@@ -66,8 +67,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _settingsLayout: null,
     _mapperLayout: null,
     _iFrameLayout: null,
+    _loggerLayout: null,
     __buttonContainer: null,
-    __filesButton: null,
+    __outFilesButton: null,
 
     populateLayout: function() {
       this.__cleanLayout();
@@ -77,6 +79,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__addOutputPortsUIs();
       this._addSettings();
       this._addIFrame();
+      // this._addLogger();
+
       this._addButtons();
     },
 
@@ -193,6 +197,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
       this._mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      this._loggerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       return mainView;
     },
@@ -237,8 +242,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       header.addSpacer();
 
+      // just a placeholder until the node is set
+      const nodeStatusUI = this.__nodeStatusUI = new qx.ui.core.Widget();
+      header.add(nodeStatusUI);
+
+      header.addSpacer();
+
       const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
-      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
+      const filesBtn = this.__outFilesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsPart.add(filesBtn);
@@ -334,7 +345,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         retrieveBtn.setEnabled(Boolean(this.getNode().getServiceUrl()));
         this.__buttonContainer.add(retrieveBtn);
       }
-      this.__buttonContainer.add(this.__filesButton);
+      this.__buttonContainer.add(this.__outFilesButton);
       this.__header.add(this.__buttonContainer);
     },
 
@@ -346,6 +357,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
       this._mapperLayout.setVisibility(othersStatus);
+      this._loggerLayout.setVisibility(othersStatus);
       this.__header.setVisibility(othersStatus);
     },
 
@@ -475,11 +487,25 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       throw new Error("Abstract method called!");
     },
 
+    _addLogger: function() {
+      return;
+    },
+
     /**
       * @abstract
       */
     _openEditAccessLevel: function() {
       throw new Error("Abstract method called!");
+    },
+
+    __createNodeStatusUI: function(node) {
+      const nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node).set({
+        backgroundColor: "material-button-background"
+      });
+      nodeStatusUI.getChildControl("label").set({
+        font: "text-16"
+      });
+      return nodeStatusUI;
     },
 
     /**
@@ -498,6 +524,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         const infoButton = this.__getInfoButton();
         this.__serviceInfoLayout.add(infoButton);
       }
+
+      const idx = this.__header.indexOf(this.__nodeStatusUI);
+      if (idx > -1) {
+        this.__header.remove(this.__nodeStatusUI);
+      }
+      this.__nodeStatusUI = this.__createNodeStatusUI(node);
+      this.__header.addAt(this.__nodeStatusUI, idx);
     }
   }
 });

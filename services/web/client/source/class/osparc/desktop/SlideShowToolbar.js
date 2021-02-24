@@ -24,6 +24,18 @@ qx.Class.define("osparc.desktop.SlideShowToolbar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "breadcrumb-navigation": {
+          const breadcrumbNavigation = this._navNodes = new osparc.navigation.BreadcrumbsSlideShow();
+          breadcrumbNavigation.addListener("nodeSelected", e => {
+            this.fireDataEvent("nodeSelected", e.getData());
+          }, this);
+          control = new qx.ui.container.Scroll();
+          control.add(breadcrumbNavigation);
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        }
         case "prev-next-btns": {
           control = new osparc.navigation.PrevNextButtons();
           control.addListener("nodeSelected", e => {

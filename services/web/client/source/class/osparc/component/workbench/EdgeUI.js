@@ -44,6 +44,11 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
     this.setEdge(edge);
     this.setRepresentation(representation);
 
+    edge.getInputNode().getStatus().addListener("changeModified", () => {
+      this.__updateCurveColor();
+    });
+    this.__updateCurveColor();
+
     this.subscribeToFilterGroup("workbench");
   },
 
@@ -59,6 +64,28 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
   },
 
   members: {
+    __updateCurveColor: function() {
+      const modified = this.getEdge().getInputNode().getStatus()
+        .getModified();
+      let newColor = null;
+      if (modified === null) {
+        newColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-comp-active");
+      } else {
+        newColor = osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
+      }
+      const newColorHex = qx.theme.manager.Color.getInstance().resolve(newColor);
+      osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), newColorHex);
+    },
+
+    setSelected: function(selected) {
+      if (selected) {
+        const selectedColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-selected");
+        osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), selectedColor);
+      } else {
+        this.__updateCurveColor();
+      }
+    },
+
     getEdgeId: function() {
       return this.getEdge().getEdgeId();
     },

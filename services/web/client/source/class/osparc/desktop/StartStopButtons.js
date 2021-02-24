@@ -41,6 +41,15 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     this.__initDefault();
   },
 
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      apply: "__applyStudy",
+      init: null,
+      nullable: false
+    }
+  },
+
   events: {
     "startPipeline": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Event",
@@ -83,36 +92,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         visibility: "excluded"
       });
       this._add(startSplitButton);
-
-      osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
-        const study = e.getData();
-        this.__updateRunButtonsStatus(study);
-      });
-    },
-
-    __updateRunButtonsStatus: function(study) {
-      if (study) {
-        const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
-        const stopButton = this.__stopButton;
-        if (study.getState() && study.getState().state) {
-          const pipelineState = study.getState().state;
-          switch (pipelineState.value) {
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-              startButtons.forEach(startButton => startButton.setFetching(true));
-              stopButton.setEnabled(true);
-              break;
-            case "NOT_STARTED":
-            case "SUCCESS":
-            case "FAILED":
-            default:
-              startButtons.forEach(startButton => startButton.setFetching(false));
-              stopButton.setEnabled(false);
-              break;
-          }
-        }
-      }
     },
 
     __createStartButton: function() {
@@ -153,6 +132,44 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         this.fireEvent("stopPipeline");
       }, this);
       return stopButton;
+    },
+
+    __applyStudy: function(study) {
+      this.__checkButtonsVisible();
+
+      study.addListener("changeState", () => {
+        this.__updateRunButtonsStatus();
+      }, this);
+    },
+
+    __checkButtonsVisible: function() {
+      this.setVisibility(this.getStudy().isReadOnly() ? "excluded" : "visible");
+    },
+
+    __updateRunButtonsStatus: function() {
+      const study = this.getStudy();
+      if (study) {
+        const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
+        const stopButton = this.__stopButton;
+        if (study.getState() && study.getState().state) {
+          const pipelineState = study.getState().state.value;
+          switch (pipelineState) {
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+              startButtons.forEach(startButton => startButton.setFetching(true));
+              stopButton.setEnabled(true);
+              break;
+            case "NOT_STARTED":
+            case "SUCCESS":
+            case "FAILED":
+            default:
+              startButtons.forEach(startButton => startButton.setFetching(false));
+              stopButton.setEnabled(false);
+              break;
+          }
+        }
+      }
     }
   }
 });

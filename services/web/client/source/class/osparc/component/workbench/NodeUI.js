@@ -192,6 +192,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
+      /*
+      node.getStatus().bind("running", this, "decorator", {
+        // Paint borders
+        converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
+      });
+      */
     },
 
     getInputPort: function() {
@@ -212,6 +218,25 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         isInput: isInput,
         ui: portLabel
       };
+      if (isInput) {
+        this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
+          converter: dependencies => {
+            if (dependencies !== null) {
+              return osparc.utils.StatusUI.getColor(dependencies.length ? "failed" : "ready");
+            }
+            return osparc.utils.StatusUI.getColor();
+          }
+        });
+      } else {
+        this.getNode().getStatus().bind("modified", portLabel, "textColor", {
+          converter: modified => {
+            if (modified === null) {
+              return osparc.utils.StatusUI.getColor();
+            }
+            return osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
+          }
+        });
+      }
       label.ui.isInput = isInput;
       this.__addDragDropMechanism(label.ui, isInput);
       if (isInput) {

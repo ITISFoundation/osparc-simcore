@@ -85,7 +85,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     getSelectedNodeIDs: function() {
-      return this.__workbenchUI.getSelectedNodeIDs();
+      if (this.__mainPanel.getMainView() === this.__workbenchUI) {
+        return this.__workbenchUI.getSelectedNodeIDs();
+      }
+      return [this.__currentNodeId];
     },
 
     nodeSelected: function(nodeId) {
@@ -130,6 +133,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     getLogger: function() {
       return this.__loggerView;
+    },
+
+    __getNodeLogger: function(nodeId) {
+      const nodes = this.getStudy().getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        if (nodeId === node.getNodeId()) {
+          return node.getLogger();
+        }
+      }
+      return null;
     },
 
     __editSlides: function() {
@@ -316,9 +329,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
 
-      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView(study.getWorkbench());
+      const loggerView = this.__loggerView = new osparc.component.widget.logger.LoggerView();
       const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView);
-      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "loggerTitleLabel");
+      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "studyLoggerTitleLabel");
       this.__sidePanel.addOrReplaceAt(loggerPanel, 2, {
         flex: 1
       });
@@ -501,7 +514,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             // Filtering out logs from other studies
             return;
           }
-          this.getLogger().infos(data["Node"], data["Messages"]);
+          const nodeId = data["Node"];
+          const messages = data["Messages"];
+          this.getLogger().infos(nodeId, messages);
+          const nodeLogger = this.__getNodeLogger(nodeId);
+          if (nodeLogger) {
+            nodeLogger.infos(nodeId, messages);
+          }
         }, this);
       }
       socket.emit(slotName);
@@ -534,13 +553,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
             node.setOutputData(nodeData.outputs);
-            if ("state" in nodeData && node.isComputational()) {
-              node.getStatus().setRunningStatus(nodeData["state"]["currentStatus"]);
-            }
             if ("progress" in nodeData) {
               const progress = Number.parseInt(nodeData["progress"]);
               node.getStatus().setProgress(progress);
             }
+            node.populateStates(nodeData);
           } else if (osparc.data.Permissions.getInstance().isTester()) {
             console.log("Ignored ws 'nodeUpdated' msg", d);
           }

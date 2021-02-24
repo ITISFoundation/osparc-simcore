@@ -16,24 +16,38 @@ qx.Class.define("osparc.ui.window.Confirmation", {
    * @extends osparc.ui.window.Dialog
    * @param {String} message Message that will be displayed to the user.
    */
-  construct: function(message) {
+  construct: function(message, confirmBtnText = this.tr("Yes")) {
     this.base(arguments, this.tr("Confirmation"), null, message);
 
     this.addCancelButton();
 
-    const btnYes = new qx.ui.toolbar.Button("Yes");
-    osparc.utils.Utils.setIdToWidget(btnYes, "confirmDeleteStudyBtn");
-    btnYes.addListener("execute", e => {
-      this.setConfirmed(true);
-      this.close(1);
-    }, this);
-    this.addButton(btnYes);
+    this._createChildControlImpl("confirm-button").set({
+      label: confirmBtnText
+    });
   },
 
   properties: {
     confirmed: {
       check: "Boolean",
       init: false
+    }
+  },
+
+  members: {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "confirm-button": {
+          control = new qx.ui.toolbar.Button();
+          control.addListener("execute", e => {
+            this.setConfirmed(true);
+            this.close(1);
+          }, this);
+          this.addButton(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
     }
   }
 });

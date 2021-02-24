@@ -37,33 +37,21 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
   },
 
   members: {
-    populateButtons: function(nodesIds = [], shape = "slash") {
-      const btns = [];
-      if (shape === "slash") {
-        for (let i=0; i<nodesIds.length; i++) {
-          const nodeId = nodesIds[i];
-          const btn = this.__createNodePathBtn(nodeId);
-          if (i === nodesIds.length-1) {
-            btn.setValue(true);
-          }
-          btns.push(btn);
-        }
-      } else if (shape === "arrow") {
-        const study = osparc.store.Store.getInstance().getCurrentStudy();
-        const currentNodeId = study.getUi().getCurrentNodeId();
-        for (let i=0; i<nodesIds.length; i++) {
-          const nodeId = nodesIds[i];
-          const btn = this.__createNodeSlideBtn(nodeId);
-          if (nodeId === currentNodeId) {
-            btn.setValue(true);
-          }
-          btns.push(btn);
-        }
-      }
-      this.__buttonsToBreadcrumb(btns, shape);
+    /**
+      * @abstract
+      */
+    populateButtons: function(nodesIds = []) {
+      throw new Error("Abstract method called!");
     },
 
-    __createNodeBtn: function(nodeId) {
+    /**
+      * @abstract
+      */
+    _createBtns: function(nodeId) {
+      throw new Error("Abstract method called!");
+    },
+
+    _createNodeBtn: function(nodeId) {
       const btn = new qx.ui.form.ToggleButton().set({
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         maxWidth: 200
@@ -74,54 +62,7 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
       return btn;
     },
 
-    __createNodePathBtn: function(nodeId) {
-      const btn = this.__createNodeBtn(nodeId);
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      if (nodeId === study.getUuid()) {
-        study.bind("name", btn, "label");
-        study.bind("name", btn, "toolTipText");
-      } else {
-        const node = study.getWorkbench().getNode(nodeId);
-        if (node) {
-          node.bind("label", btn, "label");
-          node.bind("label", btn, "toolTipText");
-        }
-      }
-      return btn;
-    },
-
-    __createNodeSlideBtn: function(nodeId) {
-      const btn = this.__createNodeBtn(nodeId);
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const slideShow = study.getUi().getSlideshow();
-      const node = study.getWorkbench().getNode(nodeId);
-      if (node && nodeId in slideShow) {
-        const pos = slideShow[nodeId].position;
-        node.bind("label", btn, "label", {
-          converter: val => (pos+1).toString() + "- " + val
-        });
-        node.bind("label", btn, "toolTipText");
-
-        const nsUI = new osparc.ui.basic.NodeStatusUI(node);
-        const nsUIIcon = nsUI.getChildControl("icon");
-        // Hacky, aber schön
-        // eslint-disable-next-line no-underscore-dangle
-        btn._add(nsUIIcon);
-        const nsUILabel = nsUI.getChildControl("label");
-        nsUILabel.addListener("changeValue", e => {
-          const statusLabel = e.getData();
-          if (statusLabel) {
-            btn.setToolTipText(`${node.getLabel()} - ${statusLabel}`);
-          }
-        }, this);
-        if (nsUILabel.getValue()) {
-          btn.setToolTipText(`${node.getLabel()} - ${nsUILabel.getValue()}`);
-        }
-      }
-      return btn;
-    },
-
-    __buttonsToBreadcrumb: function(btns, shape = "slash") {
+    _buttonsToBreadcrumb: function(btns, shape = "slash") {
       this._removeAll();
       for (let i=0; i<btns.length; i++) {
         const thisBtn = btns[i];

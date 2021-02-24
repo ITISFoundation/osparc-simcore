@@ -31,6 +31,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     this._add(slideShowToolbar);
   },
 
+  events: {
+    "startPartialPipeline": "qx.event.type.Data"
+  },
+
   properties: {
     study: {
       check: "osparc.data.model.Study",
@@ -52,12 +56,36 @@ qx.Class.define("osparc.desktop.SlideShowView", {
       return [this.__currentNodeId];
     },
 
-    nodeSelected: function(nodeId) {
-      this.__currentNodeId = nodeId;
-      this.getStudy().getUi().setCurrentNodeId(nodeId);
+    __isNodeReady: function(node, oldCurrentNodeId) {
+      const dependencies = node.getStatus().getDependencies();
+      if (dependencies && dependencies.length) {
+        const msg = this.tr("Do you want to run the required steps?");
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.fireDataEvent("startPartialPipeline", dependencies);
+          }
+          // bring the user back to the old node or to the first dependency
+          if (oldCurrentNodeId === this.__currentNodeId) {
+            this.nodeSelected(dependencies[0]);
+          } else {
+            this.nodeSelected(oldCurrentNodeId);
+          }
+        }, this);
+        return false;
+      }
+      return true;
+    },
 
+    nodeSelected: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
+        const oldCurrentNodeId = this.__currentNodeId;
+        this.__currentNodeId = nodeId;
+        this.getStudy().getUi().setCurrentNodeId(nodeId);
+
         let view;
         if (node.isContainer()) {
           view = new osparc.component.node.GroupNodeView();
@@ -78,6 +106,10 @@ qx.Class.define("osparc.desktop.SlideShowView", {
             flex: 1
           });
           this.__lastView = view;
+        }
+        // check if upstream has to be run
+        if (!this.__isNodeReady(node, oldCurrentNodeId)) {
+          return;
         }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
