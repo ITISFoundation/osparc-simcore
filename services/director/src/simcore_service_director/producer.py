@@ -955,6 +955,10 @@ async def _compute_dynamic_sidecar_node_details(
 ) -> Dict[str, Union[str, int]]:
     # pull all the details from the service-sidecar via an API call and pass it forward
     status_result = await get_service_sidecar_stack_status(app=app, node_uuid=node_uuid)
+    if status_result is None:
+        raise exceptions.DirectorException(
+            f"Error while retriving status from service-sidecar for node {node_uuid}"
+        )
     return format_node_details_for_frontend(**status_result)
 
 
@@ -1094,16 +1098,21 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
         # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
-        # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
-        service_host_name = "{}:{}{}".format(
-            service_details["service_host"],
-            service_details["service_port"]
-            if service_details["service_port"]
-            else "80",
-            service_details["service_basepath"]
-            if not "3d-viewer" in service_details["service_host"]
-            else "",
-        )
+
+        if service_details.get("dynamic_type") == "dynamic-sidecar":
+            # service-sidecar is exposed on port 8000 by default
+            service_host_name = service_details["service_host"] + ":8000"
+        else:
+            # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
+            service_host_name = "{}:{}{}".format(
+                service_details["service_host"],
+                service_details["service_port"]
+                if service_details["service_port"]
+                else "80",
+                service_details["service_basepath"]
+                if not "3d-viewer" in service_details["service_host"]
+                else "",
+            )
         log.debug("saving state of service %s...", service_host_name)
         try:
             session = app[APP_CLIENT_SESSION_KEY]
