@@ -63,7 +63,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
             const lastCharacter = label.slice(-1);
             if (modified === true && lastCharacter !== "*") {
               return label + "*"; // add star suffix
-            } else if (modified === false && lastCharacter === "*") {
+            } else if ((modified === false || modified === null) && lastCharacter === "*") {
               return label.slice(0, -1); // remove star suffix
             }
             return label;

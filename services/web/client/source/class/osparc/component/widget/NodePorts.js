@@ -50,10 +50,20 @@ qx.Class.define("osparc.component.widget.NodePorts", {
     node.bind("label", this, "title");
 
     node.getStatus().bind("modified", this.getChildControl("icon"), "source", {
-      converter: modified => osparc.utils.StatusUI.getIconSource(modified === true ? "modified" : "up-to-date")
+      converter: modified => {
+        if (modified === null) {
+          return osparc.utils.StatusUI.getIconSource();
+        }
+        return osparc.utils.StatusUI.getIconSource(modified === true ? "modified" : "up-to-date");
+      }
     }, this);
     node.getStatus().bind("modified", this.getChildControl("icon"), "textColor", {
-      converter: modified => osparc.utils.StatusUI.getColor(modified === true ? "modified" : "up-to-date")
+      converter: modified => {
+        if (modified === null) {
+          return osparc.utils.StatusUI.getColor();
+        }
+        return osparc.utils.StatusUI.getColor(modified === true ? "modified" : "up-to-date");
+      }
     }, this);
     node.getStatus().bind("modified", this.getChildControl("icon"), "toolTipText", {
       converter: modified => modified === true ? this.tr("Out of date") : ""

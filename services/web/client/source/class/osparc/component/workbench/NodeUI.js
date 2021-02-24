@@ -224,14 +224,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             if (dependencies !== null) {
               return osparc.utils.StatusUI.getColor(dependencies.length ? "failed" : "ready");
             }
-            return osparc.utils.StatusUI.getColor(null);
+            return osparc.utils.StatusUI.getColor();
           }
         });
       } else {
         this.getNode().getStatus().bind("modified", portLabel, "textColor", {
           converter: modified => {
             if (modified === null) {
-              return osparc.utils.StatusUI.getColor(null);
+              return osparc.utils.StatusUI.getColor();
             }
             return osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
           }
