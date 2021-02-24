@@ -6,6 +6,7 @@ from models_library.projects import Workbench
 from models_library.projects_nodes import NodeID, NodeState
 from models_library.projects_nodes_io import PortLink
 from models_library.projects_pipeline import PipelineDetails
+from models_library.projects_state import RunningState
 from models_library.utils.nodes import compute_node_hash
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 
@@ -167,7 +168,7 @@ async def create_minimal_computational_graph_based_on_selection(
 
 @log_decorator(logger=logger)
 async def compute_pipeline_details(
-    complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph
+    complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: List[CompTaskAtDB]
 ) -> PipelineDetails:
 
     # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
@@ -176,11 +177,15 @@ async def compute_pipeline_details(
         adjacency_list=nx.to_dict_of_lists(pipeline_dag),
         node_states={
             node_id: NodeState(
-                modified=node_data.get(kNODE_MODIFIED_STATE),
-                dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE),
+                modified=node_data.get(kNODE_MODIFIED_STATE, False),
+                dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
+                currentStatus=next(
+                    (task.state for task in comp_tasks if str(task.node_id) == node_id),
+                    RunningState.UNKNOWN,
+                ),
             )
             for node_id, node_data in complete_dag.nodes.data()
-            if node_id in pipeline_dag.nodes
+            if _is_node_computational(node_data["key"])
         },
     )
 

@@ -2,7 +2,7 @@ import logging
 import re
 import uuid as uuidlib
 from copy import deepcopy
-from typing import AnyStr, Dict, List, Match, Optional, Set, Tuple
+from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple
 
 from servicelib.decorators import safe_return
 
@@ -118,7 +118,9 @@ def substitute_parameterized_inputs(
     return project
 
 
-def is_graph_equal(lhs_workbench: Dict, rhs_workbench: Dict) -> bool:
+def is_graph_equal(
+    lhs_workbench: Dict[str, Any], rhs_workbench: Dict[str, Any]
+) -> bool:
     """Checks whether both workbench contain the same graph
 
     Two graphs are the same when the same topology (i.e. nodes and edges)
@@ -152,7 +154,7 @@ def is_graph_equal(lhs_workbench: Dict, rhs_workbench: Dict) -> bool:
 
 
 async def project_uses_available_services(
-    project: Dict, available_services: List[Dict]
+    project: Dict[str, Any], available_services: List[Dict[str, Any]]
 ) -> bool:
     if not project["workbench"]:
         # empty project
@@ -168,3 +170,18 @@ async def project_uses_available_services(
     }
 
     return needed_services.issubset(available_services)
+
+
+async def project_get_depending_nodes(
+    project: Dict[str, Any], node_uuid: str
+) -> Set[str]:
+    depending_node_uuids = set()
+    for dep_node_uuid, dep_node_data in project.get("workbench", {}).items():
+        for dep_node_inputs_key_data in dep_node_data.get("inputs", {}).values():
+            if (
+                isinstance(dep_node_inputs_key_data, dict)
+                and dep_node_inputs_key_data.get("nodeUuid") == node_uuid
+            ):
+                depending_node_uuids.add(dep_node_uuid)
+
+    return depending_node_uuids

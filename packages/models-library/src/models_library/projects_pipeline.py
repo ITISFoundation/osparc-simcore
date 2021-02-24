@@ -9,10 +9,11 @@ from .projects_state import RunningState
 
 class PipelineDetails(BaseModel):
     adjacency_list: Dict[NodeID, List[NodeID]] = Field(
-        ..., description="The adjacency list in terms of {NodeID: [successor NodeID]}"
+        ...,
+        description="The adjacency list of the current pipeline in terms of {NodeID: [successor NodeID]}",
     )
     node_states: Dict[NodeID, NodeState] = Field(
-        ..., description="The states of each of the pipeline node"
+        ..., description="The states of each of the computational nodes in the pipeline"
     )
 
 
