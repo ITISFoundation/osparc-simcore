@@ -230,10 +230,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       } else {
         this.getNode().getStatus().bind("modified", portLabel, "textColor", {
           converter: modified => {
-            if (modified !== null) {
-              return osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
+            if (modified === null) {
+              return osparc.utils.StatusUI.getColor(null);
             }
-            return osparc.utils.StatusUI.getColor(null);
+            return osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
           }
         });
       }
