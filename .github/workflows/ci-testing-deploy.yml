@@ -48,8 +48,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -84,8 +82,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -133,8 +129,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -188,8 +182,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -237,8 +229,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -290,8 +280,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -339,8 +327,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node }}
@@ -369,8 +355,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -405,8 +389,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -455,8 +437,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -504,8 +484,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -553,8 +531,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -602,8 +578,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -651,8 +625,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -701,8 +673,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -751,8 +721,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -801,8 +769,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -851,8 +817,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -897,8 +861,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
@@ -937,8 +899,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1002,8 +962,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1067,8 +1025,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1132,8 +1088,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1197,8 +1151,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1243,8 +1195,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1290,8 +1240,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -1533,8 +1481,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: deploy master
