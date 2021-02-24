@@ -444,24 +444,6 @@ PartialComputationParams = namedtuple(
                         "currentStatus": RunningState.SUCCESS,
                     },
                 },
-                exp_node_states_after_run={
-                    1: {
-                        "modified": False,
-                        "dependencies": [],
-                    },
-                    2: {
-                        "modified": False,
-                        "dependencies": [],
-                    },
-                    3: {
-                        "modified": False,
-                        "dependencies": [],
-                    },
-                    4: {
-                        "modified": False,
-                        "dependencies": [],
-                    },
-                },
             ),
             id="element 1,2,4",
         ),
