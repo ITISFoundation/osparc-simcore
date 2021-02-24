@@ -125,7 +125,6 @@ class Node(BaseModel):
     run_hash: Optional[str] = Field(
         None,
         description="the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated",
-        examples=["a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2"],
         alias="runHash",
     )
 
@@ -158,7 +157,6 @@ class Node(BaseModel):
     parent: Optional[NodeID] = Field(
         None,
         description="Parent's (group-nodes') node ID s. Used to group",
-        examples=["nodeUUid1", "nodeUuid2"],
     )
 
     # NOTE: use projects_ui.py

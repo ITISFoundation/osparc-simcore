@@ -22,7 +22,7 @@ click==7.1.2
     #   -c requirements/_test.txt
     #   black
     #   pip-tools
-dataclasses==0.7 ; python_version < "3.7"
+dataclasses==0.8 ; python_version < "3.7"
     # via
     #   -c requirements/_base.txt
     #   black
@@ -55,7 +55,7 @@ pip-tools==5.5.0
     # via -r requirements/../../../requirements/devenv.txt
 pre-commit==2.10.1
     # via -r requirements/../../../requirements/devenv.txt
-pyyaml==5.3.1
+pyyaml==5.4.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

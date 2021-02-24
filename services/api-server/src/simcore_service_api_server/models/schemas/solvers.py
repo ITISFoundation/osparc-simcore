@@ -1,53 +1,49 @@
-import functools
-from datetime import datetime
-from enum import Enum
+import urllib.parse
 from typing import Optional, Union
-from uuid import UUID, uuid3
 
 import packaging.version
 from models_library.basic_regex import VERSION_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
 from packaging.version import LegacyVersion, Version
-from pydantic import BaseModel, Extra, Field, HttpUrl, conint, constr, validator
+from pydantic import BaseModel, Extra, Field, HttpUrl, constr
 
+# NOTE:
+# - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry deployed. This constraint
+#   should be responsibility of the catalog. Those prefix
+# - Strictly speaking solvers should be a collection and releases a sub-collection, i.e. solvers/*/releases/*
+#   But, based on user feedback, everything was flattened into a released-solvers resource simply denoted "solvers"
+STRICT_RELEASE_NAME_REGEX_W_CAPTURE = r"^([^\s:]+)+:([^\s:/]+)$"
+STRICT_RELEASE_NAME_REGEX = r"^[^\s:]+:[0-9\.]+$"
+
+# - API will add flexibility to identify solver resources using aliases. Analogously to docker images e.g. a/b == a/b:latest == a/b:2.3
+#
+SOLVER_ALIAS_REGEX = r"^([^\s:]+)+:?([^\s:/]*)$"
 LATEST_VERSION = "latest"
-NAMESPACE_SOLVER_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
-NAMESPACE_JOB_KEY = UUID("ca7bdfc4-08e8-11eb-935a-ac9e17b76a71")
-
-
-@functools.lru_cache()
-def compose_solver_id(name: str, version: str) -> UUID:
-    return uuid3(NAMESPACE_SOLVER_KEY, f"{name}:{version}")
-
-
-@functools.lru_cache(maxsize=1024)
-def _compose_job_id(solver_id: UUID, inputs_sha: str, created_at: str) -> UUID:
-    # NOTE: the date is part of the composition so maxsize to 1000 * sys.getsizeof(UUID) = 1000 * 56bytes elements
-    return uuid3(NAMESPACE_JOB_KEY, f"{solver_id}:{inputs_sha}:{created_at}")
 
 
 # SOLVER ----------
 #
+SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
+
 VersionStr = constr(strip_whitespace=True, regex=VERSION_RE)
-SolverName = constr(
+SolverKeyId = constr(
     strip_whitespace=True,
     regex=COMPUTATIONAL_SERVICE_KEY_RE,
+    # TODO: should we use here a less restrictive regex that does not impose simcore/comp/?? this should be catalog responsibility
 )
 
 
 class Solver(BaseModel):
     """ A released solver with a specific version """
 
-    # Unique machine identifiers
-    name: SolverName = Field(
+    id: SolverKeyId = Field(
         ...,
-        description="Unique solver name with path namespaces",
+        description="Solver identifier",
     )
     version: VersionStr = Field(
         ...,
         description="semantic version number of the node",
     )
-    id: UUID
 
     # Human readables Identifiers
     title: str = Field(..., description="Human readable name")
@@ -63,29 +59,14 @@ class Solver(BaseModel):
         extra = Extra.ignore
         schema_extra = {
             "example": {
-                "name": "simcore/services/comp/isolve",
+                "id": "simcore/services/comp/isolve",
                 "version": "2.1.1",
-                "id": "f7c25b7d-edd6-32a4-9751-6072e4163537",
                 "title": "iSolve",
                 "description": "EM solver",
                 "maintainer": "info@itis.swiss",
-                "url": "https://api.osparc.io/v0/solvers/f7c25b7d-edd6-32a4-9751-6072e4163537",
+                "url": "https://api.osparc.io/v0/solvers/simcore%2Fservices%2Fcomp%2Fisolve/releases/2.1.1",
             }
         }
-
-    @validator("id", pre=True, always=True)
-    @classmethod
-    def compose_id_with_name_and_version(cls, v, values):
-        try:
-            sid = compose_solver_id(values["name"], values["version"])
-            if v and str(v) != str(sid):
-                raise ValueError(
-                    f"Invalid id: {v}!={sid} is incompatible with name and version composition"
-                )
-            return sid
-        except KeyError as err:
-            # If validation of name or version fails, it is NOT passed as values
-            raise ValueError(f"Id requires valid {err}") from err
 
     @classmethod
     def create_from_image(cls, image_meta: ServiceDockerData) -> "Solver":
@@ -94,12 +75,11 @@ class Solver(BaseModel):
         )
 
         return cls(
-            name=data.pop("key"),
+            id=data.pop("key"),
             version=data.pop("version"),
             title=data.pop("name"),
             maintainer=data.pop("contact"),
             url=None,
-            id=None,
             **data,
         )
 
@@ -108,153 +88,14 @@ class Solver(BaseModel):
         """ Rich version type that can be used e.g. to compare """
         return packaging.version.parse(self.version)
 
+    @property
+    def url_friendly_id(self) -> str:
+        """ Use to pass id as parameter in urls """
+        return urllib.parse.quote_plus(self.id)
 
-# JOBS ----------
-#
-#
-
-
-class Job(BaseModel):
-    solver_id: UUID = Field(..., description="Solver used to run this job")
-    inputs_checksum: str = Field(..., description="Input's checksum")
-    created_at: datetime = Field(..., description="Job creation timestamp")
-    id: UUID
-
-    # Get links to other resources
-    url: Optional[HttpUrl] = Field(..., description="Link to get this resource")
-    solver_url: Optional[HttpUrl] = Field(..., description="Link to the solver's job")
-    outputs_url: Optional[HttpUrl] = Field(..., description="Link to the job outputs")
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "solver_id": "32cfd2c5-ad5c-4086-ba5e-6f76a17dcb7a",
-                "inputs_checksum": "12345",
-                "created_at": "2021-01-22T23:59:52.322176",
-                "id": "f5c44f80-af84-3d45-8836-7933f67959a6",
-                "url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6",
-                "solver_url": "https://api.osparc.io/v0/solvers/42838344-03de-4ce2-8d93-589a5dcdfd05",
-                "outputs_url": "https://api.osparc.io/v0/jobs/f5c44f80-af84-3d45-8836-7933f67959a6/outputs",
-            }
-        }
-
-    @validator("id", pre=True, always=True)
-    @classmethod
-    def compose_id_with_solver_and_input(cls, v, values):
-        jid = _compose_job_id(
-            values["solver_id"], values["inputs_checksum"], values["created_at"]
-        )
-        if v and str(v) != str(jid):
-            raise ValueError(f"Invalid id: {v}!={jid} is incompatible with composition")
-        return jid
-
-    @classmethod
-    def create_now(cls, solver_id: UUID, inputs_checksum: str) -> "Job":
-        return cls(
-            solver_id=solver_id,
-            inputs_checksum=inputs_checksum,
-            created_at=datetime.utcnow(),
-            url=None,
-            solver_url=None,
-            outputs_url=None,
-            id=None,
-        )
-
-
-# TODO: these need to be in sync with celery task states
-class TaskStates(str, Enum):
-    UNDEFINED = "undefined"
-    PENDING = "pending"
-    RUNNING = "running"
-    SUCCESS = "success"
-    FAILED = "failed"
-
-
-class JobStatus(BaseModel):
-    """
-
-    NOTE About naming. The result of an inspection on X returns a Status object
-        What is the status of X? What sort of state is X in?
-        SEE https://english.stackexchange.com/questions/12958/status-vs-state
-    """
-
-    job_id: UUID
-    state: TaskStates
-    progress: conint(ge=0, le=100) = 0
-
-    # Timestamps to some of the states
-    # TODO: sync state events and timestamps
-    submitted_at: datetime
-    started_at: Optional[datetime] = Field(
-        None,
-        description="Timestamp that indicate the moment the solver starts execution or None if the event did not occur",
-    )
-    stopped_at: Optional[datetime] = Field(
-        None,
-        description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
-    )
-
-    def timestamp(self, event: str = "submitted"):
-        setattr(self, f"{event}_at", datetime.utcnow())
-
-
-# INPUTS/OUTPUTS ----------
-#
-#
-#
-
-
-class PortValue(BaseModel):
-    __root__: Union[float, str, int, HttpUrl, None]
-
-
-class SolverPort(BaseModel):
-    name: str = Field(
-        ...,
-        description="Name given to the input/output in solver specs (see solver metadata.yml)",
-    )
-
-    # TODO: define more specifically
-    #   - api/specs/common/schemas/node-meta-v0.0.1.json
-    #   - http://www.iana.org/assignments/media-types/media-types.xhtml
-    type: constr(
-        strict=True,
-        regex=r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$",
-    ) = Field(None, description="Data type expected on this input/ouput")
-
-    title: Optional[str] = Field(
-        None, description="Short human readable name to identify input/output"
-    )
-
-
-class JobInput(SolverPort):
-    value: Optional[PortValue] = None
-
-    # TODO: validate one or the other but not both
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "name": "T",
-                "type": "number",
-                "title": "Temperature",
-                "value": "33",
-            }
-        }
-
-
-class JobOutput(SolverPort):
-    value: PortValue
-
-    job_id: UUID = Field(..., description="Job that produced this output")
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "name": "SAR",
-                "type": "data:application/hdf5",
-                "title": "SAR field output file-id",
-                "value": "1dc2b1e6-a139-47ad-9e0c-b7b791cd4d7a",
-                "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
-            }
-        }
+    @property
+    def name(self) -> str:
+        """ Resource name """
+        _id = urllib.parse.quote_plus(self.id)
+        _version = urllib.parse.quote_plus(self.version)
+        return f"solvers/{_id}/releases/{_version}"

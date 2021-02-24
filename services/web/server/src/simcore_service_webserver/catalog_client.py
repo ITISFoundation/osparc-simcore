@@ -132,3 +132,31 @@ async def get_service(
     async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
         resp.raise_for_status()  # FIXME: error handling for session and response exceptions
         return await resp.json()
+
+
+async def update_service(
+    app: web.Application,
+    user_id: int,
+    service_key: str,
+    service_version: str,
+    product_name: str,
+    update_data: Dict[str, Any],
+) -> Dict[str, Any]:
+    url = (
+        URL(app[KCATALOG_ORIGIN])
+        .with_path(
+            app[KCATALOG_VERSION_PREFIX]
+            + f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+        )
+        .with_query(
+            {
+                "user_id": user_id,
+            }
+        )
+    )
+    session = get_client_session(app)
+    async with session.patch(
+        url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
+    ) as resp:
+        resp.raise_for_status()  # FIXME: error handling for session and response exceptions
+        return await resp.json()

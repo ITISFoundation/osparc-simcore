@@ -19,6 +19,7 @@ install() {
   bash ci/helpers/ensure_python_pip.bash
   pushd tests/public-api
   pip3 install -r requirements/ci.txt
+  pip freeze
   popd
   make pull-version || ( (make pull-cache || true) && make build-x tag-version)
   make .env
