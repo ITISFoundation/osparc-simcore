@@ -127,16 +127,25 @@ qx.Class.define("osparc.viewer.NodeViewer", {
           break;
         }
         case "running": {
-          const servicePath = data["service_basepath"];
-          const entryPointD = data["entry_point"];
-          const serviceUuid = data["service_uuid"];
-          if (serviceUuid !== this.getNodeId()) {
+          const nodeId = data["service_uuid"];
+          if (nodeId !== this.getNodeId()) {
             return;
           }
-          if (servicePath) {
-            const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-            const srvUrl = servicePath + entryPoint;
+
+          const dynamic_type = data["dynamic_type"] || null;
+          if (dynamic_type != null){
+            // dynamic service
+            const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
             this.__waitForServiceReady(srvUrl);
+          }else{
+            // old implementation
+            const servicePath = data["service_basepath"];
+            const entryPointD = data["entry_point"];
+            if (servicePath) {
+              const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
+              const srvUrl = servicePath + entryPoint;
+              this.__waitForServiceReady(srvUrl);
+            }
           }
           break;
         }
