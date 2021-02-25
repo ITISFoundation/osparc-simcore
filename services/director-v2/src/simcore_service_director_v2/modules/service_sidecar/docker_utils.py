@@ -2,8 +2,9 @@
 import asyncio
 import logging
 import time
+import json
 from enum import Enum
-from typing import Any, Deque, Dict, Tuple, Set
+from typing import Any, Deque, Dict, Tuple, Set, Optional
 
 import aiodocker
 from asyncio_extras import async_contextmanager
@@ -11,6 +12,7 @@ from asyncio_extras import async_contextmanager
 from .config import ServiceSidecarSettings
 from .constants import FIXED_SERVICE_NAME_SIDECAR, SERVICE_SIDECAR_PREFIX
 from .exceptions import GenericDockerError, ServiceSidecarError
+from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +31,10 @@ TASK_STATES_ALL: Set[str] = (
     | TASK_STATES_RUNNING
     | TASK_STATES_COMPLETE
 )
+
+ServiceLabelsStoredData = Tuple[
+    str, str, str, PathsMappingModel, ComposeSpecModel, Optional[str], str, str, int
+]
 
 
 class ServiceState(Enum):
@@ -116,7 +122,7 @@ async def inspect_service(service_id: str) -> Dict[str, Any]:
 
 async def get_service_sidecars_to_monitor(
     service_sidecar_settings: ServiceSidecarSettings,
-) -> Deque[Tuple[str, str, str, str, str, int]]:
+) -> Deque[ServiceLabelsStoredData]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         running_services = await client.services.list(
             filters={
@@ -148,17 +154,26 @@ async def get_service_sidecars_to_monitor(
         node_uuid = service["Spec"]["Labels"]["uuid"]
         service_key = service["Spec"]["Labels"]["service_key"]
         service_tag = service["Spec"]["Labels"]["service_tag"]
+        paths_mapping = PathsMappingModel(
+            **json.loads(service["Spec"]["Labels"]["paths_mapping"])
+        )
+        compose_spec = json.loads(service["Spec"]["Labels"]["compose_spec"])
+        target_container = json.loads(service["Spec"]["Labels"]["target_container"])
+
         service_sidecar_network_name = service["Spec"]["Labels"][
             "traefik.docker.network"
         ]
         simcore_traefik_zone = service["Spec"]["Labels"]["io.simcore.zone"]
         service_port = service["Spec"]["Labels"]["service_port"]
 
-        entry = (
+        entry: ServiceLabelsStoredData = (
             service_name,
             node_uuid,
             service_key,
             service_tag,
+            paths_mapping,
+            compose_spec,
+            target_container,
             service_sidecar_network_name,
             simcore_traefik_zone,
             service_port,

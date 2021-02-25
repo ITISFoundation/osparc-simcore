@@ -1,7 +1,7 @@
 import logging
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from pprint import pformat
 
 from aiohttp import web
@@ -22,6 +22,7 @@ from .docker_utils import (
 from .monitor import get_monitor
 from .utils import unused_port
 from .exceptions import ServiceSidecarError
+from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +72,9 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     service_tag: str,
     node_uuid: str,
     settings: List[Dict[str, Any]],
+    paths_mapping: PathsMappingModel,
+    compose_spec: ComposeSpecModel,
+    target_container: Optional[str],
     request_scheme: str,
     request_dns: str,
 ) -> Dict[str, str]:
@@ -139,6 +143,9 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         node_uuid=node_uuid,
         service_key=service_key,
         service_tag=service_tag,
+        paths_mapping=paths_mapping,
+        compose_spec=compose_spec,
+        target_container=target_container,
         project_id=project_id,
         settings=settings,
     )
@@ -188,6 +195,9 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         port=service_sidecar_settings.web_service_port,
         service_key=service_key,
         service_tag=service_tag,
+        paths_mapping=paths_mapping,
+        compose_spec=compose_spec,
+        target_container=target_container,
         service_sidecar_network_name=service_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=_extract_service_port_from_compose_start_spec(
@@ -435,6 +445,9 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     node_uuid: str,
     service_key: str,
     service_tag: str,
+    paths_mapping: PathsMappingModel,
+    compose_spec: ComposeSpecModel,
+    target_container: Optional[str],
     project_id: str,
     settings: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
@@ -511,6 +524,9 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
             "service_key": service_key,
             "service_tag": service_tag,
+            "paths_mapping": paths_mapping.json(),
+            "compose_spec": json.dumps(compose_spec),
+            "target_container": json.dumps(target_container),
         },
         "name": service_sidecar_name,
         "networks": [swarm_network_id, service_sidecar_network_id],

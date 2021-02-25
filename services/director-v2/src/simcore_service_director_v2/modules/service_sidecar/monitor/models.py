@@ -1,10 +1,11 @@
 import datetime
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, PositiveInt
 
 from .utils import AsyncResourceLock
+from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 
 class ServiceSidecarStatus(str, Enum):
@@ -124,6 +125,24 @@ class MonitorData(BaseModel):
         ...,
         description="together with the key used to compose the docker-compose spec for the service",
     )
+    paths_mapping: PathsMappingModel = Field(
+        ...,
+        description=(
+            "the service explicitly requests where to mount all paths "
+            "which will be handeled by the service-sidecar"
+        ),
+    )
+    compose_spec: ComposeSpecModel = Field(
+        ...,
+        description=(
+            "if the user provides a compose_spec, it will be used instead "
+            "of compsing one from the service_key and service_tag"
+        ),
+    )
+    target_container: Optional[str] = Field(
+        ...,
+        description="when the user defines a compose spec, it should pick a container inside the spec to receive traffic on a defined port",
+    )
 
     service_sidecar_network_name: str = Field(
         ...,
@@ -140,12 +159,16 @@ class MonitorData(BaseModel):
 
     @classmethod
     def assemble(
+        # pylint: disable=too-many-arguments
         cls,
         service_name: str,
         hostname: str,
         port: int,
         service_key: str,
         service_tag: str,
+        paths_mapping: PathsMappingModel,
+        compose_spec: ComposeSpecModel,
+        target_container: Optional[str],
         service_sidecar_network_name: str,
         simcore_traefik_zone: str,
         service_port: int,
@@ -154,6 +177,9 @@ class MonitorData(BaseModel):
             service_name=service_name,
             service_key=service_key,
             service_tag=service_tag,
+            paths_mapping=paths_mapping,
+            compose_spec=compose_spec,
+            target_container=target_container,
             service_sidecar_network_name=service_sidecar_network_name,
             simcore_traefik_zone=simcore_traefik_zone,
             service_port=service_port,

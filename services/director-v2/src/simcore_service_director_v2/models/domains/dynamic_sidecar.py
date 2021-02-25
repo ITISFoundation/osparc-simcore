@@ -2,8 +2,10 @@ from typing import Dict, Any, Optional, List
 
 from pydantic import BaseModel, Field, validator
 
+ComposeSpecModel = Optional[Dict[str, Any]]
 
-class ComposeSpecModel(BaseModel):
+
+class PathsMappingModel(BaseModel):
     inputs_path: str = Field(
         ..., description="path where the service expects all the inputs folder"
     )
@@ -38,14 +40,14 @@ class StartServiceSidecarModel(BaseModel):
         ...,
         description="settings for the services define by the service maintainer in the labels",
     )
-    paths_mapping: ComposeSpecModel = Field(
+    paths_mapping: PathsMappingModel = Field(
         ...,
         description=(
             "the service explicitly requests where to mount all paths "
             "which will be handeled by the service-sidecar"
         ),
     )
-    compose_spec: Optional[Dict[str, Any]] = Field(
+    compose_spec: ComposeSpecModel = Field(
         ...,
         description=(
             "if the user provides a compose_spec, it will be used instead "
@@ -71,7 +73,7 @@ class StartServiceSidecarModel(BaseModel):
 
     @validator("request_scheme")
     @classmethod
-    def validate_protocol(cls, v, values, **kwargs):
+    def validate_protocol(cls, v, values, **kwargs):  # pylint: disable=unused-argument
         if v not in {"http", "https"}:
             raise ValueError(
                 "target_container is required when compose_spec is defined. "

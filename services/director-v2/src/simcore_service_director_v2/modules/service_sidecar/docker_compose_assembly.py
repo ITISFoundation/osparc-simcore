@@ -1,10 +1,11 @@
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import yaml
 from aiohttp.web import Application
 
 from .config import ServiceSidecarSettings, get_settings
+from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {
@@ -13,7 +14,7 @@ BASE_SERVICE_SPEC: Dict[str, Any] = {
 }
 
 
-def inject_traefik_configuration(
+def _inject_traefik_configuration(
     service_spec: Dict[str, Any],
     target_container: str,
     service_sidecar_network_name: str,
@@ -53,15 +54,11 @@ def inject_traefik_configuration(
     target_container_spec["labels"] = labels
 
 
-async def assemble_spec(
+def _assemble_from_service_key_and_tag(
     app: Application,
     service_key: str,
     service_tag: str,
-    service_sidecar_network_name: str,
-    simcore_traefik_zone: str,
-    service_port: int
-) -> str:
-    """returns a docker-compose spec which will be use by the service-sidecar to start the service """
+):
     settings: ServiceSidecarSettings = get_settings(app)
 
     service_spec = deepcopy(BASE_SERVICE_SPEC)
@@ -69,12 +66,42 @@ async def assemble_spec(
         "image": f"{settings.resolved_registry_url}/{service_key}:{service_tag}"
     }
 
-    inject_traefik_configuration(
+    return service_spec
+
+
+async def assemble_spec(
+    app: Application,
+    service_key: str,
+    service_tag: str,
+    paths_mapping: PathsMappingModel,
+    compose_spec: ComposeSpecModel,
+    target_container: Optional[str],
+    service_sidecar_network_name: str,
+    simcore_traefik_zone: str,
+    service_port: int,
+) -> str:
+    """returns a docker-compose spec which will be use by the service-sidecar to start the service """
+
+    container_name = target_container
+    service_spec = compose_spec
+
+    # when no compose yaml file was provided
+    if service_spec is None:
+        service_spec = _assemble_from_service_key_and_tag(
+            app=app, service_key=service_key, service_tag=service_tag
+        )
+        container_name = CONTAINER_NAME
+    else:
+        # TODO: need to be sorted out:
+        # - inject paths mapping
+        # - some escaping for service name and version?
+        pass
+
+    _inject_traefik_configuration(
         service_spec,
-        target_container=CONTAINER_NAME,
+        target_container=container_name,
         service_sidecar_network_name=service_sidecar_network_name,
         simcore_traefik_zone=simcore_traefik_zone,
         service_port=service_port,
     )
-
     return yaml.safe_dump(service_spec)

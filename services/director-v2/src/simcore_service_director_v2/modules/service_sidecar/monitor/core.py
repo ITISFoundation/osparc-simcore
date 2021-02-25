@@ -8,15 +8,18 @@
 
 import asyncio
 import logging
-import os
 from asyncio import Lock, sleep
-from typing import Deque, Dict, Tuple, Any
+from typing import Deque, Dict, Any, Optional
 
 from aiohttp.web import Application
 from async_timeout import timeout
 
 from ..config import ServiceSidecarSettings, get_settings
-from ..docker_utils import get_service_sidecars_to_monitor, get_service_sidecar_state
+from ..docker_utils import (
+    get_service_sidecars_to_monitor,
+    get_service_sidecar_state,
+    ServiceLabelsStoredData,
+)
 from ..exceptions import ServiceSidecarError
 from .handlers import REGISTERED_HANDLERS
 from .models import (
@@ -26,6 +29,7 @@ from .models import (
 )
 from .service_sidecar_api import query_service, get_api_client, ServiceSidecarClient
 from .utils import AsyncResourceLock
+from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +113,9 @@ class ServiceSidecarsMonitor:
         port: int,
         service_key: str,
         service_tag: str,
+        paths_mapping: PathsMappingModel,
+        compose_spec: ComposeSpecModel,
+        target_container: Optional[str],
         service_sidecar_network_name: str,
         simcore_traefik_zone: str,
         service_port: int,
@@ -136,6 +143,9 @@ class ServiceSidecarsMonitor:
                     port=port,
                     service_key=service_key,
                     service_tag=service_tag,
+                    paths_mapping=paths_mapping,
+                    compose_spec=compose_spec,
+                    target_container=target_container,
                     service_sidecar_network_name=service_sidecar_network_name,
                     simcore_traefik_zone=simcore_traefik_zone,
                     service_port=service_port,
@@ -273,7 +283,7 @@ class ServiceSidecarsMonitor:
         # discover all services which were started before and add them to the monitor
         service_sidecar_settings: ServiceSidecarSettings = get_settings(self._app)
         services_to_monitor: Deque[
-            Tuple[str, str, str, str, str, int]
+            ServiceLabelsStoredData
         ] = await get_service_sidecars_to_monitor(service_sidecar_settings)
 
         logging.info(
@@ -286,6 +296,9 @@ class ServiceSidecarsMonitor:
                 node_uuid,
                 service_key,
                 service_tag,
+                paths_mapping,
+                compose_spec,
+                target_container,
                 service_sidecar_network_name,
                 simcore_traefik_zone,
                 service_port,
@@ -298,6 +311,9 @@ class ServiceSidecarsMonitor:
                 port=service_sidecar_settings.web_service_port,
                 service_key=service_key,
                 service_tag=service_tag,
+                paths_mapping=paths_mapping,
+                compose_spec=compose_spec,
+                target_container=target_container,
                 service_sidecar_network_name=service_sidecar_network_name,
                 simcore_traefik_zone=simcore_traefik_zone,
                 service_port=service_port,

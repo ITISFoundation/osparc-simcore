@@ -58,9 +58,12 @@ class RunDockerComposeUp(BaseEventHandler):
             app=app,
             service_key=current.service_key,
             service_tag=current.service_tag,
+            paths_mapping=current.paths_mapping,
+            compose_spec=current.compose_spec,
+            target_container=current.target_container,
             service_sidecar_network_name=current.service_sidecar_network_name,
             simcore_traefik_zone=current.simcore_traefik_zone,
-            service_port=current.service_port
+            service_port=current.service_port,
         )
 
         compose_spec_was_applied = await api_client.start_or_update_compose_spec(
