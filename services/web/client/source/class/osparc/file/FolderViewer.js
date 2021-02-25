@@ -36,7 +36,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       check: "qx.core.Object",
       nullable: true,
       event: "changeFolder",
-      apply: "__reloadFolderContent"
+      apply: "__applyFolder"
     },
 
     mode: {
@@ -46,6 +46,10 @@ qx.Class.define("osparc.file.FolderViewer", {
       event: "changeMode",
       apply: "__reloadFolderContent"
     }
+  },
+
+  events: {
+    "requestDatasetFiles": "qx.event.type.Data"
   },
 
   statics: {
@@ -208,19 +212,26 @@ qx.Class.define("osparc.file.FolderViewer", {
       return [];
     },
 
-    __reloadFolderContent: function() {
+    __applyFolder: function() {
       this.bind("folder", this.getChildControl("folder-name"), "value", {
         converter: folder => folder ? folder.getLabel() : "Select folder"
       });
-      this.getFolder().getChildren().addListener("change", e => {
-        const entries = this.__getEntries();
-        this.__childrenToFolderView(entries);
+
+      if (this.getFolder().getLoaded && !this.getFolder().getLoaded()) {
+        this.fireDataEvent("requestDatasetFiles", {
+          locationId: this.getFolder().getLocation(),
+          datasetId: this.getFolder().getPath()
+        });
+      }
+
+      this.getFolder().getChildren().addListener("change", () => {
+        this.__reloadFolderContent();
       }, this);
-      const entries = this.__getEntries();
-      this.__childrenToFolderView(entries);
+      this.__reloadFolderContent();
     },
 
-    __childrenToFolderView: function(entries) {
+    __reloadFolderContent: function() {
+      let entries = this.__getEntries();
       if (entries.length === 0) {
         entries = this.__getEmptyEntry();
       }

@@ -86,6 +86,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       }, this);
 
       const folderViewer = this.__folderViewer = new osparc.file.FolderViewer();
+      folderViewer.addListener("requestDatasetFiles", e => {
+        const data = e.getData();
+        filesTree.requestDatasetFiles(data.locationId, data.datasetId);
+      }, this);
 
       const filesLayout = new qx.ui.splitpane.Pane("horizontal");
       filesTree.set({
