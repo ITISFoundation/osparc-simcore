@@ -89,8 +89,8 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const filesLayout = new qx.ui.splitpane.Pane("horizontal");
       filesTree.set({
-        minWidth: 100,
-        width: 200
+        minWidth: 150,
+        width: 250
       });
       filesLayout.add(filesTree, 0); // flex 0
       filesLayout.add(folderViewer, 1); // flex 1

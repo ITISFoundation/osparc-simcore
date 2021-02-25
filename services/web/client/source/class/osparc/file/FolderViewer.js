@@ -49,6 +49,14 @@ qx.Class.define("osparc.file.FolderViewer", {
   },
 
   statics: {
+    getItemButton: function() {
+      return new qx.ui.form.ToggleButton().set({
+        iconPosition: "top",
+        width: 80,
+        padding: 5
+      });
+    },
+
     T_POS: {
       TYPE: 0,
       NAME: 1,
@@ -134,6 +142,24 @@ qx.Class.define("osparc.file.FolderViewer", {
       return control || this.base(arguments, id);
     },
 
+    __getEmptyEntry: function() {
+      const items = [];
+      if (this.getMode() === "list") {
+        items.push([
+          "",
+          this.tr("Empty folder"),
+          "",
+          "",
+          ""
+        ]);
+      } else if (this.getMode() === "icons") {
+        items.push(this.self().getItemButton().set({
+          label: this.tr("Empty folder")
+        }));
+      }
+      return items;
+    },
+
     __convertEntries: function(content) {
       const items = [];
       if (this.getMode() === "list") {
@@ -148,13 +174,10 @@ qx.Class.define("osparc.file.FolderViewer", {
         });
       } else if (this.getMode() === "icons") {
         content.forEach(entry => {
-          const btn = new qx.ui.form.ToggleButton(entry.getLabel()).set({
+          const btn = this.self().getItemButton().set({
+            label: entry.getLabel(),
             icon: this.__getIcon(entry),
-            toolTipText: entry.getLabel(),
-            iconPosition: "top",
-            selectable: true,
-            width: 80,
-            padding: 5
+            toolTipText: entry.getLabel()
           });
           btn.itemId = entry.getItemId();
           items.push(btn);
@@ -198,6 +221,9 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __childrenToFolderView: function(entries) {
+      if (entries.length === 0) {
+        entries = this.__getEmptyEntry();
+      }
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
         table.setData(entries);
