@@ -45,51 +45,74 @@ qx.Class.define("osparc.component.widget.TextEditor", {
   members: {
     __textArea: null,
 
-    __populateTextArea: function(initText) {
-      // Create a text area in which to edit the data
-      const textArea = this.__textArea = new qx.ui.form.TextArea(initText).set({
-        allowGrowX: true
-      });
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "text-area":
+          control = new qx.ui.form.TextArea().set({
+            allowGrowX: true
+          });
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "subtitle":
+          control = new qx.ui.basic.Label().set({
+            font: "text-12"
+          });
+          this._add(control);
+          break;
+        case "buttons":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignX: "right"
+          }));
+          this._add(control);
+          break;
+        case "cancel-button": {
+          const buttons = this.getChildControl("buttons");
+          control = new qx.ui.form.Button(this.tr("Cancel"));
+          control.addListener("execute", () => {
+            this.fireDataEvent("cancel");
+          }, this);
+          buttons.add(control);
+          break;
+        }
+        case "accept-button": {
+          const buttons = this.getChildControl("buttons");
+          control = new qx.ui.form.Button(this.tr("Save"));
+          control.addListener("execute", () => {
+            const newText = this.__textArea.getValue();
+            this.fireDataEvent("textChanged", newText);
+          }, this);
+          buttons.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
 
+    __populateTextArea: function(initText) {
+      const textArea = this.__textArea = this.getChildControl("text-area").set({
+        value: initText
+      });
       this.addListener("appear", () => {
         if (textArea.getValue()) {
           textArea.setTextSelection(0, textArea.getValue().length);
         }
       }, this);
-
-      this._add(textArea, {
-        flex: 1
-      });
     },
 
     __addSubtitle: function(subtitleText) {
       if (subtitleText) {
-        const subtitle = new qx.ui.basic.Label(subtitleText).set({
-          font: "text-12"
+        this.getChildControl("subtitle").set({
+          value: subtitleText
         });
-        this._add(subtitle);
       }
     },
 
     __addButtons: function() {
-      const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        alignX: "right"
-      }));
-
-      const cancel = new qx.ui.form.Button(this.tr("Cancel"));
-      cancel.addListener("execute", () => {
-        this.fireDataEvent("cancel");
-      }, this);
-      buttonsLayout.add(cancel);
-
-      const save = new qx.ui.form.Button(this.tr("Save"));
-      save.addListener("execute", () => {
-        const newText = this.__textArea.getValue();
-        this.fireDataEvent("textChanged", newText);
-      }, this);
-      buttonsLayout.add(save);
-
-      this._add(buttonsLayout);
+      this.getChildControl("cancel-button");
+      this.getChildControl("accept-button");
     }
   }
 });
