@@ -78,6 +78,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       treeLayout.add(reloadBtn);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
+        width: 200,
         dragMechnism: true,
         dropMechnism: true
       });
@@ -89,7 +90,13 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
           this.__filesTree.populateTree(null);
         }
       }, this);
-      treeLayout.add(filesTree, {
+
+      const folderViewer = this.__folderViewer = new osparc.file.FolderViewer();
+
+      const filesLayout = new qx.ui.splitpane.Pane();
+      filesLayout.add(filesTree, 0); // flex 0
+      filesLayout.add(folderViewer, 1); // flex 1
+      treeLayout.add(filesLayout, {
         flex: 1
       });
 
@@ -122,6 +129,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       const selectionData = this.__filesTree.getSelectedFile();
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
+      }
+
+      if (!selectionData.isFile) {
+        this.__folderViewer.setFolder(selectionData.selectedItem);
       }
     }
   }
