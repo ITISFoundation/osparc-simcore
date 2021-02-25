@@ -75,8 +75,8 @@ qx.Class.define("osparc.file.FilesTree", {
   },
 
   events: {
-    "selectionChanged": "qx.event.type.Event",
-    "itemSelected": "qx.event.type.Event",
+    "selectionChanged": "qx.event.type.Event", // tap
+    "itemSelected": "qx.event.type.Event", // dbltap
     "fileCopied": "qx.event.type.Data",
     "filesAddedToTree": "qx.event.type.Event"
   },

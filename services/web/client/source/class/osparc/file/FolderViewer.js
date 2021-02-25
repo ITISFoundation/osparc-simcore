@@ -41,7 +41,7 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     mode: {
       check: ["list", "icons"],
-      init: "list",
+      init: "icons",
       nullable: false,
       event: "changeMode",
       apply: "__reloadFolderContent"
@@ -49,6 +49,8 @@ qx.Class.define("osparc.file.FolderViewer", {
   },
 
   events: {
+    "selectionChanged": "qx.event.type.Event", // tap
+    "itemSelected": "qx.event.type.Event", // dbltap
     "requestDatasetFiles": "qx.event.type.Data"
   },
 
@@ -124,6 +126,8 @@ qx.Class.define("osparc.file.FolderViewer", {
           control.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
           control.setColumnWidth(this.self().T_POS.TYPE, 30);
           control.setColumnWidth(this.self().T_POS.NAME, 300);
+          control.setColumnWidth(this.self().T_POS.DATE, 150);
+          control.setColumnWidth(this.self().T_POS.SIZE, 50);
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "list" ? "visible" : "excluded"
           });
@@ -184,6 +188,11 @@ qx.Class.define("osparc.file.FolderViewer", {
             toolTipText: entry.getLabel()
           });
           btn.itemId = entry.getItemId();
+          if (this.__isFolder(entry)) {
+            btn.addListener("dbltap", () => {
+              this.setFolder(entry);
+            }, this);
+          }
           items.push(btn);
         });
       }
