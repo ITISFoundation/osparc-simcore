@@ -109,6 +109,9 @@ qx.Class.define("osparc.file.FolderViewer", {
             // tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
             initiallyHiddenColumns: [this.self().T_POS.ID]
           });
+          control.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
+          control.setColumnWidth(this.self().T_POS.TYPE, 30);
+          control.setColumnWidth(this.self().T_POS.NAME, 300);
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "list" ? "visible" : "excluded"
           });
@@ -186,12 +189,17 @@ qx.Class.define("osparc.file.FolderViewer", {
       this.bind("folder", this.getChildControl("folder-name"), "value", {
         converter: folder => folder ? folder.getLabel() : "Select folder"
       });
+      this.getFolder().getChildren().addListener("change", e => {
+        const entries = this.__getEntries();
+        this.__childrenToFolderView(entries);
+      }, this);
       const entries = this.__getEntries();
+      this.__childrenToFolderView(entries);
+    },
+
+    __childrenToFolderView: function(entries) {
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
-        table.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
-        table.setColumnWidth(this.self().T_POS.TYPE, 30);
-        table.setColumnFlex(this.self().T_POS.NAME, 1);
         table.setData(entries);
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
