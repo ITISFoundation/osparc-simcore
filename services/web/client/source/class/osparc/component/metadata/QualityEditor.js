@@ -464,7 +464,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       // certificationLink
       const headerCL = this.__getAnnotationHeader(schemaAnnotations.certificationLink);
       certificationBox.bind("selection", headerCL, "visibility", {
-        converter: selection => selection[0].label === "Uncertified" ? "excluded" : "visible"
+        converter: selection => selection[0].getLabel() === "Uncertified" ? "excluded" : "visible"
       }, this);
       this.__annotationsGrid.add(headerCL, {
         row,
@@ -474,7 +474,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       const annotationCL = new osparc.ui.markdown.Markdown();
       annotationCL.setValue(copyMetadataAnnotations.certificationLink);
       certificationBox.bind("selection", annotationCL, "visibility", {
-        converter: selection => selection[0].label === "Uncertified" ? "excluded" : "visible"
+        converter: selection => selection[0].getLabel() === "Uncertified" ? "excluded" : "visible"
       }, this);
       this.__annotationsGrid.add(annotationCL, {
         row,
@@ -483,14 +483,11 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       const buttonCL = this.__getEditButton(copyMetadataAnnotations.certificationLink, annotationCL);
       certificationBox.bind("selection", buttonCL, "visibility", {
-        converter: selection => selection[0].label === "Uncertified" ? "excluded" : "visible"
+        converter: selection => (this.getMode() === "edit" && selection[0].getLabel() !== "Uncertified") ? "visible" : "excluded"
       }, this);
       this.bind("mode", buttonCL, "visibility", {
-        converter: mode => (mode === "edit" && certificationBox.getSelection()[0].label === "Uncertified") ? "visible" : "excluded"
+        converter: mode => (mode === "edit" && certificationBox.getSelection()[0].getLabel() !== "Uncertified") ? "visible" : "excluded"
       });
-      certificationBox.bind("selection", buttonCL, "visibility", {
-        converter: selection => (this.getMode() === "edit" && selection[0].label !== "Uncertified") ? "visible" : "excluded"
-      }, this);
       this.__annotationsGrid.add(buttonCL, {
         row,
         column: 2
