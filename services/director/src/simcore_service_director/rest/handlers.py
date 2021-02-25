@@ -141,6 +141,8 @@ async def running_interactive_services_post(
         service_basepath,
     )
     try:
+        request_dns = request.headers["X-Service-Sidecar-Request-DNS"]
+        request_scheme= request.headers["X-Service-Sidecar-Request-Scheme"]
         service = await producer.start_service(
             request.app,
             user_id,
@@ -149,6 +151,8 @@ async def running_interactive_services_post(
             service_tag,
             service_uuid,
             service_basepath,
+            request_dns,
+            request_scheme,
         )
         return web.json_response(data=dict(data=service), status=201)
     except exceptions.ServiceStartTimeoutError as err:
