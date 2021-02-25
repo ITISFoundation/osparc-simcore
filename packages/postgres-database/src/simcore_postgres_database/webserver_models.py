@@ -13,31 +13,33 @@ from .models.groups import GroupType, groups, user_to_groups
 from .models.products import products
 from .models.projects import ProjectType, projects
 from .models.scicrunch_resources import scicrunch_resources
+from .models.services_consume_filetypes import services_consume_filetypes
 from .models.tags import study_tags, tags
 from .models.tokens import tokens
 from .models.users import UserRole, UserStatus, users
 
 __all__ = [
-    "users",
+    "api_keys",
+    "comp_pipeline",
+    "comp_tasks",
+    "ConfirmationAction",
+    "confirmations",
+    "DB_CHANNEL_NAME",
+    "group_classifiers",
     "groups",
     "GroupType",
-    "user_to_groups",
-    "UserRole",
-    "UserStatus",
+    "NodeClass",
+    "products",
     "projects",
     "ProjectType",
     "scicrunch_resources",
-    "confirmations",
-    "ConfirmationAction",
-    "tokens",
-    "comp_tasks",
-    "DB_CHANNEL_NAME",
-    "NodeClass",
-    "comp_pipeline",
+    "services_consume_filetypes",
     "StateType",
-    "tags",
     "study_tags",
-    "api_keys",
-    "group_classifiers",
-    "products",
+    "tags",
+    "tokens",
+    "user_to_groups",
+    "UserRole",
+    "users",
+    "UserStatus",
 ]
