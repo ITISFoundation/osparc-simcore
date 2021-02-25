@@ -9,8 +9,6 @@ from aiohttp import web, web_exceptions
 
 from simcore_service_director import exceptions, producer, registry_proxy, resources
 
-from . import node_validator
-
 log = logging.getLogger(__name__)
 
 
