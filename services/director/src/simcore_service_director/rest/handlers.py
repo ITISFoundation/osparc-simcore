@@ -9,8 +9,6 @@ from aiohttp import web, web_exceptions
 
 from simcore_service_director import exceptions, producer, registry_proxy, resources
 
-from . import node_validator
-
 log = logging.getLogger(__name__)
 
 
@@ -51,7 +49,9 @@ async def services_get(
             services = await registry_proxy.list_services(
                 request.app, registry_proxy.ServiceType.DYNAMIC
             )
-        services = node_validator.validate_nodes(services)
+        # NOTE: the validation is done in the catalog. This entrypoint IS and MUST BE only used by the catalog!!
+        # NOTE2: the catalog will directly talk to the registry see case #2165 [https://github.com/ITISFoundation/osparc-simcore/issues/2165]
+        # services = node_validator.validate_nodes(services)
         return web.json_response(data=dict(data=services))
     except exceptions.RegistryConnectionError as err:
         raise web_exceptions.HTTPUnauthorized(reason=str(err))
