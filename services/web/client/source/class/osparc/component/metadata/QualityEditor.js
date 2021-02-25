@@ -456,6 +456,10 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           certificationBox.setSelection([certItem]);
         }
       });
+      certificationBox.addListener("changeSelection", e => {
+        const selection = e.getData();
+        copyMetadataAnnotations.certificationStatus = selection[0].getLabel();
+      }, this);
       this.__annotationsGrid.add(certificationBox, {
         row,
         column: 1
