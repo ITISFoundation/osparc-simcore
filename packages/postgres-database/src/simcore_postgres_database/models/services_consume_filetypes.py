@@ -63,4 +63,12 @@ services_consume_filetypes = sa.Table(
         onupdate="CASCADE",
         ondelete="CASCADE",
     ),
+    # This table stores services (key:version) that consume filetype by AT LEAST one input_port
+    # if more ports can consume, then it should only be added once in this table
+    sa.PrimaryKeyConstraint(
+        "service_key",
+        "service_version",
+        "filetype",
+        name="services_consume_filetypes_pk",
+    ),
 )
