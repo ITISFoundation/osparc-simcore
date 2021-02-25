@@ -27,13 +27,16 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this.__reloadContent();
+    this.getChildControl("folder-name");
+    this.getChildControl("view-options");
   },
 
   properties: {
-    node: {
-      check: "osparc.data.model.Node",
-      nullable: true
+    folder: {
+      check: "qx.core.Object",
+      nullable: true,
+      event: "changeFolder",
+      apply: "__reloadFolderContent"
     },
 
     mode: {
@@ -41,12 +44,12 @@ qx.Class.define("osparc.file.FolderViewer", {
       init: "list",
       nullable: false,
       event: "changeMode",
-      apply: "__reloadContent"
+      apply: "__reloadFolderContent"
     }
   },
 
   statics: {
-    TPOS: {
+    T_POS: {
       TYPE: 0,
       NAME: 1,
       DATE: 2,
@@ -56,8 +59,6 @@ qx.Class.define("osparc.file.FolderViewer", {
   },
 
   members: {
-    __currentFolder: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -67,8 +68,10 @@ qx.Class.define("osparc.file.FolderViewer", {
           break;
         case "folder-name": {
           const header = this.getChildControl("header");
-          control = new qx.ui.basic.Label().set({
-            allowGrowX: true
+          control = new qx.ui.basic.Label(this.tr("Select Folder")).set({
+            font: "title-16",
+            allowGrowX: true,
+            alignY: "middle"
           });
           header.addAt(control, 0, {
             flex: 1
@@ -104,7 +107,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           ]);
           control = new osparc.ui.table.Table(tableModel, {
             // tableColumnModel: obj => new qx.ui.table.columnmodel.Resize(obj),
-            initiallyHiddenColumns: [this.self().TPOS.ID]
+            initiallyHiddenColumns: [this.self().T_POS.ID]
           });
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "list" ? "visible" : "excluded"
@@ -126,11 +129,6 @@ qx.Class.define("osparc.file.FolderViewer", {
         }
       }
       return control || this.base(arguments, id);
-    },
-
-    setFolder: function(folder) {
-      this.__currentFolder = folder;
-      this.__reloadContent();
     },
 
     __convertEntries: function(content) {
@@ -177,24 +175,23 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __getEntries: function() {
-      if (this.__currentFolder) {
-        const children = this.__currentFolder.getChildren().toArray();
+      if (this.getFolder()) {
+        const children = this.getFolder().getChildren().toArray();
         return this.__convertEntries(children);
       }
       return [];
     },
 
-    __reloadContent: function() {
-      this.getChildControl("folder-name").set({
-        value: this.__currentFolder ? this.__currentFolder.getLabel() : "Select folder"
+    __reloadFolderContent: function() {
+      this.bind("folder", this.getChildControl("folder-name"), "value", {
+        converter: folder => folder ? folder.getLabel() : "Select folder"
       });
-      this.getChildControl("view-options");
-
       const entries = this.__getEntries();
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
-        table.getTableColumnModel().setDataCellRenderer(this.self().TPOS.TYPE, new qx.ui.table.cellrenderer.Image());
-        table.setColumnWidth(this.self().TPOS.TYPE, 20);
+        table.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
+        table.setColumnWidth(this.self().T_POS.TYPE, 30);
+        table.setColumnFlex(this.self().T_POS.NAME, 1);
         table.setData(entries);
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
