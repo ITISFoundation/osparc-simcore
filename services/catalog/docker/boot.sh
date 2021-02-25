@@ -26,11 +26,10 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
 fi
 
 # RUNNING application ----------------------------------------
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
-then
+if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
-  exec uvicorn simcore_service_catalog.__main__:the_app --reload --host 0.0.0.0
+  exec uvicorn simcore_service_catalog.__main__:the_app --reload --host 0.0.0.0 --reload-dir services/catalog/src/simcore_service_catalog
 else
   exec simcore-service-catalog
 fi

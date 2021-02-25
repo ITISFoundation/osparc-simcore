@@ -29,8 +29,6 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
-          echo "DOCKER_BUILDX=1" >> $GITHUB_ENV
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: set git tag
