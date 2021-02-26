@@ -500,6 +500,7 @@ qx.Class.define("osparc.file.FilesTree", {
 
         const selected = new qx.data.Array([item]);
         this.setSelection(selected);
+        this.__selectionChanged();
       }
     },
 

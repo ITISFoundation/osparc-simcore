@@ -62,6 +62,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       return new qx.ui.form.ToggleButton().set({
         iconPosition: "top",
         width: 90,
+        height: 70,
         padding: 3
       });
     },
@@ -205,17 +206,15 @@ qx.Class.define("osparc.file.FolderViewer", {
             toolTipText: entry.getLabel()
           });
           btn.itemId = entry.getItemId();
-          if (osparc.file.FilesTree.isFile(entry)) {
-            btn.addListener("tap", () => {
-              this.fireDataEvent("selectionChanged", entry);
-            }, this);
-          }
-          if (osparc.file.FilesTree.isDir(entry)) {
-            btn.addListener("dbltap", () => {
+          btn.addListener("tap", () => {
+            this.fireDataEvent("selectionChanged", entry);
+          }, this);
+          btn.addListener("dbltap", () => {
+            if (osparc.file.FilesTree.isDir(entry)) {
               this.fireDataEvent("openFolder", entry);
               this.setFolder(entry);
-            }, this);
-          }
+            }
+          }, this);
           items.push(btn);
         });
       }
