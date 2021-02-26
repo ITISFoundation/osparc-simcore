@@ -297,25 +297,15 @@ async def update_project_node_state(
         project_id,
         user_id,
     )
-    project = await get_project_for_user(app, project_id, user_id)
-    if not node_id in project["workbench"]:
-        raise NodeNotFoundError(project_id, node_id)
-    if project["workbench"][node_id].get("state", {}).get("currentStatus") == new_state:
-        # nothing to do here
-        return project
-    project["workbench"][node_id].setdefault("state", {}).update(
-        {"currentStatus": new_state}
-    )
-    if RunningState(new_state) in [
-        RunningState.PUBLISHED,
-        RunningState.PENDING,
-        RunningState.STARTED,
-    ]:
-        project["workbench"][node_id]["progress"] = 0
-    elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
-        project["workbench"][node_id]["progress"] = 100
+    project = {
+        "uuid": project_id,
+        "workbench": {node_id: {"state": {"currentStatus": new_state}}},
+    }
+
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project = await db.update_user_project(
+        project, user_id, project_id, replace_project=False
+    )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
@@ -332,13 +322,14 @@ async def update_project_node_progress(
         user_id,
         progress,
     )
-    project = await get_project_for_user(app, project_id, user_id)
-    if not node_id in project["workbench"]:
-        raise NodeNotFoundError(project_id, node_id)
-
-    project["workbench"][node_id]["progress"] = int(100.0 * float(progress) + 0.5)
+    project = {
+        "uuid": project_id,
+        "workbench": {node_id: {"progress": int(100.0 * float(progress) + 0.5)}},
+    }
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project = await db.update_user_project(
+        project, user_id, project_id, replace_project=False
+    )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
@@ -365,26 +356,23 @@ async def update_project_node_outputs(
         new_run_hash,
     )
     new_outputs: Dict[str, Any] = new_outputs or {}
-    project = await get_project_for_user(app, project_id, user_id)
-
-    if not node_id in project["workbench"]:
-        raise NodeNotFoundError(project_id, node_id)
-
-    # NOTE: update outputs (not required) if necessary as the UI expects a
-    # dataset/label field that is missing
-    current_outputs = project["workbench"][node_id].setdefault("outputs", {})
-    project["workbench"][node_id]["outputs"] = new_outputs
-    project["workbench"][node_id]["runHash"] = new_run_hash
 
     # find changed keys (the ones that appear or disapppear for sure)
-    changed_keys = list(current_outputs.keys() ^ new_outputs.keys())
+    changed_keys = new_outputs.keys()
     # now check the ones that are in both object
-    for key in current_outputs.keys() & new_outputs.keys():
-        if current_outputs[key] != new_outputs[key]:
-            changed_keys.append(key)
+    # for key in current_outputs.keys() & new_outputs.keys():
+    #     if current_outputs[key] != new_outputs[key]:
+    #         changed_keys.append(key)
+
+    project = {
+        "uuid": project_id,
+        "workbench": {node_id: {"outputs": new_outputs, "runHash": new_run_hash}},
+    }
 
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project(project, user_id, project_id)
+    updated_project = await db.update_user_project(
+        project, user_id, project_id, replace_project=False
+    )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
