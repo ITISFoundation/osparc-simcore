@@ -53,6 +53,7 @@ qx.Class.define("osparc.file.FolderViewer", {
   events: {
     "selectionChanged": "qx.event.type.Event", // tap
     "itemSelected": "qx.event.type.Event", // dbltap
+    "openFolder": "qx.event.type.Data",
     "requestDatasetFiles": "qx.event.type.Data"
   },
 
@@ -192,6 +193,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           btn.itemId = entry.getItemId();
           if (this.__isFolder(entry)) {
             btn.addListener("dbltap", () => {
+              this.fireDataEvent("openFolder", entry);
               this.setFolder(entry);
             }, this);
           }
@@ -225,7 +227,7 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     __applyFolder: function() {
       this.bind("folder", this.getChildControl("folder-path"), "value", {
-        converter: folder => folder ? folder.getPathLabel() : "Select folder"
+        converter: folder => folder ? folder.getPathLabel().join(" / ") : "Select folder"
       });
 
       if (this.getFolder().getLoaded && !this.getFolder().getLoaded()) {
