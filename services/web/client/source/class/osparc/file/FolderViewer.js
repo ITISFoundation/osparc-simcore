@@ -153,6 +153,20 @@ qx.Class.define("osparc.file.FolderViewer", {
       return control || this.base(arguments, id);
     },
 
+    getSelectedFile: function() {
+      return null;
+      let selectedItem = this.__getSelectedItem();
+      if (selectedItem) {
+        const isFile = osparc.file.FilesTree.isFile(selectedItem);
+        const data = {
+          selectedItem: selectedItem,
+          isFile: isFile
+        };
+        return data;
+      }
+      return null;
+    },
+
     __getEmptyEntry: function() {
       const items = [];
       if (this.getMode() === "list") {
@@ -191,12 +205,12 @@ qx.Class.define("osparc.file.FolderViewer", {
             toolTipText: entry.getLabel()
           });
           btn.itemId = entry.getItemId();
-          if (!this.__isFolder(entry)) {
+          if (osparc.file.FilesTree.isFile(entry)) {
             btn.addListener("tap", () => {
               this.fireDataEvent("selectionChanged", entry);
             }, this);
           }
-          if (this.__isFolder(entry)) {
+          if (osparc.file.FilesTree.isDir(entry)) {
             btn.addListener("dbltap", () => {
               this.fireDataEvent("openFolder", entry);
               this.setFolder(entry);
@@ -209,17 +223,7 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __getIcon: function(entry) {
-      return this.__isFolder(entry) ? "@MaterialIcons/folder" : "@MaterialIcons/insert_drive_file";
-    },
-
-    __isFolder: function(entry) {
-      if (entry.getIsDataset) {
-        return entry.getIsDataset();
-      }
-      if (entry.getChildren) {
-        return entry.getChildren().length;
-      }
-      return false;
+      return osparc.file.FilesTree.isDir(entry) ? "@MaterialIcons/folder" : "@MaterialIcons/insert_drive_file";
     },
 
     __getEntries: function() {
