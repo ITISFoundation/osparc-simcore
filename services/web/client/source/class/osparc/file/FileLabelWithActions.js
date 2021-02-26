@@ -37,24 +37,21 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, new qx.ui.layout.HBox(5));
+    this.base(arguments);
 
-    let fileLabelWithActionsLayout = new qx.ui.layout.HBox(5);
-    this._setLayout(fileLabelWithActionsLayout);
+    this._setLayout(new qx.ui.layout.HBox(5));
 
-    let downloadBtn = this._createChildControlImpl("downloadBtn");
-    osparc.utils.Utils.setIdToWidget(downloadBtn, "filesTreeDownloadBtn");
+    const downloadBtn = this.getChildControl("downloadBtn");
     downloadBtn.addListener("execute", e => {
       this.__retrieveURLAndDownload();
     }, this);
 
-    let deleteBtn = this._createChildControlImpl("deleteBtn");
-    osparc.utils.Utils.setIdToWidget(deleteBtn, "filesTreeDeleteBtn");
+    const deleteBtn = this.getChildControl("deleteBtn");
     deleteBtn.addListener("execute", e => {
       this.__deleteFile();
     }, this);
 
-    this.__selectedLabel = this._createChildControlImpl("selectedLabel");
+    this._createChildControlImpl("selectedLabel");
   },
 
   events: {
@@ -62,21 +59,23 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
   },
 
   members: {
-    __selectedLabel: null,
+    __selection: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "selectedLabel":
-          control = new osparc.ui.toolbar.Label();
-          this._add(control);
-          break;
         case "downloadBtn":
           control = new qx.ui.toolbar.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
+          osparc.utils.Utils.setIdToWidget(control, "filesTreeDownloadBtn");
           this._add(control);
           break;
         case "deleteBtn":
           control = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash-alt/16");
+          osparc.utils.Utils.setIdToWidget(control, "filesTreeDeleteBtn");
+          this._add(control);
+          break;
+        case "selectedLabel":
+          control = new osparc.ui.toolbar.Label();
           this._add(control);
           break;
       }
@@ -84,12 +83,14 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     itemSelected: function(selectedItem, isFile) {
+      this.getChildControl("downloadBtn").setEnabled(Boolean(isFile));
+      this.getChildControl("deleteBtn").setEnabled(Boolean(isFile));
       if (isFile) {
         this.__selection = selectedItem;
-        this.__selectedLabel.setValue(selectedItem.getFileId());
+        this.getChildControl("selectedLabel").setValue(selectedItem.getFileId());
       } else {
         this.__selection = null;
-        this.__selectedLabel.setValue("");
+        this.getChildControl("selectedLabel").setValue("");
       }
     },
 
