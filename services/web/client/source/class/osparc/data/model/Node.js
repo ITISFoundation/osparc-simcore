@@ -654,6 +654,9 @@ qx.Class.define("osparc.data.model.Node", {
           }
         }
         this.getStatus().setHasOutputs(true);
+        if (this.isFilePicker() || this.isDynamic()) {
+          this.getStatus().setModified(false);
+        }
 
         this.fireDataEvent("changeOutputs", this.getOutputs());
       }
