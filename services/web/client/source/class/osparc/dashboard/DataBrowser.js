@@ -43,6 +43,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       this.addListener("appear", () => {
         this.__filesTree.populateTree(null);
+        this.__folderViewer.setFolder(this.__filesTree.getModel());
       }, this);
     },
 

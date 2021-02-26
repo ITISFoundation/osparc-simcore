@@ -27,6 +27,8 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
+    this.setPaddingLeft(10);
+
     this.getChildControl("folder-name");
     this.getChildControl("view-options");
   },
