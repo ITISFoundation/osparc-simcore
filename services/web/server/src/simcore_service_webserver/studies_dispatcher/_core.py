@@ -1,7 +1,6 @@
 import logging
 import uuid
 from collections import deque
-from dataclasses import dataclass
 from functools import lru_cache
 from typing import List, Optional
 
@@ -63,7 +62,7 @@ async def list_viewers(
 
     async with app[APP_DB_ENGINE_KEY].acquire() as conn:
 
-        # TODO: ADD CONDITION: service MUST be shared with EVERYBODY!
+        # FIXME: ADD CONDITION: service MUST be shared with EVERYBODY!
         stmt = services_consume_filetypes.select()
         if file_type:
             stmt.where(services_consume_filetypes.c.filetype == file_type)
