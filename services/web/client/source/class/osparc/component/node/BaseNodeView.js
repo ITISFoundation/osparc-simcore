@@ -514,13 +514,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _applyNode: function(node) {
       this.__serviceInfoLayout.removeAll();
       if (node && node.getMetaData()) {
-        const metadata = node.getMetaData();
-        const label = new qx.ui.basic.Label(metadata.name + " : " + metadata.version).set({
-          enabled: false,
-          alignY: "middle"
-        });
-        this.__serviceInfoLayout.add(label);
-
         const infoButton = this.__getInfoButton();
         this.__serviceInfoLayout.add(infoButton);
       }
