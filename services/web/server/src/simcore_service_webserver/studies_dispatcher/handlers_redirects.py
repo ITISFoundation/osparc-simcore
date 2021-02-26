@@ -8,7 +8,8 @@ from typing import Optional
 import aiohttp
 from aiohttp import web
 from aiohttp.client_exceptions import ClientError
-from pydantic import BaseModel, HttpUrl, ValidationError, validator
+from models_library.services import KEY_RE, VERSION_RE
+from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
@@ -38,24 +39,37 @@ def create_redirect_response(
         and parameters
             - message="Sorry, I could not find this"
             - status_code=404
+
+    Front-end can then render this data either in an error or a view page
     """
     page = page.strip(" /")
-    # TODO: test that fragment queries are understood by front-end
-    # TODO: front end should create an error page and a view page
     assert page in ("view", "error")  # nosec
-    in_fragment = str(URL.build(path=f"/{page}").with_query(**parameters))
-    redirect_url = app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(in_fragment)
+    fragment_path = str(URL.build(path=f"/{page}").with_query(**parameters))
+    redirect_url = (
+        app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
+    )
     return web.HTTPFound(location=redirect_url)
 
 
 # HANDLERS --------------------------------
+class ViewerParams(BaseModel):
+    file_type: str
+    viewer_key: constr(regex=KEY_RE)
+    viewer_version: constr(regex=VERSION_RE)
+
+    @classmethod
+    def from_viewer(cls, viewer: ViewerInfo) -> "ViewerParams":
+        # can safely construct w/o validation from a viewer
+        return cls.construct(
+            filetype=viewer.filetype,
+            viewer_key=viewer.key,
+            viewer_version=viewer.version,
+        )
 
 
-class QueryParams(BaseModel, ValidationMixin):
-    # TODO: create dinamically with pydantic class
+class RedirectionQueryParams(ViewerParams, ValidationMixin):
     file_name: Optional[str] = None
     file_size: PositiveInt
-    file_type: str  # TODO: should we define some types?
     download_link: HttpUrl
 
     @validator("download_link", pre=True)
@@ -83,14 +97,27 @@ class QueryParams(BaseModel, ValidationMixin):
             ) from err
 
 
+def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> str:
+    """This is denoted PREFIX URL because it needs to append extra query
+    parameters added in RedirectionQueryParams
+    """
+    params = ViewerParams.from_viewer(viewer)
+    absolute_url = request.url.join(
+        request.app.router["get_redirection_to_viewer"]
+        .url_for()
+        .with_query(**params.dict())
+    )
+    return str(absolute_url)
+
+
 async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
-        params = QueryParams.from_request(request)
+        params = RedirectionQueryParams.from_request(request)
         # TODO: removed await params.check_download_link()
 
-        viewer: ViewerInfo = find_compatible_viewer(
-            file_type=params.file_type, file_size=params.file_size
+        viewer: ViewerInfo = await find_compatible_viewer(
+            request.app, file_type=params.file_type, file_size=params.file_size
         )
 
         # Retrieve user or create a temporary guest
@@ -118,7 +145,7 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             page="error",
             message=f"Sorry, we cannot render this file: {err.reason}",
-            status_code= web.HTTPUnprocessableEntity.status_code # 422
+            status_code=web.HTTPUnprocessableEntity.status_code,  # 422
         )
     except web.HTTPClientError as err:
         raise create_redirect_response(
@@ -130,6 +157,6 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             page="error",
             message="Ups something went wrong while processing your request.",
-            status_code=web.HTTPServerError.status_code
+            status_code=web.HTTPServerError.status_code,
         )
     return response

@@ -51,7 +51,7 @@ class ViewerInfo(BaseModel):
         return f"{self.label.capitalize()} v{self.version}"
 
 
-async def list_viewers(
+async def list_viewers_info(
     app: web.Application, file_type: Optional[str] = None, *, only_default: bool = False
 ) -> List[ViewerInfo]:
     #
@@ -67,15 +67,22 @@ async def list_viewers(
         if file_type:
             stmt.where(services_consume_filetypes.c.filetype == file_type)
 
-        stmt.order_by("preference_order")
+        stmt.order_by("filetype", "preference_order")
 
-        if only_default:
+        if file_type and only_default:
             stmt.limit(1)
 
         log.debug("Listing viewers: %s", stmt)
 
+        listed_filetype = set()
         async for row in await conn.execute(stmt):
             try:
+                # TODO: filter in database (see test_list_default_compatible_services )
+                if only_default:
+                    if row["filetype"] in listed_filetype:
+                        continue
+                listed_filetype.add(row["filetype"])
+
                 display_name = (
                     row["service_display_name"] or row["service_key"].split("/")[-1]
                 )
@@ -100,7 +107,7 @@ async def find_compatible_viewer(
     file_size: Optional[int] = None,
 ) -> ViewerInfo:
     try:
-        viewers = await list_viewers(app, file_type, only_default=True)
+        viewers = await list_viewers_info(app, file_type, only_default=True)
         viewer = viewers[0]
     except KeyError as err:
         raise MatchNotFoundError(

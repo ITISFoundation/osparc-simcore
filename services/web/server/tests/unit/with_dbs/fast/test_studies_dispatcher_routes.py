@@ -93,15 +93,20 @@ def _get_base_url(client) -> str:
 
 
 async def test_api_get_viewer_for_file(client):
+    # TODO: mock file_type -> service resolver
+
     resp = await client.get("/v0/viewers?file_type=DICOM&file_name=foo&file_size=10000")
     data, error = await assert_status(resp, web.HTTPOk)
 
     base_url = _get_base_url(client)
+
+    # TODO: return here multiple options sorted by preference
+    # TODO: each view_url should include viewer_key and viewer_version
     assert await resp.json() == {
         "data": {
             "file_type": "DICOM",
             "viewer_title": "Sim4life v1.0.29",
-            "redirection_url": f"{base_url}/view?file_type=DICOM&file_name=foo&file_size=10000",
+            "view_url": f"{base_url}/view?file_type=DICOM&file_name=foo&file_size=10000&viewer_key=simcore/services/dynamic/sim4life&viewer_version=1.0.29",
         },
         "error": None,
     }
@@ -135,6 +140,8 @@ async def test_api_get_viewer_for_unsupported_type(client):
 
 
 async def test_api_list_supported_filetypes(client):
+    # TODO: mock file_type -> service resolver
+
     resp = await client.get("/v0/viewers/filetypes")
     data, error = await assert_status(resp, web.HTTPOk)
 
@@ -144,12 +151,12 @@ async def test_api_list_supported_filetypes(client):
             {
                 "file_type": "DICOM",
                 "viewer_title": "Sim4life v1.0.29",
-                "redirection_url": f"{base_url}/view?file_type=DICOM",
+                "view_url": f"{base_url}/view?file_type=DICOM",
             },
             {
                 "file_type": "CSV",
                 "viewer_title": "2d plot - rawgraphs v2.11.1",
-                "redirection_url": f"{base_url}/view?file_type=CSV",
+                "view_url": f"{base_url}/view?file_type=CSV",
             },
         ],
         "error": None,
