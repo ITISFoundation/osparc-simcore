@@ -366,7 +366,7 @@ qx.Class.define("osparc.file.FilesTree", {
           location.id,
           ""
         );
-        locationData["pathLabel"] = [rootModel.getPathLabel(), locationData["label"]];
+        locationData["pathLabel"] = rootModel.getPathLabel().concat(locationData["label"]);
         const locationModel = qx.data.marshal.Json.createModel(locationData, true);
         rootModel.getChildren().append(locationModel);
         if (this.__hasLocationNeedToBeLoaded(location.id)) {
@@ -382,7 +382,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const currentModel = this.getModel();
       osparc.file.FilesTree.removeLoadingChild(currentModel);
 
-      data["pathLabel"] = [currentModel.getPathLabel(), data["label"]];
+      data["pathLabel"] = currentModel.getPathLabel().concat(data["label"]);
       const newModelToAdd = qx.data.marshal.Json.createModel(data, true);
       currentModel.getChildren().append(newModelToAdd);
       this.setModel(currentModel);
@@ -410,7 +410,7 @@ qx.Class.define("osparc.file.FilesTree", {
         );
         datasetData.isDataset = true;
         datasetData.loaded = false;
-        datasetData["pathLabel"] = [locationModel.getPathLabel(), datasetData["label"]];
+        datasetData["pathLabel"] = locationModel.getPathLabel().concat(datasetData["label"]);
         const datasetModel = qx.data.marshal.Json.createModel(datasetData, true);
         osparc.file.FilesTree.addLoadingChild(datasetModel);
         locationModel.getChildren().append(datasetModel);
@@ -445,7 +445,7 @@ qx.Class.define("osparc.file.FilesTree", {
           const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
           const datasetData = locationData[0].children;
           datasetData[0].children.forEach(data => {
-            data["pathLabel"] = [datasetModel.getPathLabel(), data["label"]];
+            data["pathLabel"] = datasetModel.getPathLabel().concat(data["label"]);
             const filesModel = qx.data.marshal.Json.createModel(data, true);
             datasetModel.getChildren().append(filesModel);
           });
