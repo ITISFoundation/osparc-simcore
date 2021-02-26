@@ -130,19 +130,3 @@ def compose_uuid_from(*values) -> str:
     composition = "/".join(map(str, values))
     new_uuid = uuid.uuid5(BASE_UUID, composition)
     return str(new_uuid)
-
-
-class ValidationMixin:
-    @classmethod
-    def from_request(cls, request: web.Request):
-        try:
-            obj = cls(**dict(request.query))
-        except ValidationError as err:
-
-            raise web.HTTPBadRequest(
-                content_type="application/json",
-                body=err.json(),
-                reason=f"{len(err.errors())} invalid parameters in query",
-            )
-        else:
-            return obj

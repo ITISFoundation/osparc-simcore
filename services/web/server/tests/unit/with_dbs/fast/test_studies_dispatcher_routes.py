@@ -7,7 +7,7 @@ import re
 import urllib.parse
 from copy import deepcopy
 from pprint import pprint
-from typing import Tuple
+from typing import Iterator, Tuple
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
@@ -78,7 +78,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
 @pytest.fixture(autouse=True)
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
-) -> aioresponses:
+) -> Iterator[aioresponses]:
     yield director_v2_service_mock
 
 

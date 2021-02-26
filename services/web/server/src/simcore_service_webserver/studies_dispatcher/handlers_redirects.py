@@ -14,12 +14,7 @@ from pydantic.types import PositiveInt
 from yarl import URL
 
 from ..statics import INDEX_RESOURCE_NAME
-from ._core import (
-    MatchNotFoundError,
-    ValidationMixin,
-    ViewerInfo,
-    find_compatible_viewer,
-)
+from ._core import MatchNotFoundError, ViewerInfo, find_compatible_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
@@ -52,13 +47,13 @@ def create_redirect_response(
 
 
 # HANDLERS --------------------------------
-class ViewerParams(BaseModel):
+class ViewerQueryParams(BaseModel):
     file_type: str
     viewer_key: constr(regex=KEY_RE)
     viewer_version: constr(regex=VERSION_RE)
 
     @classmethod
-    def from_viewer(cls, viewer: ViewerInfo) -> "ViewerParams":
+    def from_viewer(cls, viewer: ViewerInfo) -> "ViewerQueryParams":
         # can safely construct w/o validation from a viewer
         return cls.construct(
             filetype=viewer.filetype,
@@ -67,7 +62,7 @@ class ViewerParams(BaseModel):
         )
 
 
-class RedirectionQueryParams(ViewerParams, ValidationMixin):
+class RedirectionQueryParams(ViewerQueryParams):
     file_name: Optional[str] = None
     file_size: PositiveInt
     download_link: HttpUrl
@@ -76,6 +71,20 @@ class RedirectionQueryParams(ViewerParams, ValidationMixin):
     @classmethod
     def decode_downloadlink(cls, v):
         return urllib.parse.unquote(v)
+
+    @classmethod
+    def from_request(cls, request: web.Request) -> "RedirectionQueryParams":
+        try:
+            obj = cls(**dict(request.query))
+        except ValidationError as err:
+
+            raise web.HTTPBadRequest(
+                content_type="application/json",
+                body=err.json(),
+                reason=f"{len(err.errors())} invalid parameters in query",
+            )
+        else:
+            return obj
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's hea"""
@@ -101,7 +110,7 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> s
     """This is denoted PREFIX URL because it needs to append extra query
     parameters added in RedirectionQueryParams
     """
-    params = ViewerParams.from_viewer(viewer)
+    params = ViewerQueryParams.from_viewer(viewer)
     absolute_url = request.url.join(
         request.app.router["get_redirection_to_viewer"]
         .url_for()
