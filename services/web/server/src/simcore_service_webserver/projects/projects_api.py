@@ -307,6 +307,8 @@ async def update_project_node_state(
         RunningState.STARTED,
     ]:
         project["workbench"][node_id]["progress"] = 0
+    elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
+        project["workbench"][node_id]["progress"] = 100
 
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(
