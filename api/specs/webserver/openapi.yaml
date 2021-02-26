@@ -241,8 +241,8 @@ paths:
   /viewers:
     $ref: "./openapi-viewer.yaml#/paths/~1viewers"
 
-  /viewers/filetypes:
-    $ref: "./openapi-viewer.yaml#/paths/~1viewers~1filetypes"
+  /viewers/default:
+    $ref: "./openapi-viewer.yaml#/paths/~1viewers~1default"
 
 components:
   responses:
