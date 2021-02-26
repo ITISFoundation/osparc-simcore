@@ -89,9 +89,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       const folderViewer = this.__folderViewer = new osparc.file.FolderViewer();
       folderViewer.addListener("selectionChanged", e => {
-        const data = e.getData();
-        filesTree.openNodeAndParents(data);
-        filesTree.setSelection(new qx.data.Array([data]));
+        const selectionData = e.getData();
+        filesTree.openNodeAndParents(selectionData);
+        filesTree.setSelection(new qx.data.Array([selectionData]));
+        this.__selectionChanged(selectionData);
       }, this);
       folderViewer.addListener("requestDatasetFiles", e => {
         const data = e.getData();
@@ -143,7 +144,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData);
 
-        if (osparc.file.FilesTree.isDir(selectionData)) {
+        if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
           this.__folderViewer.setFolder(selectionData);
         }
       }
