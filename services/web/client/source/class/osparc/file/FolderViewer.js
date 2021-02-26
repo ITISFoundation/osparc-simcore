@@ -154,20 +154,6 @@ qx.Class.define("osparc.file.FolderViewer", {
       return control || this.base(arguments, id);
     },
 
-    getSelectedFile: function() {
-      return null;
-      let selectedItem = this.__getSelectedItem();
-      if (selectedItem) {
-        const isFile = osparc.file.FilesTree.isFile(selectedItem);
-        const data = {
-          selectedItem: selectedItem,
-          isFile: isFile
-        };
-        return data;
-      }
-      return null;
-    },
-
     __getEmptyEntry: function() {
       const items = [];
       if (this.getMode() === "list") {

@@ -458,17 +458,8 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__filesReceived(locationId, datasetId, files);
     },
 
-    getSelectedFile: function() {
-      let selectedItem = this.__getSelectedItem();
-      if (selectedItem) {
-        const isFile = osparc.file.FilesTree.isFile(selectedItem);
-        const data = {
-          selectedItem: selectedItem,
-          isFile: isFile
-        };
-        return data;
-      }
-      return null;
+    getSelectedItem: function() {
+      return this.__getSelectedItem();
     },
 
     __getFilesInTree: function(item, leaves) {

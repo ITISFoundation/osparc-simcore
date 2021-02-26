@@ -82,9 +82,10 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       return control || this.base(arguments, id);
     },
 
-    itemSelected: function(selectedItem, isFile) {
-      this.getChildControl("downloadBtn").setEnabled(Boolean(isFile));
-      this.getChildControl("deleteBtn").setEnabled(Boolean(isFile));
+    itemSelected: function(selectedItem) {
+      const isFile = osparc.file.FilesTree.isFile(selectedItem);
+      this.getChildControl("downloadBtn").setEnabled(isFile);
+      this.getChildControl("deleteBtn").setEnabled(isFile);
       if (isFile) {
         this.__selection = selectedItem;
         this.getChildControl("selectedLabel").setValue(selectedItem.getFileId());

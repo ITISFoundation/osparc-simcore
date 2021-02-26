@@ -217,13 +217,13 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __selectionChanged: function() {
-      const data = this.__filesTree.getSelectedFile();
-      this.getChildControl("selectButton").setEnabled(data ? data["isFile"] : false);
+      const data = this.__filesTree.getSelectedItem();
+      this.getChildControl("selectButton").setEnabled(data ? osparc.file.FilesTree.isFile(data) : false);
     },
 
     __itemSelectedFromStore: function() {
-      const data = this.__filesTree.getSelectedFile();
-      if (data && data["isFile"]) {
+      const data = this.__filesTree.getSelectedItem();
+      if (data && osparc.file.FilesTree.isFile(data)) {
         const selectedItem = data["selectedItem"];
         this.__setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
       }

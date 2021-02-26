@@ -185,15 +185,15 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       let selectionData = null;
       if (selectedTree === "user") {
         this.__nodeFilesTree.resetSelection();
-        selectionData = this.__userFilesTree.getSelectedFile();
+        selectionData = this.__userFilesTree.getSelectedItem();
       } else {
         if (this.__userFilesTree) {
           this.__userFilesTree.resetSelection();
         }
-        selectionData = this.__nodeFilesTree.getSelectedFile();
+        selectionData = this.__nodeFilesTree.getSelectedItem();
       }
       if (selectionData) {
-        this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
+        this.__selectedFileLayout.itemSelected(selectionData);
       }
     }
   }
