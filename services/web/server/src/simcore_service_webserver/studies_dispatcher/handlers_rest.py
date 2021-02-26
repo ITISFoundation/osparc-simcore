@@ -17,10 +17,15 @@ class Viewer(BaseModel):
     """
     API model for a viewer resource
 
-    A viewer is a service with an associated filetype
+    A viewer is a service with an associated filetype.
+    You can think of it as a tuple (filetype, service)
 
     The service could consume other filetypes BUT at this
-    interface this is represented with yet another viewer
+    interface this is represented in yet another viewer resource
+
+    For instance, the same service can be in two different viewer resources
+      - viewer1=(JPEG, RawGraph service)
+      - viewer2=(CSV, RawGraph service)
 
     A viewer can be dispatched using the view_url and appending the
     """
@@ -55,7 +60,9 @@ async def list_viewers(request: web.Request):
 
     If file_type is provided, then it filters viewer for that filetype
     """
+    # filter: file_type=*
     file_type: Optional[str] = request.query.get("file_type", None)
+
     viewers = [
         Viewer.create(request, viewer).dict()
         for viewer in await list_viewers_info(request.app, file_type=file_type)
@@ -74,7 +81,9 @@ async def list_default_viewers(request: web.Request):
 
     If file_type is provided, then it filters viewer for that filetype
     """
+    # filter: file_type=*
     file_type: Optional[str] = request.query.get("file_type", None)
+
     viewers = [
         Viewer.create(request, viewer).dict()
         for viewer in await list_viewers_info(

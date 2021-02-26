@@ -52,10 +52,10 @@ class ViewerQueryParams(BaseModel):
     viewer_key: constr(regex=KEY_RE)
     viewer_version: constr(regex=VERSION_RE)
 
-    @classmethod
-    def from_viewer(cls, viewer: ViewerInfo) -> "ViewerQueryParams":
+    @staticmethod
+    def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
         # can safely construct w/o validation from a viewer
-        return cls.construct(
+        return ViewerQueryParams.construct(
             filetype=viewer.filetype,
             viewer_key=viewer.key,
             viewer_version=viewer.version,
@@ -110,11 +110,9 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> s
     """This is denoted PREFIX URL because it needs to append extra query
     parameters added in RedirectionQueryParams
     """
-    params = ViewerQueryParams.from_viewer(viewer)
+    params = ViewerQueryParams.from_viewer(viewer).dict()
     absolute_url = request.url.join(
-        request.app.router["get_redirection_to_viewer"]
-        .url_for()
-        .with_query(**params.dict())
+        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
     )
     return str(absolute_url)
 
@@ -123,7 +121,9 @@ async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
         params = RedirectionQueryParams.from_request(request)
-        # TODO: removed await params.check_download_link()
+        # TODO: Cannot check file_size from HEAD
+        # removed await params.check_download_link()
+        # Perhaps can check the header for GET while downloading and retreive file_size??
 
         viewer: ViewerInfo = await find_compatible_viewer(
             request.app, file_type=params.file_type, file_size=params.file_size
