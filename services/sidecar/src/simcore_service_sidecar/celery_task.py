@@ -50,7 +50,6 @@ def _shared_task_dispatch(
             return
         raise
 
-    # this needs to be done here since the tasks are created recursively and the state might not be upgraded yet
     log.info("Sidecar successfuly completed run.")
     if not celery_request.is_aborted():
         # the task may be aborted already...
