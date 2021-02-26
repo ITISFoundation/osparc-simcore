@@ -87,11 +87,6 @@ services:
       - "49555:5555"
     networks:
       - simcore_default
-    healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
-      interval: 10s
-      timeout: 10s
-      retries: 5
 
 volumes:
   minio_data: {}
