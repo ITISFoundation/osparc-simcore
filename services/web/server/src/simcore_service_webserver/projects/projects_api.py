@@ -301,6 +301,12 @@ async def update_project_node_state(
         "uuid": project_id,
         "workbench": {node_id: {"state": {"currentStatus": new_state}}},
     }
+    if RunningState(new_state) in [
+        RunningState.PUBLISHED,
+        RunningState.PENDING,
+        RunningState.STARTED,
+    ]:
+        project["workbench"][node_id]["progress"] = 0
 
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(
@@ -359,6 +365,7 @@ async def update_project_node_outputs(
 
     # find changed keys (the ones that appear or disapppear for sure)
     changed_keys = new_outputs.keys()
+    # FIXME: it would be nice to have some finer changed keys here
     # now check the ones that are in both object
     # for key in current_outputs.keys() & new_outputs.keys():
     #     if current_outputs[key] != new_outputs[key]:
