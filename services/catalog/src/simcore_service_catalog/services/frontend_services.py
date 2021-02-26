@@ -1,4 +1,4 @@
-from typing import Iterator, List
+from typing import Any, Dict, Iterator, List
 
 from fastapi import status
 from fastapi.exceptions import HTTPException
@@ -54,21 +54,30 @@ def is_frontend_service(service_key) -> bool:
     return service_key.startswith(FRONTEND_SERVICE_KEY_PREFIX + "/")
 
 
-def list_frontend_services() -> List[ServiceDockerData]:
-    return list(iter_frontend_services())
-
-
-def iter_frontend_services() -> Iterator[ServiceDockerData]:
+def iter_service_docker_data() -> Iterator[ServiceDockerData]:
     for factory in [create_file_picker_service, create_node_group_service]:
         model_instance = factory()
         yield model_instance
 
 
-def get_frontend_service(key, version) -> ServiceDockerData:
+def as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:
+    # FIXME: In order to convert to ServiceOut, now we have to convert back to front-end service because of alias
+    # FIXME: set the same policy for f/e and director datasets!
+    return model_instance.dict(by_alias=True, exclude_unset=True)
+
+
+def list_frontend_services() -> List[Dict[str, Any]]:
+    return [as_dict(s) for s in iter_service_docker_data()]
+
+
+def get_frontend_service(key, version) -> Dict[str, Any]:
     try:
-        return next(
-            s for s in iter_frontend_services() if s.key == key and s.version == version
+        found = next(
+            s
+            for s in iter_service_docker_data()
+            if s.key == key and s.version == version
         )
+        return as_dict(found)
     except StopIteration as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

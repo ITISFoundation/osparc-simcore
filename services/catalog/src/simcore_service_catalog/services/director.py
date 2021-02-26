@@ -1,10 +1,10 @@
 import functools
 import logging
 from contextlib import suppress
-from typing import Coroutine, Dict, Optional
+from typing import Coroutine, Dict, List, Optional, Union
 
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, codes, Response
+from httpx import AsyncClient, Response, codes
 from starlette import status
 
 from ..core.settings import DirectorSettings
@@ -106,7 +106,7 @@ class DirectorApi:
     # TODO: add ping to healthcheck
 
     @safe_request
-    async def get(self, path: str) -> Optional[Dict]:
+    async def get(self, path: str) -> Optional[Union[Dict, List]]:
         # temp solution: default timeout increased to 20"
         return await self.client.get(path, timeout=20.0)
 

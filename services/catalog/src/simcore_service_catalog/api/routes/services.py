@@ -1,11 +1,9 @@
 # pylint: disable=too-many-arguments
 
-
 import logging
 import urllib.parse
-from typing import List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
-# FIXME: too many DB calls
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models_library.services import (
     KEY_RE,
@@ -23,7 +21,7 @@ from ...models.schemas.services import ServiceOut, ServiceUpdate
 from ...services.frontend_services import (
     get_frontend_service,
     is_frontend_service,
-    iter_frontend_services,
+    list_frontend_services,
 )
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
@@ -53,6 +51,8 @@ async def list_services(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(...),
 ):
+    # FIXME: too many DB calls
+
     # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
@@ -107,7 +107,7 @@ async def list_services(
     # Detailed view re-directing to
 
     # get the services from the registry and filter them out
-    frontend_services = [s.dict(by_alias=True) for s in iter_frontend_services()]
+    frontend_services = list_frontend_services()
     registry_services = await director_client.get("/services")
     detailed_services_metadata = frontend_services + registry_services
     detailed_services: List[ServiceOut] = []
@@ -182,14 +182,10 @@ async def get_service(
 ):
     # check the service exists (raise HTTP_404_NOT_FOUND)
     if is_frontend_service(service_key):
-        frontend_service = get_frontend_service(
+        frontend_service: Dict[str, Any] = get_frontend_service(
             key=service_key, version=service_version
         )
-        # FIXME: Should not convert back to front-end service because of alias
-        # FIXME: set the same policy for f/e and director datasets!
-        service = ServiceOut.parse_obj(
-            frontend_service.dict(by_alias=True, exclude_unset=True)
-        )
+        service = ServiceOut.parse_obj(frontend_service)
     else:
         services_in_registry = await director_client.get(
             f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
