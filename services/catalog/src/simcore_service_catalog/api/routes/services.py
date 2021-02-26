@@ -186,7 +186,10 @@ async def get_service(
             key=service_key, version=service_version
         )
         # FIXME: Should not convert back to front-end service because of alias
-        service = ServiceOut.parse_obj(frontend_service.dict(by_alias=True))
+        # FIXME: set the same policy for f/e and director datasets!
+        service = ServiceOut.parse_obj(
+            frontend_service.dict(by_alias=True, exclude_unset=True)
+        )
     else:
         services_in_registry = await director_client.get(
             f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
