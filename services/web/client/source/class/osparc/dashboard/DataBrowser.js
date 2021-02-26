@@ -141,10 +141,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       this.__filesTree.resetSelection();
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
-      }
 
-      if (!selectionData.isFile) {
-        this.__folderViewer.setFolder(selectionData.selectedItem);
+        if (!selectionData.isFile) {
+          this.__folderViewer.setFolder(selectionData.selectedItem);
+        }
       }
     }
   }
