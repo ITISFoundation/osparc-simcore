@@ -17,6 +17,7 @@ from .base import metadata
 services_consume_filetypes = sa.Table(
     "services_consume_filetypes",
     metadata,
+    # TODO: add regex to key and version?
     sa.Column(
         "service_key",
         sa.String,
