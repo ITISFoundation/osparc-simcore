@@ -274,6 +274,7 @@ qx.Class.define("osparc.file.FilesTree", {
         itemId: treeName.replace(/\s/g, ""), // remove all whitespaces
         location: null,
         path: null,
+        pathLabel: treeName,
         children: []
       };
       const root = qx.data.marshal.Json.createModel(rootData, true);
@@ -290,6 +291,7 @@ qx.Class.define("osparc.file.FilesTree", {
           c.bindProperty("datasetId", "datasetId", null, item, id);
           c.bindProperty("loaded", "loaded", null, item, id);
           c.bindProperty("path", "path", null, item, id);
+          c.bindProperty("pathLabel", "pathLabel", null, item, id);
           c.bindProperty("lastModified", "lastModified", null, item, id);
           c.bindProperty("size", "size", null, item, id);
           c.bindProperty("icon", "icon", null, item, id);
@@ -364,6 +366,7 @@ qx.Class.define("osparc.file.FilesTree", {
           location.id,
           ""
         );
+        locationData["pathLabel"] = [rootModel.getPathLabel(), locationData["label"]].join("/");
         const locationModel = qx.data.marshal.Json.createModel(locationData, true);
         rootModel.getChildren().append(locationModel);
         if (this.__hasLocationNeedToBeLoaded(location.id)) {
@@ -373,6 +376,19 @@ qx.Class.define("osparc.file.FilesTree", {
       if (openThis) {
         this.openNodeAndParents(openThis);
       }
+    },
+
+    __filesToRoot: function(data) {
+      const currentModel = this.getModel();
+      osparc.file.FilesTree.removeLoadingChild(currentModel);
+
+      data["pathLabel"] = [currentModel.getPathLabel(), data["label"]].join("/");
+      const newModelToAdd = qx.data.marshal.Json.createModel(data, true);
+      currentModel.getChildren().append(newModelToAdd);
+      this.setModel(currentModel);
+      this.fireEvent("filesAddedToTree");
+
+      return newModelToAdd;
     },
 
     __datasetsToLocation: function(locationId, datasets) {
@@ -394,6 +410,7 @@ qx.Class.define("osparc.file.FilesTree", {
         );
         datasetData.isDataset = true;
         datasetData.loaded = false;
+        datasetData["pathLabel"] = [locationModel.getPathLabel(), datasetData["label"]].join("/");
         const datasetModel = qx.data.marshal.Json.createModel(datasetData, true);
         osparc.file.FilesTree.addLoadingChild(datasetModel);
         locationModel.getChildren().append(datasetModel);
@@ -427,10 +444,11 @@ qx.Class.define("osparc.file.FilesTree", {
         if (files.length>0) {
           const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
           const datasetData = locationData[0].children;
-          for (let i=0; i<datasetData[0].children.length; i++) {
-            const filesModel = qx.data.marshal.Json.createModel(datasetData[0].children[i], true);
+          datasetData[0].children.forEach(data => {
+            data["pathLabel"] = [datasetModel.getPathLabel(), data["label"]].join("/");
+            const filesModel = qx.data.marshal.Json.createModel(data, true);
             datasetModel.getChildren().append(filesModel);
-          }
+          });
         }
 
         this.__datasets.add(datasetId);
@@ -438,18 +456,6 @@ qx.Class.define("osparc.file.FilesTree", {
       }
 
       this.__filesReceived(locationId, datasetId, files);
-    },
-
-    __filesToRoot: function(data) {
-      const currentModel = this.getModel();
-      osparc.file.FilesTree.removeLoadingChild(currentModel);
-
-      const newModelToAdd = qx.data.marshal.Json.createModel(data, true);
-      currentModel.getChildren().append(newModelToAdd);
-      this.setModel(currentModel);
-      this.fireEvent("filesAddedToTree");
-
-      return newModelToAdd;
     },
 
     getSelectedFile: function() {

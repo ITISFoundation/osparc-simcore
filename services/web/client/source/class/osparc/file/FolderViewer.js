@@ -29,7 +29,7 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     this.setPaddingLeft(10);
 
-    this.getChildControl("folder-name");
+    this.getChildControl("folder-path");
     this.getChildControl("view-options");
   },
 
@@ -82,7 +82,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
           this._add(control);
           break;
-        case "folder-name": {
+        case "folder-path": {
           const header = this.getChildControl("header");
           control = new qx.ui.basic.Label(this.tr("Select Folder")).set({
             font: "title-16",
@@ -224,8 +224,8 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __applyFolder: function() {
-      this.bind("folder", this.getChildControl("folder-name"), "value", {
-        converter: folder => folder ? folder.getLabel() : "Select folder"
+      this.bind("folder", this.getChildControl("folder-path"), "value", {
+        converter: folder => folder ? folder.getPathLabel() : "Select folder"
       });
 
       if (this.getFolder().getLoaded && !this.getFolder().getLoaded()) {
@@ -243,9 +243,6 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     __reloadFolderContent: function() {
       let entries = this.__getEntries();
-      if (entries.length === 0) {
-        entries = this.__getEmptyEntry();
-      }
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
         table.setData(entries);
