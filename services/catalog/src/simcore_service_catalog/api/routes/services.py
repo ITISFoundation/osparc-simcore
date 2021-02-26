@@ -185,12 +185,14 @@ async def get_service(
         frontend_service: Dict[str, Any] = get_frontend_service(
             key=service_key, version=service_version
         )
-        service = ServiceOut.parse_obj(frontend_service)
+        _service_data = frontend_service
     else:
         services_in_registry = await director_client.get(
             f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
         )
-        service = ServiceOut.parse_obj(services_in_registry[0])
+        _service_data = services_in_registry[0]
+
+    service: ServiceOut = ServiceOut.parse_obj(_service_data)
 
     # get the user groups
     user_groups = await groups_repository.list_user_groups(user_id)
@@ -260,6 +262,13 @@ async def modify_service(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(None),
 ):
+    if is_frontend_service(service_key):
+        # NOTE: this is a temporary decision after discussing with OM
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot update front-end services",
+        )
+
     # check the service exists
     await director_client.get(
         f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
