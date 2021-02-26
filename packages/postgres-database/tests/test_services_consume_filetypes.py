@@ -8,10 +8,14 @@ from typing import List
 
 import pytest
 import sqlalchemy as sa
+from _pytest.fixtures import fixture
 from aiopg.sa.engine import Engine
 from aiopg.sa.exc import ResourceClosedError
 from aiopg.sa.result import ResultProxy, RowProxy
-from pytest_simcore.helpers.utils_services import FAKE_FILE_CONSUMER_SERVICES
+from pytest_simcore.helpers.utils_services import (
+    FAKE_FILE_CONSUMER_SERVICES,
+    list_supported_filetypes,
+)
 from simcore_postgres_database.models.services import services_meta_data
 from simcore_postgres_database.webserver_models import services_consume_filetypes
 
@@ -53,91 +57,118 @@ def make_table():
     return _make
 
 
-async def test_get_compatible_services(pg_engine: Engine, make_table):
+@fixture
+async def conn(pg_engine: Engine, make_table):
+    async with pg_engine.acquire() as conn:
+        await make_table(conn)
+        yield conn
+
+
+async def test_get_compatible_services(conn):
     # given a filetype, get sorted services
     # test sorting of services given a filetype
     # https://docs.sqlalchemy.org/en/13/core/tutorial.html#ordering-or-grouping-by-a-label
+    stmt = (
+        services_consume_filetypes.select()
+        .where(services_consume_filetypes.c.filetype == "DCM")
+        .order_by("preference_order")
+    )
+    result: ResultProxy = await conn.execute(stmt)
 
-    async with pg_engine.acquire() as conn:
-        await make_table(conn)
+    assert result.returns_rows
 
-        stmt = (
-            services_consume_filetypes.select()
-            .where(services_consume_filetypes.c.filetype == "DCM")
-            .order_by("preference_order")
-        )
-        result: ResultProxy = await conn.execute(stmt)
+    rows: List[RowProxy] = await result.fetchall()
 
-        assert result.returns_rows
+    # only S4L
+    assert all(row.service_key == "simcore/services/dynamic/sim4life" for row in rows)
+    assert len(rows) == 3
 
-        rows: List[RowProxy] = await result.fetchall()
-
-        # only S4L
-        assert all(
-            row.service_key == "simcore/services/dynamic/sim4life" for row in rows
-        )
-        assert len(rows) == 3
-
-        assert rows[0].service_version == "1.0.29"
-        assert rows[-1].service_version == "2.0.0"
+    assert rows[0].service_version == "1.0.29"
+    assert rows[-1].service_version == "2.0.0"
 
 
-async def test_get_supported_filetypes(pg_engine: Engine, make_table):
+async def test_get_supported_filetypes(conn):
     # given a service, get supported filetypes
 
-    async with pg_engine.acquire() as conn:
-        await make_table(conn)
-
-        stmt = (
-            sa.select(
-                [
-                    services_consume_filetypes.c.filetype,
-                ]
-            )
-            .where(
-                services_consume_filetypes.c.service_key
-                == "simcore/services/dynamic/sim4life"
-            )
-            .order_by(services_consume_filetypes.c.filetype)
-            .distinct()
+    stmt = (
+        sa.select(
+            [
+                services_consume_filetypes.c.filetype,
+            ]
         )
+        .where(
+            services_consume_filetypes.c.service_key
+            == "simcore/services/dynamic/sim4life"
+        )
+        .order_by(services_consume_filetypes.c.filetype)
+        .distinct()
+    )
 
-        result: ResultProxy = await conn.execute(stmt)
-        rows: List[RowProxy] = await result.fetchall()
-        assert [v for row in rows for v in row.values()] == ["DCM", "S4LCacheData"]
+    result: ResultProxy = await conn.execute(stmt)
+    rows: List[RowProxy] = await result.fetchall()
+    assert [v for row in rows for v in row.values()] == ["DCM", "S4LCacheData"]
 
 
-async def test_contraints(pg_engine: Engine, make_table):
+async def test_list_supported_filetypes(conn):
+    # given a service, get supported filetypes
+
+    stmt = (
+        sa.select(
+            [
+                services_consume_filetypes.c.filetype,
+            ]
+        )
+        .order_by(services_consume_filetypes.c.filetype)
+        .distinct()
+    )
+
+    result: ResultProxy = await conn.execute(stmt)
+    rows: List[RowProxy] = await result.fetchall()
+    assert [v for row in rows for v in row.values()] == list_supported_filetypes()
+
+
+async def test_list_default_compatible_services():
+    raise NotImplementedError()
+    stmt = (
+        sa.select(
+            [
+                services_consume_filetypes,
+            ]
+        )
+        .group_by(services_consume_filetypes.c.filetype)
+        .order_by(
+            [services_consume_filetypes.c.key, services_consume_filetypes.c.version]
+        )
+        .distinct()
+    )
+
+
+async def test_contraints(conn):
     # test foreign key contraints with service metadata table
 
-    async with pg_engine.acquire() as conn:
-        await make_table(conn)
-
-        await conn.execute(
-            services_meta_data.delete().where(
-                services_meta_data.c.key == "simcore/services/dynamic/sim4life"
-            )
+    await conn.execute(
+        services_meta_data.delete().where(
+            services_meta_data.c.key == "simcore/services/dynamic/sim4life"
         )
+    )
 
-        stmt = (
-            sa.select(
-                [
-                    sa.func.count(services_consume_filetypes.c.service_key).label(
-                        "num_services"
-                    ),
-                ]
-            )
-            .where(services_consume_filetypes.c.filetype == "DCM")
-            .as_scalar()
+    stmt = (
+        sa.select(
+            [
+                sa.func.count(services_consume_filetypes.c.service_key).label(
+                    "num_services"
+                ),
+            ]
         )
-        result: ResultProxy = await conn.execute(stmt)
-        num_services = await result.scalar()
-        assert num_services == 0
+        .where(services_consume_filetypes.c.filetype == "DCM")
+        .as_scalar()
+    )
+    result: ResultProxy = await conn.execute(stmt)
+    num_services = await result.scalar()
+    assert num_services == 0
 
 
-async def test_get_compatible_services_available_to_everyone(
-    pg_engine: Engine, make_table
-):
+async def test_get_compatible_services_available_to_everyone(conn):
     # given a filetype, get sorted services
     # test sorting of services given a filetype
     # https://docs.sqlalchemy.org/en/13/core/tutorial.html#ordering-or-grouping-by-a-label

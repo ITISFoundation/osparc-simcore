@@ -65,3 +65,13 @@ def list_fake_file_consumers() -> List[Dict[str, Any]]:
             }
             consumers.append(consumer)
     return consumers
+
+
+def list_supported_filetypes() -> List[str]:
+    return sorted(
+        {
+            consumable.split(":")[0]
+            for service in FAKE_FILE_CONSUMER_SERVICES
+            for consumable in service["consumes"]
+        }
+    )
