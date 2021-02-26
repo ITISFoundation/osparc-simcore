@@ -61,8 +61,8 @@ qx.Class.define("osparc.file.FolderViewer", {
     getItemButton: function() {
       return new qx.ui.form.ToggleButton().set({
         iconPosition: "top",
-        width: 80,
-        padding: 5
+        width: 90,
+        padding: 3
       });
     },
 
@@ -191,6 +191,11 @@ qx.Class.define("osparc.file.FolderViewer", {
             toolTipText: entry.getLabel()
           });
           btn.itemId = entry.getItemId();
+          if (!this.__isFolder(entry)) {
+            btn.addListener("tap", () => {
+              this.fireDataEvent("selectionChanged", entry);
+            }, this);
+          }
           if (this.__isFolder(entry)) {
             btn.addListener("dbltap", () => {
               this.fireDataEvent("openFolder", entry);

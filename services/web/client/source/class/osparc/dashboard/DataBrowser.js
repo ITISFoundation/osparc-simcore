@@ -78,7 +78,8 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         dropMechnism: true
       });
       filesTree.addListener("selectionChanged", () => {
-        this.__selectionChanged();
+        const selectionData = filesTree.getSelectedFile();
+        this.__selectionChanged(selectionData);
       }, this);
       filesTree.addListener("fileCopied", e => {
         if (e) {
@@ -87,6 +88,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       }, this);
 
       const folderViewer = this.__folderViewer = new osparc.file.FolderViewer();
+      filesTree.addListener("selectionChanged", () => {
+        const selectionData = folderViewer.getSelectedFile();
+        this.__selectionChanged(selectionData);
+      }, this);
       folderViewer.addListener("requestDatasetFiles", e => {
         const data = e.getData();
         filesTree.requestDatasetFiles(data.locationId, data.datasetId);
@@ -132,9 +137,8 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       return actionsToolbar;
     },
 
-    __selectionChanged: function() {
+    __selectionChanged: function(selectionData) {
       this.__filesTree.resetSelection();
-      const selectionData = this.__filesTree.getSelectedFile();
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
       }
