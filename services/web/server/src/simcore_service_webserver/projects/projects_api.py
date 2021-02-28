@@ -48,7 +48,6 @@ from ..storage_api import (
 from ..users_api import get_user_name
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
-from .projects_exceptions import NodeNotFoundError
 from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
