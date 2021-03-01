@@ -68,6 +68,64 @@ class CompTaskAtDB(BaseModel):
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
         return comp_task_dict
 
+    @classmethod
+    def from_db(cls, db_row) -> "CompTaskAtDB":
+        # clean defaultValues from schema/outputs/output_key/ if necessary
+        for output_data in db_row.get("schema", {}).get("outputs", {}).values():
+            output_data.pop("defaultValue", None)
+        return CompTaskAtDB.from_orm(db_row)
+
     class Config:
         extra = Extra.forbid
         orm_mode = True
+        schema_extra = {
+            "examples": [
+                # DB model
+                {
+                    "task_id": 324,
+                    "project_id": "341351c4-23d1-4366-95d0-bc01386001a7",
+                    "node_id": "7f62be0e-1298-4fe4-be76-66b6e859c260",
+                    "job_id": None,
+                    "internal_id": 3,
+                    "schema": {
+                        "inputs": {
+                            "input_1": {
+                                "label": "input_files",
+                                "description": "Any input files. One or serveral files compressed in a zip will be downloaded in an inputs folder.",
+                                "type": "data:*/*",
+                                "displayOrder": 1.0,
+                            }
+                        },
+                        "outputs": {
+                            "output_1": {
+                                "label": "Output files",
+                                "description": "Output files uploaded from the outputs folder",
+                                "type": "data:*/*",
+                                "displayOrder": 1.0,
+                            }
+                        },
+                    },
+                    "inputs": {
+                        "input_1": {
+                            "nodeUuid": "48a7ac7a-cfc3-44a6-ba9b-5a1a578b922c",
+                            "output": "output_1",
+                        }
+                    },
+                    "outputs": {
+                        "output_1": {
+                            "store": "0",
+                            "path": "341351c4-23d1-4366-95d0-bc01386001a7/7f62be0e-1298-4fe4-be76-66b6e859c260/output_1.zip",
+                        }
+                    },
+                    "image": {
+                        "name": "simcore/services/dynamic/jupyter-octave-python-math",
+                        "tag": "1.3.1",
+                        "requires_gpu": False,
+                        "requires_mpi": False,
+                    },
+                    "submit": "2021-03-01 13:07:34.19161",
+                    "node_class": "INTERACTIVE",
+                    "state": "NOT_STARTED",
+                }
+            ]
+        }
