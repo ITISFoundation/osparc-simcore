@@ -11,8 +11,7 @@ def create_file_picker_service() -> ServiceDockerData:
     return ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/file-picker",
         version="1.0.0",
-        # FIXME: ask Odei?? ServiceType.FRONTEND
-        type="dynamic",
+        type=ServiceType.FRONTEND,
         name="File Picker",
         description="File Picker",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
