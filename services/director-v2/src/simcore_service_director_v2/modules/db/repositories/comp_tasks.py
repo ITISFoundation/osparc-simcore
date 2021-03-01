@@ -135,7 +135,7 @@ class CompTasksRepository(BaseRepository):
         async for row in self.connection.execute(
             sa.select([comp_tasks]).where((comp_tasks.c.project_id == str(project_id)))
         ):
-            task_db = CompTaskAtDB.from_orm(row)
+            task_db = CompTaskAtDB.from_db(row)
             tasks.append(task_db)
 
         return tasks
@@ -152,7 +152,7 @@ class CompTasksRepository(BaseRepository):
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
             )
         ):
-            task_db = CompTaskAtDB.from_orm(row)
+            task_db = CompTaskAtDB.from_db(row)
             tasks.append(task_db)
 
         return tasks
@@ -212,7 +212,7 @@ class CompTasksRepository(BaseRepository):
             ).returning(literal_column("*"))
             result = await self.connection.execute(on_update_stmt)
             row: RowProxy = await result.fetchone()
-            inserted_comp_tasks_db.append(CompTaskAtDB.from_orm(row))
+            inserted_comp_tasks_db.append(CompTaskAtDB.from_db(row))
         return inserted_comp_tasks_db
 
     @log_decorator(logger=logger)
