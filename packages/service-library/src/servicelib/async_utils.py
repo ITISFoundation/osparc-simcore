@@ -1,8 +1,9 @@
 import asyncio
-from functools import wraps
 from collections import deque
+from functools import wraps
+from typing import Dict, List
+
 import attr
-from typing import List, Dict
 
 
 @attr.s(auto_attribs=True)
@@ -10,6 +11,9 @@ class Context:
     in_queue: asyncio.Queue
     out_queue: asyncio.Queue
     initialized: bool
+
+
+contexts = {}
 
 
 def run_sequentially_in_context(target_args: List[str] = None):
@@ -49,8 +53,6 @@ def run_sequentially_in_context(target_args: List[str] = None):
     target_args = [] if target_args is None else target_args
 
     def internal(decorated_function):
-        contexts = {}
-
         def get_context(args, kwargs: Dict) -> Context:
             arg_names = decorated_function.__code__.co_varnames[
                 : decorated_function.__code__.co_argcount
