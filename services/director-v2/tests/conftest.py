@@ -27,6 +27,7 @@ pytest_plugins = [
     "pytest_simcore.redis_service",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_services",
+    "pytest_simcore.pydantic_models",
 ]
 
 
