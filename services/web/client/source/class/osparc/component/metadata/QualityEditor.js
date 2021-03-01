@@ -335,7 +335,8 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
             maxScore: copyTSRTarget[ruleKey].level,
             nStars: copyTSRTarget[ruleKey].level,
             score: value,
-            marginTop: 5
+            marginTop: 5,
+            showEmptyStars: true
           });
           this.bind("mode", ruleRating, "mode");
           ruleRating.addListener("changeScore", e => {
