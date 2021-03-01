@@ -192,6 +192,10 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   statics: {
+    isFilePicker: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("file-picker"));
+    },
+
     isContainer: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
@@ -202,14 +206,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     isComputational: function(metaData) {
       return (metaData && metaData.type && metaData.type === "computational");
-    },
-
-    isFilePicker: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("file-picker"));
-    },
-
-    isRealService: function(metaData) {
-      return (metaData && metaData.type && (metaData.key.includes("simcore/services/dynamic") || metaData.key.includes("simcore/services/comp")));
     }
   },
 
@@ -255,10 +251,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     isFilePicker: function() {
       return osparc.data.model.Node.isFilePicker(this.getMetaData());
-    },
-
-    isRealService: function() {
-      return osparc.data.model.Node.isRealService(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -885,7 +877,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     retrieveInputs: function(portKey = null) {
-      if (this.isDynamic() && this.isRealService()) {
+      if (this.isDynamic()) {
         if (!osparc.data.Permissions.getInstance().canDo("study.update")) {
           return;
         }
@@ -944,7 +936,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     startDynamicService: function() {
-      if (this.isDynamic() && this.isRealService()) {
+      if (this.isDynamic()) {
         const metaData = this.getMetaData();
 
         const msg = "Starting " + metaData.key + ":" + metaData.version + "...";
