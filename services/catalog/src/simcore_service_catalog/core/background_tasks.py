@@ -56,8 +56,8 @@ async def _list_registry_services(
         except ValidationError as exc:
             logger.warning(
                 "skip service %s:%s that has invalid fields\n%s",
-                x["key"],
-                x["version"],
+                x.get("key"),
+                x.get("version"),
                 exc,
             )
 
