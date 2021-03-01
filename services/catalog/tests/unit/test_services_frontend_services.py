@@ -3,27 +3,34 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-from simcore_service_catalog.models.schemas.services import ServiceDockerData
+from simcore_service_catalog.models.schemas.services import (
+    ServiceDockerData,
+    ServiceOut,
+)
 from simcore_service_catalog.services.frontend_services import (
-    _file_picker_service,
-    _node_group_service,
+    create_file_picker_service,
+    create_node_group_service,
 )
 
 
 def test_create_file_picker():
 
-    image_metadata = _file_picker_service()
+    image_metadata = create_file_picker_service()
     assert isinstance(image_metadata, ServiceDockerData)
 
     assert (
         not image_metadata.inputs and image_metadata.outputs
     ), "Expected a source node"
+
+    service = ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
 
 
 def tests_create_node_group():
-    image_metadata = _node_group_service()
+    image_metadata = create_node_group_service()
     assert isinstance(image_metadata, ServiceDockerData)
 
     assert (
         not image_metadata.inputs and image_metadata.outputs
     ), "Expected a source node"
+
+    service = ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
