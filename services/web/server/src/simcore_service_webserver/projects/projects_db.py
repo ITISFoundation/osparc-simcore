@@ -475,13 +475,62 @@ class ProjectDBAPI:
         return template_prj
 
     @run_sequentially_in_context(target_args=["project_uuid"])
+    async def update_user_project_workbench(
+        self, partial_workbench_data: Dict[str, Any], user_id: int, project_uuid: str
+    ) -> Dict[str, Any]:
+        """patches an EXISTING project from a user
+        new_project_data only contains the entries to modify
+        """
+        log.info("Updating project %s for user %s", project_uuid, user_id)
+        async with self.engine.acquire() as conn:
+            current_project: Dict = await self._get_project(
+                conn,
+                user_id,
+                project_uuid,
+                exclude_foreign=["tags"],
+                include_templates=False,
+                for_update=True,
+            )
+            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            _check_project_permissions(current_project, user_id, user_groups, "write")
+
+            def _patch_workbench(
+                project: Dict[str, Any], new_data: Dict[str, Any]
+            ) -> None:
+                for node_key, node_data in new_data.get("workbench", {}).items():
+                    current_node_data = project.get("workbench", {}).get(node_key)
+                    if current_node_data is None:
+                        log.debug("node %s is missing from project, no patch", node_key)
+                        raise NodeNotFoundError(project_uuid, node_key)
+                    current_node_data.update(node_data)
+                return project
+
+            new_project_data = _patch_workbench(current_project, partial_workbench_data)
+
+            log.debug("DB updating with %s", pformat(new_project_data))
+            result = await conn.execute(
+                # pylint: disable=no-value-for-parameter
+                projects.update()
+                .values(**_convert_to_db_names(new_project_data))
+                .where(projects.c.id == current_project[projects.c.id.key])
+                .returning(literal_column("*"))
+            )
+            project: RowProxy = await result.fetchone()
+            log.debug("DB updated returned %s", pformat(project))
+            user_email = await self._get_user_email(conn, project.prj_owner)
+
+            tags = await self._get_tags_by_project(
+                conn, project_id=project[projects.c.id]
+            )
+            return _convert_to_schema_names(project, user_email, tags=tags)
+
+    @run_sequentially_in_context(target_args=["project_uuid"])
     async def update_user_project(
         self,
         new_project_data: Dict[str, Any],
         user_id: int,
         project_uuid: str,
         include_templates: Optional[bool] = False,
-        replace_project: bool = True,
     ) -> Dict[str, Any]:
         """updates a project from a user
         replace_project is True then new_project_data shall contain a full valid project.
@@ -531,21 +580,7 @@ class ProjectDBAPI:
                             node[prop] = old_node[prop]
                 return new_project
 
-            def _patch_workbench(
-                project: Dict[str, Any], new_data: Dict[str, Any]
-            ) -> None:
-                for node_key, node_data in new_data.get("workbench", {}).items():
-                    current_node_data = project.get("workbench", {}).get(node_key)
-                    if current_node_data is None:
-                        log.debug("node %s is missing from project, no patch", node_key)
-                        raise NodeNotFoundError(project_uuid, node_key)
-                    current_node_data.update(node_data)
-                return project
-
-            if replace_project:
-                new_project_data = _update_workbench(current_project, new_project_data)
-            else:
-                new_project_data = _patch_workbench(current_project, new_project_data)
+            _update_workbench(current_project, new_project_data)
 
             # update timestamps
             new_project_data["lastChangeDate"] = now_str()
