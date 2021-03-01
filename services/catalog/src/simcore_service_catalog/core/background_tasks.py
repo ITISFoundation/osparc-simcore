@@ -30,7 +30,7 @@ from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
-from ..services.frontend_services import get_services as get_frontend_services
+from ..services.frontend_services import iter_service_docker_data
 
 logger = logging.getLogger(__name__)
 
@@ -39,14 +39,16 @@ ServiceVersion = str
 
 OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
 
+ServiceDockerDataMap = Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]
+
 
 async def _list_registry_services(
     app: FastAPI,
-) -> Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData]:
+) -> ServiceDockerDataMap:
     client = get_director_api(app)
     data = await client.get("/services")
-    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData] = {
-        (s.key, s.version): s for s in get_frontend_services()
+    services: ServiceDockerDataMap = {
+        (s.key, s.version): s for s in iter_service_docker_data()
     }
     for x in data:
         try:
