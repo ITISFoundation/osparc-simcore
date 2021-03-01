@@ -307,7 +307,11 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
           osparc.data.Resources.fetch("organizations", "delete", params)
             .then(() => {
               osparc.store.Store.getInstance().reset("organizations");
-              this.__reloadOrganizations();
+              // reload "profile", "organizations" are part of the information in this endpoint
+              osparc.data.Resources.getOne("profile", {}, null, false)
+                .then(() => {
+                  this.__reloadOrganizations();
+                });
             })
             .catch(err => {
               osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
@@ -339,14 +343,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
-          win.close();
           osparc.store.Store.getInstance().reset("organizations");
-          this.__reloadOrganizations();
+          // reload "profile", "organizations" are part of the information in this endpoint
+          osparc.data.Resources.getOne("profile", {}, null, false)
+            .then(() => {
+              this.__reloadOrganizations();
+            });
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
+        })
+        .finally(() => {
+          win.close();
         });
     },
 
