@@ -120,7 +120,7 @@ class TutorialBase {
       listThem: false
     }];
 
-    for (let i=0; i<resources.length; i++) {
+    for (let i = 0; i < resources.length; i++) {
       const resource = resources[i];
       this.__responsesQueue.addResponseListener(resource.request);
     }
@@ -133,7 +133,7 @@ class TutorialBase {
       throw (err);
     }
 
-    for (let i=0; i<resources.length; i++) {
+    for (let i = 0; i < resources.length; i++) {
       const resource = resources[i];
       try {
         const resp = await this.__responsesQueue.waitUntilResponse(resource.request);
@@ -211,17 +211,19 @@ class TutorialBase {
     while ((new Date().getTime()) - start < timeout) {
       for (let i = nodeIds.length - 1; i >= 0; i--) {
         const nodeId = nodeIds[i];
-        if (await utils.isServiceReady(this.__page, studyId, nodeId)) {
+        if (await utils.isServiceReady(this.__page, studyId, nodeId) && await utils.isServiceConnected(this.__page, studyId, nodeId)) {
           nodeIds.splice(i, 1);
         }
       }
-      await utils.sleep(5000);
+
       if (nodeIds.length === 0) {
         console.log("Services ready in", ((new Date().getTime()) - start) / 1000);
         // after the service is responsive we need to wait a bit until the iframe is rendered
         await utils.sleep(3000);
         return;
       }
+
+      await utils.sleep(2500);
     }
     const errorMsg = "Timeout reached waiting for services";
     console.log(errorMsg, ((new Date().getTime()) - start) / 1000);
