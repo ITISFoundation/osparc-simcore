@@ -35,10 +35,7 @@ async function runTutorial() {
     const iFrame0 = await iframeHandles[0].contentFrame();
     const iFrame1 = await iframeHandles[1].contentFrame();
 
-    var nbIframe = iFrame0;
-    if (iFrame1._url.endsWith("tree?")) {
-      nbIframe = iFrame1;
-    }
+    const nbIframe = [iFrame0, iFrame1].find(iframe => iframe._url.endsWith("tree?");
 
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
