@@ -35,7 +35,7 @@ async function runTutorial() {
     const iFrame0 = await iframeHandles[0].contentFrame();
     const iFrame1 = await iframeHandles[1].contentFrame();
 
-    const nbIframe = iFrame0;
+    var nbIframe = iFrame0;
     if (iFrame1._url.endsWith("tree?")) {
       nbIframe = iFrame1;
     }
@@ -78,12 +78,12 @@ async function runTutorial() {
 
     const iframeHandles2 = await tutorial.getIframe();
     // expected three iframes = loading + jupyterNB + jupyterLab
-    const iFrame0 = await iframeHandles2[0].contentFrame();
-    const iFrame1 = await iframeHandles2[1].contentFrame();
+    const iFrame20 = await iframeHandles2[0].contentFrame();
+    const iFrame21 = await iframeHandles2[1].contentFrame();
 
-    const jLabIframe = iFrame0;
-    if (iFrame1._url.endsWith("lab?")) {
-      jLabIframe = iFrame1;
+    var jLabIframe = iFrame20;
+    if (iFrame21._url.endsWith("lab?")) {
+      jLabIframe = iFrame21;
     }
 
     // inside the iFrame, open the first notebook
