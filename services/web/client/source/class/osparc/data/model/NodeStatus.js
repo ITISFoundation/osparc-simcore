@@ -58,8 +58,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
     hasOutputs: {
       check: "Boolean",
-      init: false,
-      apply: "__applyModified"
+      init: false
     },
 
     modified: {
