@@ -65,14 +65,14 @@ async def list_viewers_info(
         # FIXME: ADD CONDITION: service MUST be shared with EVERYBODY!
         stmt = services_consume_filetypes.select()
         if file_type:
-            stmt.where(services_consume_filetypes.c.filetype == file_type)
+            stmt = stmt.where(services_consume_filetypes.c.filetype == file_type)
 
-        stmt.order_by("filetype", "preference_order")
+        stmt = stmt.order_by("filetype", "preference_order")
 
         if file_type and only_default:
-            stmt.limit(1)
+            stmt = stmt.limit(1)
 
-        log.debug("Listing viewers: %s", stmt)
+        log.debug("Listing viewers:\n%s", stmt)
 
         listed_filetype = set()
         async for row in await conn.execute(stmt):
@@ -90,6 +90,7 @@ async def list_viewers_info(
                 consumer = ViewerInfo(
                     key=row["service_key"],
                     version=row["service_version"],
+                    filetype=row["filetype"],
                     label=display_name,
                     input_port_key=row["service_input_port"],
                 )
