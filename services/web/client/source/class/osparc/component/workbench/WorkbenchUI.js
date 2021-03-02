@@ -544,7 +544,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         qx.bom.Element.addListener(
           this.__desktop,
           evType,
-          this.__startTempEdge,
+          this.__updateTempEdge,
           this
         );
       }, this);
@@ -593,7 +593,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           qx.bom.Element.removeListener(
             this.__desktop,
             evType,
-            this.__startTempEdge,
+            this.__updateTempEdge,
             this
           );
         }
@@ -622,7 +622,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         qx.bom.Element.removeListener(
           this.__desktop,
           evType,
-          this.__startTempEdge,
+          this.__updateTempEdge,
           this
         );
       }, this);
@@ -751,7 +751,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
-    __startTempEdge: function(pointerEvent) {
+    __updateTempEdge: function(pointerEvent) {
       if (this.__tempEdgeNodeId === null) {
         return;
       }
@@ -803,6 +803,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__tempEdgeRepr = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, true);
       } else {
         osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
+      }
+
+      if (!this.__tempEdgeIsInput) {
+        const modified = nodeUI.getNode().getStatus().getModified();
+        const colorHex = osparc.component.workbench.EdgeUI.getEdgeColor(modified);
+        osparc.component.workbench.SvgWidget.updateCurveColor(this.__tempEdgeRepr, colorHex);
       }
     },
 
