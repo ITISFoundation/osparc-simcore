@@ -45,9 +45,9 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
     this.setRepresentation(representation);
 
     edge.getInputNode().getStatus().addListener("changeModified", () => {
-      this.__updateCurveColor();
+      this.__updateEdgeColor();
     });
-    this.__updateCurveColor();
+    this.__updateEdgeColor();
 
     this.subscribeToFilterGroup("workbench");
   },
@@ -63,18 +63,25 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
     }
   },
 
-  members: {
-    __updateCurveColor: function() {
-      const modified = this.getEdge().getInputNode().getStatus()
-        .getModified();
+  statics: {
+    getEdgeColor(modified) {
       let newColor = null;
       if (modified === null) {
         newColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-comp-active");
       } else {
         newColor = osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
       }
-      const newColorHex = qx.theme.manager.Color.getInstance().resolve(newColor);
-      osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), newColorHex);
+      const colorHex = qx.theme.manager.Color.getInstance().resolve(newColor);
+      return colorHex;
+    }
+  },
+
+  members: {
+    __updateEdgeColor: function() {
+      const modified = this.getEdge().getInputNode().getStatus()
+        .getModified();
+      const colorHex = this.self().getEdgeColor(modified);
+      osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), colorHex);
     },
 
     setSelected: function(selected) {
@@ -82,7 +89,7 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
         const selectedColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-selected");
         osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), selectedColor);
       } else {
-        this.__updateCurveColor();
+        this.__updateEdgeColor();
       }
     },
 
