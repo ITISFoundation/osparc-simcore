@@ -78,7 +78,13 @@ async function runTutorial() {
 
     const iframeHandles2 = await tutorial.getIframe();
     // expected three iframes = loading + jupyterNB + jupyterLab
-    const jLabIframe = await iframeHandles2[2].contentFrame();
+    const iFrame0 = await iframeHandles2[0].contentFrame();
+    const iFrame1 = await iframeHandles2[1].contentFrame();
+
+    const jLabIframe = iFrame0;
+    if (iFrame1._url.endsWith("lab?")) {
+      jLabIframe = iFrame1;
+    }
 
     // inside the iFrame, open the first notebook
     const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(3)';
