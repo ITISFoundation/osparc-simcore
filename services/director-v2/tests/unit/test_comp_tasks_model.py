@@ -37,5 +37,3 @@ def test_computation_task_model_with_wrong_default_value_field(
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
-        model_instance = model_cls.from_orm(example)
-        assert model_instance, f"Failed with {name}"
