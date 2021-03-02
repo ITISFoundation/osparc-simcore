@@ -120,11 +120,11 @@ ifeq ($(target),)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(MAKE_C) services/web/client clean compile$(if $(findstring -x,$@),-x,)
 endif
 	# Building service $(target)
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
+	$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
 	$(_docker_compose_build) $(target)
 endif
 
