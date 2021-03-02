@@ -17,7 +17,10 @@ logger = logging.getLogger(__file__)
 
 
 def _is_node_computational(node_key: str) -> bool:
-    return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+    try:
+        return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+    except ValueError:
+        return False
 
 
 @log_decorator(logger=logger)
