@@ -215,7 +215,7 @@ class TutorialBase {
           nodeIds.splice(i, 1);
         }
       }
-      await utils.sleep(2500);
+      await utils.sleep(5000);
       if (nodeIds.length === 0) {
         console.log("Services ready in", ((new Date().getTime()) - start) / 1000);
         // after the service is responsive we need to wait a bit until the iframe is rendered
