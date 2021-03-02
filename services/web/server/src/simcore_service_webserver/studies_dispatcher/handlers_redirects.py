@@ -161,12 +161,12 @@ async def get_redirection_to_viewer(request: web.Request):
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
         )
-    except (ValidationError, web.HTTPServerError, Exception):
+    except (ValidationError, web.HTTPServerError, Exception) as err:
         log.exception("Fatal error while redirecting %s", request.query)
         raise create_redirect_response(
             request.app,
             page="error",
             message="Ups something went wrong while processing your request.",
-            status_code=web.HTTPServerError.status_code,
+            status_code=web.HTTPInternalServerError.status_code,
         )
     return response

@@ -7,7 +7,9 @@ from typing import List, Optional
 from aiohttp import web
 from models_library.services import KEY_RE, VERSION_RE
 from pydantic import BaseModel, Field, ValidationError, constr
-from simcore_postgres_database.webserver_models import services_consume_filetypes
+from simcore_postgres_database.models.services_consume_filetypes import (
+    services_consume_filetypes,
+)
 
 from ..constants import APP_DB_ENGINE_KEY
 
@@ -110,7 +112,7 @@ async def find_compatible_viewer(
     try:
         viewers = await list_viewers_info(app, file_type, only_default=True)
         viewer = viewers[0]
-    except KeyError as err:
+    except IndexError as err:
         raise MatchNotFoundError(
             f"No viewer available for file type '{file_type}''"
         ) from err
