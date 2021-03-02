@@ -488,7 +488,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         edge.addListener("changePortConnected", e => {
           const portConnected = e.getData();
-          osparc.component.workbench.SvgWidget.updateDashes(edgeRepresentation, !portConnected);
+          osparc.component.workbench.SvgWidget.updateCurveDashes(edgeRepresentation, !portConnected);
         }, this);
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
