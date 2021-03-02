@@ -56,7 +56,7 @@ class ViewerQueryParams(BaseModel):
     def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
         # can safely construct w/o validation from a viewer
         return ViewerQueryParams.construct(
-            filetype=viewer.filetype,
+            file_type=viewer.filetype,
             viewer_key=viewer.key,
             viewer_version=viewer.version,
         )
