@@ -32,7 +32,13 @@ async function runTutorial() {
 
     const iframeHandles = await tutorial.getIframe();
     // expected two iframes = loading + jupyterNB
-    const nbIframe = await iframeHandles[1].contentFrame();
+    const iFrame0 = await iframeHandles[0].contentFrame();
+    const iFrame1 = await iframeHandles[1].contentFrame();
+
+    const nbIframe = iFrame0;
+    if (iFrame1._url.endsWith("tree?")) {
+      nbIframe = iFrame1;
+    }
 
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
@@ -48,11 +54,11 @@ async function runTutorial() {
     // inside the first notebook, click Run button 5 times
     const runNBBtnSelector = '#run_int > button:nth-child(1)';
     const runNotebookTimes = 5;
-    for (let i=0; i<runNotebookTimes; i++) {
+    for (let i = 0; i < runNotebookTimes; i++) {
       await nbIframe.waitForSelector(runNBBtnSelector);
       await nbIframe.click(runNBBtnSelector);
       await tutorial.waitFor(3000);
-      await tutorial.takeScreenshot("pressRunNB_" + (i+1));
+      await tutorial.takeScreenshot("pressRunNB_" + (i + 1));
     }
 
     // TODO: Better check that the kernel is finished
@@ -107,7 +113,7 @@ async function runTutorial() {
 
     await tutorial.removeStudy(studyId);
   }
-  catch(err) {
+  catch (err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
