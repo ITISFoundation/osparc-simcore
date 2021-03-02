@@ -122,7 +122,7 @@ def node_needs_computation(
 async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
     for node in nx.topological_sort(complete_dag):
-        if _is_node_computational(nodes_data_view[node]["key"]):
+        if _is_node_computational(nodes_data_view[node].get("key", "")):
             await compute_node_states(nodes_data_view, node)
 
 

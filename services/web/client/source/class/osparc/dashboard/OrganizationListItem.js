@@ -32,7 +32,8 @@ qx.Class.define("osparc.dashboard.OrganizationListItem", {
   },
 
   events: {
-    "openEditOrganization": "qx.event.type.Data"
+    "openEditOrganization": "qx.event.type.Data",
+    "deleteOrganization": "qx.event.type.Data"
   },
 
   members: {
@@ -83,6 +84,12 @@ qx.Class.define("osparc.dashboard.OrganizationListItem", {
         this.fireDataEvent("openEditOrganization", this.getKey());
       });
       menu.add(editOrgButton);
+
+      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteOrgButton.addListener("execute", () => {
+        this.fireDataEvent("deleteOrganization", this.getKey());
+      });
+      menu.add(deleteOrgButton);
 
       return menu;
     },
