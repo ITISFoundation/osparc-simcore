@@ -10,8 +10,11 @@ import sqlalchemy as sa
 from .base import metadata
 
 #
-# TODO: this information SHALL be defined in service metadata upon publication
-# and the catalog can automatically move here
+# TODO: This information SHALL be defined in service metadata upon publication
+#       and the catalog service, using e.g. a background task,
+#       can automatically fill this table with services that elligable (e.g. shared with everybody)
+#       to consume given filetypes. Notice also that service "matching" will also be determined in a near
+#       future by more complex metadata
 #
 
 services_consume_filetypes = sa.Table(
