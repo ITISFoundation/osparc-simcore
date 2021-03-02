@@ -35,7 +35,7 @@ async function runTutorial() {
     const iFrame0 = await iframeHandles[0].contentFrame();
     const iFrame1 = await iframeHandles[1].contentFrame();
 
-    const nbIframe = [iFrame0, iFrame1].find(iframe => iframe._url.endsWith("tree?");
+    const nbIframe = [iFrame0, iFrame1].find(iframe => iframe._url.endsWith("tree?"));
 
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
@@ -78,7 +78,7 @@ async function runTutorial() {
     const iFrame20 = await iframeHandles2[0].contentFrame();
     const iFrame21 = await iframeHandles2[1].contentFrame();
 
-    const jLabIframe = [iFrame20, iFrame21].find(iframe => iframe._url.endsWith("lab?");
+    const jLabIframe = [iFrame20, iFrame21].find(iframe => iframe._url.endsWith("lab?"));
 
     // inside the iFrame, open the first notebook
     const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(3)';
