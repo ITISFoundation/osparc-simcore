@@ -107,7 +107,11 @@ async def _generate_tasks_list_from_project(
         task_db = CompTaskAtDB(
             project_id=project.uuid,
             node_id=node_id,
-            schema=NodeSchema(inputs=node_details.inputs, outputs=node_details.outputs),
+            schema=NodeSchema.parse_obj(
+                node_details.dict(
+                    exclude_unset=True, by_alias=True, include={"inputs", "outputs"}
+                )
+            ),
             inputs=node.inputs,
             outputs=node.outputs,
             image=image,
