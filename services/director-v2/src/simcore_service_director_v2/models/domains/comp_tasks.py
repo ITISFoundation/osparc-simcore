@@ -5,7 +5,7 @@ from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Inputs, NodeID, Outputs
 from models_library.projects_state import RunningState
-from models_library.services import KEY_RE, ServiceInputs, ServiceOutputs
+from models_library.services import KEY_RE, ServiceInputs, ServiceOutput, ServiceOutputs
 from pydantic import BaseModel, Extra, Field, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
@@ -18,6 +18,11 @@ class Image(BaseModel):
     tag: constr(regex=VERSION_RE)
     requires_gpu: bool
     requires_mpi: bool
+
+
+# NOTE: for a long time defaultValue field was added to ServiceOutput wrongly in the DB.
+# this flags allows parsing of the outputs without error. This MUST not leave the director-v2!
+ServiceOutput.Config.extra = Extra.ignore
 
 
 class NodeSchema(BaseModel):
@@ -67,13 +72,6 @@ class CompTaskAtDB(BaseModel):
         if "state" in comp_task_dict:
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
         return comp_task_dict
-
-    @classmethod
-    def from_db(cls, db_row) -> "CompTaskAtDB":
-        # clean defaultValues from schema/outputs/output_key/ if necessary
-        for output_data in db_row.get("schema", {}).get("outputs", {}).values():
-            output_data.pop("defaultValue", None)
-        return CompTaskAtDB.from_orm(db_row)
 
     class Config:
         extra = Extra.forbid

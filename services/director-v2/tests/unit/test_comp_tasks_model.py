@@ -21,3 +21,21 @@ def test_computation_task_model_examples(
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (CompTaskAtDB,),
+)
+def test_computation_task_model_with_wrong_default_value_field(
+    model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
+):
+    for name, example in model_cls_examples.items():
+
+        for output_schema in example.get("schema", {}).get("outputs", {}).values():
+            output_schema["defaultValue"] = None
+        print(name, ":", pformat(example))
+        model_instance = model_cls(**example)
+        assert model_instance, f"Failed with {name}"
+        model_instance = model_cls.from_orm(example)
+        assert model_instance, f"Failed with {name}"
