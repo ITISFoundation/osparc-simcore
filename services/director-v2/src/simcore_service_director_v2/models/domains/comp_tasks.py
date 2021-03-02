@@ -5,7 +5,13 @@ from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Inputs, NodeID, Outputs
 from models_library.projects_state import RunningState
-from models_library.services import KEY_RE, ServiceInputs, ServiceOutput, ServiceOutputs
+from models_library.services import (
+    KEY_RE,
+    PropertyName,
+    ServiceInputs,
+    ServiceOutput,
+    ServiceOutputs,
+)
 from pydantic import BaseModel, Extra, Field, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
@@ -22,12 +28,17 @@ class Image(BaseModel):
 
 # NOTE: for a long time defaultValue field was added to ServiceOutput wrongly in the DB.
 # this flags allows parsing of the outputs without error. This MUST not leave the director-v2!
-ServiceOutput.Config.extra = Extra.ignore
+class _ServiceOutputOverride(ServiceOutput):
+    class Config(ServiceOutput.Config):
+        extra = Extra.ignore
+
+
+_ServiceOutputsOverride = Dict[PropertyName, _ServiceOutputOverride]
 
 
 class NodeSchema(BaseModel):
     inputs: ServiceInputs = Field(..., description="the inputs scheam")
-    outputs: ServiceOutputs = Field(..., description="the outputs schema")
+    outputs: _ServiceOutputsOverride = Field(..., description="the outputs schema")
 
     class Config:
         extra = Extra.forbid
