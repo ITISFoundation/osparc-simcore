@@ -17,7 +17,9 @@ from pytest_simcore.helpers.utils_services import (
     list_supported_filetypes,
 )
 from simcore_postgres_database.models.services import services_meta_data
-from simcore_postgres_database.webserver_models import services_consume_filetypes
+from simcore_postgres_database.models.services_consume_filetypes import (
+    services_consume_filetypes,
+)
 
 
 @pytest.fixture
