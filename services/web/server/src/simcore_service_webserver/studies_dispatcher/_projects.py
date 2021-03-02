@@ -34,7 +34,7 @@ async def acquire_project_with_viewer(
     #   - if user requests several times, the same project is reused
     #   - if user is not a guest, the project will be saved in it's account (desired?)
     #
-    project_id = compose_uuid_from(user.id, viewer.footprint, download_link)
+    project_id: str = compose_uuid_from(user.id, viewer.footprint, download_link)
 
     # Ids are linked to produce a footprint (see viewer_project_exists)
     file_picker_id, viewer_id = generate_nodeids(project_id)
