@@ -401,10 +401,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           });
         }
       }, this);
-
-      qx.event.message.Bus.getInstance().subscribe("updateStudy", () => {
-        this.populateTree();
-      }, this);
     }
   }
 });
