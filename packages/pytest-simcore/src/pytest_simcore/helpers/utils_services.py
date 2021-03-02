@@ -38,9 +38,9 @@ FAKE_FILE_CONSUMER_SERVICES = [
     },
     # yet another service with also CSV support and PNG only in port 3
     {
-        "key": "simcore/services/dynamic/openmicroscopy-web",
+        "key": "simcore/services/dynamic/bioformats-web",
         "version": "1.0.1",
-        "display_name": "Open microscopy",
+        "display_name": "Bio Formats",
         # FYI: https://docs.openmicroscopy.org/bio-formats/6.6.0/supported-formats.html
         "consumes": [
             "CSV",
@@ -59,7 +59,7 @@ def list_fake_file_consumers() -> List[Dict[str, Any]]:
             consumer = {
                 "key": service["key"],
                 "version": service["version"],
-                "display_name": service["display_name"],
+                "display_name": f"{service['display_name']}:{service['version']} - {filetype}",
                 "filetype": filetype,
                 "input_port_key": port,
             }
