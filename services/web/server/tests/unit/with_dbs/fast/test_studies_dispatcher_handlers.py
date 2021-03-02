@@ -18,11 +18,71 @@ from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
 from yarl import URL
+
+FAKE_VIEWS_LIST = [
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="CSV",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/bio-formats-web",
+        version="1.0.1",
+        filetype="JPEG",
+        label="bio-formats",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="JSON",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/bio-formats-web",
+        version="1.0.1",
+        filetype="PNG",
+        label="bio-formats",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="TSV",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="XLSX",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+]
+
+
+@pytest.fixture()
+def patch_list_viewers_info_in_handlers_rest(mocker):
+    mocker.patch(
+        "simcore_service_webserver.studies_dispatcher.handlers_rest.list_viewers_info",
+        return_value=future_with_result(FAKE_VIEWS_LIST),
+    )
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
+def app_cfg(
+    default_app_cfg,
+    aiohttp_unused_port,
+    qx_client_outdir,
+    redis_service,
+    patch_list_viewers_info_in_handlers_rest,
+):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -93,9 +153,8 @@ def _get_base_url(client) -> str:
 
 
 async def test_api_get_viewer_for_file(client):
-    # TODO: mock file_type -> service resolver
 
-    resp = await client.get("/v0/viewers?file_type=DICOM&file_name=foo&file_size=10000")
+    resp = await client.get("/v0/viewers/default?file_type=JPEG")
     data, error = await assert_status(resp, web.HTTPOk)
 
     base_url = _get_base_url(client)
@@ -104,59 +163,58 @@ async def test_api_get_viewer_for_file(client):
     # TODO: each view_url should include viewer_key and viewer_version
     assert await resp.json() == {
         "data": {
-            "file_type": "DICOM",
-            "viewer_title": "Sim4life v1.0.29",
-            "view_url": f"{base_url}/view?file_type=DICOM&file_name=foo&file_size=10000&viewer_key=simcore/services/dynamic/sim4life&viewer_version=1.0.29",
+            "file_type": "JPEG",
+            "title": "Bio-formats v1.0.1",
+            "view_url": f"{base_url}/view?filetype=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
         },
         "error": None,
     }
 
 
 async def test_api_get_viewer_for_unsupported_type(client):
-    resp = await client.get("/v0/viewers?file_type=UNSUPPORTED_TYPE")
-    data, error = await assert_status(resp, web.HTTPUnprocessableEntity)
+    resp = await client.get("/v0/viewers/default?file_type=UNSUPPORTED_TYPE")
+    data, error = await assert_status(resp, web.HTTPOk)
 
-    assert await resp.json() == {
-        "data": None,
-        "error": {
-            "logs": [
-                {
-                    "message": "No viewer available for file type 'UNSUPPORTED_TYPE''",
-                    "level": "ERROR",
-                    "logger": "user",
-                }
-            ],
-            "errors": [
-                {
-                    "code": "HTTPUnprocessableEntity",
-                    "message": "No viewer available for file type 'UNSUPPORTED_TYPE''",
-                    "resource": None,
-                    "field": None,
-                }
-            ],
-            "status": 422,
-        },
-    }
+    assert await resp.json() == {"data": [], "error": None}
 
 
 async def test_api_list_supported_filetypes(client):
-    # TODO: mock file_type -> service resolver
 
-    resp = await client.get("/v0/viewers/filetypes")
+    resp = await client.get("/v0/viewers/default")
     data, error = await assert_status(resp, web.HTTPOk)
 
     base_url = _get_base_url(client)
     assert await resp.json() == {
         "data": [
             {
-                "file_type": "DICOM",
-                "viewer_title": "Sim4life v1.0.29",
-                "view_url": f"{base_url}/view?file_type=DICOM",
+                "title": "Rawgraphs v2.11.1",
+                "file_type": "CSV",
+                "view_url": f"{base_url}/view?filetype=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
             },
             {
-                "file_type": "CSV",
-                "viewer_title": "2d plot - rawgraphs v2.11.1",
-                "view_url": f"{base_url}/view?file_type=CSV",
+                "title": "Bio-formats v1.0.1",
+                "file_type": "JPEG",
+                "view_url": f"{base_url}/view?filetype=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+            },
+            {
+                "title": "Rawgraphs v2.11.1",
+                "file_type": "JSON",
+                "view_url": f"{base_url}/view?filetype=JSON&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+            },
+            {
+                "title": "Bio-formats v1.0.1",
+                "file_type": "PNG",
+                "view_url": f"{base_url}/view?filetype=PNG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+            },
+            {
+                "title": "Rawgraphs v2.11.1",
+                "file_type": "TSV",
+                "view_url": f"{base_url}/view?filetype=TSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+            },
+            {
+                "title": "Rawgraphs v2.11.1",
+                "file_type": "XLSX",
+                "view_url": f"{base_url}/view?filetype=XLSX&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
             },
         ],
         "error": None,
@@ -168,11 +226,10 @@ async def test_api_list_supported_filetypes(client):
 
 @pytest.fixture
 async def catalog_subsystem_mock(monkeypatch):
-    from simcore_service_webserver.studies_dispatcher._core import _FILETYPE_TO_VIEWER
 
     services_in_project = [
         {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
-    ] + [{"key": s.key, "version": s.version} for _, s in _FILETYPE_TO_VIEWER.items()]
+    ] + [{"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST]
 
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
