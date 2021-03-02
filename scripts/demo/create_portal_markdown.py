@@ -15,10 +15,9 @@ from datetime import datetime
 from pathlib import Path
 from string import ascii_uppercase
 
-from yarl import URL
-
 from simcore_service_webserver.login.registration import get_invitation_url
 from simcore_service_webserver.login.utils import get_random_string
+from yarl import URL
 
 current_path = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve()
 current_dir = current_path.parent
@@ -79,7 +78,7 @@ def write_list(hostname, url, data, fh):
     print("", file=fh)
 
 
-def main(mock_codes):
+def main(mock_codes, *, uid: int = 1):
     data = {}
 
     with open(current_dir / "template-projects/templates_in_master.json") as fp:
@@ -126,8 +125,11 @@ def main(mock_codes):
     with _open(file_path) as fh:
         print("code,user_id,action,data,created_at", file=fh)
         for n, code in enumerate(mock_codes, start=1):
-            print('%s,1,INVITATION,"{' % code, file=fh)
-            print(f'""guest"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,', file=fh)
+            print(f'{code},{uid},INVITATION,"{{', file=fh)
+            print(
+                f'""guest"": ""invitation-{today.year:04d}{today.month:02d}{today.day:02d}-{n}"" ,',
+                file=fh,
+            )
             print('""issuer"" : ""support@osparc.io""', file=fh)
             print('}",%s' % datetime.now().isoformat(sep=" "), file=fh)
 
@@ -140,6 +142,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Regenerates codes for invitations",
     )
+    parser.add_argument("--user-id", "-u", default=1)
 
     args = parser.parse_args()
 
@@ -147,4 +150,4 @@ if __name__ == "__main__":
     if args.renew_invitation_codes:
         codes = [get_random_string(len(c)) for c in default_mock_codes]
 
-    main(codes)
+    main(codes, uid=args.user_id)
