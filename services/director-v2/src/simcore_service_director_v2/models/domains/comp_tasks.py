@@ -5,13 +5,7 @@ from models_library.basic_regex import VERSION_RE
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Inputs, NodeID, Outputs
 from models_library.projects_state import RunningState
-from models_library.services import (
-    KEY_RE,
-    PropertyName,
-    ServiceInputs,
-    ServiceOutput,
-    ServiceOutputs,
-)
+from models_library.services import KEY_RE, PropertyName, ServiceInputs, ServiceOutput
 from pydantic import BaseModel, Extra, Field, constr, validator
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_tasks import NodeClass, StateType
