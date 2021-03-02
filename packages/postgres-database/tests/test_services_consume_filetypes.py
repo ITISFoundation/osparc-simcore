@@ -129,7 +129,6 @@ async def test_list_supported_filetypes(conn):
 
 @pytest.mark.skip(reason="Under DEV")
 async def test_list_default_compatible_services():
-    raise NotImplementedError()
     stmt = (
         sa.select(
             [
@@ -138,10 +137,11 @@ async def test_list_default_compatible_services():
         )
         .group_by(services_consume_filetypes.c.filetype)
         .order_by(
-            [services_consume_filetypes.c.key, services_consume_filetypes.c.version]
+            services_consume_filetypes.c.key, services_consume_filetypes.c.version
         )
         .distinct()
     )
+    raise NotImplementedError()
 
 
 async def test_contraints(conn):

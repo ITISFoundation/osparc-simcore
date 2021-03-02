@@ -125,6 +125,7 @@ async def get_redirection_to_viewer(request: web.Request):
         # removed await params.check_download_link()
         # Perhaps can check the header for GET while downloading and retreive file_size??
 
+        # pylint: disable=no-member
         viewer: ViewerInfo = await find_compatible_viewer(
             request.app, file_type=params.file_type, file_size=params.file_size
         )
