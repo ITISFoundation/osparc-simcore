@@ -127,6 +127,7 @@ async def test_list_supported_filetypes(conn):
     assert [v for row in rows for v in row.values()] == list_supported_filetypes()
 
 
+@pytest.mark.skip(reason="Under DEV")
 async def test_list_default_compatible_services():
     raise NotImplementedError()
     stmt = (
@@ -168,7 +169,10 @@ async def test_contraints(conn):
     assert num_services == 0
 
 
+@pytest.mark.skip(reason="Under DEV")
 async def test_get_compatible_services_available_to_everyone(conn):
+    # TODO: resolve when this logic is moved to catalog
+
     # given a filetype, get sorted services
     # test sorting of services given a filetype
     # https://docs.sqlalchemy.org/en/13/core/tutorial.html#ordering-or-grouping-by-a-label
