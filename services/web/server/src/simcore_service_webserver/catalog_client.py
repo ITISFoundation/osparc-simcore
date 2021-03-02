@@ -95,7 +95,7 @@ async def make_request_and_envelope_response(
 
 async def get_services_for_user_in_product(
     app: web.Application, user_id: int, product_name: str, *, only_key_versions: bool
-) -> Optional[List[Dict]]:
+) -> List[Dict]:
     url = (
         URL(app[KCATALOG_ORIGIN])
         .with_path(app[KCATALOG_VERSION_PREFIX] + "/services")
@@ -104,8 +104,11 @@ async def get_services_for_user_in_product(
     session = get_client_session(app)
     async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
         if resp.status >= 400:
-            logger.error("Error while retrieving services for user %s", user_id)
-            return
+            logger.warning(
+                "Error while retrieving services for user %s. Returning an empty list",
+                user_id,
+            )
+            return []
         return await resp.json()
 
 
