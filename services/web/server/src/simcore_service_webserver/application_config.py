@@ -16,12 +16,11 @@ from typing import Dict
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings, Field
-from trafaret_config.simple import read_and_validate
-
 from models_library.basic_types import LogLevel, PortInt
+from pydantic import BaseSettings, Field
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.config_schema_utils import addon_section, minimal_addon_schema
+from trafaret_config.simple import read_and_validate
 
 from . import (
     catalog_config,
@@ -95,6 +94,7 @@ def create_schema() -> T.Dict:
             addon_section("director-v2", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),
             addon_section("studies_dispatcher", optional=True): minimal_addon_schema(),
+            addon_section("exporter", optional=True): minimal_addon_schema(),
         }
     )
 

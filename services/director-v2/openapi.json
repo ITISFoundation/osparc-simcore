@@ -558,7 +558,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ComputationTaskOut"
+                }
               }
             }
           },
@@ -718,13 +720,18 @@
           },
           "subgraph": {
             "title": "Subgraph",
-            "uniqueItems": true,
             "type": "array",
             "items": {
               "type": "string",
               "format": "uuid"
             },
             "description": "An optional set of nodes that must be executed, if empty the whole pipeline is executed"
+          },
+          "force_restart": {
+            "title": "Force Restart",
+            "type": "boolean",
+            "description": "if True will force re-running all dependent nodes",
+            "default": false
           }
         }
       },
@@ -753,7 +760,7 @@
         "required": [
           "id",
           "state",
-          "pipeline",
+          "pipeline_details",
           "url"
         ],
         "type": "object",
@@ -777,17 +784,14 @@
             "type": "string",
             "description": "the result of the computational task"
           },
-          "pipeline": {
-            "title": "Pipeline",
-            "type": "object",
-            "additionalProperties": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "format": "uuid"
+          "pipeline_details": {
+            "title": "Pipeline Details",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PipelineDetails"
               }
-            },
-            "description": "the corresponding pipeline in terms of node uuids"
+            ],
+            "description": "the details of the generated pipeline"
           },
           "url": {
             "title": "Url",
@@ -804,6 +808,30 @@
             "type": "string",
             "description": "the link where to stop the task",
             "format": "uri"
+          }
+        },
+        "example": {
+          "id": "42838344-03de-4ce2-8d93-589a5dcdfd05",
+          "state": "PUBLISHED",
+          "pipeline_details": {
+            "adjacency_list": {
+              "2fb4808a-e403-4a46-b52c-892560d27862": [],
+              "19a40c7b-0a40-458a-92df-c77a5df7c886": [
+                "2fb4808a-e403-4a46-b52c-892560d27862"
+              ]
+            },
+            "node_states": {
+              "2fb4808a-e403-4a46-b52c-892560d27862": {
+                "modified": true,
+                "dependencies": []
+              },
+              "19a40c7b-0a40-458a-92df-c77a5df7c886": {
+                "modified": false,
+                "dependencies": [
+                  "2fb4808a-e403-4a46-b52c-892560d27862"
+                ]
+              }
+            }
           }
         }
       },
@@ -879,6 +907,68 @@
         ],
         "type": "string",
         "description": "An enumeration."
+      },
+      "NodeState": {
+        "title": "NodeState",
+        "type": "object",
+        "properties": {
+          "modified": {
+            "title": "Modified",
+            "type": "boolean",
+            "description": "true if the node's outputs need to be re-computed",
+            "default": true
+          },
+          "dependencies": {
+            "title": "Dependencies",
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "contains the node inputs dependencies if they need to be computed first"
+          },
+          "currentStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RunningState"
+              }
+            ],
+            "description": "the node's current state",
+            "default": "NOT_STARTED"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PipelineDetails": {
+        "title": "PipelineDetails",
+        "required": [
+          "adjacency_list",
+          "node_states"
+        ],
+        "type": "object",
+        "properties": {
+          "adjacency_list": {
+            "title": "Adjacency List",
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            "description": "The adjacency list in terms of {NodeID: [successor NodeID]}"
+          },
+          "node_states": {
+            "title": "Node States",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/NodeState"
+            },
+            "description": "The states of each of the pipeline node"
+          }
+        }
       },
       "RetrieveDataIn": {
         "title": "RetrieveDataIn",
@@ -1002,7 +1092,7 @@
                 "$ref": "#/components/schemas/ServiceState"
               }
             ],
-            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start\n"
+            "description": "the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start"
           },
           "service_message": {
             "title": "Service Message",
@@ -1088,7 +1178,7 @@
         }
       },
       "ServiceDockerData": {
-        "title": "simcore node",
+        "title": "ServiceDockerData",
         "required": [
           "name",
           "description",
@@ -1254,13 +1344,16 @@
             "title": "Defaultvalue",
             "anyOf": [
               {
-                "type": "string"
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
               },
               {
                 "type": "number"
               },
               {
-                "type": "integer"
+                "type": "string"
               }
             ]
           },
@@ -1318,13 +1411,16 @@
             "title": "Defaultvalue",
             "anyOf": [
               {
-                "type": "string"
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
               },
               {
                 "type": "number"
               },
               {
-                "type": "integer"
+                "type": "string"
               }
             ]
           },

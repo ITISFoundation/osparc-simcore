@@ -4,7 +4,7 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 from enum import Enum
-from typing import Dict, List, Optional, Union, Any
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -22,7 +22,9 @@ from pydantic.types import PositiveInt
 
 from .basic_regex import VERSION_RE
 
+# NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
+COMPUTATIONAL_SERVICE_KEY_RE = r"^(simcore)/(services)/comp(/[\w/-]+)+$"
 KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_RE
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
@@ -125,6 +127,13 @@ class Widget(BaseModel):
 
 
 class ServiceProperty(BaseModel):
+    """
+    Metadata on a service input or output port
+    """
+
+    ## management
+
+    ### human readable descriptors
     display_order: float = Field(
         ...,
         alias="displayOrder",
@@ -137,6 +146,8 @@ class ServiceProperty(BaseModel):
         description="description of the property",
         example="Age in seconds since 1970",
     )
+
+    # mathematical and physics descriptors
     property_type: constr(regex=PROPERTY_TYPE_RE) = Field(
         ...,
         alias="type",
@@ -155,25 +166,66 @@ class ServiceProperty(BaseModel):
             "data:application/edu.ucdavis@ceclancy.xyz",
         ],
     )
+
+    # value
     file_to_key_map: Optional[Dict[FileName, PropertyName]] = Field(
         None,
         alias="fileToKeyMap",
         description="Place the data associated with the named keys in files",
         examples=[{"dir/input1.txt": "key_1", "dir33/input2.txt": "key2"}],
     )
-    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
-        None, alias="defaultValue", examples=["Dog", True]
+
+    # TODO: use discriminators
+    unit: Optional[str] = Field(
+        None, description="Units, when it refers to a physical quantity"
+    )
+
+    # TODO: use discriminators
+    unit: Optional[str] = Field(
+        None, description="Units, when it refers to a physical quantity"
     )
 
     class Config:
         extra = Extra.forbid
+        # TODO: all alias with camecase
 
 
 class ServiceInput(ServiceProperty):
+    """
+    Metadata on a service input port
+    """
+
+    default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
+        None, alias="defaultValue", examples=["Dog", True]
+    )
+
     widget: Optional[Widget] = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
     )
+
+    class Config(ServiceProperty.Config):
+        schema_extra = {
+            "examples": [
+                # file-wo-widget:
+                {
+                    "displayOrder": 1,
+                    "label": "Input files",
+                    "description": "Files downloaded from service connected at the input",
+                    "type": "data:*/*",
+                },
+                # latest:
+                {
+                    "displayOrder": 2,
+                    "label": "Sleep Time",
+                    "description": "Time to wait before completion",
+                    "type": "number",
+                    "defaultValue": 0,
+                    "unit": "second",
+                    "widget": {"type": "TextArea", "details": {"minHeight": 3}},
+                },
+            ],
+        }
 
 
 class ServiceOutput(ServiceProperty):
@@ -183,11 +235,31 @@ class ServiceOutput(ServiceProperty):
         deprecated=True,
     )
 
+    class Config(ServiceProperty.Config):
+        schema_extra = {
+            "examples": [
+                # previously:
+                {
+                    "displayOrder": 2,
+                    "label": "Time Slept",
+                    "description": "Time the service waited before completion",
+                    "type": "number",
+                },
+                # latest:
+                {
+                    "displayOrder": 2,
+                    "label": "Time Slept",
+                    "description": "Time the service waited before completion",
+                    "type": "number",
+                    "unit": "second",
+                },
+            ]
+        }
+
 
 class ServiceKeyVersion(BaseModel):
     key: constr(regex=KEY_RE) = Field(
         ...,
-        title="",
         description="distinctive name for the node based on the docker registry path",
         examples=[
             "simcore/services/comp/itis/sleeper",
@@ -270,7 +342,6 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
 
     class Config:
         description = "Description of a simcore node 'class' with input and output"
-        title = "simcore node"
         extra = Extra.forbid
 
 
@@ -292,10 +363,13 @@ class ServiceAccessRights(BaseModel):
 
 
 class ServiceMetaData(ServiceCommonData):
-    # for a partial update all members must be Optional
+    # Overrides all fields of ServiceCommonData:
+    #    - for a partial update all members must be Optional
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
+
+    # user-defined metatada
     classifiers: Optional[List[str]]
     quality: Dict[str, Any] = {}
 

@@ -6,3 +6,8 @@
 
 # basic dev tools
 watchdog[watchmedo]
+
+# scripts/templates
+change_case
+jinja2
+ptvsd

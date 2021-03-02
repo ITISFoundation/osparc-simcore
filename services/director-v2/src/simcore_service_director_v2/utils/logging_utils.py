@@ -70,8 +70,10 @@ DEFAULT_FORMATTING = "%(levelname)s: [%(asctime)s/%(processName)s] [%(name)s:%(f
 
 
 def config_all_loggers():
+    the_manager: logging.Manager = logging.Logger.manager
+
     loggers = [logging.getLogger()] + [
-        logging.getLogger(name) for name in logging.root.manager.loggerDict
+        logging.getLogger(name) for name in the_manager.loggerDict
     ]
     for logger in loggers:
         set_logging_handler(logger)
@@ -124,7 +126,12 @@ def _log_arguments(
     return extra_args
 
 
-def log_decorator(logger=None):
+def log_decorator(*, logger: logging.Logger = None, log_exceptions: bool = False):
+    """will automatically log entry/end of decorated function.
+    Args:
+        logger ([logging.Logger], optional): [description]. Defaults to None.
+        log_exceptions (bool, optional): [If True, then exceptions will be logged as errors, if False then exceptions will just be re-raised]. Defaults to False.
+    """
     # Build logger object
     logger_obj = logger or log
 
@@ -142,9 +149,10 @@ def log_decorator(logger=None):
                     )
                 except:
                     # log exception if occurs in function
-                    logger_obj.error(
-                        "Exception: %s", sys.exc_info()[1], extra=extra_args
-                    )
+                    if log_exceptions:
+                        logger_obj.error(
+                            "Exception: %s", sys.exc_info()[1], extra=extra_args
+                        )
                     raise
                 # Return function value
                 return value

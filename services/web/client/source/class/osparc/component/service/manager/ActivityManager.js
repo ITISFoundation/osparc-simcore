@@ -48,7 +48,7 @@ qx.Class.define("osparc.component.service.manager.ActivityManager", {
       const filtersPart = new qx.ui.toolbar.Part();
       toolbar.add(filtersPart);
 
-      const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const filtersContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const nameFilter = new osparc.component.filter.TextFilter("name", "activityMonitor");
       const studyFilter = this.__studyFilter = new osparc.component.filter.StudyFilter("study", "activityMonitor");
       filtersContainer.add(nameFilter);

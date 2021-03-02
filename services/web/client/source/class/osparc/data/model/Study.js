@@ -51,7 +51,7 @@ qx.Class.define("osparc.data.model.Study", {
       accessRights: studyData.accessRights || this.getAccessRights(),
       creationDate: studyData.creationDate ? new Date(studyData.creationDate) : this.getCreationDate(),
       lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : this.getLastChangeDate(),
-      classifiers: studyData.classifiers || studyData.getClassifiers(),
+      classifiers: studyData.classifiers || this.getClassifiers(),
       tags: studyData.tags || this.getTags(),
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality()
@@ -68,6 +68,7 @@ qx.Class.define("osparc.data.model.Study", {
     uuid: {
       check: "String",
       nullable: false,
+      event: "changeUuid",
       init: ""
     },
 
@@ -135,12 +136,14 @@ qx.Class.define("osparc.data.model.Study", {
     tags: {
       check: "Array",
       init: [],
+      event: "changeTags",
       nullable: true
     },
 
     classifiers: {
       check: "Array",
       init: [],
+      event: "changeClassifiers",
       nullable: true
     },
 
@@ -151,12 +154,14 @@ qx.Class.define("osparc.data.model.Study", {
 
     state: {
       check: "Object",
-      nullable: true
+      nullable: true,
+      event: "changeState"
     },
 
     quality: {
       check: "Object",
       init: {},
+      event: "changeQuality",
       nullable: true
     },
 
@@ -183,18 +188,6 @@ qx.Class.define("osparc.data.model.Study", {
         }
       }
       return myNewStudyObject;
-    },
-
-    updateStudy: function(params) {
-      return osparc.data.Resources.fetch("studies", "put", {
-        url: {
-          projectId: params.uuid
-        },
-        data: params
-      }).then(data => {
-        qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
-        return data;
-      });
     },
 
     getProperties: function() {
@@ -227,7 +220,7 @@ qx.Class.define("osparc.data.model.Study", {
       }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = studyData["accessRights"];
-      return osparc.component.export.StudyPermissions.canGroupExecute(aceessRights, myGid);
+      return osparc.component.permissions.Study.canGroupExecute(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
@@ -250,7 +243,7 @@ qx.Class.define("osparc.data.model.Study", {
     __applyAccessRights: function(value) {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
-        const canIWrite = osparc.component.export.StudyPermissions.canGroupWrite(value, myGid);
+        const canIWrite = osparc.component.permissions.Study.canGroupWrite(value, myGid);
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);
@@ -307,26 +300,45 @@ qx.Class.define("osparc.data.model.Study", {
       return jsonObject;
     },
 
-    updateStudy: function(params) {
-      return this.self().updateStudy({
-        ...this.serialize(),
-        ...params
-      })
-        .then(data => {
-          // TODO OM: Hacky
-          if ("dev" in data) {
-            delete data["dev"];
+    updateStudy: function(params, run = false) {
+      return new Promise(resolve => {
+        osparc.data.Resources.fetch("studies", "put", {
+          url: {
+            projectId: this.getUuid(),
+            run
+          },
+          data: {
+            ...this.serialize(),
+            ...params
           }
-          this.set({
-            ...data,
-            creationDate: new Date(data.creationDate),
-            lastChangeDate: new Date(data.lastChangeDate),
-            workbench: this.getWorkbench(),
-            ui: this.getUi(),
-            sweeper: this.getSweeper()
-          });
-          return data;
+        }).then(data => {
+          this.__updateModel(data);
+          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+          resolve(data);
         });
+      });
+    },
+
+    __updateModel: function(data) {
+      if ("dev" in data) {
+        delete data["dev"];
+      }
+      this.set({
+        ...data,
+        creationDate: new Date(data.creationDate),
+        lastChangeDate: new Date(data.lastChangeDate),
+        workbench: this.getWorkbench(),
+        ui: this.getUi(),
+        sweeper: this.getSweeper()
+      });
+
+      const nodes = this.getWorkbench().getNodes(true);
+      Object.values(nodes).forEach(node => {
+        const nodeId = node.getNodeId();
+        if (nodeId in data.workbench) {
+          node.populateStates(data.workbench[nodeId]);
+        }
+      });
     }
   }
 });

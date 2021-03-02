@@ -355,7 +355,21 @@ function getGrayLogSnapshotUrl(targetUrl, since_secs = 30) {
 async function typeInInputElement(page, inputSelector, text) {
   const element = await page.waitForSelector(inputSelector);
   await element.focus();
-  await page.keyboard.type(text, { delay: 100 });
+  await page.keyboard.type(text, {
+    delay: 100
+  });
+}
+
+function isElementVisible (page, selector) {
+  return page.evaluate(selector => {
+    const element = document.querySelector(selector)
+    return !!(element && (element.offsetWidth || element.offsetHeight || element.getClientRects().length))
+  }, selector);
+}
+
+async function clickLoggerTitle(page) {
+  console.log("Click LoggerTitle");
+  await this.waitAndClick(page, '[osparc-test-id="studyLoggerTitleLabel"]')
 }
 
 
@@ -384,5 +398,7 @@ module.exports = {
   parseCommandLineArguments,
   parseCommandLineArgumentsTemplate,
   getGrayLogSnapshotUrl,
-  typeInInputElement
+  typeInInputElement,
+  isElementVisible,
+  clickLoggerTitle,
 }

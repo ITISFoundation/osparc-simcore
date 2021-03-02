@@ -73,7 +73,15 @@ class RunningServiceDetails(BaseModel):
     )
     service_state: ServiceState = Field(
         ...,
-        description="the service state * 'pending' - The service is waiting for resources to start * 'pulling' - The service is being pulled from the registry * 'starting' - The service is starting * 'running' - The service is running * 'complete' - The service completed * 'failed' - The service failed to start\n",
+        description=(
+            "the service state"
+            " * 'pending' - The service is waiting for resources to start"
+            " * 'pulling' - The service is being pulled from the registry"
+            " * 'starting' - The service is starting"
+            " * 'running' - The service is running"
+            " * 'complete' - The service completed"
+            " * 'failed' - The service failed to start"
+        ),
     )
     service_message: str = Field(..., description="the service message")
 

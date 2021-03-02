@@ -261,10 +261,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowserListItem", {
           return true;
         }
       }
-      if (data.tags && data.tags.length && this.getCategory()) {
-        const category = this.getCategory() || "";
+      if (data.tags && data.tags.length) {
         const type = this.getType() || "";
-        if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
+        if (!data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }

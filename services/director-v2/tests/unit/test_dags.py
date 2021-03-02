@@ -5,93 +5,119 @@
 # pylint:disable=no-value-for-parameter
 
 
-import json
-from pathlib import Path
-from typing import Dict, Set
+from typing import Dict, List, Set
 
 import networkx as nx
 import pytest
 from models_library.projects import Workbench
-from models_library.projects_nodes import Node
 from simcore_service_director_v2.utils.dags import (
-    create_dag_graph,
-    create_minimal_graph_based_on_selection,
+    create_complete_dag,
+    create_minimal_computational_graph_based_on_selection,
 )
 
 
-@pytest.fixture(scope="session")
-def workbench(sleepers_workbench: Dict) -> Workbench:
-    workbench: Workbench = {}
-    for node_key, node_values in sleepers_workbench.items():
-        workbench[node_key] = Node.parse_obj(node_values)
-    return workbench
-
-
-@pytest.fixture(scope="session")
-def sleepers_workbench_adjacency_file(mocks_dir: Path) -> Path:
-    file_path = mocks_dir / "4sleepers_workbench_adjacency_list.json"
-    assert file_path.exists()
-    return file_path
-
-
-@pytest.fixture(scope="session")
-def sleepers_workbench_adjacency(sleepers_workbench_adjacency_file: Path) -> Dict:
-    return json.loads(sleepers_workbench_adjacency_file.read_text())
-
-
-def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
-    dag: nx.DiGraph = create_dag_graph(workbench)
-    assert nx.to_dict_of_lists(dag) == sleepers_workbench_adjacency
+def test_create_complete_dag_graph(
+    fake_workbench: Workbench,
+    fake_workbench_complete_adjacency: Dict[str, List[str]],
+):
+    dag_graph = create_complete_dag(fake_workbench)
+    assert nx.is_directed_acyclic_graph(dag_graph)
+    assert nx.to_dict_of_lists(dag_graph) == fake_workbench_complete_adjacency
 
 
 @pytest.mark.parametrize(
-    "subgraph, exp_dag",
+    "subgraph, force_exp_dag, not_forced_exp_dag",
     [
         pytest.param(
-            {},
-            {},
-            id="no nodes",
+            [],
+            {
+                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
+                    "415fefd1-d08b-53c1-adb0-16bed3a687ef"
+                ],
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "6ede1209-b459-5735-91fc-761aa584808d": [],
+            },
+            {
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "6ede1209-b459-5735-91fc-761aa584808d": [],
+            },
+            id="no sub selection returns the full graph",
         ),
         pytest.param(
+            [
+                "8902d36c-bc65-5b0d-848f-88aed72d7849",
+                "3a710d8b-565c-5f46-870b-b45ebe195fc7",
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef",
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
+                "6ede1209-b459-5735-91fc-761aa584808d",
+                "82d7a25c-18d4-44dc-a997-e5c9a745e7fd",
+            ],
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # sleeper 0
-                "3a710d8b-565c-5f46-870b-b45ebe195fc7",  # sleeper 1
+                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
+                    "415fefd1-d08b-53c1-adb0-16bed3a687ef"
+                ],
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "6ede1209-b459-5735-91fc-761aa584808d": [],
             },
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849": [
-                    "3a710d8b-565c-5f46-870b-b45ebe195fc7"
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
                 ],
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "6ede1209-b459-5735-91fc-761aa584808d": [],
+            },
+            id="all nodes selected returns the full graph",
+        ),
+        pytest.param(
+            [
+                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # file-picker
+                "3a710d8b-565c-5f46-870b-b45ebe195fc7",  # sleeper 1
+            ],
+            {
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7": [],
             },
+            {},
             id="nodes 0 and 1",
         ),
         pytest.param(
-            {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # sleeper 0
+            [
+                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # file-picker
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef",  # sleeper 2
-            },
+            ],
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849": [
-                    "3a710d8b-565c-5f46-870b-b45ebe195fc7"
-                ],
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
                     "415fefd1-d08b-53c1-adb0-16bed3a687ef"
                 ],
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef": [],
             },
+            {
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef": [],
+            },
             id="node 0 and 2",
         ),
         pytest.param(
-            {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849",  # sleeper 0
+            [
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef",  # sleeper 2
                 "6ede1209-b459-5735-91fc-761aa584808d",  # sleeper 4
-            },
+            ],
             {
-                "8902d36c-bc65-5b0d-848f-88aed72d7849": [
-                    "3a710d8b-565c-5f46-870b-b45ebe195fc7",
-                    "e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
-                ],
                 "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
                     "415fefd1-d08b-53c1-adb0-16bed3a687ef"
                 ],
@@ -103,13 +129,40 @@ def test_create_dags(workbench: Workbench, sleepers_workbench_adjacency: Dict):
                 ],
                 "6ede1209-b459-5735-91fc-761aa584808d": [],
             },
-            id="node 0, 2 and 4",
+            {
+                "415fefd1-d08b-53c1-adb0-16bed3a687ef": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "e1e2ea96-ce8f-5abc-8712-b8ed312a782c": [
+                    "6ede1209-b459-5735-91fc-761aa584808d"
+                ],
+                "6ede1209-b459-5735-91fc-761aa584808d": [],
+            },
+            id="node 2 and 4",
         ),
     ],
 )
-def test_create_minimal_graph(workbench: Workbench, subgraph: Set[str], exp_dag):
-    full_dag_graph: nx.DiGraph = create_dag_graph(workbench)
-    reduced_dag: nx.DiGraph = create_minimal_graph_based_on_selection(
-        full_dag_graph, subgraph
+async def test_create_minimal_graph(
+    loop,
+    fake_workbench: Workbench,
+    subgraph: Set[str],
+    force_exp_dag: Dict[str, List[str]],
+    not_forced_exp_dag: Dict[str, List[str]],
+):
+    complete_dag: nx.DiGraph = create_complete_dag(fake_workbench)
+
+    # everything is outdated in that case
+    reduced_dag: nx.DiGraph = (
+        await create_minimal_computational_graph_based_on_selection(
+            complete_dag, subgraph, force_restart=True
+        )
     )
-    assert nx.to_dict_of_lists(reduced_dag) == exp_dag
+    assert nx.to_dict_of_lists(reduced_dag) == force_exp_dag
+
+    # only the outdated stuff shall be found here
+    reduced_dag_with_auto_detect: nx.DiGraph = (
+        await create_minimal_computational_graph_based_on_selection(
+            complete_dag, subgraph, force_restart=False
+        )
+    )
+    assert nx.to_dict_of_lists(reduced_dag_with_auto_detect) == not_forced_exp_dag

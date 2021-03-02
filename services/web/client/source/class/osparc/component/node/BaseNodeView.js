@@ -32,6 +32,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   statics: {
+    HEADER_HEIGHT: 35,
+
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
         appearance: "settings-groupbox",
@@ -56,6 +58,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __pane2: null,
     __title: null,
     __serviceInfoLayout: null,
+    __nodeStatusUI: null,
     __header: null,
     _mainView: null,
     __inputsView: null,
@@ -64,8 +67,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _settingsLayout: null,
     _mapperLayout: null,
     _iFrameLayout: null,
+    _loggerLayout: null,
     __buttonContainer: null,
-    __filesButton: null,
+    __outFilesButton: null,
 
     populateLayout: function() {
       this.__cleanLayout();
@@ -75,6 +79,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__addOutputPortsUIs();
       this._addSettings();
       this._addIFrame();
+      // this._addLogger();
+
       this._addButtons();
     },
 
@@ -106,28 +112,27 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __buildSideView: function(isInput) {
       const collapsedWidth = 35;
       const sidePanel = new osparc.desktop.SidePanel().set({
-        minWidth: 250,
+        minWidth: 220,
         collapsedMinWidth: collapsedWidth,
         collapsedWidth: collapsedWidth
       });
+      sidePanel.getLayout().resetSeparator();
 
-      const sideHeader = new qx.ui.toolbar.ToolBar();
-      const titlePart = new qx.ui.toolbar.Part();
-      const buttonPart = new qx.ui.toolbar.Part();
-      sideHeader.add(titlePart);
-      sideHeader.addSpacer();
-      sideHeader.add(buttonPart);
-      this.add(sideHeader, 0);
-      titlePart.add(new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
-        alignY: "middle",
-        font: "text-16"
-      }));
-      const collapseBtn = new qx.ui.toolbar.Button(this.tr("Collapse all"), "@FontAwesome5Solid/minus-square/14");
-      buttonPart.add(collapseBtn);
-      sidePanel.add(sideHeader);
+      const headerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignY: "middle"
+      })).set({
+        height: this.self().HEADER_HEIGHT,
+        paddingLeft: 10,
+        backgroundColor: "material-button-background"
+      });
+      const titleLabel = new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
+        font: "text-14"
+      });
+      headerContainer.add(titleLabel);
+      sidePanel.add(headerContainer);
 
-      const scroll = new qx.ui.container.Scroll();
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const scroll = new qx.ui.container.Scroll();
       scroll.add(container);
       sidePanel.add(scroll, {
         flex: 1
@@ -140,11 +145,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         this.__outputsView = sidePanel;
         this.__outputNodesLayout = container;
       }
-      collapseBtn.addListener("execute", () => {
-        container.getChildren().forEach(node => {
-          node.setCollapsed(true);
-        });
-      }, this);
 
       const collapsedView = this.__buildCollapsedSideView(isInput);
       sidePanel.setCollapsedView(collapsedView);
@@ -154,21 +154,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __buildCollapsedSideView: function(isInput) {
       const text = isInput ? this.tr("Inputs") : this.tr("Outputs");
-      const icon = isInput ? "@FontAwesome5Solid/chevron-down/12" : "@FontAwesome5Solid/chevron-up/12";
       const minWidth = isInput ? 120 : 130;
       const view = isInput ? this.__inputsView : this.__outputsView;
       const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
 
       const collapsedView = new qx.ui.basic.Atom().set({
         label: text + " (0)",
-        icon: icon,
         iconPosition: "right",
         gap: 6,
         padding: 8,
         alignX: "center",
         alignY: "middle",
         minWidth: minWidth,
-        font: "title-18"
+        font: "title-14"
       });
       collapsedView.getContentElement().addClass("verticalText");
       collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
@@ -199,23 +197,26 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
       this._mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      this._loggerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       return mainView;
     },
 
     __buildHeader: function() {
-      const header = this.__header = new qx.ui.toolbar.ToolBar().set({
-        spacing: 20
+      const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        height: this.self().HEADER_HEIGHT,
+        backgroundColor: "material-button-background"
       });
 
-      const nodeEditPart = new qx.ui.toolbar.Part().set({
-        spacing: 10
-      });
+      const infoLayout = this.__serviceInfoLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      header.add(infoLayout);
+
+      const nodeEditLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const title = this.__title = new osparc.ui.form.EditLabel().set({
         maxWidth: 180,
-        labelFont: "text-16",
-        inputFont: "text-16",
+        labelFont: "text-14",
+        inputFont: "text-14",
         editable: osparc.data.Permissions.getInstance().canDo("study.node.rename")
       });
       title.addListener("editValue", evt => {
@@ -227,33 +228,38 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
           qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serialize());
         }
       }, this);
-      nodeEditPart.add(title);
+      nodeEditLayout.add(title);
 
       if (osparc.data.Permissions.getInstance().canDo("study.node.update") && osparc.data.model.Study.isOwner(study)) {
-        const editAccessLevel = new qx.ui.toolbar.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
+        const editAccessLevel = new qx.ui.form.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
         editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
-        nodeEditPart.add(editAccessLevel);
+        nodeEditLayout.add(editAccessLevel);
       }
-      header.add(nodeEditPart);
+      header.add(nodeEditLayout);
 
-      header.addSpacer();
+      header.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
-      const nameVersionPart = this.__serviceInfoLayout = new qx.ui.toolbar.Part();
-      header.add(nameVersionPart);
+      // just a placeholder until the node is set
+      const nodeStatusUI = this.__nodeStatusUI = new qx.ui.core.Widget();
+      header.add(nodeStatusUI);
 
-      header.addSpacer();
+      header.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
-      const buttonsPart = this.__buttonContainer = new qx.ui.toolbar.Part();
-      const filesBtn = this.__filesButton = new qx.ui.toolbar.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
+      const buttonsLayout = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const filesBtn = this.__outFilesButton = new qx.ui.form.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeViewFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
-      buttonsPart.add(filesBtn);
+      buttonsLayout.add(filesBtn);
 
       return header;
     },
 
     __getInfoButton: function() {
-      const infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/14");
+      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       return infoBtn;
     },
@@ -329,7 +335,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _addButtons: function() {
       this.__buttonContainer.removeAll();
       if (this.getNode().isDynamic() && this.getNode().isRealService()) {
-        const retrieveBtn = new qx.ui.toolbar.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
+        const retrieveBtn = new qx.ui.form.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
         retrieveBtn.addListener("execute", e => {
           this.getNode().callRetrieveInputs();
@@ -340,7 +346,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         retrieveBtn.setEnabled(Boolean(this.getNode().getServiceUrl()));
         this.__buttonContainer.add(retrieveBtn);
       }
-      this.__buttonContainer.add(this.__filesButton);
+      this.__buttonContainer.add(this.__outFilesButton);
       this.__header.add(this.__buttonContainer);
     },
 
@@ -352,6 +358,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
       this._mapperLayout.setVisibility(othersStatus);
+      this._loggerLayout.setVisibility(othersStatus);
       this.__header.setVisibility(othersStatus);
     },
 
@@ -389,16 +396,40 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __attachEventHandlers: function() {
-      const blocker1 = this.getBlocker();
-      const blocker2 = this.__pane2.getBlocker();
-      blocker1.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
-      blocker2.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
+      const inputBlocker = this.getBlocker();
+      const outputBlocker = this.__pane2.getBlocker();
+      inputBlocker.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
+      outputBlocker.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
+
+      this.addListenerOnce("appear", () => {
+        const inputSplitter = this.getChildControl("splitter");
+        const inputKnob = inputSplitter.getChildControl("knob");
+        inputKnob.set({
+          visibility: "visible"
+        });
+        this.__inputsView.bind("collapsed", inputKnob, "source", {
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-right/12" : "@FontAwesome5Solid/angle-double-left/12"
+        });
+        this.__fillUpSplittersGap(inputSplitter);
+      }, this);
+
+      this.__pane2.addListenerOnce("appear", () => {
+        const outputSplitter = this.__pane2.getChildControl("splitter");
+        const outputKnob = outputSplitter.getChildControl("knob");
+        outputKnob.set({
+          visibility: "visible"
+        });
+        this.__outputsView.bind("collapsed", outputKnob, "source", {
+          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-left/12" : "@FontAwesome5Solid/angle-double-right/12"
+        });
+        this.__fillUpSplittersGap(outputSplitter);
+      }, this);
 
       const maximizeIframeCb = msg => {
-        blocker1.setStyles({
+        inputBlocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
-        blocker2.setStyles({
+        outputBlocker.setStyles({
           display: msg.getData() ? "none" : "block"
         });
         this.__inputsView.setVisibility(msg.getData() ? "excluded" : "visible");
@@ -412,6 +443,28 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.addListener("disappear", () => {
         qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
       }, this);
+    },
+
+    // fill up the gap created on top of the slider when the knob image was added
+    __fillUpSplittersGap: function(splitter) {
+      const headerExtender = new qx.ui.core.Widget().set({
+        backgroundColor: "material-button-background",
+        height: this.self().HEADER_HEIGHT,
+        maxWidth: 12
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(headerExtender, 0, {
+        flex: 0
+      });
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(new qx.ui.core.Spacer(), 1, {
+        flex: 1
+      });
+      // knob goes in second postion
+      // eslint-disable-next-line no-underscore-dangle
+      splitter._addAt(new qx.ui.core.Spacer(), 3, {
+        flex: 1
+      });
     },
 
     /**
@@ -435,11 +488,25 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       throw new Error("Abstract method called!");
     },
 
+    _addLogger: function() {
+      return;
+    },
+
     /**
       * @abstract
       */
     _openEditAccessLevel: function() {
       throw new Error("Abstract method called!");
+    },
+
+    __createNodeStatusUI: function(node) {
+      const nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node).set({
+        backgroundColor: "material-button-background"
+      });
+      nodeStatusUI.getChildControl("label").set({
+        font: "text-14"
+      });
+      return nodeStatusUI;
     },
 
     /**
@@ -448,16 +515,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _applyNode: function(node) {
       this.__serviceInfoLayout.removeAll();
       if (node && node.getMetaData()) {
-        const metadata = node.getMetaData();
-        const label = new qx.ui.basic.Label(metadata.name + " : " + metadata.version).set({
-          enabled: false,
-          alignY: "middle"
-        });
-        this.__serviceInfoLayout.add(label);
-
         const infoButton = this.__getInfoButton();
         this.__serviceInfoLayout.add(infoButton);
       }
+
+      const idx = this.__header.indexOf(this.__nodeStatusUI);
+      if (idx > -1) {
+        this.__header.remove(this.__nodeStatusUI);
+      }
+      this.__nodeStatusUI = this.__createNodeStatusUI(node);
+      this.__header.addAt(this.__nodeStatusUI, idx);
     }
   }
 });

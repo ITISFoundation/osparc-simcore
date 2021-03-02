@@ -101,7 +101,13 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
             });
 
           item.addListener("openEditOrganization", e => {
-            this.__openEditOrganization(e.getData());
+            const orgKey = e.getData();
+            this.__openEditOrganization(orgKey);
+          });
+
+          item.addListener("deleteOrganization", e => {
+            const orgKey = e.getData();
+            this.__deleteOrganization(orgKey);
           });
         }
       });
@@ -275,6 +281,49 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       });
     },
 
+    __deleteOrganization: function(orgKey) {
+      let org = null;
+      this.__orgsModel.forEach(orgModel => {
+        if (orgModel.getGid() === parseInt(orgKey)) {
+          org = orgModel;
+        }
+      });
+      if (org === null) {
+        return;
+      }
+
+      const name = org.getLabel();
+      const msg = this.tr("Are you sure you want to delete ") + name + "?";
+      const win = new osparc.ui.window.Confirmation(msg);
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          const params = {
+            url: {
+              "gid": orgKey
+            }
+          };
+          osparc.data.Resources.fetch("organizations", "delete", params)
+            .then(() => {
+              osparc.store.Store.getInstance().reset("organizations");
+              // reload "profile", "organizations" are part of the information in this endpoint
+              osparc.data.Resources.getOne("profile", {}, null, false)
+                .then(() => {
+                  this.__reloadOrganizations();
+                });
+            })
+            .catch(err => {
+              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong deleting ") + name, "ERROR");
+              console.error(err);
+            })
+            .finally(() => {
+              win.close();
+            });
+        }
+      }, this);
+    },
+
     __createOrganization: function(win, button, orgEditor) {
       const orgKey = orgEditor.getGid();
       const name = orgEditor.getLabel();
@@ -294,14 +343,20 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         .then(() => {
           osparc.component.message.FlashMessenger.getInstance().logAs(name + this.tr(" successfully created"));
           button.setFetching(false);
-          win.close();
           osparc.store.Store.getInstance().reset("organizations");
-          this.__reloadOrganizations();
+          // reload "profile", "organizations" are part of the information in this endpoint
+          osparc.data.Resources.getOne("profile", {}, null, false)
+            .then(() => {
+              this.__reloadOrganizations();
+            });
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong creating ") + name, "ERROR");
           button.setFetching(false);
           console.error(err);
+        })
+        .finally(() => {
+          win.close();
         });
     },
 
@@ -350,7 +405,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
       };
       osparc.data.Resources.fetch("organizationMembers", "post", params)
         .then(() => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Invitation sent to ") + orgMemberEmail);
+          osparc.component.message.FlashMessenger.getInstance().logAs(orgMemberEmail + this.tr(" added"));
           osparc.store.Store.getInstance().reset("organizationMembers");
           this.__reloadOrgMembers();
         })

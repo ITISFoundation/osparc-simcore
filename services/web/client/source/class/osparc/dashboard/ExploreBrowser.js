@@ -183,8 +183,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     __createResourcesLayout: function() {
       const exploreBrowserLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(16));
 
-      const tempStudyLayout = this.__createTemplatesLayout();
-      exploreBrowserLayout.add(tempStudyLayout);
+      const templatesLayout = this.__createTemplatesLayout();
+      exploreBrowserLayout.add(templatesLayout);
 
       const servicesLayout = this.__createServicesLayout();
       exploreBrowserLayout.add(servicesLayout);
@@ -349,7 +349,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.self().sortTemplateList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
-        this.__templatesContainer.add(this.__createStudyItem(tempStudy));
+        const templateItem = this.__createStudyItem(tempStudy);
+        templateItem.addListener("updateQualityTemplate", e => {
+          const updatedTemplateData = e.getData();
+          updatedTemplateData["resourceType"] = "template";
+          this._resetTemplateItem(updatedTemplateData);
+        }, this);
+        this.__templatesContainer.add(templateItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
@@ -370,7 +376,13 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.__servicesContainer.removeAll();
       servicesList.forEach(service => {
         service["resourceType"] = "service";
-        this.__servicesContainer.add(this.__createStudyItem(service));
+        const serviceItem = this.__createStudyItem(service);
+        serviceItem.addListener("updateQualityService", e => {
+          const updatedServiceData = e.getData();
+          updatedServiceData["resourceType"] = "service";
+          this._resetServiceItem(updatedServiceData);
+        }, this);
+        this.__servicesContainer.add(serviceItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
@@ -460,13 +472,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         return null;
       }
 
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Permissions"));
+      const permissionsButton = new qx.ui.menu.Button(this.tr("Sharing"));
       permissionsButton.addListener("execute", () => {
-        if (osparc.utils.Resources.isTemplate(studyData)) {
-          this.__openTemplatePermissions(studyData);
-        } else if (osparc.utils.Resources.isService(studyData)) {
-          this.__openServicePermissions(studyData);
-        }
+        this.__openPermissions(studyData);
       }, this);
       return permissionsButton;
     },
@@ -481,27 +489,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         this.__openClassifiers(studyData);
       }, this);
       return classifiersButton;
-    },
-
-    __openClassifiers: function(studyData) {
-      const title = this.tr("Classifiers");
-      let classifiers = null;
-      if (osparc.data.model.Study.isOwner(studyData)) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-        classifiers.addListener("updateResourceClassifiers", e => {
-          if (osparc.utils.Resources.isTemplate(studyData)) {
-            const studyId = e.getData();
-            this._reloadTemplate(studyId);
-          } else if (osparc.utils.Resources.isService(studyData)) {
-            const serviceKey = e.getData();
-            this.__reloadService(serviceKey, studyData.version);
-          }
-        }, this);
-      } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
-      }
-      osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
     },
 
     __getStudyServicesMenuButton: function(studyData) {
@@ -579,8 +566,16 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       });
     },
 
+    __openPermissions: function(studyData) {
+      if (osparc.utils.Resources.isTemplate(studyData)) {
+        this.__openTemplatePermissions(studyData);
+      } else if (osparc.utils.Resources.isService(studyData)) {
+        this.__openServicePermissions(studyData);
+      }
+    },
+
     __openServicePermissions: function(serviceData) {
-      const permissionsView = new osparc.component.export.ServicePermissions(serviceData);
+      const permissionsView = new osparc.component.permissions.Service(serviceData);
       const title = this.tr("Available to");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       permissionsView.addListener("updateService", e => {
@@ -590,14 +585,32 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __openTemplatePermissions: function(studyData) {
-      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
-      const title = this.tr("Available to");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
-      permissionsView.addListener("updateStudy", e => {
-        const studyId = e.getData();
-        console.log(studyId);
-        this.reloadTemplates();
+      const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
+      permissionsView.addListener("updateAccessRights", e => {
+        const updatedData = e.getData();
+        this._resetTemplateItem(updatedData);
       });
+    },
+
+    __openClassifiers: function(studyData) {
+      const title = this.tr("Classifiers");
+      let classifiers = null;
+      if (osparc.data.model.Study.isOwner(studyData)) {
+        classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
+        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
+        classifiers.addListener("updateClassifiers", e => {
+          win.close();
+          const updatedResource = e.getData();
+          if (osparc.utils.Resources.isTemplate(studyData)) {
+            this._resetTemplateItem(updatedResource);
+          } else if (osparc.utils.Resources.isService(studyData)) {
+            this._resetServiceItem(updatedResource);
+          }
+        }, this);
+      } else {
+        classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
+        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
+      }
     },
 
     __deleteTemplate: function(studyData) {
@@ -613,7 +626,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       let operationPromise = null;
       if (collabGids.length > 1 && amICollaborator) {
         // remove collaborator
-        osparc.component.export.StudyPermissions.removeCollaborator(studyData, myGid);
+        osparc.component.permissions.Study.removeCollaborator(studyData, myGid);
         params["data"] = studyData;
         operationPromise = osparc.data.Resources.fetch("templates", "put", params);
       } else {
@@ -695,8 +708,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         }));
         if (data.files && data.files.length) {
           const size = data.files[0].size;
-          const maxSize = 10; // 10 MB
-          if (size > maxSize * 1024 * 1024) {
+          const maxSize = 10 * 1024 * 1024; // 10 MB
+          if (size > maxSize) {
             osparc.component.message.FlashMessenger.logAs(`The file is too big. Maximum size is ${maxSize}MB. Please provide with a smaller file or a repository URL.`, "ERROR");
             return;
           }

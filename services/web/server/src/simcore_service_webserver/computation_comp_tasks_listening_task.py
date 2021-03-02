@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 from pprint import pformat
-from typing import Dict
+from typing import Dict, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -17,11 +17,13 @@ from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from servicelib.logging_utils import log_decorator
+from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
 
 from .computation_api import convert_state_from_db
 from .projects import projects_api, projects_exceptions
+from .projects.projects_utils import project_get_depending_nodes
 
 log = logging.getLogger(__name__)
 
@@ -60,6 +62,7 @@ async def _update_project_outputs(
     project_uuid: ProjectID,
     node_uuid: NodeID,
     outputs: Dict,
+    run_hash: Optional[str],
 ) -> None:
     # the new outputs might be {}, or {key_name: payload}
     project, changed_keys = await projects_api.update_project_node_outputs(
@@ -67,12 +70,22 @@ async def _update_project_outputs(
         user_id,
         project_uuid,
         node_uuid,
-        data=outputs,
+        new_outputs=outputs,
+        new_run_hash=run_hash,
     )
 
     await projects_api.notify_project_node_update(app, project, node_uuid)
-    await projects_api.trigger_connected_service_retrieve(
-        app, project, node_uuid, changed_keys
+    # get depending node and notify for these ones as well
+    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
+    await logged_gather(
+        *[
+            projects_api.notify_project_node_update(app, project, n)
+            for n in depending_node_uuids
+        ]
+    )
+    # notify
+    await projects_api.post_trigger_connected_service_retrieve(
+        app=app, project=project, updated_node_uuid=node_uuid, changed_keys=changed_keys
     )
 
 
@@ -115,8 +128,14 @@ async def listen(app: web.Application):
 
                 if "outputs" in task_changes:
                     new_outputs = task_data.get("outputs", {})
+                    new_run_hash = task_data.get("run_hash", None)
                     await _update_project_outputs(
-                        app, the_project_owner, project_uuid, node_uuid, new_outputs
+                        app,
+                        the_project_owner,
+                        project_uuid,
+                        node_uuid,
+                        new_outputs,
+                        new_run_hash,
                     )
 
                 if "state" in task_changes:

@@ -15,10 +15,6 @@
 
 ************************************************************************ */
 
-/**
- *
- */
-
 qx.Class.define("osparc.desktop.SlideShowView", {
   extend: qx.ui.core.Widget,
 
@@ -26,6 +22,17 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     this.base(arguments, "horizontal");
 
     this._setLayout(new qx.ui.layout.VBox());
+
+    const slideShowToolbar = this.__slideShowToolbar = new osparc.desktop.SlideShowToolbar();
+    slideShowToolbar.addListener("nodeSelected", e => {
+      const nodeId = e.getData();
+      this.nodeSelected(nodeId);
+    }, this);
+    this._add(slideShowToolbar);
+  },
+
+  events: {
+    "startPartialPipeline": "qx.event.type.Data"
   },
 
   properties: {
@@ -36,34 +43,49 @@ qx.Class.define("osparc.desktop.SlideShowView", {
     }
   },
 
-  statics: {
-    getSortedNodes: function(study) {
-      const slideShow = study.getUi().getSlideshow();
-      const nodes = [];
-      for (let nodeId in slideShow) {
-        const node = slideShow[nodeId];
-        nodes.push({
-          ...node,
-          nodeId
-        });
-      }
-      nodes.sort((a, b) => (a.position > b.position) ? 1 : -1);
-      return nodes;
-    }
-  },
-
   members: {
-    __controlsBar: null,
-    __prvsBtn: null,
-    __nextBtn: null,
     __currentNodeId: null,
+    __slideShowToolbar: null,
+    __lastView: null,
+
+    getStartStopButtons: function() {
+      return this.__slideShowToolbar.getStartStopButtons();
+    },
+
+    getSelectedNodeIDs: function() {
+      return [this.__currentNodeId];
+    },
+
+    __isNodeReady: function(node, oldCurrentNodeId) {
+      const dependencies = node.getStatus().getDependencies();
+      if (dependencies && dependencies.length) {
+        const msg = this.tr("Do you want to run the required steps?");
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.fireDataEvent("startPartialPipeline", dependencies);
+          }
+          // bring the user back to the old node or to the first dependency
+          if (oldCurrentNodeId === this.__currentNodeId) {
+            this.nodeSelected(dependencies[0]);
+          } else {
+            this.nodeSelected(oldCurrentNodeId);
+          }
+        }, this);
+        return false;
+      }
+      return true;
+    },
 
     nodeSelected: function(nodeId) {
-      this.__currentNodeId = nodeId;
-      this.getStudy().getUi().setCurrentNodeId(nodeId);
-
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
+        const oldCurrentNodeId = this.__currentNodeId;
+        this.__currentNodeId = nodeId;
+        this.getStudy().getUi().setCurrentNodeId(nodeId);
+
         let view;
         if (node.isContainer()) {
           view = new osparc.component.node.GroupNodeView();
@@ -73,15 +95,26 @@ qx.Class.define("osparc.desktop.SlideShowView", {
           view = new osparc.component.node.NodeView();
         }
         if (view) {
+          if (this.__lastView) {
+            this._remove(this.__lastView);
+          }
           view.setNode(node);
           view.populateLayout();
           view.getInputsView().exclude();
           view.getOutputsView().exclude();
-          this.__showInMainView(view);
-          this.__syncButtons();
+          this._add(view, {
+            flex: 1
+          });
+          this.__lastView = view;
+        }
+        // check if upstream has to be run
+        if (!this.__isNodeReady(node, oldCurrentNodeId)) {
+          return;
         }
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
+
+      this.getStartStopButtons().nodeSelectionChanged([nodeId]);
     },
 
     startSlides: function() {
@@ -98,101 +131,16 @@ qx.Class.define("osparc.desktop.SlideShowView", {
 
     _applyStudy: function(study) {
       if (study) {
-        this.__initViews();
-      }
-    },
-
-    __initViews: function() {
-      this._removeAll();
-      this.__createControlsBar();
-    },
-
-    __createControlsBar: function() {
-      const controlsBar = this.__controlsBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        minHeight: 40,
-        padding: 5
-      });
-
-      controlsBar.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      const prvsBtn = this.__prvsBtn = new qx.ui.form.Button(this.tr("Previous")).set({
-        allowGrowX: false
-      });
-      prvsBtn.addListener("execute", () => {
-        this.__previous();
-      }, this);
-      controlsBar.add(prvsBtn);
-
-      const nextBtn = this.__nextBtn = new qx.ui.form.Button(this.tr("Next")).set({
-        allowGrowX: false
-      });
-      nextBtn.addListener("execute", () => {
-        this.__next();
-      }, this);
-      controlsBar.add(nextBtn);
-
-      this._add(controlsBar);
-    },
-
-    __showInMainView: function(nodeView) {
-      const children = this._getChildren();
-      for (let i=0; i<children.length; i++) {
-        if (children[i] !== this.__controlsBar) {
-          this._removeAt(i);
-        }
-      }
-      this._addAt(nodeView, 0, {
-        flex: 1
-      });
-    },
-
-    __syncButtons: function() {
-      const study = this.getStudy();
-      if (study) {
-        const nodes = this.self().getSortedNodes(study);
-        if (nodes.length && nodes[0].nodeId === this.__currentNodeId) {
-          this.__prvsBtn.setEnabled(false);
-        } else {
-          this.__prvsBtn.setEnabled(true);
-        }
-        if (nodes.length && nodes[nodes.length-1].nodeId === this.__currentNodeId) {
-          this.__nextBtn.setEnabled(false);
-        } else {
-          this.__nextBtn.setEnabled(true);
-        }
+        this.__slideShowToolbar.setStudy(study);
       }
     },
 
     __openFirstNode: function() {
       const study = this.getStudy();
       if (study) {
-        const nodes = this.self().getSortedNodes(study);
+        const nodes = osparc.data.model.StudyUI.getSortedNodes(study);
         if (nodes.length) {
           this.nodeSelected(nodes[0].nodeId);
-        }
-      }
-    },
-
-    __next: function() {
-      const study = this.getStudy();
-      if (study) {
-        const nodes = this.self().getSortedNodes(study);
-        const idx = nodes.findIndex(node => node.nodeId === this.__currentNodeId);
-        if (idx > -1 && idx+1 < nodes.length) {
-          this.nodeSelected(nodes[idx+1].nodeId);
-        }
-      }
-    },
-
-    __previous: function() {
-      const study = this.getStudy();
-      if (study) {
-        const nodes = this.self().getSortedNodes(study);
-        const idx = nodes.findIndex(node => node.nodeId === this.__currentNodeId);
-        if (idx > -1 && idx-1 > -1) {
-          this.nodeSelected(nodes[idx-1].nodeId);
         }
       }
     }

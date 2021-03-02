@@ -7,24 +7,33 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Callable, Coroutine, Dict, Union
+from typing import Callable, Dict, Iterator, Union
 
 import aiopg.sa
+import aiopg.sa.engine as aiopg_sa_engine
 import pytest
+import simcore_postgres_database.cli as pg_cli
+import simcore_service_api_server
 import sqlalchemy as sa
+import sqlalchemy.engine as sa_engine
 import yaml
+from _helpers import RWApiKeysRepository, RWUsersRepository
 from asgi_lifespan import LifespanManager
+from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
-
-import simcore_postgres_database.cli as pg_cli
-import simcore_service_api_server
-from _helpers import RWApiKeysRepository, RWUsersRepository
 from simcore_postgres_database.models.base import metadata
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+pytestmark = pytest.mark.asyncio
+
+pytest_plugins = [
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.pydantic_models",
+]
 
 
 ## TEST_ENVIRON ---
@@ -35,7 +44,7 @@ def environment() -> Dict:
     env = {
         "WEBSERVER_HOST": "webserver",
         "WEBSERVER_SESSION_SECRET_KEY": "REPLACE ME with a key of at least length 32.",
-        "POSTGRES_HOST": "localhost",
+        "POSTGRES_HOST": "127.0.0.1",
         "POSTGRES_USER": "test",
         "POSTGRES_PASSWORD": "test",
         "POSTGRES_DB": "test",
@@ -45,11 +54,28 @@ def environment() -> Dict:
     return env
 
 
-## FOLDER LAYOUT ---
+@pytest.fixture(scope="session")
+def project_env_devel_dict(project_slug_dir: Path) -> Dict:
+    env_devel_file = project_slug_dir / ".env-devel"
+    assert env_devel_file.exists()
+    environ = dotenv_values(env_devel_file, verbose=True, interpolate=True)
+    return environ
+
+
+@pytest.fixture
+def project_env_devel_environment(project_env_devel_dict, monkeypatch):
+    for key, value in project_env_devel_dict.items():
+        monkeypatch.setenv(key, value)
+
+    # overrides
+    monkeypatch.setenv("API_SERVER_DEV_FEATURES_ENABLED", "1")
+
+
+## FOLDER LAYOUT ---------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
-def project_slug_dir():
+def project_slug_dir() -> Path:
     folder = current_dir.parent.parent
     assert folder.exists()
     assert any(folder.glob("src/simcore_service_api_server"))
@@ -57,40 +83,23 @@ def project_slug_dir():
 
 
 @pytest.fixture(scope="session")
-def package_dir():
+def package_dir() -> Path:
+    """Notice that this might be under src (if installed as edit mode)
+    or in the installation folder
+    """
     dirpath = Path(simcore_service_api_server.__file__).resolve().parent
     assert dirpath.exists()
     return dirpath
 
 
 @pytest.fixture(scope="session")
-def osparc_simcore_root_dir(project_slug_dir):
-    root_dir = project_slug_dir.parent.parent
-    assert (
-        root_dir and root_dir.exists()
-    ), "Did you renamed or moved the integration folder under api-server??"
-    assert any(root_dir.glob("services/api-server")), (
-        "%s not look like rootdir" % root_dir
-    )
-    return root_dir
-
-
-@pytest.fixture(scope="session")
-def tests_dir() -> Path:
-    tdir = (current_dir / "..").resolve()
-    assert tdir.exists()
-    assert tdir.name == "tests"
-    return tdir
-
-
-@pytest.fixture(scope="session")
-def tests_utils_dir(tests_dir: Path) -> Path:
-    utils_dir = (tests_dir / "utils").resolve()
+def tests_utils_dir(project_tests_dir: Path) -> Path:
+    utils_dir = (project_tests_dir / "utils").resolve()
     assert utils_dir.exists()
     return utils_dir
 
 
-## POSTGRES & APP ---
+## POSTGRES ---------------------------------------------------------------------
 
 
 @pytest.fixture(scope="session")
@@ -152,7 +161,9 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=_create_checker(), timeout=30.0, pause=0.1,
+        check=_create_checker(),
+        timeout=30.0,
+        pause=0.1,
     )
 
     config["dsn"] = dsn
@@ -163,25 +174,35 @@ def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> D
 def make_engine(postgres_service: Dict) -> Callable:
     dsn = postgres_service["dsn"]  # session scope freezes dsn
 
-    def maker(is_async=True) -> Union[Coroutine, Callable]:
-        return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
+    def maker(is_async=True) -> Union[aiopg_sa_engine.Engine, sa_engine.Engine]:
+        if is_async:
+            return aiopg.sa.create_engine(dsn)
+        return sa.create_engine(dsn)
 
     return maker
 
 
 @pytest.fixture
-def apply_migration(postgres_service: Dict, make_engine) -> None:
+def apply_migration(postgres_service: Dict, make_engine) -> Iterator[None]:
+    # NOTE: this is equivalent to packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db
+    # but we do override postgres_dsn -> postgres_engine -> postgres_db because we want the latter
+    # fixture to have local scope
+    #
     kwargs = postgres_service.copy()
     kwargs.pop("dsn")
     pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
+
     yield
+
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()
-
     # FIXME: deletes all because downgrade is not reliable!
     engine = make_engine(False)
     metadata.drop_all(engine)
+
+
+## APP & TEST CLIENT -----------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -197,16 +218,16 @@ def app(monkeypatch, environment, apply_migration) -> FastAPI:
 
 
 @pytest.fixture
-async def initialized_app(app: FastAPI) -> FastAPI:
+async def initialized_app(app: FastAPI) -> Iterator[FastAPI]:
     async with LifespanManager(app):
         yield app
 
 
 @pytest.fixture
-async def client(loop, initialized_app: FastAPI) -> AsyncClient:
+async def client(initialized_app: FastAPI) -> Iterator[AsyncClient]:
     async with AsyncClient(
         app=initialized_app,
-        base_url="http://testserver",
+        base_url="http://api.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
@@ -216,11 +237,13 @@ async def client(loop, initialized_app: FastAPI) -> AsyncClient:
 def sync_client(app: FastAPI) -> TestClient:
     # test client:
     # Context manager to trigger events: https://fastapi.tiangolo.com/advanced/testing-events/
-    with TestClient(app) as cli:
+    with TestClient(
+        app, base_url="http://api.testserver.io", raise_server_exceptions=True
+    ) as cli:
         yield cli
 
 
-## FAKE DATA  ---
+## FAKE DATA injected at repositories interface -------------------------------------------------
 
 
 @pytest.fixture
@@ -228,7 +251,9 @@ async def test_user_id(loop, initialized_app) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with initialized_app.state.engine.acquire() as conn:
         user_id = await RWUsersRepository(conn).create(
-            email="test@test.com", password="password", name="username",
+            email="test@test.com",
+            password="password",
+            name="username",
         )
         return user_id
 

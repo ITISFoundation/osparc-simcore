@@ -1,6 +1,8 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -euo pipefail
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 echo "------------------------------ environs -----------------------------------"
@@ -23,6 +25,11 @@ fi
 echo "------------------------------ docker -----------------------------------"
 if command -v docker; then
     docker version
+fi
+
+echo "------------------------------ docker buildx-----------------------------------"
+if command -v docker; then
+    docker buildx version
 fi
 
 echo "------------------------------ docker-compose -----------------------------------"

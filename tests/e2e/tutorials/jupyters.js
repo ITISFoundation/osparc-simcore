@@ -32,7 +32,10 @@ async function runTutorial() {
 
     const iframeHandles = await tutorial.getIframe();
     // expected two iframes = loading + jupyterNB
-    const nbIframe = await iframeHandles[1].contentFrame();
+    const iFrame0 = await iframeHandles[0].contentFrame();
+    const iFrame1 = await iframeHandles[1].contentFrame();
+
+    const nbIframe = [iFrame0, iFrame1].find(iframe => iframe._url.endsWith("tree?"));
 
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
@@ -48,14 +51,15 @@ async function runTutorial() {
     // inside the first notebook, click Run button 5 times
     const runNBBtnSelector = '#run_int > button:nth-child(1)';
     const runNotebookTimes = 5;
-    for (let i=0; i<runNotebookTimes; i++) {
+    for (let i = 0; i < runNotebookTimes; i++) {
       await nbIframe.waitForSelector(runNBBtnSelector);
       await nbIframe.click(runNBBtnSelector);
       await tutorial.waitFor(3000);
-      await tutorial.takeScreenshot("pressRunNB_" + (i+1));
+      await tutorial.takeScreenshot("pressRunNB_" + (i + 1));
     }
 
-    await tutorial.retrieve();
+    // TODO: Better check that the kernel is finished
+    await tutorial.waitFor(3000);
 
     console.log('Checking results for the notebook:');
     await tutorial.openNodeFiles(1);
@@ -69,11 +73,12 @@ async function runTutorial() {
     // open jupyter lab
     await tutorial.openNode(2);
 
-    await tutorial.retrieve();
-
     const iframeHandles2 = await tutorial.getIframe();
     // expected three iframes = loading + jupyterNB + jupyterLab
-    const jLabIframe = await iframeHandles2[2].contentFrame();
+    const iFrame20 = await iframeHandles2[0].contentFrame();
+    const iFrame21 = await iframeHandles2[1].contentFrame();
+
+    const jLabIframe = [iFrame20, iFrame21].find(iframe => iframe._url.endsWith("lab?"));
 
     // inside the iFrame, open the first notebook
     const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(3)';
@@ -108,7 +113,7 @@ async function runTutorial() {
 
     await tutorial.removeStudy(studyId);
   }
-  catch(err) {
+  catch (err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }

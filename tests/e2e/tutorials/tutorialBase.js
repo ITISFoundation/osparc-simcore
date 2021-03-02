@@ -61,6 +61,9 @@ class TutorialBase {
     }
     const domain = utils.getDomain(this.__url);
     await this.takeScreenshot("landingPage_" + domain);
+
+    await auto.acceptCookies(this.__page);
+    await this.takeScreenshot("postCookies_" + domain);
   }
 
   async start() {
@@ -220,8 +223,9 @@ class TutorialBase {
         return;
       }
     }
-    console.log("Timeout reached waiting for services", ((new Date().getTime()) - start) / 1000);
-    return;
+    const errorMsg = "Timeout reached waiting for services";
+    console.log(errorMsg, ((new Date().getTime()) - start) / 1000);
+    throw new Error(errorMsg);
   }
 
   async waitForStudyRun(studyId, timeout = 60000) {
@@ -252,12 +256,12 @@ class TutorialBase {
     await auto.restoreIFrame(this.__page);
   }
 
-  async clickLoggerTitle() {
-    await auto.clickLoggerTitle(this.__page);
+  async findLogMessage(text) {
+    return await auto.findLogMessage(this.__page, text);
   }
 
   async runPipeline(studyId, timeout = 60000) {
-    await this.clickLoggerTitle();
+    await auto.showLogger(this.__page, true);
 
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);

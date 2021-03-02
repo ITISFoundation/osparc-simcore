@@ -1,6 +1,8 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -euo pipefail
+set -o errexit   # abort on nonzero exitstatus
+set -o nounset   # abort on unbound variable
+set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
@@ -39,7 +41,7 @@ test() {
     popd
 
     #TODO: no idea what is this doing... disabled at the moment since travis is supposed to do it as well
-    
+
     # # prepare documentation site ...
     # git clone --depth 1 https://github.com/ITISFoundation/itisfoundation.github.io.git
     # rm -rf itisfoundation.github.io/.git

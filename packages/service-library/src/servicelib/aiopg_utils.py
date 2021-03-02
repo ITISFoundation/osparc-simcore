@@ -43,7 +43,7 @@ class DataSourceName:
     user: str
     password: str = attr.ib(repr=False)
     database: str
-    host: str = "localhost"
+    host: str = "127.0.0.1"
     port: int = 5432
 
     # Attributes about the caller
@@ -60,14 +60,14 @@ class DataSourceName:
 
 
 def create_pg_engine(dsn: DataSourceName, minsize: int = 1, maxsize: int = 4):
-    """ Adapts the arguments of aiopg.sa.create_engine
+    """Adapts the arguments of aiopg.sa.create_engine
 
-        Returns a coroutine that is awaitable, i.e.
+    Returns a coroutine that is awaitable, i.e.
 
-        async with create_pg_engine as engine:
-            assert not engine.closed
+    async with create_pg_engine as engine:
+        assert not engine.closed
 
-        assert engine.closed
+    assert engine.closed
     """
     awaitable_engine_coro = create_engine(
         dsn.to_uri(),
@@ -154,8 +154,7 @@ def raise_http_unavailable_error(retry_state: RetryCallState):
 
 
 class PostgresRetryPolicyUponInitialization:
-    """ Retry policy upon service initialization
-    """
+    """Retry policy upon service initialization"""
 
     WAIT_SECS = 5
     ATTEMPTS_COUNT = 20
@@ -172,8 +171,7 @@ class PostgresRetryPolicyUponInitialization:
 
 
 class PostgresRetryPolicyUponOperation:
-    """ Retry policy upon service operation
-    """
+    """Retry policy upon service operation"""
 
     WAIT_SECS = 2
     ATTEMPTS_COUNT = 3
@@ -195,8 +193,8 @@ postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation().kwargs
 
 
 def retry_pg_api(func):
-    """ Decorator to implement postgres service retry policy and
-        keep global  statistics on service attempt fails
+    """Decorator to implement postgres service retry policy and
+    keep global  statistics on service attempt fails
     """
     # TODO: temporary. For the time being, use instead postgres_service_retry_policy_kwargs
     _deco_func = retry(**postgres_service_retry_policy_kwargs)(func)

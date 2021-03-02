@@ -159,7 +159,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                           example: simcore/services/comp/itis/sleeper
                         integration-version:
                           type: string
@@ -307,6 +307,10 @@ paths:
                                   example:
                                     - Dog
                                     - true
+                                unit:
+                                  title: Unit
+                                  description: 'Units of this input value, if a physical quantity'
+                                  type: string
                                 widget:
                                   description: custom widget to use instead of the default one determined from the data-type
                                   anyOf:
@@ -411,6 +415,10 @@ paths:
                                   example:
                                     - dir/input1.txt: key_1
                                       dir33/input2.txt: key2
+                                unit:
+                                  title: Unit
+                                  description: 'Units of the output value, if a physical quantity'
+                                  type: string
                           additionalProperties: true
                   error:
                     nullable: true
@@ -498,7 +506,7 @@ paths:
           schema:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+            pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
             example:
               - simcore/services/comp/itis/sleeper
               - simcore/services/dynamic/3dviewer
@@ -544,7 +552,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                           example: simcore/services/comp/itis/sleeper
                         integration-version:
                           type: string
@@ -692,6 +700,10 @@ paths:
                                   example:
                                     - Dog
                                     - true
+                                unit:
+                                  title: Unit
+                                  description: 'Units of this input value, if a physical quantity'
+                                  type: string
                                 widget:
                                   description: custom widget to use instead of the default one determined from the data-type
                                   anyOf:
@@ -796,6 +808,10 @@ paths:
                                   example:
                                     - dir/input1.txt: key_1
                                       dir33/input2.txt: key2
+                                unit:
+                                  title: Unit
+                                  description: 'Units of the output value, if a physical quantity'
+                                  type: string
                           additionalProperties: true
                   error:
                     nullable: true
@@ -917,7 +933,7 @@ paths:
           schema:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+            pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
             example:
               - simcore/services/comp/itis/sleeper
               - simcore/services/dynamic/3dviewer
@@ -1125,7 +1141,7 @@ paths:
                         service_key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/itis/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -1229,7 +1245,7 @@ paths:
           schema:
             type: string
             description: distinctive name for the node based on the docker registry path
-            pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+            pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
             example:
               - simcore/services/comp/itis/sleeper
               - simcore/services/dynamic/3dviewer
@@ -1297,7 +1313,7 @@ paths:
                       service_key:
                         type: string
                         description: distinctive name for the node based on the docker registry path
-                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                         example:
                           - simcore/services/comp/itis/sleeper
                           - simcore/services/dynamic/3dviewer
@@ -1563,7 +1579,7 @@ paths:
                       service_key:
                         type: string
                         description: distinctive name for the node based on the docker registry path
-                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                         example:
                           - simcore/services/comp/itis/sleeper
                           - simcore/services/dynamic/3dviewer
@@ -1861,7 +1877,7 @@ components:
       schema:
         type: string
         description: distinctive name for the node based on the docker registry path
-        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
         example:
           - simcore/services/comp/itis/sleeper
           - simcore/services/dynamic/3dviewer
@@ -1873,7 +1889,7 @@ components:
       schema:
         type: string
         description: distinctive name for the node based on the docker registry path
-        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
         example:
           - simcore/services/comp/itis/sleeper
           - simcore/services/dynamic/3dviewer
@@ -1996,7 +2012,7 @@ components:
             service_key:
               type: string
               description: distinctive name for the node based on the docker registry path
-              pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+              pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
               example:
                 - simcore/services/comp/itis/sleeper
                 - simcore/services/dynamic/3dviewer
@@ -2074,7 +2090,7 @@ components:
               service_key:
                 type: string
                 description: distinctive name for the node based on the docker registry path
-                pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                 example:
                   - simcore/services/comp/itis/sleeper
                   - simcore/services/dynamic/3dviewer
@@ -2143,7 +2159,7 @@ components:
               key:
                 type: string
                 description: distinctive name for the node based on the docker registry path
-                pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                 example: simcore/services/comp/itis/sleeper
               integration-version:
                 type: string
@@ -2291,6 +2307,10 @@ components:
                         example:
                           - Dog
                           - true
+                      unit:
+                        title: Unit
+                        description: 'Units of this input value, if a physical quantity'
+                        type: string
                       widget:
                         description: custom widget to use instead of the default one determined from the data-type
                         anyOf:
@@ -2395,6 +2415,10 @@ components:
                         example:
                           - dir/input1.txt: key_1
                             dir33/input2.txt: key2
+                      unit:
+                        title: Unit
+                        description: 'Units of the output value, if a physical quantity'
+                        type: string
                 additionalProperties: true
         error:
           nullable: true

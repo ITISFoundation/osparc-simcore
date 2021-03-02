@@ -75,7 +75,7 @@ def handle_errors(service_name: str, logger: logging.Logger):
                         service_name,
                         resp.reason_phrase,
                         resp.status_code,
-                        resp.text(),
+                        resp.text,
                     )
                     raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 

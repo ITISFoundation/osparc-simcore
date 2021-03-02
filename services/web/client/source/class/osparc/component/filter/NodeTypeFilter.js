@@ -39,8 +39,6 @@ qx.Class.define("osparc.component.filter.NodeTypeFilter", {
      */
     __buildMenu: function() {
       osparc.utils.Services.getTypes().forEach(serviceType => this._addOption(osparc.utils.Utils.capitalize(serviceType)));
-      this._addSeparator();
-      osparc.utils.Services.getCategories().forEach(serviceCategory => this._addOption(osparc.utils.Utils.capitalize(serviceCategory)));
     }
   }
 });

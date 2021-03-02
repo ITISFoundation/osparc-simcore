@@ -35,6 +35,9 @@ VCS_REF       := $(shell git rev-parse --short HEAD)
 NOW_TIMESTAMP := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 
+# relevant repo folders
+SCRIPTS_DIR := $(abspath $(REPO_BASE_DIR)/scripts)
+
 # virtual env
 VENV_DIR      := $(abspath $(REPO_BASE_DIR)/.venv)
 

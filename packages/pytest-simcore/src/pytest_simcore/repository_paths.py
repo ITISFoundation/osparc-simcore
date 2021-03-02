@@ -1,5 +1,4 @@
 # pylint: disable=redefined-outer-name
-
 import sys
 from pathlib import Path
 
@@ -50,6 +49,13 @@ def env_devel_file(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def packages_directory(osparc_simcore_root_dir: Path) -> Path:
+    _folder = osparc_simcore_root_dir / "packages"
+    assert _folder.exists()
+    return _folder
+
+
+@pytest.fixture(scope="session")
 def script_dir(osparc_simcore_root_dir: Path) -> Path:
     scripts_folder = osparc_simcore_root_dir / "scripts"
     assert scripts_folder.exists()
@@ -88,3 +94,29 @@ def pylintrc(osparc_simcore_root_dir: Path) -> Path:
     pylintrc = osparc_simcore_root_dir / ".pylintrc"
     assert pylintrc.exists()
     return pylintrc
+
+
+@pytest.fixture(scope="session")
+def tests_dir() -> Path:
+    tdir = (current_dir / "..").resolve()
+    assert tdir.exists()
+    assert tdir.name == "tests"
+    return tdir
+
+
+## PACKAGE and SERVICE DIRECTORY STRUCTURE
+
+
+@pytest.fixture(scope="session")
+def project_slug_dir() -> Path:
+    raise NotImplementedError("Override fixture in project's tests/conftest.py")
+
+
+@pytest.fixture(scope="session")
+def project_tests_dir(project_slug_dir: Path) -> Path:
+    test_dir = project_slug_dir / "tests"
+    assert test_dir.exists()
+    return test_dir
+
+
+# TODO: test that all these path compositions exist

@@ -16,7 +16,7 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.viewer.NavigationBar", {
-  extend: osparc.desktop.NavigationBar,
+  extend: osparc.navigation.NavigationBar,
 
   members: {
     buildLayout: function() {

@@ -13,6 +13,7 @@ import io
 import json
 import os
 import urllib
+import uuid
 from pathlib import Path
 from shutil import copyfile
 
@@ -436,14 +437,26 @@ async def test_copy_datcore(
 
 
 def test_fmd_build():
-    file_uuid = str(Path("1234") / Path("abcd") / Path("xx.dat"))
+    file_uuid = str(Path("api") / Path("abcd") / Path("xx.dat"))
     fmd = FileMetaData()
     fmd.simcore_from_uuid(file_uuid, "test-bucket")
 
-    assert fmd.node_id == "abcd"
-    assert fmd.project_id == "1234"
+    assert not fmd.node_id
+    assert not fmd.project_id
     assert fmd.file_name == "xx.dat"
-    assert fmd.object_name == "1234/abcd/xx.dat"
+    assert fmd.object_name == "api/abcd/xx.dat"
+    assert fmd.file_uuid == file_uuid
+    assert fmd.location == SIMCORE_S3_STR
+    assert fmd.location_id == SIMCORE_S3_ID
+    assert fmd.bucket_name == "test-bucket"
+
+    file_uuid = f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat"
+    fmd.simcore_from_uuid(file_uuid, "test-bucket")
+
+    assert fmd.node_id == file_uuid.split("/")[1]
+    assert fmd.project_id == file_uuid.split("/")[0]
+    assert fmd.file_name == "xx.dat"
+    assert fmd.object_name == file_uuid
     assert fmd.file_uuid == file_uuid
     assert fmd.location == SIMCORE_S3_STR
     assert fmd.location_id == SIMCORE_S3_ID
@@ -618,6 +631,19 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
             assert len(files) == 2
         else:
             assert len(files) == 0
+
+        if files:
+            found = await dsm_fixture.search_files_starting_with(
+                user_id="21", prefix=files[0].fmd.file_uuid
+            )
+            assert found
+            assert len(found) == 1
+            assert found[0].fmd.file_uuid == files[0].fmd.file_uuid
+            assert found[0].parent_id == files[0].parent_id
+            assert found[0].fmd.node_id == files[0].fmd.node_id
+            # NOTE: found and files differ in these attributes
+            #  ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+            #  because these are added artificially in list_files
 
 
 async def test_dsm_list_dataset_files_datcore(

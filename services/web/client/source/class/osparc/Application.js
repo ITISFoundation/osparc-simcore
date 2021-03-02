@@ -96,6 +96,7 @@ qx.Class.define("osparc.Application", {
       this.__loadCommonCss();
 
       this.__updateTabName();
+      this.__checkCookiesAccepted();
     },
 
     __initRouting: function() {
@@ -201,6 +202,31 @@ qx.Class.define("osparc.Application", {
         });
     },
 
+    __checkCookiesAccepted: function() {
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          if (platformName !== "master") {
+            if (!osparc.CookiePolicy.areCookiesAccepted()) {
+              const cookiePolicy = new osparc.CookiePolicy();
+              const title = this.tr("Cookie Policy");
+              const win = osparc.ui.window.Window.popUpInWindow(cookiePolicy, title, 360, 140).set({
+                clickAwayClose: false,
+                resizable: false,
+                showClose: false
+              });
+              cookiePolicy.addListener("cookiesAccepted", () => {
+                osparc.CookiePolicy.acceptCookies();
+                win.close();
+              }, this);
+              cookiePolicy.addListener("cookiesDeclined", () => {
+                osparc.CookiePolicy.declineCookies();
+                win.close();
+              }, this);
+            }
+          }
+        });
+    },
+
     __updateFavicon: function() {
       const link = document.querySelector("link[rel*='icon']") || document.createElement("link");
       link.type = "image/x-icon";
@@ -220,9 +246,6 @@ qx.Class.define("osparc.Application", {
       if (isLogged) {
         this.__loadMainPage();
       } else {
-        // Reset store (cache)
-        osparc.store.Store.getInstance().invalidate();
-
         osparc.auth.Manager.getInstance().validateToken()
           .then(data => {
             if (data.role.toLowerCase() === "guest") {
@@ -287,6 +310,7 @@ qx.Class.define("osparc.Application", {
       if (this.__mainPage) {
         this.__mainPage.closeEditor();
       }
+      osparc.store.Store.getInstance().dispose();
       this.__restart();
     },
 

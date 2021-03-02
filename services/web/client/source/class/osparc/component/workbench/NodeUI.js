@@ -140,14 +140,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
             margin: [3, 4]
           });
-          const category = this.getNode().isContainer() ? null : osparc.utils.Services.getCategory(this.getNode().getMetaData().category);
           const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
             control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
-          }
-          if (category) {
-            control.add(new osparc.ui.basic.Chip(category.label, category.icon + "12"));
           }
           this.add(control, {
             row: 1,
@@ -196,6 +192,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.__progressBar, "value");
       }
+      /*
+      node.getStatus().bind("running", this, "decorator", {
+        // Paint borders
+        converter: state => osparc.utils.StatusUI.getBorderDecorator(state)
+      });
+      */
     },
 
     getInputPort: function() {
@@ -216,6 +218,25 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         isInput: isInput,
         ui: portLabel
       };
+      if (isInput) {
+        this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
+          converter: dependencies => {
+            if (dependencies !== null) {
+              return osparc.utils.StatusUI.getColor(dependencies.length ? "failed" : "ready");
+            }
+            return osparc.utils.StatusUI.getColor();
+          }
+        });
+      } else {
+        this.getNode().getStatus().bind("modified", portLabel, "textColor", {
+          converter: modified => {
+            if (modified === null) {
+              return osparc.utils.StatusUI.getColor();
+            }
+            return osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
+          }
+        });
+      }
       label.ui.isInput = isInput;
       this.__addDragDropMechanism(label.ui, isInput);
       if (isInput) {

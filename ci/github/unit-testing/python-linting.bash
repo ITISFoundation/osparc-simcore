@@ -1,12 +1,14 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -euo pipefail
+set -o errexit   # abort on nonzero exitstatus
+set -o nounset   # abort on unbound variable
+set -o pipefail  # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
     bash ci/helpers/ensure_python_pip.bash
     bash ci/helpers/install_pylint.bash
-    pip list -v
+    pip freeze
 }
 
 test() {

@@ -45,12 +45,12 @@ qx.Class.define("osparc.component.form.FieldWHint", {
       left: 0
     });
 
-    if (hint) {
-      this.__hintText = hint;
-    }
     this.__infoButton = this.getChildControl("infobutton");
+    if (hint) {
+      this.__infoButton.setHintText(hint);
+    }
 
-    this.__attachEventHandlers();
+    this.__field.bind("visibility", this, "visibility");
   },
 
   properties: {
@@ -61,21 +61,22 @@ qx.Class.define("osparc.component.form.FieldWHint", {
     }
   },
 
+  statics: {
+    TOP_MARGIN: 3
+  },
+
   members: {
     __field: null,
-    __hint: null,
-    __hintText: null,
     __infoButton: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "infobutton":
-          control = new osparc.ui.basic.IconButton("@FontAwesome5Solid/info-circle/14");
-          control.getContentElement().addClass("hint-button");
+          control = new osparc.ui.hint.InfoHint();
           this._add(control, {
             right: 0,
-            top: 3
+            top: this.self().TOP_MARGIN
           });
           break;
       }
@@ -93,65 +94,14 @@ qx.Class.define("osparc.component.form.FieldWHint", {
       if (value === "left") {
         this._add(this.__infoButton, {
           left: 0,
-          top: 3
+          top: this.self().TOP_MARGIN
         });
       } else {
         this._add(this.__infoButton, {
           right: 0,
-          top: 3
+          top: this.self().TOP_MARGIN
         });
       }
-    },
-
-    __attachEventHandlers: function() {
-      if (this.__hintText) {
-        this.__hint = new osparc.ui.hint.Hint(this.__infoButton, this.__hintText).set({
-          active: false
-        });
-
-        const that = this;
-        const showHint = () => {
-          // eslint-disable-next-line no-underscore-dangle
-          that.__hint.show();
-        };
-        const hideHint = () => {
-          // eslint-disable-next-line no-underscore-dangle
-          that.__hint.exclude();
-        };
-
-        // Make hint "modal" when info button is clicked
-        const tapListener = event => {
-          // eslint-disable-next-line no-underscore-dangle
-          const hintElement = that.__hint.getContentElement().getDomElement();
-          const boundRect = hintElement.getBoundingClientRect();
-          if (event.x > boundRect.x &&
-            event.y > boundRect.y &&
-            event.x < (boundRect.x + boundRect.width) &&
-            event.y < (boundRect.y + boundRect.height)) {
-            return;
-          }
-          // eslint-disable-next-line no-underscore-dangle
-          hideHint();
-          document.removeEventListener("mousedown", tapListener);
-          this.__infoButton.addListener("mouseover", showHint);
-          this.__infoButton.addListener("mouseout", hideHint);
-        };
-
-        this.__infoButton.addListener("mouseover", showHint);
-        this.__infoButton.addListener("mouseout", hideHint);
-        this.__infoButton.addListener("tap", () => {
-          showHint();
-          document.addEventListener("mousedown", tapListener);
-          this.__infoButton.removeListener("mouseover", showHint);
-          this.__infoButton.removeListener("mouseout", hideHint);
-        }, this);
-
-        this.__field.bind("visibility", this, "visibility");
-      }
-    },
-
-    getField: function() {
-      return this.__field;
     }
   }
 });

@@ -147,30 +147,32 @@ qx.Class.define("osparc.studycard.Utils", {
     },
 
     /**
-      * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
     createQuality: function(study) {
-      const quality = (study instanceof osparc.data.model.Study) ? study.getQuality() : study["quality"];
-      if (quality && "tsr" in quality) {
-        const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
-          toolTipText: qx.locale.Manager.tr("Ten Simple Rules score")
-        });
-        const {
-          score,
-          maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
-        const tsrRating = new osparc.ui.basic.StarsRating();
-        tsrRating.set({
-          score,
-          maxScore,
-          nStars: 4,
-          showScore: true
-        });
-        tsrLayout.add(tsrRating);
-
-        return tsrLayout;
-      }
-      return null;
+      const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+        toolTipText: qx.locale.Manager.tr("Ten Simple Rules score")
+      });
+      const addStars = model => {
+        tsrLayout.removeAll();
+        const quality = model.getQuality();
+        if (osparc.component.metadata.Quality.isEnabled(quality)) {
+          const tsrRating = new osparc.ui.basic.StarsRating();
+          tsrRating.set({
+            nStars: 4,
+            showScore: true
+          });
+          osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
+          tsrLayout.add(tsrRating);
+        } else {
+          tsrLayout.exclude();
+        }
+      };
+      study.addListener("changeQuality", () => {
+        addStars(study);
+      }, this);
+      addStars(study);
+      return tsrLayout;
     },
 
     /**
@@ -178,8 +180,7 @@ qx.Class.define("osparc.studycard.Utils", {
       * @param maxWidth {Number} thumbnail's maxWidth
       * @param maxHeight {Number} thumbnail's maxHeight
       */
-    createThumbnail: function(study, maxWidth) {
-      const maxHeight = 160;
+    createThumbnail: function(study, maxWidth, maxHeight = 160) {
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       if (study instanceof osparc.data.model.Study) {
@@ -223,9 +224,9 @@ qx.Class.define("osparc.studycard.Utils", {
     },
 
     /**
-      * @param studyData {Object} Serialized Study Object
+      * @param study {osparc.data.model.Study} Study Model
       */
-    createTags: function(studyData) {
+    createTags: function(study) {
       const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
         alignY: "middle"
       }));
@@ -237,11 +238,19 @@ qx.Class.define("osparc.studycard.Utils", {
 
       const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       tagsContainer.setMarginTop(5);
-      osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id))
-        .forEach(selectedTag => {
-          tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
-        });
       tagsLayout.add(tagsContainer);
+
+      const addTags = model => {
+        tagsContainer.removeAll();
+        osparc.store.Store.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
+          .forEach(selectedTag => {
+            tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
+          });
+      };
+      study.addListener("changeTags", () => {
+        addTags(study);
+      }, this);
+      addTags(study);
 
       return tagsLayout;
     },
@@ -288,19 +297,19 @@ qx.Class.define("osparc.studycard.Utils", {
       * @param studyData {Object} Serialized Study Object
       */
     openAccessRights: function(studyData) {
-      const permissionsView = new osparc.component.export.StudyPermissions(studyData);
+      const permissionsView = new osparc.component.permissions.Study(studyData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       return permissionsView;
     },
 
     /**
-      * @param studyData {Object} Serialized Study Object
+      * @param resourceData {Object} Serialized Resource Object
       */
-    openQuality: function(studyData) {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(studyData);
-      const title = studyData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
-      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 760);
+    openQuality: function(resourceData) {
+      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
+      const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
+      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;
     }
   }

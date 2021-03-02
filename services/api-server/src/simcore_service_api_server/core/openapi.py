@@ -18,12 +18,15 @@ def override_openapi_method(app: FastAPI):
     # TODO: test openapi(*) member does not change interface
 
     def _custom_openapi_method(zelf: FastAPI) -> Dict:
-        """ Overrides FastAPI.openapi member function
-            returns OAS schema with vendor extensions
+        """Overrides FastAPI.openapi member function
+        returns OAS schema with vendor extensions
         """
         if not zelf.openapi_schema:
 
-            desc = compose_long_description(zelf.description)
+            if zelf.redoc_url:
+                desc = compose_long_description(zelf.description)
+            else:
+                desc = zelf.description
             openapi_schema = get_openapi(
                 title=zelf.title,
                 version=zelf.version,

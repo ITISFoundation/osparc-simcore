@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
-from typing import Dict
+from typing import Dict, Iterator
 
 import docker
 import pytest
@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
-def docker_client() -> docker.client.DockerClient:
+def docker_client() -> Iterator[docker.client.DockerClient]:
     client = docker.from_env()
     yield client
 
@@ -32,12 +32,13 @@ def keep_docker_up(request) -> bool:
 
 @pytest.fixture(scope="module")
 def docker_swarm(
-    docker_client: docker.client.DockerClient, keep_docker_up: bool
-) -> None:
+    docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
+) -> Iterator[None]:
     try:
         docker_client.swarm.reload()
         print("CAUTION: Already part of a swarm")
         yield
+
     except docker.errors.APIError:
         docker_client.swarm.init(advertise_addr=get_ip())
         yield
@@ -56,7 +57,7 @@ def to_datetime(datetime_str: str) -> datetime:
     return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
 
 
-def by_task_update(task: Dict) -> bool:
+def by_task_update(task: Dict) -> datetime:
     datetime_str = task["Status"]["Timestamp"]
     return to_datetime(datetime_str)
 
@@ -94,14 +95,14 @@ def docker_stack(
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
-) -> Dict:
+) -> Iterator[Dict]:
     stacks = {"simcore": core_docker_compose_file, "ops": ops_docker_compose_file}
 
     # make up-version
     stacks_up = []
     for stack_name, stack_config_file in stacks.items():
         subprocess.run(
-            f"docker stack deploy -c {stack_config_file.name} {stack_name}",
+            f"docker stack deploy --with-registry-auth -c {stack_config_file.name} {stack_name}",
             shell=True,
             check=True,
             cwd=stack_config_file.parent,

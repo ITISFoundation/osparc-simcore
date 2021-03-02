@@ -91,7 +91,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     getNodes: function(recursive = false) {
       let nodes = Object.assign({}, this.__rootNodes);
-      if (recursive) {
+      if (recursive && this.__rootNodes) {
         let topLevelNodes = Object.values(this.__rootNodes);
         for (const topLevelNode of topLevelNodes) {
           let innerNodes = topLevelNode.getInnerNodes(true);
@@ -340,20 +340,20 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserializeNodes: function(workbenchData, workbenchUIData = {}) {
-      let keys = Object.keys(workbenchData);
+      const nodeIds = Object.keys(workbenchData);
       // Create first all the nodes
-      for (let i=0; i<keys.length; i++) {
-        const nodeId = keys[i];
+      for (let i=0; i<nodeIds.length; i++) {
+        const nodeId = nodeIds[i];
         const nodeData = workbenchData[nodeId];
         if (nodeData.parent && nodeData.parent !== null) {
           let parentNode = this.getNode(nodeData.parent);
           if (parentNode === null) {
             // If parent was not yet created, delay the creation of its' children
-            keys.push(nodeId);
+            nodeIds.push(nodeId);
             // check if there is an inconsitency
-            const nKeys = keys.length;
+            const nKeys = nodeIds.length;
             if (nKeys > 1) {
-              if (keys[nKeys-1] === keys[nKeys-2]) {
+              if (nodeIds[nKeys-1] === nodeIds[nKeys-2]) {
                 console.log(nodeId, "will never be created, parent missing", nodeData.parent);
                 return;
               }
@@ -371,21 +371,23 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
 
       // Then populate them (this will avoid issues of connecting nodes that might not be created yet)
-      for (let i=0; i<keys.length; i++) {
-        const nodeId = keys[i];
-        const nodeData = workbenchData[nodeId];
+      this.__populateNodesData(workbenchData, workbenchUIData);
+
+      nodeIds.forEach(nodeId => {
+        this.getNode(nodeId).giveUniqueName();
+      });
+    },
+
+    __populateNodesData: function(workbenchData, workbenchUIData) {
+      Object.entries(workbenchData).forEach(([nodeId, nodeData]) => {
         this.getNode(nodeId).populateNodeData(nodeData);
         if ("position" in nodeData) {
           this.getNode(nodeId).populateNodeUIData(nodeData);
         }
-        if ("workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
+        if (workbenchUIData && "workbench" in workbenchUIData && nodeId in workbenchUIData.workbench) {
           this.getNode(nodeId).populateNodeUIData(workbenchUIData.workbench[nodeId]);
         }
-      }
-      for (let i=0; i<keys.length; i++) {
-        const nodeId = keys[i];
-        this.getNode(nodeId).giveUniqueName();
-      }
+      });
     },
 
     __deserializeEdges: function(workbenchData) {
@@ -556,6 +558,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     serialize: function() {
+      if (this.__workbenchInitData !== null) {
+        // workbench is not initialized
+        return this.__workbenchInitData;
+      }
       let workbench = {};
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
@@ -569,6 +575,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     serializeUI: function() {
+      if (this.__workbenchUIInitData !== null) {
+        // workbenchUI is not initialized
+        return this.__workbenchUIInitData;
+      }
       let workbenchUI = {};
       const nodes = this.getNodes(true);
       for (const nodeUuid in nodes) {

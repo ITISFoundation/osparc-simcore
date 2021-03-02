@@ -8,6 +8,7 @@
 """
 # pylint: disable=too-many-arguments
 
+import json
 import logging
 from collections import defaultdict
 from pprint import pformat
@@ -22,7 +23,6 @@ from models_library.projects_state import (
     ProjectState,
     RunningState,
 )
-from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
@@ -31,7 +31,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from ..director import director_api
 from ..director_v2 import (
     delete_pipeline,
-    get_pipeline_state,
+    get_computation_task,
     request_retrieve_dyn_service,
 )
 from ..resource_manager.websocket_manager import managed_resource
@@ -80,15 +80,17 @@ async def get_project_for_user(
     db = app[APP_PROJECT_DBAPI]
 
     project: Dict = None
+    is_template = False
     if include_templates:
         project = await db.get_template_project(project_uuid)
+        is_template = bool(project)
 
     if not project:
         project = await db.get_user_project(user_id, project_uuid)
 
     # adds state if it is not a template
     if include_state:
-        project["state"] = await get_project_state_for_user(user_id, project_uuid, app)
+        project = await add_project_states_for_user(user_id, project, is_template, app)
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
@@ -175,12 +177,12 @@ async def start_project_interactive_services(
             log.error("Error while starting dynamic service %s", entry)
 
 
-async def delete_project(request: web.Request, project_uuid: str, user_id: int) -> None:
-    await delete_project_from_db(request.app, project_uuid, user_id)
+async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
+    await delete_project_from_db(app, project_uuid, user_id)
 
     async def remove_services_and_data():
-        await remove_project_interactive_services(user_id, project_uuid, request.app)
-        await delete_project_data(request, project_uuid, user_id)
+        await remove_project_interactive_services(user_id, project_uuid, app)
+        await delete_project_data(app, project_uuid, user_id)
 
     fire_and_forget_task(remove_services_and_data())
 
@@ -207,10 +209,10 @@ async def remove_project_interactive_services(
 
 
 async def delete_project_data(
-    request: web.Request, project_uuid: str, user_id: int
+    app: web.Application, project_uuid: str, user_id: int
 ) -> None:
     # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(request.app, project_uuid, user_id)
+    await delete_data_folders_of_project(app, project_uuid, user_id)
 
 
 async def delete_project_from_db(
@@ -290,15 +292,20 @@ async def update_project_node_state(
     app: web.Application, user_id: int, project_id: str, node_id: str, new_state: str
 ) -> Dict:
     log.debug(
-        "updating node %s state in project %s for user %s", node_id, project_id, user_id
+        "updating node %s current state in project %s for user %s",
+        node_id,
+        project_id,
+        user_id,
     )
     project = await get_project_for_user(app, project_id, user_id)
     if not node_id in project["workbench"]:
         raise NodeNotFoundError(project_id, node_id)
-    if project["workbench"][node_id].get("state") == new_state:
+    if project["workbench"][node_id].get("state", {}).get("currentStatus") == new_state:
         # nothing to do here
         return project
-    project["workbench"][node_id]["state"] = new_state
+    project["workbench"][node_id].setdefault("state", {}).update(
+        {"currentStatus": new_state}
+    )
     if RunningState(new_state) in [
         RunningState.PUBLISHED,
         RunningState.PENDING,
@@ -309,8 +316,8 @@ async def update_project_node_state(
         project["workbench"][node_id]["progress"] = 100
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
-    updated_project["state"] = await get_project_state_for_user(
-        user_id, project_id, app
+    updated_project = await add_project_states_for_user(
+        user_id=user_id, project=updated_project, is_template=False, app=app
     )
     return updated_project
 
@@ -332,8 +339,8 @@ async def update_project_node_progress(
     project["workbench"][node_id]["progress"] = int(100.0 * float(progress) + 0.5)
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
-    updated_project["state"] = await get_project_state_for_user(
-        user_id, project_id, app
+    updated_project = await add_project_states_for_user(
+        user_id=user_id, project=updated_project, is_template=False, app=app
     )
     return updated_project
 
@@ -343,19 +350,21 @@ async def update_project_node_outputs(
     user_id: int,
     project_id: str,
     node_id: str,
-    data: Optional[Dict],
+    new_outputs: Optional[Dict],
+    new_run_hash: Optional[str],
 ) -> Tuple[Dict, List[str]]:
     """
     Updates outputs of a given node in a project with 'data'
     """
     log.debug(
-        "updating node %s outputs in project %s for user %s with %s",
+        "updating node %s outputs in project %s for user %s with %s: run_hash [%s]",
         node_id,
         project_id,
         user_id,
-        pformat(data),
+        pformat(new_outputs),
+        new_run_hash,
     )
-    data: Dict[str, Any] = data or {}
+    new_outputs: Dict[str, Any] = new_outputs or {}
     project = await get_project_for_user(app, project_id, user_id)
 
     if not node_id in project["workbench"]:
@@ -364,8 +373,8 @@ async def update_project_node_outputs(
     # NOTE: update outputs (not required) if necessary as the UI expects a
     # dataset/label field that is missing
     current_outputs = project["workbench"][node_id].setdefault("outputs", {})
-    new_outputs = data
     project["workbench"][node_id]["outputs"] = new_outputs
+    project["workbench"][node_id]["runHash"] = new_run_hash
 
     # find changed keys (the ones that appear or disapppear for sure)
     changed_keys = list(current_outputs.keys() ^ new_outputs.keys())
@@ -374,21 +383,10 @@ async def update_project_node_outputs(
         if current_outputs[key] != new_outputs[key]:
             changed_keys.append(key)
 
-    # FIXME: this should be reviewed @maiz. how is an output file defined. I think we have several flavours.
-    for output_key in new_outputs.keys():
-        if not isinstance(new_outputs[output_key], dict):
-            continue
-        if "path" in new_outputs[output_key]:
-            # file_id is of type study_id/node_id/file.ext
-            file_id = new_outputs[output_key]["path"]
-            study_id, _, file_ext = file_id.split("/")
-            new_outputs[output_key]["dataset"] = study_id
-            new_outputs[output_key]["label"] = file_ext
-
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.update_user_project(project, user_id, project_id)
-    updated_project["state"] = await get_project_state_for_user(
-        user_id, project_id, app
+    updated_project = await add_project_states_for_user(
+        user_id=user_id, project=updated_project, is_template=False, app=app
     )
     return updated_project, changed_keys
 
@@ -443,6 +441,10 @@ async def notify_project_node_update(
 
     for room in rooms_to_notify:
         await post_group_messages(app, room, messages)
+
+
+async def post_trigger_connected_service_retrieve(**kwargs) -> None:
+    await fire_and_forget_task(trigger_connected_service_retrieve(**kwargs))
 
 
 async def trigger_connected_service_retrieve(
@@ -503,27 +505,35 @@ async def _get_project_lock_state(
         return ProjectLocked(value=is_locked)
 
 
-async def _get_project_running_state(
-    user_id: PositiveInt, project_uuid: str, app: web.Application
-) -> ProjectRunningState:
-    pipeline_state: RunningState = await get_pipeline_state(app, user_id, project_uuid)
-    return ProjectRunningState(value=pipeline_state)
+async def add_project_states_for_user(
+    user_id: int, project: Dict[str, Any], is_template: bool, app: web.Application
+) -> Dict[str, Any]:
 
+    lock_state = ProjectLocked(value=False)
+    running_state = RunningState.UNKNOWN
+    if not is_template:
+        lock_state, computation_task = await logged_gather(
+            _get_project_lock_state(user_id, project["uuid"], app),
+            get_computation_task(app, user_id, project["uuid"]),
+        )
 
-async def get_project_state_for_user(user_id, project_uuid, app) -> Dict:
-    """
-    Returns state of a project with respect to a given user
-    E.g.
-        the state is locked for user1 because user2 is working on it and
-        there is a locked-while-using policy in place
+        if computation_task:
+            # get the running state
+            running_state = computation_task.state
+            # get the nodes individual states
+            for (
+                node_id,
+                node_state,
+            ) in computation_task.pipeline_details.node_states.items():
+                prj_node = project["workbench"].get(str(node_id))
+                if prj_node is None:
+                    continue
+                node_state_dict = json.loads(
+                    node_state.json(by_alias=True, exclude_unset=True)
+                )
+                prj_node.setdefault("state", {}).update(node_state_dict)
 
-    WARNING: assumes project_uuid exists!! If not, call first get_project_for_user
-    NOTE: This adds a dependency to the socket registry sub-module. Many tests
-        might require a mock for this function to work properly
-    """
-    lock_state = await _get_project_lock_state(user_id, project_uuid, app)
-    running_state = await _get_project_running_state(user_id, project_uuid, app)
-    return ProjectState(
-        locked=lock_state,
-        state=running_state,
+    project["state"] = ProjectState(
+        locked=lock_state, state=ProjectRunningState(value=running_state)
     ).dict(by_alias=True, exclude_unset=True)
+    return project

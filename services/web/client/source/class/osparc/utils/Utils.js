@@ -198,23 +198,68 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
     },
 
-    downloadLink: function(url, fileName) {
-      let xhr = new XMLHttpRequest();
-      xhr.open("GET", url, true);
-      xhr.responseType = "blob";
-      xhr.onload = () => {
-        console.log("onload", xhr);
-        if (xhr.status == 200) {
-          let blob = new Blob([xhr.response]);
-          let urlBlob = window.URL.createObjectURL(blob);
-          let downloadAnchorNode = document.createElement("a");
-          downloadAnchorNode.setAttribute("href", urlBlob);
-          downloadAnchorNode.setAttribute("download", fileName);
-          downloadAnchorNode.click();
-          downloadAnchorNode.remove();
+    downloadLink: function(url, method, fileName, downloadStartedCB) {
+      return new Promise((resolve, reject) => {
+        let xhr = new XMLHttpRequest();
+        xhr.open(method, url, true);
+        xhr.responseType = "blob";
+        xhr.addEventListener("readystatechange", () => {
+        // xhr.onreadystatechange = () => {
+          if (xhr.readyState === XMLHttpRequest.HEADERS_RECEIVED) {
+            // The responseType value can be changed at any time before the readyState reaches 3.
+            // When the readyState reaches 2, we have access to the response headers to make that decision with.
+            if (xhr.status >= 200 && xhr.status < 400) {
+              xhr.responseType = "blob";
+            } else {
+              // get ready for handling an error
+              xhr.responseType = "text";
+            }
+          }
+        });
+        xhr.addEventListener("progress", () => {
+          if (xhr.readyState === XMLHttpRequest.LOADING) {
+            if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 400)) {
+              if (downloadStartedCB) {
+                downloadStartedCB();
+              }
+            }
+          }
+        });
+        xhr.addEventListener("load", () => {
+          if (xhr.status == 200) {
+            let blob = new Blob([xhr.response]);
+            let urlBlob = window.URL.createObjectURL(blob);
+            let downloadAnchorNode = document.createElement("a");
+            downloadAnchorNode.setAttribute("href", urlBlob);
+            if (!fileName) {
+              fileName = this.self().filenameFromContentDisposition(xhr);
+            }
+            downloadAnchorNode.setAttribute("download", fileName);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            resolve();
+          } else {
+            reject(xhr);
+          }
+        });
+        xhr.addEventListener("error", () => reject(xhr));
+        xhr.addEventListener("abort", () => reject(xhr));
+        xhr.send();
+      });
+    },
+
+    filenameFromContentDisposition: function(xhr) {
+      // https://stackoverflow.com/questions/40939380/how-to-get-file-name-from-content-disposition
+      let filename = "";
+      const disposition = xhr.getResponseHeader("Content-Disposition");
+      if (disposition && disposition.indexOf("attachment") !== -1) {
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1].replace(/['"]/g, "");
         }
-      };
-      xhr.send();
+      }
+      return filename;
     },
 
     fileNameFromPresignedLink: function(link) {
@@ -312,10 +357,10 @@ qx.Class.define("osparc.utils.Utils", {
       },
 
       getCookie: cname => {
-        var name = cname + "=";
-        var ca = document.cookie.split(";");
-        for (var i = 0; i < ca.length; i++) {
-          var c = ca[i];
+        const name = cname + "=";
+        const ca = document.cookie.split(";");
+        for (let i = 0; i < ca.length; i++) {
+          let c = ca[i];
           while (c.charAt(0) == " ") {
             c = c.substring(1);
           }
@@ -323,7 +368,7 @@ qx.Class.define("osparc.utils.Utils", {
             return c.substring(name.length, c.length);
           }
         }
-        return "";
+        return null;
       },
 
       deleteCookie: cname => {

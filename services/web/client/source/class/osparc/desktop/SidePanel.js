@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.SidePanel", {
 
     this.setAppearance("sidepanel");
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox(null, null, "separator-vertical"));
 
     this.__attachEventHandlers();
   },
@@ -49,6 +49,7 @@ qx.Class.define("osparc.desktop.SidePanel", {
     collapsed: {
       init: false,
       check: "Boolean",
+      event: "changeCollapsed",
       apply: "_applyCollapsed"
     },
 

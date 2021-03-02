@@ -11,7 +11,6 @@
 
 SHELL := /bin/bash
 
-
 MAKE_C := $(MAKE) --no-print-directory --directory
 
 # Operating system
@@ -71,11 +70,12 @@ export ETC_HOSTNAME
 host := $(shell echo $$(hostname) > $(ETC_HOSTNAME))
 endif
 
+get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
+
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
-ifeq ($(IS_WSL2),WSL2)
-S3_ENDPOINT = $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1):9001
+S3_ENDPOINT := $(get_my_ip):9001
 export S3_ENDPOINT
-endif
+
 
 
 .PHONY: help
@@ -386,7 +386,12 @@ nodenv: node_modules ## builds node_modules local environ (TODO)
 .PHONY: pylint
 
 pylint: ## Runs python linter framework's wide
-	/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+	# pylint version info
+	@/bin/bash -c "pylint --version"
+	# Running linter
+	@/bin/bash -c "pylint --jobs=0 --rcfile=.pylintrc $(strip $(shell find services packages -iname '*.py' \
+											-not -path "*.venv*" \
+											-not -path "*/client/*" \
 											-not -path "*egg*" \
 											-not -path "*migration*" \
 											-not -path "*datcore.py" \
@@ -434,7 +439,6 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 
 
 local_registry=registry
-get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 .PHONY: local-registry rm-registry
 
 rm-registry: ## remove the registry and changes to host/file

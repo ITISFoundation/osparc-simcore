@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: osparc-simcore RESTful API
+  title: osparc-simcore web API
   version: 0.6.0
-  description: RESTful API designed for web clients
+  description: API designed for the front-end app
   contact:
     name: IT'IS Foundation
     email: support@simcore.io
@@ -43,7 +43,7 @@ tags:
       defines the protocol for the frontend to interact with the node.
   - name: configuration
   - name: maintenance
-  - name: publications
+  - name: publication
     description: |
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
@@ -5828,6 +5828,10 @@ paths:
             schema:
               type: object
               properties:
+                force_restart:
+                  type: boolean
+                  default: false
+                  description: if true will force re-running all dependent nodes
                 subgraph:
                   description: The node uuids selected for running a partial pipeline
                   type: array
@@ -6176,7 +6180,7 @@ paths:
                                     key:
                                       type: string
                                       description: distinctive name for the node based on the docker registry path
-                                      pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                      pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                       example:
                                         - simcore/services/comp/sleeper
                                         - simcore/services/dynamic/3dviewer
@@ -6206,6 +6210,13 @@ paths:
                                       description: url of the latest screenshot of the node
                                       example:
                                         - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                    runHash:
+                                      description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                      type:
+                                        - string
+                                        - 'null'
+                                      example:
+                                        - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                     inputs:
                                       type: object
                                       description: values of input properties
@@ -6364,20 +6375,40 @@ paths:
                                             - '15'
                                       deprecated: true
                                     state:
-                                      title: RunningState
-                                      description: the node's running state
-                                      default: NOT_STARTED
-                                      enum:
-                                        - UNKNOWN
-                                        - NOT_STARTED
-                                        - PUBLISHED
-                                        - PENDING
-                                        - STARTED
-                                        - RETRY
-                                        - SUCCESS
-                                        - FAILED
-                                        - ABORTED
-                                      type: string
+                                      title: NodeState
+                                      type: object
+                                      properties:
+                                        modified:
+                                          title: Modified
+                                          description: true if the node's outputs need to be re-computed
+                                          default: true
+                                          type: boolean
+                                        dependencies:
+                                          title: Dependencies
+                                          description: contains the node inputs dependencies if they need to be computed first
+                                          type: array
+                                          uniqueItems: true
+                                          items:
+                                            type: string
+                                            format: uuid
+                                        currentStatus:
+                                          description: the node's current state
+                                          default: NOT_STARTED
+                                          example:
+                                            - RUNNING
+                                            - FAILED
+                                          enum:
+                                            - UNKNOWN
+                                            - PUBLISHED
+                                            - NOT_STARTED
+                                            - PENDING
+                                            - STARTED
+                                            - RETRY
+                                            - SUCCESS
+                                            - FAILED
+                                            - ABORTED
+                                          type: string
+                                      additionalProperties: false
                               additionalProperties: true
                             ui:
                               type: object
@@ -6744,7 +6775,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -6774,6 +6805,13 @@ paths:
                           description: url of the latest screenshot of the node
                           example:
                             - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                        runHash:
+                          description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                          type:
+                            - string
+                            - 'null'
+                          example:
+                            - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                         inputs:
                           type: object
                           description: values of input properties
@@ -6932,20 +6970,40 @@ paths:
                                 - '15'
                           deprecated: true
                         state:
-                          title: RunningState
-                          description: the node's running state
-                          default: NOT_STARTED
-                          enum:
-                            - UNKNOWN
-                            - NOT_STARTED
-                            - PUBLISHED
-                            - PENDING
-                            - STARTED
-                            - RETRY
-                            - SUCCESS
-                            - FAILED
-                            - ABORTED
-                          type: string
+                          title: NodeState
+                          type: object
+                          properties:
+                            modified:
+                              title: Modified
+                              description: true if the node's outputs need to be re-computed
+                              default: true
+                              type: boolean
+                            dependencies:
+                              title: Dependencies
+                              description: contains the node inputs dependencies if they need to be computed first
+                              type: array
+                              uniqueItems: true
+                              items:
+                                type: string
+                                format: uuid
+                            currentStatus:
+                              description: the node's current state
+                              default: NOT_STARTED
+                              example:
+                                - RUNNING
+                                - FAILED
+                              enum:
+                                - UNKNOWN
+                                - PUBLISHED
+                                - NOT_STARTED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILED
+                                - ABORTED
+                              type: string
+                          additionalProperties: false
                   additionalProperties: true
                 ui:
                   type: object
@@ -7192,7 +7250,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7222,6 +7280,13 @@ paths:
                                     description: url of the latest screenshot of the node
                                     example:
                                       - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                  runHash:
+                                    description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                    type:
+                                      - string
+                                      - 'null'
+                                    example:
+                                      - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                   inputs:
                                     type: object
                                     description: values of input properties
@@ -7380,20 +7445,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -7758,7 +7843,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7788,6 +7873,13 @@ paths:
                                     description: url of the latest screenshot of the node
                                     example:
                                       - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                  runHash:
+                                    description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                    type:
+                                      - string
+                                      - 'null'
+                                    example:
+                                      - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                   inputs:
                                     type: object
                                     description: values of input properties
@@ -7946,20 +8038,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -8330,7 +8442,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -8360,6 +8472,13 @@ paths:
                                     description: url of the latest screenshot of the node
                                     example:
                                       - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                  runHash:
+                                    description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                    type:
+                                      - string
+                                      - 'null'
+                                    example:
+                                      - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                   inputs:
                                     type: object
                                     description: values of input properties
@@ -8518,20 +8637,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -8893,7 +9032,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -8923,6 +9062,13 @@ paths:
                           description: url of the latest screenshot of the node
                           example:
                             - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                        runHash:
+                          description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                          type:
+                            - string
+                            - 'null'
+                          example:
+                            - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                         inputs:
                           type: object
                           description: values of input properties
@@ -9081,20 +9227,40 @@ paths:
                                 - '15'
                           deprecated: true
                         state:
-                          title: RunningState
-                          description: the node's running state
-                          default: NOT_STARTED
-                          enum:
-                            - UNKNOWN
-                            - NOT_STARTED
-                            - PUBLISHED
-                            - PENDING
-                            - STARTED
-                            - RETRY
-                            - SUCCESS
-                            - FAILED
-                            - ABORTED
-                          type: string
+                          title: NodeState
+                          type: object
+                          properties:
+                            modified:
+                              title: Modified
+                              description: true if the node's outputs need to be re-computed
+                              default: true
+                              type: boolean
+                            dependencies:
+                              title: Dependencies
+                              description: contains the node inputs dependencies if they need to be computed first
+                              type: array
+                              uniqueItems: true
+                              items:
+                                type: string
+                                format: uuid
+                            currentStatus:
+                              description: the node's current state
+                              default: NOT_STARTED
+                              example:
+                                - RUNNING
+                                - FAILED
+                              enum:
+                                - UNKNOWN
+                                - PUBLISHED
+                                - NOT_STARTED
+                                - PENDING
+                                - STARTED
+                                - RETRY
+                                - SUCCESS
+                                - FAILED
+                                - ABORTED
+                              type: string
+                          additionalProperties: false
                   additionalProperties: true
                 ui:
                   type: object
@@ -9341,7 +9507,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -9371,6 +9537,13 @@ paths:
                                     description: url of the latest screenshot of the node
                                     example:
                                       - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                  runHash:
+                                    description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                    type:
+                                      - string
+                                      - 'null'
+                                    example:
+                                      - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                   inputs:
                                     type: object
                                     description: values of input properties
@@ -9529,20 +9702,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -9929,7 +10122,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -9959,6 +10152,13 @@ paths:
                                     description: url of the latest screenshot of the node
                                     example:
                                       - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                  runHash:
+                                    description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                    type:
+                                      - string
+                                      - 'null'
+                                    example:
+                                      - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                   inputs:
                                     type: object
                                     description: values of input properties
@@ -10117,20 +10317,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -10523,6 +10743,322 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
+  '/projects/{project_id}:xport':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - exporter
+      summary: creates an archive of the project and downloads it
+      operationId: export_project
+      responses:
+        '200':
+          description: creates an archive from a project file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/projects/{project_id}:duplicate':
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags:
+        - exporter
+      summary: duplicates an existing project
+      operationId: duplicate_project
+      responses:
+        '200':
+          description: project was duplicated correctly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
+  '/projects:import':
+    post:
+      tags:
+        - exporter
+      summary: Create new project from an archive
+      operationId: import_project
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileName:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: creates a new project from an archive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uuid:
+                    type: string
+        default:
+          description: Default http error response body
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - error
+                properties:
+                  data:
+                    nullable: true
+                    default: null
+                  error:
+                    type: object
+                    nullable: true
+                    properties:
+                      logs:
+                        description: log messages
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            level:
+                              description: log level
+                              type: string
+                              default: INFO
+                              enum:
+                                - DEBUG
+                                - WARNING
+                                - INFO
+                                - ERROR
+                            message:
+                              description: 'log message. If logger is USER, then it MUST be human readable'
+                              type: string
+                            logger:
+                              description: name of the logger receiving this message
+                              type: string
+                          required:
+                            - message
+                          example:
+                            message: 'Hi there, Mr user'
+                            level: INFO
+                            logger: user-logger
+                      errors:
+                        description: errors metadata
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - code
+                            - message
+                          properties:
+                            code:
+                              type: string
+                              description: Typically the name of the exception that produced it otherwise some known error code
+                            message:
+                              type: string
+                              description: Error message specific to this item
+                            resource:
+                              type: string
+                              description: API resource affected by this error
+                            field:
+                              type: string
+                              description: Specific field within the resource
+                      status:
+                        description: HTTP error code
+                        type: integer
+                    example:
+                      BadRequestError:
+                        logs:
+                          - message: Requested information is incomplete or malformed
+                            level: ERROR
+                          - message: Invalid email and password
+                            level: ERROR
+                            logger: USER
+                        errors:
+                          - code: InvalidEmail
+                            message: Email is malformed
+                            field: email
+                          - code: UnsavePassword
+                            message: Password is not secure
+                            field: pasword
+                        status: 400
   '/projects/{project_id}:close':
     parameters:
       - name: project_id
@@ -10653,7 +11189,7 @@ paths:
                   description: the uuid to assign to the service
                 service_key:
                   type: string
-                  pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                  pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                   description: The key (url) of the service
                 service_version:
                   type: string
@@ -10825,7 +11361,7 @@ paths:
                       service_key:
                         type: string
                         description: distinctive name for the node based on the docker registry path
-                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
+                        pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
                         example:
                           - simcore/services/comp/itis/sleeper
                           - simcore/services/dynamic/3dviewer
@@ -11329,7 +11865,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -11359,6 +11895,13 @@ paths:
                                     description: url of the latest screenshot of the node
                                     example:
                                       - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                  runHash:
+                                    description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                    type:
+                                      - string
+                                      - 'null'
+                                    example:
+                                      - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                   inputs:
                                     type: object
                                     description: values of input properties
@@ -11517,20 +12060,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -11894,7 +12457,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -11924,6 +12487,13 @@ paths:
                                     description: url of the latest screenshot of the node
                                     example:
                                       - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
+                                  runHash:
+                                    description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
+                                    type:
+                                      - string
+                                      - 'null'
+                                    example:
+                                      - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                                   inputs:
                                     type: object
                                     description: values of input properties
@@ -12082,20 +12652,40 @@ paths:
                                           - '15'
                                     deprecated: true
                                   state:
-                                    title: RunningState
-                                    description: the node's running state
-                                    default: NOT_STARTED
-                                    enum:
-                                      - UNKNOWN
-                                      - NOT_STARTED
-                                      - PUBLISHED
-                                      - PENDING
-                                      - STARTED
-                                      - RETRY
-                                      - SUCCESS
-                                      - FAILED
-                                      - ABORTED
-                                    type: string
+                                    title: NodeState
+                                    type: object
+                                    properties:
+                                      modified:
+                                        title: Modified
+                                        description: true if the node's outputs need to be re-computed
+                                        default: true
+                                        type: boolean
+                                      dependencies:
+                                        title: Dependencies
+                                        description: contains the node inputs dependencies if they need to be computed first
+                                        type: array
+                                        uniqueItems: true
+                                        items:
+                                          type: string
+                                          format: uuid
+                                      currentStatus:
+                                        description: the node's current state
+                                        default: NOT_STARTED
+                                        example:
+                                          - RUNNING
+                                          - FAILED
+                                        enum:
+                                          - UNKNOWN
+                                          - PUBLISHED
+                                          - NOT_STARTED
+                                          - PENDING
+                                          - STARTED
+                                          - RETRY
+                                          - SUCCESS
+                                          - FAILED
+                                          - ABORTED
+                                        type: string
+                                    additionalProperties: false
                             additionalProperties: true
                           ui:
                             type: object
@@ -13269,7 +13859,7 @@ paths:
       tags:
         - catalog
       summary: List Services
-      operationId: list_catalog_services
+      operationId: list_services_handler
       responses:
         '200':
           description: Returns list of services from the catalog
@@ -13364,19 +13954,19 @@ paths:
         schema:
           title: Service key
           type: string
-          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\\s/]+)+$'
+          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
       - in: path
         name: service_version
         required: true
         schema:
           title: Service version
           type: string
-          pattern: '^(0|[1-9]\\d*)(\\.(0|[1-9]\\d*)){2}(-(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*)(\\.(0|[1-9]\\d*|\\d*[-a-zA-Z][-\\da-zA-Z]*))*)?(\\+[-\\da-zA-Z]+(\\.[-\\da-zA-Z-]+)*)?$'
+          pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
     get:
       tags:
         - catalog
       summary: Get Service
-      operationId: get_catalog_service
+      operationId: get_service_handler
       responses:
         '200':
           description: Returns service
@@ -13467,7 +14057,7 @@ paths:
       tags:
         - catalog
       summary: Update Service
-      operationId: update_catalog_service
+      operationId: update_service_handler
       requestBody:
         content:
           application/json:
@@ -13560,6 +14150,953 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
+  '/catalog/services/{service_key}/{service_version}/inputs':
+    get:
+      tags:
+        - catalog
+      operationId: list_service_inputs_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                description: Metadata on a service input port
+                example:
+                  defaultValue: 0
+                  description: Time to wait before completion
+                  displayOrder: 2
+                  keyId: input_2
+                  label: Sleep Time
+                  type: number
+                  unit: second
+                  unitLong: seconds
+                  unitShort: sec
+                  widget:
+                    details:
+                      minHeight: 1
+                    type: TextArea
+                properties:
+                  defaultValue:
+                    anyOf:
+                      - type: boolean
+                      - type: integer
+                      - type: number
+                      - type: string
+                    title: Defaultvalue
+                  description:
+                    description: description of the property
+                    example: Age in seconds since 1970
+                    title: Description
+                    type: string
+                  displayOrder:
+                    description: use this to numerically sort the properties for display
+                    title: Displayorder
+                    type: number
+                  fileToKeyMap:
+                    description: Place the data associated with the named keys in files
+                    title: Filetokeymap
+                    type: object
+                  keyId:
+                    description: Unique name identifier for this input
+                    pattern: '^[-_a-zA-Z0-9]+$'
+                    title: Keyid
+                    type: string
+                  label:
+                    description: short name for the property
+                    example: Age
+                    title: Label
+                    type: string
+                  type:
+                    description: data type expected on this input glob matching for data type is allowed
+                    pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                    title: Type
+                    type: string
+                  unit:
+                    description: 'Units, when it refers to a physical quantity'
+                    title: Unit
+                    type: string
+                  unitLong:
+                    description: 'Long name of the unit, if available'
+                    title: Unitlong
+                    type: string
+                  unitShort:
+                    description: 'Short name for the unit, if available'
+                    title: Unitshort
+                    type: string
+                  widget:
+                    allOf:
+                      - additionalProperties: false
+                        properties:
+                          details:
+                            anyOf:
+                              - additionalProperties: false
+                                properties:
+                                  minHeight:
+                                    description: minimum Height of the textarea
+                                    x-exclusiveMinimum: 0
+                                    title: Minheight
+                                    type: integer
+                                required:
+                                  - minHeight
+                                title: TextArea
+                                type: object
+                              - additionalProperties: false
+                                properties:
+                                  structure:
+                                    items:
+                                      additionalProperties: false
+                                      properties:
+                                        key:
+                                          anyOf:
+                                            - type: string
+                                            - type: boolean
+                                            - type: number
+                                          title: Key
+                                        label:
+                                          title: Label
+                                          type: string
+                                      required:
+                                        - key
+                                        - label
+                                      title: Structure
+                                      type: object
+                                    minItems: 1
+                                    title: Structure
+                                    type: array
+                                required:
+                                  - structure
+                                title: SelectBox
+                                type: object
+                            title: Details
+                          type:
+                            allOf:
+                              - description: An enumeration.
+                                enum:
+                                  - TextArea
+                                  - SelectBox
+                                title: WidgetType
+                                type: string
+                            description: type of the property
+                        required:
+                          - type
+                          - details
+                        title: Widget
+                        type: object
+                    description: custom widget to use instead of the default one determined from the data-type
+                    title: Widget
+                required:
+                  - displayOrder
+                  - label
+                  - description
+                  - type
+                  - keyId
+                title: ServiceInputApiOut
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    items:
+                      properties:
+                        loc:
+                          items:
+                            type: string
+                          title: Location
+                          type: array
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      title: ValidationError
+                      type: object
+                    title: Detail
+                    type: array
+                title: HTTPValidationError
+                type: object
+          description: Validation Error
+      summary: List Service Inputs
+  '/catalog/services/{service_key}/{service_version}/inputs/{input_key}':
+    get:
+      tags:
+        - catalog
+      operationId: get_service_input_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+        - in: path
+          name: input_key
+          required: true
+          schema:
+            pattern: '^[-_a-zA-Z0-9]+$'
+            title: Input Key
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                description: Metadata on a service input port
+                example:
+                  defaultValue: 0
+                  description: Time to wait before completion
+                  displayOrder: 2
+                  keyId: input_2
+                  label: Sleep Time
+                  type: number
+                  unit: second
+                  unitLong: seconds
+                  unitShort: sec
+                  widget:
+                    details:
+                      minHeight: 1
+                    type: TextArea
+                properties:
+                  defaultValue:
+                    anyOf:
+                      - type: boolean
+                      - type: integer
+                      - type: number
+                      - type: string
+                    title: Defaultvalue
+                  description:
+                    description: description of the property
+                    example: Age in seconds since 1970
+                    title: Description
+                    type: string
+                  displayOrder:
+                    description: use this to numerically sort the properties for display
+                    title: Displayorder
+                    type: number
+                  fileToKeyMap:
+                    description: Place the data associated with the named keys in files
+                    title: Filetokeymap
+                    type: object
+                  keyId:
+                    description: Unique name identifier for this input
+                    pattern: '^[-_a-zA-Z0-9]+$'
+                    title: Keyid
+                    type: string
+                  label:
+                    description: short name for the property
+                    example: Age
+                    title: Label
+                    type: string
+                  type:
+                    description: data type expected on this input glob matching for data type is allowed
+                    pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                    title: Type
+                    type: string
+                  unit:
+                    description: 'Units, when it refers to a physical quantity'
+                    title: Unit
+                    type: string
+                  unitLong:
+                    description: 'Long name of the unit, if available'
+                    title: Unitlong
+                    type: string
+                  unitShort:
+                    description: 'Short name for the unit, if available'
+                    title: Unitshort
+                    type: string
+                  widget:
+                    allOf:
+                      - additionalProperties: false
+                        properties:
+                          details:
+                            anyOf:
+                              - additionalProperties: false
+                                properties:
+                                  minHeight:
+                                    description: minimum Height of the textarea
+                                    x-exclusiveMinimum: 0
+                                    title: Minheight
+                                    type: integer
+                                required:
+                                  - minHeight
+                                title: TextArea
+                                type: object
+                              - additionalProperties: false
+                                properties:
+                                  structure:
+                                    items:
+                                      additionalProperties: false
+                                      properties:
+                                        key:
+                                          anyOf:
+                                            - type: string
+                                            - type: boolean
+                                            - type: number
+                                          title: Key
+                                        label:
+                                          title: Label
+                                          type: string
+                                      required:
+                                        - key
+                                        - label
+                                      title: Structure
+                                      type: object
+                                    minItems: 1
+                                    title: Structure
+                                    type: array
+                                required:
+                                  - structure
+                                title: SelectBox
+                                type: object
+                            title: Details
+                          type:
+                            allOf:
+                              - description: An enumeration.
+                                enum:
+                                  - TextArea
+                                  - SelectBox
+                                title: WidgetType
+                                type: string
+                            description: type of the property
+                        required:
+                          - type
+                          - details
+                        title: Widget
+                        type: object
+                    description: custom widget to use instead of the default one determined from the data-type
+                    title: Widget
+                required:
+                  - displayOrder
+                  - label
+                  - description
+                  - type
+                  - keyId
+                title: ServiceInputApiOut
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    items:
+                      properties:
+                        loc:
+                          items:
+                            type: string
+                          title: Location
+                          type: array
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      title: ValidationError
+                      type: object
+                    title: Detail
+                    type: array
+                title: HTTPValidationError
+                type: object
+          description: Validation Error
+      summary: Get Service Input
+  '/catalog/services/{service_key}/{service_version}/inputs:match':
+    get:
+      tags:
+        - catalog
+      description: 'Filters inputs of this service that match a given service output. Returns compatible input ports of the service, provided an output port of a connected node.'
+      operationId: get_compatible_inputs_given_source_output_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+        - in: query
+          name: fromService
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Fromservice
+            type: string
+        - in: query
+          name: fromVersion
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Fromversion
+            type: string
+        - in: query
+          name: fromOutput
+          required: true
+          schema:
+            pattern: '^[-_a-zA-Z0-9]+$'
+            title: Fromoutput
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  pattern: '^[-_a-zA-Z0-9]+$'
+                  type: string
+                title: Response Get Compatible Inputs Given Source Output Catalog Services  Service Key   Service Version  Inputs Match Get
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    items:
+                      properties:
+                        loc:
+                          items:
+                            type: string
+                          title: Location
+                          type: array
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      title: ValidationError
+                      type: object
+                    title: Detail
+                    type: array
+                title: HTTPValidationError
+                type: object
+          description: Validation Error
+      summary: Get Compatible Inputs Given Source Output
+  '/catalog/services/{service_key}/{service_version}/outputs':
+    get:
+      tags:
+        - catalog
+      operationId: list_service_outputs_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: false
+                  description: Metadata on a service input or output port
+                  example:
+                    defaultValue: 0
+                    description: Time to wait before completion
+                    displayOrder: 2
+                    keyId: input_2
+                    label: Sleep Time
+                    type: number
+                    unit: second
+                    unitLong: seconds
+                    unitShort: sec
+                    widget:
+                      details:
+                        minHeight: 1
+                      type: TextArea
+                  properties:
+                    defaultValue:
+                      anyOf:
+                        - type: boolean
+                        - type: integer
+                        - type: number
+                        - type: string
+                      title: Defaultvalue
+                    description:
+                      description: description of the property
+                      example: Age in seconds since 1970
+                      title: Description
+                      type: string
+                    displayOrder:
+                      description: use this to numerically sort the properties for display
+                      title: Displayorder
+                      type: number
+                    fileToKeyMap:
+                      description: Place the data associated with the named keys in files
+                      title: Filetokeymap
+                      type: object
+                    keyId:
+                      description: Unique name identifier for this input
+                      pattern: '^[-_a-zA-Z0-9]+$'
+                      title: Keyid
+                      type: string
+                    label:
+                      description: short name for the property
+                      example: Age
+                      title: Label
+                      type: string
+                    type:
+                      description: data type expected on this input glob matching for data type is allowed
+                      pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                      title: Type
+                      type: string
+                    unit:
+                      description: 'Units, when it refers to a physical quantity'
+                      title: Unit
+                      type: string
+                    unitLong:
+                      description: 'Long name of the unit, if available'
+                      title: Unitlong
+                      type: string
+                    unitShort:
+                      description: 'Short name for the unit, if available'
+                      title: Unitshort
+                      type: string
+                    widget:
+                      allOf:
+                        - additionalProperties: false
+                          properties:
+                            details:
+                              anyOf:
+                                - additionalProperties: false
+                                  properties:
+                                    minHeight:
+                                      description: minimum Height of the textarea
+                                      x-exclusiveMinimum: 0
+                                      title: Minheight
+                                      type: integer
+                                  required:
+                                    - minHeight
+                                  title: TextArea
+                                  type: object
+                                - additionalProperties: false
+                                  properties:
+                                    structure:
+                                      items:
+                                        additionalProperties: false
+                                        properties:
+                                          key:
+                                            anyOf:
+                                              - type: string
+                                              - type: boolean
+                                              - type: number
+                                            title: Key
+                                          label:
+                                            title: Label
+                                            type: string
+                                        required:
+                                          - key
+                                          - label
+                                        title: Structure
+                                        type: object
+                                      minItems: 1
+                                      title: Structure
+                                      type: array
+                                  required:
+                                    - structure
+                                  title: SelectBox
+                                  type: object
+                              title: Details
+                            type:
+                              allOf:
+                                - description: An enumeration.
+                                  enum:
+                                    - TextArea
+                                    - SelectBox
+                                  title: WidgetType
+                                  type: string
+                              description: type of the property
+                          required:
+                            - type
+                            - details
+                          title: Widget
+                          type: object
+                      deprecated: true
+                      description: custom widget to use instead of the default one determined from the data-type
+                      title: Widget
+                  required:
+                    - displayOrder
+                    - label
+                    - description
+                    - type
+                    - keyId
+                  title: ServiceOutputApiOut
+                  type: object
+                title: Response List Service Outputs Catalog Services  Service Key   Service Version  Outputs Get
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    items:
+                      properties:
+                        loc:
+                          items:
+                            type: string
+                          title: Location
+                          type: array
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      title: ValidationError
+                      type: object
+                    title: Detail
+                    type: array
+                title: HTTPValidationError
+                type: object
+          description: Validation Error
+      summary: List Service Outputs
+  '/catalog/services/{service_key}/{service_version}/outputs/{output_key}':
+    get:
+      tags:
+        - catalog
+      operationId: get_service_output_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+        - in: path
+          name: output_key
+          required: true
+          schema:
+            pattern: '^[-_a-zA-Z0-9]+$'
+            title: Output Key
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: false
+                description: Metadata on a service input or output port
+                example:
+                  defaultValue: 0
+                  description: Time to wait before completion
+                  displayOrder: 2
+                  keyId: input_2
+                  label: Sleep Time
+                  type: number
+                  unit: second
+                  unitLong: seconds
+                  unitShort: sec
+                  widget:
+                    details:
+                      minHeight: 1
+                    type: TextArea
+                properties:
+                  defaultValue:
+                    anyOf:
+                      - type: boolean
+                      - type: integer
+                      - type: number
+                      - type: string
+                    title: Defaultvalue
+                  description:
+                    description: description of the property
+                    example: Age in seconds since 1970
+                    title: Description
+                    type: string
+                  displayOrder:
+                    description: use this to numerically sort the properties for display
+                    title: Displayorder
+                    type: number
+                  fileToKeyMap:
+                    description: Place the data associated with the named keys in files
+                    title: Filetokeymap
+                    type: object
+                  keyId:
+                    description: Unique name identifier for this input
+                    pattern: '^[-_a-zA-Z0-9]+$'
+                    title: Keyid
+                    type: string
+                  label:
+                    description: short name for the property
+                    example: Age
+                    title: Label
+                    type: string
+                  type:
+                    description: data type expected on this input glob matching for data type is allowed
+                    pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                    title: Type
+                    type: string
+                  unit:
+                    description: 'Units, when it refers to a physical quantity'
+                    title: Unit
+                    type: string
+                  unitLong:
+                    description: 'Long name of the unit, if available'
+                    title: Unitlong
+                    type: string
+                  unitShort:
+                    description: 'Short name for the unit, if available'
+                    title: Unitshort
+                    type: string
+                  widget:
+                    allOf:
+                      - additionalProperties: false
+                        properties:
+                          details:
+                            anyOf:
+                              - additionalProperties: false
+                                properties:
+                                  minHeight:
+                                    description: minimum Height of the textarea
+                                    x-exclusiveMinimum: 0
+                                    title: Minheight
+                                    type: integer
+                                required:
+                                  - minHeight
+                                title: TextArea
+                                type: object
+                              - additionalProperties: false
+                                properties:
+                                  structure:
+                                    items:
+                                      additionalProperties: false
+                                      properties:
+                                        key:
+                                          anyOf:
+                                            - type: string
+                                            - type: boolean
+                                            - type: number
+                                          title: Key
+                                        label:
+                                          title: Label
+                                          type: string
+                                      required:
+                                        - key
+                                        - label
+                                      title: Structure
+                                      type: object
+                                    minItems: 1
+                                    title: Structure
+                                    type: array
+                                required:
+                                  - structure
+                                title: SelectBox
+                                type: object
+                            title: Details
+                          type:
+                            allOf:
+                              - description: An enumeration.
+                                enum:
+                                  - TextArea
+                                  - SelectBox
+                                title: WidgetType
+                                type: string
+                            description: type of the property
+                        required:
+                          - type
+                          - details
+                        title: Widget
+                        type: object
+                    deprecated: true
+                    description: custom widget to use instead of the default one determined from the data-type
+                    title: Widget
+                required:
+                  - displayOrder
+                  - label
+                  - description
+                  - type
+                  - keyId
+                title: ServiceOutputApiOut
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    items:
+                      properties:
+                        loc:
+                          items:
+                            type: string
+                          title: Location
+                          type: array
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      title: ValidationError
+                      type: object
+                    title: Detail
+                    type: array
+                title: HTTPValidationError
+                type: object
+          description: Validation Error
+      summary: Get Service Output
+  '/catalog/services/{service_key}/{service_version}/outputs:match':
+    get:
+      tags:
+        - catalog
+      description: Filters outputs of this service that match a given service input. Returns compatible output port of a connected node for a given input
+      operationId: get_compatible_outputs_given_target_input_handler
+      parameters:
+        - in: path
+          name: service_key
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Service Key
+            type: string
+        - in: path
+          name: service_version
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Service Version
+            type: string
+        - in: query
+          name: toService
+          required: true
+          schema:
+            pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+            title: Toservice
+            type: string
+        - in: query
+          name: toVersion
+          required: true
+          schema:
+            pattern: '^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$'
+            title: Toversion
+            type: string
+        - in: query
+          name: toInput
+          required: true
+          schema:
+            pattern: '^[-_a-zA-Z0-9]+$'
+            title: Toinput
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  pattern: '^[-_a-zA-Z0-9]+$'
+                  type: string
+                title: Response Get Compatible Outputs Given Target Input Catalog Services  Service Key   Service Version  Outputs Match Get
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    items:
+                      properties:
+                        loc:
+                          items:
+                            type: string
+                          title: Location
+                          type: array
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      title: ValidationError
+                      type: object
+                    title: Detail
+                    type: array
+                title: HTTPValidationError
+                type: object
+          description: Validation Error
+      summary: Get Compatible Outputs Given Target Input
   /viewers:
     get:
       operationId: get_viewer_for_file

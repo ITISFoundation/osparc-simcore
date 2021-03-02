@@ -31,12 +31,8 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     }
   },
 
-  members: {
-    __node: null,
-    __label: null,
-    __icon: null,
-
-    __addClass: function(element, className) {
+  statics: {
+    addClass: function(element, className) {
       if (element) {
         const currentClass = element.getAttribute("class");
         if (currentClass && currentClass.includes(className.trim())) {
@@ -46,67 +42,55 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       }
     },
 
-    __removeClass: function(element, className) {
+    removeClass: function(element, className) {
       const currentClass = element.getAttribute("class");
       if (currentClass) {
         const regex = new RegExp(className.trim(), "g");
         element.setAttribute("class", currentClass.replace(regex, ""));
       }
-    },
+    }
+  },
+
+  members: {
+    __node: null,
+    __label: null,
+    __icon: null,
 
     __setupComputational: function() {
-      this.__node.getStatus().bind("runningStatus", this.__label, "value", {
+      this.__node.getStatus().bind("running", this.__label, "value", {
         converter: state => {
           if (state) {
             this.show();
-            if (state === "STARTED") {
-              state = "Running";
-            }
-            return qx.lang.String.firstUp(state.toLowerCase());
+            const labelValue = osparc.utils.StatusUI.getLabelValue(state);
+            return qx.lang.String.firstUp(labelValue.toLowerCase());
           }
           this.exclude();
           return null;
+        },
+        onUpdate: (source, target) => {
+          const state = source.getRunning();
+          target.setTextColor(osparc.utils.StatusUI.getColor(state));
         }
       });
 
-      this.__node.getStatus().bind("runningStatus", this.__icon, "source", {
-        converter: state => {
-          switch (state) {
-            case "SUCCESS":
-              return "@FontAwesome5Solid/check/12";
-            case "FAILED":
-            case "ABORTED":
-              return "@FontAwesome5Solid/exclamation-circle/12";
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-            case "RETRY":
-              return "@FontAwesome5Solid/circle-notch/12";
-            case "UNKNOWN":
-            case "NOT_STARTED":
-            default:
-              return "";
-          }
-        },
+      this.__node.getStatus().bind("running", this.__icon, "source", {
+        converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
           target.show();
-          const state = source.getRunningStatus();
+          const state = source.getRunning();
           switch (state) {
             case "SUCCESS":
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
-              target.setTextColor("ready-green");
-              return;
             case "FAILED":
             case "ABORTED":
-              this.__removeClass(this.__icon.getContentElement(), "rotate");
-              target.setTextColor("failed-red");
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "PENDING":
             case "PUBLISHED":
             case "STARTED":
             case "RETRY":
-              this.__addClass(this.__icon.getContentElement(), "rotate");
-              target.resetTextColor();
+              this.self().addClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
               return;
             case "UNKNOWN":
             case "NOT_STARTED":
@@ -119,54 +103,39 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupInteractive: function() {
-      this.__node.getStatus().bind("interactiveStatus", this.__label, "value", {
-        converter: status => {
-          if (status === "ready") {
-            return this.tr("Ready");
-          } else if (status === "failed") {
-            return this.tr("Error");
-          } else if (status === "starting") {
-            return this.tr("Starting...");
-          } else if (status === "pending") {
-            return this.tr("Pending...");
-          } else if (status === "pulling") {
-            return this.tr("Pulling...");
-          } else if (status === "connecting") {
-            return this.tr("Connecting...");
-          }
-          return this.tr("Idle");
+      this.__node.getStatus().bind("interactive", this.__label, "value", {
+        converter: state => osparc.utils.StatusUI.getLabelValue(state),
+        onUpdate: (source, target) => {
+          const state = source.getInteractive();
+          target.setTextColor(osparc.utils.StatusUI.getColor(state));
         }
       });
 
-      this.__node.getStatus().bind("interactiveStatus", this.__icon, "source", {
-        converter: status => {
-          if (status === "ready") {
-            return "@FontAwesome5Solid/check/12";
-          } else if (status === "failed") {
-            return "@FontAwesome5Solid/exclamation-circle/12";
-          } else if (status === "starting") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "pending") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "pulling") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          } else if (status === "connecting") {
-            return "@FontAwesome5Solid/circle-notch/12";
-          }
-          return "@FontAwesome5Solid/check/12";
-        },
+      this.__node.getStatus().bind("interactive", this.__icon, "source", {
+        converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
-          if (source.getInteractiveStatus() == null) {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-          } else if (source.getInteractiveStatus() === "ready") {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-            target.setTextColor("ready-green");
-          } else if (source.getInteractiveStatus() === "failed") {
-            this.__removeClass(this.__icon.getContentElement(), "rotate");
-            target.setTextColor("failed-red");
-          } else {
-            this.__addClass(this.__icon.getContentElement(), "rotate");
-            target.resetTextColor();
+          const state = source.getInteractive();
+          switch (state) {
+            case "ready":
+            case "failed":
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
+              break;
+            case "idle":
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
+              break;
+            case "starting":
+            case "pulling":
+            case "pending":
+            case "connecting":
+              this.self().addClass(this.__icon.getContentElement(), "rotate");
+              target.setTextColor(osparc.utils.StatusUI.getColor(state));
+              break;
+            default:
+              this.self().removeClass(this.__icon.getContentElement(), "rotate");
+              target.resetTextColor();
+              break;
           }
         }
       });

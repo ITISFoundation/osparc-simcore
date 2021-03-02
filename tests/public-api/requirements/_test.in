@@ -1,0 +1,14 @@
+-c ../../../requirements/constraints.txt
+
+pytest
+pytest-cov
+pytest-asyncio
+
+python-dotenv
+httpx
+
+# pulled by pytest-simcore
+docker
+tenacity
+jsonschema
+pyyaml

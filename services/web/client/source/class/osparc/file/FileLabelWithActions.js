@@ -117,7 +117,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
               const link = presignedLinkData.presignedLink.link;
               const fileNameFromLink = osparc.utils.Utils.fileNameFromPresignedLink(link);
               fileName = fileNameFromLink ? fileNameFromLink : fileName;
-              osparc.utils.Utils.downloadLink(link, fileName);
+              osparc.utils.Utils.downloadLink(link, "GET", fileName);
             }
           });
       }

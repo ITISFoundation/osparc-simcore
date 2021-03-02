@@ -49,12 +49,12 @@ describe('tags testing', () => {
     // Create new study
     await waitAndClick(page, '[osparc-test-id="newStudyBtn"]');
     // Edit its title and go back to dashboard
-    await waitAndClick(page, '[qxclass="osparc.desktop.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"]');
+    await waitAndClick(page, '[qxclass="osparc.navigation.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"]');
     await page.keyboard.type(STUDY_NAME);
     await page.keyboard.press('Enter');
     await page.waitForFunction(studyName => {
       return document.querySelector(
-        '[qxclass="osparc.desktop.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"] [qxclass="qx.ui.basic.Label"]'
+        '[qxclass="osparc.navigation.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"] [qxclass="qx.ui.basic.Label"]'
       ).innerText === studyName;
     }, {}, STUDY_NAME);
     await waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
@@ -116,7 +116,7 @@ describe('tags testing', () => {
     await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
-    await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagManager"] > .qx-workbench-small-cap-captionbar [qxclass="qx.ui.form.Button"]');
+    await waitAndClick(page, '[osparc-test-id="saveTagsBtn"]');
     // UI displays the change
     let displayedTag = await page.waitForSelector('[qxclass="osparc.dashboard.StudyBrowserButtonItem"] [qxclass="osparc.ui.basic.Tag"]')
     await waitAndClick(page, '.qx-service-window[qxclass="osparc.ui.window.Window"] > .qx-workbench-small-cap-captionbar [qxclass="qx.ui.form.Button"]');

@@ -115,18 +115,18 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       apply: "_applyLocked"
     },
 
-    lockedBy: {
-      check: "String",
-      nullable: true,
-      apply: "_applyLockedBy"
-    },
-
     multiSelectionMode: {
       check: "Boolean",
       init: false,
       nullable: false,
       apply: "_applyMultiSelectionMode"
     }
+  },
+
+  events: {
+    "updateQualityStudy": "qx.event.type.Data",
+    "updateQualityTemplate": "qx.event.type.Data",
+    "updateQualityService": "qx.event.type.Data"
   },
 
   statics: {
@@ -183,6 +183,26 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
             left: 0
           });
           break;
+        case "exporting": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+            alignX: "center",
+            alignY: "middle"
+          }));
+          // const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/file-export/60");
+          const icon = new osparc.component.widget.Thumbnail("@FontAwesome5Solid/cloud-download-alt/60");
+          control.add(icon, {
+            flex: 1
+          });
+          const label = new qx.ui.basic.Label(this.tr("Exporting..."));
+          control.add(label);
+          this._add(control, {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
+          });
+          break;
+        }
         case "permission-icon": {
           control = new qx.ui.basic.Image();
           control.exclude();
@@ -416,26 +436,26 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
     },
 
     _applyQuality: function(quality) {
-      if (quality && "tsr" in quality) {
-        const {
-          score,
-          maxScore
-        } = osparc.component.metadata.Quality.computeTSRScore(quality["tsr"]);
+      if (osparc.component.metadata.Quality.isEnabled(quality)) {
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
-          score,
-          maxScore,
           nStars: 4,
           showScore: true
         });
+        osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
+        // Stop propagation of the pointer event in case the tag is inside a button that we don't want to trigger
+        tsrRating.addListener("tap", e => {
+          e.stopPropagation();
+          this.__openQualityEditor();
+        }, this);
+        tsrRating.addListener("pointerdown", e => e.stopPropagation());
       }
     },
 
     __setStudyPermissions: function(accessRights) {
       const myGroupId = osparc.auth.Data.getInstance().getGroupId();
-      const studyPerm = osparc.component.export.StudyPermissions;
       const image = this.getChildControl("permission-icon");
-      if (studyPerm.canGroupWrite(accessRights, myGroupId)) {
+      if (osparc.component.permissions.Study.canGroupWrite(accessRights, myGroupId)) {
         image.exclude();
       } else {
         image.setSource(this.self().PERM_READ);
@@ -450,25 +470,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       if (locked) {
         this.setLocked(state["locked"]["value"]);
         const owner = state["locked"]["owner"];
-        this.setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
+        this.__setLockedBy(osparc.utils.Utils.firstsUp(owner["first_name"], owner["last_name"]));
       } else {
         this.setLocked(false);
-        this.setLockedBy(null);
       }
     },
 
-    _applyLocked: function(locked) {
+    __enableCard: function(enabled) {
       this.set({
-        cursor: locked ? "not-allowed" : "pointer"
+        cursor: enabled ? "pointer" : "not-allowed"
       });
 
       this._getChildren().forEach(item => {
-        item.setOpacity(locked ? 0.4 : 1.0);
+        item.setOpacity(enabled ? 1.0 : 0.4);
       });
-
-      const lock = this.getChildControl("lock");
-      lock.setOpacity(1.0);
-      lock.setVisibility(locked ? "visible" : "excluded");
 
       [
         "tick-selected",
@@ -477,14 +492,60 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonItem", {
       ].forEach(childName => {
         const child = this.getChildControl(childName);
         child.set({
-          enabled: !locked
+          enabled
         });
       });
     },
 
-    _applyLockedBy: function(lockedBy) {
-      this.set({
+    _applyLocked: function(locked) {
+      this.__enableCard(!locked);
+
+      const lock = this.getChildControl("lock");
+      lock.set({
+        opacity: 1.0,
+        visibility: locked ? "visible" : "excluded"
+      });
+    },
+
+    __setLockedBy: function(lockedBy) {
+      const lock = this.getChildControl("lock");
+      lock.set({
         toolTipText: lockedBy ? (lockedBy + this.tr(" is using it")) : null
+      });
+    },
+
+    setExporting: function(exporting) {
+      this.__enableCard(!exporting);
+
+      const icon = this.getChildControl("exporting");
+      icon.set({
+        opacity: 1.0,
+        visibility: exporting ? "visible" : "excluded"
+      });
+    },
+
+    setImporting: function(importing) {
+      this.__enableCard(!importing);
+
+      const icon = this.getChildControl("importing");
+      icon.set({
+        opacity: 1.0,
+        visibility: importing ? "visible" : "excluded"
+      });
+    },
+
+    __openQualityEditor: function() {
+      const resourceData = this.getResourceData();
+      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedResourceData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateQualityStudy", updatedResourceData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this.fireDataEvent("updateQualityService", updatedResourceData);
+        }
       });
     },
 

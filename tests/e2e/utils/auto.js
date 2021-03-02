@@ -2,6 +2,14 @@ const utils = require("./utils")
 const responses = require('./responsesQueue');
 require('log-timestamp');
 
+async function acceptCookies(page) {
+  const id = '[osparc-test-id=acceptCookiesBtn]';
+  await page.waitForSelector(id, {
+    timeout: 5000
+  })
+    .then(() => page.click(id))
+    .catch(() => console.log("Accept Cookies button not found"));
+}
 
 async function register(page, user, pass) {
   await utils.waitAndClick(page, '[osparc-test-id="loginCreateAccountBtn"]');
@@ -173,9 +181,25 @@ async function __filterTemplatesByText(page, templateName) {
   await page.keyboard.press('Enter')
 }
 
-async function clickLoggerTitle(page) {
-  console.log("Click LoggerTitle");
-  await utils.waitAndClick(page, '[osparc-test-id="loggerTitleLabel"]')
+async function showLogger(page, show = true) {
+  const isVisible = await utils.isElementVisible(page, '[osparc-test-id="logsViewer"]');
+
+  if (show !== isVisible) {
+    await utils.clickLoggerTitle(page);
+  }
+}
+
+async function findLogMessage(page, text) {
+  console.log("Finding Log Message");
+  await this.showLogger(page, true);
+
+  await utils.waitAndClick(page, '[osparc-test-id="logsFilterField"]');
+  await utils.clearInput(page, '[osparc-test-id="logsFilterField"]');
+  await page.type('[osparc-test-id="logsFilterField"]', text);
+
+  const found1 = await page.evaluate((text) => window.find(text), text);
+  await utils.takeScreenshot(page, 'find_' + text);
+  return found1;
 }
 
 async function runStudy(page) {
@@ -334,6 +358,7 @@ async function clickRestart(page) {
 
 
 module.exports = {
+  acceptCookies,
   register,
   logIn,
   logOut,
@@ -345,7 +370,8 @@ module.exports = {
   dashboardNewStudy,
   dashboardOpenFirstTemplate,
   dashboardOpenFirstService,
-  clickLoggerTitle,
+  showLogger,
+  findLogMessage,
   runStudy,
   deleteFirstStudy,
   toDashboard,

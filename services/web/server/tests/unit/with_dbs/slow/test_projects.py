@@ -6,11 +6,12 @@ import json
 import time
 import unittest.mock as mock
 import uuid as uuidlib
-from asyncio import Future, sleep
+from asyncio import Future
 from copy import deepcopy
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from unittest.mock import call
 
+import aiohttp
 import pytest
 import socketio
 from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
@@ -138,9 +139,9 @@ def mocks_on_projects_api(mocker, logged_user) -> Dict:
             ),
         ),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
-    ).dict(by_alias=True, exclude_unset=True)
+    )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.get_project_state_for_user",
+        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
         return_value=future_with_result(state),
     )
 
@@ -209,7 +210,9 @@ async def project_db_cleaner(client):
 
 
 @pytest.fixture
-async def catalog_subsystem_mock(monkeypatch):
+async def catalog_subsystem_mock(
+    monkeypatch,
+) -> Callable[[Optional[Union[List[Dict], Dict]]], None]:
     services_in_project = []
 
     def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
@@ -328,7 +331,7 @@ async def _new_project(
             "classifiers": [],
             "ui": {},
             "dev": {},
-            "quality": {}
+            "quality": {},
         }
         if project:
             project_data.update(project)
@@ -520,13 +523,13 @@ async def _delete_project(client, project: Dict, expected: web.Response) -> None
     ],
 )
 async def test_list_projects(
-    client,
-    logged_user,
-    user_project,
-    template_project,
-    expected,
-    catalog_subsystem_mock,
-    director_v2_service_mock,
+    client: aiohttp.test_utils.TestClient,
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    template_project: Dict[str, Any],
+    expected: aiohttp.web.HTTPException,
+    catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
+    director_v2_service_mock: aioresponses,
 ):
     catalog_subsystem_mock([user_project, template_project])
     data = await _list_projects(client, expected)

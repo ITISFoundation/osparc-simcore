@@ -42,9 +42,6 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
 # environment variables
 ENV SWARM_STACK_NAME=""\
-  SIDECAR_SERVICES_MAX_NANO_CPUS=4000000000 \
-  SIDECAR_SERVICES_MAX_MEMORY_BYTES=2147483648 \
-  SIDECAR_SERVICES_TIMEOUT_SECONDS=1200 \
   SIDECAR_INPUT_FOLDER=/home/scu/input \
   SIDECAR_OUTPUT_FOLDER=/home/scu/output \
   SIDECAR_LOG_FOLDER=/home/scu/log
@@ -62,7 +59,7 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-    build-essential \
+  build-essential \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -71,7 +68,7 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=20.2.2  \
+  pip~=21.0.1  \
   wheel \
   setuptools
 

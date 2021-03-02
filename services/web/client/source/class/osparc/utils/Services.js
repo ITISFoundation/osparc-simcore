@@ -32,34 +32,6 @@ qx.Class.define("osparc.utils.Services", {
   type: "static",
 
   statics: {
-
-    CATEGORIES: {
-      postpro: {
-        label: "Postpro",
-        icon: "@FontAwesome5Solid/chart-bar/"
-      },
-      notebook: {
-        label: "Notebook",
-        icon: "@FontAwesome5Solid/file-code/"
-      },
-      solver: {
-        label: "Solver",
-        icon: "@FontAwesome5Solid/calculator/"
-      },
-      simulator: {
-        label: "Simulator",
-        icon: "@FontAwesome5Solid/brain/"
-      },
-      modeling: {
-        label: "Modeling",
-        icon: "@FontAwesome5Solid/cube/"
-      },
-      data: {
-        label: "Data",
-        icon: "@FontAwesome5Solid/file/"
-      }
-    },
-
     TYPES: {
       computational: {
         label: "Computational",
@@ -79,14 +51,6 @@ qx.Class.define("osparc.utils.Services", {
 
     getTypes: function() {
       return Object.keys(this.TYPES);
-    },
-
-    getCategories: function() {
-      return Object.keys(this.CATEGORIES);
-    },
-
-    getCategory: function(category) {
-      return this.CATEGORIES[category.trim().toLowerCase()];
     },
 
     getType: function(type) {
@@ -156,7 +120,7 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
-    getNodeMetaData: function(key, version) {
+    getMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
         const services = osparc.utils.Services.servicesCached;
@@ -170,52 +134,11 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     getFilePicker: function() {
-      return {
-        key: "simcore/services/frontend/file-picker",
-        version: "1.0.0",
-        type: "dynamic",
-        name: "File Picker",
-        description: "File Picker",
-        authors: [{
-          name: "Odei Maiz",
-          email: "maiz@itis.swiss"
-        }],
-        contact: "maiz@itis.swiss",
-        owner: "maiz@itis.swiss",
-        inputs: {},
-        outputs: {
-          outFile: {
-            displayOrder: 0,
-            label: "File",
-            description: "Chosen File",
-            type: "data:*/*"
-          }
-        },
-        "access_rights": {
-          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
-        }
-      };
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/file-picker");
     },
 
     getNodesGroup: function() {
-      return {
-        key: "simcore/services/frontend/nodes-group",
-        version: "1.0.0",
-        type: "group",
-        name: "Group",
-        description: "Group of nodes",
-        authors: [{
-          name: "Odei Maiz",
-          email: "maiz@itis.swiss"
-        }],
-        contact: "maiz@itis.swiss",
-        owner: "maiz@itis.swiss",
-        inputs: {},
-        outputs: {},
-        "access_rights": {
-          "1": osparc.component.export.ServicePermissions.getCollaboratorAccessRight()
-        }
-      };
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
 
     addServiceToCache: function(service) {
@@ -229,14 +152,8 @@ qx.Class.define("osparc.utils.Services", {
     },
 
     __addExtraInfo: function(services) {
-      const categories = this.__getCategories();
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {
-          if (Object.prototype.hasOwnProperty.call(categories, service["key"])) {
-            service["category"] = categories[service["key"]]["category"];
-          } else {
-            service["category"] = "Unknown";
-          }
           if (osparc.data.model.Node.isComputational(service)) {
             osparc.component.metadata.Quality.attachQualityToObject(service);
           }
@@ -244,169 +161,19 @@ qx.Class.define("osparc.utils.Services", {
       });
     },
 
-    __getCategories: function() {
-      return {
-        "simcore/services/frontend/file-picker": {
-          "category": "Data"
-        },
-        "simcore/services/dynamic/mattward-viewer": {
-          "category": "Solver"
-        },
-        "simcore/services/dynamic/bornstein-viewer": {
-          "category": "Solver"
-        },
-        "simcore/services/dynamic/cc-0d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-1d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/cc-2d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/raw-graphs": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/3d-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/3d-viewer-gpu": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/jupyter-r-notebook": {
-          "category": "Notebook"
-        },
-        "simcore/services/dynamic/jupyter-base-notebook": {
-          "category": "Notebook"
-        },
-        "simcore/services/dynamic/jupyter-scipy-notebook": {
-          "category": "Notebook"
-        },
-        "simcore/services/comp/rabbit-ss-0d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/rabbit-ss-1d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/rabbit-ss-2d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/human-gb-0d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/human-gb-1d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/human-gb-2d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/human-ord-0d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/human-ord-1d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/human-ord-2d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/osparc-opencor": {
-          "category": "Solver"
-        },
-
-        "simcore/services/comp/itis/sleeper": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/itis/isolve-emlf": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/itis/neuron-isolve": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis-singlecell-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis-1d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/ucdavis-2d-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/comp/kember-cardiac-model": {
-          "category": "Solver"
-        },
-        "simcore/services/demodec/computational/itis/Solver-LF": {
-          "category": "Solver"
-        },
-        "simcore/services/demodec/container/itis/s4l/Simulator/LF": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/MaterialDB": {
-          "category": "Solver"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Modeler": {
-          "category": "Modeling"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Boundary": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Grid": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Materials": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Sensors": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Setup": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/SolverSettings": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/LF/Voxel": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/NetworkConnection": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Neurons": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/PointProcesses": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sensors": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Setup": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/SolverSettings": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/Simulator/Neuron/Sources": {
-          "category": "Simulator"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/StimulationSelectivity": {
-          "category": "PostPro"
-        },
-        "simcore/services/demodec/dynamic/itis/s4l/neuroman": {
-          "category": "Modeling"
-        },
-        "simcore/services/dynamic/kember-viewer": {
-          "category": "PostPro"
-        },
-        "simcore/services/dynamic/modeler/webserver": {
-          "category": "Modeling"
-        },
-        "simcore/services/dynamic/modeler/webserverwithrat": {
-          "category": "Modeling"
-        },
-        "simcore/services/frontend/multi-plot": {
-          "category": "PostPro"
+    getUniqueServicesFromWorkbench: function(workbench) {
+      const services = [];
+      Object.values(workbench).forEach(node => {
+        const service = {
+          key: node["key"],
+          version: node["version"]
+        };
+        const idx = services.findIndex(existingSrv => existingSrv.key === service.key && existingSrv.version === service.version);
+        if (idx === -1) {
+          services.push(service);
         }
-      };
+      });
+      return services;
     }
   }
 });

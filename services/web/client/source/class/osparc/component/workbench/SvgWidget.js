@@ -38,14 +38,12 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
   construct: function() {
     this.base();
     this.addListenerOnce("appear", () => {
-      const randomID = Math.random().toString(36).substring(7);
       const el = this.getContentElement().getDomElement();
-      qx.bom.element.Attribute.set(el, "id", randomID);
       const svgWrapper = osparc.wrapper.Svg.getInstance();
       svgWrapper.init()
         .then(() => {
           if (this.__canvas === null) {
-            this.__canvas = svgWrapper.createEmptyCanvas(randomID);
+            this.__canvas = svgWrapper.createEmptyCanvas(el);
             this.setReady(true);
             this.fireDataEvent("SvgWidgetReady", true);
           }
@@ -81,9 +79,9 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       }];
     },
 
-    updateCurve: function(curve, x1, y1, x2, y2, dashed = false) {
+    updateCurve: function(curve, x1, y1, x2, y2) {
       const controls = osparc.component.workbench.SvgWidget.getCurveControls(x1, y1, x2, y2);
-      osparc.wrapper.Svg.updateCurve(curve, controls, dashed);
+      osparc.wrapper.Svg.updateCurve(curve, controls);
     },
 
     removeCurve: function(curve) {
@@ -96,6 +94,10 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     removeRect: function(rect) {
       osparc.wrapper.Svg.removeRect(rect);
+    },
+
+    updateDashes: function(curve, dashed = false) {
+      osparc.wrapper.Svg.updateDashes(curve, dashed);
     },
 
     updateCurveColor: function(curve, color) {

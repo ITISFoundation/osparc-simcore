@@ -42,13 +42,10 @@ qx.Class.define("osparc.desktop.ControlsBar", {
   },
 
   events: {
-    "showSweeper": "qx.event.type.Event",
     "showWorkbench": "qx.event.type.Event",
     "showSettings": "qx.event.type.Event",
     "groupSelection": "qx.event.type.Event",
-    "ungroupSelection": "qx.event.type.Event",
-    "startPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
+    "ungroupSelection": "qx.event.type.Event"
   },
 
   members: {
@@ -61,17 +58,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __ungroupButton: null,
     __iterationCtrls: null,
     __parametersButton: null,
-    __startButton: null,
-    __stopButton: null,
-    __pipelineCtrls: null,
-
-    getStartButton: function() {
-      return this.__startButton;
-    },
-
-    getStopButton: function() {
-      return this.__stopButton;
-    },
 
     setWorkbenchVisibility: function(isWorkbenchContext) {
       this.__serviceFilters.setVisibility(isWorkbenchContext ? "visible" : "excluded");
@@ -108,60 +94,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       if (osparc.data.Permissions.getInstance().canDo("study.node.grouping")) {
         this.add(groupCtrls);
       }
-
-      const moreCtrls = new qx.ui.toolbar.Part();
-      osparc.data.model.Sweeper.isSweeperEnabled()
-        .then(isSweeperEnabled => {
-          if (isSweeperEnabled) {
-            const sweeperButton = this.__createShowSweeperButton();
-            moreCtrls.add(sweeperButton);
-          }
-        });
-      this.add(moreCtrls);
-
-      const pipelineCtrls = this.__pipelineCtrls = new qx.ui.toolbar.Part();
-      const stopButton = this.__createStopButton();
-      stopButton.setEnabled(false);
-      pipelineCtrls.add(stopButton);
-      const startButton = this.__createStartButton();
-      pipelineCtrls.add(startButton);
-      this.add(pipelineCtrls);
-
-      osparc.store.Store.getInstance().addListener("changeCurrentStudy", e => {
-        const study = e.getData();
-        this.__updateRunButtonsStatus(study);
-      });
-    },
-
-    __updateRunButtonsStatus: function(study) {
-      if (study) {
-        const startButton = this.__startButton;
-        const stopButton = this.__stopButton;
-        if (study.getState() && study.getState().state) {
-          const pipelineState = study.getState().state;
-          switch (pipelineState.value) {
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-              startButton.setFetching(true);
-              stopButton.setEnabled(true);
-              break;
-            case "NOT_STARTED":
-            case "SUCCESS":
-            case "FAILED":
-            default:
-              startButton.setFetching(false);
-              stopButton.setEnabled(false);
-              break;
-          }
-        }
-        this.__pipelineCtrls.setVisibility(study.isReadOnly() ? "excluded" : "visible");
-      }
-    },
-
-    __createShowSweeperButton: function() {
-      const parametersButton = this.__createButton(this.tr("Sweeper"), "paw", "showSweeperButton", "showSweeper");
-      return parametersButton;
     },
 
     __createWorkbenchButton: function() {
@@ -194,15 +126,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       );
     },
 
-    __createStartButton: function() {
-      const startButton = this.__startButton = this.__createButton(this.tr("Run"), "play", "runStudyBtn", "startPipeline");
-      return startButton;
-    },
-    __createStopButton: function() {
-      const stopButton = this.__stopButton = this.__createButton(this.tr("Stop"), "stop", "stopStudyBtn", "stopPipeline");
-      return stopButton;
-    },
-
     __createRadioButton: function(label, icon, widgetId, singalName) {
       const button = new qx.ui.toolbar.RadioButton(label);
       // button.setIcon("@FontAwesome5Solid/"+icon+"/14");
@@ -228,13 +151,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
       const selectedNodes = msg.getData();
       this.__groupButton.setVisibility(selectedNodes.length ? "visible" : "excluded");
       this.__ungroupButton.setVisibility((selectedNodes.length === 1 && selectedNodes[0].isContainer()) ? "visible" : "excluded");
-      if (!this.__startButton.isFetching()) {
-        if (selectedNodes.length) {
-          this.__startButton.setLabel(this.tr("Run selection"));
-        } else {
-          this.__startButton.setLabel(this.tr("Run"));
-        }
-      }
     },
 
     __attachEventHandlers: function() {

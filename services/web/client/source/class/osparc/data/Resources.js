@@ -94,6 +94,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/projects/{projectId}:close"
           },
+          duplicate: {
+            method: "POST",
+            url: statics.API + "/projects/{projectId}:duplicate"
+          },
           state: {
             useCache: false,
             method: "GET",
@@ -181,6 +185,25 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
+          }
+        }
+      },
+      /*
+       * PORT COMPATIBILITY
+       */
+      "portsCompatibility": {
+        useCache: false, // It has its own cache handler
+        endpoints: {
+          matchInputs: {
+            // get_compatible_inputs_given_source_output_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey2}/{serviceVersion2}/inputs:match?fromService={serviceKey1}&fromVersion={serviceVersion1}&fromOutput={portKey1}"
+          },
+          matchOutputs: {
+            useCache: false,
+            // get_compatible_outputs_given_target_input_handler
+            method: "GET",
+            url: statics.API + "/catalog/services/{serviceKey1}/{serviceVersion1}/outputs:match?fromService={serviceKey2}&fromVersion={serviceVersion2}&fromOutput={portKey2}"
           }
         }
       },
@@ -599,7 +622,7 @@ qx.Class.define("osparc.data.Resources", {
             status = e.getData().error.status;
           }
           res.dispose();
-          const err = Error(message ? message : `Error while fetching ${resource}`);
+          const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
           }
@@ -704,11 +727,48 @@ qx.Class.define("osparc.data.Resources", {
     get: function(resource, params, useCache) {
       return this.getInstance().get(resource, params, useCache);
     },
+
     getServiceUrl: function(serviceKey, serviceVersion) {
       return {
         "serviceKey": encodeURIComponent(serviceKey),
         "serviceVersion": serviceVersion
       };
+    },
+
+    getCompatibleInputs: function(node1, portId1, node2) {
+      const url = this.__getMatchInputsUrl(node1, portId1, node2);
+
+      // eslint-disable-next-line no-underscore-dangle
+      const cachedCPs = this.getInstance().__getCached("portsCompatibility") || {};
+      const strUrl = JSON.stringify(url);
+      if (strUrl in cachedCPs) {
+        return Promise.resolve(cachedCPs[strUrl]);
+      }
+      const params = {
+        url
+      };
+      return this.fetch("portsCompatibility", "matchInputs", params)
+        .then(data => {
+          cachedCPs[strUrl] = data;
+          // eslint-disable-next-line no-underscore-dangle
+          this.getInstance().__setCached("portsCompatibility", cachedCPs);
+          return data;
+        });
+    },
+
+    __getMatchInputsUrl: function(node1, portId1, node2) {
+      return {
+        "serviceKey2": encodeURIComponent(node2.getKey()),
+        "serviceVersion2": node2.getVersion(),
+        "serviceKey1": encodeURIComponent(node1.getKey()),
+        "serviceVersion1": node1.getVersion(),
+        "portKey1": portId1
+      };
+    },
+
+    getErrorMsg: function(resp) {
+      const error = resp["error"];
+      return error ? error["errors"][0].message : null;
     }
   }
 });

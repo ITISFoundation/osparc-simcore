@@ -11,14 +11,14 @@ from typing import Any, Dict, List, Tuple
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa.result import RowProxy
-from sqlalchemy import and_, literal_column
-
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.login.cfg import get_storage
+from sqlalchemy import and_, literal_column
 
 from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .groups_api import convert_groups_db_to_schema
+from .login.storage import AsyncpgStorage
 from .security_api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError
 from .users_utils import convert_user_db_to_schema
@@ -137,8 +137,7 @@ async def delete_user(app: web.Application, user_id: int) -> None:
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
     # Consider "marking" users as deleted and havning a background job that
     # cleans it up
-
-    db = get_storage(app)
+    db: AsyncpgStorage = get_storage(app)
     user = await db.get_user({"id": user_id})
     if not user:
         logger.warning(
