@@ -26,7 +26,6 @@ from change_case import ChangeCase
 from jsonschema.exceptions import ValidationError
 from models_library.projects import ProjectAtDB
 from servicelib.application_keys import APP_DB_ENGINE_KEY
-from servicelib.async_utils import run_sequentially_in_context
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import literal_column
 from sqlalchemy.sql import and_, select
