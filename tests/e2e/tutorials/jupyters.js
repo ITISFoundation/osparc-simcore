@@ -109,22 +109,18 @@ async function runTutorial() {
       "TheNumber.txt"
     ];
     await tutorial.checkResults(outFiles2.length);
-
-    await tutorial.toDashboard();
-
-    await tutorial.removeStudy(studyId);
   }
   catch (err) {
-    // delete puppeteer_XX's study if it fails
-    if (studyId && user.includes("puppeteer_")) {
-      await tutorial.toDashboard();
-      await tutorial.removeStudy(studyId);
-    }
-
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
+    // delete study if succesfull or puppeteer_XX
+    if (!tutorial.getTutorialFailed() || (user.includes("puppeteer_") && studyId)) {
+      await tutorial.toDashboard();
+      await tutorial.removeStudy(studyId);
+    }
+
     await tutorial.logOut();
     tutorial.stopScreenshooter();
     await tutorial.close();
