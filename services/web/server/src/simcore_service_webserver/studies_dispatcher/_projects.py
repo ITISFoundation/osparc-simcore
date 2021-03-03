@@ -10,10 +10,9 @@ import logging
 from typing import Dict, Tuple
 
 from aiohttp import web
-from pydantic import HttpUrl
-
 from models_library.projects import AccessRights, Node, Project, StudyUI
-from models_library.projects_nodes_io import PortLink, DownloadLink
+from models_library.projects_nodes_io import DownloadLink, PortLink
+from pydantic import HttpUrl
 
 from ..projects.projects_api import get_project_for_user
 from ..projects.projects_exceptions import (
@@ -35,7 +34,7 @@ async def acquire_project_with_viewer(
     #   - if user requests several times, the same project is reused
     #   - if user is not a guest, the project will be saved in it's account (desired?)
     #
-    project_id = compose_uuid_from(user.id, viewer.footprint, download_link)
+    project_id: str = compose_uuid_from(user.id, viewer.footprint, download_link)
 
     # Ids are linked to produce a footprint (see viewer_project_exists)
     file_picker_id, viewer_id = generate_nodeids(project_id)
@@ -104,7 +103,9 @@ def create_viewer_project_model(
         inputNodes=[],
         outputs={
             # TODO: check with odeimaiz what is the meaning and relevance of label
-            file_picker_output_id: DownloadLink(downloadLink=str(download_link), label="")
+            file_picker_output_id: DownloadLink(
+                downloadLink=str(download_link), label=""
+            )
         },
         progress=0,
     )
@@ -154,8 +155,8 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
     # TODO: move this to projects_api
     # TODO: this piece was taking fromt the end of projects.projects_handlers.create_projects
 
-    from ..projects.projects_db import APP_PROJECT_DBAPI
     from ..director_v2 import create_or_update_pipeline
+    from ..projects.projects_db import APP_PROJECT_DBAPI
 
     db = app[APP_PROJECT_DBAPI]
 
@@ -166,7 +167,7 @@ async def add_new_project(app: web.Application, project: Project, user: UserInfo
     _project_db: Dict = await db.add_project(
         project_in, user.id, force_as_template=False
     )
-    assert _project_db["uuid"] == str(project.uuid) # nosec
+    assert _project_db["uuid"] == str(project.uuid)  # nosec
 
     # This is a new project and every new graph needs to be reflected in the pipeline db
     #
