@@ -1,7 +1,8 @@
+import asyncio
 import functools
 import logging
 from contextlib import suppress
-from typing import Coroutine, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response, codes
@@ -34,12 +35,13 @@ async def close_director(app: FastAPI) -> None:
 # DIRECTOR API CLASS ---------------------------------------------
 
 
-def safe_request(request_func: Coroutine):
+def safe_request(request_func: Callable):
     """
     Creates a context for safe inter-process communication (IPC)
     """
+    assert asyncio.iscoroutinefunction(request_func)
 
-    def _unenvelope_or_raise_error(resp: Response) -> Dict:
+    def _unenvelope_or_raise_error(resp: Response) -> Union[List, Dict]:
         """
         Director responses are enveloped
         If successful response, we un-envelop it and return data as a dict
@@ -64,12 +66,15 @@ def safe_request(request_func: Coroutine):
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
+        if isinstance(data, list):
+            return data
+
         return data or {}
 
     @functools.wraps(request_func)
     async def request_wrapper(zelf: "DirectorApi", path: str, *args, **kwargs):
+        normalized_path = path.lstrip("/")
         try:
-            normalized_path = path.lstrip("/")
             resp = await request_func(zelf, path=normalized_path, *args, **kwargs)
         except Exception as err:
             logger.exception(

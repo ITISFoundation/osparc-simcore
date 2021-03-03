@@ -135,7 +135,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       rect.remove();
     },
 
-    updateDashes: function(curve, dashed) {
+    updateCurveDashes: function(curve, dashed) {
       curve.attr({
         "stroke-dasharray": dashed ? 5 : 0
       });

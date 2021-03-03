@@ -17,7 +17,10 @@ logger = logging.getLogger(__file__)
 
 
 def _is_node_computational(node_key: str) -> bool:
-    return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+    try:
+        return to_node_class(node_key) == NodeClass.COMPUTATIONAL
+    except ValueError:
+        return False
 
 
 @log_decorator(logger=logger)
@@ -122,7 +125,7 @@ def node_needs_computation(
 async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
     for node in nx.topological_sort(complete_dag):
-        if _is_node_computational(nodes_data_view[node]["key"]):
+        if _is_node_computational(nodes_data_view[node].get("key", "")):
             await compute_node_states(nodes_data_view, node)
 
 
@@ -170,9 +173,13 @@ async def create_minimal_computational_graph_based_on_selection(
 async def compute_pipeline_details(
     complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: List[CompTaskAtDB]
 ) -> PipelineDetails:
-
-    # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
-    await _set_computational_nodes_states(complete_dag)
+    try:
+        # FIXME: this problem of cyclic graphs for control loops create all kinds of issues that must be fixed
+        # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
+        await _set_computational_nodes_states(complete_dag)
+    except nx.NetworkXUnfeasible:
+        # not acyclic
+        pass
     return PipelineDetails(
         adjacency_list=nx.to_dict_of_lists(pipeline_dag),
         node_states={

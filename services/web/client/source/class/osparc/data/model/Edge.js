@@ -94,31 +94,31 @@ qx.Class.define("osparc.data.model.Edge", {
 
     __applyOutputNode: function(node2) {
       node2.bind("portsConnected", this, "portConnected", {
-        converter: portsConnected => {
-          const isConnected = Boolean(Object.keys(portsConnected).length);
-          return isConnected;
+        converter: () => {
+          const isConnected = this.__checkIsPortConnected();
+          return Boolean(isConnected);
         }
       });
     },
 
     __checkIsPortConnected: function() {
+      let anyConnected = false;
       const node1 = this.getInputNode();
       let node2 = this.getOutputNode();
       if (node2.getPropsForm()) {
-        const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
-        this.setPortConnected(anyConnected);
+        anyConnected |= this.self().checkAnyPortsConnected(node1, node2);
       }
       if (node2.isContainer()) {
         const innerNodes = node2.getInnerNodes();
         for (const innerNodeId in innerNodes) {
           node2 = innerNodes[innerNodeId];
           if (node2.getPropsForm()) {
-            const anyConnected = this.self().checkAnyPortsConnected(node1, node2);
-            this.setPortConnected(anyConnected);
+            anyConnected |= this.self().checkAnyPortsConnected(node1, node2);
           }
           break;
         }
       }
+      return anyConnected;
     }
   }
 });
