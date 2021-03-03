@@ -309,7 +309,7 @@ async def update_project_node_state(
         project["workbench"][node_id]["progress"] = 100
 
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project_workbench(
+    updated_project = await db.patch_user_project_workbench(
         partial_workbench_data=project, user_id=user_id, project_uuid=project_id
     )
     updated_project = await add_project_states_for_user(
@@ -332,7 +332,7 @@ async def update_project_node_progress(
         "workbench": {node_id: {"progress": int(100.0 * float(progress) + 0.5)}},
     }
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project_workbench(
+    updated_project = await db.patch_user_project_workbench(
         partial_workbench_data=project, user_id=user_id, project_uuid=project_id
     )
     updated_project = await add_project_states_for_user(
@@ -375,7 +375,7 @@ async def update_project_node_outputs(
     }
 
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project_workbench(
+    updated_project = await db.patch_user_project_workbench(
         partial_workbench_data=project, user_id=user_id, project_uuid=project_id
     )
     updated_project = await add_project_states_for_user(

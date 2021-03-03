@@ -12,7 +12,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from pprint import pformat
-from typing import Any, Dict, List, Mapping, Optional, Set, Union
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Union
 
 import psycopg2.errors
 import sqlalchemy as sa
@@ -473,13 +473,13 @@ class ProjectDBAPI:
 
         return template_prj
 
-    async def update_user_project_workbench(
+    async def patch_user_project_workbench(
         self, partial_workbench_data: Dict[str, Any], user_id: int, project_uuid: str
     ) -> Dict[str, Any]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
         """
-        log.info("Updating project %s for user %s", project_uuid, user_id)
+        log.info("Patching project %s for user %s", project_uuid, user_id)
         async with self.engine.acquire() as conn:
             async with conn.begin() as _transaction:
                 current_project: Dict = await self._get_project(
@@ -499,18 +499,31 @@ class ProjectDBAPI:
 
                 def _patch_workbench(
                     project: Dict[str, Any], new_data: Dict[str, Any]
-                ) -> None:
+                ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+                    """patch the project workbench with the values in new_data and returns the changed project and changed values"""
+                    changed_entries = {}
                     for node_key, node_data in new_data.get("workbench", {}).items():
                         current_node_data = project.get("workbench", {}).get(node_key)
+
                         if current_node_data is None:
                             log.debug(
                                 "node %s is missing from project, no patch", node_key
                             )
                             raise NodeNotFoundError(project_uuid, node_key)
+                        # find changed keys
+                        # changed_keys = current_node_data.keys() ^ node_data.keys()
+                        # changed_keys.extend(
+                        #     [
+                        #         k
+                        #         for k in current_node_data.keys() & new_data.keys()
+                        #         if current_node_data[k] != new_data[k]
+                        #     ]
+                        # )
+                        # changed_entries.update({"workbench": {node_key: }})
                         current_node_data.update(node_data)
-                    return project
+                    return project, changed_entries
 
-                new_project_data = _patch_workbench(
+                new_project_data, changed_entries = _patch_workbench(
                     current_project, partial_workbench_data
                 )
 
@@ -531,7 +544,7 @@ class ProjectDBAPI:
                 )
                 return _convert_to_schema_names(project, user_email, tags=tags)
 
-    async def update_user_project(
+    async def replace_user_project(
         self,
         new_project_data: Dict[str, Any],
         user_id: int,
