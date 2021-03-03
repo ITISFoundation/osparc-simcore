@@ -230,16 +230,22 @@ async function makePingRequest(page, path) {
   return await page.evaluate(async (path) => {
     const url = (path).replace(/\/\//g, "\/");
     console.log("makePingRequest", url);
-    return fetch(url, { accept: '*/*', cache: 'no-cache' })
-      .then(response => { console.log("ping response status:", response.status); return response.ok; })
-      .catch(error => { console.error(error); });
+    return fetch(url, {
+      accept: '*/*',
+      cache: 'no-cache'
+    })
+      .then(response => {
+        console.log("ping response status:", response.status);
+        return response.ok;
+      })
+      .catch(error => console.error(error));
   }, path);
 }
 
 async function isServiceConnected(page, studyId, nodeId) {
   console.log("-- Is Service Connected", nodeId);
   const serviceUrl = await getServiceUrl(page, studyId, nodeId);
-  connected = await makePingRequest(page, serviceUrl);
+  const connected = await makePingRequest(page, serviceUrl);
   console.log(connected, "--")
   return connected;
 }
