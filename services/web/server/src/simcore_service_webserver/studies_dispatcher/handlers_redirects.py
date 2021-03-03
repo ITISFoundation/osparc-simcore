@@ -37,9 +37,11 @@ def create_redirect_response(
 
     Front-end can then render this data either in an error or a view page
     """
+    log.debug("page: '%s' parameters: '%s'", page, parameters)
+
     page = page.strip(" /")
     assert page in ("view", "error")  # nosec
-    fragment_path = str(URL.build(path=f"/{page}").with_query(**parameters))
+    fragment_path = str(URL.build(path=f"/{page}").with_query(parameters))
     redirect_url = (
         app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
     )
@@ -63,7 +65,7 @@ class ViewerQueryParams(BaseModel):
 
 
 class RedirectionQueryParams(ViewerQueryParams):
-    file_name: Optional[str] = None
+    file_name: Optional[str] = "unknown"
     file_size: PositiveInt
     download_link: HttpUrl
 
@@ -145,7 +147,7 @@ async def get_redirection_to_viewer(request: web.Request):
             page="view",
             project_id=project_id,
             viewer_node_id=viewer_id,
-            file_name=params.file_name,
+            file_name=params.file_name or "unkwnown",
             file_size=params.file_size,
         )
         await ensure_authentication(user, request, response)
@@ -156,11 +158,13 @@ async def get_redirection_to_viewer(request: web.Request):
             page="error",
             message=f"Sorry, we cannot render this file: {err.reason}",
             status_code=web.HTTPUnprocessableEntity.status_code,  # 422
-        )
+        ) from err
+
     except web.HTTPClientError as err:
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
-        )
+        ) from err
+
     except (ValidationError, web.HTTPServerError, Exception) as err:
         log.exception("Fatal error while redirecting %s", request.query)
         raise create_redirect_response(
@@ -168,5 +172,6 @@ async def get_redirection_to_viewer(request: web.Request):
             page="error",
             message="Ups something went wrong while processing your request.",
             status_code=web.HTTPInternalServerError.status_code,
-        )
+        ) from err
+
     return response
