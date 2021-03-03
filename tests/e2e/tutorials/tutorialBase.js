@@ -230,7 +230,7 @@ class TutorialBase {
     throw new Error(errorMsg);
   }
 
-  async waitForStudyRun(studyId, timeout = 60000) {
+  async waitForStudyDone(studyId, timeout = 60000) {
     const start = new Date().getTime();
     while ((new Date().getTime()) - start < timeout) {
       await utils.sleep(5000);
@@ -238,7 +238,7 @@ class TutorialBase {
         return;
       }
     }
-    console.log("Timeout reached waiting for study run", ((new Date().getTime()) - start) / 1000);
+    console.log("Timeout reached waiting for study done ", ((new Date().getTime()) - start) / 1000);
     return;
   }
 
@@ -262,12 +262,11 @@ class TutorialBase {
     return await auto.findLogMessage(this.__page, text);
   }
 
-  async runPipeline(studyId, timeout = 60000) {
+  async runPipeline() {
     await auto.showLogger(this.__page, true);
 
     await this.takeScreenshot("runStudy_before");
     await auto.runStudy(this.__page);
-    await this.waitForStudyRun(studyId, timeout);
     await this.takeScreenshot("runStudy_after");
   }
 

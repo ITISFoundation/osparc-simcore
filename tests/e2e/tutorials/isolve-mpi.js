@@ -27,7 +27,8 @@ async function runTutorial() {
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
 
-    await tutorial.runPipeline(studyId, 20000);
+    await tutorial.runPipeline();
+    await tutorial.waitForStudyDone(studyId, 30000);
     console.log('Checking isolve-mpi results:');
     await tutorial.openNodeFiles(1);
     const outFiles = [

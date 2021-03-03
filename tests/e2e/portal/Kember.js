@@ -29,7 +29,8 @@ async function runTutorial () {
     await tutorial.waitFor(10000);
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
-    await tutorial.runPipeline(studyId, 120000);
+    await tutorial.runPipeline();
+    await tutorial.waitForStudyDone(studyId, 120000);
     await utils.takeScreenshot(page, screenshotPrefix + 'pipeline_run');
 
     await tutorial.openNodeFiles(0);
