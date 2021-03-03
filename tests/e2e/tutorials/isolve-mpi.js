@@ -28,7 +28,7 @@ async function runTutorial() {
     await tutorial.waitFor(5000);
 
     await tutorial.runPipeline();
-    await tutorial.waitForStudyDone(studyId, 30000);
+    await tutorial.waitForStudyDone(studyId, 80000);
 
     await tutorial.openNodeFiles(1);
     const outFiles = [
