@@ -33,7 +33,7 @@ async function runTutorial() {
 
     const iframeHandles = await tutorial.getIframe();
     const iframes = [];
-    for (let i=0; i<iframeHandles.length; i++) {
+    for (let i = 0; i < iframeHandles.length; i++) {
       const frame = await iframeHandles[i].contentFrame();
       iframes.push(frame);
     }
@@ -65,11 +65,23 @@ async function runTutorial() {
 
 
 
-    async function checkNotebookCompleted(page, el, expected_value) {
+    // async function checkNotebookCompleted(page, el) {
+    //   let value = await page.evaluate(el => el.textContent, el);
+    //   return value.match(/\[[0-9]+\]/) != null;
+    // }
+    await nbIframe.waitForFunction(async (page, el) => {
       let value = await page.evaluate(el => el.textContent, el);
-      return value.match(expected_value) != null;
-    }
-    await nbIframe.waitForFunction(checkNotebookCompleted(nbIframe, inputElement, /\[[0-9]+\]/g), { polling: 200, timeout: 20000 });
+      if (value.match(/\[[0-9]+\]/)) {
+        return true;
+      } else {
+        return false;
+      }
+    }, {}, nbIframe, inputElement);
+    // await nbIframe.waitForFunction(async (page, selector) => {
+    //   element = await page.$(selector);
+    //   return element.innerText.match(/\[[0-9]+\]/) != null;
+    // }, { polling: 200, timeout: 20000 }, nbIframe, finishedRunningCheckboxSelector);
+    // checkNotebookCompleted(nbIframe, inputElement, /\[[0-9]+\]/g), { polling: 200, timeout: 20000 });
 
 
 
@@ -87,7 +99,7 @@ async function runTutorial() {
 
     const iframeHandles2 = await tutorial.getIframe();
     const iframes2 = [];
-    for (let i=0; i<iframeHandles2.length; i++) {
+    for (let i = 0; i < iframeHandles2.length; i++) {
       const frame = await iframeHandles2[i].contentFrame();
       iframes2.push(frame);
     }
