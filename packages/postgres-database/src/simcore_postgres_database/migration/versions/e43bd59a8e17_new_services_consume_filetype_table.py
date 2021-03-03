@@ -22,7 +22,7 @@ def upgrade():
         sa.Column("service_key", sa.String(), nullable=False),
         sa.Column("service_version", sa.String(), nullable=False),
         sa.Column("service_display_name", sa.String(), nullable=False),
-        sa.Column("service_input_port", sa.String(), nullable=True),
+        sa.Column("service_input_port", sa.String(), nullable=False),
         sa.Column("filetype", sa.String(), nullable=False),
         sa.Column("preference_order", sa.SmallInteger(), nullable=True),
         sa.ForeignKeyConstraint(

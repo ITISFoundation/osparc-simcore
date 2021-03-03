@@ -42,7 +42,7 @@ services_consume_filetypes = sa.Table(
     sa.Column(
         "service_input_port",
         sa.String,
-        default="input_1",
+        nullable=False,
         doc="Key name of the service input that consumes this filetype",
     ),
     sa.Column(

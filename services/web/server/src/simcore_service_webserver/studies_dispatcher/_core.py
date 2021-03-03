@@ -39,7 +39,6 @@ class ViewerInfo(BaseModel):
 
     label: str = Field(..., description="Display name")
     input_port_key: str = Field(
-        "input_1",
         description="Name of the connection port, since it is service-dependent",
     )
 
