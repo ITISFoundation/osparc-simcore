@@ -16,12 +16,15 @@ import textwrap
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, Iterator, List, Optional
 from uuid import uuid4
 
 import aioredis
 import pytest
 import redis
+import simcore_postgres_database.cli as pg_cli
+import simcore_service_webserver.db_models as orm
+import simcore_service_webserver.utils
 import socketio
 import sqlalchemy as sa
 import trafaret_config
@@ -31,11 +34,6 @@ from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_mock import future_with_result
-from yarl import URL
-
-import simcore_postgres_database.cli as pg_cli
-import simcore_service_webserver.db_models as orm
-import simcore_service_webserver.utils
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
@@ -47,6 +45,7 @@ from simcore_service_webserver.groups_api import (
     list_user_groups,
 )
 from simcore_service_webserver.statics import STATIC_DIRNAMES
+from yarl import URL
 
 # current directory
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -161,8 +160,7 @@ def client(loop, aiohttp_client, web_server, mock_orphaned_services) -> TestClie
 
 @pytest.fixture
 def qx_client_outdir(tmpdir):
-    """  Emulates qx output at service/web/client after compiling
-    """
+    """Emulates qx output at service/web/client after compiling"""
 
     basedir = tmpdir.mkdir("source-output")
     folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
@@ -336,7 +334,9 @@ def postgres_service(docker_services, postgres_dsn):
 
 
 @pytest.fixture
-def postgres_db(postgres_dsn: Dict, postgres_service: str) -> sa.engine.Engine:
+def postgres_db(
+    postgres_dsn: Dict, postgres_service: str
+) -> Iterator[sa.engine.Engine]:
     url = postgres_service
 
     # Configures db and initializes tables

@@ -7,17 +7,19 @@ import logging
 from copy import deepcopy
 
 import pytest
-
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import delete_all_projects
+from pytest_simcore.helpers.utils_services import (
+    FAKE_FILE_CONSUMER_SERVICES,
+    list_fake_file_consumers,
+)
 from simcore_service_webserver.groups_api import auto_add_user_to_groups
 
 # from simcore_postgres_database.models.projects import projects as projects_table
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import get_project_for_user
-from simcore_service_webserver.studies_dispatcher._core import _FILETYPE_TO_VIEWER
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
@@ -25,6 +27,8 @@ from simcore_service_webserver.studies_dispatcher._projects import (
     create_viewer_project_model,
 )
 from simcore_service_webserver.users_api import get_user
+
+FAKE_FILE_VIEWS = list_fake_file_consumers()
 
 
 @pytest.fixture
@@ -82,14 +86,17 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
 
 
 @pytest.mark.parametrize(
-    "file_type,viewer", [(k, v) for k, v in _FILETYPE_TO_VIEWER.items()]
+    "view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS]
 )
 async def test_add_new_project_from_model_instance(
-    file_type: str,
-    viewer: ViewerInfo,
+    view,
     client,
     mocker,
 ):
+    view["label"] = view.pop("display_name")
+    viewer = ViewerInfo(**view)
+    assert viewer.dict() == view
+
     mock_func = mocker.patch(
         "simcore_service_webserver.director_v2.create_or_update_pipeline",
         return_value=future_with_result(result=None),
@@ -130,7 +137,7 @@ async def test_add_new_project_from_model_instance(
             # internally validates project injected in db
             project_db = await get_project_for_user(
                 client.app,
-                project.uuid,
+                str(project.uuid),
                 user.id,
                 include_state=False,
                 include_templates=False,
