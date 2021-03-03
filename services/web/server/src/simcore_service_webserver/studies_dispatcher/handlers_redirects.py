@@ -8,17 +8,13 @@ from typing import Optional
 import aiohttp
 from aiohttp import web
 from aiohttp.client_exceptions import ClientError
-from pydantic import BaseModel, HttpUrl, ValidationError, validator
+from models_library.services import KEY_RE, VERSION_RE
+from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
 from ..statics import INDEX_RESOURCE_NAME
-from ._core import (
-    MatchNotFoundError,
-    ValidationMixin,
-    ViewerInfo,
-    find_compatible_viewer,
-)
+from ._core import MatchNotFoundError, ViewerInfo, find_compatible_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
@@ -38,30 +34,59 @@ def create_redirect_response(
         and parameters
             - message="Sorry, I could not find this"
             - status_code=404
+
+    Front-end can then render this data either in an error or a view page
     """
+    log.debug("page: '%s' parameters: '%s'", page, parameters)
+
     page = page.strip(" /")
-    # TODO: test that fragment queries are understood by front-end
-    # TODO: front end should create an error page and a view page
     assert page in ("view", "error")  # nosec
-    in_fragment = str(URL.build(path=f"/{page}").with_query(**parameters))
-    redirect_url = app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(in_fragment)
+    fragment_path = str(URL.build(path=f"/{page}").with_query(parameters))
+    redirect_url = (
+        app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(fragment_path)
+    )
     return web.HTTPFound(location=redirect_url)
 
 
 # HANDLERS --------------------------------
+class ViewerQueryParams(BaseModel):
+    file_type: str
+    viewer_key: constr(regex=KEY_RE)
+    viewer_version: constr(regex=VERSION_RE)
+
+    @staticmethod
+    def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
+        # can safely construct w/o validation from a viewer
+        return ViewerQueryParams.construct(
+            file_type=viewer.filetype,
+            viewer_key=viewer.key,
+            viewer_version=viewer.version,
+        )
 
 
-class QueryParams(BaseModel, ValidationMixin):
-    # TODO: create dinamically with pydantic class
-    file_name: Optional[str] = None
+class RedirectionQueryParams(ViewerQueryParams):
+    file_name: Optional[str] = "unknown"
     file_size: PositiveInt
-    file_type: str  # TODO: should we define some types?
     download_link: HttpUrl
 
     @validator("download_link", pre=True)
     @classmethod
     def decode_downloadlink(cls, v):
         return urllib.parse.unquote(v)
+
+    @classmethod
+    def from_request(cls, request: web.Request) -> "RedirectionQueryParams":
+        try:
+            obj = cls(**dict(request.query))
+        except ValidationError as err:
+
+            raise web.HTTPBadRequest(
+                content_type="application/json",
+                body=err.json(),
+                reason=f"{len(err.errors())} invalid parameters in query",
+            )
+        else:
+            return obj
 
     async def check_download_link(self):
         """Explicit validation of download link that performs a light fetch of url's hea"""
@@ -83,14 +108,28 @@ class QueryParams(BaseModel, ValidationMixin):
             ) from err
 
 
+def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> str:
+    """This is denoted PREFIX URL because it needs to append extra query
+    parameters added in RedirectionQueryParams
+    """
+    params = ViewerQueryParams.from_viewer(viewer).dict()
+    absolute_url = request.url.join(
+        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
+    )
+    return str(absolute_url)
+
+
 async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
-        params = QueryParams.from_request(request)
-        # TODO: removed await params.check_download_link()
+        params = RedirectionQueryParams.from_request(request)
+        # TODO: Cannot check file_size from HEAD
+        # removed await params.check_download_link()
+        # Perhaps can check the header for GET while downloading and retreive file_size??
 
-        viewer: ViewerInfo = find_compatible_viewer(
-            file_type=params.file_type, file_size=params.file_size
+        # pylint: disable=no-member
+        viewer: ViewerInfo = await find_compatible_viewer(
+            request.app, file_type=params.file_type, file_size=params.file_size
         )
 
         # Retrieve user or create a temporary guest
@@ -108,7 +147,7 @@ async def get_redirection_to_viewer(request: web.Request):
             page="view",
             project_id=project_id,
             viewer_node_id=viewer_id,
-            file_name=params.file_name,
+            file_name=params.file_name or "unkwnown",
             file_size=params.file_size,
         )
         await ensure_authentication(user, request, response)
@@ -118,18 +157,21 @@ async def get_redirection_to_viewer(request: web.Request):
             request.app,
             page="error",
             message=f"Sorry, we cannot render this file: {err.reason}",
-            status_code= web.HTTPUnprocessableEntity.status_code # 422
-        )
+            status_code=web.HTTPUnprocessableEntity.status_code,  # 422
+        ) from err
+
     except web.HTTPClientError as err:
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
-        )
-    except (ValidationError, web.HTTPServerError, Exception):
+        ) from err
+
+    except (ValidationError, web.HTTPServerError, Exception) as err:
         log.exception("Fatal error while redirecting %s", request.query)
         raise create_redirect_response(
             request.app,
             page="error",
             message="Ups something went wrong while processing your request.",
-            status_code=web.HTTPServerError.status_code
-        )
+            status_code=web.HTTPInternalServerError.status_code,
+        ) from err
+
     return response

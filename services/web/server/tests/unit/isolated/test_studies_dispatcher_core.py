@@ -9,18 +9,19 @@ from typing import Dict
 from urllib.parse import parse_qs
 
 import pytest
-from yarl import URL
-
 from models_library.projects import Project
+from pytest_simcore.helpers.utils_services import list_fake_file_consumers
 from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
 from simcore_service_webserver.projects import projects_api
-from simcore_service_webserver.studies_dispatcher._core import _FILETYPE_TO_VIEWER
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
     ViewerInfo,
     create_viewer_project_model,
 )
-from simcore_service_webserver.studies_dispatcher.handlers_redirects import QueryParams
+from simcore_service_webserver.studies_dispatcher.handlers_redirects import (
+    RedirectionQueryParams,
+)
+from yarl import URL
 
 
 @pytest.fixture
@@ -28,12 +29,14 @@ def project_jsonschema(project_schema_file: Path) -> Dict:
     return json.loads(project_schema_file.read_text())
 
 
-async def test_download_link_validators():
+def test_download_link_validators():
 
-    params = QueryParams(
+    params = RedirectionQueryParams(
         file_name="dataset_description.slsx",
         file_size=24770,  # BYTES
         file_type="MSExcel",
+        viewer_key="simcore/services/dynamic/fooo",
+        viewer_version="1.0.0",
         download_link="https://blackfynn-discover-use1.s3.amazonaws.com/23/2/files/dataset_description.xlsx?AWSAccessKeyId=AKIAQNJEWKCFAOLGQTY6&Signature=K229A0CE5Z5OU2PRi2cfrfgLLEw%3D&x-amz-request-payer=requester&Expires=1605545606",
     )
     assert params.download_link.host.endswith("s3.amazonaws.com")
@@ -48,12 +51,13 @@ async def test_download_link_validators():
     )
 
 
-@pytest.mark.parametrize(
-    "file_type,viewer", [(k, v) for k, v in _FILETYPE_TO_VIEWER.items()]
-)
-def test_create_project_with_viewer(
-    project_jsonschema, file_type: str, viewer: ViewerInfo
-):
+@pytest.mark.parametrize("view", list_fake_file_consumers())
+def test_create_project_with_viewer(project_jsonschema, view):
+
+    view["label"] = view.pop("display_name")
+    viewer = ViewerInfo(**view)
+    assert viewer.dict() == view
+
     user = UserInfo(id=3, name="foo", primary_gid=33, email="foo@bar.com")
 
     project = create_viewer_project_model(
@@ -82,7 +86,7 @@ def test_create_project_with_viewer(
 
 def test_redirection_urls():
     url_in = URL(
-        r"http://localhost:9081/view?file_type=CSV&download_link=https%253A%252F%252Fraw.githubusercontent.com%252Frawgraphs%252Fraw%252Fmaster%252Fdata%252Forchestra.csv&file_name=orchestra.json&file_size=4"
+        r"http://localhost:9081/view?file_type=CSV&download_link=https%253A%252F%252Fraw.githubusercontent.com%252Frawgraphs%252Fraw%252Fmaster%252Fdata%252Forchestra.csv&file_name=orchestra.json&file_size=4&viewer_key=simcore/services/comp/foo&viewer_version=1.0.0"
     )
 
     # TODO: why this fails?
@@ -92,7 +96,7 @@ def test_redirection_urls():
     # )
 
     assert hasattr(url_in, "query")
-    params = QueryParams.from_request(url_in)
+    params = RedirectionQueryParams.from_request(url_in)
 
     assert (
         params.download_link
