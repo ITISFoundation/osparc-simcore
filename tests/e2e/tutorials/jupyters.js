@@ -50,18 +50,28 @@ async function runTutorial() {
     await tutorial.waitFor(2000);
     await tutorial.takeScreenshot("openNotebook");
 
-    // inside the first notebook, click Run button 5 times
-    const runNBBtnSelector = '#run_int > button:nth-child(1)';
-    const runNotebookTimes = 5;
-    for (let i = 0; i < runNotebookTimes; i++) {
-      await nbIframe.waitForSelector(runNBBtnSelector);
-      await nbIframe.click(runNBBtnSelector);
-      await tutorial.waitFor(3000);
-      await tutorial.takeScreenshot("pressRunNB_" + (i + 1));
-    }
+    // inside the first notebook, click Run all button
+    const runAllButtonSelector = '#run_int > button:nth-child(4)';
+    await utils.waitAndClick(nbIframe, runAllButtonSelector)
+    // inside the first notebook, click confirm run all
+    const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
+    await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector)
+    // now check that the input contains [4]
+    const finishedRunningCheckboxSelector = '#notebook-container > div:nth-child(5) > div.input > div.prompt_container > div.prompt.input_prompt';
+    await nbIframe.waitForSelector(finishedRunningCheckboxSelector);
 
-    // TODO: Better check that the kernel is finished
-    await tutorial.waitFor(3000);
+
+    let inputElement = await nbIframe.$(finishedRunningCheckboxSelector);
+
+
+
+    async function checkNotebookCompleted(page, el, expected_value) {
+      let value = await page.evaluate(el => el.textContent, el);
+      return value.match(expected_value) != null;
+    }
+    await nbIframe.waitForFunction(checkNotebookCompleted(nbIframe, inputElement, /\[[0-9]+\]/g), { polling: 200, timeout: 20000 });
+
+
 
     console.log('Checking results for the notebook:');
     await tutorial.openNodeFiles(1);
