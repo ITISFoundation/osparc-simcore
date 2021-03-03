@@ -27,6 +27,7 @@ async function runTutorial() {
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1], workbenchData["nodeIds"][2]]);
+    await tutorial.waitFor(2000);
 
     // open jupyterNB
     await tutorial.openNode(1);
@@ -51,15 +52,19 @@ async function runTutorial() {
     // inside the first notebook, click Run all button
     const runAllButtonSelector = '#run_int > button:nth-child(4)';
     await utils.waitAndClick(nbIframe, runAllButtonSelector)
+
     // inside the first notebook, click confirm run all
     const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
+    await tutorial.takeScreenshot("pressRunNotebook");
     await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector)
+    await tutorial.takeScreenshot("pressRunNotebookAfterConfirm");
     // now check that the input contains [4]
     console.log('Waiting for notebook results...');
     const finishedRunningCheckboxSelector = '#notebook-container > div:nth-child(5) > div.input > div.prompt_container > div.prompt.input_prompt';
-    await nbIframe.waitForFunction('document.querySelector("' + finishedRunningCheckboxSelector + '").innerText.match(/\[[0-9]+\]/)')
-    const element = await nbIframe.$(finishedRunningCheckboxSelector)
+    await nbIframe.waitForFunction('document.querySelector("' + finishedRunningCheckboxSelector + '").innerText.match(/\[[0-9]+\]/)');
+    const element = await nbIframe.$(finishedRunningCheckboxSelector);
     const value = await nbIframe.evaluate(el => el.textContent, element);
+    await tutorial.takeScreenshot("notebookAfterRun");
     console.log('Checking results for the notebook cell:', value);
 
     await tutorial.openNodeFiles(1);
@@ -91,17 +96,21 @@ async function runTutorial() {
 
     // click Run Menu
     const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
-    await jLabIframe.waitForSelector(mainRunMenuBtnSelector);
-    await jLabIframe.click(mainRunMenuBtnSelector);
+    await utils.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
     await tutorial.waitFor(1000);
 
     // click Run All Cells
     const mainRunAllBtnSelector = '  body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
-    await jLabIframe.waitForSelector(mainRunAllBtnSelector);
-    await jLabIframe.click(mainRunAllBtnSelector);
-    await tutorial.waitFor(6000);
-    await tutorial.takeScreenshot("pressRunJLab");
+    await utils.waitAndClick(jLabIframe, mainRunAllBtnSelector)
 
+    console.log('Waiting for jupyter lab results...');
+    const labCompletedInputSelector = 'div.lm-Widget.p-Widget.jp-MainAreaWidget.jp-NotebookPanel.jp-Document.jp-Activity > div:nth-child(2) > div:nth-child(3) > div.lm-Widget.p-Widget.lm-Panel.p-Panel.jp-Cell-inputWrapper > div.lm-Widget.p-Widget.jp-InputArea.jp-Cell-inputArea > div.lm-Widget.p-Widget.jp-InputPrompt.jp-InputArea-prompt';
+    await jLabIframe.waitForFunction('document.querySelector("' + labCompletedInputSelector + '").innerText.match(/\[[0-9]+\]/)');
+    const jLabElement = await jLabIframe.$(labCompletedInputSelector);
+    const jLabVvalue = await jLabIframe.evaluate(el => el.textContent, jLabElement);
+    console.log('Checking results for the jupyter lab cell:', jLabVvalue);
+    await tutorial.takeScreenshot("pressRunJLab");
+    await tutorial.waitFor(5000);
     console.log('Checking results for the jupyter lab:');
     await tutorial.openNodeFiles(2);
     const outFiles2 = [
