@@ -235,10 +235,12 @@ class TutorialBase {
     while ((new Date().getTime()) - start < timeout) {
       await utils.sleep(5000);
       if (await utils.isStudyDone(this.__page, studyId)) {
+        await utils.takeScreenshot(page, 'run_pipeline_done');
         return;
       }
     }
     console.log("Timeout reached waiting for study done ", ((new Date().getTime()) - start) / 1000);
+    await utils.takeScreenshot(page, 'run_pipeline_timeout_reached');
     return;
   }
 

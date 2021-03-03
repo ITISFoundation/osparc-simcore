@@ -31,7 +31,6 @@ async function runTutorial () {
 
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 120000);
-    await utils.takeScreenshot(page, screenshotPrefix + 'pipeline_run');
 
     await tutorial.openNodeFiles(0);
     const outFiles = [

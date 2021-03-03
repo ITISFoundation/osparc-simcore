@@ -31,7 +31,7 @@ async function runTutorial() {
 
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 30000);
-    console.log('Checking isolve-gpu results:');
+
     await tutorial.openNodeFiles(1);
     const outFiles = [
       "logs.zip",

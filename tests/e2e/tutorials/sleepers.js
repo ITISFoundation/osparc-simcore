@@ -29,7 +29,7 @@ async function runTutorial() {
 
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 60000);
-    console.log('Checking results for the first sleeper:');
+
     await tutorial.openNodeFiles(0);
     const outFiles = [
       "logs.zip",
