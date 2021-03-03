@@ -297,7 +297,6 @@ async def update_project_node_state(
         user_id,
     )
     project = {
-        "uuid": project_id,
         "workbench": {node_id: {"state": {"currentStatus": new_state}}},
     }
     if RunningState(new_state) in [
@@ -310,8 +309,8 @@ async def update_project_node_state(
         project["workbench"][node_id]["progress"] = 100
 
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project(
-        project, user_id, project_id, replace_project=False
+    updated_project = await db.update_user_project_workbench(
+        partial_workbench_data=project, user_id=user_id, project_uuid=project_id
     )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
@@ -330,12 +329,11 @@ async def update_project_node_progress(
         progress,
     )
     project = {
-        "uuid": project_id,
         "workbench": {node_id: {"progress": int(100.0 * float(progress) + 0.5)}},
     }
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project(
-        project, user_id, project_id, replace_project=False
+    updated_project = await db.update_user_project_workbench(
+        partial_workbench_data=project, user_id=user_id, project_uuid=project_id
     )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
@@ -373,13 +371,12 @@ async def update_project_node_outputs(
     #         changed_keys.append(key)
 
     project = {
-        "uuid": project_id,
         "workbench": {node_id: {"outputs": new_outputs, "runHash": new_run_hash}},
     }
 
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.update_user_project(
-        project, user_id, project_id, replace_project=False
+    updated_project = await db.update_user_project_workbench(
+        partial_workbench_data=project, user_id=user_id, project_uuid=project_id
     )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
