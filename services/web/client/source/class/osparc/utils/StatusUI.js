@@ -27,30 +27,32 @@ qx.Class.define("osparc.utils.StatusUI", {
     getIconSource: function(state) {
       switch (state) {
         // computationals
+        case "UNKNOWN":
+        case "NOT_STARTED":
+          return "";
         case "SUCCESS":
           return "@FontAwesome5Solid/check/12";
-        case "FAILED":
-        case "ABORTED":
-          return "@FontAwesome5Solid/exclamation-circle/12";
         case "PENDING":
         case "PUBLISHED":
         case "STARTED":
         case "RETRY":
           return "@FontAwesome5Solid/circle-notch/12";
-        case "UNKNOWN":
-        case "NOT_STARTED":
-          return "";
+        case "FAILED":
+        case "ABORTED":
+          return "@FontAwesome5Solid/exclamation-circle/12";
 
         // dynamics
+        case "idle":
+          return "";
         case "ready":
           return "@FontAwesome5Solid/check/12";
-        case "failed":
-          return "@FontAwesome5Solid/exclamation-circle/12";
         case "starting":
         case "pending":
         case "pulling":
         case "connecting":
           return "@FontAwesome5Solid/circle-notch/12";
+        case "failed":
+          return "@FontAwesome5Solid/exclamation-circle/12";
 
         // ports
         case "modified":
@@ -91,31 +93,32 @@ qx.Class.define("osparc.utils.StatusUI", {
     getColor: function(state) {
       switch (state) {
         // computationals
+        case "UNKNOWN":
+        case "NOT_STARTED":
+          return "text";
         case "SUCCESS":
           return "ready-green";
-        case "FAILED":
-        case "ABORTED":
-          return "failed-red";
         case "PENDING":
         case "PUBLISHED":
         case "STARTED":
         case "RETRY":
           return "busy-orange";
-        case "UNKNOWN":
-        case "NOT_STARTED":
-          return "text";
+        case "FAILED":
+        case "ABORTED":
+          return "failed-red";
 
         // dynamics
+        case "idle":
+          return "text";
         case "ready":
           return "ready-green";
-        case "failed":
-          return "failed-red";
-        case "idle":
         case "starting":
         case "pulling":
         case "pending":
         case "connecting":
           return "busy-orange";
+        case "failed":
+          return "failed-red";
 
         // ports
         case "modified":
