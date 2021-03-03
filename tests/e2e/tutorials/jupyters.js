@@ -41,12 +41,10 @@ async function runTutorial() {
 
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
-    await nbIframe.waitForSelector(notebookCBSelector);
-    await nbIframe.click(notebookCBSelector);
+    await utils.waitAndClick(nbIframe, notebookCBSelector)
     await tutorial.waitFor(2000);
     const notebookViewSelector = "#notebook_toolbar > div.col-sm-8.no-padding > div.dynamic-buttons > button.view-button.btn.btn-default.btn-xs"
-    await nbIframe.waitForSelector(notebookViewSelector);
-    await nbIframe.click(notebookViewSelector);
+    await utils.waitAndClick(nbIframe, notebookViewSelector)
     await tutorial.waitFor(2000);
     await tutorial.takeScreenshot("openNotebook");
 
@@ -57,35 +55,13 @@ async function runTutorial() {
     const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
     await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector)
     // now check that the input contains [4]
+    console.log('Waiting for notebook results...');
     const finishedRunningCheckboxSelector = '#notebook-container > div:nth-child(5) > div.input > div.prompt_container > div.prompt.input_prompt';
-    await nbIframe.waitForSelector(finishedRunningCheckboxSelector);
+    await nbIframe.waitForFunction('document.querySelector("' + finishedRunningCheckboxSelector + '").innerText.match(/\[[0-9]+\]/)')
+    const element = await nbIframe.$(finishedRunningCheckboxSelector)
+    const value = await nbIframe.evaluate(el => el.textContent, element);
+    console.log('Checking results for the notebook cell:', value);
 
-
-    let inputElement = await nbIframe.$(finishedRunningCheckboxSelector);
-
-
-
-    // async function checkNotebookCompleted(page, el) {
-    //   let value = await page.evaluate(el => el.textContent, el);
-    //   return value.match(/\[[0-9]+\]/) != null;
-    // }
-    await nbIframe.waitForFunction(async (page, el) => {
-      let value = await page.evaluate(el => el.textContent, el);
-      if (value.match(/\[[0-9]+\]/)) {
-        return true;
-      } else {
-        return false;
-      }
-    }, {}, nbIframe, inputElement);
-    // await nbIframe.waitForFunction(async (page, selector) => {
-    //   element = await page.$(selector);
-    //   return element.innerText.match(/\[[0-9]+\]/) != null;
-    // }, { polling: 200, timeout: 20000 }, nbIframe, finishedRunningCheckboxSelector);
-    // checkNotebookCompleted(nbIframe, inputElement, /\[[0-9]+\]/g), { polling: 200, timeout: 20000 });
-
-
-
-    console.log('Checking results for the notebook:');
     await tutorial.openNodeFiles(1);
     const outFiles = [
       "TheNumberNumber.txt",
