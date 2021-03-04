@@ -14,5 +14,7 @@ idna==2.10
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   email-validator
-pydantic[email]==1.7.3
+pydantic[email]==1.8.1
     # via -r requirements/_base.in
+typing-extensions==3.7.4.3
+    # via pydantic
