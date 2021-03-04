@@ -25,8 +25,9 @@ class Nodeports(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __init__(self, **data: Any):
-        super().__init__(**data)
+    def __post__init__post__parse__(self):
+        # pylint: disable=protected-access
+
         # let's pass ourselves down
         for input_key in self.internal_inputs:
             self.internal_inputs[input_key]._node_ports = self
