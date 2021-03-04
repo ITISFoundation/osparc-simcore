@@ -81,6 +81,7 @@ async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> N
                     destination_folder,
                 )
                 for zip_entry in zip_file_handler.infolist()
+                if zip_entry.is_file()
             ]
 
             await asyncio.gather(*tasks)
