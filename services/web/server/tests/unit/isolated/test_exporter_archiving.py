@@ -306,8 +306,7 @@ async def test_error_during_decompression(loop):
 
     assert exc_info.type is ExporterException
     assert exc_info.value.args[0] == (
-        "There was an error while extracting directory '/i/do/not/exist' "
-        "to '/' [Errno 2] No such file or directory: '/i/do/not/exist'"
+        "There was an error while extracting directory '/i/do/not/exist' to '/'"
     )
 
 

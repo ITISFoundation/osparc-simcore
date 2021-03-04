@@ -59,36 +59,31 @@ def ensure_destination_subdirectories_exist(
 
 
 async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
-    try:
-        with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
-            with ProcessPoolExecutor() as pool:
-                loop = asyncio.get_event_loop()
+    with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
+        with ProcessPoolExecutor() as pool:
+            loop = asyncio.get_event_loop()
 
-                # running in process poll is not ideal for concurrency issues
-                # to avoid race conditions all subdirectories where files will be extracted need to exist
-                # creating them before the extraction is under way avoids the issue
-                # the following avoids race conditions while unzippin in parallel
-                ensure_destination_subdirectories_exist(
-                    zip_file_handler=zip_file_handler,
-                    destination_folder=destination_folder,
+            # running in process poll is not ideal for concurrency issues
+            # to avoid race conditions all subdirectories where files will be extracted need to exist
+            # creating them before the extraction is under way avoids the issue
+            # the following avoids race conditions while unzippin in parallel
+            ensure_destination_subdirectories_exist(
+                zip_file_handler=zip_file_handler,
+                destination_folder=destination_folder,
+            )
+
+            tasks = [
+                loop.run_in_executor(
+                    pool,
+                    _zipfile_single_file_extract_worker,
+                    archive_to_extract,
+                    zip_entry.filename,
+                    destination_folder,
                 )
+                for zip_entry in zip_file_handler.infolist()
+            ]
 
-                tasks = [
-                    loop.run_in_executor(
-                        pool,
-                        _zipfile_single_file_extract_worker,
-                        archive_to_extract,
-                        zip_entry.filename,
-                        destination_folder,
-                    )
-                    for zip_entry in zip_file_handler.infolist()
-                ]
-
-                await asyncio.gather(*tasks)
-    except Exception as e:
-        message = f"There was an error while extracting directory '{archive_to_extract}' to '{destination_folder}'"
-        log.exception(message)
-        raise e
+            await asyncio.gather(*tasks)
 
 
 def _serial_add_to_archive(

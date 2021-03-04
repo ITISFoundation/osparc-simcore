@@ -87,7 +87,13 @@ async def zip_folder(folder_to_zip: Path, destination_folder: Path) -> Path:
 
 
 async def unzip_folder(archive_to_extract: Path, destination_folder: Path) -> Path:
-    await unarchive_dir(
-        archive_to_extract=archive_to_extract, destination_folder=destination_folder
-    )
+    try:
+        await unarchive_dir(
+            archive_to_extract=archive_to_extract, destination_folder=destination_folder
+        )
+    except Exception as e:
+        message = f"There was an error while extracting directory '{archive_to_extract}' to '{destination_folder}'"
+        log.exception(message)
+        raise ExporterException(message) from e
+
     return search_for_unzipped_path(destination_folder)
