@@ -42,7 +42,6 @@ def _zipfile_single_file_extract_worker(
     with zipfile.ZipFile(zip_file_path) as zf:
         # assemble destination and ensure it exits
         destination_path = destination_folder / file_in_archive
-        destination_path.parent.mkdir(parents=True, exist_ok=True)
 
         with zf.open(name=file_in_archive) as zip_fp:
             with open(destination_path, "wb") as destination_fp:
