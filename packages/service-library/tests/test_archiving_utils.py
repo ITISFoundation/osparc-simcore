@@ -6,7 +6,7 @@ import hashlib
 import random
 from pathlib import Path
 import asyncio
-from typing import Set, List, Dict, Iterator
+from typing import Set, List, Dict, Iterator, Tuple
 from concurrent.futures import ProcessPoolExecutor
 import string
 import secrets
@@ -98,7 +98,7 @@ def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
     }
 
 
-def _compute_hash(file_path: Path) -> str:
+def _compute_hash(file_path: Path) -> Tuple[Path, str]:
     with open(file_path, "rb") as file_to_hash:
         file_hash = hashlib.md5()
         chunk = file_to_hash.read(8192)
@@ -119,6 +119,8 @@ async def compute_hashes(file_paths: List[Path]) -> Dict[Path, str]:
             loop.run_in_executor(prcess_pool_executor, _compute_hash, file_path)
             for file_path in file_paths
         ]
+        # pylint: disable=unnecessary-comprehension
+        # see return value of _compute_hash it is a tuple, mapping list[Tuple[Path,str]] to Dict[Path, str] here
         return {k: v for k, v in await asyncio.gather(*tasks)}
 
 
