@@ -79,7 +79,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       });
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
-        this.__selectionChanged(selectionData);
+        this.__selectedFileLayout.itemSelected(selectionData);
+        if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+          this.__folderViewer.setFolder(selectionData);
+        }
       }, this);
       filesTree.addListener("fileCopied", e => {
         if (e) {
@@ -92,16 +95,16 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         const selectionData = e.getData();
         filesTree.openNodeAndParents(selectionData);
         filesTree.setSelection(new qx.data.Array([selectionData]));
-        this.__selectionChanged(selectionData);
+        this.__selectedFileLayout.itemSelected(selectionData);
+      }, this);
+      folderViewer.addListener("itemSelected", e => {
+        const data = e.getData();
+        filesTree.openNodeAndParents(data);
+        filesTree.setSelection(new qx.data.Array([data]));
       }, this);
       folderViewer.addListener("requestDatasetFiles", e => {
         const data = e.getData();
         filesTree.requestDatasetFiles(data.locationId, data.datasetId);
-      }, this);
-      folderViewer.addListener("openFolder", e => {
-        const data = e.getData();
-        filesTree.openNodeAndParents(data);
-        filesTree.setSelection(new qx.data.Array([data]));
       }, this);
 
       const filesLayout = new qx.ui.splitpane.Pane("horizontal");
@@ -137,17 +140,6 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       fileActions.add(selectedFileLayout);
 
       return actionsToolbar;
-    },
-
-    __selectionChanged: function(selectionData) {
-      this.__filesTree.resetSelection();
-      if (selectionData) {
-        this.__selectedFileLayout.itemSelected(selectionData);
-
-        if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
-          this.__folderViewer.setFolder(selectionData);
-        }
-      }
     }
   }
 });

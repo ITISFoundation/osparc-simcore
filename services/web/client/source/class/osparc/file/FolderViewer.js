@@ -51,9 +51,8 @@ qx.Class.define("osparc.file.FolderViewer", {
   },
 
   events: {
-    "selectionChanged": "qx.event.type.Event", // tap
-    "itemSelected": "qx.event.type.Event", // dbltap
-    "openFolder": "qx.event.type.Data",
+    "selectionChanged": "qx.event.type.Data", // tap
+    "itemSelected": "qx.event.type.Data", // dbltap
     "requestDatasetFiles": "qx.event.type.Data"
   },
 
@@ -117,7 +116,7 @@ qx.Class.define("osparc.file.FolderViewer", {
         case "table": {
           const tableModel = new qx.ui.table.model.Simple();
           tableModel.setColumns([
-            this.tr("-"),
+            this.tr(""),
             this.tr("Name"),
             this.tr("Date Modified"),
             this.tr("Size"),
@@ -196,8 +195,8 @@ qx.Class.define("osparc.file.FolderViewer", {
             this.fireDataEvent("selectionChanged", entry);
           }, this);
           btn.addListener("dbltap", () => {
+            this.fireDataEvent("itemSelected", entry);
             if (osparc.file.FilesTree.isDir(entry)) {
-              this.fireDataEvent("openFolder", entry);
               this.setFolder(entry);
             }
           }, this);
@@ -245,7 +244,9 @@ qx.Class.define("osparc.file.FolderViewer", {
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
         iconsLayout.removeAll();
-        const iconsGroup = new qx.ui.form.RadioGroup();
+        const iconsGroup = new qx.ui.form.RadioGroup().set({
+          allowEmptySelection: true
+        });
         entries.forEach(entry => {
           iconsGroup.add(entry);
           iconsLayout.add(entry);
