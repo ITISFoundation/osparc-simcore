@@ -116,7 +116,7 @@ qx.Class.define("osparc.file.FolderViewer", {
         case "table": {
           const tableModel = new qx.ui.table.model.Simple();
           tableModel.setColumns([
-            this.tr(""),
+            "",
             this.tr("Name"),
             this.tr("Date Modified"),
             this.tr("Size"),
@@ -181,6 +181,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           row.push(entry.getLastModified ? entry.getLastModified() : "");
           row.push(entry.getSize ? entry.getSize() : "");
           row.push(entry.getItemId());
+          row.entry = entry;
           items.push(row);
         });
       } else if (this.getMode() === "icons") {
@@ -233,6 +234,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       if (this.getMode() === "list") {
         const table = this.getChildControl("table");
         table.setData(entries);
+        this.__attachListenersTotable(table);
       } else if (this.getMode() === "icons") {
         const iconsLayout = this.getChildControl("icons-layout");
         iconsLayout.removeAll();
@@ -263,6 +265,19 @@ qx.Class.define("osparc.file.FolderViewer", {
       }, this);
       btn.addListener("dbltap", () => {
         this.__itemDblTapped(entry);
+      }, this);
+    },
+
+    __attachListenersTotable: function(table) {
+      table.addListener("cellTap", e => {
+        const selectedRow = e.getRow();
+        const rowData = table.getTableModel().getRowData(selectedRow);
+        this.__itemTapped(rowData.entry);
+      }, this);
+      table.addListener("cellDbltap", e => {
+        const selectedRow = e.getRow();
+        const rowData = table.getTableModel().getRowData(selectedRow);
+        this.__itemDblTapped(rowData.entry);
       }, this);
     }
   }
