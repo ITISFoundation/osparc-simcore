@@ -94,11 +94,36 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     // overridden
     setAccessLevel: function(data) {
       const entry = this.self().gridPos;
+      const disableables = [
+        this.self().gridPos.label,
+        this.self().gridPos.ctrlField,
+        this.self().gridPos.menu
+      ];
       Object.entries(data).forEach(([portId, visibility]) => {
-        Object.values(entry).forEach(entryVal => {
-          const layoutElement = this._getLayoutChild(portId, entryVal);
-          if (layoutElement) {
-            this.__changeControlVisibility(layoutElement.child, visibility);
+        Object.values(entry).forEach(entryPos => {
+          const layoutElement = this._getLayoutChild(portId, entryPos);
+          if (layoutElement && layoutElement.child) {
+            const control = layoutElement.child;
+            switch (visibility) {
+              case this._visibility.hidden:
+                control.setVisibility("excluded");
+                if (disableables.includes(entryPos)) {
+                  control.setEnabled(false);
+                }
+                break;
+              case this._visibility.readOnly:
+                control.setVisibility("visible");
+                if (disableables.includes(entryPos)) {
+                  control.setEnabled(false);
+                }
+                break;
+              case this._visibility.readWrite:
+                control.setVisibility("visible");
+                if (disableables.includes(entryPos)) {
+                  control.setEnabled(true);
+                }
+                break;
+            }
           }
         });
       });
@@ -572,24 +597,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.__parameterRemoved(portId);
     },
     /* /PARAMETERS */
-
-    __changeControlVisibility: function(control, visibility) {
-      if (control === null) {
-        return;
-      }
-
-      switch (visibility) {
-        case this._visibility.hidden:
-          control.setVisibility("excluded");
-          break;
-        case this._visibility.readOnly:
-          control.setVisibility("visible");
-          break;
-        case this._visibility.readWrite:
-          control.setVisibility("visible");
-          break;
-      }
-    },
 
     __getRetrieveFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().gridPos.retrieveStatus);

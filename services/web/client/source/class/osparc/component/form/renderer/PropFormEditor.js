@@ -178,28 +178,31 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
     __setAccessLevel: function(data) {
       for (const key in data) {
+        const disableables = [
+          this.self().gridPos.label,
+          this.self().gridPos.ctrlField,
+          this.self().gridPos.menu
+        ];
+        const ctrls = [];
+        disableables.forEach(disableable => ctrls.push(this._getLayoutChild(key, disableable)));
         const label = this._getLabelFieldChild(key).child;
-        const control = this._form.getControl(key);
         switch (data[key]) {
           case this._visibility.hidden: {
             const newLabel = this.__addDelTag(label.getValue());
             label.setValue(newLabel);
-            label.setEnabled(false);
-            control.setEnabled(false);
+            ctrls.forEach(ctrl => ctrl.setEnabled(false));
             break;
           }
           case this._visibility.readOnly: {
             const newLabel = this.__removeDelTag(label.getValue());
             label.setValue(newLabel);
-            label.setEnabled(false);
-            control.setEnabled(false);
+            ctrls.forEach(ctrl => ctrl.setEnabled(false));
             break;
           }
           case this._visibility.readWrite: {
             const newLabel = this.__removeDelTag(label.getValue());
             label.setValue(newLabel);
-            label.setEnabled(true);
-            control.setEnabled(true);
+            ctrls.forEach(ctrl => ctrl.setEnabled(true));
             break;
           }
         }
