@@ -16,11 +16,9 @@ from typing import Dict, Optional
 
 import alembic.command
 import click
+import docker
 from alembic import __version__ as __alembic_version__
 from alembic.config import Config as AlembicConfig
-from tenacity import Retrying, after_log, wait_fixed
-
-import docker
 from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import (
     build_url,
@@ -28,8 +26,9 @@ from simcore_postgres_database.utils import (
     hide_url_pass,
     raise_if_not_responsive,
 )
+from tenacity import Retrying, after_log, wait_fixed
 
-alembic_version = tuple([int(v) for v in __alembic_version__.split(".")[0:3]])
+alembic_version = tuple(int(v) for v in __alembic_version__.split(".")[0:3])
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.resolve()
 default_ini = current_dir / "alembic.ini"
@@ -97,9 +96,9 @@ def _get_alembic_config_from_cache(
     force_cfg: Optional[Dict] = None,
 ) -> Optional[AlembicConfig]:
     """
-        Creates alembic config from cfg or cache
+    Creates alembic config from cfg or cache
 
-        Returns None if cannot build url (e.g. if user requires a cache that does not exists)
+    Returns None if cannot build url (e.g. if user requires a cache that does not exists)
     """
 
     # build url
@@ -277,8 +276,7 @@ def upgrade_and_close():
 @main.command()
 @click.option("-m", "message")
 def review(message):
-    """Auto-generates a new revison. Equivalent to `alembic revision --autogenerate -m "first tables"`
-    """
+    """Auto-generates a new revison. Equivalent to `alembic revision --autogenerate -m "first tables"`"""
     click.echo("Auto-generates revision based on changes ")
 
     config = _get_alembic_config_from_cache()
@@ -303,15 +301,15 @@ def review(message):
 def upgrade(revision):
     """Upgrades target database to a given revision
 
-        Say we have revision ae1027a6acf
+    Say we have revision ae1027a6acf
 
-        Absolute migration:
-            sc-pg upgrade ae10
+    Absolute migration:
+        sc-pg upgrade ae10
 
-        Relative to current:
-            sc-pg upgrade +2
-            sc-pg downgrade -- -1
-            sc-pg upgrade ae10+2
+    Relative to current:
+        sc-pg upgrade +2
+        sc-pg downgrade -- -1
+        sc-pg upgrade ae10+2
 
     """
     click.echo(f"Upgrading database to {revision} ...")
@@ -327,15 +325,15 @@ def upgrade(revision):
 def downgrade(revision):
     """Revert target database to a given revision
 
-        Say we have revision ae1027a6acf
+    Say we have revision ae1027a6acf
 
-        Absolute migration:
-            sc-pg upgrade ae10
+    Absolute migration:
+        sc-pg upgrade ae10
 
-        Relative to current:
-            sc-pg upgrade +2
-            sc-pg downgrade -- -1
-            sc-pg upgrade ae10+2
+    Relative to current:
+        sc-pg upgrade +2
+        sc-pg downgrade -- -1
+        sc-pg upgrade ae10+2
     """
     # https://click.palletsprojects.com/en/3.x/arguments/#argument-like-options
     click.echo(f"Downgrading database to current-{revision} ...")
