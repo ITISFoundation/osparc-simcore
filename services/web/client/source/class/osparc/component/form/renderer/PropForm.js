@@ -100,25 +100,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
           const layoutElement = this._getLayoutChild(portId, entryPos);
           if (layoutElement && layoutElement.child) {
             const control = layoutElement.child;
-            switch (visibility) {
-              case this._visibility.hidden:
-                control.setVisibility("excluded");
-                if (disableables.includes(entryPos)) {
-                  control.setEnabled(false);
-                }
-                break;
-              case this._visibility.readOnly:
-                control.setVisibility("visible");
-                if (disableables.includes(entryPos)) {
-                  control.setEnabled(false);
-                }
-                break;
-              case this._visibility.readWrite:
-                control.setVisibility("visible");
-                if (disableables.includes(entryPos)) {
-                  control.setEnabled(true);
-                }
-                break;
+            if (control) {
+              const vis = visibility === this._visibility.hidden ? "excluded" : "visible";
+              const enabled = visibility === this._visibility.readWrite;
+              control.setVisibility(vis);
+              if (disableables.includes(entryPos)) {
+                control.setEnabled(enabled);
+              }
             }
           }
         });
