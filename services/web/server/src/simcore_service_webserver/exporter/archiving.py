@@ -25,13 +25,29 @@ def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
     return Path(str(input_path).replace(to_strip, ""))
 
 
+def _read_in_chunks(file_object, chunk_size=1024 * 8):
+    """Lazy function (generator) to read a file piece by piece.
+    Default chunk size: 8k."""
+    while True:
+        data = file_object.read(chunk_size)
+        if not data:
+            break
+        yield data
+
+
 def _zipfile_single_file_extract_worker(
     zip_file_path: Path, file_in_archive: str, destination_folder: Path
 ) -> None:
-    with open(zip_file_path, "rb") as f:
-        zf = zipfile.ZipFile(f)
-        zf.extract(file_in_archive, destination_folder)
+    """Extracing in chunks to avoid memory pressure on zip/unzip"""
+    with zipfile.ZipFile(zip_file_path) as zf:
+        # assemble destination and ensure it exits
+        destination_path = destination_folder / file_in_archive
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
 
+        with zf.open(name=file_in_archive) as zip_fp:
+            with open(destination_path, "wb") as destination_fp:
+                for chunk in _read_in_chunks(zip_fp):
+                    destination_fp.write(chunk)
 
 
 async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
