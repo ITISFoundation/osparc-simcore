@@ -97,7 +97,6 @@ async def unzip_folder(archive_to_extract: Path, destination_folder: Path) -> Pa
             f"There was an error while extracting '{archive_to_extract}' directory to "
             f"'{destination_folder}'; files_in_destination_directory={files_in_destination}"
         )
-
         log.exception(message)
         raise ExporterException(message) from e
 

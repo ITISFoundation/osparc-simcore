@@ -302,11 +302,11 @@ def test_validate_osparc_file_name_too_many_shasums():
 
 async def test_error_during_decompression(loop):
     with pytest.raises(ExporterException) as exc_info:
-        await unzip_folder(Path("/i/do/not/exist"), Path("/"))
+        await unzip_folder(Path("/i/do/not/exist"), Path("/tmp/do_i_not_exist_properly_two"))
 
     assert exc_info.type is ExporterException
     assert exc_info.value.args[0] == (
-        "There was an error while extracting '/i/do/not/exist' directory to '/'; files_in_destination_directory=[]"
+        "There was an error while extracting '/i/do/not/exist' directory to '/tmp/do_i_not_exist_properly_two'; files_in_destination_directory=[]"
     )
 
 
