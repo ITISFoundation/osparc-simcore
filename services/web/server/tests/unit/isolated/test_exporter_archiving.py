@@ -302,7 +302,7 @@ def test_validate_osparc_file_name_too_many_shasums():
 
 async def test_error_during_decompression(loop):
     with pytest.raises(ExporterException) as exc_info:
-        await unzip_folder(Path("/i/do/not/exist"), "/")
+        await unzip_folder(Path("/i/do/not/exist"), Path("/"))
 
     assert exc_info.type is ExporterException
     assert exc_info.value.args[0] == (

@@ -92,7 +92,7 @@ async def unzip_folder(archive_to_extract: Path, destination_folder: Path) -> Pa
             archive_to_extract=archive_to_extract, destination_folder=destination_folder
         )
     except Exception as e:
-        files_in_destination = [str(x) for x in Path(destination_folder).rglob("*")]
+        files_in_destination = [str(x) for x in destination_folder.rglob("*")]
         message = (
             f"There was an error while extracting '{archive_to_extract}' directory to "
             f"'{destination_folder}'; files_in_destination_directory={files_in_destination}"
