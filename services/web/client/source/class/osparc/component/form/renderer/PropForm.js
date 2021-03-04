@@ -94,11 +94,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     // overridden
     setAccessLevel: function(data) {
       const entry = this.self().gridPos;
-      const disableables = [
-        this.self().gridPos.label,
-        this.self().gridPos.ctrlField,
-        this.self().gridPos.menu
-      ];
+      const disableables = osparc.component.form.renderer.PropFormBase.getDisableables();
       Object.entries(data).forEach(([portId, visibility]) => {
         Object.values(entry).forEach(entryPos => {
           const layoutElement = this._getLayoutChild(portId, entryPos);

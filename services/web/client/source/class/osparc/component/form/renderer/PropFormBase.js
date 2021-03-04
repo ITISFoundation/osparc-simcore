@@ -61,6 +61,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       ctrlField: 2,
       unit: 3,
       menu: 4
+    },
+
+    getDisableables: function() {
+      return [
+        this.gridPos.label,
+        this.gridPos.ctrlField,
+        this.gridPos.menu
+      ];
     }
   },
 
