@@ -281,7 +281,9 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         });
         osparc.data.model.Sweeper.isSweeperEnabled()
           .then(isSweeperEnabled => {
-            menuBtn.setVisibility(isSweeperEnabled ? "visible" : "excluded");
+            field.bind("visibility", menuBtn, "visibility", {
+              converter: visibility => (visibility === "visible" && isSweeperEnabled) ? "visible" : "excluded"
+            });
           });
         return menuBtn;
       }
