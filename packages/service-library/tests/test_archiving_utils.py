@@ -235,6 +235,3 @@ async def test_unarchive_in_same_dir_as_archive(
         temp_dir_one,
         None if store_relative_path else dir_with_random_content,
     )
-
-
-# '/tmp/iaz51zwa/uploaded.zip' to '/tmp/iaz51zwa'
