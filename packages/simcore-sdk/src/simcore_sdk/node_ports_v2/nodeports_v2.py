@@ -25,7 +25,8 @@ class Nodeports(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    def __post__init__post__parse__(self):
+    def __init__(self, **data: Any):
+        super().__init__(**data)
         # pylint: disable=protected-access
 
         # let's pass ourselves down
