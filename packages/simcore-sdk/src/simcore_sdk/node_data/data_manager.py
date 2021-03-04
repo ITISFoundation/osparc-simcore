@@ -38,7 +38,7 @@ async def push(file_or_folder: Path, rename_to: Optional[str] = None):
         await archive_dir(
             dir_to_compress=file_or_folder,
             destination=archive_file_path,
-            compress=True,
+            compress=False,  # disabling compression for faster speeds
             store_relative_path=True,
         )
         return await _push_file(archive_file_path, None)
