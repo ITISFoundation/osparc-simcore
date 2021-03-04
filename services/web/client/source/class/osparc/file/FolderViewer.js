@@ -185,22 +185,14 @@ qx.Class.define("osparc.file.FolderViewer", {
         });
       } else if (this.getMode() === "icons") {
         content.forEach(entry => {
-          const btn = this.self().getItemButton().set({
+          const item = this.self().getItemButton().set({
             label: entry.getLabel(),
             icon: this.__getIcon(entry),
             toolTipText: entry.getLabel()
           });
-          btn.itemId = entry.getItemId();
-          btn.addListener("tap", () => {
-            this.fireDataEvent("selectionChanged", entry);
-          }, this);
-          btn.addListener("dbltap", () => {
-            this.fireDataEvent("itemSelected", entry);
-            if (osparc.file.FilesTree.isDir(entry)) {
-              this.setFolder(entry);
-            }
-          }, this);
-          items.push(btn);
+          item.itemId = entry.getItemId();
+          this.__attachListenersToItems(item, entry);
+          items.push(item);
         });
       }
       return items;
@@ -252,6 +244,26 @@ qx.Class.define("osparc.file.FolderViewer", {
           iconsLayout.add(entry);
         });
       }
+    },
+
+    __itemTapped: function(item) {
+      this.fireDataEvent("selectionChanged", item);
+    },
+
+    __itemDblTapped: function(item) {
+      this.fireDataEvent("itemSelected", item);
+      if (osparc.file.FilesTree.isDir(item)) {
+        this.setFolder(item);
+      }
+    },
+
+    __attachListenersToItems: function(btn, entry) {
+      btn.addListener("tap", () => {
+        this.__itemTapped(entry);
+      }, this);
+      btn.addListener("dbltap", () => {
+        this.__itemDblTapped(entry);
+      }, this);
     }
   }
 });
