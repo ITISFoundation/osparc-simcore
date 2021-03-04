@@ -50,11 +50,34 @@ def _zipfile_single_file_extract_worker(
                     destination_fp.write(chunk)
 
 
+def ensure_destination_subdirectories_exist(
+    zip_file_handler: zipfile.ZipFile, destination_folder: Path
+) -> None:
+    # assemble full destination paths
+    full_destination_paths = {
+        destination_folder / entry.filename for entry in zip_file_handler.infolist()
+    }
+    # extract all possible subdirectories
+    subdirectories = {x.parent for x in full_destination_paths}
+    # create all subdirectories before extracting
+    for subdirectory in subdirectories:
+        Path(subdirectory).mkdir(parents=True, exist_ok=True)
+
+
 async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
     try:
         with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
             with ProcessPoolExecutor() as pool:
                 loop = asyncio.get_event_loop()
+
+                # running in process poll is not ideal for concurrency issues
+                # to avoid race conditions all subdirectories where files will be extracted need to exist
+                # creating them before the extraction is under way avoids the issue
+                # the following avoids race conditions while unzippin in parallel
+                ensure_destination_subdirectories_exist(
+                    zip_file_handler=zip_file_handler,
+                    destination_folder=destination_folder,
+                )
 
                 tasks = [
                     loop.run_in_executor(
