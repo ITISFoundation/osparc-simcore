@@ -174,19 +174,23 @@ async def assert_same_directory_content(
 # end utils
 
 
-@pytest.mark.parametrize("compress", [True, False])
+@pytest.mark.parametrize(
+    "compress,store_relative_path",
+    [[True, True], [True, False], [False, True], [False, False]],
+)
 async def test_archive_unarchive_same_structure_dir(
     dir_with_random_content: Path,
     temp_dir_one: Path,
     temp_dir_two: Path,
     compress: bool,
+    store_relative_path: bool,
 ):
     archive_file = temp_dir_one / "archive.zip"
 
     archive_result = await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
-        store_relative_path=True,
+        store_relative_path=store_relative_path,
         compress=compress,
     )
     assert archive_result is True
@@ -195,30 +199,42 @@ async def test_archive_unarchive_same_structure_dir(
         archive_to_extract=archive_file, destination_folder=temp_dir_two
     )
 
-    await assert_same_directory_content(dir_with_random_content, temp_dir_two)
+    await assert_same_directory_content(
+        dir_with_random_content,
+        temp_dir_two,
+        None if store_relative_path else dir_with_random_content,
+    )
 
 
-@pytest.mark.parametrize("compress", [True, False])
-async def test_archive_unarchive_include_relative_paths(
+@pytest.mark.parametrize(
+    "compress,store_relative_path",
+    [[True, True], [True, False], [False, True], [False, False]],
+)
+async def test_unarchive_in_same_dir_as_archive(
     dir_with_random_content: Path,
     temp_dir_one: Path,
-    temp_dir_two: Path,
     compress: bool,
+    store_relative_path: bool,
 ):
     archive_file = temp_dir_one / "archive.zip"
 
     archive_result = await archive_dir(
         dir_to_compress=dir_with_random_content,
         destination=archive_file,
-        store_relative_path=False,
-        compress=False,
+        store_relative_path=store_relative_path,
+        compress=compress,
     )
     assert archive_result is True
 
     await unarchive_dir(
-        archive_to_extract=archive_file, destination_folder=temp_dir_two
+        archive_to_extract=archive_file, destination_folder=temp_dir_one
+    )
+    archive_file.unlink()
+    await assert_same_directory_content(
+        dir_with_random_content,
+        temp_dir_one,
+        None if store_relative_path else dir_with_random_content,
     )
 
-    await assert_same_directory_content(
-        dir_with_random_content, temp_dir_two, dir_with_random_content
-    )
+
+# '/tmp/iaz51zwa/uploaded.zip' to '/tmp/iaz51zwa'

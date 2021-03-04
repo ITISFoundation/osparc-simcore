@@ -306,7 +306,7 @@ async def test_error_during_decompression(loop):
 
     assert exc_info.type is ExporterException
     assert exc_info.value.args[0] == (
-        "There was an error while extracting directory '/i/do/not/exist' to '/'"
+        "There was an error while extracting '/i/do/not/exist' directory to '/'; files_in_destination_directory=[]"
     )
 
 
@@ -346,9 +346,7 @@ async def test_unzip_found_too_many_project_targets(
         await unzip_folder(archive_path, archive_path.parent)
 
     assert exc_info.type is ExporterException
-    assert exc_info.value.args[0].startswith(
-        "There was an error while extracting directory"
-    )
+    assert exc_info.value.args[0].startswith("There was an error while extracting ")
 
 
 async def test_same_dir_structure_after_compress_decompress(
