@@ -31,12 +31,16 @@ def _read_in_chunks(file_object, chunk_size=1024 * 8):
 
 
 def _zipfile_single_file_extract_worker(
-    zip_file_path: Path, file_in_archive: str, destination_folder: Path
+    zip_file_path: Path, file_in_archive: str, destination_folder: Path, is_dir: bool
 ) -> None:
     """Extracing in chunks to avoid memory pressure on zip/unzip"""
     with zipfile.ZipFile(zip_file_path) as zf:
         # assemble destination and ensure it exits
         destination_path = destination_folder / file_in_archive
+
+        if is_dir:
+            destination_path.mkdir(parents=True, exist_ok=True)
+            return
 
         with zf.open(name=file_in_archive) as zip_fp:
             with open(destination_path, "wb") as destination_fp:
@@ -79,9 +83,9 @@ async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> N
                     archive_to_extract,
                     zip_entry.filename,
                     destination_folder,
+                    zip_entry.is_dir(),
                 )
                 for zip_entry in zip_file_handler.infolist()
-                if zip_entry.is_file()
             ]
 
             await asyncio.gather(*tasks)
