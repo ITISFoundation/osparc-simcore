@@ -334,7 +334,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     _addButtons: function() {
       this.__buttonContainer.removeAll();
-      if (this.getNode().isDynamic() && this.getNode().isRealService()) {
+      if (this.getNode().isDynamic()) {
         const retrieveBtn = new qx.ui.form.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
         retrieveBtn.addListener("execute", e => {
