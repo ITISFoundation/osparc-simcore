@@ -147,14 +147,14 @@ async def test_valid_metadata(
     assert store_id == s3_simcore_location
     assert e_tag
 
-    is_metadata_present = await filemanager.is_metadata_for_entry(
+    is_metadata_present = await filemanager.entry_exists(
         store_id=store_id, s3_object=file_id
     )
 
     assert is_metadata_present is True
 
 
-async def test_invaldvalid_metadata(
+async def test_invalid_metadata(
     tmpdir: Path,
     bucket: str,
     filemanager_cfg: None,
@@ -166,7 +166,7 @@ async def test_invaldvalid_metadata(
     file_id = file_uuid(file_path)
     assert file_path.exists() is False
 
-    is_metadata_present = await filemanager.is_metadata_for_entry(
+    is_metadata_present = await filemanager.entry_exists(
         store_id=s3_simcore_location, s3_object=file_id
     )
 

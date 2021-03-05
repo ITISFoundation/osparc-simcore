@@ -299,7 +299,7 @@ async def upload_file(
     raise exceptions.S3InvalidPathError(s3_object)
 
 
-async def is_metadata_for_entry(store_id: str, s3_object: str) -> bool:
+async def entry_exists(store_id: str, s3_object: str) -> bool:
     """Returns True if metadata for s3_object is present"""
     user_id = config.USER_ID
     with api_client() as client:
