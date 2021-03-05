@@ -126,3 +126,47 @@ async def test_invalid_store(
         await filemanager.download_file_from_s3(
             store_name=store, s3_object=file_id, local_folder=download_folder
         )
+
+
+async def test_valid_metadata(
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
+):
+    file_path = Path(tmpdir) / "test.test"
+    file_path.write_text("I am a test file")
+    assert file_path.exists()
+
+    file_id = file_uuid(file_path)
+    store_id, e_tag = await filemanager.upload_file(
+        store_id=s3_simcore_location, s3_object=file_id, local_file_path=file_path
+    )
+    assert store_id == s3_simcore_location
+    assert e_tag
+
+    is_metadata_present = await filemanager.is_metadata_for_entry(
+        store_id=store_id, s3_object=file_id
+    )
+
+    assert is_metadata_present is True
+
+
+async def test_invaldvalid_metadata(
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: str,
+    file_uuid: str,
+    s3_simcore_location: str,
+):
+    file_path = Path(tmpdir) / "test.test"
+    file_id = file_uuid(file_path)
+
+    is_metadata_present = await filemanager.is_metadata_for_entry(
+        store_id=s3_simcore_location, s3_object=file_id
+    )
+
+    assert is_metadata_present is False
