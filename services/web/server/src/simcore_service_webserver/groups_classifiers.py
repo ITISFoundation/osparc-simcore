@@ -31,10 +31,10 @@ MAX_SIZE_SHORT_MSG = 100
 
 class ClassifierItem(BaseModel):
     classifier: str = Field(
-        ..., description="Unique identifier used to tag studies or services", example=""
+        ..., description="Unique identifier used to tag studies or services"
     )
     display_name: str
-    short_description: Optional[str]  # TODO: truncate
+    short_description: Optional[str]
     url: Optional[HttpUrl] = Field(
         None,
         description="Link to more information",
@@ -44,7 +44,7 @@ class ClassifierItem(BaseModel):
     @validator("short_description", pre=True)
     @classmethod
     def truncate_to_short(cls, v):
-        if len(v) >= MAX_SIZE_SHORT_MSG:
+        if v and len(v) >= MAX_SIZE_SHORT_MSG:
             return v[:MAX_SIZE_SHORT_MSG] + "…"
         return v
 
@@ -70,21 +70,21 @@ class GroupClassifierRepository:
     def __init__(self, app: web.Application):
         self.engine = app[APP_DB_ENGINE_KEY]
 
-    async def get_bundle(self, gid: int) -> Dict[str, Any]:
+    async def _get_bundle(self, gid: int) -> Optional[RowProxy]:
         async with self.engine.acquire() as conn:
-            bundle = await conn.scalar(
+            bundle: Optional[RowProxy] = await conn.scalar(
                 sa.select([group_classifiers.c.bundle]).where(
                     group_classifiers.c.gid == gid
                 )
             )
-            return bundle or {}
+            return bundle
 
     async def get_classifiers_from_bundle(self, gid: int) -> Dict[str, Any]:
-        bundle = await self.get_bundle(gid)
+        bundle = await self._get_bundle(gid)
         if bundle:
             try:
                 # truncate bundle to what is needed and drop the rest
-                bundle = Classifiers(**bundle).dict(exclude_unset=True)
+                return Classifiers(**bundle).dict(exclude_unset=True, exclude_none=True)
             except ValidationError as err:
                 logger.error(
                     "DB corrupt data in 'groups_classifiers' table. "
@@ -93,7 +93,7 @@ class GroupClassifierRepository:
                     gid,
                     err,
                 )
-        return bundle
+        return {}
 
     async def group_uses_scicrunch(self, gid: int) -> bool:
         async with self.engine.acquire() as conn:
