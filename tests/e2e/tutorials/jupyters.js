@@ -43,29 +43,33 @@ async function runTutorial() {
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
     await utils.waitAndClick(nbIframe, notebookCBSelector)
-    await tutorial.waitFor(2000);
     const notebookViewSelector = "#notebook_toolbar > div.col-sm-8.no-padding > div.dynamic-buttons > button.view-button.btn.btn-default.btn-xs"
     await utils.waitAndClick(nbIframe, notebookViewSelector)
-    await tutorial.waitFor(2000);
-    await tutorial.takeScreenshot("openNotebook");
+
 
     // inside the first notebook, click Run all button
     const runAllButtonSelector = '#run_int > button:nth-child(4)';
-    await utils.waitAndClick(nbIframe, runAllButtonSelector)
+    await utils.waitAndClick(nbIframe, runAllButtonSelector);
+    await tutorial.takeScreenshot("pressRunAllButtonNotebook");
 
-    // inside the first notebook, click confirm run all
-    const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
-    await tutorial.takeScreenshot("pressRunNotebook");
-    await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector)
-    await tutorial.takeScreenshot("pressRunNotebookAfterConfirm");
+    // inside the first notebook, click confirm run all (NOTE: this dialog does not appear it seems)
+    // const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
+    // await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector);
+    // await tutorial.takeScreenshot("pressRunNotebookAfterConfirmation");
+
     // now check that the input contains [4]
     console.log('Waiting for notebook results...');
     const finishedRunningCheckboxSelector = '#notebook-container > div:nth-child(5) > div.input > div.prompt_container > div.prompt.input_prompt';
+    // the page scrolls down, so first wait so that it becomes visible
+    await nbIframe.waitForSelector(finishedRunningCheckboxSelector);
     await nbIframe.waitForFunction('document.querySelector("' + finishedRunningCheckboxSelector + '").innerText.match(/\[[0-9]+\]/)');
+    await tutorial.takeScreenshot("notebookWaitingForNotebookCompleted");
+    console.log('...waiting completed');
     const element = await nbIframe.$(finishedRunningCheckboxSelector);
     const value = await nbIframe.evaluate(el => el.textContent, element);
-    await tutorial.takeScreenshot("notebookAfterRun");
-    console.log('Checking results for the notebook cell:', value);
+    console.log('Results for the notebook cell is:', value);
+    // NOTE: we need to wait here to get the results.
+    await tutorial.waitFor(10000);
 
     await tutorial.openNodeFiles(1);
     const outFiles = [
@@ -92,12 +96,9 @@ async function runTutorial() {
     await jLabIframe.click(input2outputFileSelector, {
       clickCount: 2
     });
-    await tutorial.waitFor(2000);
-
     // click Run Menu
     const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
     await utils.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
-    await tutorial.waitFor(1000);
 
     // click Run All Cells
     const mainRunAllBtnSelector = '  body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
@@ -110,7 +111,8 @@ async function runTutorial() {
     const jLabVvalue = await jLabIframe.evaluate(el => el.textContent, jLabElement);
     console.log('Checking results for the jupyter lab cell:', jLabVvalue);
     await tutorial.takeScreenshot("pressRunJLab");
-    await tutorial.waitFor(5000);
+    // wait sufficiently before getting the results
+    await tutorial.waitFor(10000);
     console.log('Checking results for the jupyter lab:');
     await tutorial.openNodeFiles(2);
     const outFiles2 = [
