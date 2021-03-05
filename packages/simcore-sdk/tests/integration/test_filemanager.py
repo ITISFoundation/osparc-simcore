@@ -164,6 +164,7 @@ async def test_invaldvalid_metadata(
 ):
     file_path = Path(tmpdir) / "test.test"
     file_id = file_uuid(file_path)
+    assert file_path.exists()
 
     is_metadata_present = await filemanager.is_metadata_for_entry(
         store_id=s3_simcore_location, s3_object=file_id
