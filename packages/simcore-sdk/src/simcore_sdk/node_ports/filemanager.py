@@ -306,13 +306,7 @@ async def is_metadata_for_entry(store_id: str, s3_object: str) -> bool:
         api = UsersApi(client)
         try:
             result = await api.get_file_metadata(s3_object, store_id, user_id)
-            log.debug("Metada request result %s, for s3_object %s", result, s3_object)
-            log.debug(
-                "%s %s %s %s", result.data, result, type(result), type(result.data)
-            )
-            is_metadata_present = (
-                result.get("data", {}).get("object_name", "") == s3_object
-            )
+            is_metadata_present = result.data.object_name == s3_object
             return is_metadata_present
         except Exception:  # pylint: disable=broad-except
             log.warning(
@@ -320,5 +314,4 @@ async def is_metadata_for_entry(store_id: str, s3_object: str) -> bool:
                 store_id,
                 s3_object,
             )
-            log.exception("read logs")
             return False
