@@ -306,9 +306,9 @@ async def is_metadata_for_entry(store_id: str, s3_object: str) -> bool:
         api = UsersApi(client)
         try:
             result = await api.get_file_metadata(s3_object, store_id, user_id)
-            log.debug("Metada request result %s, for s3_object %s", result, s3_object)
+            log.debug("Metada request result %s, for s3_object %s", dict(result), s3_object)
             is_metadata_present = (
-                result.get("data", {}).get("file_uuid", "") == s3_object
+                dict(result).get("data", {}).get("object_name", "") == s3_object
             )
             return is_metadata_present
         except Exception:  # pylint: disable=broad-except
@@ -318,3 +318,22 @@ async def is_metadata_for_entry(store_id: str, s3_object: str) -> bool:
                 s3_object,
             )
             return False
+
+
+{
+    "data": {
+        "bucket_name": "simcore",
+        "file_name": "test.test",
+        "file_uuid": "ca0c565f-d0bb-43ac-af2c-53a414878f78/84cded93-0c46-4992-8bf7-7b7988f34a36/test.test",
+        "location": "simcore.s3",
+        "location_id": "0",
+        "node_id": "84cded93-0c46-4992-8bf7-7b7988f34a36",
+        "node_name": None,
+        "object_name": "ca0c565f-d0bb-43ac-af2c-53a414878f78/84cded93-0c46-4992-8bf7-7b7988f34a36/test.test",
+        "project_id": "ca0c565f-d0bb-43ac-af2c-53a414878f78",
+        "project_name": None,
+        "user_id": "1258",
+        "user_name": None,
+    },
+    "error": None,
+}
