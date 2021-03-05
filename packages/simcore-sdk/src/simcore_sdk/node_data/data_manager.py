@@ -75,7 +75,8 @@ async def is_file_present_in_storage(file_path: Path) -> bool:
     """
     :retruns True if an entry is present inside the files_metadata else False
     """
-    return await filemanager.is_metadata_for_entry(
+    return await filemanager.entry_exists(
+
         store_id=0,  # this is for simcore.s3
         s3_object=_create_s3_object(file_path),
     )
