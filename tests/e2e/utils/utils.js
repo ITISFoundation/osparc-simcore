@@ -211,6 +211,45 @@ async function isServiceReady(page, studyId, nodeId) {
   return stopListening.includes(status);
 }
 
+async function getServiceUrl(page, studyId, nodeId) {
+  const endPoint = "/projects/" + studyId + "/nodes/" + nodeId;
+  console.log("-- get service url", endPoint);
+  const resp = await makeRequest(page, endPoint);
+
+  const service_basepath = resp["service_basepath"];
+  const service_entrypoint = resp["entry_point"];
+  const service_url = service_basepath + (service_entrypoint ? ("/" + service_entrypoint) : "/");
+  console.log("Service URL:", nodeId, service_url);
+
+  return service_url;
+}
+
+async function makePingRequest(page, path) {
+  // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
+  await page.setBypassCSP(true);
+  return await page.evaluate(async (path) => {
+    const url = (path).replace(/\/\//g, "\/");
+    console.log("makePingRequest", url);
+    return fetch(url, {
+      accept: '*/*',
+      cache: 'no-cache'
+    })
+      .then(response => {
+        console.log("ping response status:", response.status);
+        return response.ok;
+      })
+      .catch(error => console.error(error));
+  }, path);
+}
+
+async function isServiceConnected(page, studyId, nodeId) {
+  console.log("-- Is Service Connected", nodeId);
+  const serviceUrl = await getServiceUrl(page, studyId, nodeId);
+  const connected = await makePingRequest(page, serviceUrl);
+  console.log(connected, "--")
+  return connected;
+}
+
 async function isStudyDone(page, studyId) {
   const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Is study done", endPoint);
@@ -360,7 +399,7 @@ async function typeInInputElement(page, inputSelector, text) {
   });
 }
 
-function isElementVisible (page, selector) {
+function isElementVisible(page, selector) {
   return page.evaluate(selector => {
     const element = document.querySelector(selector)
     return !!(element && (element.offsetWidth || element.offsetHeight || element.getClientRects().length))
@@ -386,6 +425,7 @@ module.exports = {
   dragAndDrop,
   waitForResponse,
   isServiceReady,
+  isServiceConnected,
   isStudyDone,
   isStudyUnlocked,
   waitForValidOutputFile,

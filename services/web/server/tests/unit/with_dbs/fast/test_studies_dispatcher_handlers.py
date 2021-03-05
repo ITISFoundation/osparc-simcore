@@ -7,9 +7,10 @@ import re
 import urllib.parse
 from copy import deepcopy
 from pprint import pprint
-from typing import Tuple
+from typing import Iterator, Tuple
 
 import pytest
+import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked
@@ -18,11 +19,96 @@ from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
+from simcore_service_webserver.studies_dispatcher._core import ViewerInfo
+from sqlalchemy.sql import text
 from yarl import URL
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_service):
+def inject_tables(postgres_db: sa.engine.Engine):
+
+    stmt_create_services = text(
+        'INSERT INTO "services_meta_data" ("key", "version", "owner", "name", "description", "thumbnail", "classifiers", "created", "modified", "quality") VALUES'
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	NULL,	'2D plot',	'2D plots powered by RAW Graphs',	NULL,	'{}',	'2021-03-02 16:08:28.655207',	'2021-03-02 16:08:28.655207',	'{}'),"
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	NULL,	'bio-formats',	'Bio-Formats image viewer',	'https://www.openmicroscopy.org/img/logos/bio-formats.svg',	'{}',	'2021-03-02 16:08:28.420722',	'2021-03-02 16:08:28.420722',	'{}');"
+    )
+    stmt_create_services_consume_filetypes = text(
+        'INSERT INTO "services_consume_filetypes" ("service_key", "service_version", "service_display_name", "service_input_port", "filetype", "preference_order") VALUES'
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'PNG',	0),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'CSV',	0),"
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'JPEG',	0),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'TSV',	0),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'XLSX',	0),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'JSON',	0);"
+    )
+    with postgres_db.connect() as conn:
+        conn.execute(stmt_create_services)
+        conn.execute(stmt_create_services_consume_filetypes)
+
+
+FAKE_VIEWS_LIST = [
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="CSV",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/bio-formats-web",
+        version="1.0.1",
+        filetype="JPEG",
+        label="bio-formats",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="JSON",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/bio-formats-web",
+        version="1.0.1",
+        filetype="PNG",
+        label="bio-formats",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="TSV",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/raw-graphs",
+        version="2.11.1",
+        filetype="XLSX",
+        label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+]
+
+
+@pytest.fixture()
+def patch_list_viewers_info_in_handlers_rest(mocker):
+    mocker.patch(
+        "simcore_service_webserver.studies_dispatcher.handlers_rest.list_viewers_info",
+        return_value=future_with_result(FAKE_VIEWS_LIST),
+    )
+
+
+@pytest.fixture
+def app_cfg(
+    default_app_cfg,
+    aiohttp_unused_port,
+    qx_client_outdir,
+    redis_service,
+    # patch_list_viewers_info_in_handlers_rest,
+    inject_tables,
+):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -78,7 +164,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
 @pytest.fixture(autouse=True)
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
-) -> aioresponses:
+) -> Iterator[aioresponses]:
     yield director_v2_service_mock
 
 
@@ -93,67 +179,65 @@ def _get_base_url(client) -> str:
 
 
 async def test_api_get_viewer_for_file(client):
-    resp = await client.get("/v0/viewers?file_type=DICOM&file_name=foo&file_size=10000")
-    data, error = await assert_status(resp, web.HTTPOk)
+
+    resp = await client.get("/v0/viewers/default?file_type=JPEG")
+    data, _ = await assert_status(resp, web.HTTPOk)
 
     base_url = _get_base_url(client)
-    assert await resp.json() == {
-        "data": {
-            "file_type": "DICOM",
-            "viewer_title": "Sim4life v1.0.29",
-            "redirection_url": f"{base_url}/view?file_type=DICOM&file_name=foo&file_size=10000",
+    assert data == [
+        {
+            "file_type": "JPEG",
+            "title": "Bio-formats v1.0.1",
+            "view_url": f"{base_url}/view?file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
         },
-        "error": None,
-    }
+    ]
 
 
 async def test_api_get_viewer_for_unsupported_type(client):
-    resp = await client.get("/v0/viewers?file_type=UNSUPPORTED_TYPE")
-    data, error = await assert_status(resp, web.HTTPUnprocessableEntity)
-
-    assert await resp.json() == {
-        "data": None,
-        "error": {
-            "logs": [
-                {
-                    "message": "No viewer available for file type 'UNSUPPORTED_TYPE''",
-                    "level": "ERROR",
-                    "logger": "user",
-                }
-            ],
-            "errors": [
-                {
-                    "code": "HTTPUnprocessableEntity",
-                    "message": "No viewer available for file type 'UNSUPPORTED_TYPE''",
-                    "resource": None,
-                    "field": None,
-                }
-            ],
-            "status": 422,
-        },
-    }
+    resp = await client.get("/v0/viewers/default?file_type=UNSUPPORTED_TYPE")
+    data, error = await assert_status(resp, web.HTTPOk)
+    assert data == []
+    assert error is None
 
 
 async def test_api_list_supported_filetypes(client):
-    resp = await client.get("/v0/viewers/filetypes")
-    data, error = await assert_status(resp, web.HTTPOk)
+
+    resp = await client.get("/v0/viewers/default")
+    data, _ = await assert_status(resp, web.HTTPOk)
 
     base_url = _get_base_url(client)
-    assert await resp.json() == {
-        "data": [
-            {
-                "file_type": "DICOM",
-                "viewer_title": "Sim4life v1.0.29",
-                "redirection_url": f"{base_url}/view?file_type=DICOM",
-            },
-            {
-                "file_type": "CSV",
-                "viewer_title": "2d plot - rawgraphs v2.11.1",
-                "redirection_url": f"{base_url}/view?file_type=CSV",
-            },
-        ],
-        "error": None,
-    }
+    assert data == [
+        {
+            "title": "Rawgraphs v2.11.1",
+            "file_type": "CSV",
+            "view_url": f"{base_url}/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+        },
+        {
+            "title": "Bio-formats v1.0.1",
+            "file_type": "JPEG",
+            "view_url": f"{base_url}/view?file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+        },
+        {
+            "title": "Rawgraphs v2.11.1",
+            "file_type": "JSON",
+            "view_url": f"{base_url}/view?file_type=JSON&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+        },
+        {
+            "title": "Bio-formats v1.0.1",
+            "file_type": "PNG",
+            "view_url": f"{base_url}/view?file_type=PNG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+        },
+        {
+            "title": "Rawgraphs v2.11.1",
+            "file_type": "TSV",
+            "view_url": f"{base_url}/view?file_type=TSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+        },
+        {
+            "title": "Rawgraphs v2.11.1",
+            "file_type": "XLSX",
+            "view_url": f"{base_url}/view?file_type=XLSX&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
+        },
+    ]
 
 
 # REDIRECT ROUTES --------------------------------------------------------------------------------
@@ -161,11 +245,10 @@ async def test_api_list_supported_filetypes(client):
 
 @pytest.fixture
 async def catalog_subsystem_mock(monkeypatch):
-    from simcore_service_webserver.studies_dispatcher._core import _FILETYPE_TO_VIEWER
 
     services_in_project = [
         {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
-    ] + [{"key": s.key, "version": s.version} for _, s in _FILETYPE_TO_VIEWER.items()]
+    ] + [{"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST]
 
     async def mocked_get_services_for_user(*args, **kwargs):
         return services_in_project
@@ -255,8 +338,10 @@ async def test_dispatch_viewer_anonymously(
         .url_for()
         .with_query(
             file_name="users.csv",
-            file_size=3 * 1024,
+            file_size=187,
             file_type="CSV",
+            viewer_key="simcore/services/dynamic/raw-graphs",
+            viewer_version="2.11.1",
             download_link=urllib.parse.quote(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
@@ -313,6 +398,8 @@ async def test_viewer_redirect_with_file_type_errors(client):
             file_name="users.csv",
             file_size=3 * 1024,
             file_type="INVALID_TYPE",  # <<<<<---------
+            viewer_key="simcore/services/dynamic/raw-graphs",
+            viewer_version="2.11.1",
             download_link=urllib.parse.quote(
                 "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/8987c95d0ca0090e14f3a5b52db724fa24114cf5/services/storage/tests/data/users.csv"
             ),
@@ -336,6 +423,8 @@ async def test_viewer_redirect_with_client_errors(client):
             file_name="users.csv",
             file_size=-1,  # <<<<<---------
             file_type="CSV",
+            viewer_key="simcore/services/dynamic/raw-graphs",
+            viewer_version="2.11.1",
             download_link=urllib.parse.quote("httnot a link"),  # <<<<<---------
         )
     )

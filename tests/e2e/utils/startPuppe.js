@@ -82,6 +82,8 @@ function listenToEvents(page) {
 async function getPage(browser) {
   const page = await browser.newPage();
   page.setCacheEnabled(false);
+  // NOTE: activate to see what happens in puppeteer evaluate function
+  // page.on('console', consoleObj => console.log(consoleObj.text()));
   await page.setViewport({
     width: 1920,
     height: 1080

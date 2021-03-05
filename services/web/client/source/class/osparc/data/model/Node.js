@@ -643,17 +643,20 @@ qx.Class.define("osparc.data.model.Node", {
 
     setOutputData: function(outputs) {
       if (outputs) {
+        let hasOutputs = false;
         for (const outputKey in this.getOutputs()) {
           if (!Object.prototype.hasOwnProperty.call(this.getOutputs(), outputKey)) {
             this.getOutputs()[outputKey] = {};
           }
           if (Object.prototype.hasOwnProperty.call(outputs, outputKey)) {
             this.getOutputs()[outputKey]["value"] = outputs[outputKey];
+            hasOutputs = true;
           } else {
             this.getOutputs()[outputKey]["value"] = "";
           }
         }
-        this.getStatus().setHasOutputs(true);
+        this.getStatus().setHasOutputs(hasOutputs);
+
         if (this.isFilePicker() || this.isDynamic()) {
           this.getStatus().setModified(false);
         }

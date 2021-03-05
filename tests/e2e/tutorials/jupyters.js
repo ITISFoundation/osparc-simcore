@@ -17,11 +17,12 @@ const templateName = "Jupyters";
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
 
+  let studyId = null;
   try {
     tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
-    const studyId = studyData["data"]["uuid"];
+    studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
@@ -31,8 +32,12 @@ async function runTutorial() {
     await tutorial.openNode(1);
 
     const iframeHandles = await tutorial.getIframe();
-    // expected two iframes = loading + jupyterNB
-    const nbIframe = await iframeHandles[1].contentFrame();
+    const iframes = [];
+    for (let i=0; i<iframeHandles.length; i++) {
+      const frame = await iframeHandles[i].contentFrame();
+      iframes.push(frame);
+    }
+    const nbIframe = iframes.find(iframe => iframe._url.endsWith("tree?"));
 
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
@@ -48,11 +53,11 @@ async function runTutorial() {
     // inside the first notebook, click Run button 5 times
     const runNBBtnSelector = '#run_int > button:nth-child(1)';
     const runNotebookTimes = 5;
-    for (let i=0; i<runNotebookTimes; i++) {
+    for (let i = 0; i < runNotebookTimes; i++) {
       await nbIframe.waitForSelector(runNBBtnSelector);
       await nbIframe.click(runNBBtnSelector);
       await tutorial.waitFor(3000);
-      await tutorial.takeScreenshot("pressRunNB_" + (i+1));
+      await tutorial.takeScreenshot("pressRunNB_" + (i + 1));
     }
 
     // TODO: Better check that the kernel is finished
@@ -71,8 +76,12 @@ async function runTutorial() {
     await tutorial.openNode(2);
 
     const iframeHandles2 = await tutorial.getIframe();
-    // expected three iframes = loading + jupyterNB + jupyterLab
-    const jLabIframe = await iframeHandles2[2].contentFrame();
+    const iframes2 = [];
+    for (let i=0; i<iframeHandles2.length; i++) {
+      const frame = await iframeHandles2[i].contentFrame();
+      iframes2.push(frame);
+    }
+    const jLabIframe = iframes2.find(iframe => iframe._url.endsWith("lab?"));
 
     // inside the iFrame, open the first notebook
     const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(3)';
@@ -102,16 +111,18 @@ async function runTutorial() {
       "TheNumber.txt"
     ];
     await tutorial.checkResults(outFiles2.length);
-
-    await tutorial.toDashboard();
-
-    await tutorial.removeStudy(studyId);
   }
-  catch(err) {
+  catch (err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
+    // delete study if succesfull or puppeteer_XX
+    if (!tutorial.getTutorialFailed() || (user.includes("puppeteer_") && studyId)) {
+      await tutorial.toDashboard();
+      await tutorial.removeStudy(studyId);
+    }
+
     await tutorial.logOut();
     tutorial.stopScreenshooter();
     await tutorial.close();

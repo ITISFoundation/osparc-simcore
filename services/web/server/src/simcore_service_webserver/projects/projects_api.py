@@ -80,7 +80,7 @@ async def get_project_for_user(
     """
     db = app[APP_PROJECT_DBAPI]
 
-    project: Dict = None
+    project: Dict = {}
     is_template = False
     if include_templates:
         project = await db.get_template_project(project_uuid)
