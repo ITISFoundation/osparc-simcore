@@ -94,11 +94,20 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     // overridden
     setAccessLevel: function(data) {
       const entry = this.self().gridPos;
+      const disableables = osparc.component.form.renderer.PropFormBase.getDisableables();
       Object.entries(data).forEach(([portId, visibility]) => {
-        Object.values(entry).forEach(entryVal => {
-          const layoutElement = this._getLayoutChild(portId, entryVal);
-          if (layoutElement) {
-            this.__changeControlVisibility(layoutElement.child, visibility);
+        Object.values(entry).forEach(entryPos => {
+          const layoutElement = this._getLayoutChild(portId, entryPos);
+          if (layoutElement && layoutElement.child) {
+            const control = layoutElement.child;
+            if (control) {
+              const vis = visibility === this._visibility.hidden ? "excluded" : "visible";
+              const enabled = visibility === this._visibility.readWrite;
+              control.setVisibility(vis);
+              if (disableables.includes(entryPos)) {
+                control.setEnabled(enabled);
+              }
+            }
           }
         });
       });
@@ -572,24 +581,6 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       this.__parameterRemoved(portId);
     },
     /* /PARAMETERS */
-
-    __changeControlVisibility: function(control, visibility) {
-      if (control === null) {
-        return;
-      }
-
-      switch (visibility) {
-        case this._visibility.hidden:
-          control.setVisibility("excluded");
-          break;
-        case this._visibility.readOnly:
-          control.setVisibility("visible");
-          break;
-        case this._visibility.readWrite:
-          control.setVisibility("visible");
-          break;
-      }
-    },
 
     __getRetrieveFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().gridPos.retrieveStatus);
