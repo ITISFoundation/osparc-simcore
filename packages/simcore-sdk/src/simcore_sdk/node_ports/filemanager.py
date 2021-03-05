@@ -297,3 +297,22 @@ async def upload_file(
                 return store_id, e_tag
 
     raise exceptions.S3InvalidPathError(s3_object)
+
+
+async def is_metadata_for_entry(store_id: str, s3_object: str) -> bool:
+    """Returns True if metadata for s3_object is present"""
+    user_id = config.USER_ID
+    with api_client() as client:
+        api = UsersApi(client)
+        try:
+            result = await api.get_file_metadata(s3_object, store_id, user_id)
+            log.debug("Metada request result %s", result)
+            is_metadata_present = result.data.get("file_uuid", "") == s3_object
+            return is_metadata_present
+        except Exception:  # pylint: disable=broad-except
+            log.warning(
+                "There is no metadata for requested store_id=%s s3_object=%s",
+                store_id,
+                s3_object,
+            )
+            return False
