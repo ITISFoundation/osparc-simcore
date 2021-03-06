@@ -69,3 +69,13 @@ async def pull(file_or_folder: Path):
             archive_to_extract=str(archive_file), destination_folder=file_or_folder
         )
         log.info("extraction completed")
+
+
+async def is_file_present_in_storage(file_path: Path) -> bool:
+    """
+    :retruns True if an entry is present inside the files_metadata else False
+    """
+    return await filemanager.entry_exists(
+        store_id=0,  # this is for simcore.s3
+        s3_object=_create_s3_object(file_path),
+    )
