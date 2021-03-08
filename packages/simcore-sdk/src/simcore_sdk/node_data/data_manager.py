@@ -57,12 +57,16 @@ async def _pull_file(file_path: Path):
     log.info("%s successfuly pulled", file_path)
 
 
+def _get_archive_name(path: Path) -> str:
+    return f"{path.stem}.zip"
+
+
 async def pull(file_or_folder: Path):
     if file_or_folder.is_file():
         return await _pull_file(file_or_folder)
     # we have a folder, so we need somewhere to extract it to
     with TemporaryDirectory() as tmp_dir_name:
-        archive_file = Path(tmp_dir_name) / "{}.zip".format(file_or_folder.stem)
+        archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
         await _pull_file(archive_file)
         log.info("extracting data from %s", archive_file)
         await unarchive_dir(
@@ -75,7 +79,8 @@ async def is_file_present_in_storage(file_path: Path) -> bool:
     """
     :retruns True if an entry is present inside the files_metadata else False
     """
+    archive_nme = _get_archive_name(file_path)
     return await filemanager.entry_exists(
         store_id=0,  # this is for simcore.s3
-        s3_object=_create_s3_object(file_path),
+        s3_object=_create_s3_object(archive_nme),
     )
