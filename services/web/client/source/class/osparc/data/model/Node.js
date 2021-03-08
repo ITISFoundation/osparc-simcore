@@ -387,7 +387,6 @@ qx.Class.define("osparc.data.model.Node", {
           } else {
             this.getStatus().setModified(null);
           }
-
         }
       }
     },
