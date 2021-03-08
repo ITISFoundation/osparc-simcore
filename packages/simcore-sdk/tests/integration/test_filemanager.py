@@ -4,7 +4,6 @@
 # pylint:disable=too-many-arguments
 
 import filecmp
-import asyncio
 from pathlib import Path
 
 import pytest
