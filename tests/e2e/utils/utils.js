@@ -246,7 +246,7 @@ async function isServiceConnected(page, studyId, nodeId) {
   console.log("-- Is Service Connected", nodeId);
   const serviceUrl = await getServiceUrl(page, studyId, nodeId);
   const connected = await makePingRequest(page, serviceUrl);
-  console.log(connected, "--")
+  console.log(connected ? ("service " + nodeId + " connected") : ("service" + nodeId + " connecting..."), "--")
   return connected;
 }
 
@@ -300,10 +300,10 @@ async function waitForValidOutputFile(page) {
   })
 }
 
-async function waitAndClick(page, id) {
+async function waitAndClick(page, id, timeout = null) {
   await page.waitForSelector(id, {
-    timeout: 30000 // default 30s
-  })
+    timeout: (timeout ? timeout : 30000) // default 30s
+  });
   await page.click(id);
 }
 

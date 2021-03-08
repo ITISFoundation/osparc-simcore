@@ -272,6 +272,18 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "--username",
+          "${POSTGRES_USER}",
+          "--dbname",
+          "${POSTGRES_DB}",
+        ]
+      interval: 15s
+      retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
     # in the meantime postgres allows to set a configuration through CLI.
@@ -299,6 +311,11 @@ services:
     networks:
       - default
       - computational_services_subnet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
 
   traefik:
     image: traefik:v2.2.1
