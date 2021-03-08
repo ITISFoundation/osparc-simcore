@@ -377,10 +377,12 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setDependencies(nodeData.state.dependencies);
         }
         if ("currentStatus" in nodeData.state && this.isComputational()) {
+          // currentStatus is only applycable to computational services
           this.getStatus().setRunning(nodeData.state.currentStatus);
         }
         if ("modified" in nodeData.state) {
-          this.getStatus().setModified(nodeData.state.modified);
+          // File Picker can't have a modified output
+          this.getStatus().setModified(nodeData.state.modified && !this.isFilePicker());
         }
       }
     },
