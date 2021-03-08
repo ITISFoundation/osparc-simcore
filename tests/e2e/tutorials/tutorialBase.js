@@ -179,7 +179,7 @@ class TutorialBase {
       console.error(`"${this.__templateName}" template could not be started:\n`, err);
       throw (err);
     }
-    await this.__page.waitFor(waitFor);
+    await this.__page.waitForTimeout(waitFor);
     await this.takeScreenshot("dashboardOpenFirstTemplate_after");
     return resp;
   }
@@ -197,7 +197,7 @@ class TutorialBase {
       console.error(`"${this.__templateName}" service could not be started:\n`, err);
       throw (err);
     }
-    await this.__page.waitFor(waitFor);
+    await this.__page.waitForTimeout(waitFor);
     await this.takeScreenshot("dashboardOpenFirstService_after");
     return resp;
   }
@@ -296,7 +296,7 @@ class TutorialBase {
 
   async retrieve(waitAfterRetrieve = 5000) {
     await auto.clickRetrieve(this.__page);
-    await this.__page.waitFor(waitAfterRetrieve);
+    await this.__page.waitForTimeout(waitAfterRetrieve);
   }
 
   async openNodeRetrieveAndRestart(nodePosInTree = 0) {
@@ -380,7 +380,7 @@ class TutorialBase {
   }
 
   async waitFor(waitFor) {
-    await this.__page.waitFor(waitFor);
+    await this.__page.waitForTimeout(waitFor);
   }
 
   async takeScreenshot(screenshotTitle) {

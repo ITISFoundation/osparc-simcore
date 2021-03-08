@@ -314,7 +314,7 @@ async function checkDataProducedByNode(page, nFiles = 1) {
   let children = [];
   const minTime = 1000; // wait a bit longer for fetching the files
   for (let i = 0; i < tries && children.length === 0; i++) {
-    await page.waitFor(minTime * (i + 1));
+    await page.waitForTimeout(minTime * (i + 1));
     await page.waitForSelector('[osparc-test-id="fileTreeItem_NodeFiles"]');
     children = await utils.getFileTreeItemIDs(page, "NodeFiles");
     console.log(i + 1, 'try: ', children);
