@@ -48,19 +48,11 @@ async function runTutorial() {
 
 
     // inside the first notebook, click Run all button
-    const runAllButtonSelector = '#run_int > button:nth-child(4)';
-    await utils.waitAndClick(nbIframe, runAllButtonSelector);
+    const cellMenuSelector = '#menus > div > div > ul > li:nth-child(5) > a'
+    await utils.waitAndClick(nbIframe, cellMenuSelector);
+    const runAllCellsSelector = '#run_all_cells > a'
+    await utils.waitAndClick(nbIframe, runAllCellsSelector);
     await tutorial.takeScreenshot("pressRunAllButtonNotebook");
-
-    // inside the first notebook, click confirm run all (NOTE: this dialog does not appear in headless mode)
-    try {
-      const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
-      await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector, 10000);
-      await tutorial.takeScreenshot("pressRunNotebookAfterConfirmation");
-    } catch (err) {
-      console.log("The confirmation dialog appears only in --demo mode.");
-    }
-
 
     // now check that the input contains [4]
     console.log('Waiting for notebook results...');
