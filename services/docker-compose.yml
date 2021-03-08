@@ -273,7 +273,15 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "--username",
+          "${POSTGRES_USER}",
+          "--dbname",
+          "${POSTGRES_DB}",
+        ]
       interval: 15s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
