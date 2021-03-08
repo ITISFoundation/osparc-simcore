@@ -214,7 +214,7 @@ qx.Class.define("osparc.file.FilesTree", {
           const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
           this.__filesToRoot(newChildren);
           let filesInTree = [];
-          this.__getFilesInTree(rootModel, filesInTree);
+          this.__getLeavesInTree(rootModel, filesInTree);
           for (let i=0; i<filesInTree.length; i++) {
             this.openNodeAndParents(filesInTree[i]);
           }
@@ -457,26 +457,38 @@ qx.Class.define("osparc.file.FilesTree", {
 
       this.__filesReceived(locationId, datasetId, files);
     },
-    __getFilesInTree: function(item, leaves) {
+
+    getParent: function(childItem) {
+      const root = this.getModel();
+      const list = [];
+      this.__getItemsInTree(root, list);
+      return list.find(element => element.getChildren && element.getChildren().contains(childItem));
+    },
+
+    __getItemsInTree: function(item, items) {
+      items.push(item);
+      if (item.getChildren) {
+        item.getChildren().forEach(child => {
+          this.__getItemsInTree(child, items);
+        });
+      }
+    },
+
+    __getLeavesInTree: function(item, leaves) {
       if (item.getChildren == null) {
         leaves.push(item);
       } else {
-        for (let i=0; i<item.getChildren().length; i++) {
-          this.__getFilesInTree(item.getChildren().toArray()[i], leaves);
-        }
+        item.getChildren().forEach(child => {
+          this.__getLeavesInTree(child, leaves);
+        });
       }
     },
 
     __findUuidInLeaves: function(uuid) {
-      const parent = this.getModel();
-      const list = [];
-      this.__getFilesInTree(parent, list);
-      for (let j = 0; j < list.length; j++) {
-        if (uuid === list[j].getFileId()) {
-          return list[j];
-        }
-      }
-      return null;
+      const root = this.getModel();
+      const leaves = [];
+      this.__getLeavesInTree(root, leaves);
+      return leaves.find(element => element.getFileId() === uuid);
     },
 
     setSelectedFile: function(fileId) {

@@ -31,7 +31,7 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     const folderUpBtn = this.getChildControl("folder-up");
     folderUpBtn.addListener("execute", () => {
-      this.fireEvent("folderUp");
+      this.fireDataEvent("folderUp", this.getFolder());
     }, this);
     this.getChildControl("folder-path");
     this.getChildControl("view-options");
@@ -57,7 +57,7 @@ qx.Class.define("osparc.file.FolderViewer", {
   events: {
     "selectionChanged": "qx.event.type.Data", // tap
     "itemSelected": "qx.event.type.Data", // dbltap
-    "folderUp": "qx.event.type.Event", // dbltap
+    "folderUp": "qx.event.type.Data",
     "requestDatasetFiles": "qx.event.type.Data"
   },
 

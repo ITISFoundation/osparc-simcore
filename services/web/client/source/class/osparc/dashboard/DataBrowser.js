@@ -100,8 +100,13 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         filesTree.openNodeAndParents(data);
         filesTree.setSelection(new qx.data.Array([data]));
       }, this);
-      folderViewer.addListener("folderUp", () => {
-        console.log("up", filesTree.getSelection());
+      folderViewer.addListener("folderUp", e => {
+        const currentFolder = e.getData();
+        const parent = filesTree.getParent(currentFolder);
+        if (parent) {
+          filesTree.setSelection(new qx.data.Array([parent]));
+          this.__folderViewer.setFolder(parent);
+        }
       }, this);
       folderViewer.addListener("requestDatasetFiles", e => {
         const data = e.getData();
