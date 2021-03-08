@@ -311,8 +311,8 @@ async def entry_exists(store_id: str, s3_object: str) -> bool:
             is_metadata_present = result.data.object_name == s3_object
             return is_metadata_present
         except Exception:  # pylint: disable=broad-except
-            log.warning(
-                "There is no metadata for requested store_id=%s s3_object=%s",
+            log.exception(
+                "Could not find metadata for requested store_id=%s s3_object=%s",
                 store_id,
                 s3_object,
             )
