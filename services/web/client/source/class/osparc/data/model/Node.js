@@ -652,7 +652,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
         this.getStatus().setHasOutputs(hasOutputs);
 
-        if (this.isFilePicker() || this.isDynamic()) {
+        if (hasOutputs && (this.isFilePicker() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
 
