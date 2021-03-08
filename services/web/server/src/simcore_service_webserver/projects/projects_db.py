@@ -498,11 +498,11 @@ class ProjectDBAPI:
                 )
 
                 def _patch_workbench(
-                    project: Dict[str, Any], new_data: Dict[str, Any]
+                    project: Dict[str, Any], new_partial_workbench_data: Dict[str, Any]
                 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
                     """patch the project workbench with the values in new_data and returns the changed project and changed values"""
                     changed_entries = {}
-                    for node_key, node_data in new_data.get("workbench", {}).items():
+                    for node_key, node_data in new_partial_workbench_data.items():
                         current_node_data = project.get("workbench", {}).get(node_key)
 
                         if current_node_data is None:

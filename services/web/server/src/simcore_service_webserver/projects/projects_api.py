@@ -296,21 +296,23 @@ async def update_project_node_state(
         project_id,
         user_id,
     )
-    project = {
-        "workbench": {node_id: {"state": {"currentStatus": new_state}}},
+    partial_workbench_data = {
+        node_id: {"state": {"currentStatus": new_state}},
     }
     if RunningState(new_state) in [
         RunningState.PUBLISHED,
         RunningState.PENDING,
         RunningState.STARTED,
     ]:
-        project["workbench"][node_id]["progress"] = 0
+        partial_workbench_data["workbench"][node_id]["progress"] = 0
     elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
-        project["workbench"][node_id]["progress"] = 100
+        partial_workbench_data["workbench"][node_id]["progress"] = 100
 
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.patch_user_project_workbench(
-        partial_workbench_data=project, user_id=user_id, project_uuid=project_id
+        partial_workbench_data=partial_workbench_data,
+        user_id=user_id,
+        project_uuid=project_id,
     )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
@@ -328,12 +330,14 @@ async def update_project_node_progress(
         user_id,
         progress,
     )
-    project = {
-        "workbench": {node_id: {"progress": int(100.0 * float(progress) + 0.5)}},
+    partial_workbench_data = {
+        node_id: {"progress": int(100.0 * float(progress) + 0.5)},
     }
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.patch_user_project_workbench(
-        partial_workbench_data=project, user_id=user_id, project_uuid=project_id
+        partial_workbench_data=partial_workbench_data,
+        user_id=user_id,
+        project_uuid=project_id,
     )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
@@ -370,13 +374,15 @@ async def update_project_node_outputs(
     #     if current_outputs[key] != new_outputs[key]:
     #         changed_keys.append(key)
 
-    project = {
-        "workbench": {node_id: {"outputs": new_outputs, "runHash": new_run_hash}},
+    partial_workbench_data = {
+        node_id: {"outputs": new_outputs, "runHash": new_run_hash},
     }
 
     db = app[APP_PROJECT_DBAPI]
     updated_project = await db.patch_user_project_workbench(
-        partial_workbench_data=project, user_id=user_id, project_uuid=project_id
+        partial_workbench_data=partial_workbench_data,
+        user_id=user_id,
+        project_uuid=project_id,
     )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
