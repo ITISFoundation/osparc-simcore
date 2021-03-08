@@ -316,4 +316,4 @@ async def entry_exists(store_id: str, s3_object: str) -> bool:
                 store_id,
                 s3_object,
             )
-            raise exceptions.NodeportsException(msg=str(e)) from e
+            raise exceptions.NodeportsException(msg=str(e))
