@@ -219,12 +219,12 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     init: function() {
-      if (this.self().isOutputFromStore(this.getOutputs())) {
+      if (this.self().isOutputFromStore(this.getNode().getOutputs())) {
         const outFile = this.__getOutputFile();
         this.__filesTree.loadFilePath(outFile.value);
       }
 
-      if (this.self().isOutputDownloadLink(this.getOutputs())) {
+      if (this.self().isOutputDownloadLink(this.getNode().getOutputs())) {
         const outFile = this.__getOutputFile();
         this.getChildControl("downloadLink").setValue(outFile.value["downloadLink"]);
       }
