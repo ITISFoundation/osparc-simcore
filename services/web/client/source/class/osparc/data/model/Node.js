@@ -380,11 +380,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setRunning(nodeData.state.currentStatus);
         }
         if ("modified" in nodeData.state) {
-          if (this.getStatus().getHasOutputs()) {
-            this.getStatus().setModified(nodeData.state.modified || this.getStatus().hasDependencies());
-          } else {
-            this.getStatus().setModified(null);
-          }
+          this.getStatus().setModified(nodeData.state.modified);
         }
       }
     },
