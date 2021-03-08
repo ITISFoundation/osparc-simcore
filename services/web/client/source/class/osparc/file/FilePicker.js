@@ -62,7 +62,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     getOutputLabel: function(outputs) {
-      const outFileValue = this.self().getOutput(outputs);
+      const outFileValue = this.getOutput(outputs);
       if (outFileValue) {
         if ("label" in outFileValue) {
           return outFileValue.label;
@@ -76,6 +76,21 @@ qx.Class.define("osparc.file.FilePicker", {
         }
       }
       return null;
+    },
+
+    isOutputFromStore: function(outputs) {
+      const outFileValue = this.getOutput(outputs);
+      return (typeof outFileValue === "object" && "path" in outFileValue);
+    },
+
+    isOutputDownloadLink: function(outputs) {
+      const outFileValue = this.getOutput(outputs);
+      return (typeof outFileValue === "object" && "downloadLink" in outFileValue);
+    },
+
+    extractLabelFromLink: function(outputs) {
+      const outFileValue = this.getOutput(outputs);
+      return osparc.file.FileDownloadLink.extractLabelFromLink(outFileValue["downloadLink"]);
     },
 
     serializeOutput: function(outputs) {
@@ -204,12 +219,12 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     init: function() {
-      if (this.__isOutputFileSelectedFromStore()) {
+      if (this.self().isOutputFromStore(this.getOutputs())) {
         const outFile = this.__getOutputFile();
         this.__filesTree.loadFilePath(outFile.value);
       }
 
-      if (this.__isOutputFileSelectedFromLink()) {
+      if (this.self().isOutputDownloadLink(this.getOutputs())) {
         const outFile = this.__getOutputFile();
         this.getChildControl("downloadLink").setValue(outFile.value["downloadLink"]);
       }
@@ -268,28 +283,6 @@ qx.Class.define("osparc.file.FilePicker", {
         this.getNode().setOutputs(outputs);
         this.getNode().getStatus().setProgress(100);
       }
-    },
-
-    __isOutputFileSelectedFromStore: function() {
-      const outFile = this.__getOutputFile();
-      if (outFile &&
-        "value" in outFile &&
-        typeof outFile["value"] === "object" &&
-        "path" in outFile["value"]) {
-        return true;
-      }
-      return false;
-    },
-
-    __isOutputFileSelectedFromLink: function() {
-      const outFile = this.__getOutputFile();
-      if (outFile &&
-        "value" in outFile &&
-        typeof outFile["value"] === "object" &&
-        "downloadLink" in outFile.value) {
-        return true;
-      }
-      return false;
     },
 
     __checkSelectedFileIsListed: function() {

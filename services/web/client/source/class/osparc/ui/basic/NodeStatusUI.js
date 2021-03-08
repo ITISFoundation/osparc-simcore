@@ -142,7 +142,6 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupFilepicker: function() {
-      const node = this.__node;
       this.__node.bind("outputs", this.__icon, "source", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
@@ -162,7 +161,11 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.__node.bind("outputs", this.__label, "value", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
-            return osparc.file.FilePicker.getOutputLabel(outputs);
+            const outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);
+            if (outputLabel === "" && osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
+              return osparc.file.FilePicker.extractLabelFromLink(outputs);
+            }
+            return outputLabel;
           }
           return this.tr("Select a file");
         }
