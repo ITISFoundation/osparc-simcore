@@ -53,9 +53,9 @@ async function runTutorial() {
     await tutorial.takeScreenshot("pressRunAllButtonNotebook");
 
     // inside the first notebook, click confirm run all (NOTE: this dialog does not appear it seems)
-    // const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
-    // await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector);
-    // await tutorial.takeScreenshot("pressRunNotebookAfterConfirmation");
+    const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
+    await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector);
+    await tutorial.takeScreenshot("pressRunNotebookAfterConfirmation");
 
     // now check that the input contains [4]
     console.log('Waiting for notebook results...');
