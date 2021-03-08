@@ -310,10 +310,10 @@ async def entry_exists(store_id: str, s3_object: str) -> bool:
             log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
             is_metadata_present = result.data.object_name == s3_object
             return is_metadata_present
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
             log.exception(
                 "Could not find metadata for requested store_id=%s s3_object=%s",
                 store_id,
                 s3_object,
             )
-            raise
+            raise exceptions.NodeportsException(msg=str(e)) from e
