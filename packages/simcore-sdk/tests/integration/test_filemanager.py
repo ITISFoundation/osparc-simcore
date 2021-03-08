@@ -153,22 +153,3 @@ async def test_valid_metadata(
 
     assert is_metadata_present is True
 
-
-async def test_invalid_metadata(
-    tmpdir: Path,
-    bucket: str,
-    filemanager_cfg: None,
-    user_id: str,
-    file_uuid: str,
-    s3_simcore_location: str,
-):
-    file_path = Path(tmpdir) / "test.test"
-    file_id = file_uuid(file_path)
-    assert file_path.exists() is False
-
-    with pytest.raises(exceptions.NodeportsException) as exc_info:
-        is_metadata_present = await filemanager.entry_exists(
-            store_id=s3_simcore_location, s3_object=file_id
-        )
-
-    assert exc_info.type is exceptions.NodeportsException
