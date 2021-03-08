@@ -300,7 +300,7 @@ async function waitForValidOutputFile(page) {
   })
 }
 
-async function waitAndClick(page, id, timeout) {
+async function waitAndClick(page, id, timeout = null) {
   await page.waitForSelector(id, {
     timeout: (timeout ? timeout : 30000) // default 30s
   });
