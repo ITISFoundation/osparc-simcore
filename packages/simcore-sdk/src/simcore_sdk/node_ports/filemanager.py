@@ -66,7 +66,7 @@ def api_client():
     except ApiException:
         log.exception(msg="connection to storage service failed")
     finally:
-        del client.rest_client
+        del client
 
 
 def _handle_api_exception(store_id: str, err: ApiException):
