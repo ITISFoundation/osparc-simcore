@@ -179,30 +179,18 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
     __setAccessLevel: function(data) {
       for (const key in data) {
         const label = this._getLabelFieldChild(key).child;
-        const control = this._form.getControl(key);
-        switch (data[key]) {
-          case this._visibility.hidden: {
-            const newLabel = this.__addDelTag(label.getValue());
-            label.setValue(newLabel);
-            label.setEnabled(false);
-            control.setEnabled(false);
-            break;
+        const newLabel = data[key] === this._visibility.hidden ? this.__addDelTag(label.getValue()) : this.__removeDelTag(label.getValue());
+        label.setValue(newLabel);
+
+        const enabled = data[key] === this._visibility.readWrite;
+        const disableables = osparc.component.form.renderer.PropFormBase.getDisableables();
+        const ctrls = [];
+        disableables.forEach(disableable => ctrls.push(this._getLayoutChild(key, disableable)));
+        ctrls.forEach(ctrl => {
+          if (ctrl) {
+            ctrl.child.setEnabled(enabled);
           }
-          case this._visibility.readOnly: {
-            const newLabel = this.__removeDelTag(label.getValue());
-            label.setValue(newLabel);
-            label.setEnabled(false);
-            control.setEnabled(false);
-            break;
-          }
-          case this._visibility.readWrite: {
-            const newLabel = this.__removeDelTag(label.getValue());
-            label.setValue(newLabel);
-            label.setEnabled(true);
-            control.setEnabled(true);
-            break;
-          }
-        }
+        });
       }
     },
 
