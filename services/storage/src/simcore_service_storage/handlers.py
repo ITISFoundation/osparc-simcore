@@ -181,6 +181,9 @@ async def get_file_metadata(request: web.Request):
     location = dsm.location_from_id(location_id)
 
     data = await dsm.list_file(user_id=user_id, location=location, file_uuid=file_uuid)
+    # when no metadata is found
+    if data is None:
+        return {"error": "No result found", "data": {}}
 
     envelope = {
         "error": None,
