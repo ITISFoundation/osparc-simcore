@@ -42,25 +42,18 @@ async function runTutorial() {
 
     // inside the iFrame, open the first notebook
     const notebookCBSelector = '#notebook_list > div:nth-child(2) > div > input[type=checkbox]';
-    await utils.waitAndClick(nbIframe, notebookCBSelector)
+    await utils.waitAndClick(nbIframe, notebookCBSelector);
     const notebookViewSelector = "#notebook_toolbar > div.col-sm-8.no-padding > div.dynamic-buttons > button.view-button.btn.btn-default.btn-xs"
-    await utils.waitAndClick(nbIframe, notebookViewSelector)
-
+    await utils.waitAndClick(nbIframe, notebookViewSelector);
+    console.log("notebook iframe found");
+    await tutorial.waitFor(5000);
 
     // inside the first notebook, click Run all button
-    const runAllButtonSelector = '#run_int > button:nth-child(4)';
-    await utils.waitAndClick(nbIframe, runAllButtonSelector);
+    const cellMenuSelector = '#menus > div > div > ul > li:nth-child(5) > a'
+    await utils.waitAndClick(nbIframe, cellMenuSelector);
+    const runAllCellsSelector = '#run_all_cells > a'
+    await utils.waitAndClick(nbIframe, runAllCellsSelector);
     await tutorial.takeScreenshot("pressRunAllButtonNotebook");
-
-    // inside the first notebook, click confirm run all (NOTE: this dialog does not appear in headless mode)
-    try {
-      const confirmRunAllButtonSelector = 'body > div.modal.fade.in > div > div > div.modal-footer > button.btn.btn-default.btn-sm.btn-danger';
-      await utils.waitAndClick(nbIframe, confirmRunAllButtonSelector, 10000);
-      await tutorial.takeScreenshot("pressRunNotebookAfterConfirmation");
-    } catch (err) {
-      console.log("The confirmation dialog appears only in --demo mode.");
-    }
-
 
     // now check that the input contains [4]
     console.log('Waiting for notebook results...');
@@ -101,6 +94,7 @@ async function runTutorial() {
     await jLabIframe.click(input2outputFileSelector, {
       clickCount: 2
     });
+    await tutorial.waitFor(5000);
     // click Run Menu
     const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
     await utils.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
