@@ -172,3 +172,4 @@ async def test_invalid_metadata(
         )
 
     assert exc_info.type is exceptions.NodeportsException
+    assert exc_info.value.args[0] == ("")
