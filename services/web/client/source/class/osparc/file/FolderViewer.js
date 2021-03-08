@@ -29,6 +29,10 @@ qx.Class.define("osparc.file.FolderViewer", {
 
     this.setPaddingLeft(10);
 
+    const folderUpBtn = this.getChildControl("folder-up");
+    folderUpBtn.addListener("execute", () => {
+      this.fireEvent("folderUp");
+    }, this);
     this.getChildControl("folder-path");
     this.getChildControl("view-options");
   },
@@ -53,6 +57,7 @@ qx.Class.define("osparc.file.FolderViewer", {
   events: {
     "selectionChanged": "qx.event.type.Data", // tap
     "itemSelected": "qx.event.type.Data", // dbltap
+    "folderUp": "qx.event.type.Event", // dbltap
     "requestDatasetFiles": "qx.event.type.Data"
   },
 
@@ -80,9 +85,17 @@ qx.Class.define("osparc.file.FolderViewer", {
       let control;
       switch (id) {
         case "header":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           this._add(control);
           break;
+        case "folder-up": {
+          const header = this.getChildControl("header");
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/12").set({
+            enabled: false
+          });
+          header.addAt(control, 0);
+          break;
+        }
         case "folder-path": {
           const header = this.getChildControl("header");
           control = new qx.ui.basic.Label(this.tr("Select Folder")).set({
@@ -90,7 +103,7 @@ qx.Class.define("osparc.file.FolderViewer", {
             allowGrowX: true,
             alignY: "middle"
           });
-          header.addAt(control, 0, {
+          header.addAt(control, 1, {
             flex: 1
           });
           break;
@@ -110,7 +123,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           menu.add(iconsBtn);
           control.setMenu(menu);
-          header.addAt(control, 1);
+          header.addAt(control, 2);
           break;
         }
         case "table": {
@@ -212,6 +225,10 @@ qx.Class.define("osparc.file.FolderViewer", {
     },
 
     __applyFolder: function() {
+      this.bind("folder", this.getChildControl("folder-up"), "enabled", {
+        converter: folder => folder && folder.getPathLabel().length > 1
+      });
+
       this.bind("folder", this.getChildControl("folder-path"), "value", {
         converter: folder => folder ? folder.getPathLabel().join(" / ") : "Select folder"
       });
