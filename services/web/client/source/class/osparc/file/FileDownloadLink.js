@@ -60,6 +60,12 @@ qx.Class.define("osparc.file.FileDownloadLink", {
         const parts = found[1].split("/");
         return parts[parts.length - 1];
       }
+
+      const idx = downloadLink.lastIndexOf("/");
+      if (idx > -1) {
+        return downloadLink.substring(idx + 1);
+      }
+
       return "unknown";
     },
 
