@@ -94,6 +94,7 @@ async function runTutorial() {
     await jLabIframe.click(input2outputFileSelector, {
       clickCount: 2
     });
+    await tutorial.waitFor(5000);
     // click Run Menu
     const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
     await utils.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
