@@ -82,5 +82,5 @@ async def is_file_present_in_storage(file_path: Path) -> bool:
     archive_nme = _get_archive_name(file_path)
     return await filemanager.entry_exists(
         store_id=0,  # this is for simcore.s3
-        s3_object=_create_s3_object(archive_nme),
+        s3_object=archive_nme,
     )
