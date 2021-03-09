@@ -66,7 +66,7 @@ def api_client():
     except ApiException:
         log.exception(msg="connection to storage service failed")
     finally:
-        del client.rest_client
+        del client
 
 
 def _handle_api_exception(store_id: str, err: ApiException):
@@ -305,13 +305,15 @@ async def entry_exists(store_id: str, s3_object: str) -> bool:
     with api_client() as client:
         api = UsersApi(client)
         try:
+            log.debug("Will request metadata for s3_object=%s", s3_object)
             result = await api.get_file_metadata(s3_object, store_id, user_id)
+            log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
             is_metadata_present = result.data.object_name == s3_object
             return is_metadata_present
-        except Exception:  # pylint: disable=broad-except
-            log.warning(
-                "There is no metadata for requested store_id=%s s3_object=%s",
+        except Exception as e:  # pylint: disable=broad-except
+            log.exception(
+                "Could not find metadata for requested store_id=%s s3_object=%s",
                 store_id,
                 s3_object,
             )
-            return False
+            raise exceptions.NodeportsException(msg=str(e))
