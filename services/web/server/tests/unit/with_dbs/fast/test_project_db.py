@@ -15,9 +15,11 @@ from pytest_simcore.helpers.utils_login import LoggedUser
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
+    ProjectAccessRights,
     ProjectDBAPI,
     _convert_to_db_names,
     _convert_to_schema_names,
+    _create_project_access_rights,
     setup_projects_db,
 )
 from simcore_service_webserver.security_roles import UserRole
@@ -74,6 +76,23 @@ def test_convert_to_schema_names(fake_project: Dict[str, Any]):
     assert schema_entries["creationDate"] == "{}Z".format(
         date.isoformat(timespec="milliseconds")
     )
+
+
+@pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
+def test_project_access_rights_creation(project_access_rights: ProjectAccessRights):
+    gid = -1
+    git_to_access_rights = _create_project_access_rights(gid, project_access_rights)
+    assert str(gid) in git_to_access_rights
+    assert git_to_access_rights[str(gid)] == project_access_rights.value
+
+
+def test_check_project_permission():
+    gid = 23
+    project = {
+        "access_rights": _create_project_access_rights(
+            gid, ProjectAccessRights.COLLABORATOR
+        )
+    }
 
 
 async def test_setup_projects_db(client: TestClient):
