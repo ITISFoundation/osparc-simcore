@@ -352,8 +352,10 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
     ]
     if not networks or len(networks) > 1:
         raise exceptions.DirectorException(
-            msg="Swarm network name is not configured, found following networks: {}".format(
-                networks
+            msg=(
+                "Swarm network name is not configured, found following networks "
+                "(if there is more then 1 network, remove the one which has no "
+                f"containers attached and all is fixed): {networks}"
             )
         )
     return networks[0]
