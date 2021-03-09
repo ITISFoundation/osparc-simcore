@@ -71,7 +71,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
   },
 
   members: {
-    __hasDependencies: function() {
+    hasDependencies: function() {
       const dependencies = this.getDependencies();
       if (dependencies && dependencies.length) {
         return true;
@@ -80,12 +80,12 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     __applyDependencies: function() {
-      this.__applyModified(this.__hasDependencies());
+      this.__applyModified(this.hasDependencies());
     },
 
     __applyModified: function(modified) {
       if (this.getHasOutputs()) {
-        this.setModified(modified || this.__hasDependencies());
+        this.setModified(modified || this.hasDependencies());
       } else {
         this.setModified(null);
       }
