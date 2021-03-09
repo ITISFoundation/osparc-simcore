@@ -99,7 +99,7 @@ qx.Class.define("osparc.file.FolderViewer", {
         case "folder-path": {
           const header = this.getChildControl("header");
           control = new qx.ui.basic.Label(this.tr("Select Folder")).set({
-            font: "title-16",
+            font: "text-16",
             allowGrowX: true,
             alignY: "middle"
           });
@@ -189,7 +189,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       if (this.getMode() === "list") {
         content.forEach(entry => {
           const row = [];
-          row.push(this.__getIcon(entry));
+          row.push(entry.getIcon ? entry.getIcon() : this.__getIcon(entry));
           row.push(entry.getLabel());
           row.push(entry.getLastModified ? entry.getLastModified() : "");
           row.push(entry.getSize ? entry.getSize() : "");
@@ -201,7 +201,7 @@ qx.Class.define("osparc.file.FolderViewer", {
         content.forEach(entry => {
           const item = this.self().getItemButton().set({
             label: entry.getLabel(),
-            icon: this.__getIcon(entry),
+            icon: entry.getIcon ? entry.getIcon() : this.__getIcon(entry),
             toolTipText: entry.getLabel()
           });
           item.itemId = entry.getItemId();
