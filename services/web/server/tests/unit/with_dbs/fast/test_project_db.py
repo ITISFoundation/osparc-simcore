@@ -7,7 +7,6 @@ from uuid import UUID, uuid4
 import pytest
 import regex
 from aiohttp.test_utils import TestClient
-from models_library.projects import ProjectAtDB
 from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
