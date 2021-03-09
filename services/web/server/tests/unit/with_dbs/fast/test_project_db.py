@@ -8,8 +8,10 @@ import pytest
 import regex
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_login import LoggedUser
+from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
+    ProjectDBAPI,
     _convert_to_db_names,
     _convert_to_schema_names,
     setup_projects_db,
@@ -74,4 +76,12 @@ async def test_setup_projects_db(client: TestClient):
     setup_projects_db(client.app)
 
     assert APP_PROJECT_DBAPI in client.app
-    assert client.app[APP_PROJECT_DBAPI]
+    db_api = client.app[APP_PROJECT_DBAPI]
+    assert db_api
+
+    assert db_api._app == client.app
+    assert db_api._engine
+
+
+def test_project_db_engine_creation(client: TestClient):
+    ProjectDBAPI.init_from_engine(client.app.get(APP_DB_ENGINE_KEY))
