@@ -1,5 +1,6 @@
 import datetime
 import json
+from copy import deepcopy
 from typing import Any, Dict
 from uuid import UUID, uuid4
 
@@ -45,24 +46,29 @@ def test_convert_to_db_names(fake_project: Dict[str, Any]):
     assert regex.match(r"[A-Z]", json.dumps(list(db_entries.keys()))) is None
 
 
-def test_convert_to_schema_names(fake_db_dict: Dict[str, Any]):
-    fake_email = "fakey.justafake@fake.faketory"
-    db_entries = _convert_to_schema_names(fake_db_dict, fake_email)
-    assert "anEntryThatUsesSnakeCase" in db_entries
-    assert "anotherEntryThatUsesSnakeCase" in db_entries
+def test_convert_to_schema_names(fake_project: Dict[str, Any]):
+    db_entries = _convert_to_db_names(fake_project)
+
+    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    fake_project.pop("tags")
+    expected_project = deepcopy(fake_project)
+    expected_project.pop("prjOwner")
+    assert schema_entries == expected_project
+
+    # if there is a prj_owner, it should be replaced with the email of the owner
+    db_entries["prj_owner"] = 321
+    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    expected_project = deepcopy(fake_project)
+    assert schema_entries == expected_project
+
     # test date time conversion
     date = datetime.datetime.utcnow()
-    fake_db_dict["time_entry"] = date
-    db_entries = _convert_to_schema_names(fake_db_dict, fake_email)
-    assert "timeEntry" in db_entries
-    assert db_entries["timeEntry"] == "{}Z".format(
+    db_entries["creation_date"] = date
+    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    assert "creationDate" in schema_entries
+    assert schema_entries["creationDate"] == "{}Z".format(
         date.isoformat(timespec="milliseconds")
     )
-    # test conversion of prj owner int to string
-    fake_db_dict["prj_owner"] = 1
-    db_entries = _convert_to_schema_names(fake_db_dict, fake_email)
-    assert "prjOwner" in db_entries
-    assert db_entries["prjOwner"] == fake_email
 
 
 async def test_setup_projects_db(client: TestClient):
