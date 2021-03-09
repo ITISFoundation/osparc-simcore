@@ -204,6 +204,13 @@ qx.Class.define("osparc.file.FolderViewer", {
             icon: entry.getIcon ? entry.getIcon() : this.__getIcon(entry),
             toolTipText: entry.getLabel()
           });
+          const icon = item.getChildControl("icon", true);
+          if (icon.getSource() === "@FontAwesome5Solid/circle-notch/12") {
+            icon.setPadding(0);
+            icon.setMarginRight(4);
+            icon.getContentElement().addClass("rotate");
+          }
+
           item.itemId = entry.getItemId();
           this.__attachListenersToItems(item, entry);
           items.push(item);
