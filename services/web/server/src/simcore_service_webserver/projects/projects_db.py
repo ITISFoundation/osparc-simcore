@@ -54,37 +54,57 @@ class ProjectAccessRights(Enum):
 
 
 def _check_project_permissions(
-    project: Union[RowProxy, Dict],
+    project: Dict[str, Any],
     user_id: int,
-    user_groups: List[RowProxy],
+    user_groups: List[Dict[str, Any]],
     permission: str,
 ) -> None:
+    if not permission:
+        return
+
+    needed_permissions = permission.split("|")
+    if not needed_permissions:
+        return
+
     # compute access rights by order of priority all group > organizations > primary
-    primary_group = next(filter(lambda x: x.type == GroupType.PRIMARY, user_groups))
-    standard_groups = filter(lambda x: x.type == GroupType.STANDARD, user_groups)
-    all_group = next(filter(lambda x: x.type == GroupType.EVERYONE, user_groups))
+    primary_group = next(
+        filter(lambda x: x.get("type") == GroupType.PRIMARY, user_groups), None
+    )
+    standard_groups = filter(lambda x: x.get("type") == GroupType.STANDARD, user_groups)
+    all_group = next(
+        filter(lambda x: x.get("type") == GroupType.EVERYONE, user_groups), None
+    )
+    if primary_group is None or all_group is None:
+        # the user groups is missing entries
+        raise ProjectInvalidRightsError(user_id, project.get("uuid"))
 
-    if f"{primary_group.gid}" in project["access_rights"]:
-        if not project["access_rights"][f"{primary_group.gid}"][permission]:
-            raise ProjectInvalidRightsError(user_id, project["uuid"])
-        return
-    # let's check if standard groups are in there and take the most liberal rights
-    standard_groups_permissions = []
+    project_access_rights = project.get("access_rights", {})
+
+    # compute access rights
+    no_access_rights = {"read": False, "write": False, "delete": False}
+    computed_permissions = project_access_rights.get(
+        str(all_group["gid"]), no_access_rights
+    )
+
+    # get the standard groups
     for group in standard_groups:
-        if f"{group.gid}" in project["access_rights"]:
-            standard_groups_permissions.append(
-                project["access_rights"][f"{group.gid}"][permission]
+        standard_project_access = project_access_rights.get(
+            str(group["gid"]), no_access_rights
+        )
+        for k in computed_permissions.keys():
+            computed_permissions[k] = (
+                computed_permissions[k] or standard_project_access[k]
             )
-    if standard_groups_permissions:
-        if not any(standard_groups_permissions):
-            raise ProjectInvalidRightsError(user_id, project["uuid"])
-        return
 
-    if (
-        not f"{all_group.gid}" in project["access_rights"]
-        or not project["access_rights"][f"{all_group.gid}"][permission]
-    ):
-        raise ProjectInvalidRightsError(user_id, project["uuid"])
+    # get the primary group access
+    primary_access_right = project_access_rights.get(
+        str(primary_group["gid"]), no_access_rights
+    )
+    for k in computed_permissions.keys():
+        computed_permissions[k] = computed_permissions[k] or primary_access_right[k]
+
+    if any(not computed_permissions[p] for p in needed_permissions):
+        raise ProjectInvalidRightsError(user_id, project.get("uuid"))
 
 
 def _create_project_access_rights(

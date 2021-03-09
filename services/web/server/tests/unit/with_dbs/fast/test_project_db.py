@@ -5,43 +5,26 @@
 import datetime
 import json
 from copy import deepcopy
-from typing import Any, Dict
-from uuid import UUID, uuid4
+from itertools import combinations
+from typing import Any, Dict, List
 
 import pytest
 import regex
+import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.utils_login import LoggedUser
 from servicelib.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     ProjectAccessRights,
     ProjectDBAPI,
+    ProjectInvalidRightsError,
+    _check_project_permissions,
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
     setup_projects_db,
 )
-from simcore_service_webserver.security_roles import UserRole
-
-
-@pytest.fixture
-def project_id() -> UUID:
-    return uuid4()
-
-
-@pytest.fixture
-async def logged_user(client, user_role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: role fixture is defined as a parametrization below
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        yield user
 
 
 def test_convert_to_db_names(fake_project: Dict[str, Any]):
@@ -78,21 +61,146 @@ def test_convert_to_schema_names(fake_project: Dict[str, Any]):
     )
 
 
+@pytest.fixture
+def group_id() -> int:
+    return 234
+
+
 @pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
-def test_project_access_rights_creation(project_access_rights: ProjectAccessRights):
-    gid = -1
-    git_to_access_rights = _create_project_access_rights(gid, project_access_rights)
-    assert str(gid) in git_to_access_rights
-    assert git_to_access_rights[str(gid)] == project_access_rights.value
+def test_project_access_rights_creation(
+    group_id: int, project_access_rights: ProjectAccessRights
+):
+    git_to_access_rights = _create_project_access_rights(
+        group_id, project_access_rights
+    )
+    assert str(group_id) in git_to_access_rights
+    assert git_to_access_rights[str(group_id)] == project_access_rights.value
 
 
-def test_check_project_permission():
-    gid = 23
-    project = {
-        "access_rights": _create_project_access_rights(
-            gid, ProjectAccessRights.COLLABORATOR
+def all_permission_combinations() -> List[str]:
+    entries_list = ["read", "write", "delete"]
+    temp = []
+    for i in range(1, len(entries_list) + 1):
+        temp.extend(list(combinations(entries_list, i)))
+    res = []
+    for el in temp:
+        res.append("|".join(el))
+    return res
+
+
+@pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
+@pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
+def test_check_project_permissions(
+    group_id: int, project_access_rights: ProjectAccessRights, wanted_permissions: str
+):
+    project = {"access_rights": {}}
+
+    user_id = 132
+
+    # this should not raise as needed permissions is empty
+    _check_project_permissions(project, user_id, user_groups=[], permission="")
+
+    # this should raise cause we have no user groups defined and we want permission
+    with pytest.raises(ProjectInvalidRightsError):
+        _check_project_permissions(
+            project, user_id, user_groups=[], permission=wanted_permissions
         )
+
+    def _project_access_rights_from_permissions(
+        permissions: str, invert: bool = False
+    ) -> ProjectAccessRights:
+        access_rights = {}
+        for p in ["read", "write", "delete"]:
+            access_rights[p] = (
+                p in permissions if invert == False else p not in permissions
+            )
+        return access_rights
+
+    # primary group has needed access, so this should not raise
+    project = {
+        "access_rights": {
+            str(group_id): _project_access_rights_from_permissions(wanted_permissions)
+        }
     }
+    user_groups = [
+        {"type": GroupType.PRIMARY, "gid": group_id},
+        {"type": GroupType.EVERYONE, "gid": 2},
+    ]
+    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+
+    # primary group does not have access, it should raise
+    project = {
+        "access_rights": {
+            str(group_id): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            )
+        }
+    }
+    with pytest.raises(ProjectInvalidRightsError):
+        _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+
+    # if no primary group, we rely on standard groups and the most permissive access are used. so this should not raise
+    project = {
+        "access_rights": {
+            str(group_id): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+            str(group_id + 1): _project_access_rights_from_permissions(
+                wanted_permissions
+            ),
+            str(group_id + 2): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+        }
+    }
+    user_groups = [
+        {"type": GroupType.PRIMARY, "gid": group_id},
+        {"type": GroupType.EVERYONE, "gid": 2},
+        {"type": GroupType.STANDARD, "gid": group_id + 1},
+        {"type": GroupType.STANDARD, "gid": group_id + 2},
+    ]
+    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+
+    # if both primary and standard do not have rights it should raise
+    project = {
+        "access_rights": {
+            str(group_id): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+            str(group_id + 1): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+            str(group_id + 2): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+        }
+    }
+    user_groups = [
+        {"type": GroupType.PRIMARY, "gid": group_id},
+        {"type": GroupType.EVERYONE, "gid": 2},
+        {"type": GroupType.STANDARD, "gid": group_id + 1},
+        {"type": GroupType.STANDARD, "gid": group_id + 2},
+    ]
+    with pytest.raises(ProjectInvalidRightsError):
+        _check_project_permissions(project, user_id, user_groups, wanted_permissions)
+
+    # the everyone group has access so it should not raise
+    project = {
+        "access_rights": {
+            str(2): _project_access_rights_from_permissions(wanted_permissions),
+            str(group_id): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+            str(group_id + 1): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+            str(group_id + 2): _project_access_rights_from_permissions(
+                wanted_permissions, invert=True
+            ),
+        }
+    }
+
+    _check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
 
 async def test_setup_projects_db(client: TestClient):
@@ -106,5 +214,7 @@ async def test_setup_projects_db(client: TestClient):
     assert db_api._engine
 
 
-def test_project_db_engine_creation(client: TestClient):
-    ProjectDBAPI.init_from_engine(client.app.get(APP_DB_ENGINE_KEY))
+def test_project_db_engine_creation(postgres_db: sa.engine.Engine):
+    db_api = ProjectDBAPI.init_from_engine(postgres_db)
+    assert db_api._app == {}
+    assert db_api._engine == postgres_db
