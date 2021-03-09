@@ -1,3 +1,7 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 import datetime
 import json
 from copy import deepcopy
@@ -78,7 +82,7 @@ async def test_setup_projects_db(client: TestClient):
     assert APP_PROJECT_DBAPI in client.app
     db_api = client.app[APP_PROJECT_DBAPI]
     assert db_api
-
+    # pylint:disable=protected-access
     assert db_api._app == client.app
     assert db_api._engine
 
