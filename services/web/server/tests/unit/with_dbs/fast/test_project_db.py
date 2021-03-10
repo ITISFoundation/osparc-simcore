@@ -15,6 +15,8 @@ from aiohttp.test_utils import TestClient
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
+    DB_EXCLUSIVE_COLUMNS,
+    SCHEMA_NON_NULL_KEYS,
     ProjectAccessRights,
     ProjectDBAPI,
     ProjectInvalidRightsError,
@@ -49,6 +51,20 @@ def test_convert_to_schema_names(fake_project: Dict[str, Any]):
     schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
     expected_project = deepcopy(fake_project)
     assert schema_entries == expected_project
+
+    # test DB exclusive columns
+    for col in DB_EXCLUSIVE_COLUMNS:
+        db_entries[col] = "some fake stuff"
+    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    for col in DB_EXCLUSIVE_COLUMNS:
+        assert col not in schema_entries
+
+    # test non null keys
+    for col in SCHEMA_NON_NULL_KEYS:
+        db_entries[col] = None
+    schema_entries = _convert_to_schema_names(db_entries, fake_project["prjOwner"])
+    for col in SCHEMA_NON_NULL_KEYS:
+        assert col is not None
 
     # test date time conversion
     date = datetime.datetime.utcnow()

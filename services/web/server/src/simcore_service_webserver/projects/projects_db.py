@@ -63,8 +63,6 @@ def _check_project_permissions(
         return
 
     needed_permissions = permission.split("|")
-    if not needed_permissions:
-        return
 
     # compute access rights by order of priority all group > organizations > primary
     primary_group = next(
