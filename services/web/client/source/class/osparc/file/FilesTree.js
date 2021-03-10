@@ -212,11 +212,24 @@ qx.Class.define("osparc.file.FilesTree", {
       dataStore.getNodeFiles(nodeId)
         .then(files => {
           const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
-          this.__filesToRoot(newChildren);
-          let filesInTree = [];
-          this.__getLeavesInTree(rootModel, filesInTree);
-          for (let i=0; i<filesInTree.length; i++) {
-            this.openNodeAndParents(filesInTree[i]);
+          if (newChildren.length &&
+            newChildren[0].children.length &&
+            newChildren[0].children[0].children.length) {
+            const nodeData = newChildren[0].children[0].children[0];
+            const nodeTreeName = nodeData.label;
+            this.__resetTree(nodeTreeName);
+            const rootNodeModel = this.getModel();
+            if (nodeData.children.length) {
+              const filesOnly = nodeData.children;
+              this.__filesToRoot(filesOnly);
+            }
+            this.openNode(rootNodeModel);
+
+            const selected = new qx.data.Array([rootNodeModel]);
+            this.setSelection(selected);
+            this.__selectionChanged();
+          } else {
+            rootModel.getChildren().removeAll();
           }
         });
     },
