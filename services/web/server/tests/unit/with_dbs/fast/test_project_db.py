@@ -26,6 +26,7 @@ from simcore_service_webserver.projects.projects_db import (
     _create_project_access_rights,
     setup_projects_db,
 )
+from sqlalchemy.engine.result import RowProxy
 
 
 def test_convert_to_db_names(fake_project: Dict[str, Any]):
@@ -224,7 +225,7 @@ def test_check_project_permissions(
     _check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
 
-async def test_setup_projects_db(client: TestClient):
+def _create_project_db(client: TestClient) -> ProjectDBAPI:
     setup_projects_db(client.app)
 
     assert APP_PROJECT_DBAPI in client.app
@@ -233,6 +234,11 @@ async def test_setup_projects_db(client: TestClient):
     # pylint:disable=protected-access
     assert db_api._app == client.app
     assert db_api._engine
+    return db_api
+
+
+async def test_setup_projects_db(client: TestClient):
+    _create_project_db(client)
 
 
 def test_project_db_engine_creation(postgres_db: sa.engine.Engine):
@@ -243,9 +249,32 @@ def test_project_db_engine_creation(postgres_db: sa.engine.Engine):
 
 
 @pytest.fixture()
-async def db_api(client: TestClient) -> ProjectDBAPI:
-    return setup_projects_db(client.app)
+async def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> ProjectDBAPI:
+    db_api = _create_project_db(client)
+    yield db_api
+
+    # clean the projects
+    postgres_db.execute("DELETE FROM projects")
 
 
-async def test_add_project_to_db(db_api: ProjectDBAPI):
-    pass
+async def test_add_project_to_db(
+    db_api: ProjectDBAPI, fake_project: Dict[str, Any], postgres_db: sa.engine.Engine
+):
+    # add project without user id -> by default creates a template
+    now_time = datetime.datetime.utcnow()
+    project = await db_api.add_project(prj=fake_project, user_id=None)
+
+    assert project["prjOwner"] == "not_a_user@unknown.com"
+    project.pop("prjOwner")
+    exp_project = deepcopy(fake_project)
+    exp_project.pop("prjOwner")
+    assert project == exp_project
+    row: RowProxy = postgres_db.execute(
+        f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
+    ).fetchone()
+    assert row["type"] == "TEMPLATE"
+    assert row["prj_owner"] == None
+    assert row["published"] == False
+    assert row["creation_date"] > now_time
+    assert row["last_change_date"] == row["creation_date"]
+    assert row["last_change_date"] > now_time

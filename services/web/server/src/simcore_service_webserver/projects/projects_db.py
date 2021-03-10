@@ -193,12 +193,12 @@ class ProjectDBAPI:
 
     async def add_project(
         self,
-        prj: Dict,
+        prj: Dict[str, Any],
         user_id: int,
         *,
         force_project_uuid=False,
         force_as_template=False,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """Inserts a new project in the database and, if a user is specified, it assigns ownership
 
         - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
