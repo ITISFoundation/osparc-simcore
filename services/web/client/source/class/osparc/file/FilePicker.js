@@ -124,12 +124,24 @@ qx.Class.define("osparc.file.FilePicker", {
           });
           this._addAt(control, this.self().POS.RELOAD);
           break;
-        case "files-tree":
-          control = new osparc.file.FilesTree();
+        case "tree-folder-layout":
+          control = new qx.ui.splitpane.Pane("horizontal");
           this._addAt(control, this.self().POS.FILES_TREE, {
             flex: 1
           });
           break;
+        case "files-tree": {
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          control = new osparc.file.FilesTree();
+          treeFolderLayout.add(control, 0);
+          break;
+        }
+        case "folder-viewer": {
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          control = new osparc.file.FolderViewer();
+          treeFolderLayout.add(control, 1);
+          break;
+        }
         case "toolbar":
           control = new qx.ui.toolbar.ToolBar();
           control.addSpacer();
@@ -179,6 +191,8 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
 
       this.__recreateFilesTree();
+
+      this.getChildControl("folder-viewer");
 
       const filesAdd = this.getChildControl("files-add");
       filesAdd.addListener("fileAdded", e => {
