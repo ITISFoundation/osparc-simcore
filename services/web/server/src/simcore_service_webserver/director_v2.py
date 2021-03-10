@@ -2,7 +2,7 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 
-from aiohttp import ClientTimeout, web
+from aiohttp import ClientError, ClientTimeout, web
 from models_library.projects_pipeline import ComputationTask
 from pydantic.types import PositiveInt
 from servicelib.application_setup import ModuleCategory, app_module_setup
@@ -60,9 +60,10 @@ async def _request_director_v2(
             payload: Dict = await resp.json()
             return payload
 
-    except TimeoutError as err:
-        raise web.HTTPServiceUnavailable(
-            reason="director service is currently unavailable"
+    except (ClientError, TimeoutError) as err:
+        raise _DirectorServiceError(
+            web.HTTPServiceUnavailable.status_code,
+            reason="director-v2 service is unavailable",
         ) from err
 
 
