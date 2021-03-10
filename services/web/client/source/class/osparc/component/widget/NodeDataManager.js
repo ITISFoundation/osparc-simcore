@@ -59,35 +59,53 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       flex: 1
     });
 
+
     const nodeTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+
     const nodeReloadBtn = this._createChildControlImpl("reloadButton");
     nodeReloadBtn.addListener("execute", function() {
       this.__reloadNodeTree();
     }, this);
     nodeTreeLayout.add(nodeReloadBtn);
+
+    const nodeTreeFolderLayout = this._createChildControlImpl("nodeTreeFolderLayout");
     const nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
-    osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerNodeFilesTree");
     nodeFilesTree.setDragMechanism(true);
+    nodeFilesTree.setWidth(200);
+    nodeTreeFolderLayout.add(nodeFilesTree, 0);
+
+    const nodeFolder = this._createChildControlImpl("nodeFolder");
+    nodeTreeFolderLayout.add(nodeFolder, 1);
+
     nodeFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("node");
+      const selectionData = nodeFilesTree.getSelectedItem();
+      if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+        nodeFolder.setFolder(selectionData);
+      }
     }, this);
-    nodeTreeLayout.add(nodeFilesTree, {
+
+    nodeTreeLayout.add(nodeTreeFolderLayout, {
       flex: 1
     });
+
     treesLayout.add(nodeTreeLayout, {
       flex: 1
     });
+
 
     const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
     this.bind("showMyData", userTreeLayout, "visibility", {
       converter: showMyDataValue => showMyDataValue ? "visible" : "excluded"
     });
+
     const userReloadBtn = this._createChildControlImpl("reloadButton");
     userReloadBtn.addListener("execute", function() {
       this.__userFilesTree.resetCache();
       this.__reloadUserTree();
     }, this);
     userTreeLayout.add(userReloadBtn);
+
     const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
     osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
     userFilesTree.setDropMechnism(true);
@@ -103,9 +121,11 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     userTreeLayout.add(userFilesTree, {
       flex: 1
     });
+
     treesLayout.add(userTreeLayout, {
       flex: 1
     });
+
 
     const selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     selectedFileLayout.addListener("fileDeleted", e => {
@@ -155,9 +175,16 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
             allowGrowX: false
           });
           break;
+        case "nodeTreeFolderLayout":
+        case "userTreeFolderLayout":
+          control = new qx.ui.splitpane.Pane("horizontal");
+          break;
         case "nodeTree":
         case "userTree":
           control = new osparc.file.FilesTree();
+          break;
+        case "nodeFolder":
+          control = new osparc.file.FolderViewer();
           break;
         case "selectedFileLayout":
           control = new osparc.file.FileLabelWithActions().set({
