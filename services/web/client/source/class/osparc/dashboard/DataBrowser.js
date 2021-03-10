@@ -74,20 +74,13 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       treeLayout.add(reloadBtn);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
-        showLeafs: false,
-        dragMechanism: true,
-        dropMechnism: true
+        showLeafs: false
       });
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
         this.__selectedFileLayout.itemSelected(selectionData);
         if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
           this.__folderViewer.setFolder(selectionData);
-        }
-      }, this);
-      filesTree.addListener("fileCopied", e => {
-        if (e) {
-          this.__filesTree.populateTree(null);
         }
       }, this);
 
