@@ -35,11 +35,20 @@ qx.Class.define("osparc.file.FolderViewer", {
     }, this);
     this.getChildControl("folder-path");
     this.getChildControl("view-options");
+
+    this.bind("folder", this.getChildControl("folder-up"), "enabled", {
+      converter: folder => Boolean(folder && folder.getPathLabel && folder.getPathLabel().length > 1)
+    });
+
+    this.bind("folder", this.getChildControl("folder-path"), "value", {
+      converter: folder => folder ? folder.getPathLabel().join(" / ") : "Select folder"
+    });
   },
 
   properties: {
     folder: {
       check: "qx.core.Object",
+      init: null,
       nullable: true,
       event: "changeFolder",
       apply: "__applyFolder"
@@ -231,23 +240,15 @@ qx.Class.define("osparc.file.FolderViewer", {
       return [];
     },
 
-    __applyFolder: function() {
-      this.bind("folder", this.getChildControl("folder-up"), "enabled", {
-        converter: folder => folder && folder.getPathLabel().length > 1
-      });
-
-      this.bind("folder", this.getChildControl("folder-path"), "value", {
-        converter: folder => folder ? folder.getPathLabel().join(" / ") : "Select folder"
-      });
-
-      if (this.getFolder().getLoaded && !this.getFolder().getLoaded()) {
+    __applyFolder: function(folder) {
+      if (folder.getLoaded && !folder.getLoaded()) {
         this.fireDataEvent("requestDatasetFiles", {
-          locationId: this.getFolder().getLocation(),
-          datasetId: this.getFolder().getPath()
+          locationId: folder.getLocation(),
+          datasetId: folder.getPath()
         });
       }
 
-      this.getFolder().getChildren().addListener("change", () => {
+      folder.getChildren().addListener("change", () => {
         this.__reloadFolderContent();
       }, this);
       this.__reloadFolderContent();
