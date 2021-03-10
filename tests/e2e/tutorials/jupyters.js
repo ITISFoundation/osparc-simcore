@@ -89,7 +89,7 @@ async function runTutorial() {
     const jLabIframe = iframes2.find(iframe => iframe._url.endsWith("lab?"));
 
     // inside the iFrame, open the first notebook
-    const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(3)';
+    const input2outputFileSelector = '#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-DirListing-narrow > ul > li:nth-child(4)';
     await jLabIframe.waitForSelector(input2outputFileSelector);
     await jLabIframe.click(input2outputFileSelector, {
       clickCount: 2
