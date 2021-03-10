@@ -147,7 +147,9 @@ def web_server(
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, web_server, mock_orphaned_services) -> TestClient:
+def client(
+    loop, aiohttp_client, web_server: TestServer, mock_orphaned_services
+) -> TestClient:
     cli = loop.run_until_complete(aiohttp_client(web_server))
     return cli
 
@@ -333,7 +335,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture
+@pytest.fixture()
 def postgres_db(
     postgres_dsn: Dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:
