@@ -67,7 +67,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     nodeTreeLayout.add(nodeReloadBtn);
     const nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
     osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerNodeFilesTree");
-    nodeFilesTree.setDragMechnism(true);
+    nodeFilesTree.setDragMechanism(true);
     nodeFilesTree.addListener("selectionChanged", () => {
       this.__selectionChanged("node");
     }, this);

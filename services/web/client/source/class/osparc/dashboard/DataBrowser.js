@@ -74,7 +74,8 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       treeLayout.add(reloadBtn);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
-        dragMechnism: true,
+        showLeafs: false,
+        dragMechanism: true,
         dropMechnism: true
       });
       filesTree.addListener("selectionChanged", () => {

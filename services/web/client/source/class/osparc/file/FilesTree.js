@@ -63,7 +63,7 @@ qx.Class.define("osparc.file.FilesTree", {
   },
 
   properties: {
-    dragMechnism: {
+    dragMechanism: {
       check: "Boolean",
       init: false
     },
@@ -525,11 +525,11 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     __addDragAndDropMechanisms: function(item) {
-      if (this.getDragMechnism()) {
+      if (this.isDragMechanism()) {
         this.__createDragMechanism(item);
       }
 
-      if (this.getDropMechnism()) {
+      if (this.isDropMechnism()) {
         this.__createDropMechanism(item);
       }
     },
