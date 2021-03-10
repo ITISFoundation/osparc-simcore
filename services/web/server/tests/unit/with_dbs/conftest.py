@@ -128,7 +128,7 @@ class _BaseSettingEncoder(json.JSONEncoder):
 
 @pytest.fixture
 def web_server(
-    loop, aiohttp_server, app_cfg: Dict, monkeypatch, postgres_db
+    loop, app_cfg: Dict, monkeypatch, postgres_db, aiohttp_server
 ) -> TestServer:
     print(
         "Inits webserver with app_cfg",
