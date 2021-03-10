@@ -487,7 +487,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         column: 1
       });
 
-      const buttonCL = this.__getEditButton(copyMetadataAnnotations.certificationLink, annotationCL);
+      const buttonCL = this.__getEditButton(copyMetadataAnnotations, "certificationLink", annotationCL);
       certificationBox.bind("selection", buttonCL, "visibility", {
         converter: selection => (this.getMode() === "edit" && selection[0].getLabel() !== "Uncertified") ? "visible" : "excluded"
       }, this);
@@ -514,7 +514,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         column: 1
       });
 
-      const buttonVV = this.__getEditButton(copyMetadataAnnotations.certificationLink, annotationCL);
+      const buttonVV = this.__getEditButton(copyMetadataAnnotations, "vandv", annotationVV);
       this.bind("mode", buttonVV, "visibility", {
         converter: mode => mode === "edit" ? "visible" : "excluded"
       });
@@ -549,7 +549,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         column: 1
       });
 
-      const buttonL = this.__getEditButton(copyMetadataAnnotations.certificationLink, annotationCL);
+      const buttonL = this.__getEditButton(copyMetadataAnnotations, "limitations", annotationLimitations, serviceLimitations);
       this.bind("mode", buttonL, "visibility", {
         converter: mode => mode === "edit" ? "visible" : "excluded"
       });
@@ -571,18 +571,18 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       return header;
     },
 
-    __getEditButton: function(fieldValue, viewMD, suffixText = "") {
+    __getEditButton: function(annotationsObj, fieldKey, viewMD, suffixText = "") {
       const button = osparc.utils.Utils.getEditButton();
       button.addListener("execute", () => {
         const title = this.tr("Edit Annotations");
         const subtitle = this.tr("Supports Markdown");
-        const textEditor = new osparc.component.widget.TextEditor(fieldValue, subtitle, title);
+        const textEditor = new osparc.component.widget.TextEditor(annotationsObj[fieldKey], subtitle, title);
         textEditor.getChildControl("accept-button").setLabel(this.tr("Accept"));
         const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
         textEditor.addListener("textChanged", e => {
           const newText = e.getData();
           viewMD.setValue(newText + suffixText);
-          fieldValue = newText;
+          annotationsObj[fieldKey] = newText;
           win.close();
         }, this);
         textEditor.addListener("cancel", () => {

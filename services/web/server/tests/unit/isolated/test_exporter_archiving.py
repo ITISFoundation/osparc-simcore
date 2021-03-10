@@ -302,12 +302,11 @@ def test_validate_osparc_file_name_too_many_shasums():
 
 async def test_error_during_decompression(loop):
     with pytest.raises(ExporterException) as exc_info:
-        await unzip_folder(Path("/i/do/not/exist"), "/")
+        await unzip_folder(Path("/i/do/not/exist"), Path("/tmp/do_i_not_exist_properly_two"))
 
     assert exc_info.type is ExporterException
     assert exc_info.value.args[0] == (
-        "There was an error while extracting directory '/i/do/not/exist' "
-        "to '/' [Errno 2] No such file or directory: '/i/do/not/exist'"
+        "There was an error while extracting '/i/do/not/exist' directory to '/tmp/do_i_not_exist_properly_two'; files_in_destination_directory=[]"
     )
 
 
@@ -347,9 +346,7 @@ async def test_unzip_found_too_many_project_targets(
         await unzip_folder(archive_path, archive_path.parent)
 
     assert exc_info.type is ExporterException
-    assert exc_info.value.args[0].startswith(
-        "There was an error while extracting directory"
-    )
+    assert exc_info.value.args[0].startswith("There was an error while extracting ")
 
 
 async def test_same_dir_structure_after_compress_decompress(

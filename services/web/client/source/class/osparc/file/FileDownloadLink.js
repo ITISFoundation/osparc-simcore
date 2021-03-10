@@ -35,9 +35,10 @@ qx.Class.define("osparc.file.FileDownloadLink", {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(5));
-    const downloadLinkField = this.__downloadLinkField = this._createChildControlImpl("downloadLink");
 
-    const selectButton = this._createChildControlImpl("selectButton");
+    const downloadLinkField = this.getChildControl("downloadLinkField");
+
+    const selectButton = this.getChildControl("selectButton");
     selectButton.addListener("execute", () => {
       const downloadLink = downloadLinkField.getValue();
       this.fireDataEvent("fileLinkAdded", downloadLink);
@@ -59,7 +60,13 @@ qx.Class.define("osparc.file.FileDownloadLink", {
         const parts = found[1].split("/");
         return parts[parts.length - 1];
       }
-      return "n/a";
+
+      const idx = downloadLink.lastIndexOf("/");
+      if (idx > -1) {
+        return downloadLink.substring(idx + 1);
+      }
+
+      return "unknown";
     },
 
     checkFileExists: function(urlToFile) {
@@ -79,12 +86,10 @@ qx.Class.define("osparc.file.FileDownloadLink", {
   },
 
   members: {
-    __downloadLinkField: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "downloadLink":
+        case "downloadLinkField":
           control = new qx.ui.form.TextField().set({
             placeholder: this.tr("Type a Download Link")
           });
@@ -112,11 +117,11 @@ qx.Class.define("osparc.file.FileDownloadLink", {
     },
 
     getValue: function() {
-      return this.__downloadLinkField.getValue();
+      return this.getChildControl("downloadLinkField").getValue();
     },
 
     setValue: function(value) {
-      this.__downloadLinkField.setValue(value);
+      this.getChildControl("downloadLinkField").setValue(value);
     }
   }
 });

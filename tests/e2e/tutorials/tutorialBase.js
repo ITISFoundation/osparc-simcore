@@ -179,7 +179,7 @@ class TutorialBase {
       console.error(`"${this.__templateName}" template could not be started:\n`, err);
       throw (err);
     }
-    await this.__page.waitFor(waitFor);
+    await this.waitFor(waitFor);
     await this.takeScreenshot("dashboardOpenFirstTemplate_after");
     return resp;
   }
@@ -197,7 +197,7 @@ class TutorialBase {
       console.error(`"${this.__templateName}" service could not be started:\n`, err);
       throw (err);
     }
-    await this.__page.waitFor(waitFor);
+    await this.waitFor(waitFor);
     await this.takeScreenshot("dashboardOpenFirstService_after");
     return resp;
   }
@@ -219,11 +219,11 @@ class TutorialBase {
       if (nodeIds.length === 0) {
         console.log("Services ready in", ((new Date().getTime()) - start) / 1000);
         // after the service is responsive we need to wait a bit until the iframe is rendered
-        await utils.sleep(3000);
+        await this.waitFor(3000);
         return;
       }
 
-      await utils.sleep(2500);
+      await this.waitFor(2500);
     }
     const errorMsg = "Timeout reached waiting for services";
     console.log(errorMsg, ((new Date().getTime()) - start) / 1000);
@@ -233,7 +233,7 @@ class TutorialBase {
   async waitForStudyDone(studyId, timeout = 60000) {
     const start = new Date().getTime();
     while ((new Date().getTime()) - start < timeout) {
-      await utils.sleep(5000);
+      await this.waitFor(5000);
       if (await utils.isStudyDone(this.__page, studyId)) {
         await utils.takeScreenshot(this.__page, 'run_pipeline_done');
         return;
@@ -247,7 +247,7 @@ class TutorialBase {
   async waitForStudyUnlocked(studyId, timeout = 10000) {
     const start = new Date().getTime();
     while ((new Date().getTime()) - start < timeout) {
-      await utils.sleep(timeout / 10);
+      await this.waitFor(timeout / 10);
       if (await utils.isStudyUnlocked(this.__page, studyId)) {
         return;
       }
@@ -296,7 +296,7 @@ class TutorialBase {
 
   async retrieve(waitAfterRetrieve = 5000) {
     await auto.clickRetrieve(this.__page);
-    await this.__page.waitFor(waitAfterRetrieve);
+    await this.waitFor(waitAfterRetrieve);
   }
 
   async openNodeRetrieveAndRestart(nodePosInTree = 0) {
@@ -360,7 +360,7 @@ class TutorialBase {
           break;
         }
         console.log(studyId, "study card still locked");
-        await utils.sleep(3000);
+        await this.waitFor(3000);
       }
     }
     catch (err) {
@@ -375,12 +375,12 @@ class TutorialBase {
   }
 
   async close() {
-    await utils.sleep(2000);
+    await this.waitFor(2000);
     await this.__browser.close();
   }
 
   async waitFor(waitFor) {
-    await this.__page.waitFor(waitFor);
+    await utils.sleep(waitFor);
   }
 
   async takeScreenshot(screenshotTitle) {
