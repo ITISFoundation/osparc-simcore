@@ -376,7 +376,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), true);
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
       const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, this.getNode().getLabel(), 900, 600).set({
         appearance: "service-window"
       });

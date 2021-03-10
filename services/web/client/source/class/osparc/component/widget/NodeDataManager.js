@@ -38,9 +38,8 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-    * @param showUsersTree {Boolean} Show the user's tree on the right side. True by default
     */
-  construct: function(node, showUsersTree = true) {
+  construct: function(node) {
     this.base(arguments);
 
     this.set({
@@ -51,6 +50,9 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
     const nodeDataManagerLayout = new qx.ui.layout.VBox(10);
     this._setLayout(nodeDataManagerLayout);
+
+    const showMyData = this._createChildControlImpl("showMyDataCheckbox");
+    showMyData.bind("value", this, "showMyData");
 
     const treesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
     this._add(treesLayout, {
@@ -76,33 +78,34 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       flex: 1
     });
 
-    if (showUsersTree) {
-      const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const userReloadBtn = this._createChildControlImpl("reloadButton");
-      userReloadBtn.addListener("execute", function() {
-        this.__userFilesTree.resetCache();
-        this.__reloadUserTree();
-      }, this);
-      userTreeLayout.add(userReloadBtn);
-      const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
-      osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
-      userFilesTree.setDropMechnism(true);
-      userFilesTree.addListener("selectionChanged", () => {
-        this.__selectionChanged("user");
-      }, this);
-      userFilesTree.addListener("fileCopied", e => {
-        const fileMetadata = e.getData();
-        if (fileMetadata) {
-          console.log("file copied", fileMetadata);
-        }
-      }, this);
-      userTreeLayout.add(userFilesTree, {
-        flex: 1
-      });
-      treesLayout.add(userTreeLayout, {
-        flex: 1
-      });
-    }
+    const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    this.bind("showMyData", userTreeLayout, "visibility", {
+      converter: showMyDataValue => showMyDataValue ? "visible" : "excluded"
+    });
+    const userReloadBtn = this._createChildControlImpl("reloadButton");
+    userReloadBtn.addListener("execute", function() {
+      this.__userFilesTree.resetCache();
+      this.__reloadUserTree();
+    }, this);
+    userTreeLayout.add(userReloadBtn);
+    const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
+    osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
+    userFilesTree.setDropMechnism(true);
+    userFilesTree.addListener("selectionChanged", () => {
+      this.__selectionChanged("user");
+    }, this);
+    userFilesTree.addListener("fileCopied", e => {
+      const fileMetadata = e.getData();
+      if (fileMetadata) {
+        console.log("file copied", fileMetadata);
+      }
+    }, this);
+    userTreeLayout.add(userFilesTree, {
+      flex: 1
+    });
+    treesLayout.add(userTreeLayout, {
+      flex: 1
+    });
 
     const selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
     selectedFileLayout.addListener("fileDeleted", e => {
@@ -117,7 +120,15 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
   properties: {
     node: {
-      check: "osparc.data.model.Node"
+      check: "osparc.data.model.Node",
+      nullable: false
+    },
+
+    showMyData: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeShowMyData"
     }
   },
 
@@ -129,6 +140,14 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "showMyDataCheckbox":
+          control = new qx.ui.form.CheckBox().set({
+            label: this.tr("Show My Data"),
+            alignX: "right",
+            value: this.getShowMyData()
+          });
+          this._add(control);
+          break;
         case "reloadButton":
           control = new qx.ui.form.Button().set({
             label: this.tr("Reload"),

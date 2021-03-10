@@ -292,7 +292,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), false);
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
       const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, this.getNode().getLabel(), 900, 600).set({
         appearance: "service-window"
       });
