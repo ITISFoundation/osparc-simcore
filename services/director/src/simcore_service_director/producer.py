@@ -7,7 +7,8 @@ import re
 from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Optional, Tuple, Union, Any, Deque
+from collections import deque
 
 import aiodocker
 import tenacity
@@ -798,6 +799,61 @@ async def _extract_osparc_involved_service_labels(
     return labels_by_service
 
 
+def _merge_resources_in_settings(
+    settings: Deque[Dict[str, Any]]
+) -> Deque[Dict[str, Any]]:
+    """All oSPARC services which have defined resource requirements will be added"""
+    result: Deque[Dict[str, Any]] = deque()
+    resources_entries: Deque[Dict[str, Any]] = deque()
+
+    for entry in settings:
+        if entry.get("name") == "Resources" and entry.get("type") == "Resources":
+            resources_entries.append(entry)
+        else:
+            result.append(entry)
+
+    if len(resources_entries) <= 1:
+        return settings
+
+    # merge all resources
+    empty_resource_entry: Dict[str, Any] = {
+        "name": "Resources",
+        "type": "Resources",
+        "value": {
+            "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+            "Reservations": {
+                "NanoCPUs": 0,
+                "MemoryBytes": 0,
+                "GenericResources": [],
+            },
+        },
+    }
+
+    for resource_entry in resources_entries:
+        limits = resource_entry["value"].get("Limits", {})
+        empty_resource_entry["value"]["Limits"]["NanoCPUs"] += limits.get("NanoCPUs", 0)
+        empty_resource_entry["value"]["Limits"]["MemoryBytes"] += limits.get(
+            "MemoryBytes", 0
+        )
+
+        reservations = resource_entry["value"].get("Reservations", {})
+        empty_resource_entry["value"]["Reservations"]["NanoCPUs"] = reservations.get(
+            "NanoCPUs", 0
+        )
+        empty_resource_entry["value"]["Reservations"]["MemoryBytes"] = reservations.get(
+            "MemoryBytes", 0
+        )
+        empty_resource_entry["value"]["Reservations"]["GenericResources"] = []
+        # put all generic resources together without looking for duplicates
+        empty_resource_entry["value"]["Reservations"]["GenericResources"].extend(
+            reservations.get("GenericResources", [])
+        )
+
+    result.append(empty_resource_entry)
+
+    return result
+
+
 async def _start_docker_service_with_dynamic_service(
     app: web.Application,
     client: aiodocker.docker.Docker,
@@ -848,12 +904,14 @@ async def _start_docker_service_with_dynamic_service(
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
 
     # merge the settings from the all the involved services
-    settings: List[Dict[str, Any]] = []
+    settings: Deque[Dict[str, Any]] = deque()
     for service_labels in labels_for_involved_services.values():
         service_settings: List[Dict[str, Any]] = json.loads(
             service_labels["simcore.service.settings"]
         )
         settings.extend(service_settings)
+
+    merged_resources_settings = _merge_resources_in_settings(settings)
 
     # calls into director-v2 to start
     proxy_service_create_results = await start_service_sidecar_stack(
@@ -863,7 +921,7 @@ async def _start_docker_service_with_dynamic_service(
         service_key=service["key"],
         service_tag=service["tag"],
         node_uuid=node_uuid,
-        settings=settings,
+        settings=list(merged_resources_settings),
         paths_mapping=paths_mapping,
         compose_spec=compose_spec,
         target_container=target_container,
