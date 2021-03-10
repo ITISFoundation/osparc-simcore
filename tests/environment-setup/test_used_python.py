@@ -6,7 +6,7 @@
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 
 import pytest
@@ -57,7 +57,7 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def expected_python_version_callable() -> Tuple[int]:
+def expected_python_version_callable() -> Callable:
     def factory(dockerfile=None):
         if dockerfile is not None and "service-sidecar" in str(dockerfile):
             return (3, 8)
