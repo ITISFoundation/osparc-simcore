@@ -401,8 +401,7 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__locations.add(locationId);
       locationModel.getChildren().removeAll();
       let openThis = null;
-      for (let i=0; i<datasets.length; i++) {
-        const dataset = datasets[i];
+      datasets.forEach(dataset => {
         const datasetData = osparc.data.Converters.createDirEntry(
           dataset.display_name,
           locationId,
@@ -425,7 +424,13 @@ qx.Class.define("osparc.file.FilesTree", {
         if (this.__hasDatasetNeedToBeLoaded(locationId, datasetId)) {
           openThis = datasetModel;
         }
-      }
+      });
+
+      // Hack to trigger a rebuild of the item.
+      // Without this sometimes the arrow gicing access to the children is not rendered
+      this.openNode(locationModel);
+      this.closeNode(locationModel);
+
       if (openThis) {
         const datasetId = openThis.getItemId();
         this.openNodeAndParents(openThis);
@@ -441,7 +446,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const datasetModel = this.__getDatasetModel(locationId, datasetId);
       if (datasetModel) {
         datasetModel.getChildren().removeAll();
-        if (files.length>0) {
+        if (files.length) {
           const locationData = osparc.data.Converters.fromDSMToVirtualTreeModel(datasetId, files);
           const datasetData = locationData[0].children;
           datasetData[0].children.forEach(data => {
@@ -450,6 +455,11 @@ qx.Class.define("osparc.file.FilesTree", {
             datasetModel.getChildren().append(filesModel);
           });
         }
+
+        // Hack to trigger a rebuild of the item.
+        // Without this sometimes the arrow gicing access to the children is not rendered
+        this.openNode(datasetModel);
+        this.closeNode(datasetModel);
 
         this.__datasets.add(datasetId);
         this.fireEvent("filesAddedToTree");
