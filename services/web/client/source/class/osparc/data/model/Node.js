@@ -237,6 +237,10 @@ qx.Class.define("osparc.data.model.Node", {
       return this.getKey().includes(str);
     },
 
+    isFilePicker: function() {
+      return osparc.data.model.Node.isFilePicker(this.getMetaData());
+    },
+
     isContainer: function() {
       return osparc.data.model.Node.isContainer(this.getMetaData());
     },
@@ -247,10 +251,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     isComputational: function() {
       return osparc.data.model.Node.isComputational(this.getMetaData());
-    },
-
-    isFilePicker: function() {
-      return osparc.data.model.Node.isFilePicker(this.getMetaData());
     },
 
     getMetaData: function() {
@@ -376,11 +376,13 @@ qx.Class.define("osparc.data.model.Node", {
           this.getStatus().setDependencies(nodeData.state.dependencies);
         }
         if ("currentStatus" in nodeData.state && this.isComputational()) {
+          // currentStatus is only applicable to computational services
           this.getStatus().setRunning(nodeData.state.currentStatus);
         }
         if ("modified" in nodeData.state) {
           if (this.getStatus().getHasOutputs()) {
-            this.getStatus().setModified(nodeData.state.modified || this.getStatus().hasDependencies());
+            // File Picker can't have a modified output
+            this.getStatus().setModified((nodeData.state.modified || this.getStatus().hasDependencies()) && !this.isFilePicker());
           } else {
             this.getStatus().setModified(null);
           }
@@ -649,7 +651,7 @@ qx.Class.define("osparc.data.model.Node", {
         }
         this.getStatus().setHasOutputs(hasOutputs);
 
-        if (this.isFilePicker() || this.isDynamic()) {
+        if (hasOutputs && (this.isFilePicker() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
 

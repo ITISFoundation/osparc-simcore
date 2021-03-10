@@ -142,16 +142,15 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupFilepicker: function() {
-      const node = this.__node;
-      this.__node.getStatus().bind("progress", this.__icon, "source", {
-        converter: progress => {
-          if (progress === 100) {
+      this.__node.bind("outputs", this.__icon, "source", {
+        converter: outputs => {
+          if (osparc.file.FilePicker.getOutput(outputs)) {
             return "@FontAwesome5Solid/check/12";
           }
           return "@FontAwesome5Solid/file/12";
         },
         onUpdate: (source, target) => {
-          if (source.getProgress() === 100) {
+          if (osparc.file.FilePicker.getOutput(source.getOutputs())) {
             target.setTextColor("ready-green");
           } else {
             target.resetTextColor();
@@ -159,10 +158,14 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.__node.getStatus().bind("progress", this.__label, "value", {
-        converter: progress => {
-          if (progress === 100) {
-            return osparc.file.FilePicker.getOutputLabel(node.getOutputs());
+      this.__node.bind("outputs", this.__label, "value", {
+        converter: outputs => {
+          if (osparc.file.FilePicker.getOutput(outputs)) {
+            const outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);
+            if (outputLabel === "" && osparc.file.FilePicker.isOutputDownloadLink(outputs)) {
+              return osparc.file.FilePicker.extractLabelFromLink(outputs);
+            }
+            return outputLabel;
           }
           return this.tr("Select a file");
         }
