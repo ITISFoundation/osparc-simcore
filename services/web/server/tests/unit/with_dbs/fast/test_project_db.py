@@ -9,10 +9,9 @@ from itertools import combinations
 from typing import Any, Dict, List
 
 import pytest
-import regex
+import regex as re
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
@@ -33,7 +32,7 @@ def test_convert_to_db_names(fake_project: Dict[str, Any]):
     assert "prjOwner" not in db_entries
 
     # there should be not camelcasing in the keys, except inside the workbench
-    assert regex.match(r"[A-Z]", json.dumps(list(db_entries.keys()))) is None
+    assert re.match(r"[A-Z]", json.dumps(list(db_entries.keys()))) is None
 
 
 def test_convert_to_schema_names(fake_project: Dict[str, Any]):
@@ -66,6 +65,11 @@ def group_id() -> int:
     return 234
 
 
+@pytest.fixture
+def user_id() -> int:
+    return 132
+
+
 @pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
 def test_project_access_rights_creation(
     group_id: int, project_access_rights: ProjectAccessRights
@@ -91,11 +95,12 @@ def all_permission_combinations() -> List[str]:
 @pytest.mark.parametrize("project_access_rights", [e for e in ProjectAccessRights])
 @pytest.mark.parametrize("wanted_permissions", all_permission_combinations())
 def test_check_project_permissions(
-    group_id: int, project_access_rights: ProjectAccessRights, wanted_permissions: str
+    user_id: int,
+    group_id: int,
+    project_access_rights: ProjectAccessRights,
+    wanted_permissions: str,
 ):
     project = {"access_rights": {}}
-
-    user_id = 132
 
     # this should not raise as needed permissions is empty
     _check_project_permissions(project, user_id, user_groups=[], permission="")
@@ -216,5 +221,6 @@ async def test_setup_projects_db(client: TestClient):
 
 def test_project_db_engine_creation(postgres_db: sa.engine.Engine):
     db_api = ProjectDBAPI.init_from_engine(postgres_db)
+    # pylint:disable=protected-access
     assert db_api._app == {}
     assert db_api._engine == postgres_db
