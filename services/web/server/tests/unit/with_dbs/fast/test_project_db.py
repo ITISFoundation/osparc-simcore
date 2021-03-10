@@ -240,3 +240,12 @@ def test_project_db_engine_creation(postgres_db: sa.engine.Engine):
     # pylint:disable=protected-access
     assert db_api._app == {}
     assert db_api._engine == postgres_db
+
+
+@pytest.fixture()
+async def db_api(client: TestClient) -> ProjectDBAPI:
+    return setup_projects_db(client.app)
+
+
+async def test_add_project_to_db(db_api: ProjectDBAPI):
+    pass
