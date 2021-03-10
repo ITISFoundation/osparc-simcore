@@ -426,10 +426,7 @@ qx.Class.define("osparc.file.FilesTree", {
         }
       });
 
-      // Hack to trigger a rebuild of the item.
-      // Without this sometimes the arrow gicing access to the children is not rendered
-      this.openNode(locationModel);
-      this.closeNode(locationModel);
+      this.__rerender(locationModel);
 
       if (openThis) {
         const datasetId = openThis.getItemId();
@@ -456,16 +453,22 @@ qx.Class.define("osparc.file.FilesTree", {
           });
         }
 
-        // Hack to trigger a rebuild of the item.
-        // Without this sometimes the arrow gicing access to the children is not rendered
-        this.openNode(datasetModel);
-        this.closeNode(datasetModel);
+        this.__rerender(datasetModel);
 
         this.__datasets.add(datasetId);
         this.fireEvent("filesAddedToTree");
       }
 
       this.__filesReceived(locationId, datasetId, files);
+    },
+
+    __rerender: function(item) {
+      // Hack to trigger a rebuild of the item.
+      // Without this sometimes the arrow giving access to the children is not rendered
+      if (!this.isNodeOpen(item)) {
+        this.openNode(item);
+        this.closeNode(item);
+      }
     },
 
     getParent: function(childItem) {
