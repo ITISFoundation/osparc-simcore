@@ -212,9 +212,9 @@ qx.Class.define("osparc.file.FilesTree", {
       dataStore.getNodeFiles(nodeId)
         .then(files => {
           const newChildren = osparc.data.Converters.fromDSMToVirtualTreeModel(null, files);
-          if (newChildren.length &&
-            newChildren[0].children.length &&
-            newChildren[0].children[0].children.length) {
+          if (newChildren.length && // location
+            newChildren[0].children.length && // study
+            newChildren[0].children[0].children.length) { // node
             const nodeData = newChildren[0].children[0].children[0];
             const nodeTreeName = nodeData.label;
             this.__resetTree(nodeTreeName);
