@@ -733,6 +733,71 @@ def _get_value_from_label(labels: Dict[str, Any], key: str) -> Any:
     return None if value == "" else value
 
 
+MATCH_SERVICE_TAG = "${SERVICE_TAG}"
+MATCH_IMAGE_START = "${REGISTRY_URL}/"
+MATCH_IMAGE_END = f":{MATCH_SERVICE_TAG}"
+
+
+def _assemble_key(service_key: str, service_tag: str) -> str:
+    return f"{service_key}:{service_tag}"
+
+
+async def _extract_osparc_involved_service_labels(
+    app: web.Application,
+    service_key: str,
+    service_tag: str,
+    service_labels: Dict[str, str],
+    compose_spec: Optional[str],
+) -> Dict[str, Any]:
+    """
+    Returns all the involved oSPARC services from the provided service labels.
+
+    If the service contains a compose-spec that will also be parsed for images.
+    Searches for images like the following in the spec:
+    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
+    - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` where `1.2.3` is a hardcoded tag
+    """
+
+    # initialize with existing labels
+    labels_by_service = {
+        _assemble_key(service_key=service_key, service_tag=service_tag): service_labels
+    }
+
+    for service_data in compose_spec.get("services", {}).values():
+        image = service_data.get("image", None)
+        if image is None:
+            continue
+
+        # if image dose not have this format skip:
+        # - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:${SERVICE_TAG}`
+        # - `${REGISTRY_URL}/**SOME_SERVICE_NAME**:1.2.3` a hardcoded tag
+        if not image.startswith(MATCH_IMAGE_START) or ":" not in image:
+            continue
+        if not image.startswith(MATCH_IMAGE_START) or not image.endswith(
+            MATCH_IMAGE_END
+        ):
+            continue
+
+        # strips `${REGISTRY_URL}/`; replaces `${SERVICE_TAG}` with `service_tag`
+        osparc_image_key = image.replace(MATCH_SERVICE_TAG, service_tag).replace(
+            MATCH_IMAGE_START, ""
+        )
+        current_service_key, current_service_tag = osparc_image_key.split(":")
+        involved_key = _assemble_key(
+            service_key=current_service_key, service_tag=current_service_tag
+        )
+
+        # if the labels already existed no need to fetch them again
+        if involved_key in labels_by_service:
+            continue
+
+        labels_by_service[involved_key] = await registry_proxy.get_image_labels(
+            app=app, image=current_service_key, tag=current_service_tag
+        )
+
+    return labels_by_service
+
+
 async def _start_docker_service_with_dynamic_service(
     app: web.Application,
     client: aiodocker.docker.Docker,
@@ -740,7 +805,6 @@ async def _start_docker_service_with_dynamic_service(
     project_id: str,
     node_uuid: str,
     service: Dict[str, Any],
-    image_labels: Dict[str, str],
     request_scheme: str,
     request_dns: str,
 ):
@@ -748,10 +812,15 @@ async def _start_docker_service_with_dynamic_service(
     Assembles and passes on all the required information for the service
     to be ran by the service-sidecar.
     """
+    image_labels = await registry_proxy.get_image_labels(
+        app=app, image=service["key"], tag=service["tag"]
+    )
+    log.info(
+        "image=%s, tag=%s, labels=%s", service["key"], service["tag"], image_labels
+    )
+
     # paths_mapping express how to map service-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
-
-    log.info("Processing labels %s", image_labels)
     paths_mapping = _get_value_from_label(image_labels, "simcore.service.paths-mapping")
     if paths_mapping is None:
         raise exceptions.DirectorException(
@@ -759,8 +828,9 @@ async def _start_docker_service_with_dynamic_service(
         )
     paths_mapping: Dict[str, Any] = json.loads(paths_mapping)
 
-    # if not provided, one will be automatically generated
-    compose_spec = _get_value_from_label(image_labels, "simcore.service.compose-spec")
+    compose_spec: Optional[str] = _get_value_from_label(
+        image_labels, "simcore.service.compose-spec"
+    )
     if compose_spec is not None:
         compose_spec = json.loads(compose_spec)
 
@@ -768,9 +838,22 @@ async def _start_docker_service_with_dynamic_service(
         image_labels, "simcore.service.target-container"
     )
 
-    settings: List[Dict[str, Any]] = json.loads(
-        image_labels["simcore.service.settings"]
+    labels_for_involved_services = await _extract_osparc_involved_service_labels(
+        app=app,
+        service_key=service["key"],
+        service_tag=service["tag"],
+        service_labels=image_labels,
+        compose_spec=compose_spec,
     )
+    logging.info("labels_for_involved_services=%s", labels_for_involved_services)
+
+    # merge the settings from the all the involved services
+    settings: List[Dict[str, Any]] = []
+    for service_labels in labels_for_involved_services.values():
+        service_settings: List[Dict[str, Any]] = json.loads(
+            service_labels["simcore.service.settings"]
+        )
+        settings.extend(service_settings)
 
     # calls into director-v2 to start
     proxy_service_create_results = await start_service_sidecar_stack(
@@ -831,10 +914,6 @@ async def _create_node(
         # dynamic-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
         # "service-sidecar", the dynamic sidecar will be used in place of the current system
 
-        image_labels = await registry_proxy.get_image_labels(
-            app=app, image=service["key"], tag=service["tag"]
-        )
-
         if boot_as_service_sidecar:
             service_meta_data = await _start_docker_service_with_dynamic_service(
                 app=app,
@@ -843,7 +922,6 @@ async def _create_node(
                 project_id=project_id,
                 node_uuid=node_uuid,
                 service=service,
-                image_labels=image_labels,
                 request_scheme=request_scheme,
                 request_dns=request_dns,
             )
