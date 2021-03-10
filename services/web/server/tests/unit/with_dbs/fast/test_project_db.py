@@ -12,6 +12,7 @@ import pytest
 import regex as re
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from psycopg2.errors import ForeignKeyViolation
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
@@ -293,3 +294,12 @@ async def test_add_project_to_db(
     assert row["creation_date"] > now_time
     assert row["last_change_date"] == row["creation_date"]
     assert row["last_change_date"] > now_time
+
+    # adding a project with a fake user id raises
+    fake_user_id = 4654654654
+    with pytest.raises(ForeignKeyViolation):
+        project = await db_api.add_project(prj=fake_project, user_id=fake_user_id)
+        # adding a project with a fake user but forcing as template should still raise
+        project = await db_api.add_project(
+            prj=fake_project, user_id=fake_user_id, force_as_template=True
+        )
