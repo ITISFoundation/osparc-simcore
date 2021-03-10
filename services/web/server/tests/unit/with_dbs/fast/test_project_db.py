@@ -272,9 +272,24 @@ async def test_add_project_to_db(
     row: RowProxy = postgres_db.execute(
         f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
     ).fetchone()
-    assert row["type"] == "TEMPLATE"
-    assert row["prj_owner"] == None
-    assert row["published"] == False
+
+    expected_db_entries = {
+        "type": "TEMPLATE",
+        "uuid": fake_project["uuid"],
+        "name": fake_project["name"],
+        "description": fake_project["description"],
+        "thumbnail": fake_project["thumbnail"],
+        "prj_owner": None,
+        "workbench": fake_project["workbench"],
+        "published": False,
+        "access_rights": {},
+        "dev": fake_project["dev"],
+        "classifiers": fake_project["classifiers"],
+        "ui": fake_project["ui"],
+        "quality": fake_project["quality"],
+    }
+    for k in expected_db_entries:
+        assert row[k] == expected_db_entries[k]
     assert row["creation_date"] > now_time
     assert row["last_change_date"] == row["creation_date"]
     assert row["last_change_date"] > now_time
