@@ -90,15 +90,13 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
             allowGrowX: false
           });
           break;
-        case "node-tree-folder-layout":
-        case "user-tree-folder-layout":
+        case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
           break;
-        case "node-tree":
-        case "user-tree":
+        case "files-tree":
           control = new osparc.file.FilesTree();
           break;
-        case "node-folder-viewer":
+        case "folder-viewer":
           control = new osparc.file.FolderViewer();
           break;
         case "selected-file-layout":
@@ -133,12 +131,13 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       }, this);
       nodeTreeLayout.add(nodeReloadBtn);
 
-      const nodeTreeFolderLayout = this.getChildControl("node-tree-folder-layout");
-      const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("node-tree");
-      nodeFilesTree.setDragMechanism(true);
-      nodeFilesTree.setWidth(200);
+      const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("files-tree").set({
+        dragMechanism: true,
+        width: 200
+      });
+      const nodeFolder = this.getChildControl("folder-viewer");
+      const nodeTreeFolderLayout = this.getChildControl("tree-folder-layout");
       nodeTreeFolderLayout.add(nodeFilesTree, 0);
-      const nodeFolder = this.getChildControl("node-folder-viewer");
       nodeTreeFolderLayout.add(nodeFolder, 1);
 
       nodeFilesTree.addListener("selectionChanged", () => {
@@ -170,7 +169,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       }, this);
       userTreeLayout.add(userReloadBtn);
 
-      const userFilesTree = this.__userFilesTree = this.getChildControl("user-tree");
+      const userFilesTree = this.__userFilesTree = this.getChildControl("files-tree");
       osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
       userFilesTree.setDropMechnism(true);
       userFilesTree.addListener("selectionChanged", () => {
