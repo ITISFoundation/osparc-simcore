@@ -497,11 +497,11 @@ async def test_patch_user_project_workbench(
         ]
     )
     # check the nodes are completely patched as expected
-    _assert_project_db_row(
-        postgres_db,
-        exp_project,
-        prj_owner=logged_user["id"],
-        access_rights={
-            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-        },
-    )
+    # _assert_project_db_row(
+    #     postgres_db,
+    #     exp_project,
+    #     prj_owner=logged_user["id"],
+    #     access_rights={
+    #         str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+    #     },
+    # )
