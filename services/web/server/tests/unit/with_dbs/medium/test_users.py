@@ -14,7 +14,6 @@ import pytest
 from aiohttp import web
 from aiopg.sa.connection import SAConnection
 from psycopg2 import OperationalError
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_tokens import (
@@ -65,18 +64,6 @@ def client(loop, aiohttp_client, app_cfg, postgres_db):
 # https://github.com/aio-libs/pytest-aiohttp/issues/8#issuecomment-405602020
 # https://github.com/pytest-dev/pytest-asyncio/issues/76
 #
-
-
-@pytest.fixture
-async def logged_user(client, role: UserRole):
-    """ adds a user in db and logs in with client
-
-    NOTE: role fixture is defined as a parametrization below
-    """
-    async with LoggedUser(
-        client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
-    ) as user:
-        yield user
 
 
 @pytest.fixture
@@ -309,8 +296,8 @@ async def test_delete_token(
 @pytest.fixture
 def mock_failing_connection(mocker) -> MagicMock:
     """
-        async with engine.acquire() as conn:
-            await conn.execute(query)  --> will raise OperationalError
+    async with engine.acquire() as conn:
+        await conn.execute(query)  --> will raise OperationalError
     """
     # See http://initd.org/psycopg/docs/module.html
     conn_execute = mocker.patch.object(SAConnection, "execute")
@@ -321,7 +308,10 @@ def mock_failing_connection(mocker) -> MagicMock:
 
 
 @pytest.mark.parametrize(
-    "role,expected", [(UserRole.USER, web.HTTPServiceUnavailable),]
+    "role,expected",
+    [
+        (UserRole.USER, web.HTTPServiceUnavailable),
+    ],
 )
 async def test_get_profile_with_failing_db_connection(
     logged_user,
@@ -331,13 +321,13 @@ async def test_get_profile_with_failing_db_connection(
     expected: web.HTTPException,
 ):
     """
-        Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160
+    Reproduces issue https://github.com/ITISFoundation/osparc-simcore/pull/1160
 
-        A logged user fails to get profie because though authentication because
+    A logged user fails to get profie because though authentication because
 
-        i.e. conn.execute(query) will raise psycopg2.OperationalError: server closed the connection unexpectedly
+    i.e. conn.execute(query) will raise psycopg2.OperationalError: server closed the connection unexpectedly
 
-        ISSUES: #880, #1160
+    ISSUES: #880, #1160
     """
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"

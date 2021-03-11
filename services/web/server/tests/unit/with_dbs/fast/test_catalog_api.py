@@ -83,22 +83,6 @@ def mock_api_client_session(client, mocker):
     yield context_mock
 
 
-@pytest.fixture()
-async def logged_user(client, user_role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user_role)
-        yield user
-        print("<----- logged out user", user_role)
-
-
 # TODO: with different user roles, i.e. access rights
 @pytest.mark.parametrize(
     "user_role,expected",

@@ -101,9 +101,9 @@ async def logged_user(client):  # , role: UserRole):
     async with LoggedUser(
         client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
     ) as user:
-
+        print("-----> logged in user", user["name"])
         yield user
-
+        print("<----- logged out user", user["name"])
         await delete_all_projects(client.app)
 
 

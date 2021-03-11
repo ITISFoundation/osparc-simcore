@@ -8,9 +8,8 @@ from copy import deepcopy
 from typing import Dict, List
 
 import pytest
-from aiohttp import web
-
 from _helpers import standard_role_response
+from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
 from servicelib.application import create_safe_application
@@ -59,20 +58,6 @@ def client(loop, aiohttp_client, app_cfg, postgres_db):
     return client
 
 
-@pytest.fixture
-async def logged_user(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
-
-    NOTE: role fixture is defined as a parametrization below
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        yield user
-
-
 # --------------------------------------------------------------------------
 PREFIX = "/" + API_VERSION + "/groups"
 
@@ -104,7 +89,9 @@ def _assert__group_user(
     assert "gid" in actual_user
 
 
-@pytest.mark.parametrize(*standard_role_response(),)
+@pytest.mark.parametrize(
+    *standard_role_response(),
+)
 async def test_list_groups(
     client,
     logged_user,
@@ -263,7 +250,10 @@ async def test_group_creation_workflow(client, logged_user, user_role, expected)
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_add_remove_users_from_group(
-    client, logged_user, user_role, expected,
+    client,
+    logged_user,
+    user_role,
+    expected,
 ):
 
     new_group = {
@@ -412,7 +402,10 @@ async def test_add_remove_users_from_group(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_group_access_rights(
-    client, logged_user, user_role, expected,
+    client,
+    logged_user,
+    user_role,
+    expected,
 ):
     # Use-case:
     # 1. create a group
@@ -472,7 +465,11 @@ async def test_group_access_rights(
     # login
     url = client.app.router["auth_login"].url_for()
     resp = await client.post(
-        url, json={"email": users[0]["email"], "password": users[0]["raw_password"],}
+        url,
+        json={
+            "email": users[0]["email"],
+            "password": users[0]["raw_password"],
+        },
     )
     await assert_status(resp, expected.ok)
     # check as a manager I can remove user 2
@@ -497,7 +494,11 @@ async def test_group_access_rights(
     # login
     url = client.app.router["auth_login"].url_for()
     resp = await client.post(
-        url, json={"email": users[1]["email"], "password": users[1]["raw_password"],}
+        url,
+        json={
+            "email": users[1]["email"],
+            "password": users[1]["raw_password"],
+        },
     )
     await assert_status(resp, expected.ok)
     # as a member I cannot remove user 1

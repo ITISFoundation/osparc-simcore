@@ -25,7 +25,7 @@ from models_library.projects_state import (
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
+from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
@@ -103,22 +103,6 @@ def client(
     )
 
     # teardown here ...
-
-
-@pytest.fixture()
-async def logged_user(client, user_role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user["name"], user_role)
-        yield user
-        print("<----- logged out user", user["name"], user_role)
 
 
 @pytest.fixture

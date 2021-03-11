@@ -125,7 +125,7 @@ def fake_project_data(fake_data_dir: Path) -> Dict:
         return json.load(fp)
 
 
-@pytest.fixture
+@pytest.fixture()
 async def logged_user(client):  # , role: UserRole):
     """adds a user in db and logs in with client
 
