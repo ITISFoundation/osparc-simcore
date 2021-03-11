@@ -132,7 +132,11 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         case "files-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
-          control = new osparc.file.FilesTree();
+          control = new osparc.file.FilesTree().set({
+            showLeafs: false,
+            minWidth: 150,
+            width: 200
+          });
           treeFolderLayout.add(control, 0);
           break;
         }
@@ -190,15 +194,19 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__filesTree.populateTree();
       }, this);
 
-      const filesTree = this.__filesTree = this._createChildControlImpl("files-tree").set({
-        width: 200
-      });
-      filesTree.addListener("selectionChanged", this.__selectionChanged, this);
+      const filesTree = this.__filesTree = this.getChildControl("files-tree");
+      const folderViewer = this.getChildControl("folder-viewer");
+
+      filesTree.addListener("selectionChanged", () => {
+        this.__selectionChanged();
+        const selectionData = filesTree.getSelectedItem();
+        if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+          folderViewer.setFolder(selectionData);
+        }
+      }, this);
       filesTree.addListener("itemSelected", this.__itemSelectedFromStore, this);
       filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
       filesTree.populateTree();
-
-      this.getChildControl("folder-viewer");
 
       const filesAdd = this.getChildControl("files-add");
       filesAdd.addListener("fileAdded", e => {
