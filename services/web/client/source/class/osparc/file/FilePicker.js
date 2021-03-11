@@ -187,10 +187,16 @@ qx.Class.define("osparc.file.FilePicker", {
       const reloadButton = this.getChildControl("reload-button");
       reloadButton.addListener("execute", () => {
         this.__filesTree.resetCache();
-        this.__recreateFilesTree();
+        this.__filesTree.populateTree();
       }, this);
 
-      this.__recreateFilesTree();
+      const filesTree = this.__filesTree = this._createChildControlImpl("files-tree").set({
+        width: 200
+      });
+      filesTree.addListener("selectionChanged", this.__selectionChanged, this);
+      filesTree.addListener("itemSelected", this.__itemSelectedFromStore, this);
+      filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
+      filesTree.populateTree();
 
       this.getChildControl("folder-viewer");
 
@@ -200,7 +206,6 @@ qx.Class.define("osparc.file.FilePicker", {
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
           this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
-        const filesTree = this.__recreateFilesTree();
         filesTree.resetCache();
         filesTree.populateTree();
         filesTree.loadFilePath(this.__getOutputFile()["value"]);
@@ -218,18 +223,6 @@ qx.Class.define("osparc.file.FilePicker", {
         const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
         this.__setOutputValueFromLink(downloadLink, label);
       }, this);
-    },
-
-    __recreateFilesTree: function() {
-      if (this.__filesTree) {
-        this._remove(this.__filesTree);
-      }
-      const filesTree = this.__filesTree = this._createChildControlImpl("files-tree");
-      filesTree.addListener("selectionChanged", this.__selectionChanged, this);
-      filesTree.addListener("itemSelected", this.__itemSelectedFromStore, this);
-      filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
-      filesTree.populateTree();
-      return filesTree;
     },
 
     init: function() {
