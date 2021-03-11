@@ -217,9 +217,14 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__selectionChanged(selectionData);
       }, this);
       folderViewer.addListener("itemSelected", e => {
-        const data = e.getData();
-        filesTree.openNodeAndParents(data);
-        filesTree.setSelection(new qx.data.Array([data]));
+        const selectionData = e.getData();
+        this.__selectionChanged(selectionData);
+        if (osparc.file.FilesTree.isFile(selectionData)) {
+          this.__itemSelected();
+        } else if (osparc.file.FilesTree.isDir(selectionData)) {
+          filesTree.openNodeAndParents(selectionData);
+          filesTree.setSelection(new qx.data.Array([selectionData]));
+        }
       }, this);
       folderViewer.addListener("folderUp", e => {
         const currentFolder = e.getData();
