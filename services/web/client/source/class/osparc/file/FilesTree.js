@@ -53,7 +53,7 @@ qx.Class.define("osparc.file.FilesTree", {
     this.addListener("tap", this.__selectionChanged, this);
 
     // Listen to "Enter" key
-    this.addListener("keypress", function(keyEvent) {
+    this.addListener("keypress", keyEvent => {
       if (keyEvent.getKeyIdentifier() === "Enter") {
         this.__itemSelected();
       }
