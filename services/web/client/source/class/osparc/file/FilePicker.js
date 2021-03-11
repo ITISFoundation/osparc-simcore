@@ -236,7 +236,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
 
       const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
-      selectedFileLayout.getChildControl("deleteBtn").exclude();
+      selectedFileLayout.getChildControl("delete-button").exclude();
 
       const filesAdd = this.getChildControl("files-add");
       filesAdd.addListener("fileAdded", e => {

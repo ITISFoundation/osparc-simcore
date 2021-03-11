@@ -41,17 +41,17 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
-    const downloadBtn = this.getChildControl("downloadBtn");
+    const downloadBtn = this.getChildControl("download-button");
     downloadBtn.addListener("execute", e => {
       this.__retrieveURLAndDownload();
     }, this);
 
-    const deleteBtn = this.getChildControl("deleteBtn");
+    const deleteBtn = this.getChildControl("delete-button");
     deleteBtn.addListener("execute", e => {
       this.__deleteFile();
     }, this);
 
-    this._createChildControlImpl("selectedLabel");
+    this._createChildControlImpl("selected-label");
   },
 
   events: {
@@ -64,17 +64,17 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "downloadBtn":
+        case "download-button":
           control = new qx.ui.toolbar.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
           osparc.utils.Utils.setIdToWidget(control, "filesTreeDownloadBtn");
           this._add(control);
           break;
-        case "deleteBtn":
+        case "delete-button":
           control = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash-alt/16");
           osparc.utils.Utils.setIdToWidget(control, "filesTreeDeleteBtn");
           this._add(control);
           break;
-        case "selectedLabel":
+        case "selected-label":
           control = new osparc.ui.toolbar.Label();
           this._add(control);
           break;
@@ -84,14 +84,14 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     itemSelected: function(selectedItem) {
       const isFile = osparc.file.FilesTree.isFile(selectedItem);
-      this.getChildControl("downloadBtn").setEnabled(isFile);
-      this.getChildControl("deleteBtn").setEnabled(isFile);
+      this.getChildControl("download-button").setEnabled(isFile);
+      this.getChildControl("delete-button").setEnabled(isFile);
       if (isFile) {
         this.__selection = selectedItem;
-        this.getChildControl("selectedLabel").setValue(selectedItem.getFileId());
+        this.getChildControl("selected-label").setValue(selectedItem.getFileId());
       } else {
         this.__selection = null;
-        this.getChildControl("selectedLabel").setValue("");
+        this.getChildControl("selected-label").setValue("");
       }
     },
 
