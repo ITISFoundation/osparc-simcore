@@ -36,6 +36,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
   members: {
     __filesTree: null,
     __folderViewer: null,
+    __selectedFileLayout: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -71,6 +72,11 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
           treeFolderLayout.add(control, 1);
           break;
         }
+        case "selected-file-layout":
+          control = new osparc.file.FileLabelWithActions().set({
+            alignY: "middle"
+          });
+          break;
       }
 
       return control || this.base(arguments, id);
@@ -108,11 +114,11 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       actionsToolbar.addSpacer();
       actionsToolbar.add(addFile);
 
-      const selectedFileLayout = new osparc.file.FileLabelWithActions();
+      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
 
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
-        selectedFileLayout.itemSelected(selectionData);
+        this.__selectionChanged(selectionData);
         if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
           folderViewer.setFolder(selectionData);
         }
@@ -120,7 +126,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
       folderViewer.addListener("selectionChanged", e => {
         const selectionData = e.getData();
-        selectedFileLayout.itemSelected(selectionData);
+        this.__selectionChanged(selectionData);
       }, this);
       folderViewer.addListener("itemSelected", e => {
         const data = e.getData();
@@ -147,6 +153,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       fileActions.add(selectedFileLayout);
 
       this._add(actionsToolbar);
+    },
+
+    __selectionChanged: function(selectedItem) {
+      this.__selectedFileLayout.itemSelected(selectedItem);
     }
   }
 });
