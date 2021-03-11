@@ -760,11 +760,15 @@ async def _extract_osparc_involved_service_labels(
     """
 
     # initialize with existing labels
-    labels_by_service = {
+    # stores labels mapped by image_name service:tag
+    docker_image_name_by_services: Dict[str, Any] = {
         _assemble_key(service_key=service_key, service_tag=service_tag): service_labels
     }
+    # maps form image_name to compose_spec key
+    reverse_mapping: Dict[str, str] = {}
 
-    for service_data in compose_spec.get("services", {}).values():
+    for compose_service_key, service_data in compose_spec.get("services", {}).items():
+
         image = service_data.get("image", None)
         if image is None:
             continue
@@ -787,16 +791,23 @@ async def _extract_osparc_involved_service_labels(
         involved_key = _assemble_key(
             service_key=current_service_key, service_tag=current_service_tag
         )
+        reverse_mapping[involved_key] = compose_service_key
 
         # if the labels already existed no need to fetch them again
-        if involved_key in labels_by_service:
+        if involved_key in docker_image_name_by_services:
             continue
 
-        labels_by_service[involved_key] = await registry_proxy.get_image_labels(
+        docker_image_name_by_services[
+            involved_key
+        ] = await registry_proxy.get_image_labels(
             app=app, image=current_service_key, tag=current_service_tag
         )
 
-    return labels_by_service
+    # remaps from image_name as key to compose_spec key
+    compose_spec_mapped_labels = {
+        reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()
+    }
+    return compose_spec_mapped_labels
 
 
 def _merge_resources_in_settings(
@@ -805,6 +816,8 @@ def _merge_resources_in_settings(
     """All oSPARC services which have defined resource requirements will be added"""
     result: Deque[Dict[str, Any]] = deque()
     resources_entries: Deque[Dict[str, Any]] = deque()
+
+    log.debug("merging settings %s", settings)
 
     for entry in settings:
         if entry.get("name") == "Resources" and entry.get("type") == "Resources":
@@ -852,6 +865,54 @@ def _merge_resources_in_settings(
     result.append(empty_resource_entry)
 
     return result
+
+
+def _inject_target_service_into_env_vars(
+    settings: Deque[Dict[str, Any]]
+) -> Deque[Dict[str, Any]]:
+    """NOTE: this method will modify settings in place"""
+
+    def _forma_env_var(env_var: str, destination_container: str) -> str:
+        var_name, var_payload = env_var.split("=")
+        json_encoded = json.dumps(
+            dict(destination_container=destination_container, env_var=var_payload)
+        )
+        return f"{var_name}={json_encoded}"
+
+    for entry in settings:
+        if entry.get("name") == "env" and entry.get("type") == "string":
+            # process entry
+            list_of_env_vars = entry.get("value", [])
+            destination_container = entry["destination_container"]
+
+            # transforms settings defined environment variables
+            # from `ENV_VAR=PAYLOAD`
+            # to   `ENV_VAR={"destination_container": "destination_container", "env_var": "PAYLOAD"}`
+            entry["value"] = [
+                _forma_env_var(x, destination_container) for x in list_of_env_vars
+            ]
+
+    return settings
+
+
+def _add_compose_destination_container_to_settings_entries(
+    settings: Deque[Dict[str, Any]], destination_container: str
+) -> List[Dict[str, Any]]:
+    def _inject_destination_container(item: Dict[str, Any]):
+        item["destination_container"] = destination_container
+        return item
+
+    return [_inject_destination_container(x) for x in settings]
+
+
+def _strip_compose_destination_container_from_settings_entries(
+    settings: Deque[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    def _remove_destination_container(item: Dict[str, Any]):
+        item.pop("destination_container", None)
+        return item
+
+    return [_remove_destination_container(x) for x in settings]
 
 
 async def _start_docker_service_with_dynamic_service(
@@ -905,13 +966,21 @@ async def _start_docker_service_with_dynamic_service(
 
     # merge the settings from the all the involved services
     settings: Deque[Dict[str, Any]] = deque()
-    for service_labels in labels_for_involved_services.values():
+    for compose_spec_key, service_labels in labels_for_involved_services.items():
         service_settings: List[Dict[str, Any]] = json.loads(
             service_labels["simcore.service.settings"]
         )
-        settings.extend(service_settings)
+        settings.extend(
+            # inject compose spec key, used to target container specific services
+            _add_compose_destination_container_to_settings_entries(
+                settings=service_settings, destination_container=compose_spec_key
+            )
+        )
 
-    merged_resources_settings = _merge_resources_in_settings(settings)
+    settings = _merge_resources_in_settings(settings)
+    settings = _inject_target_service_into_env_vars(settings)
+    # destination_container is no longer required, removing
+    settings = _strip_compose_destination_container_from_settings_entries(settings)
 
     # calls into director-v2 to start
     proxy_service_create_results = await start_service_sidecar_stack(
@@ -921,7 +990,7 @@ async def _start_docker_service_with_dynamic_service(
         service_key=service["key"],
         service_tag=service["tag"],
         node_uuid=node_uuid,
-        settings=list(merged_resources_settings),
+        settings=list(settings),
         paths_mapping=paths_mapping,
         compose_spec=compose_spec,
         target_container=target_container,

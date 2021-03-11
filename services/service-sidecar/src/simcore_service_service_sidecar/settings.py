@@ -48,7 +48,7 @@ class ServiceSidecarSettings(BaseSettings):
     )
 
     max_combined_container_name_length: PositiveInt = Field(
-        255, description="the container name will be limited to 255 chars"
+        63, description="the container name which will be used as hostname"
     )
 
     stop_and_remove_timeout: PositiveInt = Field(

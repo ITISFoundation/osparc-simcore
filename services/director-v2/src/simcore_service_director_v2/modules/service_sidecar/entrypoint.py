@@ -337,7 +337,8 @@ def _parse_env_settings(settings: List[str]) -> Dict:
         if "=" in s:
             parts = s.split("=")
             if len(parts) == 2:
-                envs.update({parts[0]: parts[1]})
+                # will be forwarded to service-sidecar spawned containers
+                envs[f"FORWARD_ENV_{parts[0]}"] = parts[1]
 
         log.debug("Parsed env settings %s", s)
 
@@ -346,17 +347,11 @@ def _parse_env_settings(settings: List[str]) -> Dict:
 
 # pylint: disable=too-many-branches
 def _inject_settings_to_create_service_params(
-    node_uuid: str,
     labels_service_settings: List[Dict[str, Any]],
     create_service_params: Dict[str, Any],
 ) -> None:
     for param in labels_service_settings:
         _check_setting_correctness(param)
-        # replace %service_uuid% by the given uuid
-        if str(param["value"]).find("%service_uuid%") != -1:
-            dummy_string = json.dumps(param["value"])
-            dummy_string = dummy_string.replace("%service_uuid%", node_uuid)
-            param["value"] = json.loads(dummy_string)
 
         # NOTE: the below capitalize addresses a bug in a lot of already in use services
         # where Resources was written in lower case
@@ -502,7 +497,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             ]
 
     # used for the container name to avoid collisions for started containers on the same node
-    compose_namespace = f"{SERVICE_SIDECAR_PREFIX}_{project_id}_{node_uuid}"
+    compose_namespace = f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}"
 
     create_service_params = {
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
@@ -561,7 +556,6 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     }
 
     _inject_settings_to_create_service_params(
-        node_uuid=node_uuid,
         labels_service_settings=settings,
         create_service_params=create_service_params,
     )
