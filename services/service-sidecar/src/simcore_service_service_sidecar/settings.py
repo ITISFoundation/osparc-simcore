@@ -33,7 +33,8 @@ class ServiceSidecarSettings(BaseSettings):
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
     host: str = Field(
-        "0.0.0.0", description="host where to bind the application on which to serve"
+        "0.0.0.0",  # nosec
+        description="host where to bind the application on which to serve",
     )
     port: PortInt = Field(
         8000, description="port where the server will be currently serving"
