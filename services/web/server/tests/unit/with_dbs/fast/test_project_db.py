@@ -437,3 +437,7 @@ async def test_add_project_to_db(
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
     )
+
+
+async def test_patch_user_project_workbench():
+    pass
