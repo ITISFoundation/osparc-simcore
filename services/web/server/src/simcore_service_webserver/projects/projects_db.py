@@ -27,6 +27,7 @@ from sqlalchemy import literal_column
 from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
+from ..users_exceptions import UserNotFoundError
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (
     NodeNotFoundError,
@@ -699,6 +700,8 @@ class ProjectDBAPI:
         primary_gid: int = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
+        if not primary_gid:
+            raise UserNotFoundError(uid=user_id)
         return primary_gid
 
     async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:

@@ -12,8 +12,8 @@ from typing import Any, Dict, List
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
-from psycopg2.errors import ForeignKeyViolation
 from simcore_postgres_database.models.groups import GroupType
+from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
@@ -27,6 +27,7 @@ from simcore_service_webserver.projects.projects_db import (
     _create_project_access_rights,
     setup_projects_db,
 )
+from simcore_service_webserver.users_exceptions import UserNotFoundError
 from sqlalchemy.engine.result import RowProxy
 
 
@@ -258,48 +259,85 @@ async def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> ProjectDB
     postgres_db.execute("DELETE FROM projects")
 
 
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        (UserRole.ANONYMOUS),
+        (UserRole.GUEST),
+        (UserRole.USER),
+        (UserRole.TESTER),
+    ],
+)
 async def test_add_project_to_db(
-    db_api: ProjectDBAPI, fake_project: Dict[str, Any], postgres_db: sa.engine.Engine
+    fake_project: Dict[str, Any],
+    postgres_db: sa.engine.Engine,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, str],
+    db_api: ProjectDBAPI,
 ):
+    original_project = deepcopy(fake_project)
     # add project without user id -> by default creates a template
-    now_time = datetime.datetime.utcnow()
+    now_time = datetime.datetime.utcnow() - datetime.timedelta(milliseconds=10)
     project = await db_api.add_project(prj=fake_project, user_id=None)
 
+    # no user so the project owner has a pre-defined value
+    _DIFFERENT_KEYS = ["prjOwner", "creationDate", "lastChangeDate"]
+    exp_project = deepcopy(original_project)
+    assert all(project[k] != exp_project[k] for k in _DIFFERENT_KEYS)
     assert project["prjOwner"] == "not_a_user@unknown.com"
-    project.pop("prjOwner")
-    exp_project = deepcopy(fake_project)
-    exp_project.pop("prjOwner")
+    for k in _DIFFERENT_KEYS:
+        project.pop(k)
+        exp_project.pop(k)
+    # the rest of the keys shall be the same as the original
     assert project == exp_project
-    row: RowProxy = postgres_db.execute(
-        f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
-    ).fetchone()
 
-    expected_db_entries = {
-        "type": "TEMPLATE",
-        "uuid": fake_project["uuid"],
-        "name": fake_project["name"],
-        "description": fake_project["description"],
-        "thumbnail": fake_project["thumbnail"],
-        "prj_owner": None,
-        "workbench": fake_project["workbench"],
-        "published": False,
-        "access_rights": {},
-        "dev": fake_project["dev"],
-        "classifiers": fake_project["classifiers"],
-        "ui": fake_project["ui"],
-        "quality": fake_project["quality"],
-    }
-    for k in expected_db_entries:
-        assert row[k] == expected_db_entries[k]
-    assert row["creation_date"] > now_time
-    assert row["last_change_date"] == row["creation_date"]
-    assert row["last_change_date"] > now_time
+    def _assert_project_db_row(project: Dict[str, Any], **kwargs):
+        row: RowProxy = postgres_db.execute(
+            f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
+        ).fetchone()
 
+        expected_db_entries = {
+            "type": "STANDARD",
+            "uuid": project["uuid"],
+            "name": project["name"],
+            "description": project["description"],
+            "thumbnail": project["thumbnail"],
+            "prj_owner": None,
+            "workbench": project["workbench"],
+            "published": False,
+            "access_rights": {},
+            "dev": project["dev"],
+            "classifiers": project["classifiers"],
+            "ui": project["ui"],
+            "quality": project["quality"],
+        }
+        expected_db_entries.update(kwargs)
+        for k in expected_db_entries:
+            assert (
+                row[k] == expected_db_entries[k]
+            ), f"project column [{k}] does not correspond"
+        assert row["creation_date"] > now_time
+        assert row["last_change_date"] == row["creation_date"]
+        assert row["last_change_date"] > now_time
+
+    _assert_project_db_row(project, type="TEMPLATE")
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
-    with pytest.raises(ForeignKeyViolation):
+    with pytest.raises(UserNotFoundError):
         project = await db_api.add_project(prj=fake_project, user_id=fake_user_id)
         # adding a project with a fake user but forcing as template should still raise
         project = await db_api.add_project(
             prj=fake_project, user_id=fake_user_id, force_as_template=True
         )
+
+    # adding a project with a real user id does not raise and creates a STANDARD project
+    fake_project["prjOwner"] = logged_user["email"]
+
+    project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
+    _assert_project_db_row(
+        project,
+        prj_owner=logged_user["id"],
+        access_rights={
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        },
+    )
