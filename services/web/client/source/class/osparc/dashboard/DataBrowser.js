@@ -35,59 +35,92 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
 
   members: {
     __filesTree: null,
-    __selectedFileLayout: null,
+    __folderViewer: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "reload-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Reload"),
+            font: "text-14",
+            icon: "@FontAwesome5Solid/sync-alt/14",
+            allowGrowX: false
+          });
+          this._add(control);
+          break;
+        case "tree-folder-layout":
+          control = new qx.ui.splitpane.Pane("horizontal");
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "files-tree": {
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          control = new osparc.file.FilesTree().set({
+            showLeafs: false,
+            minWidth: 150,
+            width: 250
+          });
+          treeFolderLayout.add(control, 0);
+          break;
+        }
+        case "folder-viewer": {
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          control = new osparc.file.FolderViewer();
+          treeFolderLayout.add(control, 1);
+          break;
+        }
+      }
+
+      return control || this.base(arguments, id);
+    },
 
     // overriden
     _initResources: function() {
-      this.__createDataManagerLayout();
+      this.__buildLayout();
 
       this.addListener("appear", () => {
-        this.__filesTree.populateTree(null);
-        this.__folderViewer.setFolder(this.__filesTree.getModel());
+        this.getChildControl("files-tree").populateTree(null);
+        this.getChildControl("folder-viewer").setFolder(this.getChildControl("files-tree").getModel());
       }, this);
     },
 
-    __createDataManagerLayout: function() {
-      const dataManagerMainLayout = this.__createTreeLayout().set({
+    __buildLayout: function() {
+      this.set({
         marginTop: 20
       });
 
-      this._add(dataManagerMainLayout, {
-        flex: 1
-      });
-    },
-
-    __createTreeLayout: function() {
-      const treeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
       // button for refetching data
-      const reloadBtn = new qx.ui.form.Button().set({
-        label: this.tr("Reload"),
-        font: "text-14",
-        icon: "@FontAwesome5Solid/sync-alt/14",
-        allowGrowX: false
-      });
+      const reloadBtn = this.getChildControl("reload-button");
       reloadBtn.addListener("execute", function() {
-        this.__filesTree.resetCache();
-        this.__filesTree.populateTree(null);
+        this.getChildControl("files-tree").resetCache();
+        this.getChildControl("files-tree").populateTree(null);
       }, this);
-      treeLayout.add(reloadBtn);
 
-      const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
-        showLeafs: false
-      });
+      const filesTree = this.getChildControl("files-tree");
+      const folderViewer = this.getChildControl("folder-viewer");
+
+      const actionsToolbar = new qx.ui.toolbar.ToolBar();
+      const fileActions = new qx.ui.toolbar.Part();
+      const addFile = new qx.ui.toolbar.Part();
+      actionsToolbar.add(fileActions);
+      actionsToolbar.addSpacer();
+      actionsToolbar.add(addFile);
+
+      const selectedFileLayout = new osparc.file.FileLabelWithActions();
+
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
-        this.__selectedFileLayout.itemSelected(selectionData);
+        selectedFileLayout.itemSelected(selectionData);
         if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
-          this.__folderViewer.setFolder(selectionData);
+          folderViewer.setFolder(selectionData);
         }
       }, this);
 
-      const folderViewer = this.__folderViewer = new osparc.file.FolderViewer();
       folderViewer.addListener("selectionChanged", e => {
         const selectionData = e.getData();
-        this.__selectedFileLayout.itemSelected(selectionData);
+        selectedFileLayout.itemSelected(selectionData);
       }, this);
       folderViewer.addListener("itemSelected", e => {
         const data = e.getData();
@@ -99,7 +132,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         const parent = filesTree.getParent(currentFolder);
         if (parent) {
           filesTree.setSelection(new qx.data.Array([parent]));
-          this.__folderViewer.setFolder(parent);
+          folderViewer.setFolder(parent);
         }
       }, this);
       folderViewer.addListener("requestDatasetFiles", e => {
@@ -107,39 +140,13 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
         filesTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
 
-      const filesLayout = new qx.ui.splitpane.Pane("horizontal");
-      filesTree.set({
-        minWidth: 150,
-        width: 250
-      });
-      filesLayout.add(filesTree, 0); // flex 0
-      filesLayout.add(folderViewer, 1); // flex 1
-      treeLayout.add(filesLayout, {
-        flex: 1
-      });
-
-      const actionsToolbar = this.__createActionsToolbar();
-      treeLayout.add(actionsToolbar);
-
-      return treeLayout;
-    },
-
-    __createActionsToolbar: function() {
-      const actionsToolbar = new qx.ui.toolbar.ToolBar();
-      const fileActions = new qx.ui.toolbar.Part();
-      const addFile = new qx.ui.toolbar.Part();
-      actionsToolbar.add(fileActions);
-      actionsToolbar.addSpacer();
-      actionsToolbar.add(addFile);
-
-      const selectedFileLayout = this.__selectedFileLayout = new osparc.file.FileLabelWithActions();
       selectedFileLayout.addListener("fileDeleted", e => {
         const fileMetadata = e.getData();
-        this.__filesTree.populateTree(fileMetadata["locationId"]);
+        this.getChildControl("files-tree").populateTree(fileMetadata["locationId"]);
       }, this);
       fileActions.add(selectedFileLayout);
 
-      return actionsToolbar;
+      this._add(actionsToolbar);
     }
   }
 });
