@@ -12,6 +12,7 @@ from typing import Any, Dict, List
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from psycopg2.errors import UniqueViolation
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.projects_db import (
@@ -318,10 +319,10 @@ def _assert_project_db_row(
 @pytest.mark.parametrize(
     "user_role",
     [
-        (UserRole.ANONYMOUS),
-        (UserRole.GUEST),
+        # (UserRole.ANONYMOUS),
+        # (UserRole.GUEST),
         (UserRole.USER),
-        (UserRole.TESTER),
+        # (UserRole.TESTER),
     ],
 )
 async def test_add_project_to_db(
@@ -345,9 +346,9 @@ async def test_add_project_to_db(
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
-        project = await db_api.add_project(prj=fake_project, user_id=fake_user_id)
+        await db_api.add_project(prj=fake_project, user_id=fake_user_id)
         # adding a project with a fake user but forcing as template should still raise
-        project = await db_api.add_project(
+        await db_api.add_project(
             prj=fake_project, user_id=fake_user_id, force_as_template=True
         )
 
@@ -355,6 +356,68 @@ async def test_add_project_to_db(
     # since we already have a project with that uuid, it shall be updated
     new_project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
     assert new_project["uuid"] != original_project["uuid"]
+    _assert_added_project(
+        original_project,
+        new_project,
+        exp_overrides={
+            "uuid": new_project["uuid"],
+            "prjOwner": logged_user["email"],
+            "accessRights": {
+                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+            },
+        },
+    )
+    _assert_project_db_row(
+        postgres_db,
+        new_project,
+        prj_owner=logged_user["id"],
+        access_rights={
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        },
+    )
+
+    # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
+    new_project = await db_api.add_project(
+        prj=fake_project, user_id=logged_user["id"], force_as_template=True
+    )
+    assert new_project["uuid"] != original_project["uuid"]
+    _assert_added_project(
+        original_project,
+        new_project,
+        exp_overrides={
+            "uuid": new_project["uuid"],
+            "prjOwner": logged_user["email"],
+            "accessRights": {
+                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+            },
+        },
+    )
+    _assert_project_db_row(
+        postgres_db,
+        new_project,
+        prj_owner=logged_user["id"],
+        access_rights={
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        },
+        type="TEMPLATE",
+    )
+    # add a project with a uuid that is already present, using force_project_uuid shall raise
+    with pytest.raises(UniqueViolation):
+        await db_api.add_project(
+            prj=fake_project, user_id=logged_user["id"], force_project_uuid=True
+        )
+
+    # add a project with a bad uuid that is already present, using force_project_uuid shall raise
+    fake_project["uuid"] = "some bad uuid"
+    with pytest.raises(ValueError):
+        await db_api.add_project(
+            prj=fake_project, user_id=logged_user["id"], force_project_uuid=True
+        )
+
+    # add a project with a bad uuid that is already present, shall not raise
+    new_project = await db_api.add_project(
+        prj=fake_project, user_id=logged_user["id"], force_project_uuid=False
+    )
     _assert_added_project(
         original_project,
         new_project,
