@@ -28,6 +28,7 @@ from simcore_service_webserver.projects.projects_db import (
     setup_projects_db,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
+from simcore_service_webserver.utils import to_datetime
 from sqlalchemy.engine.result import RowProxy
 
 
@@ -259,6 +260,61 @@ async def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> ProjectDB
     postgres_db.execute("DELETE FROM projects")
 
 
+def _assert_added_project(
+    exp_project: Dict[str, Any],
+    added_project: Dict[str, Any],
+    exp_overrides: Dict[str, Any],
+):
+    original_prj = deepcopy(exp_project)
+    added_prj = deepcopy(added_project)
+    # no user so the project owner has a pre-defined value
+    _DIFFERENT_KEYS = ["creationDate", "lastChangeDate"]
+
+    assert all(added_prj[k] != original_prj[k] for k in _DIFFERENT_KEYS)
+    assert to_datetime(added_prj["creationDate"]) > to_datetime(
+        exp_project["creationDate"]
+    )
+    assert added_prj["creationDate"] == added_prj["lastChangeDate"]
+    original_prj.update(exp_overrides)
+    for k in _DIFFERENT_KEYS:
+        added_prj.pop(k)
+        original_prj.pop(k)
+    # the rest of the keys shall be the same as the original
+    assert added_prj == original_prj
+
+
+def _assert_project_db_row(
+    postgres_db: sa.engine.Engine, project: Dict[str, Any], **kwargs
+):
+    row: RowProxy = postgres_db.execute(
+        f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
+    ).fetchone()
+
+    expected_db_entries = {
+        "type": "STANDARD",
+        "uuid": project["uuid"],
+        "name": project["name"],
+        "description": project["description"],
+        "thumbnail": project["thumbnail"],
+        "prj_owner": None,
+        "workbench": project["workbench"],
+        "published": False,
+        "access_rights": {},
+        "dev": project["dev"],
+        "classifiers": project["classifiers"],
+        "ui": project["ui"],
+        "quality": project["quality"],
+    }
+    expected_db_entries.update(kwargs)
+    for k in expected_db_entries:
+        assert (
+            row[k] == expected_db_entries[k]
+        ), f"project column [{k}] does not correspond"
+    assert row["creation_date"] == to_datetime(project["creationDate"])
+    assert row["last_change_date"] == row["creation_date"]
+    assert row["last_change_date"] == to_datetime(project["lastChangeDate"])
+
+
 @pytest.mark.parametrize(
     "user_role",
     [
@@ -277,50 +333,15 @@ async def test_add_project_to_db(
 ):
     original_project = deepcopy(fake_project)
     # add project without user id -> by default creates a template
-    now_time = datetime.datetime.utcnow() - datetime.timedelta(milliseconds=10)
-    project = await db_api.add_project(prj=fake_project, user_id=None)
+    new_project = await db_api.add_project(prj=fake_project, user_id=None)
 
-    # no user so the project owner has a pre-defined value
-    _DIFFERENT_KEYS = ["prjOwner", "creationDate", "lastChangeDate"]
-    exp_project = deepcopy(original_project)
-    assert all(project[k] != exp_project[k] for k in _DIFFERENT_KEYS)
-    assert project["prjOwner"] == "not_a_user@unknown.com"
-    for k in _DIFFERENT_KEYS:
-        project.pop(k)
-        exp_project.pop(k)
-    # the rest of the keys shall be the same as the original
-    assert project == exp_project
+    _assert_added_project(
+        original_project,
+        new_project,
+        exp_overrides={"prjOwner": "not_a_user@unknown.com"},
+    )
 
-    def _assert_project_db_row(project: Dict[str, Any], **kwargs):
-        row: RowProxy = postgres_db.execute(
-            f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
-        ).fetchone()
-
-        expected_db_entries = {
-            "type": "STANDARD",
-            "uuid": project["uuid"],
-            "name": project["name"],
-            "description": project["description"],
-            "thumbnail": project["thumbnail"],
-            "prj_owner": None,
-            "workbench": project["workbench"],
-            "published": False,
-            "access_rights": {},
-            "dev": project["dev"],
-            "classifiers": project["classifiers"],
-            "ui": project["ui"],
-            "quality": project["quality"],
-        }
-        expected_db_entries.update(kwargs)
-        for k in expected_db_entries:
-            assert (
-                row[k] == expected_db_entries[k]
-            ), f"project column [{k}] does not correspond"
-        assert row["creation_date"] > now_time
-        assert row["last_change_date"] == row["creation_date"]
-        assert row["last_change_date"] > now_time
-
-    _assert_project_db_row(project, type="TEMPLATE")
+    _assert_project_db_row(postgres_db, new_project, type="TEMPLATE")
     # adding a project with a fake user id raises
     fake_user_id = 4654654654
     with pytest.raises(UserNotFoundError):
@@ -330,12 +351,24 @@ async def test_add_project_to_db(
             prj=fake_project, user_id=fake_user_id, force_as_template=True
         )
 
-    # adding a project with a real user id does not raise and creates a STANDARD project
-    fake_project["prjOwner"] = logged_user["email"]
-
-    project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
+    # adding a project with a logged user does not raise and creates a STANDARD project
+    # since we already have a project with that uuid, it shall be updated
+    new_project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
+    assert new_project["uuid"] != original_project["uuid"]
+    _assert_added_project(
+        original_project,
+        new_project,
+        exp_overrides={
+            "uuid": new_project["uuid"],
+            "prjOwner": logged_user["email"],
+            "accessRights": {
+                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+            },
+        },
+    )
     _assert_project_db_row(
-        project,
+        postgres_db,
+        new_project,
         prj_owner=logged_user["id"],
         access_rights={
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
