@@ -90,7 +90,7 @@ async def assemble_spec(
     app: Application,
     service_key: str,
     service_tag: str,
-    paths_mapping: PathsMappingModel,
+    paths_mapping: PathsMappingModel,  # pylint: disable=unused-argument
     compose_spec: ComposeSpecModel,
     target_container: Optional[str],
     service_sidecar_network_name: str,
@@ -114,6 +114,7 @@ async def assemble_spec(
     else:
         # TODO: need to be sorted out:
         # - inject paths mapping
+        # - remove above # pylint: disable=unused-argument
         pass
 
     _inject_traefik_configuration(

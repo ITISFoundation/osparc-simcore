@@ -99,6 +99,7 @@ async def create_network(network_config: Dict[str, Any]) -> str:
                     return network_details["Id"]
 
             # finally raise an error if a network cannot be spawned
+            # pylint: disable=raise-missing-from
             raise ServiceSidecarError(
                 f"Could not create or recover a network ID for {network_config}"
             )

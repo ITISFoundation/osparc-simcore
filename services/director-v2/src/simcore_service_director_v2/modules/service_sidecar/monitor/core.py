@@ -106,6 +106,7 @@ class ServiceSidecarsMonitor:
         self._inverse_search_mapping: Dict[str, str] = dict()
 
     async def add_service_to_monitor(
+        # pylint: disable=too-many-arguments
         self,
         service_name: str,
         node_uuid: str,
