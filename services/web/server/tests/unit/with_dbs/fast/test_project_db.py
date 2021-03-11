@@ -1,13 +1,17 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
+# pylint:disable=no-value-for-parameter
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import datetime
 import json
 import re
 from copy import deepcopy
 from itertools import combinations
+from random import randint
 from typing import Any, Dict, List
+from uuid import UUID, uuid5
 
 import pytest
 import sqlalchemy as sa
@@ -439,5 +443,65 @@ async def test_add_project_to_db(
     )
 
 
-async def test_patch_user_project_workbench():
-    pass
+@pytest.mark.parametrize(
+    "user_role",
+    [
+        # (UserRole.ANONYMOUS),
+        # (UserRole.GUEST),
+        (UserRole.USER),
+        # (UserRole.TESTER),
+    ],
+)
+async def test_patch_user_project_workbench(
+    fake_project: Dict[str, Any],
+    postgres_db: sa.engine.Engine,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, str],
+    db_api: ProjectDBAPI,
+):
+    _NUMBER_OF_NODES = randint(250, 1000)
+    BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
+    node_uuids = [str(uuid5(BASE_UUID, f"{n}")) for n in range(_NUMBER_OF_NODES)]
+    # create a project with a lot of nodes
+    fake_project["workbench"] = {
+        node_uuids[n]: {
+            "key": "simcore/services/comp/sleepers",
+            "version": "1.43.5",
+            "label": f"I am node {n}",
+        }
+        for n in range(_NUMBER_OF_NODES)
+    }
+    exp_project = deepcopy(fake_project)
+    for n in range(_NUMBER_OF_NODES):
+        exp_project["workbench"][node_uuids[n]]["outputs"] = {f"key_{n}": f"{n}"}
+
+    # add the project
+    new_project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
+    _assert_project_db_row(
+        postgres_db,
+        new_project,
+        prj_owner=logged_user["id"],
+        access_rights={
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        },
+    )
+    # patch all the nodes concurrently
+    results = await asyncio.gather(
+        *[
+            db_api.patch_user_project_workbench(
+                {node_uuids[n]: {"outputs": {f"key_{n}": f"{n}"}}},
+                logged_user["id"],
+                new_project["uuid"],
+            )
+            for n in range(_NUMBER_OF_NODES)
+        ]
+    )
+    # check the nodes are completely patched as expected
+    _assert_project_db_row(
+        postgres_db,
+        exp_project,
+        prj_owner=logged_user["id"],
+        access_rights={
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        },
+    )
