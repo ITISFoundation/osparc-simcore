@@ -95,8 +95,8 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       }
     },
 
-    __getItemSelected: function() {
-      let selectedItem = this.__selection;
+    getItemSelected: function() {
+      const selectedItem = this.__selection;
       if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
         return selectedItem;
       }
@@ -105,7 +105,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
 
     // Request to the server an download
     __retrieveURLAndDownload: function() {
-      let selection = this.__getItemSelected();
+      let selection = this.getItemSelected();
       if (selection) {
         const fileId = selection.getFileId();
         let fileName = fileId.split("/");
@@ -126,7 +126,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     },
 
     __deleteFile: function() {
-      let selection = this.__getItemSelected();
+      let selection = this.getItemSelected();
       if (selection) {
         console.log("Delete ", selection);
         const fileId = selection.getFileId();

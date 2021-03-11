@@ -143,7 +143,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       nodeFilesTree.addListener("selectionChanged", () => {
         this.__selectionChanged("node");
         const selectionData = nodeFilesTree.getSelectedItem();
-        if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+        if (selectionData && osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
           nodeFolder.setFolder(selectionData);
         }
       }, this);

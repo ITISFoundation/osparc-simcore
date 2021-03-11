@@ -42,6 +42,8 @@ qx.Class.define("osparc.file.FilePicker", {
   construct: function(node) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox(5));
+
     this.set({
       node
     });
@@ -166,13 +168,13 @@ qx.Class.define("osparc.file.FilePicker", {
           mainButtons.add(control);
           break;
         }
-        case "selectButton": {
+        case "select-button": {
           control = new qx.ui.toolbar.Button(this.tr("Select"));
           const mainButtons = this.getChildControl("main-buttons");
           mainButtons.add(control);
           break;
         }
-        case "downloadLink": {
+        case "file-download-link": {
           const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
             layout: new qx.ui.layout.VBox(5)
           });
@@ -187,8 +189,6 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     buildLayout: function() {
-      this._setLayout(new qx.ui.layout.VBox(5));
-
       const reloadButton = this.getChildControl("reload-button");
       reloadButton.addListener("execute", () => {
         this.__filesTree.resetCache();
@@ -241,13 +241,13 @@ qx.Class.define("osparc.file.FilePicker", {
         filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
 
-      const selectBtn = this.getChildControl("selectButton");
+      const selectBtn = this.getChildControl("select-button");
       selectBtn.setEnabled(false);
       selectBtn.addListener("execute", () => {
         this.__itemSelectedFromStore();
       }, this);
 
-      const fileDownloadLink = this.getChildControl("downloadLink");
+      const fileDownloadLink = this.getChildControl("file-download-link");
       fileDownloadLink.addListener("fileLinkAdded", e => {
         const downloadLink = e.getData();
         const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
@@ -263,7 +263,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       if (this.self().isOutputDownloadLink(this.getNode().getOutputs())) {
         const outFile = this.__getOutputFile();
-        this.getChildControl("downloadLink").setValue(outFile.value["downloadLink"]);
+        this.getChildControl("file-download-link").setValue(outFile.value["downloadLink"]);
       }
     },
 
@@ -278,11 +278,11 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __selectionChanged: function(selectedItem) {
       const isFile = osparc.file.FilesTree.isFile(selectedItem);
-      this.getChildControl("selectButton").setEnabled(isFile);
+      this.getChildControl("select-button").setEnabled(isFile);
     },
 
     __itemSelectedFromStore: function() {
-      const data = this.__folderViewer.getSelectedItem();
+      const data = this.__.getItemSelected();
       if (data && osparc.file.FilesTree.isFile(data)) {
         const selectedItem = data["selectedItem"];
         this.__setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
