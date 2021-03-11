@@ -42,6 +42,8 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
   construct: function(node) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox(10));
+
     this.set({
       node: node
     });
@@ -83,6 +85,12 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
           });
           this._add(control);
           break;
+        case "files-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          this._add(control, {
+            flex: 1
+          });
+          break;
         case "reload-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Reload"),
@@ -94,7 +102,10 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
           control = new qx.ui.splitpane.Pane("horizontal");
           break;
         case "files-tree":
-          control = new osparc.file.FilesTree();
+          control = new osparc.file.FilesTree().set({
+            minWidth: 150,
+            width: 200
+          });
           break;
         case "folder-viewer":
           control = new osparc.file.FolderViewer();
@@ -111,9 +122,6 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     },
 
     __buildLayout: function() {
-      const nodeDataManagerLayout = new qx.ui.layout.VBox(10);
-      this._setLayout(nodeDataManagerLayout);
-
       const showMyData = this.getChildControl("show-my-data-checkbox");
       showMyData.bind("value", this, "showMyData");
 
@@ -131,9 +139,9 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       }, this);
       nodeTreeLayout.add(nodeReloadBtn);
 
+      const nodeTreeFolderLayout = this.getChildControl("tree-folder-layout");
       const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("files-tree").set({
-        dragMechanism: true,
-        width: 200
+        dragMechanism: true
       });
       const nodeFolder = this.getChildControl("folder-viewer");
       const nodeTreeFolderLayout = this.getChildControl("tree-folder-layout");
@@ -143,8 +151,10 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       nodeFilesTree.addListener("selectionChanged", () => {
         this.__selectionChanged("node");
         const selectionData = nodeFilesTree.getSelectedItem();
-        if (selectionData && osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
-          nodeFolder.setFolder(selectionData);
+        if (selectionData) {
+          if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+            nodeFolder.setFolder(selectionData);
+          }
         }
       }, this);
 
