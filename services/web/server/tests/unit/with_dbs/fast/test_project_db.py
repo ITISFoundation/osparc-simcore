@@ -4,12 +4,12 @@
 
 import datetime
 import json
+import re
 from copy import deepcopy
 from itertools import combinations
 from typing import Any, Dict, List
 
 import pytest
-import regex as re
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from psycopg2.errors import ForeignKeyViolation
