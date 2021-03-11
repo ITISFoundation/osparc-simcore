@@ -98,10 +98,11 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
             allowGrowX: false
           });
           break;
-        case "tree-folder-layout":
+        case "node-tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
           break;
-        case "files-tree":
+        case "node-files-tree":
+        case "user-files-tree":
           control = new osparc.file.FilesTree().set({
             minWidth: 150,
             width: 200
@@ -125,10 +126,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       const showMyData = this.getChildControl("show-my-data-checkbox");
       showMyData.bind("value", this, "showMyData");
 
-      const treesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      this._add(treesLayout, {
-        flex: 1
-      });
+      const treesLayout = this.getChildControl("files-layout");
 
 
       const nodeTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
@@ -139,12 +137,11 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       }, this);
       nodeTreeLayout.add(nodeReloadBtn);
 
-      const nodeTreeFolderLayout = this.getChildControl("tree-folder-layout");
-      const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("files-tree").set({
+      const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("node-files-tree").set({
         dragMechanism: true
       });
       const nodeFolder = this.getChildControl("folder-viewer");
-      const nodeTreeFolderLayout = this.getChildControl("tree-folder-layout");
+      const nodeTreeFolderLayout = this.getChildControl("node-tree-folder-layout");
       nodeTreeFolderLayout.add(nodeFilesTree, 0);
       nodeTreeFolderLayout.add(nodeFolder, 1);
 
@@ -179,7 +176,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       }, this);
       userTreeLayout.add(userReloadBtn);
 
-      const userFilesTree = this.__userFilesTree = this.getChildControl("files-tree");
+      const userFilesTree = this.__userFilesTree = this.getChildControl("user-files-tree");
       osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
       userFilesTree.setDropMechnism(true);
       userFilesTree.addListener("selectionChanged", () => {
