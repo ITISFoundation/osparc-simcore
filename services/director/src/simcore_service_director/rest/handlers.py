@@ -142,8 +142,9 @@ async def running_interactive_services_post(
         service_basepath,
     )
     try:
-        request_dns = request.headers["X-Service-Sidecar-Request-DNS"]
-        request_scheme= request.headers["X-Service-Sidecar-Request-Scheme"]
+        # not mandatory, only used by service sidecar
+        request_dns = request.headers.get("X-Service-Sidecar-Request-DNS", None)
+        request_scheme= request.headers.get("X-Service-Sidecar-Request-Scheme", None)
         service = await producer.start_service(
             request.app,
             user_id,
