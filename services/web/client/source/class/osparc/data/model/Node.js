@@ -993,7 +993,7 @@ qx.Class.define("osparc.data.model.Node", {
             // dynamic service
             const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
             this.__waitForServiceReady(srvUrl);
-          } else{
+          } else {
             // old implementation
             const servicePath = data["service_basepath"];
             const entryPointD = data["entry_point"];
