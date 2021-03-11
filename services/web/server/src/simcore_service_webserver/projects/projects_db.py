@@ -12,7 +12,7 @@ from collections import deque
 from datetime import datetime
 from enum import Enum
 from pprint import pformat
-from typing import Any, Dict, List, Mapping, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
 import psycopg2.errors
 import sqlalchemy as sa
