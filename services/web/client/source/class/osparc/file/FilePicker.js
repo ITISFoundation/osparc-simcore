@@ -115,6 +115,7 @@ qx.Class.define("osparc.file.FilePicker", {
   members: {
     __filesTree: null,
     __folderViewer: null,
+    __selectedFileLayout: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -150,27 +151,30 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         }
         case "toolbar":
-          control = new qx.ui.toolbar.ToolBar();
-          control.addSpacer();
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, this.self().POS.TOOLBAR);
           break;
-        case "main-buttons": {
-          control = new qx.ui.toolbar.Part();
-          const toolbar = this.getChildControl("toolbar");
-          toolbar.add(control);
+        case "selected-file-layout": {
+          control = new osparc.file.FileLabelWithActions().set({
+            alignY: "middle"
+          });
+          const mainButtons = this.getChildControl("toolbar");
+          mainButtons.add(control, {
+            flex: 1
+          });
           break;
         }
         case "files-add": {
           control = new osparc.file.FilesAdd().set({
             node: this.getNode()
           });
-          const mainButtons = this.getChildControl("main-buttons");
+          const mainButtons = this.getChildControl("toolbar");
           mainButtons.add(control);
           break;
         }
         case "select-button": {
-          control = new qx.ui.toolbar.Button(this.tr("Select"));
-          const mainButtons = this.getChildControl("main-buttons");
+          control = new qx.ui.form.Button(this.tr("Select"));
+          const mainButtons = this.getChildControl("toolbar");
           mainButtons.add(control);
           break;
         }
@@ -230,6 +234,10 @@ qx.Class.define("osparc.file.FilePicker", {
         filesTree.requestDatasetFiles(data.locationId, data.datasetId);
       }, this);
 
+
+      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
+      selectedFileLayout.getChildControl("deleteBtn").exclude();
+
       const filesAdd = this.getChildControl("files-add");
       filesAdd.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
@@ -244,7 +252,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const selectBtn = this.getChildControl("select-button");
       selectBtn.setEnabled(false);
       selectBtn.addListener("execute", () => {
-        this.__itemSelectedFromStore();
+        this.__itemSelected();
       }, this);
 
       const fileDownloadLink = this.getChildControl("file-download-link");
@@ -279,12 +287,13 @@ qx.Class.define("osparc.file.FilePicker", {
     __selectionChanged: function(selectedItem) {
       const isFile = osparc.file.FilesTree.isFile(selectedItem);
       this.getChildControl("select-button").setEnabled(isFile);
+
+      this.__selectedFileLayout.itemSelected(selectedItem);
     },
 
-    __itemSelectedFromStore: function() {
-      const data = this.__.getItemSelected();
-      if (data && osparc.file.FilesTree.isFile(data)) {
-        const selectedItem = data["selectedItem"];
+    __itemSelected: function() {
+      const selectedItem = this.__selectedFileLayout.getItemSelected();
+      if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
         this.__setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
       }
     },
