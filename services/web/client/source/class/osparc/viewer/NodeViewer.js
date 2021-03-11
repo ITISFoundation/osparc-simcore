@@ -132,12 +132,12 @@ qx.Class.define("osparc.viewer.NodeViewer", {
             return;
           }
 
-          const dynamic_type = data["dynamic_type"] || null;
-          if (dynamic_type != null){
+          const dynamicType = data["dynamic_type"] || null;
+          if (dynamicType != null){
             // dynamic service
             const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
             this.__waitForServiceReady(srvUrl);
-          }else{
+          } else{
             // old implementation
             const servicePath = data["service_basepath"];
             const entryPointD = data["entry_point"];
