@@ -138,6 +138,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       nodeTreeLayout.add(nodeReloadBtn);
 
       const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("node-files-tree").set({
+        showLeafs: false,
         dragMechanism: true
       });
       const nodeFolder = this.getChildControl("folder-viewer");
