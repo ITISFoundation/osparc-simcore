@@ -366,14 +366,6 @@ async def update_project_node_outputs(
     )
     new_outputs: Dict[str, Any] = new_outputs or {}
 
-    # find changed keys (the ones that appear or disapppear for sure)
-    changed_keys = new_outputs.keys()
-    # FIXME: it would be nice to have some finer changed keys here
-    # now check the ones that are in both object
-    # for key in current_outputs.keys() & new_outputs.keys():
-    #     if current_outputs[key] != new_outputs[key]:
-    #         changed_keys.append(key)
-
     partial_workbench_data = {
         node_id: {"outputs": new_outputs, "runHash": new_run_hash},
     }
@@ -384,12 +376,20 @@ async def update_project_node_outputs(
         user_id=user_id,
         project_uuid=project_id,
     )
+    log.debug(
+        "patched project %s, following entries changed: %s",
+        project_id,
+        pformat(changed_entries),
+    )
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
 
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
-
+    # we do want only the key names
+    changed_keys = [
+        k for k in changed_entries.get(node_id, {}).get("outputs", {}).keys()
+    ]
     return updated_project, changed_keys
 
 
