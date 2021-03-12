@@ -9,15 +9,15 @@ containers_router = APIRouter()
 @containers_router.get("/containers")
 async def get_spawned_container_names(request: Request) -> List[str]:
     """ Returns a list of containers created using docker-compose """
-    return request.app.state.async_store.get_container_names()
+    return request.app.state.shared_store.get_container_names()
 
 
-@containers_router.get("/containers/inspect")
+@containers_router.get("/containers:inspect")
 async def containers_inspect(request: Request, response: Response) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
     docker = aiodocker.Docker()
 
-    container_names = request.app.state.async_store.get_container_names()
+    container_names = request.app.state.shared_store.get_container_names()
     container_names = container_names if container_names else {}
 
     results = {}

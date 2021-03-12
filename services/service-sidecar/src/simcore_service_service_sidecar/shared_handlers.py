@@ -4,7 +4,7 @@ from typing import Tuple
 from fastapi import FastAPI
 
 from .settings import ServiceSidecarSettings
-from .storage import AsyncStore
+from .storage import SharedStore
 from .utils import async_command, write_to_tmp_file
 
 logger = logging.getLogger(__name__)
@@ -30,10 +30,10 @@ async def write_file_and_run_command(
 
 
 async def remove_the_compose_spec(
-    async_store: AsyncStore, settings: ServiceSidecarSettings, command_timeout: float
+    shared_store: SharedStore, settings: ServiceSidecarSettings, command_timeout: float
 ) -> None:
 
-    stored_compose_content = async_store.get_spec()
+    stored_compose_content = shared_store.get_spec()
     if stored_compose_content is None:
         return True, "No started spec to remove was found"
 
@@ -47,17 +47,17 @@ async def remove_the_compose_spec(
         command=command,
         command_timeout=command_timeout,
     )
-    async_store.put_spec(None)  # removing compose-file spec
+    shared_store.put_spec(None)  # removing compose-file spec
     return result
 
 
 async def on_shutdown_handler(app: FastAPI) -> None:
     logging.info("Going to remove spawned containers")
-    async_store: AsyncStore = app.state.async_store
+    shared_store: SharedStore = app.state.shared_store
     settings: ServiceSidecarSettings = app.state.settings
 
     result = await remove_the_compose_spec(
-        async_store=async_store,
+        shared_store=shared_store,
         settings=settings,
         command_timeout=settings.docker_compose_down_timeout,
     )

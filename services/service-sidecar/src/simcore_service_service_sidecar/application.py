@@ -7,7 +7,7 @@ from .models import ApplicationHealth
 from .remote_debug import setup as remote_debug_setup
 from .settings import ServiceSidecarSettings
 from .shared_handlers import on_shutdown_handler
-from .storage import AsyncStore
+from .storage import SharedStore
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,9 @@ def assemble_application() -> FastAPI:
 
     application = FastAPI(debug=service_sidecar_settings.debug)
 
-    # store "settings"  and "async_store" for later usage
+    # store "settings"  and "shared_store" for later usage
     application.state.settings = service_sidecar_settings
-    application.state.async_store = AsyncStore(settings=service_sidecar_settings)
+    application.state.shared_store = SharedStore(settings=service_sidecar_settings)
     # used to keep track of the health of the application
     # also will be used in the /health endpoint
     application.state.application_health = ApplicationHealth()

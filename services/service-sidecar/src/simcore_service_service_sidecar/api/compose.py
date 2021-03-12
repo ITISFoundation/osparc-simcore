@@ -3,7 +3,7 @@ from fastapi.responses import PlainTextResponse
 
 from ..settings import ServiceSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
-from ..storage import AsyncStore
+from ..storage import SharedStore
 from ..utils import InvalidComposeSpec
 
 compose_router = APIRouter()
@@ -18,10 +18,10 @@ async def store_docker_compose_spec_for_later_usage(
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     body_as_text = (await request.body()).decode("utf-8")
 
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
 
     try:
-        async_store.put_spec(body_as_text)
+        shared_store.put_spec(body_as_text)
     except InvalidComposeSpec as e:
         response.status_code = 400
         return str(e)
@@ -39,10 +39,10 @@ async def create_docker_compose_configuration_containers_without_starting(
 
     settings: ServiceSidecarSettings = request.app.state.settings
 
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
 
     try:
-        async_store.put_spec(body_as_text)
+        shared_store.put_spec(body_as_text)
     except InvalidComposeSpec as e:
         response.status_code = 400
         return str(e)
@@ -51,7 +51,7 @@ async def create_docker_compose_configuration_containers_without_starting(
     command = "docker-compose -p {project} -f {file_path} up --no-build --no-start"
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
-        file_content=async_store.get_spec(),
+        file_content=shared_store.get_spec(),
         command=command,
         command_timeout=command_timeout,
     )
@@ -66,10 +66,10 @@ async def stop_containers_without_removing_them(
 ) -> str:
     """Stops the previously started service
     and returns the docker-compose output"""
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
     settings: ServiceSidecarSettings = request.app.state.settings
 
-    stored_compose_content = async_store.get_spec()
+    stored_compose_content = shared_store.get_spec()
     if stored_compose_content is None:
         response.status_code = 400
         return "No started spec to stop was found"
@@ -93,10 +93,10 @@ async def pull_docker_required_docker_images(
     request: Request, response: Response, command_timeout: float
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
     settings: ServiceSidecarSettings = request.app.state.settings
 
-    stored_compose_content = async_store.get_spec()
+    stored_compose_content = shared_store.get_spec()
     if stored_compose_content is None:
         response.status_code = 400
         return "No started spec to stop was found"
@@ -119,13 +119,13 @@ async def start_or_update_docker_compose_configuration(
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     settings: ServiceSidecarSettings = request.app.state.settings
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
 
     # --no-build might be a security risk building is disabled
     command = "docker-compose -p {project} -f {file_path} up --no-build -d"
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
-        file_content=async_store.get_spec(),
+        file_content=shared_store.get_spec(),
         command=command,
         command_timeout=command_timeout,
     )
@@ -141,7 +141,7 @@ async def remove_docker_compose_configuration(
     """Removes the previously started service
     and returns the docker-compose output"""
     finished_without_errors, stdout = await remove_the_compose_spec(
-        async_store=request.app.state.async_store,
+        shared_store=request.app.state.shared_store,
         settings=request.app.settings,
         command_timeout=command_timeout,
     )

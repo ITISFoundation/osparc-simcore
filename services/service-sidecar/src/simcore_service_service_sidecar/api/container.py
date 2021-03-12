@@ -3,7 +3,7 @@ from typing import Any, Dict
 import aiodocker
 from fastapi import APIRouter, Query, Request, Response
 
-from ..storage import AsyncStore
+from ..storage import SharedStore
 
 container_router = APIRouter()
 
@@ -31,9 +31,9 @@ async def get_container_logs(
     ),
 ) -> str:
     """ Returns the logs of a given container if found """
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
 
-    if container not in async_store.get_container_names():
+    if container not in shared_store.get_container_names():
         response.status_code = 400
         return f"No container '{container}' was started"
 
@@ -57,9 +57,9 @@ async def container_inspect(
     request: Request, response: Response, container: str
 ) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
 
-    if container not in async_store.get_container_names():
+    if container not in shared_store.get_container_names():
         response.status_code = 400
         return dict(error=f"No container '{container}' was started")
 
@@ -77,9 +77,9 @@ async def container_inspect(
 async def container_remove(
     request: Request, response: Response, container: str
 ) -> bool:
-    async_store: AsyncStore = request.app.state.async_store
+    shared_store: SharedStore = request.app.state.shared_store
 
-    if container not in async_store.get_container_names():
+    if container not in shared_store.get_container_names():
         response.status_code = 400
         return dict(error=f"No container '{container}' was started")
 
