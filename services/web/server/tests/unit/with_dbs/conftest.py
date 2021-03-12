@@ -32,13 +32,12 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, NewUser
+from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -525,22 +524,6 @@ async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
 async def all_group(client, logged_user) -> Dict[str, str]:
     _, _, all_group = await list_user_groups(client.app, logged_user["id"])
     return all_group
-
-
-@pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> Dict[str, Any]:
-    """adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user["name"], user_role)
-        yield user
-        print("<----- logged out user", user["name"], user_role)
 
 
 # GENERIC HELPER FUNCTIONS ----------------------------------------------------
