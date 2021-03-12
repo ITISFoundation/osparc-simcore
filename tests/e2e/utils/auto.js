@@ -310,7 +310,6 @@ async function openNodeFiles(page) {
 
 async function checkDataProducedByNode(page, nFiles = 1) {
   console.log("checking Data produced by Node. Expecting", nFiles, "file(s)");
-  await utils.sleep(1000);
   const iconsContent = await page.waitForSelector('[osparc-test-id="FolderViewerIconsContent"]', {
     timeout: 5000
   });

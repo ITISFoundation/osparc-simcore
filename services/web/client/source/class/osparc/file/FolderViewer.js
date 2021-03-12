@@ -72,12 +72,14 @@ qx.Class.define("osparc.file.FolderViewer", {
 
   statics: {
     getItemButton: function() {
-      return new qx.ui.form.ToggleButton().set({
+      const item = new qx.ui.form.ToggleButton().set({
         iconPosition: "top",
         width: 90,
         height: 70,
         padding: 3
       });
+      osparc.utils.Utils.setIdToWidget(item, "FolderViewerItem");
+      return item;
     },
 
     T_POS: {
