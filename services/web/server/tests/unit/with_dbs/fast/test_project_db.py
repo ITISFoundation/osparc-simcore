@@ -450,54 +450,62 @@ async def test_add_project_to_db(
     "dict_a, dict_b, exp_changes",
     [
         pytest.param(
-            {"patch_with_same_entry": "blahblah"},
-            {"patch_with_same_entry": "blahblah"},
+            {"state": "PUBLISHED"},
+            {"state": "PUBLISHED"},
             {},
             id="same entry",
         ),
         pytest.param(
-            {"patch_with_new_entry": "blahblah"},
-            {"new_entry": "lbkjad"},
-            {"new_entry": "lbkjad"},
+            {"state": "PUBLISHED"},
+            {"inputs": {"in_1": 1, "in_2": 4}},
+            {"inputs": {"in_1": 1, "in_2": 4}},
             id="new entry",
         ),
-        pytest.param({"patch_with_empty": 3}, {}, {}, id="empty patch"),
+        pytest.param({"state": "PUBLISHED"}, {}, {}, id="empty patch"),
         pytest.param(
-            {"patch_with_additional": 3},
-            {"patch_with_additional": "new_stuff"},
-            {"patch_with_additional": "new_stuff"},
+            {"state": "PUBLISHED"},
+            {"state": "RUNNING"},
+            {"state": "RUNNING"},
             id="patch with new data",
         ),
         pytest.param(
-            {"patch_with_nested_stuff": {"first_level": 123}},
-            {"patch_with_nested_stuff": {"first_level": 2}},
-            {"patch_with_nested_stuff": {"first_level": 2}},
+            {"inputs": {"in_1": 1, "in_2": 4}},
+            {"inputs": {"in_1": 1, "in_2": 5}},
+            {"inputs": {"in_2": 5}},
             id="patch with new nested data",
         ),
         pytest.param(
-            {"patch_with_new_nested_stuff": {"first_level": 123}},
-            {"patch_with_new_nested_stuff": {"first_level_other": 2}},
-            {"patch_with_new_nested_stuff": {"first_level_other": 2}},
+            {"inputs": {"in_1": 1, "in_2": 4}},
+            {"inputs": {"in_1": 1, "in_2": 4, "in_6": "new_entry"}},
+            {"inputs": {"in_6": "new_entry"}},
             id="patch with additional nested data",
         ),
         pytest.param(
             {
-                "patch_with_new_nested_nested_stuff": {
-                    "first_level": {"second_level1": 123}
+                "inputs": {
+                    "in_1": {"some_file": {"etag": "lkjflsdkjfslkdj"}},
+                    "in_2": 4,
                 }
             },
             {
-                "patch_with_new_nested_nested_stuff": {
-                    "first_level": {"second_level2": 123}
+                "inputs": {
+                    "in_1": {"some_file": {"etag": "newEtag"}},
+                    "in_2": 4,
                 }
             },
             {
-                "patch_with_new_nested_nested_stuff": {
-                    "first_level": {"second_level2": 123}
+                "inputs": {
+                    "in_1": {"some_file": {"etag": "newEtag"}},
                 }
             },
             id="patch with 2x nested new data",
         ),
+        # pytest.param(
+        #     {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
+        #     {"remove_entries_in_dict": {"outputs": {}}},
+        #     {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
+        #     id="removal of data",
+        # ),
     ],
 )
 def test_find_changed_dict_keys(

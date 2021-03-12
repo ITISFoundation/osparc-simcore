@@ -309,7 +309,7 @@ async def update_project_node_state(
         partial_workbench_data["workbench"][node_id]["progress"] = 100
 
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.patch_user_project_workbench(
+    updated_project, _ = await db.patch_user_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
         project_uuid=project_id,
@@ -334,7 +334,7 @@ async def update_project_node_progress(
         node_id: {"progress": int(100.0 * float(progress) + 0.5)},
     }
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.patch_user_project_workbench(
+    updated_project, _ = await db.patch_user_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
         project_uuid=project_id,
@@ -379,7 +379,7 @@ async def update_project_node_outputs(
     }
 
     db = app[APP_PROJECT_DBAPI]
-    updated_project = await db.patch_user_project_workbench(
+    updated_project, changed_entries = await db.patch_user_project_workbench(
         partial_workbench_data=partial_workbench_data,
         user_id=user_id,
         project_uuid=project_id,
@@ -387,6 +387,9 @@ async def update_project_node_outputs(
     updated_project = await add_project_states_for_user(
         user_id=user_id, project=updated_project, is_template=False, app=app
     )
+
+    # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
+
     return updated_project, changed_keys
 
 
