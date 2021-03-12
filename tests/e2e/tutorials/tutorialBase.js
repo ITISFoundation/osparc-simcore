@@ -310,8 +310,15 @@ class TutorialBase {
   async checkNodeResults(nodePos, expecedNFiles) {
     await this.takeScreenshot("checkNodeResults_before");
     try {
-      await this.openNodeFiles(nodePos);
-      await auto.checkDataProducedByNode(this.__page, expecedNFiles.length);
+      let filesFound = false;
+      const tries = 3;
+      for (let i = 0; i < tries && !filesFound; i++) {
+        await this.openNodeFiles(nodePos);
+        filesFound = await auto.checkDataProducedByNode(this.__page, expecedNFiles.length);
+      }
+      if (!filesFound) {
+        throw ("Expected files not found");
+      }
     }
     catch (err) {
       console.error("Failed checking Data Produced By Node", err);
