@@ -5,7 +5,7 @@ from .utils import assemble_container_names, validate_compose_spec
 
 
 class AsyncStore:
-    """Define custom storage abstraction for easy future extention"""
+    """Define custom storage abstraction for easy future extension"""
 
     __slots__ = ("_storage", "_settings")
 
