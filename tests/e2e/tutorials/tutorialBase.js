@@ -314,7 +314,12 @@ class TutorialBase {
       const tries = 3;
       for (let i = 0; i < tries && !filesFound; i++) {
         await this.openNodeFiles(nodePos);
-        filesFound = await auto.checkDataProducedByNode(this.__page, expecedNFiles.length);
+        try {
+          filesFound = await auto.checkDataProducedByNode(this.__page, expecedNFiles.length);
+        }
+        catch (err) {
+          console.error("Files not found, one more try?", i+1);
+        }
       }
       if (!filesFound) {
         throw ("Expected files not found");
