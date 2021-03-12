@@ -15,7 +15,6 @@ from aiohttp import web
 from aiopg.sa.connection import SAConnection
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_tokens import (
     create_token_in_db,
     delete_all_tokens_from_db,
