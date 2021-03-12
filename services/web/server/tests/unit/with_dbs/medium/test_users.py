@@ -108,7 +108,7 @@ PREFIX = "/" + API_VERSION + "/me"
 
 
 @pytest.mark.parametrize(
-    "role,expected",
+    "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPOk),
@@ -119,7 +119,7 @@ PREFIX = "/" + API_VERSION + "/me"
 async def test_get_profile(
     logged_user: Dict,
     client,
-    role: UserRole,
+    user_role: UserRole,
     expected: web.HTTPException,
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
@@ -136,7 +136,7 @@ async def test_get_profile(
         assert data["gravatar_id"]
         assert data["first_name"] == logged_user["name"]
         assert data["last_name"] == ""
-        assert data["role"] == role.name.capitalize()
+        assert data["role"] == user_role.name.capitalize()
         assert data["groups"] == {
             "me": primary_group,
             "organizations": standard_groups,
@@ -145,7 +145,7 @@ async def test_get_profile(
 
 
 @pytest.mark.parametrize(
-    "role,expected",
+    "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
@@ -153,7 +153,7 @@ async def test_get_profile(
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_update_profile(logged_user, client, role, expected):
+async def test_update_profile(logged_user, client, user_role, expected):
     url = client.app.router["update_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
@@ -166,7 +166,7 @@ async def test_update_profile(logged_user, client, role, expected):
 
         assert data["first_name"] == logged_user["name"]
         assert data["last_name"] == "Foo"
-        assert data["role"] == role.name.capitalize()
+        assert data["role"] == user_role.name.capitalize()
 
 
 # Test CRUD on tokens --------------------------------------------
@@ -178,7 +178,7 @@ PREFIX = "/" + API_VERSION + "/me/" + RESOURCE_NAME
 
 
 @pytest.mark.parametrize(
-    "role,expected",
+    "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
@@ -186,7 +186,7 @@ PREFIX = "/" + API_VERSION + "/me/" + RESOURCE_NAME
         (UserRole.TESTER, web.HTTPCreated),
     ],
 )
-async def test_create_token(client, logged_user, tokens_db, role, expected):
+async def test_create_token(client, logged_user, tokens_db, expected):
     url = client.app.router["create_tokens"].url_for()
     assert "/v0/me/tokens" == str(url)
 
@@ -205,7 +205,7 @@ async def test_create_token(client, logged_user, tokens_db, role, expected):
 
 
 @pytest.mark.parametrize(
-    "role,expected",
+    "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
@@ -213,7 +213,7 @@ async def test_create_token(client, logged_user, tokens_db, role, expected):
         (UserRole.TESTER, web.HTTPOk),
     ],
 )
-async def test_read_token(client, logged_user, tokens_db, fake_tokens, role, expected):
+async def test_read_token(client, logged_user, tokens_db, fake_tokens, expected):
     # list all
     url = client.app.router["list_tokens"].url_for()
     assert "/v0/me/tokens" == str(url)
@@ -236,7 +236,7 @@ async def test_read_token(client, logged_user, tokens_db, fake_tokens, role, exp
 
 
 @pytest.mark.parametrize(
-    "role,expected",
+    "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
@@ -244,9 +244,7 @@ async def test_read_token(client, logged_user, tokens_db, fake_tokens, role, exp
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_update_token(
-    client, logged_user, tokens_db, fake_tokens, role, expected
-):
+async def test_update_token(client, logged_user, tokens_db, fake_tokens, expected):
 
     selected = random.choice(fake_tokens)
     sid = selected["service"]
@@ -269,7 +267,7 @@ async def test_update_token(
 
 
 @pytest.mark.parametrize(
-    "role,expected",
+    "user_role,expected",
     [
         (UserRole.ANONYMOUS, web.HTTPUnauthorized),
         (UserRole.GUEST, web.HTTPForbidden),
@@ -277,9 +275,7 @@ async def test_update_token(
         (UserRole.TESTER, web.HTTPNoContent),
     ],
 )
-async def test_delete_token(
-    client, logged_user, tokens_db, fake_tokens, role, expected
-):
+async def test_delete_token(client, logged_user, tokens_db, fake_tokens, expected):
     sid = fake_tokens[0]["service"]
 
     url = client.app.router["delete_token"].url_for(service=sid)
@@ -308,7 +304,7 @@ def mock_failing_connection(mocker) -> MagicMock:
 
 
 @pytest.mark.parametrize(
-    "role,expected",
+    "user_role,expected",
     [
         (UserRole.USER, web.HTTPServiceUnavailable),
     ],
@@ -317,7 +313,6 @@ async def test_get_profile_with_failing_db_connection(
     logged_user,
     client,
     mock_failing_connection: MagicMock,
-    role: UserRole,
     expected: web.HTTPException,
 ):
     """
