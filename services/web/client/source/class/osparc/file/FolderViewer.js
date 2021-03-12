@@ -202,7 +202,9 @@ qx.Class.define("osparc.file.FolderViewer", {
           row.push(entry.getLabel());
           row.push(entry.getLastModified ? entry.getLastModified() : "");
           row.push(entry.getSize ? entry.getSize() : "");
-          row.push(entry.getItemId());
+          if (entry.getItemId) {
+            row.push(entry.getItemId());
+          }
           row.entry = entry;
           items.push(row);
         });
@@ -220,8 +222,10 @@ qx.Class.define("osparc.file.FolderViewer", {
             icon.getContentElement().addClass("rotate");
           }
 
-          item.itemId = entry.getItemId();
-          this.__attachListenersToItems(item, entry);
+          if (entry.getItemId) {
+            item.itemId = entry.getItemId();
+            this.__attachListenersToItems(item, entry);
+          }
           items.push(item);
         });
       }
@@ -297,12 +301,16 @@ qx.Class.define("osparc.file.FolderViewer", {
       table.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
-        this.__itemTapped(rowData.entry);
+        if ("entry" in rowData) {
+          this.__itemTapped(rowData.entry);
+        }
       }, this);
       table.addListener("cellDbltap", e => {
         const selectedRow = e.getRow();
         const rowData = table.getTableModel().getRowData(selectedRow);
-        this.__itemDblTapped(rowData.entry);
+        if ("entry" in rowData) {
+          this.__itemDblTapped(rowData.entry);
+        }
       }, this);
     }
   }
