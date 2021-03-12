@@ -474,8 +474,6 @@ async def test_patch_user_project_workbench(
         for n in range(_NUMBER_OF_NODES)
     }
     exp_project = deepcopy(fake_project)
-    for n in range(_NUMBER_OF_NODES):
-        exp_project["workbench"][node_uuids[n]]["outputs"] = {f"key_{n}": f"{n}"}
 
     # add the project
     original_project = deepcopy(fake_project)
@@ -500,10 +498,16 @@ async def test_patch_user_project_workbench(
     )
 
     # patch all the nodes concurrently
+    randomly_created_outputs = [
+        {"outputs": {f"out_{k}": f"{k}"} for k in range(randint(1, 10))}
+        for n in range(_NUMBER_OF_NODES)
+    ]
+    for n in range(_NUMBER_OF_NODES):
+        exp_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
     results = await asyncio.gather(
         *[
             db_api.patch_user_project_workbench(
-                {node_uuids[n]: {"outputs": {f"key_{n}": f"{n}"}}},
+                {node_uuids[n]: randomly_created_outputs[n]},
                 logged_user["id"],
                 new_project["uuid"],
             )
