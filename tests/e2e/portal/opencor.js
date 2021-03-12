@@ -31,13 +31,12 @@ async function runTutorial () {
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 30000);
 
-    await tutorial.openNodeFiles(0);
     const outFiles = [
       "results.json",
       "logs.zip",
       "membrane-potential.csv"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles.length);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

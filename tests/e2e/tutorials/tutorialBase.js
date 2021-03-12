@@ -307,16 +307,17 @@ class TutorialBase {
     await this.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
-  async checkResults(expecedNFiles = 1) {
-    await this.takeScreenshot("checkResults_before");
+  async checkNodeResults(nodePos, expecedNFiles) {
+    await this.takeScreenshot("checkNodeResults_before");
     try {
-      await auto.checkDataProducedByNode(this.__page, expecedNFiles);
+      await this.openNodeFiles(nodePos);
+      await auto.checkDataProducedByNode(this.__page, expecedNFiles.length);
     }
     catch (err) {
       console.error("Failed checking Data Produced By Node", err);
       throw (err);
     }
-    await this.takeScreenshot("checkResults_after");
+    await this.takeScreenshot("checkNodeResults_after");
   }
 
   async toDashboard() {
