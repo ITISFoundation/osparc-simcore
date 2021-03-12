@@ -279,7 +279,9 @@ def _assert_added_project(
     assert to_datetime(added_prj["creationDate"]) > to_datetime(
         exp_project["creationDate"]
     )
-    assert added_prj["creationDate"] == added_prj["lastChangeDate"]
+    assert to_datetime(added_prj["creationDate"]) <= to_datetime(
+        added_prj["lastChangeDate"]
+    )
     original_prj.update(exp_overrides)
     for k in _DIFFERENT_KEYS:
         added_prj.pop(k)
@@ -309,15 +311,15 @@ def _assert_project_db_row(
         "classifiers": project["classifiers"],
         "ui": project["ui"],
         "quality": project["quality"],
+        "creation_date": to_datetime(project["creationDate"]),
+        "last_change_date": to_datetime(project["lastChangeDate"]),
     }
     expected_db_entries.update(kwargs)
     for k in expected_db_entries:
         assert (
             row[k] == expected_db_entries[k]
         ), f"project column [{k}] does not correspond"
-    assert row["creation_date"] == to_datetime(project["creationDate"])
-    assert row["last_change_date"] == row["creation_date"]
-    assert row["last_change_date"] == to_datetime(project["lastChangeDate"])
+    assert row["last_change_date"] >= row["creation_date"]
 
 
 @pytest.mark.parametrize(
@@ -476,7 +478,18 @@ async def test_patch_user_project_workbench(
         exp_project["workbench"][node_uuids[n]]["outputs"] = {f"key_{n}": f"{n}"}
 
     # add the project
+    original_project = deepcopy(fake_project)
     new_project = await db_api.add_project(prj=fake_project, user_id=logged_user["id"])
+    _assert_added_project(
+        original_project,
+        new_project,
+        exp_overrides={
+            "prjOwner": logged_user["email"],
+            "accessRights": {
+                str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+            },
+        },
+    )
     _assert_project_db_row(
         postgres_db,
         new_project,
@@ -485,6 +498,7 @@ async def test_patch_user_project_workbench(
             str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
         },
     )
+
     # patch all the nodes concurrently
     results = await asyncio.gather(
         *[
@@ -496,12 +510,21 @@ async def test_patch_user_project_workbench(
             for n in range(_NUMBER_OF_NODES)
         ]
     )
+    # get the latest change date
+    latest_change_date = max(to_datetime(prj["lastChangeDate"]) for prj in results)
+
+    # NOTE: each returned project contains the project with some updated workbenches
+    # the ordering is uncontrolled.
+    # The important thing is that the final result shall contain ALL the changes
+
     # check the nodes are completely patched as expected
-    # _assert_project_db_row(
-    #     postgres_db,
-    #     exp_project,
-    #     prj_owner=logged_user["id"],
-    #     access_rights={
-    #         str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
-    #     },
-    # )
+    _assert_project_db_row(
+        postgres_db,
+        exp_project,
+        prj_owner=logged_user["id"],
+        access_rights={
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        },
+        creation_date=to_datetime(new_project["creationDate"]),
+        last_change_date=latest_change_date,
+    )

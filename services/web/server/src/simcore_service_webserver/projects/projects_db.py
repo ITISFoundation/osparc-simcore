@@ -546,6 +546,9 @@ class ProjectDBAPI:
                     current_project, partial_workbench_data
                 )
 
+                # update timestamps
+                new_project_data["lastChangeDate"] = now_str()
+
                 log.debug("DB updating with %s", pformat(new_project_data))
                 result = await conn.execute(
                     # pylint: disable=no-value-for-parameter
