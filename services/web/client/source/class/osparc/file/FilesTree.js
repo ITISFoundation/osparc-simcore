@@ -536,8 +536,11 @@ qx.Class.define("osparc.file.FilesTree", {
         if (selectItem.length) {
           this.setSelection(selectItem);
           this.__selectionChanged();
+          return true;
         }
       }
+
+      return false;
     },
 
     getSelectedItem: function() {

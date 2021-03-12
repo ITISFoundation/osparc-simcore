@@ -116,6 +116,7 @@ qx.Class.define("osparc.file.FilePicker", {
     __filesTree: null,
     __folderViewer: null,
     __selectedFileLayout: null,
+    __selectedFileFound: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -194,6 +195,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __reloadFilesTree: function() {
       if (this.__filesTree) {
+        this.__selectedFileFound = false;
         this.__filesTree.resetCache();
         this.__filesTree.populateTree();
       }
@@ -344,10 +346,13 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __checkSelectedFileIsListed: function() {
-      if (this.self().isOutputFromStore(this.getNode().getOutputs())) {
+      if (this.__selectedFileFound === false && this.self().isOutputFromStore(this.getNode().getOutputs())) {
         const outFile = this.__getOutputFile();
-        this.__filesTree.setSelectedFile(outFile.value.path);
-        this.__filesTree.fireEvent("selectionChanged");
+        const selected = this.__filesTree.setSelectedFile(outFile.value.path);
+        if (selected) {
+          this.__selectedFileFound = true;
+          this.__filesTree.fireEvent("selectionChanged");
+        }
       }
     }
   }
