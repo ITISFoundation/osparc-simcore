@@ -147,6 +147,22 @@ def _convert_to_schema_names(
     return converted_args
 
 
+def _find_changed_dict_keys(
+    current_dict: Dict[str, Any], new_dict: Dict[str, Any]
+) -> Dict[str, Any]:
+    # start with the missing keys
+    changed_keys = {k: new_dict[k] for k in new_dict.keys() - current_dict.keys()}
+    # then go for the modified ones
+    for k in current_dict.keys() & new_dict.keys():
+        if current_dict[k] == new_dict[k]:
+            continue
+        modified_entry = {k: new_dict[k]}
+        if isinstance(new_dict[k], dict):
+            modified_entry = {k: _find_changed_dict_keys(current_dict[k], new_dict[k])}
+        changed_keys.update(modified_entry)
+    return changed_keys
+
+
 # TODO: test all function return schema-compatible data
 # TODO: is user_id str or int?
 # TODO: systemaic user_id, project
@@ -494,7 +510,7 @@ class ProjectDBAPI:
 
     async def patch_user_project_workbench(
         self, partial_workbench_data: Dict[str, Any], user_id: int, project_uuid: str
-    ) -> Dict[str, Any]:
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """patches an EXISTING project from a user
         new_project_data only contains the entries to modify
         """
@@ -521,7 +537,7 @@ class ProjectDBAPI:
                 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
                     """patch the project workbench with the values in new_data and returns the changed project and changed values"""
                     changed_entries = {}
-                    for node_key, node_data in new_partial_workbench_data.items():
+                    for node_key, new_node_data in new_partial_workbench_data.items():
                         current_node_data = project.get("workbench", {}).get(node_key)
 
                         if current_node_data is None:
@@ -530,17 +546,16 @@ class ProjectDBAPI:
                             )
                             raise NodeNotFoundError(project_uuid, node_key)
                         # find changed keys
-                        # changed_keys = current_node_data.keys() ^ node_data.keys()
-                        # changed_keys.extend(
-                        #     [
-                        #         k
-                        #         for k in current_node_data.keys() & new_data.keys()
-                        #         if current_node_data[k] != new_data[k]
-                        #     ]
-                        # )
-                        # changed_entries.update({"workbench": {node_key: }})
-                        current_node_data.update(node_data)
-                    return project, changed_entries
+                        changed_entries.update(
+                            {
+                                node_key: _find_changed_dict_keys(
+                                    current_node_data, new_node_data
+                                )
+                            }
+                        )
+                        # patch
+                        current_node_data.update(new_node_data)
+                    return (project, changed_entries)
 
                 new_project_data, changed_entries = _patch_workbench(
                     current_project, partial_workbench_data
@@ -564,7 +579,10 @@ class ProjectDBAPI:
                 tags = await self._get_tags_by_project(
                     conn, project_id=project[projects.c.id]
                 )
-                return _convert_to_schema_names(project, user_email, tags=tags)
+                return (
+                    _convert_to_schema_names(project, user_email, tags=tags),
+                    changed_entries,
+                )
 
     async def replace_user_project(
         self,

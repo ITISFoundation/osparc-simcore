@@ -10,7 +10,7 @@ import re
 from copy import deepcopy
 from itertools import combinations
 from random import randint
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 from uuid import UUID, uuid5
 
 import pytest
@@ -30,6 +30,7 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_db_names,
     _convert_to_schema_names,
     _create_project_access_rights,
+    _find_changed_dict_keys,
     setup_projects_db,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
@@ -446,6 +447,66 @@ async def test_add_project_to_db(
 
 
 @pytest.mark.parametrize(
+    "dict_a, dict_b, exp_changes",
+    [
+        pytest.param(
+            {"patch_with_same_entry": "blahblah"},
+            {"patch_with_same_entry": "blahblah"},
+            {},
+            id="same entry",
+        ),
+        pytest.param(
+            {"patch_with_new_entry": "blahblah"},
+            {"new_entry": "lbkjad"},
+            {"new_entry": "lbkjad"},
+            id="new entry",
+        ),
+        pytest.param({"patch_with_empty": 3}, {}, {}, id="empty patch"),
+        pytest.param(
+            {"patch_with_additional": 3},
+            {"patch_with_additional": "new_stuff"},
+            {"patch_with_additional": "new_stuff"},
+            id="patch with new data",
+        ),
+        pytest.param(
+            {"patch_with_nested_stuff": {"first_level": 123}},
+            {"patch_with_nested_stuff": {"first_level": 2}},
+            {"patch_with_nested_stuff": {"first_level": 2}},
+            id="patch with new nested data",
+        ),
+        pytest.param(
+            {"patch_with_new_nested_stuff": {"first_level": 123}},
+            {"patch_with_new_nested_stuff": {"first_level_other": 2}},
+            {"patch_with_new_nested_stuff": {"first_level_other": 2}},
+            id="patch with additional nested data",
+        ),
+        pytest.param(
+            {
+                "patch_with_new_nested_nested_stuff": {
+                    "first_level": {"second_level1": 123}
+                }
+            },
+            {
+                "patch_with_new_nested_nested_stuff": {
+                    "first_level": {"second_level2": 123}
+                }
+            },
+            {
+                "patch_with_new_nested_nested_stuff": {
+                    "first_level": {"second_level2": 123}
+                }
+            },
+            id="patch with 2x nested new data",
+        ),
+    ],
+)
+def test_find_changed_dict_keys(
+    dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
+):
+    assert _find_changed_dict_keys(dict_a, dict_b) == exp_changes
+
+
+@pytest.mark.parametrize(
     "user_role",
     [
         # (UserRole.ANONYMOUS),
@@ -454,14 +515,16 @@ async def test_add_project_to_db(
         # (UserRole.TESTER),
     ],
 )
-async def test_patch_user_project_workbench(
+@pytest.mark.parametrize("number_of_nodes", [1, randint(250, 1000)])
+async def test_patch_user_project_workbench_concurrently(
     fake_project: Dict[str, Any],
     postgres_db: sa.engine.Engine,
     logged_user: Dict[str, Any],
     primary_group: Dict[str, str],
     db_api: ProjectDBAPI,
+    number_of_nodes: int,
 ):
-    _NUMBER_OF_NODES = randint(250, 1000)
+    _NUMBER_OF_NODES = number_of_nodes
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     node_uuids = [str(uuid5(BASE_UUID, f"{n}")) for n in range(_NUMBER_OF_NODES)]
     # create a project with a lot of nodes
@@ -504,7 +567,9 @@ async def test_patch_user_project_workbench(
     ]
     for n in range(_NUMBER_OF_NODES):
         exp_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
-    results = await asyncio.gather(
+    patched_projects: List[
+        Tuple[Dict[str, Any], Dict[str, Any]]
+    ] = await asyncio.gather(
         *[
             db_api.patch_user_project_workbench(
                 {node_uuids[n]: randomly_created_outputs[n]},
@@ -514,12 +579,20 @@ async def test_patch_user_project_workbench(
             for n in range(_NUMBER_OF_NODES)
         ]
     )
-    # get the latest change date
-    latest_change_date = max(to_datetime(prj["lastChangeDate"]) for prj in results)
-
     # NOTE: each returned project contains the project with some updated workbenches
     # the ordering is uncontrolled.
     # The important thing is that the final result shall contain ALL the changes
+
+    for (prj, changed_entries), node_uuid, exp_outputs in zip(
+        patched_projects, node_uuids, randomly_created_outputs
+    ):
+        assert prj["workbench"][node_uuid]["outputs"] == exp_outputs["outputs"]
+        assert changed_entries == {node_uuid: {"outputs": exp_outputs["outputs"]}}
+
+    # get the latest change date
+    latest_change_date = max(
+        to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects
+    )
 
     # check the nodes are completely patched as expected
     _assert_project_db_row(
