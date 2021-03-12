@@ -125,21 +125,6 @@ def fake_project_data(fake_data_dir: Path) -> Dict:
         return json.load(fp)
 
 
-@pytest.fixture()
-async def logged_user(client):  # , role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: role fixture is defined as a parametrization below
-    """
-    role = UserRole.USER  # TODO: parameterize roles
-
-    async with LoggedUser(
-        client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
-    ) as user:
-        yield user
-        await delete_all_projects(client.app)
-
-
 @pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
     """
@@ -239,6 +224,7 @@ async def _request_delete(client, pid):
     await assert_status(resp, web.HTTPNoContent)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_workflow(
     postgres_db: sa.engine.Engine,
     docker_registry: str,
@@ -324,6 +310,7 @@ async def test_workflow(
     assert not projects
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
@@ -337,6 +324,7 @@ async def test_get_invalid_project(
     await assert_status(resp, web.HTTPNotFound)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
@@ -350,6 +338,7 @@ async def test_update_invalid_project(
     await assert_status(resp, web.HTTPNotFound)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_delete_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
@@ -363,6 +352,7 @@ async def test_delete_invalid_project(
     await assert_status(resp, web.HTTPNotFound)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_list_template_projects(
     client,
     postgres_db: sa.engine.Engine,
