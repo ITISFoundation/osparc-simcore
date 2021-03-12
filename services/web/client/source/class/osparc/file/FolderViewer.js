@@ -163,6 +163,7 @@ qx.Class.define("osparc.file.FolderViewer", {
         }
         case "icons-layout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow());
+          osparc.utils.Utils.setIdToWidget(control, "FolderViewerIconsContent");
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "icons" ? "visible" : "excluded"
           });
