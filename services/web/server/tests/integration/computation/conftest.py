@@ -33,20 +33,6 @@ def mock_project(fake_data_dir: Path, mock_workbench_payload: Dict) -> Dict:
 
 
 @pytest.fixture
-async def logged_user(client, user_role: UserRole) -> Dict:
-    """adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        yield user
-
-
-@pytest.fixture
 async def user_project(client, mock_project: Dict, logged_user: Dict) -> Dict:
     mock_project["prjOwner"] = logged_user["name"]
 
