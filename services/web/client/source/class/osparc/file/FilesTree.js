@@ -101,12 +101,13 @@ qx.Class.define("osparc.file.FilesTree", {
     },
 
     addLoadingChild: function(parent) {
-      const loadingModel = new osparc.file.FileTreeItem().set({
+      const loadingModel = qx.data.marshal.Json.createModel({
         label: "Loading...",
         location: null,
         path: null,
+        children: [],
         icon: "@FontAwesome5Solid/circle-notch/12"
-      });
+      }, true);
       parent.getChildren().append(loadingModel);
     },
 
