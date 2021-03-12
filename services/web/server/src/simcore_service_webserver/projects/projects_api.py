@@ -387,9 +387,7 @@ async def update_project_node_outputs(
 
     # changed entries come in the form of {node_uuid: {outputs: {changed_key1: value1, changed_key2: value2}}}
     # we do want only the key names
-    changed_keys = [
-        k for k in changed_entries.get(node_id, {}).get("outputs", {}).keys()
-    ]
+    changed_keys = changed_entries.get(node_id, {}).get("outputs", {}).keys()
     return updated_project, changed_keys
 
 
