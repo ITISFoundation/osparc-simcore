@@ -17,15 +17,9 @@ import pytest
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
-from models_library.projects_state import (
-    Owner,
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    RunningState,
-)
+from models_library.projects_state import ProjectLocked
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, UserRole
+from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.rest_responses import unwrap_envelope
@@ -88,23 +82,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, qx_client_outdir, redis_servic
     cfg["resource_manager"]["garbage_collection_interval_seconds"] = 1
 
     return cfg
-
-
-@pytest.fixture
-async def logged_user(client):  # , role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: role fixture is defined as a parametrization below
-    """
-    role = UserRole.USER  # TODO: parameterize roles
-
-    async with LoggedUser(
-        client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
-    ) as user:
-        print("-----> logged in user", user["name"])
-        yield user
-        print("<----- logged out user", user["name"])
-        await delete_all_projects(client.app)
 
 
 @pytest.fixture
@@ -277,6 +254,13 @@ async def test_access_study_anonymously(
     assert guest_project["prjOwner"] == data["login"]
 
 
+@pytest.fixture
+async def auto_delete_projects(client) -> None:
+    yield
+    await delete_all_projects(client.app)
+
+
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_access_study_by_logged_user(
     client,
     logged_user,
@@ -284,6 +268,7 @@ async def test_access_study_by_logged_user(
     storage_subsystem_mock,
     catalog_subsystem_mock,
     mocks_on_projects_api,
+    auto_delete_projects,
 ):
     study_url = client.app.router["study"].url_for(id=published_project["uuid"])
     resp = await client.get(study_url)
