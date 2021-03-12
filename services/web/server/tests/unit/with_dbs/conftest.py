@@ -16,7 +16,7 @@ import textwrap
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List, Optional
+from typing import Callable, Dict, Iterator, List, Optional
 from uuid import uuid4
 
 import aioredis
