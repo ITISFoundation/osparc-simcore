@@ -66,12 +66,30 @@ class RunDockerComposeUp(BaseEventHandler):
             service_port=current.service_port,
         )
 
-        compose_spec_was_applied = await api_client.start_or_update_compose_spec(
+        was_compose_spec_stored = await api_client.store_compose_spec(
             service_sidecar_endpoint, compose_spec
         )
 
         # compose spec was submitted
         current.service_sidecar.compose_spec_submitted = True
+
+        if not was_compose_spec_stored:
+            current.service_sidecar.overall_status.update_failing_status(
+                "Could not store compose spec. Ask an admin to check director logs for details."
+            )
+            return
+
+        were_images_pulled = await api_client.pull_images(service_sidecar_endpoint)
+
+        if not were_images_pulled:
+            current.service_sidecar.overall_status.update_failing_status(
+                "Could not pull docker images. Ask an admin to check director logs for details."
+            )
+            return
+
+        compose_spec_was_applied = await api_client.start_or_update_compose_spec(
+            service_sidecar_endpoint
+        )
 
         # singal there is a problem with the service-sidecar
         if not compose_spec_was_applied:

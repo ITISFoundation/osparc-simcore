@@ -68,6 +68,13 @@ class ServiceSidecarSettings(BaseSettings):
         ),
     )
 
+    service_sidecar_api_request_docker_compose_pull_timeout: PositiveInt = Field(
+        3600,
+        description=(
+            "when pulling images, before running docker-compose up, there is an 1 hour timeout"
+        ),
+    )
+
     service_sidecar_api_request_docker_compose_up_timeout: PositiveInt = Field(
         10,
         description=(

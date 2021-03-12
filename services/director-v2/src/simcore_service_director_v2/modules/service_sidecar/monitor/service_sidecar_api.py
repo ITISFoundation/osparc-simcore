@@ -88,9 +88,54 @@ class ServiceSidecarClient:
             log_httpx_http_error(url, "GET", traceback.format_exc())
             return None
 
-    async def start_or_update_compose_spec(
+    async def store_compose_spec(
         self, service_sidecar_endpoint: str, compose_spec: str
     ) -> bool:
+        """returns: True if the compose spec was stored"""
+        url = get_url(service_sidecar_endpoint, "/compose:store")
+        try:
+            response = await self.httpx_client.post(url, data=compose_spec)
+            if response.status_code != 204:
+                logging.warning(
+                    "error during request status=%s, body=%s",
+                    response.status_code,
+                    response.text,
+                )
+                return False
+
+            return True
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            return False
+
+    async def pull_images(self, service_sidecar_endpoint: str) -> bool:
+        """returns True if succeeded to pull images"""
+        service_sidecar_settings = get_settings(self._app)
+        command_timeout = (
+            service_sidecar_settings.service_sidecar_api_request_docker_compose_pull_timeout
+        )
+
+        url = get_url(service_sidecar_endpoint, "/compose:pull")
+        try:
+            response = await self.httpx_client.get(
+                url, params=dict(command_timeout=command_timeout)
+            )
+            if response.status_code != 200:
+                logging.warning(
+                    "error during request status=%s, body=%s",
+                    response.status_code,
+                    response.text,
+                )
+                return False
+
+            # request was ok
+            logger.info("Pull images result %s", response.text)
+            return True
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            return False
+
+    async def start_or_update_compose_spec(self, service_sidecar_endpoint: str) -> bool:
         """returns: True if the compose spec was applied """
         service_sidecar_settings = get_settings(self._app)
         command_timeout = (
@@ -100,9 +145,7 @@ class ServiceSidecarClient:
         url = get_url(service_sidecar_endpoint, "/compose")
         try:
             response = await self.httpx_client.post(
-                url,
-                params=dict(command_timeout=command_timeout),
-                data=compose_spec,
+                url, params=dict(command_timeout=command_timeout)
             )
             if response.status_code != 200:
                 logging.warning(
