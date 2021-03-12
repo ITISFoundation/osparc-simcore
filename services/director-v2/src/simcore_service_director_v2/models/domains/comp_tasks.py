@@ -78,13 +78,6 @@ class CompTaskAtDB(BaseModel):
             comp_task_dict["state"] = RUNNING_STATE_TO_DB[comp_task_dict["state"]].value
         return comp_task_dict
 
-    @classmethod
-    def from_db(cls, db_row) -> "CompTaskAtDB":
-        # clean defaultValues from schema/outputs/output_key/ if necessary
-        for output_data in db_row.get("schema", {}).get("outputs", {}).values():
-            output_data.pop("defaultValue", None)
-        return CompTaskAtDB.from_orm(db_row)
-
     class Config:
         extra = Extra.forbid
         orm_mode = True
