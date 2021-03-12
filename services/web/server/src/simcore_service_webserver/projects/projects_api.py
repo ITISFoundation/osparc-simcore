@@ -304,9 +304,9 @@ async def update_project_node_state(
         RunningState.PENDING,
         RunningState.STARTED,
     ]:
-        partial_workbench_data["workbench"][node_id]["progress"] = 0
+        partial_workbench_data[node_id]["progress"] = 0
     elif RunningState(new_state) in [RunningState.SUCCESS, RunningState.FAILED]:
-        partial_workbench_data["workbench"][node_id]["progress"] = 100
+        partial_workbench_data[node_id]["progress"] = 100
 
     db = app[APP_PROJECT_DBAPI]
     updated_project, _ = await db.patch_user_project_workbench(
