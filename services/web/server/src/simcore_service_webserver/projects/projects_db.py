@@ -148,17 +148,29 @@ def _convert_to_schema_names(
 
 
 def _find_changed_dict_keys(
-    current_dict: Dict[str, Any], new_dict: Dict[str, Any]
+    current_dict: Dict[str, Any],
+    new_dict: Dict[str, Any],
+    *,
+    look_for_removed_keys: bool,
 ) -> Dict[str, Any]:
     # start with the missing keys
     changed_keys = {k: new_dict[k] for k in new_dict.keys() - current_dict.keys()}
+    if look_for_removed_keys:
+        changed_keys.update(
+            {k: current_dict[k] for k in current_dict.keys() - new_dict.keys()}
+        )
     # then go for the modified ones
     for k in current_dict.keys() & new_dict.keys():
         if current_dict[k] == new_dict[k]:
             continue
+        # if the entry was modified put the new one
         modified_entry = {k: new_dict[k]}
         if isinstance(new_dict[k], dict):
-            modified_entry = {k: _find_changed_dict_keys(current_dict[k], new_dict[k])}
+            modified_entry = {
+                k: _find_changed_dict_keys(
+                    current_dict[k], new_dict[k], look_for_removed_keys=True
+                )
+            }
         changed_keys.update(modified_entry)
     return changed_keys
 
@@ -549,7 +561,9 @@ class ProjectDBAPI:
                         changed_entries.update(
                             {
                                 node_key: _find_changed_dict_keys(
-                                    current_node_data, new_node_data
+                                    current_node_data,
+                                    new_node_data,
+                                    look_for_removed_keys=False,
                                 )
                             }
                         )

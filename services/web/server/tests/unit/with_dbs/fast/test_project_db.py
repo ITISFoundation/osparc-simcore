@@ -470,8 +470,8 @@ async def test_add_project_to_db(
         ),
         pytest.param(
             {"inputs": {"in_1": 1, "in_2": 4}},
-            {"inputs": {"in_1": 1, "in_2": 5}},
             {"inputs": {"in_2": 5}},
+            {"inputs": {"in_1": 1, "in_2": 5}},
             id="patch with new nested data",
         ),
         pytest.param(
@@ -500,18 +500,21 @@ async def test_add_project_to_db(
             },
             id="patch with 2x nested new data",
         ),
-        # pytest.param(
-        #     {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
-        #     {"remove_entries_in_dict": {"outputs": {}}},
-        #     {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
-        #     id="removal of data",
-        # ),
+        pytest.param(
+            {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
+            {"remove_entries_in_dict": {"outputs": {}}},
+            {"remove_entries_in_dict": {"outputs": {"out_1": 123, "out_3": True}}},
+            id="removal of data",
+        ),
     ],
 )
 def test_find_changed_dict_keys(
     dict_a: Dict[str, Any], dict_b: Dict[str, Any], exp_changes: Dict[str, Any]
 ):
-    assert _find_changed_dict_keys(dict_a, dict_b) == exp_changes
+    assert (
+        _find_changed_dict_keys(dict_a, dict_b, look_for_removed_keys=False)
+        == exp_changes
+    )
 
 
 @pytest.mark.parametrize(
