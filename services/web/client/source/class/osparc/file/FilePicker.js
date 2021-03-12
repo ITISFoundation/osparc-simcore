@@ -192,11 +192,17 @@ qx.Class.define("osparc.file.FilePicker", {
       return control || this.base(arguments, id);
     },
 
+    __reloadFilesTree: function() {
+      if (this.__filesTree) {
+        this.__filesTree.resetCache();
+        this.__filesTree.populateTree();
+      }
+    },
+
     buildLayout: function() {
       const reloadButton = this.getChildControl("reload-button");
       reloadButton.addListener("execute", () => {
-        this.__filesTree.resetCache();
-        this.__filesTree.populateTree();
+        this.__reloadFilesTree();
       }, this);
 
       const filesTree = this.__filesTree = this.getChildControl("files-tree");
@@ -209,8 +215,10 @@ qx.Class.define("osparc.file.FilePicker", {
           folderViewer.setFolder(selectionData);
         }
       }, this);
-      filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
-      filesTree.populateTree();
+      filesTree.addListener("filesAddedToTree", () => {
+        this.__checkSelectedFileIsListed();
+      }, this);
+      this.__reloadFilesTree();
 
       folderViewer.addListener("selectionChanged", e => {
         const selectionData = e.getData();
@@ -249,8 +257,7 @@ qx.Class.define("osparc.file.FilePicker", {
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
           this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
-        filesTree.resetCache();
-        filesTree.populateTree();
+        this.__reloadFilesTree();
         filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
 
