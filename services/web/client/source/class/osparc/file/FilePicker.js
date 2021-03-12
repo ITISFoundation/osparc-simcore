@@ -80,12 +80,12 @@ qx.Class.define("osparc.file.FilePicker", {
 
     isOutputFromStore: function(outputs) {
       const outFileValue = this.getOutput(outputs);
-      return (outFileValue && typeof outFileValue === "object" && "path" in outFileValue);
+      return (typeof outFileValue === "object" && "path" in outFileValue);
     },
 
     isOutputDownloadLink: function(outputs) {
       const outFileValue = this.getOutput(outputs);
-      return (outFileValue && typeof outFileValue === "object" && "downloadLink" in outFileValue);
+      return (typeof outFileValue === "object" && "downloadLink" in outFileValue);
     },
 
     extractLabelFromLink: function(outputs) {
