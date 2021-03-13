@@ -9,6 +9,7 @@ import logging
 import textwrap
 import uuid as uuidlib
 from collections import deque
+from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from pprint import pformat
@@ -77,7 +78,7 @@ def _check_project_permissions(
         # the user groups is missing entries
         raise ProjectInvalidRightsError(user_id, project.get("uuid"))
 
-    project_access_rights = project.get("access_rights", {})
+    project_access_rights = deepcopy(project.get("access_rights", {}))
 
     # compute access rights
     no_access_rights = {"read": False, "write": False, "delete": False}
