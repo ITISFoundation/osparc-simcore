@@ -307,16 +307,29 @@ class TutorialBase {
     await this.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
-  async checkResults(expecedNFiles = 1) {
-    await this.takeScreenshot("checkResults_before");
+  async checkNodeResults(nodePos, expecedNFiles) {
+    await this.takeScreenshot("checkNodeResults_before");
     try {
-      await auto.checkDataProducedByNode(this.__page, expecedNFiles);
+      let filesFound = false;
+      const tries = 3;
+      for (let i = 0; i < tries && !filesFound; i++) {
+        await this.openNodeFiles(nodePos);
+        try {
+          filesFound = await auto.checkDataProducedByNode(this.__page, expecedNFiles.length);
+        }
+        catch (err) {
+          console.error("Files not found, one more try?", i+1);
+        }
+      }
+      if (!filesFound) {
+        throw ("Expected files not found");
+      }
     }
     catch (err) {
       console.error("Failed checking Data Produced By Node", err);
       throw (err);
     }
-    await this.takeScreenshot("checkResults_after");
+    await this.takeScreenshot("checkNodeResults_after");
   }
 
   async toDashboard() {
