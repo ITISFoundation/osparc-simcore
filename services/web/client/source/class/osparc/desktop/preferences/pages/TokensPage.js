@@ -207,13 +207,14 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
               height: 80
             });
             btn.getChildControl("icon").set({
+              scale: true,
               maxWidth: 50,
-              maxHeight: 50,
-              scale: true
+              maxHeight: 50
             });
             btn.addListener("execute", () => {
-              const emptyForm = this.__createEmptyTokenForm(srv);
-              this.__validTokensGB.add(new qx.ui.form.renderer.Single(emptyForm));
+              const newTokenForm = this.__createNewTokenForm(srv);
+              const form = new qx.ui.form.renderer.Single(newTokenForm);
+              osparc.ui.window.Window.popUpInWindow(form, srv.label, 350, 200);
             }, this);
             this.__supportedExternalsGB.add(btn);
           });
@@ -271,12 +272,26 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         .catch(err => console.error(err));
     },
 
-    __createEmptyTokenForm: function(supportedExternalServices) {
+    __createValidEntryLayout: function() {
+      const height = 20;
+      const gr = new qx.ui.layout.Grid(10, 3);
+      gr.setColumnFlex(0, 1);
+      gr.setRowHeight(0, height); // Link
+      gr.setRowHeight(1, height); // Token entry
+      const grid = new qx.ui.container.Composite(gr);
+      return grid;
+    },
+
+    __createNewTokenForm: function(supportedExternalServices) {
       const form = new qx.ui.form.Form();
 
       form.addGroupHeader("Add new service API tokens");
 
-      // FIXME: for the moment this is fixed since it has to be a unique id
+      if ("link" in supportedExternalServices) {
+        const linkBtn = new osparc.ui.form.LinkButton(this.tr("To ") + supportedExternalServices["label"], null, supportedExternalServices["link"]);
+        form.add(linkBtn);
+      }
+
       const newTokenService = new qx.ui.form.TextField();
       newTokenService.set({
         value: supportedExternalServices["name"],
@@ -296,8 +311,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       });
       form.add(newTokenSecret, this.tr("Secret"));
 
-      const addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
-      addTokenBtn.setWidth(100);
+      const addTokenBtn = new osparc.ui.form.FetchButton(this.tr("Add"));
       addTokenBtn.addListener("execute", e => {
         if (!osparc.data.Permissions.getInstance().canDo("user.token.create", true)) {
           return;
@@ -309,23 +323,15 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
             "token_secret": newTokenSecret.getValue()
           }
         };
+        addTokenBtn.setFetching(true);
         osparc.data.Resources.fetch("tokens", "post", params)
           .then(() => this.__rebuildTokensList())
-          .catch(err => console.error(err));
+          .catch(err => console.error(err))
+          .finally(() => addTokenBtn.setFetching(false));
       }, this);
       form.addButton(addTokenBtn);
 
       return form;
-    },
-
-    __createValidEntryLayout: function() {
-      const height = 20;
-      const gr = new qx.ui.layout.Grid(10, 3);
-      gr.setColumnFlex(0, 1);
-      gr.setRowHeight(0, height); // Link
-      gr.setRowHeight(1, height); // Token entry
-      const grid = new qx.ui.container.Composite(gr);
-      return grid;
     }
   }
 });
