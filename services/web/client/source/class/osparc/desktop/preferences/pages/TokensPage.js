@@ -148,13 +148,14 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         name: "blackfynn-datcore",
         label: "DAT-Core",
         link: "https://app.blackfynn.io",
-        logo: "blackfynn-logo.svg"
+        logo: "blackfynn-logo.png"
       }];
       if (osparc.utils.Utils.isInZ43()) {
         supportedServices.push({
           name: "z43-filesrv",
           label: "z43-filesrv",
-          link: "https://www.z43.swiss/"
+          link: "https://www.z43.swiss/",
+          logo: "z43-logo.png"
         });
       }
       return supportedServices;
