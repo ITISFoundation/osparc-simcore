@@ -25,7 +25,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
   construct: function() {
     const iconSrc = "@FontAwesome5Solid/shield-alt/24";
-    const title = this.tr("Security");
+    const title = this.tr("API");
     this.base(arguments, title, iconSrc);
 
     this.add(this.__createAPIKeysSection());
@@ -147,7 +147,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       const supportedServices = [{
         name: "blackfynn-datcore",
         label: "DAT-Core",
-        link: "https://app.blackfynn.io"
+        link: "https://app.blackfynn.io",
+        logo: "blackfynn-logo.svg"
       }];
       if (osparc.utils.Utils.isInZ43()) {
         supportedServices.push({
@@ -165,7 +166,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
       const label = this._createHelpLabel(this.tr("List of API tokens to access external services. Supported services:"));
       this.__supportedServices().forEach(supportedService => {
-        label.setValue(label.getValue() + "<br>- " + supportedService["label"]);
+        label.setValue(`${label.getValue()} <br>- ${supportedService["label"]} (${supportedService["name"]})`);
       });
       box.add(label);
 
@@ -262,7 +263,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       }, this);
       grid.add(delTokenBtn, {
         row: 0,
-        column: 3
+        column: 2
       });
 
       return grid;
