@@ -88,7 +88,7 @@ async function runTutorial() {
     const jLabIframe = iframes2.find(iframe => iframe._url.endsWith("lab?"));
 
     // inside the iFrame, open the first notebook
-    const input2outputFileSelector = '[title*="input2output.ipynb"]';
+    const input2outputFileSelector = '[title~="input2output.ipynb"]';
     await jLabIframe.waitForSelector(input2outputFileSelector);
     await jLabIframe.click(input2outputFileSelector, {
       clickCount: 2

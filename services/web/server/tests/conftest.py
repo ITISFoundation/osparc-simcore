@@ -10,13 +10,13 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import pytest
-
 import simcore_service_webserver
-
 from integration.utils import get_fake_data_dir, get_fake_project
+from pytest_simcore.helpers.utils_login import LoggedUser
+from simcore_service_webserver.db_models import UserRole
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -52,3 +52,19 @@ def fake_data_dir() -> Path:
 @pytest.fixture
 def fake_project(fake_data_dir: Path) -> Dict:
     return get_fake_project()
+
+
+@pytest.fixture()
+async def logged_user(client, user_role: UserRole) -> Dict[str, Any]:
+    """adds a user in db and logs in with client
+
+    NOTE: `user_role` fixture is defined as a parametrization below!!!
+    """
+    async with LoggedUser(
+        client,
+        {"role": user_role.name},
+        check_if_succeeds=user_role != UserRole.ANONYMOUS,
+    ) as user:
+        print("-----> logged in user", user["name"], user_role)
+        yield user
+        print("<----- logged out user", user["name"], user_role)

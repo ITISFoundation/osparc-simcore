@@ -122,6 +122,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+      - SIDECAR_HOST_HOSTNAME_PATH=${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
     networks:
       - computational_services_subnet
 
@@ -177,6 +178,7 @@ services:
       - REGISTRY_USER=${REGISTRY_USER}
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+      - SIDECAR_HOST_HOSTNAME_PATH=${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
       - TARGET_MPI_NODE_CPU_COUNT=${DEV_PC_CPU_COUNT:-0} # development computer CPU count, if env var is missing put to 0 to disable
     networks:
       - computational_services_subnet
