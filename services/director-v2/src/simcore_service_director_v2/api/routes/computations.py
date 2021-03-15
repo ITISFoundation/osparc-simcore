@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, List
 
 import networkx as nx
+from celery import exceptions as celery_exceptions
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -62,7 +63,12 @@ def celery_on_message(body: Any) -> None:
 
 def background_on_message(task: Any) -> None:
     # FIXME: this might become handy when we stop starting tasks recursively
-    log.warning(task.get(on_message=celery_on_message, propagate=False))
+    try:
+        _ = task.get(on_message=celery_on_message, propagate=True)
+    except celery_exceptions.TimeoutError:
+        log.error("timeout on waiting for task %s", task)
+    except Exception:
+        log.error("An unexpected error happend while running Celery task %s", task)
 
 
 async def _abort_pipeline_tasks(

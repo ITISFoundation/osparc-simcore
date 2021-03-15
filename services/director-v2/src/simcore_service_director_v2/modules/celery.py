@@ -2,8 +2,8 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Dict, List
 
-from celery import Celery, Task, chain, group, signature
-from celery.canvas import Signature
+from celery import Celery, Task, group, signature
+from celery.canvas import Signature, chord
 from celery.contrib.abortable import AbortableAsyncResult
 from fastapi import FastAPI
 from models_library.projects import ProjectID
@@ -72,7 +72,6 @@ class CeleryClient:
                     "project_id": str(project_id),
                     "node_id": str(node_id),
                 },
-                immutable=True,  # this prevents the result to be added to the next task
             )
             return task_signature
 
@@ -81,23 +80,30 @@ class CeleryClient:
         for node_group in topologically_sorted_nodes:
             celery_groups.append(
                 group(
-                    _create_task_signature(
-                        self,
-                        user_id,
-                        project_id,
-                        node_id,
-                        node_data["runtime_requirements"],
-                    )
-                    for node_id, node_data in node_group.items()
+                    [
+                        _create_task_signature(
+                            self,
+                            user_id,
+                            project_id,
+                            node_id,
+                            node_data["runtime_requirements"],
+                        )
+                        for node_id, node_data in node_group.items()
+                    ]
                 )
             )
 
-        # chain the tasks into a flow
-        celery_flow = chain(celery_groups)
+        def _create_celery_flow(grps, index: int = 0):
+            if index < len(grps):
+                body = _create_celery_flow(grps, index + 1)
+                return chord(header=grps[index], body=body) if body else grps[index]
+            return None
+
+        celery_flow = _create_celery_flow(celery_groups)
 
         # publish the tasks through Celery
         task = celery_flow.apply_async()
-        logger.debug("created celery workflow %s", str(celery_flow))
+        logger.debug("created celery workflow: %s", str(celery_flow))
         return task
 
     @classmethod
