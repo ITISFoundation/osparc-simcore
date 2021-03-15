@@ -871,7 +871,7 @@ async def test_share_project(
 
 @pytest.fixture()
 def ensure_run_in_sequence_context_is_empty():
-    async_utils.contexts = {}
+    async_utils.sequential_jobs_contexts = {}
 
 
 # PUT --------

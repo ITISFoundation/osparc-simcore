@@ -13,7 +13,7 @@ class Context:
     initialized: bool
 
 
-contexts = {}
+sequential_jobs_contexts = {}
 
 
 def run_sequentially_in_context(target_args: List[str] = None):
@@ -72,14 +72,14 @@ def run_sequentially_in_context(target_args: List[str] = None):
 
             key = ":".join(map(str, key_parts))
 
-            if key not in contexts:
-                contexts[key] = Context(
+            if key not in sequential_jobs_contexts:
+                sequential_jobs_contexts[key] = Context(
                     in_queue=asyncio.Queue(),
                     out_queue=asyncio.Queue(),
                     initialized=False,
                 )
 
-            return contexts[key]
+            return sequential_jobs_contexts[key]
 
         @wraps(decorated_function)
         async def wrapper(*args, **kwargs):

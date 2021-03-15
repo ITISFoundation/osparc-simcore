@@ -8,14 +8,14 @@ from time import time
 from typing import Any, Dict, List
 
 import pytest
-from servicelib.async_utils import contexts, run_sequentially_in_context
+from servicelib.async_utils import run_sequentially_in_context, sequential_jobs_contexts
 
 
 @pytest.fixture(autouse=True)
 def ensure_run_in_sequence_context_is_empty():
     # NOTE: since the contexts variable is initialized at import time, when several test run
     # the import happens only once and is rendered invalid, therefore explicit clearance is necessary
-    contexts.clear()
+    sequential_jobs_contexts.clear()
 
 
 class LockedStore:
