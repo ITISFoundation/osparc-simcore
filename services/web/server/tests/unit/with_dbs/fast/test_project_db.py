@@ -326,10 +326,7 @@ def _assert_project_db_row(
 @pytest.mark.parametrize(
     "user_role",
     [
-        # (UserRole.ANONYMOUS),
-        # (UserRole.GUEST),
         (UserRole.USER),
-        # (UserRole.TESTER),
     ],
 )
 async def test_add_project_to_db(
@@ -520,10 +517,7 @@ def test_find_changed_dict_keys(
 @pytest.mark.parametrize(
     "user_role",
     [
-        # (UserRole.ANONYMOUS),
-        # (UserRole.GUEST),
         (UserRole.USER),
-        # (UserRole.TESTER),
     ],
 )
 @pytest.mark.parametrize("number_of_nodes", [1, randint(250, 1000)])
