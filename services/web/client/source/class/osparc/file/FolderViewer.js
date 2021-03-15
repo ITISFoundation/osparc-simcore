@@ -34,7 +34,8 @@ qx.Class.define("osparc.file.FolderViewer", {
       this.fireDataEvent("folderUp", this.getFolder());
     }, this);
     this.getChildControl("folder-path");
-    this.getChildControl("view-options");
+    this.getChildControl("view-options-icons");
+    this.getChildControl("view-options-list");
 
     this.bind("folder", this.getChildControl("folder-up"), "enabled", {
       converter: folder => Boolean(folder && folder.getPathLabel && folder.getPathLabel().length > 1)
@@ -96,7 +97,7 @@ qx.Class.define("osparc.file.FolderViewer", {
       let control;
       switch (id) {
         case "header":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox());
           this._add(control);
           break;
         case "folder-up": {
@@ -112,29 +113,38 @@ qx.Class.define("osparc.file.FolderViewer", {
           control = new qx.ui.basic.Label(this.tr("Select Folder")).set({
             font: "text-16",
             allowGrowX: true,
-            alignY: "middle"
+            alignY: "middle",
+            marginLeft: 10,
+            marginRight: 10
           });
           header.addAt(control, 1, {
             flex: 1
           });
           break;
         }
-        case "view-options": {
-          const header = this.getChildControl("header");
-          control = new qx.ui.form.MenuButton(this.tr("View"));
-          const menu = new qx.ui.menu.Menu();
-          const listBtn = new qx.ui.menu.Button(this.tr("List"));
-          listBtn.addListener("execute", () => {
-            this.setMode("list");
-          });
-          menu.add(listBtn);
-          const iconsBtn = new qx.ui.menu.Button(this.tr("Icons"));
-          iconsBtn.addListener("execute", () => {
+        case "view-options-rgroup":
+          control = new qx.ui.form.RadioGroup();
+          break;
+        case "view-options-icons": {
+          control = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+          const group = this.getChildControl("view-options-rgroup");
+          group.add(control);
+          control.addListener("execute", () => {
             this.setMode("icons");
           });
-          menu.add(iconsBtn);
-          control.setMenu(menu);
+          const header = this.getChildControl("header");
           header.addAt(control, 2);
+          break;
+        }
+        case "view-options-list": {
+          control = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
+          const group = this.getChildControl("view-options-rgroup");
+          group.add(control);
+          control.addListener("execute", () => {
+            this.setMode("list");
+          });
+          const header = this.getChildControl("header");
+          header.addAt(control, 3);
           break;
         }
         case "table": {
