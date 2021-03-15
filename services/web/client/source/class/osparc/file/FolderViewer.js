@@ -75,9 +75,15 @@ qx.Class.define("osparc.file.FolderViewer", {
     getItemButton: function() {
       const item = new qx.ui.form.ToggleButton().set({
         iconPosition: "top",
-        width: 90,
-        height: 70,
+        width: 100,
+        height: 80,
         padding: 3
+      });
+      item.getChildControl("label").set({
+        rich: true,
+        textAlign: "center",
+        maxWidth: 100,
+        maxHeight: 31
       });
       osparc.utils.Utils.setIdToWidget(item, "FolderViewerItem");
       return item;
@@ -162,7 +168,7 @@ qx.Class.define("osparc.file.FolderViewer", {
           });
           control.getTableColumnModel().setDataCellRenderer(this.self().T_POS.TYPE, new qx.ui.table.cellrenderer.Image());
           control.setColumnWidth(this.self().T_POS.TYPE, 30);
-          control.setColumnWidth(this.self().T_POS.NAME, 300);
+          control.setColumnWidth(this.self().T_POS.NAME, 400);
           control.setColumnWidth(this.self().T_POS.DATE, 150);
           control.setColumnWidth(this.self().T_POS.SIZE, 50);
           this.bind("mode", control, "visibility", {
