@@ -5,7 +5,6 @@ import networkx as nx
 from celery import exceptions as celery_exceptions
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
@@ -67,7 +66,7 @@ def background_on_message(task: Any) -> None:
         _ = task.get(on_message=celery_on_message, propagate=True)
     except celery_exceptions.TimeoutError:
         log.error("timeout on waiting for task %s", task)
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         log.error("An unexpected error happend while running Celery task %s", task)
 
 
