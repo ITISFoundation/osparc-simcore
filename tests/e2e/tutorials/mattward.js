@@ -33,7 +33,6 @@ async function runTutorial() {
     // This study opens in fullscreen mode
     await tutorial.restoreIFrame();
 
-    await tutorial.openNodeFiles(0);
     const outFiles = [
       "CAP_plot.csv",
       "CV_plot.csv",
@@ -43,7 +42,7 @@ async function runTutorial() {
       "t_plot.csv",
       "tst_plot.csv"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
 
     await tutorial.toDashboard();
 

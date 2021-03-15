@@ -42,6 +42,8 @@ qx.Class.define("osparc.file.FilePicker", {
   construct: function(node) {
     this.base(arguments);
 
+    this._setLayout(new qx.ui.layout.VBox(5));
+
     this.set({
       node
     });
@@ -80,12 +82,12 @@ qx.Class.define("osparc.file.FilePicker", {
 
     isOutputFromStore: function(outputs) {
       const outFileValue = this.getOutput(outputs);
-      return (typeof outFileValue === "object" && "path" in outFileValue);
+      return (outFileValue && typeof outFileValue === "object" && "path" in outFileValue);
     },
 
     isOutputDownloadLink: function(outputs) {
       const outFileValue = this.getOutput(outputs);
-      return (typeof outFileValue === "object" && "downloadLink" in outFileValue);
+      return (outFileValue && typeof outFileValue === "object" && "downloadLink" in outFileValue);
     },
 
     extractLabelFromLink: function(outputs) {
@@ -112,6 +114,9 @@ qx.Class.define("osparc.file.FilePicker", {
 
   members: {
     __filesTree: null,
+    __folderViewer: null,
+    __selectedFileLayout: null,
+    __selectedFileFound: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -124,38 +129,57 @@ qx.Class.define("osparc.file.FilePicker", {
           });
           this._addAt(control, this.self().POS.RELOAD);
           break;
-        case "files-tree":
-          control = new osparc.file.FilesTree();
+        case "tree-folder-layout":
+          control = new qx.ui.splitpane.Pane("horizontal");
           this._addAt(control, this.self().POS.FILES_TREE, {
             flex: 1
           });
           break;
+        case "files-tree": {
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          control = new osparc.file.FilesTree().set({
+            showLeafs: false,
+            minWidth: 150,
+            width: 200
+          });
+          treeFolderLayout.add(control, 0);
+          break;
+        }
+        case "folder-viewer": {
+          const treeFolderLayout = this.getChildControl("tree-folder-layout");
+          control = new osparc.file.FolderViewer();
+          treeFolderLayout.add(control, 1);
+          break;
+        }
         case "toolbar":
-          control = new qx.ui.toolbar.ToolBar();
-          control.addSpacer();
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, this.self().POS.TOOLBAR);
           break;
-        case "main-buttons": {
-          control = new qx.ui.toolbar.Part();
-          const toolbar = this.getChildControl("toolbar");
-          toolbar.add(control);
+        case "selected-file-layout": {
+          control = new osparc.file.FileLabelWithActions().set({
+            alignY: "middle"
+          });
+          const mainButtons = this.getChildControl("toolbar");
+          mainButtons.add(control, {
+            flex: 1
+          });
           break;
         }
         case "files-add": {
           control = new osparc.file.FilesAdd().set({
             node: this.getNode()
           });
-          const mainButtons = this.getChildControl("main-buttons");
+          const mainButtons = this.getChildControl("toolbar");
           mainButtons.add(control);
           break;
         }
-        case "selectButton": {
-          control = new qx.ui.toolbar.Button(this.tr("Select"));
-          const mainButtons = this.getChildControl("main-buttons");
+        case "select-button": {
+          control = new qx.ui.form.Button(this.tr("Select"));
+          const mainButtons = this.getChildControl("toolbar");
           mainButtons.add(control);
           break;
         }
-        case "downloadLink": {
+        case "file-download-link": {
           const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
             layout: new qx.ui.layout.VBox(5)
           });
@@ -169,16 +193,65 @@ qx.Class.define("osparc.file.FilePicker", {
       return control || this.base(arguments, id);
     },
 
-    buildLayout: function() {
-      this._setLayout(new qx.ui.layout.VBox(5));
+    __reloadFilesTree: function() {
+      if (this.__filesTree) {
+        this.__selectedFileFound = false;
+        this.__filesTree.resetCache();
+        this.__filesTree.populateTree();
+      }
+    },
 
+    buildLayout: function() {
       const reloadButton = this.getChildControl("reload-button");
       reloadButton.addListener("execute", () => {
-        this.__filesTree.resetCache();
-        this.__recreateFilesTree();
+        this.__reloadFilesTree();
       }, this);
 
-      this.__recreateFilesTree();
+      const filesTree = this.__filesTree = this.getChildControl("files-tree");
+      const folderViewer = this.__folderViewer = this.getChildControl("folder-viewer");
+
+      filesTree.addListener("selectionChanged", () => {
+        const selectionData = filesTree.getSelectedItem();
+        this.__selectionChanged(selectionData);
+        if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+          folderViewer.setFolder(selectionData);
+        }
+      }, this);
+      filesTree.addListener("filesAddedToTree", () => {
+        this.__checkSelectedFileIsListed();
+      }, this);
+      this.__reloadFilesTree();
+
+      folderViewer.addListener("selectionChanged", e => {
+        const selectionData = e.getData();
+        this.__selectionChanged(selectionData);
+      }, this);
+      folderViewer.addListener("itemSelected", e => {
+        const selectionData = e.getData();
+        this.__selectionChanged(selectionData);
+        if (osparc.file.FilesTree.isFile(selectionData)) {
+          this.__itemSelected();
+        } else if (osparc.file.FilesTree.isDir(selectionData)) {
+          filesTree.openNodeAndParents(selectionData);
+          filesTree.setSelection(new qx.data.Array([selectionData]));
+        }
+      }, this);
+      folderViewer.addListener("folderUp", e => {
+        const currentFolder = e.getData();
+        const parent = filesTree.getParent(currentFolder);
+        if (parent) {
+          filesTree.setSelection(new qx.data.Array([parent]));
+          folderViewer.setFolder(parent);
+        }
+      }, this);
+      folderViewer.addListener("requestDatasetFiles", e => {
+        const data = e.getData();
+        filesTree.requestDatasetFiles(data.locationId, data.datasetId);
+      }, this);
+
+
+      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
+      selectedFileLayout.getChildControl("delete-button").exclude();
 
       const filesAdd = this.getChildControl("files-add");
       filesAdd.addListener("fileAdded", e => {
@@ -186,36 +259,22 @@ qx.Class.define("osparc.file.FilePicker", {
         if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
           this.__setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
         }
-        const filesTree = this.__recreateFilesTree();
-        filesTree.resetCache();
-        filesTree.populateTree();
+        this.__reloadFilesTree();
         filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
 
-      const selectBtn = this.getChildControl("selectButton");
+      const selectBtn = this.getChildControl("select-button");
       selectBtn.setEnabled(false);
       selectBtn.addListener("execute", () => {
-        this.__itemSelectedFromStore();
+        this.__itemSelected();
       }, this);
 
-      const fileDownloadLink = this.getChildControl("downloadLink");
+      const fileDownloadLink = this.getChildControl("file-download-link");
       fileDownloadLink.addListener("fileLinkAdded", e => {
         const downloadLink = e.getData();
         const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
         this.__setOutputValueFromLink(downloadLink, label);
       }, this);
-    },
-
-    __recreateFilesTree: function() {
-      if (this.__filesTree) {
-        this._remove(this.__filesTree);
-      }
-      const filesTree = this.__filesTree = this._createChildControlImpl("files-tree");
-      filesTree.addListener("selectionChanged", this.__selectionChanged, this);
-      filesTree.addListener("itemSelected", this.__itemSelectedFromStore, this);
-      filesTree.addListener("filesAddedToTree", this.__checkSelectedFileIsListed, this);
-      filesTree.populateTree();
-      return filesTree;
     },
 
     init: function() {
@@ -226,7 +285,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       if (this.self().isOutputDownloadLink(this.getNode().getOutputs())) {
         const outFile = this.__getOutputFile();
-        this.getChildControl("downloadLink").setValue(outFile.value["downloadLink"]);
+        this.getChildControl("file-download-link").setValue(outFile.value["downloadLink"]);
       }
     },
 
@@ -239,15 +298,16 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    __selectionChanged: function() {
-      const data = this.__filesTree.getSelectedFile();
-      this.getChildControl("selectButton").setEnabled(data ? data["isFile"] : false);
+    __selectionChanged: function(selectedItem) {
+      const isFile = osparc.file.FilesTree.isFile(selectedItem);
+      this.getChildControl("select-button").setEnabled(isFile);
+
+      this.__selectedFileLayout.itemSelected(selectedItem);
     },
 
-    __itemSelectedFromStore: function() {
-      const data = this.__filesTree.getSelectedFile();
-      if (data && data["isFile"]) {
-        const selectedItem = data["selectedItem"];
+    __itemSelected: function() {
+      const selectedItem = this.__selectedFileLayout.getItemSelected();
+      if (selectedItem && osparc.file.FilesTree.isFile(selectedItem)) {
         this.__setOutputValueFromStore(selectedItem.getLocation(), selectedItem.getDatasetId(), selectedItem.getFileId(), selectedItem.getLabel());
       }
     },
@@ -286,10 +346,13 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __checkSelectedFileIsListed: function() {
-      if (this.self().isOutputFromStore(this.getNode().getOutputs())) {
+      if (this.__selectedFileFound === false && this.self().isOutputFromStore(this.getNode().getOutputs())) {
         const outFile = this.__getOutputFile();
-        this.__filesTree.setSelectedFile(outFile.value.path);
-        this.__filesTree.fireEvent("selectionChanged");
+        const selected = this.__filesTree.setSelectedFile(outFile.value.path);
+        if (selected) {
+          this.__selectedFileFound = true;
+          this.__filesTree.fireEvent("selectionChanged");
+        }
       }
     }
   }

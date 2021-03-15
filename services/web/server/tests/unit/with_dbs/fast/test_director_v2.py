@@ -18,22 +18,6 @@ from simcore_service_webserver import director_v2
 from simcore_service_webserver.db_models import UserRole
 
 
-@pytest.fixture()
-async def logged_user(client, user_role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user as", user_role)
-        yield user
-        print("<----- logged out user as", user_role)
-
-
 @pytest.fixture(autouse=True)
 async def auto_mock_director_v2(
     loop,
