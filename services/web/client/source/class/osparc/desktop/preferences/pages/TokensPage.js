@@ -37,7 +37,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
   members: {
     __apiKeysList: null,
-    __tokensList: null,
+    __validTokensGB: null,
+    __supportedExternalsGB: null,
     __requestAPIKeyBtn: null,
 
     __createAPIKeysSection: function() {
@@ -109,7 +110,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
     },
 
     __createValidAPIKeyForm: function(apiKeyLabel) {
-      const grid = this.__createValidEntryForm();
+      const grid = this.__createValidEntryLayout();
 
       const nameLabel = new qx.ui.basic.Label(apiKeyLabel);
       grid.add(nameLabel, {
@@ -143,19 +144,19 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         .catch(err => console.error(err));
     },
 
-    __supportedServices: function() {
+    __supportedExternalServices: function() {
       const supportedServices = [{
         name: "blackfynn-datcore",
         label: "DAT-Core",
         link: "https://app.blackfynn.io",
-        logo: "blackfynn-logo.png"
+        logo: "osparc/blackfynn-logo.png"
       }];
       if (osparc.utils.Utils.isInZ43()) {
         supportedServices.push({
           name: "z43-filesrv",
-          label: "z43-filesrv",
+          label: "Z43",
           link: "https://www.z43.swiss/",
-          logo: "z43-logo.png"
+          logo: "osparc/z43-logo.png"
         });
       }
       return supportedServices;
@@ -165,84 +166,70 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       // layout
       const box = this._createSectionBox(this.tr("External Service Tokens"));
 
-      const label = this._createHelpLabel(this.tr("List of API tokens to access external services. Supported services:"));
-      this.__supportedServices().forEach(supportedService => {
-        label.setValue(`${label.getValue()} <br>- ${supportedService["label"]} (${supportedService["name"]})`);
-      });
+      const label = this._createHelpLabel(this.tr("Enter the API tokens to access external services."));
       box.add(label);
 
-      const tokensList = this.__tokensList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
-      box.add(tokensList);
+      const validTokensGB = this.__validTokensGB = this._createSectionBox(this.tr("Exisiting tokens"));
+      box.add(validTokensGB);
+
+      const supportedExternalsGB = this.__supportedExternalsGB = this._createSectionBox(this.tr("Supported services")).set({
+        layout: new qx.ui.layout.Flow(5, 5)
+      });
+      box.add(supportedExternalsGB);
 
       return box;
     },
 
     __rebuildTokensList: function() {
-      this.__tokensList.removeAll();
+      this.__validTokensGB.exclude();
+      this.__supportedExternalsGB.exclude();
       osparc.data.Resources.get("tokens")
         .then(tokensList => {
           console.log("tokens", tokensList);
+          this.__validTokensGB.removeAll();
+          this.__supportedExternalsGB.removeAll();
+
+          const supportedExternalServices = osparc.utils.Utils.deepCloneObject(this.__supportedExternalServices());
+
           tokensList.forEach(token => {
-            const tokenForm = this.__createValidTokenForm(token);
-            this.__tokensList.add(tokenForm);
+            const tokenForm = this.__createValidTokenEntry(token);
+            this.__validTokensGB.add(tokenForm);
+            const idx = supportedExternalServices.findIndex(srv => srv.name === token.service);
+            if (idx > -1) {
+              supportedExternalServices.splice(idx, 1);
+            }
           });
 
-          const emptyForm = this.__createEmptyTokenForm();
-          this.__tokensList.add(new qx.ui.form.renderer.Single(emptyForm));
+          supportedExternalServices.forEach(srv => {
+            const btn = new qx.ui.form.Button(srv.label, srv.logo).set({
+              iconPosition: "top",
+              width: 80,
+              height: 80
+            });
+            btn.getChildControl("icon").set({
+              maxWidth: 50,
+              maxHeight: 50,
+              scale: true
+            });
+            btn.addListener("execute", () => {
+              const emptyForm = this.__createEmptyTokenForm(srv);
+              this.__validTokensGB.add(new qx.ui.form.renderer.Single(emptyForm));
+            }, this);
+            this.__supportedExternalsGB.add(btn);
+          });
+
+          if (tokensList.length) {
+            this.__validTokensGB.show();
+          }
+          if (supportedExternalServices.length) {
+            this.__supportedExternalsGB.show();
+          }
         })
         .catch(err => console.error(err));
     },
 
-    __createEmptyTokenForm: function() {
-      const form = new qx.ui.form.Form();
-
-      form.addGroupHeader("Add new service API tokens");
-
-      // FIXME: for the moment this is fixed since it has to be a unique id
-      const newTokenService = new qx.ui.form.TextField();
-      newTokenService.set({
-        placeholder: this.tr("Input unique service name, i.e. ") + this.__supportedServices()[0]["name"]
-      });
-      form.add(newTokenService, this.tr("Service"));
-
-      const newTokenKey = new qx.ui.form.TextField();
-      newTokenKey.set({
-        placeholder: this.tr("Input your token key")
-      });
-      form.add(newTokenKey, this.tr("Key"));
-
-      const newTokenSecret = new qx.ui.form.TextField();
-      newTokenSecret.set({
-        placeholder: this.tr("Input your token secret")
-      });
-      form.add(newTokenSecret, this.tr("Secret"));
-
-      const addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
-      addTokenBtn.setWidth(100);
-      addTokenBtn.addListener("execute", e => {
-        if (!osparc.data.Permissions.getInstance().canDo("user.token.create", true)) {
-          return;
-        }
-        const params = {
-          data: {
-            "service": newTokenService.getValue(),
-            "token_key": newTokenKey.getValue(),
-            "token_secret": newTokenSecret.getValue()
-          }
-        };
-        osparc.data.Resources.fetch("tokens", "post", params)
-          .then(() => this.__rebuildTokensList())
-          .catch(err => console.error(err));
-      }, this);
-      form.addButton(addTokenBtn);
-
-      return form;
-    },
-
-    __createValidTokenForm: function(token) {
-      const grid = this.__createValidEntryForm();
-
-      const supportedServices = this.__supportedServices();
+    __createValidTokenEntry: function(token) {
+      const grid = this.__createValidEntryLayout();
 
       const service = token["service"];
       const nameLabel = new qx.ui.basic.Label(service);
@@ -284,7 +271,54 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         .catch(err => console.error(err));
     },
 
-    __createValidEntryForm: function() {
+    __createEmptyTokenForm: function(supportedExternalServices) {
+      const form = new qx.ui.form.Form();
+
+      form.addGroupHeader("Add new service API tokens");
+
+      // FIXME: for the moment this is fixed since it has to be a unique id
+      const newTokenService = new qx.ui.form.TextField();
+      newTokenService.set({
+        value: supportedExternalServices["name"],
+        readOnly: true
+      });
+      form.add(newTokenService, this.tr("Service"));
+
+      const newTokenKey = new qx.ui.form.TextField();
+      newTokenKey.set({
+        placeholder: this.tr("Input your token key")
+      });
+      form.add(newTokenKey, this.tr("Key"));
+
+      const newTokenSecret = new qx.ui.form.TextField();
+      newTokenSecret.set({
+        placeholder: this.tr("Input your token secret")
+      });
+      form.add(newTokenSecret, this.tr("Secret"));
+
+      const addTokenBtn = new qx.ui.form.Button(this.tr("Add"));
+      addTokenBtn.setWidth(100);
+      addTokenBtn.addListener("execute", e => {
+        if (!osparc.data.Permissions.getInstance().canDo("user.token.create", true)) {
+          return;
+        }
+        const params = {
+          data: {
+            "service": newTokenService.getValue(),
+            "token_key": newTokenKey.getValue(),
+            "token_secret": newTokenSecret.getValue()
+          }
+        };
+        osparc.data.Resources.fetch("tokens", "post", params)
+          .then(() => this.__rebuildTokensList())
+          .catch(err => console.error(err));
+      }, this);
+      form.addButton(addTokenBtn);
+
+      return form;
+    },
+
+    __createValidEntryLayout: function() {
       const height = 20;
       const gr = new qx.ui.layout.Grid(10, 3);
       gr.setColumnFlex(0, 1);
