@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
-
 from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
 from simcore_service_webserver.security_roles import UserRole
@@ -31,20 +30,6 @@ def mock_project(fake_data_dir: Path, mock_workbench_payload: Dict) -> Dict:
         project = json.load(fp)
     project["workbench"] = mock_workbench_payload["workbench"]
     return project
-
-
-@pytest.fixture
-async def logged_user(client, user_role: UserRole) -> Dict:
-    """adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        yield user
 
 
 @pytest.fixture
