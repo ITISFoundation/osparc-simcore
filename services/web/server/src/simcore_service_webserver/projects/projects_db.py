@@ -606,9 +606,9 @@ class ProjectDBAPI:
         project_uuid: str,
         include_templates: Optional[bool] = False,
     ) -> Dict[str, Any]:
-        """updates a project from a user
-        replace_project is True then new_project_data shall contain a full valid project.
-        if replace_project is False then new_project_data shall contain only the modified elements.
+        """replaces a project from a user
+        this method completely replaces a user project with new_project_data only keeping
+        the old entries from the project workbench if they exists in the new project workbench.
         """
         log.info("Updating project %s for user %s", project_uuid, user_id)
 
