@@ -7,8 +7,15 @@ from .utils import wrap_async_call
 log = logging.getLogger(__name__)
 
 
-def entrypoint(self, *, user_id: str, project_id: str, node_id: str) -> None:
-    log.info("Received task %s", self.request.id)
+def entrypoint(
+    self, *args, user_id: str, project_id: str, node_id: str, **kwargs
+) -> None:
+    log.info(
+        "Received task %s with args [%s] and kwargs [%s]",
+        self.request.id,
+        *args,
+        **kwargs
+    )
     _shared_task_dispatch(self, user_id, project_id, node_id)
     log.info("Completed task %s", self.request.id)
 
