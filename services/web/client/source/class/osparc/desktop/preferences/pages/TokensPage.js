@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
   extend: osparc.desktop.preferences.pages.BasePage,
 
   construct: function() {
-    const iconSrc = "@FontAwesome5Solid/shield-alt/24";
+    const iconSrc = "@FontAwesome5Solid/exchange-alt/24";
     const title = this.tr("API");
     this.base(arguments, title, iconSrc);
 
@@ -100,7 +100,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       this.__apiKeysList.removeAll();
       osparc.data.Resources.get("apiKeys")
         .then(apiKeys => {
-          console.log("apiKeys", apiKeys);
           apiKeys.forEach(apiKey => {
             const apiKeyForm = this.__createValidAPIKeyForm(apiKey);
             this.__apiKeysList.add(apiKeyForm);
@@ -151,14 +150,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         link: "https://app.blackfynn.io",
         logo: "osparc/blackfynn-logo.png"
       }];
-      if (osparc.utils.Utils.isInZ43()) {
-        supportedServices.push({
-          name: "z43-filesrv",
-          label: "Z43",
-          link: "https://www.z43.swiss/",
-          logo: "osparc/z43-logo.png"
-        });
-      }
       return supportedServices;
     },
 
@@ -169,7 +160,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       const label = this._createHelpLabel(this.tr("Enter the API tokens to access external services."));
       box.add(label);
 
-      const validTokensGB = this.__validTokensGB = this._createSectionBox(this.tr("Exisiting tokens"));
+      const validTokensGB = this.__validTokensGB = this._createSectionBox(this.tr("Exisiting Tokens"));
       box.add(validTokensGB);
 
       const supportedExternalsGB = this.__supportedExternalsGB = this._createSectionBox(this.tr("Supported services")).set({
@@ -185,7 +176,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       this.__supportedExternalsGB.exclude();
       osparc.data.Resources.get("tokens")
         .then(tokensList => {
-          console.log("tokens", tokensList);
           this.__validTokensGB.removeAll();
           this.__supportedExternalsGB.removeAll();
 
@@ -214,7 +204,11 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
             btn.addListener("execute", () => {
               const newTokenForm = this.__createNewTokenForm(srv);
               const form = new qx.ui.form.renderer.Single(newTokenForm);
-              osparc.ui.window.Window.popUpInWindow(form, srv.label, 350, 200);
+              const win = osparc.ui.window.Window.popUpInWindow(form, srv.label, 350, 200);
+              newTokenForm.addListener("added", () => {
+                this.__rebuildTokensList();
+                win.close();
+              });
             }, this);
             this.__supportedExternalsGB.add(btn);
           });
@@ -239,12 +233,14 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         column: 0
       });
 
-      const label = token["keyLabel"] || token["service"];
-      const nameVal = new qx.ui.basic.Label(label);
-      grid.add(nameVal, {
-        row: 0,
-        column: 1
-      });
+      if ("keyLabel" in token) {
+        const label = token["keyLabel"];
+        const nameVal = new qx.ui.basic.Label(label);
+        grid.add(nameVal, {
+          row: 0,
+          column: 1
+        });
+      }
 
       const delTokenBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/14");
       delTokenBtn.addListener("execute", e => {
@@ -320,7 +316,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         };
         addTokenBtn.setFetching(true);
         osparc.data.Resources.fetch("tokens", "post", params)
-          .then(() => this.__rebuildTokensList())
+          .then(() => form.fireEvent("added"))
           .catch(err => console.error(err))
           .finally(() => addTokenBtn.setFetching(false));
       }, this);
