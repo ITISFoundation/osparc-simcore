@@ -43,7 +43,7 @@ async function runTutorial () {
       "t_plot.csv",
       "tst_plot.csv"
     ];
-    await tutorial.checkNodeResults(0, outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
