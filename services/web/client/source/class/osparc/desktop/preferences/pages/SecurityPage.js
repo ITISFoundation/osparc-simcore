@@ -214,10 +214,7 @@ qx.Class.define("osparc.desktop.preferences.pages.SecurityPage", {
       // layout
       const box = this._createSectionBox(this.tr("External Service Tokens"));
 
-      const label = this._createHelpLabel(this.tr(
-        "List of API tokens to access external services. Currently, \
-         only DAT-Core API keys are supported."
-      ));
+      const label = this._createHelpLabel(this.tr("List of API tokens to access external services."));
       box.add(label);
 
       const linkBtn = new osparc.ui.form.LinkButton(this.tr("To DAT-Core"), null, "https://app.blackfynn.io");
