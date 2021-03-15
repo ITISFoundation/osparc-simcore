@@ -287,11 +287,6 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
       form.addGroupHeader("Add new service API tokens");
 
-      if ("link" in supportedExternalServices) {
-        const linkBtn = new osparc.ui.form.LinkButton(this.tr("To ") + supportedExternalServices["label"], null, supportedExternalServices["link"]);
-        form.add(linkBtn);
-      }
-
       const newTokenService = new qx.ui.form.TextField();
       newTokenService.set({
         value: supportedExternalServices["name"],
