@@ -192,7 +192,9 @@ async def create_computation(
             task = celery_client.send_computation_tasks(
                 job.user_id, job.project_id, topologically_sorted_grouped_nodes
             )
-            background_tasks.add_task(background_on_message, task)
+            # NOTE: This is currently disabled. this makes test wait for the task to run completely
+            # We will see if we need this with airflow or not.
+            # background_tasks.add_task(background_on_message, task)
             log.debug(
                 "Started computational task %s for user %s based on project %s",
                 task.id,
