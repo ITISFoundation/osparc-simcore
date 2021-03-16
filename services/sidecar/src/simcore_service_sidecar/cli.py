@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 import click
 from servicelib.logging_utils import log_decorator
@@ -20,15 +20,10 @@ log = logging.getLogger(__name__)
 @click.option("--user_id", default=0, type=int, help="The user ID")
 @click.option("--project_id", default="0", help="The project ID")
 @click.option("--node_id", default=None, help="The node ID or nothing")
-def main(
-    job_id: str, user_id: str, project_id: str, node_id: str
-) -> Optional[List[str]]:
+def main(job_id: str, user_id: str, project_id: str, node_id: str) -> None:
 
     try:
-        next_task_nodes, _ = wrap_async_call(
-            run_sidecar(job_id, user_id, project_id, node_id=node_id)
-        )
-        return next_task_nodes
+        wrap_async_call(run_sidecar(job_id, user_id, project_id, node_id=node_id))
     except Exception:  # pylint: disable=broad-except
         log.exception("Unexpected problem while running sidecar")
         return None

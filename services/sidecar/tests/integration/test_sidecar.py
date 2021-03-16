@@ -447,24 +447,14 @@ async def test_run_services(
     from simcore_service_sidecar import cli
 
     # runs None first
-    next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
+    await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
     await asyncio.sleep(5)
     assert await incoming_data.is_empty(), pformat(await incoming_data.as_list())
-    assert next_task_nodes
-    assert len(next_task_nodes) == 1
-    assert next_task_nodes[0] == next(iter(pipeline_cfg))
 
-    for node_id in next_task_nodes:
+    for node_id in pipeline_cfg:
         job_id += 1
-        next_tasks = await cli.run_sidecar(
-            job_id, user_id, pipeline.project_id, node_id
-        )
-        if next_tasks:
-            next_task_nodes.extend(next_tasks)
-    dag = [next_task_nodes[0]]
-    for key in pipeline_cfg:
-        dag.extend(pipeline_cfg[key]["next"])
-    assert next_task_nodes == dag
+        await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
+
     await asyncio.sleep(15)  # wait a little bit for logs to come in
     await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),
