@@ -37,6 +37,40 @@ def setup(app: FastAPI, settings: CeleryConfig) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+def _computation_task_signature(
+    settings: CeleryConfig,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    routing_queue: str,
+) -> Signature:
+    """returns the signature of the computation task (see celery canvas)"""
+    task_signature = signature(
+        settings.task_name,
+        queue=f"{settings.task_name}.{routing_queue}",
+        kwargs={
+            "user_id": user_id,
+            "project_id": str(project_id),
+            "node_id": str(node_id),
+        },
+    )
+    return task_signature
+
+
+def _create_celery_flow(celery_groups: List[group], index: int = 0):
+    """creates a celery worlflow by using the CHORD primitive to ensure each group wait on the previous one before running
+    NOTE: Only chaining groups does not work as celery does not wait for a preceding group to fully complete before running the next one.
+    """
+    if index < len(celery_groups):
+        body = _create_celery_flow(celery_groups, index + 1)
+        return (
+            chord(header=celery_groups[index], body=body)
+            if body
+            else celery_groups[index]
+        )
+    return None
+
+
 @dataclass
 class CeleryClient:
     client: Celery
@@ -51,29 +85,16 @@ class CeleryClient:
     def instance(cls, app: FastAPI) -> "CeleryClient":
         return app.state.celery_client
 
+    def send_task(self, task_name: str, *args, **kwargs) -> Task:
+        # TODO: check what can happen when exceptions are thrown (see [https://docs.celeryproject.org/en/2.4-archived/reference/celery.exceptions.html?highlight=exceptions#module-celery.exceptions])
+        return self.client.send_task(task_name, *args, **kwargs)
+
     def send_computation_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
         topologically_sorted_nodes: List[Dict[str, Dict[str, Any]]],
     ) -> Task:
-        def _create_task_signature(
-            self,
-            user_id: UserID,
-            project_id: ProjectID,
-            node_id: NodeID,
-            routing_queue: str,
-        ) -> Signature:
-            task_signature = signature(
-                self.settings.task_name,
-                queue=f"{self.settings.task_name}.{routing_queue}",
-                kwargs={
-                    "user_id": user_id,
-                    "project_id": str(project_id),
-                    "node_id": str(node_id),
-                },
-            )
-            return task_signature
 
         # create the // tasks
         celery_groups = []
@@ -81,8 +102,8 @@ class CeleryClient:
             celery_groups.append(
                 group(
                     [
-                        _create_task_signature(
-                            self,
+                        _computation_task_signature(
+                            self.settings,
                             user_id,
                             project_id,
                             node_id,
@@ -92,12 +113,6 @@ class CeleryClient:
                     ]
                 )
             )
-
-        def _create_celery_flow(grps, index: int = 0):
-            if index < len(grps):
-                body = _create_celery_flow(grps, index + 1)
-                return chord(header=grps[index], body=body) if body else grps[index]
-            return None
 
         celery_flow = _create_celery_flow(celery_groups)
 
