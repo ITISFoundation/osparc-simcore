@@ -252,12 +252,12 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.component.widget.Renamer(this.getService()["label"], null, title);
+      const titleEditor = new osparc.component.widget.Renamer(this.getService()["name"], null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
         this.__updateService({
-          "label": newLabel
+          "name": newLabel
         });
       }, this);
       titleEditor.center();
