@@ -155,14 +155,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
             case "PUBLISHED":
             case "STARTED":
               startButtons.forEach(startButton => startButton.setFetching(true));
-              stopButton.setEnabled(true);
+              stopButton.show();
               break;
             case "NOT_STARTED":
             case "SUCCESS":
             case "FAILED":
             default:
               startButtons.forEach(startButton => startButton.setFetching(false));
-              stopButton.setEnabled(false);
+              stopButton.exclude();
               break;
           }
         }
