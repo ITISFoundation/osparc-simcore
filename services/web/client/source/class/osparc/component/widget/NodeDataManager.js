@@ -124,6 +124,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
     __buildLayout: function() {
       const showMyData = this.getChildControl("show-my-data-checkbox");
+      showMyData.exclude();
       showMyData.bind("value", this, "showMyData");
 
       const treesLayout = this.getChildControl("files-layout");
