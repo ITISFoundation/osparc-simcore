@@ -36,8 +36,6 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
-    this.setAppearance("sidepanel");
-
     this.__initDefault();
   },
 
