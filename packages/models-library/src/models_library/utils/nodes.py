@@ -65,9 +65,6 @@ async def compute_node_hash(
                 resolved_payload[port_type][port_key] = payload
 
     # now create the hash
-    # logger.debug("io_payload generated is %s", pformat(resolved_payload))
     block_string = json.dumps(resolved_payload, sort_keys=True).encode("utf-8")
-    # logger.debug("block string generated is %s", block_string)
     raw_hash = hashlib.sha256(block_string)
-    # logger.debug("generated hash %s", raw_hash)
     return raw_hash.hexdigest()
