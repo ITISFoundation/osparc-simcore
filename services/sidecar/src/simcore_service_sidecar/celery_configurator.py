@@ -55,7 +55,6 @@ def configure_node(bootmode: BootMode) -> Celery:
         broker=config.CELERY_CONFIG.broker_url,
         backend=config.CELERY_CONFIG.result_backend,
     )
-    app.control.enable_events()
 
     app.conf.task_default_queue = "celery"
     app.conf.task_queues = [
