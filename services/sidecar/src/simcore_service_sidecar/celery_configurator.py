@@ -8,8 +8,6 @@ use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
 import logging
-from functools import wraps
-from typing import Callable
 
 from celery import Celery
 from celery.contrib.abortable import AbortableTask

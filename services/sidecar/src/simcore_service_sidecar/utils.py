@@ -1,16 +1,13 @@
 import asyncio
 import logging
 import uuid
-from typing import Awaitable, List, Optional
+from typing import Awaitable, Optional
 
 import aiodocker
 import networkx as nx
 from aiodocker.volumes import DockerVolume
-from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from servicelib.logging_utils import log_decorator
-from simcore_postgres_database.sidecar_models import StateType, comp_tasks
-from sqlalchemy import and_
 
 from . import config
 from .exceptions import SidecarException
