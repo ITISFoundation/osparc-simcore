@@ -136,10 +136,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("nNodesChanged", this.__checkButtonsVisible, this);
-
-      study.addListener("changeState", () => {
-        this.__updateRunButtonsStatus();
-      }, this);
+      study.addListener("changeState", this.__updateRunButtonsStatus, this);
     },
 
     __checkButtonsVisible: function() {
