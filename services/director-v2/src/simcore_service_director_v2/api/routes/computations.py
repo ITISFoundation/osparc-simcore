@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 import networkx as nx
 from celery import exceptions as celery_exceptions
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from models_library.services import ServiceKeyVersion
@@ -93,7 +93,6 @@ async def _abort_pipeline_tasks(
 async def create_computation(
     # pylint: disable=too-many-arguments
     job: ComputationTaskCreate,
-    background_tasks: BackgroundTasks,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),
     computation_pipelines: CompPipelinesRepository = Depends(
