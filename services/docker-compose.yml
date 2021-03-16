@@ -309,12 +309,6 @@ services:
         "-c",
         "tcp_keepalives_count=5",
       ]
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 15s
 
   redis:
     image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
