@@ -261,6 +261,7 @@ async def pipeline(
                 schema=service["schema"],
                 image=service["image"],
                 inputs=node_inputs,
+                state="PENDING",
                 outputs={},
             )
             postgres_session.add(comp_task)
@@ -438,6 +439,7 @@ async def test_run_services(
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
         async with message.process():
             data = json.loads(message.body)
+            print("incoming message", data)
             await incoming_data.append(data)
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True)
@@ -446,11 +448,7 @@ async def test_run_services(
 
     from simcore_service_sidecar import cli
 
-    # runs None first
-    await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
-    await asyncio.sleep(5)
-    assert await incoming_data.is_empty(), pformat(await incoming_data.as_list())
-
+    # run nodes
     for node_id in pipeline_cfg:
         job_id += 1
         await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
