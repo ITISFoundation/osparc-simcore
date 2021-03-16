@@ -133,14 +133,23 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       if (!osparc.data.Permissions.getInstance().canDo("user.apikey.delete", true)) {
         return;
       }
-      const params = {
-        data: {
-          "display_name": apiKeyLabel
+
+      const msg = this.tr("Do you want to delete the API key?");
+      const win = new osparc.ui.window.Confirmation(msg);
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          const params = {
+            data: {
+              "display_name": apiKeyLabel
+            }
+          };
+          osparc.data.Resources.fetch("apiKeys", "delete", params)
+            .then(() => this.__rebuildAPIKeysList())
+            .catch(err => console.error(err));
         }
-      };
-      osparc.data.Resources.fetch("apiKeys", "delete", params)
-        .then(() => this.__rebuildAPIKeysList())
-        .catch(err => console.error(err));
+      }, this);
     },
 
     __supportedExternalServices: function() {
