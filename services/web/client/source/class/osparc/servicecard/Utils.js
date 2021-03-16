@@ -61,13 +61,29 @@ qx.Class.define("osparc.servicecard.Utils", {
     /**
       * @param serviceData {Object} Serialized Service Object
       */
-    createOwner: function(serviceData) {
+    createContact: function(serviceData) {
       const owner = new qx.ui.basic.Label();
       owner.set({
-        value: osparc.utils.Utils.getNameFromEmail(serviceData["owner"]),
-        toolTipText: serviceData["owner"]
+        value: osparc.utils.Utils.getNameFromEmail(serviceData["contact"]),
+        toolTipText: serviceData["contact"]
       });
       return owner;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createAuthors: function(serviceData) {
+      const authors = new qx.ui.basic.Label().set({
+        rich: true
+      });
+      serviceData["authors"].forEach(author => {
+        authors.set({
+          value: authors.getValue() + `${author["name"]} <br>`,
+          toolTipText: authors.getToolTipText() + `${author["email"]} - ${author["affiliation"]}<br>`
+        });
+      });
+      return authors;
     },
 
     /**
@@ -76,14 +92,12 @@ qx.Class.define("osparc.servicecard.Utils", {
     createAccessRights: function(serviceData) {
       let permissions = "";
       const myGID = osparc.auth.Data.getInstance().getGroupId();
-      const ar = serviceData["accessRights"];
+      const ar = serviceData["access_rights"];
       if (myGID in ar) {
-        if (ar[myGID]["delete"]) {
-          permissions = qx.locale.Manager.tr("Owner");
-        } else if (ar[myGID]["write"]) {
-          permissions = qx.locale.Manager.tr("Collaborator");
-        } else if (ar[myGID]["read"]) {
-          permissions = qx.locale.Manager.tr("Viewer");
+        if (ar[myGID]["write_access"]) {
+          permissions = qx.locale.Manager.tr("Write");
+        } else if (ar[myGID]["execute_access"]) {
+          permissions = qx.locale.Manager.tr("Execute");
         }
       }
       const accessRights = new qx.ui.basic.Label(permissions);
@@ -106,9 +120,9 @@ qx.Class.define("osparc.servicecard.Utils", {
       const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
         toolTipText: qx.locale.Manager.tr("Ten Simple Rules score")
       });
-      const addStars = model => {
+      const addStars = data => {
         tsrLayout.removeAll();
-        const quality = model.getQuality();
+        const quality = data["quality"];
         if (osparc.component.metadata.Quality.isEnabled(quality)) {
           const tsrRating = new osparc.ui.basic.StarsRating();
           tsrRating.set({
@@ -121,10 +135,7 @@ qx.Class.define("osparc.servicecard.Utils", {
           tsrLayout.exclude();
         }
       };
-      study.addListener("changeQuality", () => {
-        addStars(study);
-      }, this);
-      addStars(study);
+      addStars(serviceData);
       return tsrLayout;
     },
 
@@ -137,7 +148,7 @@ qx.Class.define("osparc.servicecard.Utils", {
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       img.set({
-        source: serviceData["thumbnail"] === "" ? osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON : serviceData["thumbnail"]
+        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON
       });
       return image;
     },

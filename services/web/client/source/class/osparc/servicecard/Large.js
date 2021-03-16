@@ -106,13 +106,13 @@ qx.Class.define("osparc.servicecard.Large", {
         this._add(hBox);
       }
 
-      if (this.getService().getDescription() || this.__isOwner()) {
+      if (this.getService()["description"] || this.__isOwner()) {
         const description = this.__createDescription();
         const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
         this._add(descriptionLayout);
       }
 
-      if (this.getService().getTags().length || this.__isOwner()) {
+      if (this.getService()["tags"].length || this.__isOwner()) {
         const tags = this.__createTags();
         const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
         if (this.__isOwner()) {
@@ -172,15 +172,19 @@ qx.Class.define("osparc.servicecard.Large", {
           callback: this.__openAccessRights,
           ctx: this
         }
-      }, {
-        label: this.tr("Classifiers"),
-        view: this.__createClassifiers(),
-        action: (this.getService()["classifiers"].length || this.__isOwner()) ? {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openClassifiers,
-          ctx: this
-        } : null
       }];
+
+      if (this.getService()["classifiers"]) {
+        extraInfo.push({
+          label: this.tr("Classifiers"),
+          view: this.__createClassifiers(),
+          action: {
+            button: osparc.utils.Utils.getViewButton(),
+            callback: this.__openClassifiers,
+            ctx: this
+          }
+        });
+      }
 
       if (this.getService()["quality"] && osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])) {
         extraInfo.push({
@@ -214,7 +218,7 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __createContact: function() {
-      return osparc.servicecard.Utils.createOwner(this.getService());
+      return osparc.servicecard.Utils.createContact(this.getService());
     },
 
     __createAuthors: function() {
@@ -329,7 +333,7 @@ qx.Class.define("osparc.servicecard.Large", {
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
       const subtitle = this.tr("Supports Markdown");
-      const textEditor = new osparc.component.widget.TextEditor(this.getService().getDescription(), subtitle, title);
+      const textEditor = new osparc.component.widget.TextEditor(this.getService()["description"], subtitle, title);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();
