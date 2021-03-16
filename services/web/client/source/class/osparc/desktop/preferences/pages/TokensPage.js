@@ -267,14 +267,23 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       if (!osparc.data.Permissions.getInstance().canDo("user.token.delete", true)) {
         return;
       }
-      const params = {
-        url: {
-          service
+
+      const msg = this.tr("Do you want to delete the Token?");
+      const win = new osparc.ui.window.Confirmation(msg);
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          const params = {
+            url: {
+              service
+            }
+          };
+          osparc.data.Resources.fetch("tokens", "delete", params, service)
+            .then(() => this.__rebuildTokensList())
+            .catch(err => console.error(err));
         }
-      };
-      osparc.data.Resources.fetch("tokens", "delete", params, service)
-        .then(() => this.__rebuildTokensList())
-        .catch(err => console.error(err));
+      }, this);
     },
 
     __createValidEntryLayout: function() {
