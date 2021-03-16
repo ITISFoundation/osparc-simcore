@@ -34,12 +34,11 @@ async function runTutorial () {
     // This study opens in fullscreen mode
     await tutorial.restoreIFrame();
 
-    await tutorial.openNodeFiles(0);
     const outFiles = [
       "output.csv",
       "traces.pkl"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

@@ -5,27 +5,10 @@
 import attr
 import pytest
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.login.api_keys_handlers import CRUD as ApiKeysCRUD
-
-
-@pytest.fixture()
-async def logged_user(client, user_role: UserRole):
-    """ adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user as", user_role)
-        yield user
-        print("<----- logged out user as", user_role)
 
 
 @pytest.fixture()
@@ -62,7 +45,8 @@ USER_ACCESS_PARAMETERS = [
 
 
 @pytest.mark.parametrize(
-    "user_role,expected", USER_ACCESS_PARAMETERS,
+    "user_role,expected",
+    USER_ACCESS_PARAMETERS,
 )
 async def test_list_api_keys(
     client, logged_user, user_role, expected, disable_gc_manual_guest_users
