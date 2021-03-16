@@ -85,10 +85,6 @@ class CeleryClient:
     def instance(cls, app: FastAPI) -> "CeleryClient":
         return app.state.celery_client
 
-    def send_task(self, task_name: str, *args, **kwargs) -> Task:
-        # TODO: check what can happen when exceptions are thrown (see [https://docs.celeryproject.org/en/2.4-archived/reference/celery.exceptions.html?highlight=exceptions#module-celery.exceptions])
-        return self.client.send_task(task_name, *args, **kwargs)
-
     def send_computation_tasks(
         self,
         user_id: UserID,
