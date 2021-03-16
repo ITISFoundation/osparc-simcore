@@ -1,0 +1,259 @@
+/* ************************************************************************
+
+   osparc - the simcore frontend
+
+   https://osparc.io
+
+   Copyright:
+     2021 IT'IS Foundation, https://itis.swiss
+
+   License:
+     MIT: https://opensource.org/licenses/MIT
+
+   Authors:
+     * Odei Maiz (odeimaiz)
+
+************************************************************************ */
+
+
+qx.Class.define("osparc.servicecard.Utils", {
+  type: "static",
+
+  statics: {
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createTitle: function(serviceData) {
+      const title = new qx.ui.basic.Label().set({
+        font: "title-14",
+        allowStretchX: true,
+        rich: true
+      });
+      title.setValue(serviceData["name"]);
+      return title;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createKey: function(serviceData) {
+      const key = new qx.ui.basic.Label().set({
+        maxWidth: 150
+      });
+      key.set({
+        value: serviceData["key"],
+        toolTipText: serviceData["key"]
+      });
+      return key;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createVersion: function(serviceData) {
+      const key = new qx.ui.basic.Label().set({
+        value: serviceData["version"],
+        maxWidth: 150
+      });
+      return key;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createOwner: function(serviceData) {
+      const owner = new qx.ui.basic.Label();
+      owner.set({
+        value: osparc.utils.Utils.getNameFromEmail(serviceData["owner"]),
+        toolTipText: serviceData["owner"]
+      });
+      return owner;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createAccessRights: function(serviceData) {
+      let permissions = "";
+      const myGID = osparc.auth.Data.getInstance().getGroupId();
+      const ar = serviceData["accessRights"];
+      if (myGID in ar) {
+        if (ar[myGID]["delete"]) {
+          permissions = qx.locale.Manager.tr("Owner");
+        } else if (ar[myGID]["write"]) {
+          permissions = qx.locale.Manager.tr("Collaborator");
+        } else if (ar[myGID]["read"]) {
+          permissions = qx.locale.Manager.tr("Viewer");
+        }
+      }
+      const accessRights = new qx.ui.basic.Label(permissions);
+      return accessRights;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createClassifiers: function(serviceData) {
+      const nClassifiers = new qx.ui.basic.Label();
+      nClassifiers.setValue(`(${serviceData["classifiers"].length})`);
+      return nClassifiers;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createQuality: function(serviceData) {
+      const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
+        toolTipText: qx.locale.Manager.tr("Ten Simple Rules score")
+      });
+      const addStars = model => {
+        tsrLayout.removeAll();
+        const quality = model.getQuality();
+        if (osparc.component.metadata.Quality.isEnabled(quality)) {
+          const tsrRating = new osparc.ui.basic.StarsRating();
+          tsrRating.set({
+            nStars: 4,
+            showScore: true
+          });
+          osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
+          tsrLayout.add(tsrRating);
+        } else {
+          tsrLayout.exclude();
+        }
+      };
+      study.addListener("changeQuality", () => {
+        addStars(study);
+      }, this);
+      addStars(study);
+      return tsrLayout;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      * @param maxWidth {Number} thumbnail's maxWidth
+      * @param maxHeight {Number} thumbnail's maxHeight
+      */
+    createThumbnail: function(serviceData, maxWidth, maxHeight = 160) {
+      const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
+      const img = image.getChildControl("image");
+      img.set({
+        source: serviceData["thumbnail"] === "" ? osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON : serviceData["thumbnail"]
+      });
+      return image;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      * @param maxHeight {Number} description's maxHeight
+      */
+    createDescription: function(serviceData, maxHeight) {
+      const descriptionLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Description")).set({
+        font: "title-12"
+      });
+      descriptionLayout.add(label);
+
+      const description = new osparc.ui.markdown.Markdown().set({
+        noMargin: true,
+        maxHeight: maxHeight
+      });
+      description.setValue(serviceData["description"]);
+      descriptionLayout.add(description);
+
+      return descriptionLayout;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
+    createTags: function(serviceData) {
+      const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
+        font: "title-12"
+      });
+      tagsLayout.add(label);
+
+      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      tagsContainer.setMarginTop(5);
+      tagsLayout.add(tagsContainer);
+
+      const addTags = model => {
+        tagsContainer.removeAll();
+        osparc.store.Store.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
+          .forEach(selectedTag => {
+            tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
+          });
+      };
+      serviceData.addListener("changeTags", () => {
+        addTags(serviceData);
+      }, this);
+      addTags(serviceData);
+
+      return tagsLayout;
+    },
+
+    createExtraInfo: function(extraInfos) {
+      const grid = new qx.ui.layout.Grid(5, 3);
+      grid.setColumnAlign(0, "right", "middle");
+      grid.setColumnAlign(1, "left", "middle");
+      const moreInfo = new qx.ui.container.Composite(grid).set({
+        allowGrowX: false,
+        alignX: "center",
+        alignY: "middle"
+      });
+
+      for (let i=0; i<extraInfos.length; i++) {
+        const extraInfo = extraInfos[i];
+        moreInfo.add(new qx.ui.basic.Label(extraInfo.label).set({
+          font: "title-12"
+        }), {
+          row: i,
+          column: 0
+        });
+
+        moreInfo.add(extraInfo.view, {
+          row: i,
+          column: 1
+        });
+
+        if (extraInfo.action) {
+          extraInfo.action.button.addListener("execute", () => {
+            extraInfo.action.callback.call(extraInfo.action.ctx);
+          }, this);
+          moreInfo.add(extraInfo.action.button, {
+            row: i,
+            column: 2
+          });
+        }
+      }
+
+      return moreInfo;
+    },
+
+    /**
+      * @param studyData {Object} Serialized Study Object
+      */
+    openAccessRights: function(studyData) {
+      const permissionsView = new osparc.component.permissions.Study(studyData);
+      const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
+      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
+      return permissionsView;
+    },
+
+    /**
+      * @param resourceData {Object} Serialized Resource Object
+      */
+    openQuality: function(resourceData) {
+      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
+      const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
+      osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
+      return qualityEditor;
+    }
+  }
+});

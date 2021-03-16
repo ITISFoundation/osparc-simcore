@@ -16,14 +16,16 @@
 ************************************************************************ */
 
 
-qx.Class.define("osparc.studycard.Large", {
+qx.Class.define("osparc.servicecard.Large", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    * @param serviceData {Object} Serialized Service Object
     */
-  construct: function(study) {
+  construct: function(serviceData) {
     this.base(arguments);
+
+    console.log("serviceData", serviceData);
 
     this.set({
       minHeight: 350,
@@ -31,12 +33,7 @@ qx.Class.define("osparc.studycard.Large", {
     });
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    if (study instanceof osparc.data.model.Study) {
-      this.setStudy(study);
-    } else if (study instanceof Object) {
-      const studyModel = new osparc.data.model.Study(study);
-      this.setStudy(studyModel);
-    }
+    this.setService(serviceData);
 
     this.addListenerOnce("appear", () => {
       this.__rebuildLayout();
@@ -47,13 +44,13 @@ qx.Class.define("osparc.studycard.Large", {
   },
 
   events: {
-    "updateStudy": "qx.event.type.Data",
-    "updateTags": "qx.event.type.Data"
+    "updateService": "qx.event.type.Data",
+    "startService": "qx.event.type.Data"
   },
 
   properties: {
-    study: {
-      check: "osparc.data.model.Study",
+    service: {
+      check: "Object",
       init: null,
       nullable: false
     }
@@ -68,7 +65,7 @@ qx.Class.define("osparc.studycard.Large", {
 
   members: {
     __isOwner: function() {
-      return osparc.data.model.Study.isOwner(this.getStudy());
+      return this.getService()["owner"] === osparc.auth.Data.getInstance().getEmail();
     },
 
     __rebuildLayout: function() {
@@ -109,13 +106,13 @@ qx.Class.define("osparc.studycard.Large", {
         this._add(hBox);
       }
 
-      if (this.getStudy().getDescription() || this.__isOwner()) {
+      if (this.getService().getDescription() || this.__isOwner()) {
         const description = this.__createDescription();
         const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
         this._add(descriptionLayout);
       }
 
-      if (this.getStudy().getTags().length || this.__isOwner()) {
+      if (this.getService().getTags().length || this.__isOwner()) {
         const tags = this.__createTags();
         const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
         if (this.__isOwner()) {
@@ -143,18 +140,29 @@ qx.Class.define("osparc.studycard.Large", {
       return layout;
     },
 
+    __createTitle: function() {
+      const title = osparc.servicecard.Utils.createTitle(this.getService()).set({
+        font: "title-16"
+      });
+      return title;
+    },
+
     __extraInfo: function() {
       const extraInfo = [{
-        label: this.tr("Author"),
-        view: this.__createOwner(),
+        label: this.tr("Key"),
+        view: this.__createKey(),
         action: null
       }, {
-        label: this.tr("Creation Date"),
-        view: this.__createCreationDate(),
+        label: this.tr("Version"),
+        view: this.__createVersion(),
         action: null
       }, {
-        label: this.tr("Last Modified"),
-        view: this.__createLastChangeDate(),
+        label: this.tr("Contact"),
+        view: this.__createContact(),
+        action: null
+      }, {
+        label: this.tr("Authors"),
+        view: this.__createAuthors(),
         action: null
       }, {
         label: this.tr("Access Rights"),
@@ -167,14 +175,14 @@ qx.Class.define("osparc.studycard.Large", {
       }, {
         label: this.tr("Classifiers"),
         view: this.__createClassifiers(),
-        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
+        action: (this.getService()["classifiers"].length || this.__isOwner()) ? {
           button: osparc.utils.Utils.getViewButton(),
           callback: this.__openClassifiers,
           ctx: this
         } : null
       }];
 
-      if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
+      if (this.getService()["quality"] && osparc.component.metadata.Quality.isEnabled(this.getService()["quality"])) {
         extraInfo.push({
           label: this.tr("Quality"),
           view: this.__createQuality(),
@@ -186,100 +194,78 @@ qx.Class.define("osparc.studycard.Large", {
         });
       }
 
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        extraInfo.unshift({
-          label: this.tr("UUID"),
-          view: this.__createUuid(),
-          action: {
-            button: osparc.utils.Utils.getCopyButton(),
-            callback: this.__copyUuidToClipboard,
-            ctx: this
-          }
-        });
-      }
       return extraInfo;
     },
 
     __createExtraInfo: function(extraInfo) {
-      const moreInfo = osparc.studycard.Utils.createExtraInfo(extraInfo).set({
+      const moreInfo = osparc.servicecard.Utils.createExtraInfo(extraInfo).set({
         width: this.self().EXTRA_INFO_WIDTH
       });
 
       return moreInfo;
     },
 
-    __createTitle: function() {
-      const title = osparc.studycard.Utils.createTitle(this.getStudy()).set({
-        font: "title-16"
-      });
-      return title;
+    __createKey: function() {
+      return osparc.servicecard.Utils.createKey(this.getService());
     },
 
-    __createUuid: function() {
-      return osparc.studycard.Utils.createUuid(this.getStudy());
+    __createVersion: function() {
+      return osparc.servicecard.Utils.createVersion(this.getService());
     },
 
-    __createOwner: function() {
-      return osparc.studycard.Utils.createOwner(this.getStudy());
+    __createContact: function() {
+      return osparc.servicecard.Utils.createOwner(this.getService());
     },
 
-    __createCreationDate: function() {
-      return osparc.studycard.Utils.createCreationDate(this.getStudy());
-    },
-
-    __createLastChangeDate: function() {
-      return osparc.studycard.Utils.createLastChangeDate(this.getStudy());
+    __createAuthors: function() {
+      return osparc.servicecard.Utils.createAuthors(this.getService());
     },
 
     __createAccessRights: function() {
-      return osparc.studycard.Utils.createAccessRights(this.getStudy());
+      return osparc.servicecard.Utils.createAccessRights(this.getService());
     },
 
     __createClassifiers: function() {
-      return osparc.studycard.Utils.createClassifiers(this.getStudy());
+      return osparc.servicecard.Utils.createClassifiers(this.getService());
     },
 
     __createQuality: function() {
-      return osparc.studycard.Utils.createQuality(this.getStudy());
+      return osparc.servicecard.Utils.createQuality(this.getService());
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 160) {
-      return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+      return osparc.servicecard.Utils.createThumbnail(this.getService(), maxWidth, maxHeight);
     },
 
     __createDescription: function() {
       const maxHeight = 400;
-      return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
+      return osparc.servicecard.Utils.createDescription(this.getService(), maxHeight);
     },
 
     __createTags: function() {
-      return osparc.studycard.Utils.createTags(this.getStudy());
+      return osparc.servicecard.Utils.createTags(this.getService());
     },
 
     __openTitleEditor: function() {
       const title = this.tr("Edit Title");
-      const titleEditor = new osparc.component.widget.Renamer(this.getStudy().getName(), null, title);
+      const titleEditor = new osparc.component.widget.Renamer(this.getService()["label"], null, title);
       titleEditor.addListener("labelChanged", e => {
         titleEditor.close();
         const newLabel = e.getData()["newLabel"];
-        this.__updateStudy({
-          "name": newLabel
+        this.__updateService({
+          "label": newLabel
         });
       }, this);
       titleEditor.center();
       titleEditor.open();
     },
 
-    __copyUuidToClipboard: function() {
-      osparc.utils.Utils.copyTextToClipboard(this.getStudy().getUuid());
-    },
-
     __openAccessRights: function() {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(this.getStudy().serialize());
-      permissionsView.addListener("updateStudy", e => {
+      const permissionsView = osparc.servicecard.Utils.openAccessRights(this.getService().serialize());
+      permissionsView.addListener("updateService", e => {
         const updatedData = e.getData();
-        this.getStudy().setAccessRights(updatedData["accessRights"]);
-        this.fireDataEvent("updateStudy", updatedData);
+        this.getService().setAccessRights(updatedData["accessRights"]);
+        this.fireDataEvent("updateService", updatedData);
       }, this);
     },
 
@@ -287,44 +273,44 @@ qx.Class.define("osparc.studycard.Large", {
       const title = this.tr("Classifiers");
       let classifiers = null;
       if (this.__isOwner()) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getStudy().serialize());
+        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getService().serialize());
         const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
           win.close();
           const updatedData = e.getData();
-          this.getStudy().setClassifiers(updatedData["classifiers"]);
-          this.fireDataEvent("updateStudy", updatedData);
+          this.getService().setClassifiers(updatedData["classifiers"]);
+          this.fireDataEvent("updateService", updatedData);
         }, this);
       } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getStudy().serialize());
+        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getService().serialize());
         osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
     },
 
     __openQuality: function() {
-      const qualityEditor = osparc.studycard.Utils.openQuality(this.getStudy().serialize());
+      const qualityEditor = osparc.servicecard.Utils.openQuality(this.getService().serialize());
       qualityEditor.addListener("updateQuality", e => {
         const updatedData = e.getData();
-        this.getStudy().setQuality(updatedData["quality"]);
-        this.fireDataEvent("updateStudy", updatedData);
+        this.getService().setQuality(updatedData["quality"]);
+        this.fireDataEvent("updateService", updatedData);
       });
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getStudy().serialize(), null, "study", this.getStudy().getUuid()).set({
+      const tagManager = new osparc.component.form.tag.TagManager(this.getService().serialize(), null, "study", this.getService().getUuid()).set({
         liveUpdate: false
       });
       tagManager.addListener("updateTags", e => {
         tagManager.close();
         const updatedData = e.getData();
-        this.getStudy().setTags(updatedData["tags"]);
-        this.fireDataEvent("updateStudy", updatedData);
+        this.getService().setTags(updatedData["tags"]);
+        this.fireDataEvent("updateService", updatedData);
       }, this);
     },
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thubmnailEditor = new osparc.component.widget.Renamer(this.getStudy().getThumbnail(), null, title);
+      const thubmnailEditor = new osparc.component.widget.Renamer(this.getService().getThumbnail(), null, title);
       thubmnailEditor.addListener("labelChanged", e => {
         thubmnailEditor.close();
         const dirty = e.getData()["newLabel"];
@@ -332,7 +318,7 @@ qx.Class.define("osparc.studycard.Large", {
         if (dirty && dirty !== clean) {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was some curation in the text of thumbnail "), "WARNING");
         }
-        this.__updateStudy({
+        this.__updateService({
           "thumbnail": clean
         });
       }, this);
@@ -343,12 +329,12 @@ qx.Class.define("osparc.studycard.Large", {
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
       const subtitle = this.tr("Supports Markdown");
-      const textEditor = new osparc.component.widget.TextEditor(this.getStudy().getDescription(), subtitle, title);
+      const textEditor = new osparc.component.widget.TextEditor(this.getService().getDescription(), subtitle, title);
       const win = osparc.ui.window.Window.popUpInWindow(textEditor, title, 400, 300);
       textEditor.addListener("textChanged", e => {
         win.close();
         const newDescription = e.getData();
-        this.__updateStudy({
+        this.__updateService({
           "description": newDescription
         });
       }, this);
@@ -357,11 +343,11 @@ qx.Class.define("osparc.studycard.Large", {
       }, this);
     },
 
-    __updateStudy: function(params) {
-      this.getStudy().updateStudy(params)
+    __updateService: function(params) {
+      this.getService().updateService(params)
         .then(studyData => {
-          this.fireDataEvent("updateStudy", studyData);
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
+          this.fireDataEvent("updateService", studyData);
+          qx.event.message.Bus.getInstance().dispatchByName("updateService", studyData);
         })
         .catch(err => {
           console.error(err);

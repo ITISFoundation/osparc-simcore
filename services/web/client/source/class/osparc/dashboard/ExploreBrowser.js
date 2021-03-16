@@ -548,10 +548,12 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     _openServiceDetailsEditor: function(serviceData) {
-      const serviceDetailsEditor = new osparc.component.metadata.ServiceDetailsEditor(serviceData);
+      const serviceDetails = new osparc.servicecard.Large(serviceData);
       const title = this.tr("Service information") + " · " + serviceData.name;
-      const win = osparc.ui.window.Window.popUpInWindow(serviceDetailsEditor, title, 700, 800);
-      serviceDetailsEditor.addListener("startService", e => {
+      const width = 700;
+      const height = 800;
+      const win = osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+      serviceDetails.addListener("startService", e => {
         const {
           serviceKey,
           serviceVersion
@@ -559,7 +561,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         this.__createStudyFromService(serviceKey, serviceVersion);
         win.close();
       });
-      serviceDetailsEditor.addListener("updateService", e => {
+      serviceDetails.addListener("updateService", e => {
         const newServiceData = e.getData();
         this._resetServiceItem(newServiceData);
         win.close();
