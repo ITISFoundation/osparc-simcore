@@ -83,7 +83,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
 
     __initDefault: function() {
       const stopButton = this.__createStopButton();
-      stopButton.exlude();
+      stopButton.exclude();
       this._add(stopButton);
 
       const startButton = this.__createStartButton();
