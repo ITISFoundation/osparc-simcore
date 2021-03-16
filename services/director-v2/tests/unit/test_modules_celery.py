@@ -4,10 +4,12 @@
 # pylint:disable=protected-access
 
 from random import randint
-from typing import Optional
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 import pytest
+from celery.app.base import Celery
+from celery.contrib.testing.worker import TestWorkController
 from fastapi import FastAPI
 from models_library.settings.celery import CeleryConfig
 from pydantic.types import PositiveInt
@@ -30,19 +32,19 @@ RESULT_BACKEND = "rpc://"
 
 
 @pytest.fixture(scope="session")
-def celery_config():
+def celery_config() -> Dict[str, Any]:
     # NOTE: forces celery to use in-memory broker
     return {"broker_url": BROKER, "result_backend": RESULT_BACKEND}
 
 
 @pytest.fixture(scope="session")
-def celery_enable_logging():
+def celery_enable_logging() -> bool:
     return True
 
 
 # test pytest-celery here
 # https://github.com/celery/celery/issues/3642#issuecomment-369057682 defines why this works
-def test_create_task(celery_app, celery_worker):
+def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
     @celery_app.task
     def mul(x, y):
         return x * y
@@ -75,7 +77,9 @@ def test_celery_configuration(
     assert celery_configuration.result_backend == RESULT_BACKEND
 
 
-def test_send_tasks(minimal_app: FastAPI, celery_app, celery_worker):
+def test_send_tasks(
+    minimal_app: FastAPI, celery_app: Celery, celery_worker: TestWorkController
+):
     @celery_app.task(name="some_task")
     def some_task(x, y):
         return x * y
@@ -87,22 +91,22 @@ def test_send_tasks(minimal_app: FastAPI, celery_app, celery_worker):
     assert task.get(timeout=10) == 6
 
 
-def test_send_computation_task(
+def test_send_computation_tasks(
     minimal_app: FastAPI,
-    celery_app,
-    celery_worker,
-    celery_configuration,
-    user_id,
-    project_id,
+    celery_app: Celery,
+    celery_worker: TestWorkController,
+    celery_configuration: CeleryConfig,
+    user_id: PositiveInt,
+    project_id: str,
 ):
     @celery_app.task(name=celery_configuration.task_name)
     def some_task(
-        *, user_id: int, project_id: str, node_id: Optional[str] = None
+        *args, user_id: int, project_id: str, node_id: Optional[str] = None, **kwargs
     ) -> str:
-        return f"task created for {user_id} and {project_id}:{node_id}"
+        return f"task created for {user_id} and {project_id}:{node_id} with args: [{args}] and kwargs: [{kwargs}]"
 
     celery_worker.reload()
 
     celery_client: CeleryClient = minimal_app.state.celery_client
-    task = celery_client.send_computation_task(user_id, project_id)
+    task = celery_client.send_computation_tasks(user_id, project_id)
     assert task.get(timeout=10) == f"task created for {user_id} and {project_id}:None"
