@@ -61,10 +61,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __stopButton: null,
 
     setRunning: function(running) {
-      const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
-      startButtons.forEach(startButton => startButton.setFetching(running));
+      this.__getStartButtons().forEach(startBtn => startBtn.setFetching(running));
 
-      this.__stopButton.setVisibility(running ? "visible" : "excluded");
+      this.__stopButton.setEnabled(running);
     },
 
     nodeSelectionChanged: function(selectedNodes) {
@@ -77,6 +76,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
           this.__startSelectionButton.exclude();
         }
       }
+    },
+
+    __getStartButtons: function() {
+      return [
+        this.__startButton,
+        this.__startSelectionButton.getChildControl("button"),
+        this.__startAllButton
+      ];
     },
 
     __initDefault: function() {
@@ -142,14 +149,16 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __checkButtonsVisible: function() {
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       const isRunnable = Object.values(allNodes).some(node => node.isComputational());
+      this.__getStartButtons().forEach(startBtn => startBtn.setEnabled(isRunnable));
+
       const isReadOnly = this.getStudy().isReadOnly();
-      this.setVisibility(isRunnable && !isReadOnly ? "visible" : "excluded");
+      this.setVisibility(isReadOnly ? "excluded" : "visible");
     },
 
     __updateRunButtonsStatus: function() {
       const study = this.getStudy();
       if (study) {
-        const startButtons = [this.__startButton, this.__startSelectionButton.getChildControl("button"), this.__startAllButton];
+        const startButtons = this.__getStartButtons();
         const stopButton = this.__stopButton;
         if (study.getState() && study.getState().state) {
           const pipelineState = study.getState().state.value;
