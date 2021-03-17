@@ -599,7 +599,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           const serviceVersion = selection[0].getLabel();
           store.getServicesDAGs()
             .then(services => {
-              const selectedService = osparc.utils.Services.getFromObject(services, serviceDetails.getService()["key"], serviceVersion);
+              const selectedService = osparc.utils.Services.getFromObject(services, serviceData["key"], serviceVersion);
               serviceDetails.setService(selectedService);
             });
         }
