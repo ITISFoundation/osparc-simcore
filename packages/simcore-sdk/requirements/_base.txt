@@ -95,6 +95,8 @@ openapi-schema-validator==0.1.4
     # via openapi-spec-validator
 openapi-spec-validator==0.3.0
     # via openapi-core
+packaging==20.9
+    # via -r requirements/_base.in
 prometheus-client==0.9.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.8.6
@@ -108,6 +110,8 @@ pydantic[email]==1.8.1
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
+pyparsing==2.4.7
+    # via packaging
 pyrsistent==0.17.3
     # via jsonschema
 python-dateutil==2.8.1
