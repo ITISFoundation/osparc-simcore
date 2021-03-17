@@ -152,7 +152,7 @@ qx.Class.define("osparc.servicecard.Utils", {
       const image = new osparc.component.widget.Thumbnail(null, maxWidth, maxHeight);
       const img = image.getChildControl("image");
       img.set({
-        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.StudyBrowserButtonItem.STUDY_ICON
+        source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.StudyBrowserButtonItem.SERVICE_ICON
       });
       return image;
     },
@@ -220,21 +220,21 @@ qx.Class.define("osparc.servicecard.Utils", {
     },
 
     /**
-      * @param studyData {Object} Serialized Study Object
+      * @param serviceData {Object} Serialized Service Object
       */
-    openAccessRights: function(studyData) {
-      const permissionsView = new osparc.component.permissions.Study(studyData);
+    openAccessRights: function(serviceData) {
+      const permissionsView = new osparc.component.permissions.Service(serviceData);
       const title = qx.locale.Manager.tr("Share with Collaborators and Organizations");
       osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
       return permissionsView;
     },
 
     /**
-      * @param resourceData {Object} Serialized Resource Object
+      * @param serviceData {Object} Serialized Service Object
       */
-    openQuality: function(resourceData) {
-      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
-      const title = resourceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
+    openQuality: function(serviceData) {
+      const qualityEditor = new osparc.component.metadata.QualityEditor(serviceData);
+      const title = serviceData["name"] + " - " + qx.locale.Manager.tr("Quality Assessment");
       osparc.ui.window.Window.popUpInWindow(qualityEditor, title, 650, 700);
       return qualityEditor;
     }

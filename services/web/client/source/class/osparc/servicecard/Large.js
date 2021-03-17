@@ -269,7 +269,7 @@ qx.Class.define("osparc.servicecard.Large", {
       const permissionsView = osparc.servicecard.Utils.openAccessRights(this.getService());
       permissionsView.addListener("updateService", e => {
         const updatedData = e.getData();
-        this.getService().setAccessRights(updatedData["accessRights"]);
+        this.getService().setAccessRights(updatedData["access_rights"]);
         this.fireDataEvent("updateService", updatedData);
       }, this);
     },
