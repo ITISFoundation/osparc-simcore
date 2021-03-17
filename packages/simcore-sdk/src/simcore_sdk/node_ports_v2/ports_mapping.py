@@ -9,7 +9,7 @@ from .port import Port
 PortKey: Type[str] = constr(regex=PROPERTY_KEY_RE)
 
 
-class PortsMapping(BaseModel):
+class BasePortsMapping(BaseModel):
     __root__: Dict[PortKey, Port]
 
     def __getitem__(self, key: Union[int, PortKey]) -> Port:
@@ -36,9 +36,9 @@ class PortsMapping(BaseModel):
         return self.__root__.__len__()
 
 
-class InputsList(PortsMapping):
-    __root__: Dict[PortKey, Port]
+class InputsList(BasePortsMapping):
+    pass
 
 
-class OutputsList(PortsMapping):
-    __root__: Dict[PortKey, Port]
+class OutputsList(BasePortsMapping):
+    pass
