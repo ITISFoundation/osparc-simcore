@@ -101,7 +101,7 @@ qx.Class.define("osparc.servicecard.Utils", {
         } else if (ar[myGID]["execute_access"]) {
           permissions = qx.locale.Manager.tr("Execute");
         } else {
-          permissions = qx.locale.Manager.tr("Viewer");
+          permissions = qx.locale.Manager.tr("execute");
         }
       }
       const accessRights = new qx.ui.basic.Label(permissions);
