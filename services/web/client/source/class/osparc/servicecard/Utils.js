@@ -179,36 +179,6 @@ qx.Class.define("osparc.servicecard.Utils", {
       return descriptionLayout;
     },
 
-    /**
-      * @param serviceData {Object} Serialized Service Object
-      */
-    createTags: function(serviceData) {
-      const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-        alignY: "middle"
-      }));
-
-      const label = new qx.ui.basic.Label(qx.locale.Manager.tr("Tags")).set({
-        font: "title-12"
-      });
-      tagsLayout.add(label);
-
-      const tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      tagsContainer.setMarginTop(5);
-      tagsLayout.add(tagsContainer);
-
-      const addTags = data => {
-        const tags = "tags" in data ? data["tags"] : [];
-        tagsContainer.removeAll();
-        osparc.store.Store.getInstance().getTags().filter(tag => tags.includes(tag.id))
-          .forEach(selectedTag => {
-            tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
-          });
-      };
-      addTags(serviceData);
-
-      return tagsLayout;
-    },
-
     createExtraInfo: function(extraInfos) {
       const grid = new qx.ui.layout.Grid(5, 3);
       grid.setColumnAlign(0, "right", "middle");

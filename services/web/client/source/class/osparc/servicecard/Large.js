@@ -96,20 +96,19 @@ qx.Class.define("osparc.servicecard.Large", {
       });
       this._add(hBox);
 
-      if (this.getService()["description"] || this.__isOwner()) {
-        const description = this.__createDescription();
-        const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
-        this._add(descriptionLayout);
-      }
+      const description = this.__createDescription();
+      const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
+      this._add(descriptionLayout);
 
-      if ("tags" in this.getService() && this.getService()["tags"].length || this.__isOwner()) {
-        const tags = this.__createTags();
-        const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
-        if (this.__isOwner()) {
-          osparc.utils.Utils.setIdToWidget(tagsLayout.getChildren()[1], "editStudyEditTagsBtn");
-        }
-        this._add(tagsLayout);
-      }
+      const rawMetadata = this.__createRawMetadata();
+      const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
+        caretSize: 14
+      });
+      more.setCollapsed(true);
+      more.getChildControl("title").setFont("title-12");
+      this._add(more, {
+        flex: 1
+      });
     },
 
     __createViewWithEdit: function(view, cb) {
@@ -244,8 +243,10 @@ qx.Class.define("osparc.servicecard.Large", {
       return osparc.servicecard.Utils.createDescription(this.getService(), maxHeight);
     },
 
-    __createTags: function() {
-      return osparc.servicecard.Utils.createTags(this.getService());
+    __createRawMetadata: function() {
+      const container = new qx.ui.container.Scroll();
+      container.add(new osparc.ui.basic.JsonTreeWidget(this.getService(), "serviceDescriptionSettings"));
+      return container;
     },
 
     __openTitleEditor: function() {
@@ -300,18 +301,6 @@ qx.Class.define("osparc.servicecard.Large", {
         this.getService()["quality"] = updatedData["quality"];
         this.fireDataEvent("updateService", updatedData);
       });
-    },
-
-    __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getService(), null, "study", this.getService()["uuid"]).set({
-        liveUpdate: false
-      });
-      tagManager.addListener("updateTags", e => {
-        tagManager.close();
-        const updatedData = e.getData();
-        this.getService()["tags"] = updatedData["tags"];
-        this.fireDataEvent("updateService", updatedData);
-      }, this);
     },
 
     __openThumbnailEditor: function() {
