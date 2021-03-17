@@ -547,20 +547,22 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.resetSelection();
     },
 
-    _openServiceDetailsEditor: function(serviceData) {
+    _openServiceDetails: function(serviceData) {
       const serviceDetails = new osparc.servicecard.Large(serviceData);
       const title = this.tr("Service information");
       const width = 600;
       const height = 700;
       const win = osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
-      serviceDetails.addListener("startService", e => {
-        const {
-          serviceKey,
-          serviceVersion
-        } = e.getData();
-        this.__createStudyFromService(serviceKey, serviceVersion);
-        win.close();
+
+      const openButton = new qx.ui.form.Button(this.tr("Open")).set({
+        appearance: "toolbar-md-button"
       });
+      osparc.utils.Utils.setIdToWidget(openButton, "startServiceBtn");
+      openButton.addListener("execute", () => {
+        this.__createStudyFromService(serviceData["key"], serviceData["version"]);
+      });
+      serviceDetails.add(openButton);
+
       serviceDetails.addListener("updateService", e => {
         const newServiceData = e.getData();
         this._resetServiceItem(newServiceData);

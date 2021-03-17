@@ -25,8 +25,6 @@ qx.Class.define("osparc.servicecard.Large", {
   construct: function(serviceData) {
     this.base(arguments);
 
-    console.log("serviceData", serviceData);
-
     this.set({
       minHeight: 350,
       padding: this.self().PADDING
@@ -44,8 +42,7 @@ qx.Class.define("osparc.servicecard.Large", {
   },
 
   events: {
-    "updateService": "qx.event.type.Data",
-    "startService": "qx.event.type.Data"
+    "updateService": "qx.event.type.Data"
   },
 
   properties: {
@@ -338,11 +335,17 @@ qx.Class.define("osparc.servicecard.Large", {
       }, this);
     },
 
-    __updateService: function(params) {
-      this.getService().updateService(params)
-        .then(studyData => {
-          this.fireDataEvent("updateService", studyData);
-          qx.event.message.Bus.getInstance().dispatchByName("updateService", studyData);
+    __updateService: function(data) {
+      const params = {
+        url: osparc.data.Resources.getServiceUrl(
+          this.getService()["key"],
+          this.getService()["version"]
+        ),
+        data: data
+      };
+      osparc.data.Resources.fetch("services", "patch", params)
+        .then(serviceData => {
+          this.fireDataEvent("updateService", serviceData);
         })
         .catch(err => {
           console.error(err);
