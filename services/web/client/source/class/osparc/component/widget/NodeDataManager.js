@@ -148,13 +148,17 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       nodeTreeFolderLayout.add(nodeFolder, 1);
 
       nodeFilesTree.addListener("selectionChanged", () => {
-        this.__selectionChanged("node");
         const selectionData = nodeFilesTree.getSelectedItem();
+        this.__selectionChanged(selectionData, "node");
         if (selectionData) {
           if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
             nodeFolder.setFolder(selectionData);
           }
         }
+      }, this);
+      nodeFolder.addListener("selectionChanged", e => {
+        const selectionData = e.getData();
+        this.__selectionChanged(selectionData);
       }, this);
 
       nodeTreeLayout.add(nodeTreeFolderLayout, {
@@ -181,9 +185,6 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       const userFilesTree = this.__userFilesTree = this.getChildControl("user-files-tree");
       osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
       userFilesTree.setDropMechnism(true);
-      userFilesTree.addListener("selectionChanged", () => {
-        this.__selectionChanged("user");
-      }, this);
       userFilesTree.addListener("fileCopied", e => {
         const fileMetadata = e.getData();
         if (fileMetadata) {
@@ -219,16 +220,11 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       }
     },
 
-    __selectionChanged: function(selectedTree) {
-      let selectionData = null;
+    __selectionChanged: function(selectionData, selectedTree = "node") {
       if (selectedTree === "user") {
         this.__nodeFilesTree.resetSelection();
-        selectionData = this.__userFilesTree.getSelectedItem();
-      } else {
-        if (this.__userFilesTree) {
-          this.__userFilesTree.resetSelection();
-        }
-        selectionData = this.__nodeFilesTree.getSelectedItem();
+      } else if (this.__userFilesTree) {
+        this.__userFilesTree.resetSelection();
       }
       if (selectionData) {
         this.__selectedFileLayout.itemSelected(selectionData);
