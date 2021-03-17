@@ -67,8 +67,6 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __rebuildLayout: function() {
-      console.log(this.getService());
-
       this._removeAll();
 
       const title = this.__createTitle();
