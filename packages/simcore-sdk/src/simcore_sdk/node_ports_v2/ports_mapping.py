@@ -1,4 +1,4 @@
-from typing import Dict, ItemsView, Iterator, KeysView, Union, ValuesView
+from typing import Dict, ItemsView, Iterator, KeysView, Type, Union, ValuesView
 
 from models_library.services import PROPERTY_KEY_RE
 from pydantic import BaseModel, constr
@@ -6,7 +6,7 @@ from pydantic import BaseModel, constr
 from ..node_ports.exceptions import UnboundPortError
 from .port import Port
 
-PortKey: constr = constr(regex=PROPERTY_KEY_RE)
+PortKey: Type[str] = constr(regex=PROPERTY_KEY_RE)
 
 
 class PortsMapping(BaseModel):
