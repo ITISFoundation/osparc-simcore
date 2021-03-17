@@ -588,6 +588,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.utils.Utils.setIdToWidget(openButton, "startServiceBtn");
       view.add(openButton);
 
+      const title = this.tr("Service information");
+      const width = 600;
+      const height = 700;
+      const win = osparc.ui.window.Window.popUpInWindow(view, title, width, height);
+
       serviceVersionsList.addListener("changeSelection", () => {
         const selection = serviceVersionsList.getSelection();
         if (selection && selection.length) {
@@ -601,18 +606,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       }, this);
 
       serviceDetails.addListener("updateService", e => {
-        const newServiceData = e.getData();
-        this._resetServiceItem(newServiceData);
+        const updatedServiceData = e.getData();
+        this._resetServiceItem(updatedServiceData);
       });
 
       openButton.addListener("execute", () => {
-        this.__createStudyFromService(serviceData["key"], serviceData["version"]);
+        win.close();
+        const currentService = serviceDetails.getService();
+        this.__createStudyFromService(currentService["key"], currentService["version"]);
       });
-
-      const title = this.tr("Service information");
-      const width = 600;
-      const height = 700;
-      osparc.ui.window.Window.popUpInWindow(view, title, width, height);
     },
 
     __openPermissions: function(studyData) {
