@@ -49,7 +49,8 @@ qx.Class.define("osparc.servicecard.Large", {
     service: {
       check: "Object",
       init: null,
-      nullable: false
+      nullable: false,
+      apply: "__rebuildLayout"
     }
   },
 

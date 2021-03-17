@@ -548,26 +548,71 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     _openServiceDetails: function(serviceData) {
+      const view = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const serviceVersionsList = new qx.ui.form.SelectBox().set({
+        allowGrowX: false,
+        font: "text-14"
+      });
+      const store = osparc.store.Store.getInstance();
+      store.getServicesDAGs()
+        .then(services => {
+          const versions = osparc.utils.Services.getVersions(services, serviceData["key"]);
+          if (versions) {
+            let selectedItem = null;
+            versions.reverse().forEach(version => {
+              const listItem = new qx.ui.form.ListItem(version).set({
+                font: "text-14"
+              });
+              serviceVersionsList.add(listItem);
+              if (serviceData["version"] === version) {
+                selectedItem = listItem;
+              }
+            });
+            if (selectedItem) {
+              serviceVersionsList.setSelection([selectedItem]);
+            }
+          }
+        });
+      view.add(serviceVersionsList);
+
       const serviceDetails = new osparc.servicecard.Large(serviceData);
-      const title = this.tr("Service information");
-      const width = 600;
-      const height = 700;
-      const win = osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+      view.add(serviceDetails, {
+        flex: 1
+      });
 
       const openButton = new qx.ui.form.Button(this.tr("Open")).set({
-        appearance: "toolbar-md-button"
+        allowGrowX: false,
+        alignX: "right"
       });
       osparc.utils.Utils.setIdToWidget(openButton, "startServiceBtn");
-      openButton.addListener("execute", () => {
-        this.__createStudyFromService(serviceData["key"], serviceData["version"]);
-      });
-      serviceDetails.add(openButton);
+      view.add(openButton);
+
+      serviceVersionsList.addListener("changeSelection", () => {
+        const selection = serviceVersionsList.getSelection();
+        if (selection && selection.length) {
+          const serviceVersion = selection[0].getLabel();
+          store.getServicesDAGs()
+            .then(services => {
+              const selectedService = osparc.utils.Services.getFromObject(services, serviceDetails.getService()["key"], serviceVersion);
+              serviceDetails.setService(selectedService);
+            });
+        }
+      }, this);
 
       serviceDetails.addListener("updateService", e => {
         const newServiceData = e.getData();
         this._resetServiceItem(newServiceData);
-        win.close();
       });
+
+      openButton.addListener("execute", () => {
+        this.__createStudyFromService(serviceData["key"], serviceData["version"]);
+      });
+
+      const title = this.tr("Service information");
+      const width = 600;
+      const height = 700;
+      osparc.ui.window.Window.popUpInWindow(view, title, width, height);
     },
 
     __openPermissions: function(studyData) {
