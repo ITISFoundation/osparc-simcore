@@ -27,6 +27,8 @@ qx.Class.define("osparc.desktop.Toolbar", {
     this.setAppearance("sidepanel");
 
     this.set({
+      paddingLeft: 6,
+      paddingRight: 6,
       height: 46
     });
 

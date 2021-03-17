@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.Workbench", {
   },
 
   events: {
-    "workbenchChanged": "qx.event.type.Event",
+    "nNodesChanged": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
@@ -253,7 +253,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         this.__rootNodes[nodeId] = node;
       }
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
-      this.fireEvent("workbenchChanged");
+      this.fireEvent("nNodesChanged");
     },
 
     moveNode: function(node, newParent, oldParent) {
@@ -290,7 +290,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (isTopLevel) {
           delete this.__rootNodes[nodeId];
         }
-        this.fireEvent("workbenchChanged");
+        this.fireEvent("nNodesChanged");
         return true;
       }
       return false;
