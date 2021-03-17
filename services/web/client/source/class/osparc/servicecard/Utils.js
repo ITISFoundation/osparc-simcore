@@ -38,7 +38,7 @@ qx.Class.define("osparc.servicecard.Utils", {
       */
     createKey: function(serviceData) {
       const key = new qx.ui.basic.Label().set({
-        maxWidth: 150
+        maxWidth: 220
       });
       key.set({
         value: serviceData["key"],
@@ -78,9 +78,11 @@ qx.Class.define("osparc.servicecard.Utils", {
         rich: true
       });
       serviceData["authors"].forEach(author => {
+        const oldVal = authors.getValue();
+        const oldTTT = authors.getToolTipText();
         authors.set({
-          value: authors.getValue() + `${author["name"]} <br>`,
-          toolTipText: authors.getToolTipText() + `${author["email"]} - ${author["affiliation"]}<br>`
+          value: (oldVal ? oldVal : "") + `${author["name"]} <br>`,
+          toolTipText: (oldTTT ? oldTTT : "") + `${author["email"]} - ${author["affiliation"]}<br>`
         });
       });
       return authors;

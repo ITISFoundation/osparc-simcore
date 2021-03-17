@@ -549,9 +549,9 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     _openServiceDetailsEditor: function(serviceData) {
       const serviceDetails = new osparc.servicecard.Large(serviceData);
-      const title = this.tr("Service information") + " · " + serviceData.name;
-      const width = 700;
-      const height = 800;
+      const title = this.tr("Service information");
+      const width = 600;
+      const height = 700;
       const win = osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
       serviceDetails.addListener("startService", e => {
         const {

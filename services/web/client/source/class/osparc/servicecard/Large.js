@@ -58,9 +58,9 @@ qx.Class.define("osparc.servicecard.Large", {
 
   statics: {
     PADDING: 5,
-    EXTRA_INFO_WIDTH: 250,
-    THUMBNAIL_MIN_WIDTH: 150,
-    THUMBNAIL_MAX_WIDTH: 230
+    EXTRA_INFO_WIDTH: 300,
+    THUMBNAIL_MIN_WIDTH: 140,
+    THUMBNAIL_MAX_WIDTH: 280
   },
 
   members: {
@@ -78,33 +78,23 @@ qx.Class.define("osparc.servicecard.Large", {
       const extraInfo = this.__extraInfo();
       const extraInfoLayout = this.__createExtraInfo(extraInfo);
 
-
       const bounds = this.getBounds();
       const offset = 30;
-      let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
-      let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
-      const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
-      if (slim) {
-        this._add(extraInfoLayout);
-        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-        this._add(thumbnailLayout);
-      } else {
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
-          alignX: "center"
-        }));
-        hBox.add(extraInfoLayout);
-        thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
-        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-        hBox.add(thumbnailLayout, {
-          flex: 1
-        });
-        this._add(hBox);
-      }
+      let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
+      let thumbnailWidth = widgetWidth - 2*this.self().PADDING - this.self().EXTRA_INFO_WIDTH;
+      thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
+      const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
+      const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+        alignX: "center"
+      }));
+      hBox.add(extraInfoLayout);
+      hBox.add(thumbnailLayout, {
+        flex: 1
+      });
+      this._add(hBox);
 
       if (this.getService()["description"] || this.__isOwner()) {
         const description = this.__createDescription();
@@ -149,10 +139,6 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __extraInfo: function() {
       const extraInfo = [{
-        label: this.tr("Key"),
-        view: this.__createKey(),
-        action: null
-      }, {
         label: this.tr("Version"),
         view: this.__createVersion(),
         action: null
@@ -193,6 +179,18 @@ qx.Class.define("osparc.servicecard.Large", {
           action: {
             button: osparc.utils.Utils.getViewButton(),
             callback: this.__openQuality,
+            ctx: this
+          }
+        });
+      }
+
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        extraInfo.unshift({
+          label: this.tr("Key"),
+          view: this.__createKey(),
+          action: {
+            button: osparc.utils.Utils.getCopyButton(),
+            callback: this.__copyKeyToClipboard,
             ctx: this
           }
         });
@@ -262,6 +260,10 @@ qx.Class.define("osparc.servicecard.Large", {
       }, this);
       titleEditor.center();
       titleEditor.open();
+    },
+
+    __copyKeyToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getService()["key"]);
     },
 
     __openAccessRights: function() {
