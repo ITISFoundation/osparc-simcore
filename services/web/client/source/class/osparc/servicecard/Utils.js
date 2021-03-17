@@ -196,16 +196,14 @@ qx.Class.define("osparc.servicecard.Utils", {
       tagsContainer.setMarginTop(5);
       tagsLayout.add(tagsContainer);
 
-      const addTags = model => {
+      const addTags = data => {
+        const tags = "tags" in data ? data["tags"] : [];
         tagsContainer.removeAll();
-        osparc.store.Store.getInstance().getTags().filter(tag => model.getTags().includes(tag.id))
+        osparc.store.Store.getInstance().getTags().filter(tag => tags.includes(tag.id))
           .forEach(selectedTag => {
             tagsContainer.add(new osparc.ui.basic.Tag(selectedTag.name, selectedTag.color));
           });
       };
-      serviceData.addListener("changeTags", () => {
-        addTags(serviceData);
-      }, this);
       addTags(serviceData);
 
       return tagsLayout;

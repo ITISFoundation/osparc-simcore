@@ -102,7 +102,7 @@ qx.Class.define("osparc.servicecard.Large", {
         this._add(descriptionLayout);
       }
 
-      if (this.getService()["tags"].length || this.__isOwner()) {
+      if ("tags" in this.getService() && this.getService()["tags"].length || this.__isOwner()) {
         const tags = this.__createTags();
         const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
         if (this.__isOwner()) {
@@ -267,7 +267,7 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __openAccessRights: function() {
-      const permissionsView = osparc.servicecard.Utils.openAccessRights(this.getService().serialize());
+      const permissionsView = osparc.servicecard.Utils.openAccessRights(this.getService());
       permissionsView.addListener("updateService", e => {
         const updatedData = e.getData();
         this.getService().setAccessRights(updatedData["accessRights"]);
@@ -279,7 +279,7 @@ qx.Class.define("osparc.servicecard.Large", {
       const title = this.tr("Classifiers");
       let classifiers = null;
       if (this.__isOwner()) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getService().serialize());
+        classifiers = new osparc.component.metadata.ClassifiersEditor(this.getService());
         const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
           win.close();
@@ -288,35 +288,35 @@ qx.Class.define("osparc.servicecard.Large", {
           this.fireDataEvent("updateService", updatedData);
         }, this);
       } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getService().serialize());
+        classifiers = new osparc.component.metadata.ClassifiersViewer(this.getService());
         osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
       }
     },
 
     __openQuality: function() {
-      const qualityEditor = osparc.servicecard.Utils.openQuality(this.getService().serialize());
+      const qualityEditor = osparc.servicecard.Utils.openQuality(this.getService());
       qualityEditor.addListener("updateQuality", e => {
         const updatedData = e.getData();
-        this.getService().setQuality(updatedData["quality"]);
+        this.getService()["quality"] = updatedData["quality"];
         this.fireDataEvent("updateService", updatedData);
       });
     },
 
     __openTagsEditor: function() {
-      const tagManager = new osparc.component.form.tag.TagManager(this.getService().serialize(), null, "study", this.getService().getUuid()).set({
+      const tagManager = new osparc.component.form.tag.TagManager(this.getService(), null, "study", this.getService()["uuid"]).set({
         liveUpdate: false
       });
       tagManager.addListener("updateTags", e => {
         tagManager.close();
         const updatedData = e.getData();
-        this.getService().setTags(updatedData["tags"]);
+        this.getService()["tags"] = updatedData["tags"];
         this.fireDataEvent("updateService", updatedData);
       }, this);
     },
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thubmnailEditor = new osparc.component.widget.Renamer(this.getService().getThumbnail(), null, title);
+      const thubmnailEditor = new osparc.component.widget.Renamer(this.getService()["thumbnail"], null, title);
       thubmnailEditor.addListener("labelChanged", e => {
         thubmnailEditor.close();
         const dirty = e.getData()["newLabel"];
