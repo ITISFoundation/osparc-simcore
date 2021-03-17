@@ -97,12 +97,12 @@ qx.Class.define("osparc.servicecard.Utils", {
       const ar = serviceData["access_rights"];
       if (myGID in ar) {
         if (ar[myGID]["write_access"]) {
-          permissions = qx.locale.Manager.tr("Owner");
+          permissions = qx.locale.Manager.tr("Write");
         } else if (ar[myGID]["execute_access"]) {
           permissions = qx.locale.Manager.tr("Execute");
-        } else {
-          permissions = qx.locale.Manager.tr("execute");
         }
+      } else {
+        permissions = qx.locale.Manager.tr("Public");
       }
       const accessRights = new qx.ui.basic.Label(permissions);
       return accessRights;
