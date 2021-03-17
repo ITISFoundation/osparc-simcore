@@ -439,7 +439,7 @@ class ProjectDBAPI:
 
     async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
+            project = await self._get_project(conn, user_id, project_uuid, include_templates=True)
             # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
             user_email = await self._get_user_email(conn, user_id)
@@ -451,7 +451,7 @@ class ProjectDBAPI:
 
     async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
+            project = await self._get_project(conn, user_id, project_uuid, include_templates=True)
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
