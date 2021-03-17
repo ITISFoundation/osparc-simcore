@@ -67,6 +67,8 @@ qx.Class.define("osparc.servicecard.Large", {
     },
 
     __rebuildLayout: function() {
+      console.log(this.getService());
+
       this._removeAll();
 
       const title = this.__createTitle();
@@ -268,9 +270,9 @@ qx.Class.define("osparc.servicecard.Large", {
     __openAccessRights: function() {
       const permissionsView = osparc.servicecard.Utils.openAccessRights(this.getService());
       permissionsView.addListener("updateService", e => {
-        const updatedData = e.getData();
-        this.getService().setAccessRights(updatedData["access_rights"]);
-        this.fireDataEvent("updateService", updatedData);
+        const updatedServiceData = e.getData();
+        this.setService(updatedServiceData);
+        this.fireDataEvent("updateService", updatedServiceData);
       }, this);
     },
 
@@ -282,9 +284,9 @@ qx.Class.define("osparc.servicecard.Large", {
         const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
         classifiers.addListener("updateClassifiers", e => {
           win.close();
-          const updatedData = e.getData();
-          this.getService().setClassifiers(updatedData["classifiers"]);
-          this.fireDataEvent("updateService", updatedData);
+          const updatedServiceData = e.getData();
+          this.setService(updatedServiceData);
+          this.fireDataEvent("updateService", updatedServiceData);
         }, this);
       } else {
         classifiers = new osparc.component.metadata.ClassifiersViewer(this.getService());
@@ -295,9 +297,9 @@ qx.Class.define("osparc.servicecard.Large", {
     __openQuality: function() {
       const qualityEditor = osparc.servicecard.Utils.openQuality(this.getService());
       qualityEditor.addListener("updateQuality", e => {
-        const updatedData = e.getData();
-        this.getService()["quality"] = updatedData["quality"];
-        this.fireDataEvent("updateService", updatedData);
+        const updatedServiceData = e.getData();
+        this.setService(updatedServiceData);
+        this.fireDataEvent("updateService", updatedServiceData);
       });
     },
 
@@ -346,6 +348,7 @@ qx.Class.define("osparc.servicecard.Large", {
       };
       osparc.data.Resources.fetch("services", "patch", params)
         .then(serviceData => {
+          this.setService(serviceData);
           this.fireDataEvent("updateService", serviceData);
         })
         .catch(err => {
