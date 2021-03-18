@@ -143,7 +143,7 @@ qx.Class.define("osparc.store.Store", {
         if (Array.isArray(data)) {
           this.set(resource, data);
         } else {
-          const idFields = (idField).split(":");
+          const idFields = Array.isArray(idField) ? idField : [idField];
           const element = stored.find(item => idFields.every(id => item[id] === data[id]));
           if (element) {
             const newStored = stored.map(item => {
@@ -171,8 +171,8 @@ qx.Class.define("osparc.store.Store", {
     remove: function(resource, idField = "uuid", id) {
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
-        const idFields = (idField).split(":");
-        const ids = (id).split(":");
+        const idFields = Array.isArray(idField) ? idField : [idField];
+        const ids = Array.isArray(id) ? id : [id];
         const index = stored.findIndex(element => {
           let match = true;
           for (let i=0; i<idFields.length && match; i++) {
