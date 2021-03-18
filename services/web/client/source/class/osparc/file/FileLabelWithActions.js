@@ -110,25 +110,13 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       return null;
     },
 
-    // Request to the server an download
+    // Request to the server and download
     __retrieveURLAndDownload: function() {
       let selection = this.getItemSelected();
       if (selection) {
         const fileId = selection.getFileId();
-        let fileName = fileId.split("/");
-        fileName = fileName[fileName.length-1];
-        const download = true;
         const locationId = selection.getLocation();
-        const dataStore = osparc.store.Data.getInstance();
-        dataStore.getPresignedLink(download, locationId, fileId)
-          .then(presignedLinkData => {
-            if (presignedLinkData.presignedLink) {
-              const link = presignedLinkData.presignedLink.link;
-              const fileNameFromLink = osparc.utils.Utils.fileNameFromPresignedLink(link);
-              fileName = fileNameFromLink ? fileNameFromLink : fileName;
-              osparc.utils.Utils.downloadLink(link, "GET", fileName);
-            }
-          });
+        osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
       }
     },
 
