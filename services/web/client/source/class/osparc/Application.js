@@ -61,15 +61,9 @@ qx.Class.define("osparc.Application", {
       }
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
-      webSocket.addListener("connect", () => {
-        osparc.io.WatchDog.getInstance().setOnLine(true);
-      });
-      webSocket.addListener("disconnect", () => {
-        osparc.io.WatchDog.getInstance().setOnLine(false);
-      });
-      webSocket.addListener("logout", e => {
-        this.logout();
-      });
+      webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnLine(true));
+      webSocket.addListener("disconnect", () => osparc.io.WatchDog.getInstance().setOnLine(false));
+      webSocket.addListener("logout", () => this.logout());
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible
       // to provide our own message here
@@ -88,9 +82,7 @@ qx.Class.define("osparc.Application", {
       }
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", function() {
-        this.__restart();
-      }, this);
+      osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
 
       this.__initRouting();
       this.__loadCommonCss();
@@ -262,9 +254,7 @@ qx.Class.define("osparc.Application", {
     __loadLoginPage: function() {
       this.__disconnectWebSocket();
       const view = new osparc.auth.LoginPage();
-      view.addListener("done", function(msg) {
-        this.__restart();
-      }, this);
+      view.addListener("done", () => this.__restart(), this);
       this.__loadView(view, {
         top: "10%"
       });
