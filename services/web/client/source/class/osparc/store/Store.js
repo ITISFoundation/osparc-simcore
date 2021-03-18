@@ -132,7 +132,7 @@ qx.Class.define("osparc.store.Store", {
      * Updates an element or a set of elements in the store.
      * @param {String} resource Name of the resource property. If used with {osparc.data.Resources}, it has to be the same there.
      * @param {*} data Data to be stored, it needs to have the correct type as in the property definition.
-     * @param {String} idField Key used for the id field. This field has to be unique among all elements of that resource.
+     * @param {String} idField Key(s) used for the id field. This field has to be unique among all elements of that resource.
      */
     update: function(resource, data, idField = "uuid") {
       if (data === undefined) {
@@ -143,10 +143,11 @@ qx.Class.define("osparc.store.Store", {
         if (Array.isArray(data)) {
           this.set(resource, data);
         } else {
-          let element = stored.find(item => item[idField] === data[idField]);
+          const idFields = (idField).split(":");
+          const element = stored.find(item => idFields.every(id => item[id] === data[id]));
           if (element) {
             const newStored = stored.map(item => {
-              if (item[idField] === data[idField]) {
+              if (idFields.every(id => item[id] === data[id])) {
                 return data;
               }
               return item;
@@ -164,15 +165,22 @@ qx.Class.define("osparc.store.Store", {
     /**
      * Remove an element from an array, or erase the store for a given resource.
      * @param {String} resource Name of the resource property. If used with {osparc.data.Resources}, it has to be the same there.
-     * @param {String} idField Key used for the id field. This field has to be unique among all elements of that resource.
-     * @param {String} id Value of the id field.
+     * @param {String} idField Key(s) used for the id field. This field has to be unique among all elements of that resource.
+     * @param {String} id(s) Value of the id field.
      */
     remove: function(resource, idField = "uuid", id) {
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
-        const item = stored.find(element => element[idField] === id);
-        if (item) {
-          const index = stored.indexOf(item);
+        const idFields = (idField).split(":");
+        const ids = (id).split(":");
+        const index = stored.findIndex(element => {
+          let match = true;
+          for (let i=0; i<idFields.length && match; i++) {
+            match = element[idFields[i]] === ids[i];
+          }
+          return match;
+        });
+        if (index > -1) {
           this.set(resource, [...stored.slice(0, index), ...stored.slice(index + 1)]);
         }
       } else {

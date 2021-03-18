@@ -637,7 +637,7 @@ qx.Class.define("osparc.data.Resources", {
      * Get a single resource or a specific resource inside a collection.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
-     * @param {String} id Id of the element to get, if it is a collection of elements.
+     * @param {String} id Id(s) of the element to get, if it is a collection of elements.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
     getOne: function(resource, params, id, useCache = true) {
