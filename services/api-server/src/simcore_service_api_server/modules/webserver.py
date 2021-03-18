@@ -3,6 +3,7 @@ import json
 import logging
 from contextlib import suppress
 from typing import Dict, Optional
+from uuid import UUID
 
 import attr
 from cryptography import fernet
@@ -11,6 +12,8 @@ from httpx import AsyncClient, Response, codes
 from starlette import status
 
 from ..core.settings import WebServerSettings
+from ..models.domain.projects import NewProjectIn, Project
+from ..models.raw_data import Json
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +88,7 @@ class AuthSession:
         )
 
     @classmethod
-    def _process(cls, resp: Response) -> Optional[Dict]:
+    def _process(cls, resp: Response) -> Optional[Json]:
         # enveloped answer
         data, error = None, None
         try:
@@ -114,17 +117,18 @@ class AuthSession:
     # TODO: policy to retry if NetworkError/timeout?
     # TODO: add ping to healthcheck
 
-    async def get(self, path: str) -> Optional[Dict]:
+    async def get(self, path: str) -> Optional[Json]:
         url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
         except Exception as err:
+            # FIXME: error handling
             logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
 
-    async def put(self, path: str, body: Dict) -> Optional[Dict]:
+    async def put(self, path: str, body: Dict) -> Optional[Json]:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
@@ -133,3 +137,33 @@ class AuthSession:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
+
+    # PROJECTS resource ---
+    # TODO: error handling!
+
+    async def create_project(self, project: NewProjectIn):
+        resp = await self.client.post(
+            "/projects", json=project.dict(), cookies=self.session_cookies
+        )
+
+        data: Optional[Json] = self._process(resp)
+        return Project.parse_obj(data)
+
+    async def get_project(self, project_id: UUID) -> Project:
+        resp = await self.client.get(
+            f"/projects/{project_id}", cookies=self.session_cookies
+        )
+
+        data: Optional[Json] = self._process(resp)
+        return Project.parse_obj(data)
+
+
+# TODO: init client and then build sessions from client using depenencies
+#
+# from ..utils.client_base import BaseServiceClientApi
+# class WebserverApi(BaseServiceClientApi):
+#     """ One instance per app """
+
+#     def create_auth_session(self, session_cookies) -> AuthSession:
+#         """ Needed per request, so it can perform """
+#         return AuthSession(client=self.client, vtag="v0", session_cookies=session_cookies)

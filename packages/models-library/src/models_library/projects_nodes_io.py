@@ -21,6 +21,8 @@ NodeID_AsDictKey = constr(regex=UUID_REGEX)
 
 
 class PortLink(BaseModel):
+    """ Input/Output is a reference to the output port of another node in the project """
+
     node_uuid: NodeID = Field(
         ...,
         description="The node to get the port output from",
@@ -77,6 +79,19 @@ class BaseFileLink(BaseModel):
 
 
 class SimCoreFileLink(BaseFileLink):
+    """ Input/Output is a reference to a dataset in the internal storage """
+
+    store: int = 0
+
+    @validator("store")
+    @classmethod
+    def must_be_simcore_s3(cls, v):
+        if v is None:
+            v = 0
+        if v != 0:
+            raise ValueError(f"store must be set to 0, got {v}")
+        return v
+
     @validator("label", always=True, pre=True)
     @classmethod
     def pre_fill_label_with_filename_ext(cls, v, values):
