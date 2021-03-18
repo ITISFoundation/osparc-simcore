@@ -172,7 +172,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "services": {
         useCache: true,
-        idField: "key",
+        idField: "key:version",
         endpoints: {
           get: {
             method: "GET",
@@ -644,8 +644,9 @@ qx.Class.define("osparc.data.Resources", {
       if (useCache) {
         const stored = this.__getCached(resource);
         if (stored) {
-          const idField = this.self().resources[resource].idField || "uuid";
-          const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
+          const idFields = (this.self().resources[resource].idField || "uuid").split(":");
+          const ids = id ? id.split(":") : [];
+          const item = Array.isArray(stored) ? stored.find(element => idFields.every(idField => element[idField] === ids[idField])) : stored;
           if (item) {
             return Promise.resolve(item);
           }
