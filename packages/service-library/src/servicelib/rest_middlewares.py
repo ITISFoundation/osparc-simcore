@@ -4,6 +4,8 @@
 """
 import json
 import logging
+from asyncio import CancelledError
+from datetime import datetime, timezone
 
 from aiohttp import web
 from openapi_core.schema.exceptions import OpenAPIError
@@ -25,6 +27,7 @@ DEFAULT_API_VERSION = "v0"
 
 
 logger = logging.getLogger(__name__)
+_IS_PRODUCTION_ENVIRON: bool = is_production_environ()
 
 
 def is_api_request(request: web.Request, api_version: str) -> bool:
@@ -35,14 +38,14 @@ def is_api_request(request: web.Request, api_version: str) -> bool:
 def error_middleware_factory(
     api_version: str = DEFAULT_API_VERSION, log_exceptions=True
 ):
-    _is_prod: bool = is_production_environ()
-
     def _process_and_raise_unexpected_error(request: web.BaseRequest, err: Exception):
         resp = create_error_response(
-            [err,],
+            [
+                err,
+            ],
             "Unexpected Server error",
             web.HTTPInternalServerError,
-            skip_internal_error_details=_is_prod,
+            skip_internal_error_details=_IS_PRODUCTION_ENVIRON,
         )
 
         if log_exceptions:
@@ -61,7 +64,7 @@ def error_middleware_factory(
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
-            Ensure all error raised are properly enveloped and json responses
+        Ensure all error raised are properly enveloped and json responses
         """
         if not is_api_request(request, api_version):
             return await handler(request)
@@ -80,9 +83,13 @@ def error_middleware_factory(
 
             if not err.text or not is_enveloped_from_text(err.text):
                 error = ErrorType(
-                    errors=[ErrorItemType.from_error(err),],
+                    errors=[
+                        ErrorItemType.from_error(err),
+                    ],
                     status=err.status,
-                    logs=[LogMessageType(message=err.reason, level="ERROR"),],
+                    logs=[
+                        LogMessageType(message=err.reason, level="ERROR"),
+                    ],
                 )
                 err.text = EnvelopeFactory(error=error).as_text()
 
@@ -104,6 +111,24 @@ def error_middleware_factory(
             logger.debug("Redirected to %s", ex)
             raise
 
+        except CancelledError as err:
+
+            error_resp = create_error_response(
+                [
+                    err,
+                ],
+                "Service temporary unavailable, try later",
+                web.HTTPServiceUnavailable,
+                skip_internal_error_details=_IS_PRODUCTION_ENVIRON,
+            )
+            # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+            error_resp.headers["Retry-After"] = datetime.now(timezone.utc).strftime(
+                "%a, %d %b %Y %H:%M:%S %Z"
+            )
+            error_resp.headers["Retry-After"] = "3"  # secs
+
+            raise error_resp from err
+
         except Exception as err:  # pylint: disable=broad-except
             _process_and_raise_unexpected_error(request, err)
 
@@ -117,8 +142,8 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
-            Validates requests against openapi specs and extracts body, params, etc ...
-            Validate response against openapi specs
+        Validates requests against openapi specs and extracts body, params, etc ...
+        Validate response against openapi specs
         """
         if not is_api_request(request, api_version):
             return await handler(request)
@@ -160,12 +185,12 @@ def validate_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
 
 def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
-    _is_prod: bool = is_production_environ()
+    _IS_PRODUCTION_ENVIRON: bool = is_production_environ()
 
     @web.middleware
     async def _middleware_handler(request: web.Request, handler):
         """
-            Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
+        Ensures all responses are enveloped as {'data': .. , 'error', ...} in json
         """
         if not is_api_request(request, api_version):
             return await handler(request)
@@ -177,7 +202,8 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 
         if not isinstance(resp, web.Response):
             response = create_data_response(
-                data=resp, skip_internal_error_details=_is_prod,
+                data=resp,
+                skip_internal_error_details=_IS_PRODUCTION_ENVIRON,
             )
         else:
             # Enforced by user. Should check it is json?
@@ -193,9 +219,7 @@ def envelope_middleware_factory(api_version: str = DEFAULT_API_VERSION):
 def append_rest_middlewares(
     app: web.Application, api_version: str = DEFAULT_API_VERSION
 ):
-    """ Helper that appends rest-middlewares in the correct order
-
-    """
+    """Helper that appends rest-middlewares in the correct order"""
     app.middlewares.append(error_middleware_factory(api_version))
     # FIXME:  openapi-core fails to validate response when specs are in separate files!
     # FIXME: disabled so webserver and storage do not get this issue
