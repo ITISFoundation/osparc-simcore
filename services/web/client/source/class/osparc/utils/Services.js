@@ -24,7 +24,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let latestSrv = osparc.utils.Services.getLatest(services, serviceKey);
+ *   let latestSrv = osparc.utils.Services.getLatest(services, key);
  * </pre>
  */
 
@@ -74,8 +74,8 @@ qx.Class.define("osparc.utils.Services", {
 
     convertObjectToArray: function(servicesObject) {
       let services = [];
-      for (const serviceKey in servicesObject) {
-        const serviceVersions = servicesObject[serviceKey];
+      for (const key in servicesObject) {
+        const serviceVersions = servicesObject[key];
         for (const serviceVersion in serviceVersions) {
           services.push(serviceVersions[serviceVersion]);
         }

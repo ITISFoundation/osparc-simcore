@@ -257,14 +257,14 @@ qx.Class.define("osparc.store.Store", {
     },
 
     /**
-     * @param {String} serviceKey
-     * @param {String} serviceVersion
+     * @param {String} key
+     * @param {String} version
      * @param {Boolean} reload
      */
-    getService: function(serviceKey, serviceVersion, reload = false) {
+    getService: function(key, version, reload = false) {
       return new Promise((resolve, reject) => {
         const params = {
-          url: osparc.data.Resources.getServiceUrl(serviceKey, serviceVersion)
+          url: osparc.data.Resources.getServiceUrl(key, version)
         };
         osparc.data.Resources.getOne("services", params, null, !reload)
           .then(serviceData => {

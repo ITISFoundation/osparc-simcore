@@ -80,8 +80,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         });
     },
 
-    __reloadService: function(serviceKey, serviceVersion, reload) {
-      osparc.store.Store.getInstance().getService(serviceKey, serviceVersion, reload)
+    __reloadService: function(key, version, reload) {
+      osparc.store.Store.getInstance().getService(key, version, reload)
         .then(serviceData => {
           this._resetServiceItem(serviceData);
         })
@@ -124,8 +124,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       store.getServicesDAGs()
         .then(services => {
           const servicesList = [];
-          for (const serviceKey in services) {
-            const latestService = osparc.utils.Services.getLatest(services, serviceKey);
+          for (const key in services) {
+            const latestService = osparc.utils.Services.getLatest(services, key);
             servicesList.push(latestService);
           }
           this.__resetServicesList(servicesList);
@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return servicesLayout;
     },
 
-    __createStudyFromService: function(serviceKey, serviceVersion) {
+    __createStudyFromService: function(key, version) {
       if (!this.__checkLoggedIn()) {
         return;
       }
@@ -233,8 +233,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
-          if (serviceKey in services) {
-            const service = serviceVersion ? osparc.utils.Services.getFromObject(services, serviceKey, serviceVersion) : osparc.utils.Services.getLatest(services, serviceKey);
+          if (key in services) {
+            const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);
             const newUuid = osparc.utils.Utils.uuidv4();
             const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
             minStudyData["name"] = service["name"];
@@ -537,8 +537,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __itemClicked: function(item) {
       if (item.isResourceType("service")) {
-        const serviceKey = item.getUuid();
-        this.__createStudyFromService(serviceKey, null);
+        const key = item.getUuid();
+        this.__createStudyFromService(key, null);
       } else {
         const matchesId = study => study.uuid === item.getUuid();
         const templateData = this.__templates.find(matchesId);
