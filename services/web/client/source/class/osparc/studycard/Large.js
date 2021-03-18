@@ -67,25 +67,11 @@ qx.Class.define("osparc.studycard.Large", {
   },
 
   members: {
-    __updateFromCacheAndNotify: function(studyId) {
-      const params = {
-        url: {
-          "projectId": studyId
-        }
-      };
-      osparc.data.Resources.getOne("studies", params, studyId, true)
-        .then(studyData => {
-          this.fireDataEvent("updateStudy", studyData);
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", studyData);
-          this.__setUpdatedData(studyData);
-        });
-    },
-
     __isOwner: function() {
       return osparc.data.model.Study.isOwner(this.getStudy());
     },
 
-    __rebuildLayout: function(width) {
+    __rebuildLayout: function() {
       this._removeAll();
 
       const title = this.__createTitle();
@@ -97,15 +83,8 @@ qx.Class.define("osparc.studycard.Large", {
 
 
       const bounds = this.getBounds();
-      let widgetWidth = null;
       const offset = 30;
-      if (width) {
-        widgetWidth = width - offset;
-      } else if (bounds) {
-        widgetWidth = bounds.width - offset;
-      } else {
-        widgetWidth = 500 - offset;
-      }
+      let widgetWidth = bounds ? bounds.width - offset : 500 - offset;
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;

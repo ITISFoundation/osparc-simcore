@@ -228,8 +228,8 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       let groupedServices = this.__allServicesObj = osparc.utils.Services.convertArrayToObject(filteredServices);
 
       let groupedServicesList = [];
-      for (const serviceKey in groupedServices) {
-        let service = osparc.utils.Services.getLatest(groupedServices, serviceKey);
+      for (const key in groupedServices) {
+        let service = osparc.utils.Services.getLatest(groupedServices, key);
         let newModel = qx.data.marshal.Json.createModel(service);
         groupedServicesList.push(newModel);
       }
@@ -240,12 +240,12 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
       this.__serviceBrowser.setModel(newModel);
     },
 
-    __changedSelection: function(serviceKey) {
+    __changedSelection: function(key) {
       if (this.__versionsBox) {
         let selectBox = this.__versionsBox;
         selectBox.removeAll();
-        if (serviceKey in this.__allServicesObj) {
-          let versions = osparc.utils.Services.getVersions(this.__allServicesObj, serviceKey);
+        if (key in this.__allServicesObj) {
+          let versions = osparc.utils.Services.getVersions(this.__allServicesObj, key);
           const latest = new qx.ui.form.ListItem(this.self(arguments).LATEST);
           selectBox.add(latest);
           for (let i = versions.length; i--;) {
@@ -255,13 +255,13 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         }
       }
       if (this.__addBtn) {
-        this.__addBtn.setEnabled(serviceKey !== null);
+        this.__addBtn.setEnabled(key !== null);
       }
       if (this.__infoBtn) {
-        this.__infoBtn.setEnabled(serviceKey !== null);
+        this.__infoBtn.setEnabled(key !== null);
       }
       if (this.__versionsBox) {
-        this.__versionsBox.setEnabled(serviceKey !== null);
+        this.__versionsBox.setEnabled(key !== null);
       }
     },
 
@@ -285,18 +285,20 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
 
     __getSelectedService: function() {
       const selected = this.__serviceBrowser.getSelected();
-      const serviceKey = selected.getKey();
-      let serviceVersion = this.__versionsBox.getSelection()[0].getLabel().toString();
-      if (serviceVersion == this.self(arguments).LATEST.toString()) {
-        serviceVersion = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
+      const key = selected.getKey();
+      let version = this.__versionsBox.getSelection()[0].getLabel().toString();
+      if (version == this.self(arguments).LATEST.toString()) {
+        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
       }
-      return osparc.utils.Services.getFromArray(this.__allServicesList, serviceKey, serviceVersion);
+      return osparc.utils.Services.getFromArray(this.__allServicesList, key, version);
     },
 
     __showServiceDetails: function() {
-      const serviceDetails = new osparc.component.metadata.ServiceDetails(this.__getSelectedService());
-      const title = qx.locale.Manager.tr("Service information") + " · " + serviceDetails.getService().name;
-      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, 700, 800);
+      const serviceDetails = new osparc.servicecard.Large(this.__getSelectedService());
+      const title = this.tr("Service information");
+      const width = 600;
+      const height = 700;
+      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
     },
 
     __onCancel: function() {
