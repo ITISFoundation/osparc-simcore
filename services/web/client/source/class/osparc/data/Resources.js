@@ -699,11 +699,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {*} data Resource or collection of resources to be cached.
      */
     __setCached: function(resource, data) {
-      const store = osparc.store.Store.getInstance();
-      switch (resource) {
-        default:
-          store.update(resource, data, this.self().resources[resource].idField || "uuid");
-      }
+      osparc.store.Store.getInstance().update(resource, data, this.self().resources[resource].idField || "uuid");
     },
 
     /**
