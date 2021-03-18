@@ -30,6 +30,11 @@ qx.Class.define("osparc.Application", {
     qx.locale.MTranslation
   ],
 
+  statics: {
+    MIN_WIDTH: 1240,
+    MIN_HEIGHT: 700
+  },
+
   members: {
     __current: null,
     __mainPage: null,
@@ -81,6 +86,8 @@ qx.Class.define("osparc.Application", {
         osparc.dev.fake.srv.restapi.Authentication;
       }
 
+      window.addEventListener("resize", () => this.__checkScreenSize());
+
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
 
@@ -89,6 +96,48 @@ qx.Class.define("osparc.Application", {
 
       this.__updateTabName();
       this.__checkCookiesAccepted();
+    },
+
+    __checkScreenSize: function() {
+      const w = document.documentElement.clientWidth;
+      const h = document.documentElement.clientHeight;
+      const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", this.tr("Get a bigger device!")).set({
+        height: 100,
+        width: 330,
+        layout: new qx.ui.layout.VBox(),
+        appearance: "service-window",
+        showMinimize: false,
+        showMaximize: false,
+        showClose: false,
+        resizable: false,
+        modal: true,
+        contentPadding: 10
+      });
+      if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
+        const msg = this.tr(`
+          oSPARC is designed for slightly bigger screens.<br>\
+          A mininum resolution of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
+          Touch devices are not fully supported.
+        `);
+        const label = new qx.ui.basic.Label().set({
+          value: msg,
+          rich: true
+        });
+        tooSmallWindow.add(label, {
+          flex: 1
+        });
+        const okBtn = new qx.ui.form.Button(this.tr("Got it")).set({
+          allowGrowX: false,
+          allowGrowY: false,
+          alignX: "right"
+        });
+        okBtn.addListener("execute", () => tooSmallWindow.close());
+        tooSmallWindow.add(okBtn);
+        tooSmallWindow.center();
+        tooSmallWindow.open();
+      } else {
+        tooSmallWindow.close();
+      }
     },
 
     __initRouting: function() {
