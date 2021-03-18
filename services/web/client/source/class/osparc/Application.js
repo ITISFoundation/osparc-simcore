@@ -86,8 +86,6 @@ qx.Class.define("osparc.Application", {
         osparc.dev.fake.srv.restapi.Authentication;
       }
 
-      window.addEventListener("resize", () => this.__checkScreenSize());
-
       // Setting up auth manager
       osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
 
@@ -96,6 +94,11 @@ qx.Class.define("osparc.Application", {
 
       this.__updateTabName();
       this.__checkCookiesAccepted();
+
+      // onload, load, DOMContentLoaded, appear... didn't work
+      // bit of a hack
+      setTimeout(() => this.__checkScreenSize(), 100);
+      window.addEventListener("resize", () => this.__checkScreenSize());
     },
 
     __checkScreenSize: function() {
