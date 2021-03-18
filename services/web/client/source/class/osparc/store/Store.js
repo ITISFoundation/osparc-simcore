@@ -127,10 +127,6 @@ qx.Class.define("osparc.store.Store", {
     }
   },
 
-  events: {
-    "servicesRegistered": "qx.event.type.Data"
-  },
-
   members: {
     /**
      * Updates an element or a set of elements in the store.
@@ -292,7 +288,6 @@ qx.Class.define("osparc.store.Store", {
           .finally(() => {
             const servicesObj = osparc.utils.Services.convertArrayToObject(allServices);
             osparc.utils.Services.servicesToCache(servicesObj, true);
-            this.fireDataEvent("servicesRegistered", servicesObj);
             resolve(osparc.utils.Services.servicesCached);
           });
       });
