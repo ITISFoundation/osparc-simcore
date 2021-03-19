@@ -8,7 +8,7 @@ aiohttp==3.7.3
     # via
     #   -c requirements/_base.txt
     #   pytest-aiohttp
-astroid==2.4.2
+astroid==2.5.1
     # via pylint
 async-timeout==3.0.1
     # via
@@ -41,15 +41,15 @@ chardet==3.0.4
     #   requests
 codecov==2.1.11
     # via -r requirements/_test.in
-coverage==5.4
+coverage==5.5
     # via
     #   -r requirements/_test.in
     #   codecov
     #   coveralls
     #   pytest-cov
-coveralls==3.0.0
+coveralls==3.0.1
     # via -r requirements/_test.in
-cryptography==3.4.5
+cryptography==3.4.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
@@ -59,7 +59,7 @@ docker-compose==1.27.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-docker
-docker[ssh]==4.4.1
+docker[ssh]==4.4.4
     # via docker-compose
 dockerpty==0.4.1
     # via docker-compose
@@ -122,7 +122,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.6.0
+pylint==2.7.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -180,7 +180,6 @@ requests==2.24.0
 six==1.15.0
     # via
     #   -c requirements/_base.txt
-    #   astroid
     #   bcrypt
     #   docker
     #   dockerpty

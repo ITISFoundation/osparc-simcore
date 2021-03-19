@@ -3,13 +3,20 @@ import logging
 from pprint import pformat
 from typing import Any, Dict, Set
 
+import pydantic
 from aiopg.sa.result import RowProxy
 from models_library.projects_nodes import NodeID
 from models_library.utils.nodes import compute_node_hash
+from packaging import version
 
 from ..node_ports.dbmanager import DBManager
 from ..node_ports.exceptions import InvalidProtocolError
 from .nodeports_v2 import Nodeports
+
+# NOTE: Keeps backwards compatibility with pydantic
+#   - from 1.8, it DOES NOT need __root__ specifiers when nested
+_PYDANTIC_NEEDS_ROOT_SPECIFIED = version.parse(pydantic.VERSION) < version.parse("1.8")
+
 
 log = logging.getLogger(__name__)
 
@@ -35,23 +42,35 @@ async def load(
         raise InvalidProtocolError(
             port_cfg, "nodeport in comp_task does not follow protocol"
         )
+
     # convert to our internal node ports
-    _PY_INT = "__root__"
-    node_ports_cfg: Dict[str, Dict[str, Any]] = {
-        "inputs": {_PY_INT: {}},
-        "outputs": {_PY_INT: {}},
-    }
-    for port_type in ["inputs", "outputs"]:
-        # schemas first
-        node_ports_cfg.update(
-            {
-                port_type: {_PY_INT: port_cfg["schema"][port_type]},
-            }
-        )
-        # add the key and the payload
-        for key, port_value in node_ports_cfg[port_type][_PY_INT].items():
-            port_value["key"] = key
-            port_value["value"] = port_cfg[port_type].get(key, None)
+    if _PYDANTIC_NEEDS_ROOT_SPECIFIED:
+        _PY_INT = "__root__"
+        node_ports_cfg: Dict[str, Dict[str, Any]] = {
+            "inputs": {_PY_INT: {}},
+            "outputs": {_PY_INT: {}},
+        }
+        for port_type in ["inputs", "outputs"]:
+            # schemas first
+            node_ports_cfg.update(
+                {
+                    port_type: {_PY_INT: port_cfg["schema"][port_type]},
+                }
+            )
+            # add the key and the payload
+            for key, port_value in node_ports_cfg[port_type][_PY_INT].items():
+                port_value["key"] = key
+                port_value["value"] = port_cfg[port_type].get(key, None)
+    else:
+        node_ports_cfg: Dict[str, Dict[str, Any]] = {}
+        for port_type in ["inputs", "outputs"]:
+            # schemas first
+            node_ports_cfg[port_type] = port_cfg["schema"][port_type]
+
+            # add the key and the payload
+            for key, port_value in node_ports_cfg[port_type].items():
+                port_value["key"] = key
+                port_value["value"] = port_cfg[port_type].get(key, None)
 
     ports = Nodeports(
         **node_ports_cfg,
