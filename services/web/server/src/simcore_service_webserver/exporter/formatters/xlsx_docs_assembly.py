@@ -772,11 +772,31 @@ class SubmissionXLSXDocument(BaseXLSXDocument):
     sheet1 = SubmissionFirstSheet()
 
 
+class CodeManifestFirstSheet(BaseXLSXSheet):
+    name = "Sheet1"
+    cell_styles = [
+        ("A1", TB("filename") | Backgrounds.blue | Borders.light_grid),
+        ("B1", TB("timestamp") | Backgrounds.blue | Borders.light_grid),
+        ("C1", TB("description") | Backgrounds.blue | Borders.light_grid),
+        ("D1", TB("file type") | Backgrounds.blue | Borders.light_grid),
+        *[
+            (
+                f"{chr(ord('E')+i)}1",
+                TB("Additional Metadata")
+                | Backgrounds.yellow_dark
+                | Borders.light_grid,
+            )
+            for i in range(12)
+        ],
+    ]
+    column_dimensions = {"A": 15, "B": 40, "C": 25, "D": 10}
+
+
+class CodeManifestXLSXDocument(BaseXLSXDocument):
+    sheet1 = CodeManifestFirstSheet()
+
+
 if __name__ == "__main__":
-    document = SubmissionXLSXDocument()
-    template_data_entires = {
-        "award_number": "some number",
-        "milestone_archived": "this miletone",
-        "milestone_completion_date": "01/03/3939",
-    }
+    document = CodeManifestXLSXDocument()
+    template_data_entires = {}
     document.save_document("test.xlsx", **template_data_entires)
