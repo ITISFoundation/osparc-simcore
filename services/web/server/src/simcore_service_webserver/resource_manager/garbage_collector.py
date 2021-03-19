@@ -364,7 +364,7 @@ async def remove_orphaned_services(
             or node_id not in currently_opened_projects_node_ids
         ):
             service_host = interactive_service["service_host"]
-            if interactive_service.get("service_state") == "pulling":
+            if interactive_service.get("service_state") != "running":
                 # Services returned in running_interactive_services
                 # might be still pulling its image and when stop_service is
                 # called, will cancel the pull operation as well.

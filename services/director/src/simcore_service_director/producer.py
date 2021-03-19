@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import re
+from datetime import datetime, timedelta
 from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
@@ -189,8 +190,8 @@ async def _create_docker_service_params(
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
-                "Delay": 5000000,
-                "MaxAttempts": 2,
+                "Delay": config.DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S * pow(10, 6),
+                "MaxAttempts": config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS,
             },
             "Resources": {
                 "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
@@ -364,7 +365,7 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
 async def _get_docker_image_port_mapping(
     service: Dict,
 ) -> Tuple[Optional[str], Optional[int]]:
-    log.debug("getting port published by service: %s", pformat(service))
+    log.debug("getting port published by service: %s", service["Spec"]["Name"])
 
     published_ports = list()
     target_ports = list()
@@ -483,48 +484,88 @@ async def _remove_overlay_network_of_swarm(
         ) from err
 
 
+DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+
 async def _get_service_state(
     client: aiodocker.docker.Docker, service: Dict
 ) -> Tuple[ServiceState, str]:
     # some times one has to wait until the task info is filled
     service_name = service["Spec"]["Name"]
     log.debug("Getting service %s state", service_name)
-    while True:
-        tasks = await client.tasks.list(filters={"service": service_name})
-        # only keep the ones with the right service ID (we're being a bit picky maybe)
-        tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+    tasks = await client.tasks.list(filters={"service": service_name})
 
-        # we are only interested in the last task which has been created last
-        if tasks:
-            sorted_tasks = sorted(tasks, key=lambda task: task["UpdatedAt"])
-            last_task = sorted_tasks[-1]
-            task_state = last_task["Status"]["State"]
-            log.debug("%s %s", service["ID"], task_state)
+    async def _wait_for_tasks(tasks):
+        task_started_time = datetime.utcnow()
+        while (datetime.utcnow() - task_started_time) < timedelta(seconds=20):
+            tasks = await client.tasks.list(filters={"service": service_name})
+            # only keep the ones with the right service ID (we're being a bit picky maybe)
+            tasks = [x for x in tasks if x["ServiceID"] == service["ID"]]
+            if tasks:
+                return
+            await asyncio.sleep(1)  # let other events happen too
 
-            last_task_state = ServiceState.STARTING  # default
-            last_task_error_msg = (
-                last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
+    await _wait_for_tasks(tasks)
+    if not tasks:
+        return (ServiceState.FAILED, "getting state timed out")
+
+    # we are only interested in the last task which has been created last
+    last_task = sorted(tasks, key=lambda task: task["UpdatedAt"])[-1]
+    task_state = last_task["Status"]["State"]
+
+    def _to_datetime(datetime_str: str) -> datetime:
+        # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
+        #  - The T separates the date portion from the time-of-day portion
+        #  - The Z on the end means UTC, that is, an offset-from-UTC
+        # The 099 before the Z is not clear, therefore we will truncate the last part
+        N = len("2020-10-09T12:28:14.7710")
+        if len(datetime_str) > N:
+            datetime_str = datetime_str[:N]
+        return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
+
+    task_state_update_time = _to_datetime(last_task["Status"]["Timestamp"])
+    log.debug("%s %s: time %s", service["ID"], task_state, task_state_update_time)
+
+    last_task_state = ServiceState.STARTING  # default
+    last_task_error_msg = (
+        last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
+    )
+    if task_state in ("failed"):
+        # check if it failed already the max number of attempts we allow for
+        if len(tasks) < config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS:
+            log.debug("number of tasks: %s", len(tasks))
+            last_task_state = ServiceState.STARTING
+        else:
+            log.error(
+                "service %s failed with %s after %s trials",
+                service_name,
+                last_task["Status"],
+                len(tasks),
             )
-            if task_state in ("failed", "rejected"):
-                log.error(
-                    "service %s failed with %s", service_name, last_task["Status"]
-                )
-                last_task_state = ServiceState.FAILED
-            elif task_state in ("pending"):
-                last_task_state = ServiceState.PENDING
-            elif task_state in ("assigned", "accepted", "preparing"):
-                last_task_state = ServiceState.PULLING
-            elif task_state in ("ready", "starting"):
-                last_task_state = ServiceState.STARTING
-            elif task_state in ("running"):
-                last_task_state = ServiceState.RUNNING
-            elif task_state in ("complete", "shutdown"):
-                last_task_state = ServiceState.COMPLETE
-            return (last_task_state, last_task_error_msg)
-
-        # allows dealing with other events instead of wasting time here
-        await asyncio.sleep(1)  # 1s
-    log.debug("Waited for service %s to start", service_name)
+            last_task_state = ServiceState.FAILED
+    elif task_state in ("rejected"):
+        log.error("service %s failed with %s", service_name, last_task["Status"])
+        last_task_state = ServiceState.FAILED
+    elif task_state in ("pending"):
+        last_task_state = ServiceState.PENDING
+    elif task_state in ("assigned", "accepted", "preparing"):
+        last_task_state = ServiceState.PULLING
+    elif task_state in ("ready", "starting"):
+        last_task_state = ServiceState.STARTING
+    elif task_state in ("running"):
+        now = datetime.utcnow()
+        time_since_running = now - task_state_update_time
+        log.debug("Now is %s, time since running mode is %s", now, time_since_running)
+        if time_since_running > timedelta(
+            seconds=config.DIRECTOR_SERVICES_STATE_MONITOR_S
+        ):
+            last_task_state = ServiceState.RUNNING
+        else:
+            last_task_state = ServiceState.STARTING
+    elif task_state in ("complete", "shutdown"):
+        last_task_state = ServiceState.COMPLETE
+    log.debug("service running state is %s", last_task_state)
+    return (last_task_state, last_task_error_msg)
 
 
 async def _wait_until_service_running_or_failed(
@@ -981,7 +1022,7 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
                         await response.text(),
                     )
         except ClientConnectionError:
-            log.exception(
+            log.warning(
                 "service %s could not be contacted, state not saved", service_host_name
             )
 
