@@ -109,84 +109,108 @@ class AllignTop(BaseXLSXCellData):
 
 class SheetOne(BaseXLSXSheet):
     name = "Code Description"
-    cell_styles = {
+    cell_styles = [
         ## Header
-        "A1": TB("Metadata element"),
-        "B1": TB("Description"),
-        "C1": TB("Example"),
-        "A1:C1": Backgrounds.blue,
+        ("A1", TB("Metadata element")),
+        ("B1", TB("Description")),
+        ("C1", TB("Example")),
+        ("A1:C1", Backgrounds.blue),
         ## Classifiers section
-        "A2": TB("RRID Term"),
-        "B2": T("Associated tools or resources used"),
-        "C2": T("ImageJ"),
-        "A3": TB("RRID Identifier"),
-        "B3": T("Associated tools or resources identifier (with 'RRID:')"),
-        "C3": T("RRID:SCR_003070"),
-        "A4": TB("Ontological term"),
-        "B4": T("Associated ontological term (human-readable)"),
-        "C4": T("Heart"),
-        "A5": TB("Ontological Identifier"),
-        "B5": Link(
-            "Associated ontological identifier from SciCrunch",
-            "https://scicrunch.org/sawg",
+        ("A2", TB("RRID Term")),
+        ("B2", T("Associated tools or resources used")),
+        ("C2", T("ImageJ")),
+        ("A3", TB("RRID Identifier")),
+        ("B3", T("Associated tools or resources identifier (with 'RRID:')")),
+        ("C3", T("RRID:SCR_003070")),
+        ("A4", TB("Ontological term")),
+        ("B4", T("Associated ontological term (human-readable)")),
+        ("C4", T("Heart")),
+        ("A5", TB("Ontological Identifier")),
+        (
+            "B5",
+            Link(
+                "Associated ontological identifier from SciCrunch",
+                "https://scicrunch.org/sawg",
+            ),
         ),
-        "C5": T("UBERON:0000948"),
-        "A2:C5": Backgrounds.green,
-        "A5:C5": Borders.border_bottom_thick,
-        "A1:C5": Borders.light_grid,
+        ("C5", T("UBERON:0000948")),
+        ("A2:C5", Backgrounds.green),
+        ("A5:C5", Borders.border_bottom_thick),
+        ("A1:C5", Borders.light_grid),
         ## TSR section
-        "A6": Link(
-            "Ten Simple Rules (TSR)",
-            "https://www.imagwiki.nibib.nih.gov/content/10-simple-rules-conformance-rubric",
+        (
+            "A6",
+            Link(
+                "Ten Simple Rules (TSR)",
+                "https://www.imagwiki.nibib.nih.gov/content/10-simple-rules-conformance-rubric",
+            ),
         ),
-        "B7": T(
-            "The TSR is a communication tool for modelers to organize their model development process and present it coherently."
+        (
+            "B7",
+            T(
+                "The TSR is a communication tool for modelers to organize their model development process and present it coherently."
+            ),
         ),
-        "C8": Link("Rating (0-4)", "#'TSR Rating Rubric'!A1"),
-    }
+        ("C8", Link("Rating (0-4)", "#'TSR Rating Rubric'!A1")),
+    ]
 
 
 class SheetTSRRating(BaseXLSXSheet):
     name = "TSR Rating Rubric"
-    cell_styles = {
-        "A1": T("Conformance Level"),
-        "A3": T("Description"),
-        "B1": T("Comprehensive"),
-        "B2": T(4),
-        "B3": T(
-            "Can be understood by non MS&P practitioners familiar with the application domain and the intended context of use"
+    cell_styles = [
+        ("A1", T("Conformance Level")),
+        ("A3", T("Description")),
+        ("B1", T("Comprehensive")),
+        ("B2", T(4)),
+        (
+            "B3",
+            T(
+                "Can be understood by non MS&P practitioners familiar with the application domain and the intended context of use"
+            ),
         ),
-        "C1": T("Extensive"),
-        "C2": T(3),
-        "C3": T(
-            "Can be understood by MS&P practitions not familiar with the application domain and the intended context of use"
+        ("C1", T("Extensive")),
+        ("C2", T(3)),
+        (
+            "C3",
+            T(
+                "Can be understood by MS&P practitions not familiar with the application domain and the intended context of use"
+            ),
         ),
-        "D1": T("Adequate"),
-        "D2": T(2),
-        "D3": T(
-            "Can be understood by MS&P practitioners familiar with the application domain and the intended context of use"
+        ("D1", T("Adequate")),
+        ("D2", T(2)),
+        (
+            "D3",
+            T(
+                "Can be understood by MS&P practitioners familiar with the application domain and the intended context of use"
+            ),
         ),
-        "E1": T("Partial"),
-        "E2": T(1),
-        "E3": T(
-            "Unclear to the MS&P practitioners familiar with the application domain and the intended context of use"
+        ("E1", T("Partial")),
+        ("E2", T(1)),
+        (
+            "E3",
+            T(
+                "Unclear to the MS&P practitioners familiar with the application domain and the intended context of use"
+            ),
         ),
-        "F1": T("Insufficient"),
-        "F2": T(0),
-        "F3": T(
-            "Missing or grossly incomplete information to properly evaluate the conformance with the rule"
+        ("F1", T("Insufficient")),
+        ("F2", T(0)),
+        (
+            "F3",
+            T(
+                "Missing or grossly incomplete information to properly evaluate the conformance with the rule"
+            ),
         ),
-        # background
-        "A1:F2": Backgrounds.green | AllignTopCenter(),
-        "A3:F3": Backgrounds.yellow,
+        # background & Alignment
+        ("A1:F2", Backgrounds.green),
+        ("A3:F3", Backgrounds.yellow),
         # Borders
-        "A1:F3": Borders.light_grid,
+        ("A1:F3", Borders.light_grid),
         # Alignment
-        #"A1:F2": AllignTopCenter(),
-        "A3:F3": AllignTop(),
-    }
+        ("A1:F2", AllignTopCenter()),
+        ("A3:F3", AllignTop()),
+    ]
     cell_merge = {"A1:A2"}
-    #column_dimensions = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "F": 20}
+    column_dimensions = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "F": 20}
 
 
 class XLSXTestDocument(BaseXLSXDocument):
