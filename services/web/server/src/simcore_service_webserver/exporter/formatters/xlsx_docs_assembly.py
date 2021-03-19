@@ -1,3 +1,4 @@
+from typing import List, Tuple, Dict
 from simcore_service_webserver.exporter.xlsx_base import (
     BaseXLSXCellData,
     BaseXLSXSheet,
@@ -10,6 +11,7 @@ from openpyxl.styles.borders import BORDER_THIN, BORDER_MEDIUM
 
 COLOR_BLACK = "FF000000"
 COLOR_GRAY = "FFC9C9C9"
+COLOR_GRAY_BACKGROUND = "D0D0D0"
 COLOR_LINK = "0563C1"
 COLOR_BLUE = "8CB3DF"
 COLOR_GREEN = "99C87B"
@@ -51,6 +53,7 @@ class Backgrounds:
     green_light = BackgroundWithColor(color=COLOR_GREEN_LIGHT)
     yellow = BackgroundWithColor(color=COLOR_YELLOW)
     yellow_dark = BackgroundWithColor(color=COLOR_YELLOW_DARK)
+    gray_background = BackgroundWithColor(color=COLOR_GRAY_BACKGROUND)
 
 
 class BorderWithStyle(BaseXLSXCellData):
@@ -517,7 +520,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
         ("A38", T("Ann5: Testing on o²S²PARC Reference")),
         (
             "B38",
-            T("TReference to the tests run on the onboarded MSoP submission"),
+            T("Reference to the tests run on the onboarded MSoP submission"),
         ),
         ("A38:C38", Backgrounds.yellow),
         # ann boders
@@ -557,6 +560,110 @@ class CodeDescriptionSheet(BaseXLSXSheet):
         ("A39:C41", Borders.medium_grid),
     ]
     column_dimensions = {"A": 40, "B": 55, "C": 35}
+
+
+class InputsSheet(BaseXLSXSheet):
+    name = "Inputs"
+    cell_styles = [
+        # column A
+        ("A1", T("Field")),
+        ("A2", T("Description")),
+        ("A3", T("Example")),
+        # column B
+        ("B1", TB("Service name")),
+        ("B2", T("Name of the service containing this input")),
+        ("B3", T("MembraneModel")),
+        # column C
+        ("C1", TB("Service version")),
+        ("C2", T("Version of the service containing this input")),
+        ("C3", T("1.0.1")),
+        # column D
+        ("D1", TB("Input Name")),
+        ("D2", T("An input field to the MSoP submission")),
+        ("D3", T("Membrane Depolarization")),
+        # column E
+        ("E1", TB("Input Data Ontology Identifier")),
+        (
+            "E2",
+            Link(
+                "Ontology identifier for the input field, if applicable",
+                "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term",
+            ),
+        ),
+        ("E3", T("ILX:0103092")),
+        # column F
+        ("F1", TB("Input Data Type")),
+        ("F2", T("Data type for the input field (in plain text)")),
+        ("F3", T(".txt file")),
+        # column G
+        ("G1", TB("Input Data Units")),
+        ("G2", T("Units of data for the input field, if applicable")),
+        ("G3", T("millivolts")),
+        # column H
+        ("H1", TB("Input Data Default Value")),
+        ("H2", T("Default value for the input field, if applicable (doi or value)")),
+        # background & borders
+        ("A1:A3", Backgrounds.gray_background),
+        ("B1:H1", Backgrounds.yellow_dark),
+        ("B2:H3", Backgrounds.yellow),
+        ("A1:H3", Borders.medium_grid),
+    ]
+    column_dimensions = {
+        "A": 10,
+        "B": 20,
+        "C": 20,
+        "D": 20,
+        "E": 20,
+        "F": 20,
+        "G": 20,
+        "H": 20,
+    }
+
+
+class OutputsSheet(BaseXLSXSheet):
+    name = "Outputs"
+    cell_styles = [
+        # column A
+        ("A1", T("Field")),
+        ("A2", T("Description")),
+        ("A3", T("Example")),
+        # column B
+        ("B1", TB("Service name")),
+        ("B2", T("Name of the service containing this output")),
+        ("B3", T("ThresholdModel")),
+        # column C
+        ("C1", TB("Service version")),
+        ("C2", T("Version of the service containing this output")),
+        ("C3", T("1.0.1")),
+        # column D
+        ("D1", TB("Output Name")),
+        ("D2", T("An output field to the MSoP submission")),
+        ("D3", T("Excitation Threshold")),
+        # column E
+        ("E1", TB("Output Data Ontology Identifier")),
+        (
+            "E2",
+            Link(
+                "Ontology identifier for the output field, if applicable",
+                "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term",
+            ),
+        ),
+        ("E3", T("ILX:0110906 ")),
+        # column F
+        ("F1", TB("Output Data Type")),
+        ("F2", T("Data type for the output field")),
+        ("F3", T("real number")),
+        # column G
+        ("G1", TB("Output Data Units")),
+        ("G2", T("Units of data for the output field, if applicable")),
+        ("G3", T("millivolts")),
+        # background & borders
+        ("A1:A3", Backgrounds.gray_background),
+        ("B1:G1", Backgrounds.yellow_dark),
+        ("B2:G3", Backgrounds.yellow),
+        ("A1:G3", Borders.medium_grid),
+    ]
+    column_dimensions = {"A": 10, "B": 20, "C": 20, "D": 20, "E": 20, "F": 20, "G": 20}
 
 
 class SheetTSRRating(BaseXLSXSheet):
@@ -604,12 +711,12 @@ class SheetTSRRating(BaseXLSXSheet):
                 "Missing or grossly incomplete information to properly evaluate the conformance with the rule"
             ),
         ),
-        # background & Alignment
+        # background
         ("A1:F2", Backgrounds.green),
         ("A3:F3", Backgrounds.yellow),
-        # Borders
-        ("A1:F3", Borders.light_grid),
-        # Alignment
+        # borders
+        ("A1:F3", Borders.medium_grid),
+        # alignment
         ("A1:F2", AllignTopCenter()),
         ("A3:F3", AllignTop()),
     ]
@@ -619,9 +726,57 @@ class SheetTSRRating(BaseXLSXSheet):
 
 class CodeDescriptionXLSXDocument(BaseXLSXDocument):
     code_description = CodeDescriptionSheet()
+    inputs = InputsSheet()
+    outputs = OutputsSheet()
     tsr_rating = SheetTSRRating()
+
+    # TODO: attach here methods to populate with data
+
+
+class SubmissionFirstSheet(BaseXLSXSheet):
+    name = "Sheet1"
+    cell_styles = [
+        ("A1", TB("Submission Item")),
+        ("B1", TB("Definition")),
+        ("C1", TB("Value")),
+        ("A2", TB("SPARC Award number")),
+        ("B2", T("Grant number supporting the milestone")),
+        ("A3", TB("Milestone achieved")),
+        ("B3", T("From milestones supplied to NIH")),
+        ("A4", TB("Milestone completion date")),
+        (
+            "B4",
+            T(
+                "Date of milestone completion. This date starts the countdown for submission (30 days after completion), length of embargo and publication date (12 months from completion of milestone)"
+            ),
+        ),
+        ("A1:C1", Backgrounds.blue),
+        ("A1:C4", Borders.light_grid),
+    ]
+    column_dimensions = {"A": 30, "B": 40, "C": 40}
+
+    def assemble_data_for_template(
+        self, **template_data_entires
+    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+        award_number = template_data_entires["award_number"]
+        milestone_archived = template_data_entires["milestone_archived"]
+        milestone_completion_date = template_data_entires["milestone_completion_date"]
+        return [
+            ("C2", T(award_number)),
+            ("C3", T(milestone_archived)),
+            ("C4", T(milestone_completion_date)),
+        ]
+
+
+class SubmissionXLSXDocument(BaseXLSXDocument):
+    sheet1 = SubmissionFirstSheet()
 
 
 if __name__ == "__main__":
-    document = CodeDescriptionXLSXDocument()
-    document.save_document("test.xlsx")
+    document = SubmissionXLSXDocument()
+    template_data_entires = {
+        "award_number": "some number",
+        "milestone_archived": "this miletone",
+        "milestone_completion_date": "01/03/3939",
+    }
+    document.save_document("test.xlsx", **template_data_entires)
