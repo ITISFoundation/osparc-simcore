@@ -1,5 +1,4 @@
 import inspect
-
 from typing import Dict, Generator, Tuple, Any, Set, List
 from pathlib import Path
 
@@ -145,6 +144,15 @@ class BaseXLSXSheet:
     def __repr__(self):
         return f"<{self.__class__.__name__} name={self.name}, cell_styles={self.cell_styles}"
 
+    def assemble_data_for_template(
+        self, **template_data_entires
+    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+        """
+        Expected to be implemented by the user.
+        Used to polpulate the sheet before applying the
+        static part of the template.
+        """
+
 
 def _update_cell(cell: Cell, data: BaseXLSXCellData) -> None:
     """Extract properties from the cell_styles and apply them to the cell"""
@@ -168,7 +176,7 @@ def _update_entry_in_cell(
 
 
 def _assemble_workbook(
-    sheets_entries: Generator[Tuple[str, Any], None, None]
+    sheets_entries: Generator[Tuple[str, Any], None, None], **template_data_entires
 ) -> Workbook:
     workbook = Workbook()
 
@@ -180,7 +188,14 @@ def _assemble_workbook(
 
         single_cells_cell_styles: Dict[str, BaseXLSXCellData] = {}
 
-        for cell_address, entry in sheet_data.cell_styles:
+        all_cells = []
+        data_cells = sheet_data.assemble_data_for_template(**template_data_entires)
+
+        if data_cells:
+            all_cells.extend(data_cells)
+        all_cells.extend(sheet_data.cell_styles)
+
+        for cell_address, entry in all_cells:
             if ":" in cell_address:
                 # ranges like A1:B4 will be flattened into single cell entries
                 for cell_row in xls_sheet[cell_address]:
@@ -230,9 +245,9 @@ class BaseXLSXDocument:
         formatted_sheets = "\n\t".join([f"{x[0]}={x[1]}" for x in self._get_sheets()])
         return f"<{self.__class__.__name__}\n\t{formatted_sheets}>"
 
-    def _generate_document(self) -> Workbook:
-        return _assemble_workbook(self._get_sheets())
+    def _generate_document(self, **template_data_entires) -> Workbook:
+        return _assemble_workbook(self._get_sheets(), **template_data_entires)
 
-    def save_document(self, file_path: Path) -> None:
-        workbook = self._generate_document()
+    def save_document(self, file_path: Path, **template_data_entires) -> None:
+        workbook = self._generate_document(**template_data_entires)
         workbook.save(file_path)
