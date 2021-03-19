@@ -12,7 +12,7 @@ from simcore_service_webserver.exporter.formatters.xlsx.styling_components impor
 )
 
 
-class SubmissionFirstSheet(BaseXLSXSheet):
+class SheetFirstSubmission(BaseXLSXSheet):
     name = "Sheet1"
     cell_styles = [
         ("A1", TB("Submission Item")),
@@ -48,4 +48,4 @@ class SubmissionFirstSheet(BaseXLSXSheet):
 
 
 class SubmissionXLSXDocument(BaseXLSXDocument):
-    sheet1 = SubmissionFirstSheet()
+    sheet1 = SheetFirstSubmission()

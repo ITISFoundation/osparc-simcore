@@ -9,7 +9,7 @@ from simcore_service_webserver.exporter.formatters.xlsx.styling_components impor
 )
 
 
-class DirectoryManifestFirstSheet(BaseXLSXSheet):
+class SheetFirstDirectoryManifest(BaseXLSXSheet):
     name = "Sheet1"
     cell_styles = [
         ("A1", TB("filename") | Backgrounds.blue | Borders.light_grid),
@@ -30,4 +30,4 @@ class DirectoryManifestFirstSheet(BaseXLSXSheet):
 
 
 class DirectoryManifestXLSXDocument(BaseXLSXDocument):
-    sheet1 = DirectoryManifestFirstSheet()
+    sheet1 = SheetFirstDirectoryManifest()

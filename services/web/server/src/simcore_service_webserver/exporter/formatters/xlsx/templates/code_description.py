@@ -13,7 +13,7 @@ from simcore_service_webserver.exporter.formatters.xlsx.styling_components impor
 )
 
 
-class CodeDescriptionSheet(BaseXLSXSheet):
+class SheetCodeDescription(BaseXLSXSheet):
     name = "Code Description"
     cell_styles = [
         ## Header
@@ -437,7 +437,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
     column_dimensions = {"A": 40, "B": 55, "C": 35}
 
 
-class InputsSheet(BaseXLSXSheet):
+class SheetInputs(BaseXLSXSheet):
     name = "Inputs"
     cell_styles = [
         # column A
@@ -495,7 +495,7 @@ class InputsSheet(BaseXLSXSheet):
     }
 
 
-class OutputsSheet(BaseXLSXSheet):
+class SheetOutputs(BaseXLSXSheet):
     name = "Outputs"
     cell_styles = [
         # column A
@@ -600,9 +600,9 @@ class SheetTSRRating(BaseXLSXSheet):
 
 
 class CodeDescriptionXLSXDocument(BaseXLSXDocument):
-    code_description = CodeDescriptionSheet()
-    inputs = InputsSheet()
-    outputs = OutputsSheet()
+    code_description = SheetCodeDescription()
+    inputs = SheetInputs()
+    outputs = SheetOutputs()
     tsr_rating = SheetTSRRating()
 
     # TODO: attach here methods to populate with data
