@@ -772,7 +772,7 @@ class SubmissionXLSXDocument(BaseXLSXDocument):
     sheet1 = SubmissionFirstSheet()
 
 
-class CodeManifestFirstSheet(BaseXLSXSheet):
+class DirectoryManifestFirstSheet(BaseXLSXSheet):
     name = "Sheet1"
     cell_styles = [
         ("A1", TB("filename") | Backgrounds.blue | Borders.light_grid),
@@ -792,11 +792,11 @@ class CodeManifestFirstSheet(BaseXLSXSheet):
     column_dimensions = {"A": 15, "B": 40, "C": 25, "D": 10}
 
 
-class CodeManifestXLSXDocument(BaseXLSXDocument):
-    sheet1 = CodeManifestFirstSheet()
+class DirectoryManifestXLSXDocument(BaseXLSXDocument):
+    sheet1 = DirectoryManifestFirstSheet()
 
 
 if __name__ == "__main__":
-    document = CodeManifestXLSXDocument()
+    document = DirectoryManifestXLSXDocument()
     template_data_entires = {}
     document.save_document("test.xlsx", **template_data_entires)
