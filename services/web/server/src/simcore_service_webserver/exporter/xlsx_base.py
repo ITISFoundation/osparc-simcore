@@ -1,6 +1,6 @@
 import inspect
 
-from typing import Dict, Generator, Tuple, Any, Set
+from typing import Dict, Generator, Tuple, Any, Set, List
 from pathlib import Path
 
 from openpyxl import Workbook
@@ -86,8 +86,6 @@ class BaseXLSXCellData:
             to_store = self.__getattribute__(name) if value is None else value
             self.__setattr__(name, to_store)
 
-        print(">>>>setup", self.__class__.__name__, vars(self).keys())
-
     def __or__(self, other):
         """
         Applies or operation to all shared attributes and
@@ -127,11 +125,13 @@ class BaseXLSXCellData:
 class BaseXLSXSheet:
     # name of the sheet
     name: str = None
-    # cell style contents
-    cell_styles: Dict[str, Dict[str, BaseXLSXCellData]] = None
-    # cell merge contents
+    # cell style contents, using a list of tuples instead of dict
+    # to allow for "duplicate keys"
+    cell_styles: List[Tuple[str, Dict[str, BaseXLSXCellData]]] = None
+
+    # used to merge cells via ranges like A1:B2
     cell_merge: Set[str] = set()
-    # column length
+    # specify each column's length liek {"B": 10}
     column_dimensions: Dict[str, int] = {}
 
     def _check_attribute(self, attribute_name: str):
@@ -162,7 +162,6 @@ def _update_entry_in_cell(
     It is useful for applying styling to existing cells and storing values
     """
     exiting_entry = target.get(address, None)
-    print(">>>>>", type(exiting_entry), type(new_entry), "||||||||")
     target[address] = (
         new_entry if exiting_entry is None else (exiting_entry | new_entry)
     )
@@ -181,9 +180,9 @@ def _assemble_workbook(
 
         single_cells_cell_styles: Dict[str, BaseXLSXCellData] = {}
 
-        # flatten out ranges like A1:B20 in single entries
-        for cell_address, entry in sheet_data.cell_styles.items():
+        for cell_address, entry in sheet_data.cell_styles:
             if ":" in cell_address:
+                # ranges like A1:B4 will be flattened into single cell entries
                 for cell_row in xls_sheet[cell_address]:
                     for cell in cell_row:
                         _update_entry_in_cell(
