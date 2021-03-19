@@ -76,6 +76,18 @@ class Borders:
         color=COLOR_GRAY,
     )
 
+    medium_grid = BorderWithStyle(
+        "top",
+        "left",
+        "right",
+        "bottom",
+        "outline",
+        "vertical",
+        "horizontal",
+        border_style=BORDER_THIN,
+        color=COLOR_BLACK,
+    )
+
     bold_grid = BorderWithStyle(
         "top",
         "left",
@@ -458,49 +470,91 @@ class CodeDescriptionSheet(BaseXLSXSheet):
         ),
         ("A32:C32", Backgrounds.yellow),
         # Ann3
-        ("A33", T("Ann3: Onboarded to o²S²PARC Status")),
+        ("A33", T("Ann3: Certification Status")),
         (
             "B33",
+            T("The code has been certified externally (yes/no)"),
+        ),
+        ("C33", T("yes")),
+        ("A33:C33", Backgrounds.green_light),
+        ("A34", T("Ann3: Reference to Certification")),
+        ("B34", T("Reference to the certification, if it has been certified")),
+        (
+            "C34",
+            Link(
+                "https://github.com/exampleuser/certifier.md",
+                "https://github.com/exampleuser/certifier.md",
+            ),
+        ),
+        ("A34:C34", Backgrounds.yellow),
+        # Ann4
+        ("A35", T("Ann4: Onboarded to o²S²PARC Status")),
+        (
+            "B35",
             T(
                 "The MSoP submission has been integrated into the o²S²PARC platform and is publicly available"
             ),
         ),
-        ("C33", T("yes")),
-        ("A33:C33", Backgrounds.green_light),
-        ("A34", T("Ann3: Reference to onboarded MSoP submission on o²S²PARC")),
+        ("C35", T("yes")),
+        ("A35:C35", Backgrounds.green_light),
+        ("A36", T("Ann4: Reference to onboarded MSoP submission on o²S²PARC")),
         (
-            "B34",
+            "B36",
             T("The name of the onboarded service or template on the o²S²PARC platform"),
         ),
-        ("C34", T("My Wonderful Model Service")),
-        ("A34:C34", Backgrounds.yellow),
+        ("C36", T("My Wonderful Model Service")),
+        ("A36:C36", Backgrounds.yellow),
         # Ann4
-        ("A35", T("Ann4: Testing on o²S²PARC Status")),
+        ("A37", T("Ann5: Testing on o²S²PARC Status")),
         (
-            "B35",
+            "B37",
             T(
                 "The MSoP submission includes unit and integration testing on the o²S²PARC platform"
             ),
         ),
-        ("C35", T("no")),
-        ("A35:C35", Backgrounds.green_light),
-        ("A36", T("Ann4: Testing on o²S²PARC Reference")),
+        ("C37", T("no")),
+        ("A37:C37", Backgrounds.green_light),
+        ("A38", T("Ann5: Testing on o²S²PARC Reference")),
         (
-            "B36",
+            "B38",
             T("TReference to the tests run on the onboarded MSoP submission"),
         ),
-        ("A36:C36", Backgrounds.yellow),
+        ("A38:C38", Backgrounds.yellow),
         # ann boders
-        ("A28:A36", Borders.border_left_light),
-        ("B28:B36", Borders.border_left_light),
-        ("B28:B36", Borders.border_right_light),
-        ("C28:C36", Borders.border_right_light),
+        ("A28:A38", Borders.border_left_light),
+        ("B28:B38", Borders.border_left_light),
+        ("B28:B38", Borders.border_right_light),
+        ("C28:C38", Borders.border_right_light),
         ("A29:C29", Borders.border_top_light),
         ("A31:C31", Borders.border_top_light),
         ("A33:C33", Borders.border_top_light),
         ("A35:C35", Borders.border_top_light),
-        ("A28:C36", Borders.light_grid),
+        ("A37:C37", Borders.border_top_light),
+        ("A28:C38", Borders.light_grid),
         ## Footer
+        ("A39", TB("Inputs")),
+        (
+            "B39",
+            Link("Model/Simulation/Data Processing Inputs (if any)", "#'Inputs'!A1"),
+        ),
+        ("A40", TB("Outputs")),
+        (
+            "B40",
+            Link("Model/Simulation/Data Processing Outputs (if any)", "#'Outputs'!A1"),
+        ),
+        ("A41", TB("Representation in CellML")),
+        ("B41", TB("Analogous CellML/SED-ML model representation, if any")),
+        (
+            "C41",
+            Link(
+                "https://models.physiomeproject.org/workspace/author_2021/@@rawfile/xx/my_model.cellml",
+                "https://models.physiomeproject.org/workspace/author_2021/@@rawfile/xx/my_model.cellml",
+            ),
+        ),
+        # background and borders
+        ("A39:C41", Backgrounds.yellow_dark),
+        ("A39:C39", Borders.border_top_thick),
+        ("A39:C41", Borders.medium_grid),
     ]
     column_dimensions = {"A": 40, "B": 55, "C": 35}
 
