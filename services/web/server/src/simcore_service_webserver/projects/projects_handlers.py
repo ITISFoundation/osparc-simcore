@@ -271,7 +271,7 @@ async def replace_project(request: web.Request):
         # check the project is opened
         project_users: Set[int] = {}
         with managed_resource(user_id, None, request.app) as rt:
-            project_users: Set[int] = set(
+            project_users = set(
                 await rt.find_users_of_resource("project_id", project_uuid)
             )
         if user_id not in project_users:
