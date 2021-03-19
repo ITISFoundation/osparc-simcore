@@ -346,6 +346,8 @@ services:
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.network=${SWARM_STACK_NAME}_default"
       - "--providers.docker.swarmMode=true"
+      # https://github.com/traefik/traefik/issues/7886
+      - "--providers.docker.swarmModeRefreshSeconds=1"
       - "--providers.docker.exposedByDefault=false"
       - "--providers.docker.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
       - "--tracing=true"
