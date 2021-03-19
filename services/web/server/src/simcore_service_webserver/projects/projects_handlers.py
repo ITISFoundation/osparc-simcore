@@ -259,7 +259,7 @@ async def replace_project(request: web.Request):
 
     try:
         projects_api.validate_project(request.app, new_project)
-
+        # check the project exists
         current_project = await projects_api.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
@@ -267,6 +267,24 @@ async def replace_project(request: web.Request):
             include_templates=True,
             include_state=True,
         )
+
+        # check the project is opened
+        project_users: Set[int] = {}
+        with managed_resource(user_id, None, request.app) as rt:
+            project_users: Set[int] = set(
+                await rt.find_users_of_resource("project_id", project_uuid)
+            )
+        if user_id not in project_users:
+            if project_users:
+                other_user_names = {
+                    await get_user_name(request.app, x) for x in project_users
+                }
+                raise web.HTTPForbidden(
+                    reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
+                )
+            raise web.HTTPConflict(
+                reason="Project is not opened. Saving is not allowed."
+            )
 
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
