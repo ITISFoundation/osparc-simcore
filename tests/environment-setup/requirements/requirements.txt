@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/requirements.txt requirements/requirements.in
 #
-aiohttp==3.7.3
+aiohttp==3.7.4
     # via pytest-aiohttp
 async-timeout==3.0.1
     # via aiohttp
@@ -21,7 +21,7 @@ idna==2.10
     #   -c requirements/../../../requirements/constraints.txt
     #   idna-ssl
     #   yarl
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   pluggy
     #   pytest
