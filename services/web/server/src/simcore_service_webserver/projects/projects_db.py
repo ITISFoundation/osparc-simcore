@@ -425,6 +425,19 @@ class ProjectDBAPI:
         user_groups: List[RowProxy] = await self.__load_user_groups(connection, user_id)
 
         # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
+        # HOTFIX: disabled for now as there is an issue with shared data
+        # query = textwrap.dedent(
+        #     f"""\
+        #     SELECT *
+        #     FROM projects
+        #     WHERE
+        #     {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
+        #     uuid = '{project_uuid}'
+        #     AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+        #     OR prj_owner = {user_id})
+        #     {"FOR UPDATE" if for_update else ""}
+        #     """
+        # )
         query = textwrap.dedent(
             f"""\
             SELECT *
@@ -432,8 +445,7 @@ class ProjectDBAPI:
             WHERE
             {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
             uuid = '{project_uuid}'
-            AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-            OR prj_owner = {user_id})
+            AND (prj_owner = {user_id})
             {"FOR UPDATE" if for_update else ""}
             """
         )
