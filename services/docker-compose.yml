@@ -147,10 +147,11 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/health
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=1000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=75ms
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=3
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
     networks:
       - default
       - interactive_services_subnet
