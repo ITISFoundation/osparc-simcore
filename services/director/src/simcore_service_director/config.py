@@ -61,6 +61,10 @@ DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S: int = int(
     os.environ.get("DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S", 12)
 )
 
+DIRECTOR_SERVICES_STATE_MONITOR_S: int = int(
+    os.environ.get("DIRECTOR_SERVICES_STATE_MONITOR_S", 8)
+)
+
 TRAEFIK_SIMCORE_ZONE: str = os.environ.get(
     "TRAEFIK_SIMCORE_ZONE", "internal_simcore_stack"
 )
