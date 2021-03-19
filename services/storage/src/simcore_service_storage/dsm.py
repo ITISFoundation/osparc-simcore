@@ -24,6 +24,7 @@ from sqlalchemy.sql import and_
 from tenacity import retry
 from yarl import URL
 
+from .access_layer import get_readable_project_ids
 from .datcore_wrapper import DatcoreWrapper
 from .models import (
     DatasetMetaData,
@@ -202,15 +203,25 @@ class DataStorageManager:
         """
         data = deque()
         if location == SIMCORE_S3_STR:
+
+            readable_projects_ids = []
             async with self.engine.acquire() as conn:
-                query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.user_id == user_id
+
+                # NOTE: API data is NOT associate to project, and has ONLY ownership
+                readable_projects_ids = await get_readable_project_ids(
+                    conn, int(user_id)
                 )
+                query = sa.select([file_meta_data]).where(
+                    file_meta_data.c.project_id.in_(readable_projects_ids)
+                    | (file_meta_data.c.user_id == user_id)
+                )
+                logger.debug("user %s query: %s", user_id, query)
+
                 async for row in conn.execute(query):
-                    result_dict = dict(zip(row._result_proxy.keys, row._row))
-                    d = FileMetaData(**result_dict)
-                    parent_id = str(Path(d.object_name).parent)
-                    dex = FileMetaDataEx(fmd=d, parent_id=parent_id)
+                    d = FileMetaData(**dict(row))
+                    dex = FileMetaDataEx(
+                        fmd=d, parent_id=str(Path(d.object_name).parent)
+                    )
                     data.append(dex)
 
             if self.has_project_db:
@@ -219,7 +230,7 @@ class DataStorageManager:
                 try:
                     async with self.engine.acquire() as conn:
                         query = sa.select([projects]).where(
-                            projects.c.prj_owner == user_id
+                            projects.c.project_id.in_(readable_projects_ids)
                         )
 
                         async for row in conn.execute(query):
@@ -318,12 +329,15 @@ class DataStorageManager:
         data = []
 
         if location == SIMCORE_S3_STR:
-            # get lis of all projects belonging to user
             if self.has_project_db:
                 try:
                     async with self.engine.acquire() as conn:
+                        readable_projects_ids = await get_readable_project_ids(
+                            conn, int(user_id)
+                        )
+
                         query = sa.select([projects]).where(
-                            projects.c.prj_owner == user_id
+                            projects.c.project_id.in_(readable_projects_ids)
                         )
                         async for row in conn.execute(query):
                             proj_data = dict(row.items())
@@ -334,6 +348,7 @@ class DataStorageManager:
                             data.append(dmd)
                 except DBAPIError as _err:
                     logger.exception("Error querying database for project names")
+
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
@@ -345,13 +360,13 @@ class DataStorageManager:
         self, user_id: str, location: str, file_uuid: str
     ) -> FileMetaDataEx:
         if location == SIMCORE_S3_STR:
-            # TODO: get engine from outside
+
+            # FIXME: <====== ACCESS RIGHTS
+
             async with self.engine.acquire() as conn:
                 query = sa.select([file_meta_data]).where(
-                    and_(
-                        file_meta_data.c.user_id == user_id,
-                        file_meta_data.c.file_uuid == file_uuid,
-                    )
+                    (file_meta_data.c.user_id == user_id)
+                    & (file_meta_data.c.file_uuid == file_uuid)
                 )
                 async for row in conn.execute(query):
                     result_dict = dict(zip(row._result_proxy.keys, row._row))
@@ -378,6 +393,9 @@ class DataStorageManager:
         if location == SIMCORE_S3_STR:
             to_delete = []
             async with self.engine.acquire() as conn:
+
+                # FIXME: <====== ACCESS RIGHTS
+
                 query = sa.select([file_meta_data]).where(
                     file_meta_data.c.file_uuid == file_uuid
                 )
@@ -497,6 +515,8 @@ class DataStorageManager:
                 fmd = FileMetaData()
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
                 fmd.user_id = user_id
+
+                # FIXME: <====== WRITE ACCESS RIGHTS
                 query = sa.select([file_meta_data]).where(
                     file_meta_data.c.file_uuid == file_uuid
                 )
@@ -625,6 +645,7 @@ class DataStorageManager:
                 await self.copy_file_datcore_s3(user_id, dest_uuid, source_uuid)
 
     async def download_link_s3(self, file_uuid: str) -> str:
+
         link = None
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
@@ -783,6 +804,7 @@ class DataStorageManager:
         If node_id is not given, then all the project files db entries are deleted.
         """
 
+        # FIXME: <====== DELETE ACCESS RIGHTS
         async with self.engine.acquire() as conn:
             delete_me = file_meta_data.delete().where(
                 and_(
@@ -823,6 +845,8 @@ class DataStorageManager:
         # Avoids using list_files since it accounts for projects/nodes
         # Storage should know NOTHING about those concepts
         data = deque()
+
+        # FIXME: <====== READ ACCESS RIGHTS
         async with self.engine.acquire() as conn:
             stmt = sa.select([file_meta_data]).where(
                 (file_meta_data.c.user_id == str(user_id))
