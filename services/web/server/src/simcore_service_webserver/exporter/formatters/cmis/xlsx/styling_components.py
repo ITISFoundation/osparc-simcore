@@ -1,4 +1,4 @@
-from simcore_service_webserver.exporter.formatters.xlsx.xlsx_base import (
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.xlsx_base import (
     BaseXLSXCellData,
 )
 

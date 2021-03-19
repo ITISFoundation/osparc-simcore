@@ -1,8 +1,8 @@
-from simcore_service_webserver.exporter.formatters.xlsx.xlsx_base import (
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.xlsx_base import (
     BaseXLSXSheet,
     BaseXLSXDocument,
 )
-from simcore_service_webserver.exporter.formatters.xlsx.styling_components import (
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.styling_components import (
     T,
     TB,
     Link,

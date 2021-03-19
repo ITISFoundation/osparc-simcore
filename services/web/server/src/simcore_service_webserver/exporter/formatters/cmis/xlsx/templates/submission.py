@@ -1,10 +1,10 @@
 from typing import List, Tuple, Dict
-from simcore_service_webserver.exporter.formatters.xlsx.xlsx_base import (
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.xlsx_base import (
     BaseXLSXCellData,
     BaseXLSXSheet,
     BaseXLSXDocument,
 )
-from simcore_service_webserver.exporter.formatters.xlsx.styling_components import (
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.styling_components import (
     T,
     TB,
     Backgrounds,
