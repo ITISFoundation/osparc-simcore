@@ -172,7 +172,7 @@ qx.Class.define("osparc.data.Resources", {
        */
       "services": {
         useCache: true,
-        idField: "key",
+        idField: ["key", "version"],
         endpoints: {
           get: {
             method: "GET",
@@ -180,11 +180,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           getOne: {
             method: "GET",
-            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
+            url: statics.API + "/catalog/services/{key}/{version}"
           },
           patch: {
             method: "PATCH",
-            url: statics.API + "/catalog/services/{serviceKey}/{serviceVersion}"
+            url: statics.API + "/catalog/services/{key}/{version}"
           }
         }
       },
@@ -637,7 +637,7 @@ qx.Class.define("osparc.data.Resources", {
      * Get a single resource or a specific resource inside a collection.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
-     * @param {String} id Id of the element to get, if it is a collection of elements.
+     * @param {String} id Id(s) of the element to get, if it is a collection of elements.
      * @param {Boolean} useCache Whether the cache has to be used. If false, an API call will be issued.
      */
     getOne: function(resource, params, id, useCache = true) {
@@ -645,7 +645,9 @@ qx.Class.define("osparc.data.Resources", {
         const stored = this.__getCached(resource);
         if (stored) {
           const idField = this.self().resources[resource].idField || "uuid";
-          const item = Array.isArray(stored) ? stored.find(element => element[idField] === id) : stored;
+          const idFields = Array.isArray(idField) ? idField : [idField];
+          const ids = Array.isArray(id) ? id : [id];
+          const item = Array.isArray(stored) ? stored.find(element => idFields.every(idF => element[idF] === ids[idF])) : stored;
           if (item) {
             return Promise.resolve(item);
           }
@@ -699,11 +701,7 @@ qx.Class.define("osparc.data.Resources", {
      * @param {*} data Resource or collection of resources to be cached.
      */
     __setCached: function(resource, data) {
-      const store = osparc.store.Store.getInstance();
-      switch (resource) {
-        default:
-          store.update(resource, data, this.self().resources[resource].idField || "uuid");
-      }
+      osparc.store.Store.getInstance().update(resource, data, this.self().resources[resource].idField || "uuid");
     },
 
     /**
@@ -728,10 +726,10 @@ qx.Class.define("osparc.data.Resources", {
       return this.getInstance().get(resource, params, useCache);
     },
 
-    getServiceUrl: function(serviceKey, serviceVersion) {
+    getServiceUrl: function(key, version) {
       return {
-        "serviceKey": encodeURIComponent(serviceKey),
-        "serviceVersion": serviceVersion
+        "key": encodeURIComponent(key),
+        "version": version
       };
     },
 
