@@ -4,42 +4,17 @@ from dataclasses import dataclass
 from operator import attrgetter
 from typing import Callable, List, Optional, Tuple
 
-import httpx
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData, ServiceType
 from pydantic import EmailStr, Extra, ValidationError
 
 from ..core.settings import CatalogSettings
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
-from ..utils.client_base import BaseServiceClientApi
+from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
-
-# Module's setup logic ---------------------------------------------
-
-
-def setup(app: FastAPI, settings: CatalogSettings) -> None:
-    if not settings:
-        settings = CatalogSettings()
-
-    def on_startup() -> None:
-        logger.debug("Setup %s at %s...", __name__, settings.base_url)
-        CatalogApi.create(
-            app,
-            client=httpx.AsyncClient(base_url=settings.base_url),
-            service_name="catalog",
-        )
-
-    async def on_shutdown() -> None:
-        client = CatalogApi.get_instance(app)
-        if client:
-            await client.aclose()
-        logger.debug("%s client closed successfully", __name__)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
 
 
 SolverNameVersionPair = Tuple[SolverKeyId, str]
@@ -182,3 +157,15 @@ class CatalogApi(BaseServiceClientApi):
         # raises IndexError if None
         latest = sorted(releases, key=attrgetter("pep404_version"))[-1]
         return latest
+
+
+# MODULES APP SETUP -------------------------------------------------------------
+
+
+def setup(app: FastAPI, settings: CatalogSettings) -> None:
+    if not settings:
+        settings = CatalogSettings()
+
+    setup_client_instance(
+        app, CatalogApi, api_baseurl=settings.base_url, service_name="catalog"
+    )

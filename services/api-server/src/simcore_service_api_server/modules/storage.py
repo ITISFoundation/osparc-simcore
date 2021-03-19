@@ -5,42 +5,17 @@ from mimetypes import guess_type
 from typing import List
 from uuid import UUID
 
-import httpx
 from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
 from models_library.api_schemas_storage import FileMetaDataArray, PresignedLink
 
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
-from ..utils.client_base import BaseServiceClientApi
+from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 ## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
-
-# Module's setup logic ---------------------------------------------
-
-
-def setup(app: FastAPI, settings: StorageSettings) -> None:
-    if not settings:
-        settings = StorageSettings()
-
-    def on_startup() -> None:
-        logger.debug("Setup %s at %s...", __name__, settings.base_url)
-        StorageApi.create(
-            app,
-            client=httpx.AsyncClient(base_url=settings.base_url),
-            service_name="storage",
-        )
-
-    async def on_shutdown() -> None:
-        client = StorageApi.get_instance(app)
-        if client:
-            await client.aclose()
-        logger.debug("%s client closed successfully", __name__)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
 
 
 # API CLASS ---------------------------------------------
@@ -137,3 +112,15 @@ def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
         checksum=stored_file_meta.entity_tag,
     )
     return meta
+
+
+# MODULES APP SETUP -------------------------------------------------------------
+
+
+def setup(app: FastAPI, settings: StorageSettings) -> None:
+    if not settings:
+        settings = StorageSettings()
+
+    setup_client_instance(
+        app, StorageApi, api_baseurl=settings.base_url, service_name="storage"
+    )
