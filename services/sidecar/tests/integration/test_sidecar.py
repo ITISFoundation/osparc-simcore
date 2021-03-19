@@ -124,7 +124,7 @@ async def _assert_incoming_data_logs(
             # instrumentation message
             instrumentation_messages[message["service_uuid"]].append(message)
         else:
-            assert all([field in message for field in fields])
+            assert all(field in message for field in fields)
             assert message["Channel"] == "Log" or message["Channel"] == "Progress"
             assert message["user_id"] == user_id
             assert message["project_id"] == project_id

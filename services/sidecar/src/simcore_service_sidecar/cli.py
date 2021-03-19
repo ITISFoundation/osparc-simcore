@@ -30,7 +30,8 @@ def main(
         )
         return next_task_nodes
     except Exception:  # pylint: disable=broad-except
-        log.exception("Uncaught exception")
+        log.exception("Unexpected problem while running sidecar")
+        return None
 
 
 @log_decorator(logger=log, level=logging.INFO)

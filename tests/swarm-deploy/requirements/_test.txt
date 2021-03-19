@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aio-pika==6.7.1
+aio-pika==6.8.0
     # via -r requirements/_test.in
 aiodebug==1.1.2
     # via
@@ -12,7 +12,7 @@ aiodebug==1.1.2
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
 aiofiles==0.6.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-aiohttp==3.7.3
+aiohttp==3.7.4
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
@@ -29,7 +29,7 @@ aiozipkin==0.7.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-alembic==1.5.4
+alembic==1.5.5
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
@@ -64,12 +64,12 @@ click==7.1.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
-configparser==5.0.1
+configparser==5.0.2
     # via
     #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   minio
-coverage==5.4
+coverage==5.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -88,7 +88,7 @@ dnspython==2.1.0
     #   -r requirements/../../../packages/models-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   email-validator
-docker==4.4.1
+docker==4.4.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
@@ -113,7 +113,7 @@ idna==2.10
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
@@ -127,10 +127,12 @@ isodate==0.6.0
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   openapi-core
+    #   openapi-schema-validator
 jsonschema==3.2.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   openapi-schema-validator
     #   openapi-spec-validator
 lazy-object-proxy==1.4.3
     # via
@@ -162,7 +164,12 @@ openapi-core==0.12.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-openapi-spec-validator==0.2.9
+openapi-schema-validator==0.1.4
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   openapi-spec-validator
+openapi-spec-validator==0.3.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
@@ -188,7 +195,7 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 py==1.10.0
     # via pytest
-pydantic==1.7.3
+pydantic[email]==1.8.1
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
@@ -260,6 +267,7 @@ six==1.15.0
     #   isodate
     #   jsonschema
     #   openapi-core
+    #   openapi-schema-validator
     #   openapi-spec-validator
     #   python-dateutil
     #   tenacity
@@ -277,7 +285,7 @@ strict-rfc3339==0.7
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   openapi-core
-tenacity==6.3.1
+tenacity==7.0.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
@@ -287,7 +295,7 @@ termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
     # via pytest
-tqdm==4.56.2
+tqdm==4.58.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
 trafaret-config==2.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
@@ -298,10 +306,12 @@ trafaret==2.1.0
     #   trafaret-config
 typing-extensions==3.7.4.3
     # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   aiohttp
     #   importlib-metadata
+    #   pydantic
     #   yarl
 ujson==4.0.2
     # via
@@ -315,7 +325,7 @@ urllib3==1.26.3
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   minio
     #   requests
-websocket-client==0.57.0
+websocket-client==0.58.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker
