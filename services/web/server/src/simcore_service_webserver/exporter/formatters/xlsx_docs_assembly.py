@@ -89,14 +89,27 @@ class Borders:
     border_bottom_thick = BorderWithStyle(
         "bottom", border_style=BORDER_MEDIUM, color=COLOR_BLACK
     )
-    border_bottom_thick = BorderWithStyle(
-        "bottom", border_style=BORDER_MEDIUM, color=COLOR_BLACK
+    border_top_thick = BorderWithStyle(
+        "top", border_style=BORDER_MEDIUM, color=COLOR_BLACK
     )
     border_left_thick = BorderWithStyle(
         "left", border_style=BORDER_MEDIUM, color=COLOR_BLACK
     )
     border_right_thick = BorderWithStyle(
         "right", border_style=BORDER_MEDIUM, color=COLOR_BLACK
+    )
+
+    border_bottom_light = BorderWithStyle(
+        "bottom", border_style=BORDER_THIN, color=COLOR_BLACK
+    )
+    border_top_light = BorderWithStyle(
+        "top", border_style=BORDER_THIN, color=COLOR_BLACK
+    )
+    border_left_light = BorderWithStyle(
+        "left", border_style=BORDER_THIN, color=COLOR_BLACK
+    )
+    border_right_light = BorderWithStyle(
+        "right", border_style=BORDER_THIN, color=COLOR_BLACK
     )
 
 
@@ -136,7 +149,10 @@ class CodeDescriptionSheet(BaseXLSXSheet):
         ),
         ("C5", T("UBERON:0000948")),
         ("A2:C5", Backgrounds.green),
+        # borders for headers section
         ("A5:C5", Borders.border_bottom_thick),
+        ("B1:B5", Borders.border_left_light),
+        ("B1:B5", Borders.border_right_light),
         ("A1:C5", Borders.light_grid),
         ## TSR section
         (
@@ -331,7 +347,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
         ),
         ("A22:C22", Backgrounds.yellow),
         # TSR9
-        ("A3", T("TSR9: Test Competing Implementations Rating (0-4)")),
+        ("A23", T("TSR9: Test Competing Implementations Rating (0-4)")),
         (
             "B23",
             T(
@@ -340,7 +356,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
         ),
         ("C23", T(0)),
         ("A23:C23", Backgrounds.light_green),
-        ("A4", T("TSR9: Test Competing Implementations Reference")),
+        ("A24", T("TSR9: Test Competing Implementations Reference")),
         (
             "B24",
             T("Reference to implementations tested"),
@@ -379,8 +395,110 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             Link("https://www.cellml.org", "https://www.cellml.org"),
         ),
         ("A27:C27", Backgrounds.yellow),
-        # adding gird and borders for the TSR
+        # adding borders to TSR
+        ("A6:A27", Borders.border_left_light),
+        ("B6:B27", Borders.border_left_light),
+        ("B6:B27", Borders.border_right_light),
+        ("C6:C27", Borders.border_right_light),
+        ("A7:C7", Borders.border_top_light),
+        ("A9:C9", Borders.border_top_light),
+        ("A11:C11", Borders.border_top_light),
+        ("A13:C13", Borders.border_top_light),
+        ("A15:C15", Borders.border_top_light),
+        ("A17:C17", Borders.border_top_light),
+        ("A19:C19", Borders.border_top_light),
+        ("A21:C21", Borders.border_top_light),
+        ("A23:C23", Borders.border_top_light),
+        ("A25:C25", Borders.border_top_light),
+        ("A27:C27", Borders.border_bottom_thick),
         ("A6:C27", Borders.light_grid),
+        ## Annotations
+        ("A28", TB("Annotations")),
+        ("A28:C28", Backgrounds.green),
+        # Ann1
+        ("A29", T("Ann1: Code Verification Status")),
+        (
+            "B29",
+            T(
+                "Provide assurance that the MSoP submissions is free of bugs in the source code and numerical algorithms (yes/no)"
+            ),
+        ),
+        ("C29", T("yes")),
+        ("A29:C29", Backgrounds.light_green),
+        ("A30", T("Ann1: Reference to Code Verification")),
+        (
+            "B30",
+            T("Link to the verification documentation"),
+        ),
+        (
+            "C30",
+            Link(
+                "https://github.com/example_user/example_repository/tests.py",
+                "https://github.com/example_user/example_repository/tests.py",
+            ),
+        ),
+        ("A30:C30", Backgrounds.yellow),
+        # Ann2
+        ("A31", T("Ann2: Code Validation Status")),
+        (
+            "B31",
+            T(
+                "Assess the degree to which a computer model and simulation framework is able to simulate a reality of interest"
+            ),
+        ),
+        ("C31", T("yes")),
+        ("A31:C31", Backgrounds.light_green),
+        ("A32", T("Ann2: Reference to Code Validation")),
+        ("B32", T("Reference to assessment")),
+        (
+            "C32",
+            Link("https://doi.org/10.0000/0000", "https://doi.org/10.0000/0000"),
+        ),
+        ("A32:C32", Backgrounds.yellow),
+        # Ann3
+        ("A33", T("Ann3: Onboarded to o²S²PARC Status")),
+        (
+            "B33",
+            T(
+                "The MSoP submission has been integrated into the o²S²PARC platform and is publicly available"
+            ),
+        ),
+        ("C33", T("yes")),
+        ("A33:C33", Backgrounds.light_green),
+        ("A34", T("Ann3: Reference to onboarded MSoP submission on o²S²PARC")),
+        (
+            "B34",
+            T("The name of the onboarded service or template on the o²S²PARC platform"),
+        ),
+        ("C34", T("My Wonderful Model Service")),
+        ("A34:C34", Backgrounds.yellow),
+        # Ann4
+        ("A35", T("Ann4: Testing on o²S²PARC Status")),
+        (
+            "B35",
+            T(
+                "The MSoP submission includes unit and integration testing on the o²S²PARC platform"
+            ),
+        ),
+        ("C35", T("no")),
+        ("A35:C35", Backgrounds.light_green),
+        ("A36", T("Ann4: Testing on o²S²PARC Reference")),
+        (
+            "B36",
+            T("TReference to the tests run on the onboarded MSoP submission"),
+        ),
+        ("A36:C36", Backgrounds.yellow),
+        # ann boders
+        ("A28:A36", Borders.border_left_light),
+        ("B28:B36", Borders.border_left_light),
+        ("B28:B36", Borders.border_right_light),
+        ("C28:C36", Borders.border_right_light),
+        ("A29:C29", Borders.border_top_light),
+        ("A31:C31", Borders.border_top_light),
+        ("A33:C33", Borders.border_top_light),
+        ("A35:C35", Borders.border_top_light),
+        ("A28:C36", Borders.light_grid),
+        ## Footer
     ]
     column_dimensions = {"A": 40, "B": 55, "C": 35}
 
