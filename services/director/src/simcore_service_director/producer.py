@@ -364,7 +364,7 @@ async def _get_swarm_network(client: aiodocker.docker.Docker) -> Dict:
 async def _get_docker_image_port_mapping(
     service: Dict,
 ) -> Tuple[Optional[str], Optional[int]]:
-    log.debug("getting port published by service: %s", pformat(service))
+    log.debug("getting port published by service: %s", service["Spec"]["Name"])
 
     published_ports = list()
     target_ports = list()
