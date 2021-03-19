@@ -13,8 +13,9 @@ COLOR_GRAY = "FFC9C9C9"
 COLOR_LINK = "0563C1"
 COLOR_BLUE = "8CB3DF"
 COLOR_GREEN = "99C87B"
-COLOR_LIGHT_GREEN = "BBDAA5"
+COLOR_GREEN_LIGHT = "BBDAA5"
 COLOR_YELLOW = "FEE288"
+COLOR_YELLOW_DARK = "FFD254"
 
 
 class T(BaseXLSXCellData):
@@ -47,8 +48,9 @@ class BackgroundWithColor(BaseXLSXCellData):
 class Backgrounds:
     blue = BackgroundWithColor(color=COLOR_BLUE)
     green = BackgroundWithColor(color=COLOR_GREEN)
-    light_green = BackgroundWithColor(color=COLOR_LIGHT_GREEN)
+    green_light = BackgroundWithColor(color=COLOR_GREEN_LIGHT)
     yellow = BackgroundWithColor(color=COLOR_YELLOW)
+    yellow_dark = BackgroundWithColor(color=COLOR_YELLOW_DARK)
 
 
 class BorderWithStyle(BaseXLSXCellData):
@@ -179,7 +181,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C7", T(3)),
-        ("A7:C7", Backgrounds.light_green),
+        ("A7:C7", Backgrounds.green_light),
         ("A8", T("TSR1: Define Context Clearly Reference")),
         ("B8", T("Reference to context of use")),
         (
@@ -199,7 +201,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C9", T(2)),
-        ("A9:C9", Backgrounds.light_green),
+        ("A9:C9", Backgrounds.green_light),
         ("A10", T("TSR2: Use Appropriate Data Reference")),
         (
             "B10",
@@ -224,7 +226,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C11", T(3)),
-        ("A11:C11", Backgrounds.light_green),
+        ("A11:C11", Backgrounds.green_light),
         ("A12", T("TSR3: Evaluate Within Context Reference")),
         (
             "B12",
@@ -246,7 +248,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C13", T(0)),
-        ("A13:C13", Backgrounds.light_green),
+        ("A13:C13", Backgrounds.green_light),
         ("A14", T("TSR4: List Limitations Explicitly Reference")),
         (
             "B14",
@@ -266,7 +268,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C15", T(4)),
-        ("A15:C15", Backgrounds.light_green),
+        ("A15:C15", Backgrounds.green_light),
         ("A16", T("TSR5: Use Version Control Reference")),
         (
             "B16",
@@ -289,7 +291,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C17", T(4)),
-        ("A17:C17", Backgrounds.light_green),
+        ("A17:C17", Backgrounds.green_light),
         ("A18", T("TSR6: Document Adequately Reference")),
         (
             "B18",
@@ -312,7 +314,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C19", T(4)),
-        ("A19:C19", Backgrounds.light_green),
+        ("A19:C19", Backgrounds.green_light),
         ("A20", T("TSR7: Disseminate Broadly Reference")),
         (
             "B20",
@@ -332,7 +334,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C21", T(2)),
-        ("A21:C21", Backgrounds.light_green),
+        ("A21:C21", Backgrounds.green_light),
         ("A22", T("TSR8: Get Independent Reviews Reference")),
         (
             "B22",
@@ -355,7 +357,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C23", T(0)),
-        ("A23:C23", Backgrounds.light_green),
+        ("A23:C23", Backgrounds.green_light),
         ("A24", T("TSR9: Test Competing Implementations Reference")),
         (
             "B24",
@@ -371,7 +373,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C25", T(4)),
-        ("A25:C25", Backgrounds.light_green),
+        ("A25:C25", Backgrounds.green_light),
         ("A26", T("TSR10a: Conform to Standards Reference")),
         (
             "B26",
@@ -424,7 +426,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C29", T("yes")),
-        ("A29:C29", Backgrounds.light_green),
+        ("A29:C29", Backgrounds.green_light),
         ("A30", T("Ann1: Reference to Code Verification")),
         (
             "B30",
@@ -447,7 +449,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C31", T("yes")),
-        ("A31:C31", Backgrounds.light_green),
+        ("A31:C31", Backgrounds.green_light),
         ("A32", T("Ann2: Reference to Code Validation")),
         ("B32", T("Reference to assessment")),
         (
@@ -464,7 +466,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C33", T("yes")),
-        ("A33:C33", Backgrounds.light_green),
+        ("A33:C33", Backgrounds.green_light),
         ("A34", T("Ann3: Reference to onboarded MSoP submission on o²S²PARC")),
         (
             "B34",
@@ -481,7 +483,7 @@ class CodeDescriptionSheet(BaseXLSXSheet):
             ),
         ),
         ("C35", T("no")),
-        ("A35:C35", Backgrounds.light_green),
+        ("A35:C35", Backgrounds.green_light),
         ("A36", T("Ann4: Testing on o²S²PARC Reference")),
         (
             "B36",
