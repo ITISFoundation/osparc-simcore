@@ -97,6 +97,8 @@ dnspython==2.0.0
     # via email-validator
 email-validator==1.1.1
     # via pydantic
+et-xmlfile==1.0.1
+    # via openpyxl
 expiringdict==1.2.1
     # via -r requirements/_base.in
 hiredis==1.1.0
@@ -150,6 +152,8 @@ openapi-core==0.12.0
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
 openapi-spec-validator==0.2.9
     # via openapi-core
+openpyxl==3.0.7
+    # via -r requirements/_base.in
 orjson==3.4.8
     # via -r requirements/_base.in
 pamqp==2.3.0
