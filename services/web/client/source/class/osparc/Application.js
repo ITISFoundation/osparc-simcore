@@ -119,8 +119,8 @@ qx.Class.define("osparc.Application", {
       const h = document.documentElement.clientHeight;
       if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
         const msg = this.tr(`
-          oSPARC is designed for slightly bigger screens (window size).<br>\
-          A mininum resolution (window size) of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
+          oSPARC is designed for slightly bigger window size.<br>\
+          A mininum window size of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
           Touch devices are not fully supported.
         `);
         const label = new qx.ui.basic.Label().set({
