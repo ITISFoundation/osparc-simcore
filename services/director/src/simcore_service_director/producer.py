@@ -189,8 +189,8 @@ async def _create_docker_service_params(
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
-                "Delay": 5000000,
-                "MaxAttempts": 2,
+                "Delay": config.DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S * pow(10, 6),
+                "MaxAttempts": config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS,
             },
             "Resources": {
                 "Limits": {"NanoCPUs": 2 * pow(10, 9), "MemoryBytes": 1 * pow(1024, 3)},
@@ -505,7 +505,15 @@ async def _get_service_state(
             last_task_error_msg = (
                 last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
             )
-            if task_state in ("failed", "rejected"):
+            if task_state in ("failed"):
+                # check if it failed already the max number of attempts we allow for
+                if len(tasks) < config.DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS:
+                    return ServiceState.STARTING
+                log.error(
+                    "service %s failed with %s", service_name, last_task["Status"]
+                )
+                last_task_state = ServiceState.FAILED
+            elif task_state in ("rejected"):
                 log.error(
                     "service %s failed with %s", service_name, last_task["Status"]
                 )
@@ -522,8 +530,6 @@ async def _get_service_state(
                 last_task_state = ServiceState.COMPLETE
             return (last_task_state, last_task_error_msg)
 
-        # allows dealing with other events instead of wasting time here
-        await asyncio.sleep(1)  # 1s
     log.debug("Waited for service %s to start", service_name)
 
 
