@@ -280,7 +280,7 @@ async def replace_project(request: web.Request):
                     await get_user_name(request.app, x) for x in project_users
                 }
                 raise web.HTTPForbidden(
-                    reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
+                    reason=f"Project is open by {other_user_names}. It cannot be updated until the project is closed."
                 )
             raise web.HTTPConflict(
                 reason="Project is not opened. Saving is not allowed."
