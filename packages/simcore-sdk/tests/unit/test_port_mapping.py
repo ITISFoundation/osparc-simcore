@@ -6,10 +6,9 @@ from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 
 
-##################### TESTS
 @pytest.mark.parametrize("port_class", [InputsList, OutputsList])
 def test_empty_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
-    port_mapping = port_class(**{"__root__": {}})
+    port_mapping = port_class(__root__={})
     assert not port_mapping.items()
     assert not port_mapping.values()
     assert not port_mapping.keys()
@@ -26,7 +25,11 @@ def test_filled_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
         port = create_valid_port_config(t)
         port_cfgs[port["key"]] = port
     port_cfgs["some_file"] = create_valid_port_config("data:*/*", key="some_file")
-    port_mapping = port_class(**{"__root__": port_cfgs})
+
+    port_mapping = port_class(__root__=port_cfgs)
+
+    # two ways to construct instances of __root__
+    assert port_class.parse_obj(port_cfgs) == port_mapping
 
     assert len(port_mapping) == len(port_cfgs)
     for port_key, port_value in port_mapping.items():
@@ -44,3 +47,16 @@ def test_filled_ports_mapping(port_class: Type[Union[InputsList, OutputsList]]):
 
     with pytest.raises(exceptions.UnboundPortError):
         _ = port_mapping["whatever"]
+
+
+def test_io_ports_are_not_aliases():
+    # prevents creating alises as InputsList = PortsMappings
+
+    inputs = InputsList(__root__={})
+    outputs = OutputsList(__root__={})
+
+    assert isinstance(inputs, InputsList)
+    assert not isinstance(inputs, OutputsList)
+
+    assert isinstance(outputs, OutputsList)
+    assert not isinstance(outputs, InputsList)

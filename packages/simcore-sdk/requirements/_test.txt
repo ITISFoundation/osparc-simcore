@@ -4,18 +4,18 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.3
+aiohttp==3.7.4
     # via
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest-aiohttp
 aioresponses==0.7.1
     # via -r requirements/_test.in
-alembic==1.5.4
+alembic==1.5.5
     # via -r requirements/_test.in
 apipkg==1.5
     # via execnet
-astroid==2.4.2
+astroid==2.5.1
     # via pylint
 async-timeout==3.0.1
     # via
@@ -35,14 +35,14 @@ chardet==3.0.4
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-coverage==5.4
+coverage==5.5
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.0.0
+coveralls==3.0.1
     # via -r requirements/_test.in
-docker==4.4.1
+docker==4.4.4
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
@@ -60,7 +60,7 @@ idna==2.10
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   -c requirements/_base.txt
     #   pluggy
@@ -86,6 +86,7 @@ multidict==5.1.0
     #   yarl
 packaging==20.9
     # via
+    #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
 pluggy==0.13.1
@@ -100,10 +101,12 @@ py==1.10.0
     # via
     #   pytest
     #   pytest-forked
-pylint==2.6.0
+pylint==2.7.2
     # via -r requirements/_test.in
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
 pytest-cov==2.11.1
@@ -149,7 +152,6 @@ requests==2.25.1
 six==1.15.0
     # via
     #   -c requirements/_base.txt
-    #   astroid
     #   docker
     #   python-dateutil
     #   websocket-client
@@ -175,7 +177,7 @@ urllib3==1.26.3
     # via
     #   -c requirements/_base.txt
     #   requests
-websocket-client==0.57.0
+websocket-client==0.58.0
     # via docker
 wrapt==1.12.1
     # via astroid
