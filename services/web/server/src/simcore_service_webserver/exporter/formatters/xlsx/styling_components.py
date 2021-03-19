@@ -3,6 +3,7 @@ from simcore_service_webserver.exporter.formatters.xlsx.xlsx_base import (
 )
 
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+from openpyxl.comments import Comment as PyXLComment
 from openpyxl.styles.borders import BORDER_THIN, BORDER_MEDIUM
 
 
@@ -28,6 +29,16 @@ class T(BaseXLSXCellData):
 
 class TB(T):
     font = Font(bold=True)
+
+
+class Comment(BaseXLSXCellData):
+    """Used to insert a commnet in a cell"""
+
+    def __init__(self, text: str, author: str, height: int = 100, width: int = 150):
+        text += f"\n - {author}"
+        super().__init__(
+            comment=PyXLComment(text=text, author=author, height=height, width=width)
+        )
 
 
 class Link(T):
