@@ -29,6 +29,14 @@ SECRET_KEY = "12345678"
 BUCKET_NAME = "simcore-testing-bucket"
 USER_ID = "0"
 
+PG_TABLES_NEEDED_FOR_STORAGE = [
+    user_to_groups,
+    file_meta_data,
+    projects,
+    users,
+    groups,
+]
+
 
 def current_dir() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -77,8 +85,13 @@ def create_tables(url, engine=None):
     if not engine:
         engine = sa.create_engine(url)
 
-    meta.drop_all(bind=engine, tables=[file_meta_data])
-    meta.create_all(bind=engine, tables=[file_meta_data])
+    meta.drop_all(
+        bind=engine,
+        tables=PG_TABLES_NEEDED_FOR_STORAGE,
+        checkfirst=True,
+    )
+    meta.create_all(bind=engine, tables=PG_TABLES_NEEDED_FOR_STORAGE)
+    return engine
 
 
 def drop_tables(url, engine=None):
@@ -86,7 +99,7 @@ def drop_tables(url, engine=None):
     if not engine:
         engine = sa.create_engine(url)
 
-    meta.drop_all(bind=engine, tables=[file_meta_data])
+    meta.drop_all(bind=engine, tables=PG_TABLES_NEEDED_FOR_STORAGE)
 
 
 def insert_metadata(url: str, fmd: FileMetaData):
@@ -120,30 +133,7 @@ def insert_metadata(url: str, fmd: FileMetaData):
 
 
 def create_full_tables(url):
-    meta = sa.MetaData()
-    engine = sa.create_engine(url)
-
-    meta.drop_all(
-        bind=engine,
-        tables=[
-            user_to_groups,
-            file_meta_data,
-            projects,
-            users,
-            groups,
-        ],
-        checkfirst=True,
-    )
-    meta.create_all(
-        bind=engine,
-        tables=[
-            file_meta_data,
-            projects,
-            users,
-            groups,
-            user_to_groups,
-        ],
-    )
+    engine = create_tables(url)
 
     for t in ["users", "file_meta_data", "projects"]:
         filename = t + ".csv"
@@ -180,7 +170,6 @@ def create_full_tables(url):
     #             with open(csv_file, 'r') as file:
     #                 data_df = pd.read_csv(file)
     #                 data_df.to_sql(t, con=engine, index=False, index_label="id", if_exists='append')
-    engine.dispose()
 
 
 def drop_all_tables(url):
