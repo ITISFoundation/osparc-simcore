@@ -38,9 +38,7 @@
 
 
 import logging
-from collections import deque
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import UUID
 
@@ -49,8 +47,6 @@ from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from simcore_postgres_database.storage_models import file_meta_data
 from sqlalchemy.sql import text
-
-from .models import FileMetaData, FileMetaDataEx
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +166,9 @@ async def get_file_access_rights(
     Returns access-rights of user (user_id) over data file resource (file_uuid)
     """
 
+    #
+    # 1. file registered in file_meta_data table
+    #
     stmt = sa.select([file_meta_data.c.project_id, file_meta_data.c.user_id]).where(
         file_meta_data.c.file_uuid == file_uuid
     )
@@ -182,49 +181,54 @@ async def get_file_access_rights(
             return AccessRights.all()
 
         if not row.project_id:
+            # not owner and not shared via project
             return AccessRights.none()
 
-        # has associated project, then use
+        # has associated project
         access_rights = await get_project_access_rights(
             conn, user_id, project_id=row.project_id
         )
         if not access_rights:
             logger.warning(
-                "File %s references a project %s that does not exists in db",
+                "File %s references a project %s that does not exists in db."
+                "TIP: Audit sync between files_meta_data and projects tables",
                 file_uuid,
                 row.project_id,
             )
             return AccessRights.none()
 
-        return access_rights
-
     else:
-        # file is not registered in meta-data table (e.g. is about to be uploaded or it was deleted)
+        #
+        # 2. file is NOT registered in meta-data table e.g. it is about to be uploaded or it was deleted
+        #    We rely on the assumption that file_uuid is formatted either as
+        #
+        #       - project's data: {project_id}/{node_id}/{filename}
+        #       - API data:       api/{file_id}/{filename}
+        #
         try:
             parent, _, _ = file_uuid.split("/")
 
             if parent == "api":
-                # ownership still not defined
+                # ownership still not defined, so we assume it is user_id
                 return AccessRights.all()
 
-            else:
-                access_rights = await get_project_access_rights(
-                    conn, user_id, project_id=UUID(parent)
+            access_rights = await get_project_access_rights(
+                conn, user_id, project_id=UUID(parent)
+            )
+            if not access_rights:
+                logger.warning(
+                    "File %s references a project %s that does not exists in db",
+                    file_uuid,
+                    row.project_id,
                 )
-                if not access_rights:
-                    logger.warning(
-                        "File %s references a project %s that does not exists in db",
-                        file_uuid,
-                        row.project_id,
-                    )
-                    return AccessRights.none()
-
-                return access_rights
+                return AccessRights.none()
 
         except (ValueError, AttributeError) as err:
             raise ValueError(
                 f"Invalid file_uuid. '{file_uuid}' does not follow any known pattern ({err})"
             ) from err
+
+    return access_rights
 
 
 # HELPERS -----------------------------------------------
@@ -234,29 +238,3 @@ async def get_readable_project_ids(conn: SAConnection, user_id: int) -> List[Pro
     """ Returns a list of projects where user has granted read-access """
     projects_access_rights = await list_projects_access_rights(conn, int(user_id))
     return [pid for pid, access in projects_access_rights.items() if access.read]
-
-
-# FILEMETADATA repository ----------------------------
-#
-#
-
-
-async def list_files_metadata(conn: SAConnection, user_id: int) -> List[FileMetaDataEx]:
-    files_meta = deque()
-
-    # filter accounting AR
-    can_read_projects = await get_readable_project_ids(conn, int(user_id))
-
-    query = sa.select([file_meta_data]).where(
-        (file_meta_data.c.user_id == user_id)
-        | file_meta_data.c.project_id.in_(can_read_projects)
-    )
-    logger.debug("user %s query: %s", user_id, query)
-
-    # list
-    async for row in conn.execute(query):
-        d = FileMetaData(**dict(row))
-        dex = FileMetaDataEx(fmd=d, parent_id=str(Path(d.object_name).parent))
-        files_meta.append(dex)
-
-    return list(files_meta)

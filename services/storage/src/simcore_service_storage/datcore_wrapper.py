@@ -65,7 +65,7 @@ class DatcoreWrapper:
                 api_secret=api_secret,
                 host="https://api.blackfynn.io",
             )
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self.d_client = None  # Disabled: any call will raise AttributeError
             logger.warning("Failed to setup datcore. Disabling client.", exc_info=True)
 

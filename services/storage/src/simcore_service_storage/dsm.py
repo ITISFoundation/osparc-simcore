@@ -1,3 +1,8 @@
+# pylint: disable=no-value-for-parameter
+# FIXME: E1120:No value for argument 'dml' in method call
+# pylint: disable=protected-access
+# FIXME: Access to a protected member _result_proxy of a client class
+
 import asyncio
 import logging
 import os
@@ -21,13 +26,11 @@ from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
-from sqlalchemy.sql import and_
 from tenacity import retry
 from yarl import URL
 
 from .access_layer import (
     AccessRights,
-    NotAllowedError,
     get_file_access_rights,
     get_project_access_rights,
     get_readable_project_ids,
@@ -54,52 +57,45 @@ from .settings import (
 )
 from .utils import expo
 
-# pylint: disable=no-value-for-parameter
-# FIXME: E1120:No value for argument 'dml' in method call
-
-# pylint: disable=protected-access
-# FIXME: Access to a protected member _result_proxy of a client class
-
-
 logger = logging.getLogger(__name__)
 
 postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).kwargs
 
 
-async def _setup_dsm(app: web.Application):
-    cfg = app[APP_CONFIG_KEY]
-
-    main_cfg = cfg
-
-    engine = app.get(APP_DB_ENGINE_KEY)
-    loop = asyncio.get_event_loop()
-    s3_client = app.get(APP_S3_KEY)
-
-    max_workers = main_cfg["max_workers"]
-    pool = ThreadPoolExecutor(max_workers=max_workers)
-
-    s3_cfg = get_config_s3(app)
-    bucket_name = s3_cfg["bucket_name"]
-
-    testing = main_cfg["testing"]
-    dsm = DataStorageManager(
-        s3_client, engine, loop, pool, bucket_name, not testing, app
-    )
-
-    app[APP_DSM_KEY] = dsm
-
-    yield
-    # clean up
-
-
 def setup_dsm(app: web.Application):
-    app.cleanup_ctx.append(_setup_dsm)
+    async def _cleanup_context(app: web.Application):
+        cfg = app[APP_CONFIG_KEY]
+
+        main_cfg = cfg
+
+        engine = app.get(APP_DB_ENGINE_KEY)
+        loop = asyncio.get_event_loop()
+        s3_client = app.get(APP_S3_KEY)
+
+        max_workers = main_cfg["max_workers"]
+        pool = ThreadPoolExecutor(max_workers=max_workers)
+
+        s3_cfg = get_config_s3(app)
+        bucket_name = s3_cfg["bucket_name"]
+
+        testing = main_cfg["testing"]
+        dsm = DataStorageManager(
+            s3_client, engine, loop, pool, bucket_name, not testing, app
+        )
+
+        app[APP_DSM_KEY] = dsm
+
+        yield
+
+        # NOTE: write here clean up
+
+    app.cleanup_ctx.append(_cleanup_context)
 
 
 @attr.s(auto_attribs=True)
 class DatCoreApiToken:
-    api_token: str = None
-    api_secret: str = None
+    api_token: Optional[str] = None
+    api_secret: Optional[str] = None
 
     def to_tuple(self):
         return (self.api_token, self.api_secret)
