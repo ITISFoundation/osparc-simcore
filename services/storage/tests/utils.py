@@ -37,13 +37,8 @@ PG_TABLES_NEEDED_FOR_STORAGE = [
     groups,
 ]
 
-
-def current_dir() -> Path:
-    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-def data_dir() -> Path:
-    return current_dir() / Path("data")
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+DATA_DIR = CURRENT_DIR / "data"
 
 
 def has_datcore_tokens() -> bool:
@@ -135,41 +130,12 @@ def insert_metadata(url: str, fmd: FileMetaData):
 def create_full_tables(url):
     engine = create_tables(url)
 
-    for t in ["users", "file_meta_data", "projects"]:
-        filename = t + ".csv"
-        csv_file = str(data_dir() / Path(filename))
-        with open(csv_file, "r") as file:
+    for table in ["users", "file_meta_data", "projects"]:
+        with open(DATA_DIR / f"{table}.csv", "r") as file:
             data_df = pd.read_csv(file)
             data_df.to_sql(
-                t, con=engine, index=False, index_label="id", if_exists="append"
+                table, con=engine, index=False, index_label="id", if_exists="append"
             )
-
-    # NOTE: Leave here as a reference
-    # import psycopg2
-    # conn = psycopg2.connect(url)
-    # cur = conn.cursor()
-    # columns = [["file_uuid","location_id","location","bucket_name","object_name","project_id","project_name","node_id","node_name","file_name","user_id","user_name"],[],[],[]]
-    # if False:
-    #     for t in ["file_meta_data", "projects", "users"]:
-    #         filename = t + ".sql"
-    #         sqlfile = str(data_dir() / Path(filename))
-    #         cur.execute(open(sqlfile, "r").read())
-    # else:
-    #     for t in ["file_meta_data", "projects", "users"]:
-    #         filename = t + ".csv"
-    #         csv_file = str(data_dir() / Path(filename))
-    #         if False:
-    #             with open(csv_file, 'r') as file:
-    #                 next(file)
-    #                 if t == "file_meta_data":
-    #                     cur.copy_from(file, t, sep=',', columns=columns[0])
-    #                 else:
-    #                     cur.copy_from(file, t, sep=',')
-    #                 conn.commit()
-    #         else:
-    #             with open(csv_file, 'r') as file:
-    #                 data_df = pd.read_csv(file)
-    #                 data_df.to_sql(t, con=engine, index=False, index_label="id", if_exists='append')
 
 
 def drop_all_tables(url):

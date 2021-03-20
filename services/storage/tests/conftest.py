@@ -26,16 +26,26 @@ from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import SIMCORE_S3_STR
-from utils import ACCESS_KEY, BUCKET_NAME, DATABASE, PASS, SECRET_KEY, USER, USER_ID
+from utils import (
+    ACCESS_KEY,
+    BUCKET_NAME,
+    DATA_DIR,
+    DATABASE,
+    PASS,
+    SECRET_KEY,
+    USER,
+    USER_ID,
+)
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 # TODO: replace by pytest_simcore
-sys.path.append(str(current_dir / "helpers"))
+sys.path.append(str(CURRENT_DIR / "helpers"))
 
 
 @pytest.fixture(scope="session")
 def here() -> Path:
-    return current_dir
+    return CURRENT_DIR
 
 
 @pytest.fixture(scope="session")
@@ -229,7 +239,7 @@ def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[str, str]:
         "node_id": "ad9bda7f-1dc5-5480-ab22-5fef4fc53eac",
         "filename": "outputController.dat",
     }
-    f = utils.data_dir() / Path("outputController.dat")
+    f = DATA_DIR / "outputController.dat"
     object_name = "{project_id}/{node_id}/{filename}".format(**file_1)
     s3_client.upload_file(bucket_name, object_name, f)
 
@@ -238,7 +248,7 @@ def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[str, str]:
         "node_id": "a3941ea0-37c4-5c1d-a7b3-01b5fd8a80c8",
         "filename": "notebooks.zip",
     }
-    f = utils.data_dir() / Path("notebooks.zip")
+    f = DATA_DIR / "notebooks.zip"
     object_name = "{project_id}/{node_id}/{filename}".format(**file_2)
     s3_client.upload_file(bucket_name, object_name, f)
     yield (file_1, file_2)
