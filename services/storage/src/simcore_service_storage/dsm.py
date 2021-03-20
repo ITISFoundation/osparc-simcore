@@ -7,7 +7,8 @@ import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
+from uuid import UUID
 
 import aiobotocore
 import aiofiles
@@ -24,7 +25,13 @@ from sqlalchemy.sql import and_
 from tenacity import retry
 from yarl import URL
 
-from .access_layer import get_readable_project_ids
+from .access_layer import (
+    AccessRights,
+    NotAllowedError,
+    get_file_access_rights,
+    get_project_access_rights,
+    get_readable_project_ids,
+)
 from .datcore_wrapper import DatcoreWrapper
 from .models import (
     DatasetMetaData,
@@ -57,10 +64,6 @@ from .utils import expo
 logger = logging.getLogger(__name__)
 
 postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).kwargs
-
-FileMetaDataVec = List[FileMetaData]
-FileMetaDataExVec = List[FileMetaDataEx]
-DatasetMetaDataVec = List[DatasetMetaData]
 
 
 async def _setup_dsm(app: web.Application):
@@ -139,7 +142,7 @@ class DataStorageManager:
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
-    app: web.Application = None
+    app: Optional[web.Application] = None
 
     datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
@@ -192,30 +195,26 @@ class DataStorageManager:
     # pylint: disable=too-many-statements
     async def list_files(
         self, user_id: str, location: str, uuid_filter: str = "", regex: str = ""
-    ) -> FileMetaDataExVec:
+    ) -> List[FileMetaDataEx]:
         """Returns a list of file paths
 
-        Works for simcore.s3 and datcore
-
-        Can filter on uuid: useful to filter on project_id/node_id
-
-        Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
+        - Works for simcore.s3 and datcore
+        - Can filter on uuid: useful to filter on project_id/node_id
+        - Can filter upon regular expression (for now only on key: value pairs of the FileMetaData)
         """
         data = deque()
         if location == SIMCORE_S3_STR:
-
-            readable_projects_ids = []
+            accesible_projects_ids = []
             async with self.engine.acquire() as conn:
 
-                # NOTE: API data is NOT associate to project, and has ONLY ownership
-                readable_projects_ids = await get_readable_project_ids(
+                accesible_projects_ids = await get_readable_project_ids(
                     conn, int(user_id)
                 )
-                query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.project_id.in_(readable_projects_ids)
-                    | (file_meta_data.c.user_id == user_id)
-                )
-                logger.debug("user %s query: %s", user_id, query)
+                has_read_access = (
+                    file_meta_data.c.user_id == int(user_id)
+                ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
+
+                query = sa.select([file_meta_data]).where(has_read_access)
 
                 async for row in conn.execute(query):
                     d = FileMetaData(**dict(row))
@@ -230,7 +229,7 @@ class DataStorageManager:
                 try:
                     async with self.engine.acquire() as conn:
                         query = sa.select([projects]).where(
-                            projects.c.project_id.in_(readable_projects_ids)
+                            projects.c.uuid.in_(accesible_projects_ids)
                         )
 
                         async for row in conn.execute(query):
@@ -281,6 +280,7 @@ class DataStorageManager:
             data = await dcw.list_files_raw()
 
         if uuid_filter:
+            # TODO: incorporate this in db query!
             _query = re.compile(uuid_filter, re.IGNORECASE)
             filtered_data = deque()
             for dx in data:
@@ -306,21 +306,22 @@ class DataStorageManager:
 
     async def list_files_dataset(
         self, user_id: str, location: str, dataset_id: str
-    ) -> FileMetaDataVec:
+    ) -> Union[List[FileMetaData], List[FileMetaDataEx]]:
         # this is a cheap shot, needs fixing once storage/db is in sync
         data = []
         if location == SIMCORE_S3_STR:
-            data = await self.list_files(
+            data: List[FileMetaDataEx] = await self.list_files(
                 user_id, location, uuid_filter=dataset_id + "/"
             )
+
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            data = await dcw.list_files_raw_dataset(dataset_id)
+            data: List[FileMetaData] = await dcw.list_files_raw_dataset(dataset_id)
 
         return data
 
-    async def list_datasets(self, user_id: str, location: str) -> DatasetMetaDataVec:
+    async def list_datasets(self, user_id: str, location: str) -> List[DatasetMetaData]:
         """Returns a list of top level datasets
 
         Works for simcore.s3 and datcore
@@ -335,15 +336,16 @@ class DataStorageManager:
                         readable_projects_ids = await get_readable_project_ids(
                             conn, int(user_id)
                         )
+                        has_read_access = projects.c.uuid.in_(readable_projects_ids)
 
-                        query = sa.select([projects]).where(
-                            projects.c.project_id.in_(readable_projects_ids)
+                        # FIXME: this DOES NOT read from file-metadata table!!!
+                        query = sa.select([projects.c.uuid, projects.c.name]).where(
+                            has_read_access
                         )
                         async for row in conn.execute(query):
-                            proj_data = dict(row.items())
                             dmd = DatasetMetaData(
-                                dataset_id=proj_data["uuid"],
-                                display_name=proj_data["name"],
+                                dataset_id=row.uuid,
+                                display_name=row.name,
                             )
                             data.append(dmd)
                 except DBAPIError as _err:
@@ -358,22 +360,25 @@ class DataStorageManager:
 
     async def list_file(
         self, user_id: str, location: str, file_uuid: str
-    ) -> FileMetaDataEx:
+    ) -> Optional[FileMetaDataEx]:
+
         if location == SIMCORE_S3_STR:
 
-            # FIXME: <====== ACCESS RIGHTS
-
             async with self.engine.acquire() as conn:
-                query = sa.select([file_meta_data]).where(
-                    (file_meta_data.c.user_id == user_id)
-                    & (file_meta_data.c.file_uuid == file_uuid)
+                can: Optional[AccessRights] = await get_file_access_rights(
+                    conn, int(user_id), file_uuid
                 )
-                async for row in conn.execute(query):
-                    result_dict = dict(zip(row._result_proxy.keys, row._row))
-                    d = FileMetaData(**result_dict)
-                    dx = FileMetaDataEx(fmd=d, parent_id="")
-                    return dx
+                if can.read:
+                    query = sa.select([file_meta_data]).where(
+                        file_meta_data.c.file_uuid == file_uuid
+                    )
+                    async for row in conn.execute(query):
+                        d = FileMetaData(**dict(row))
+                        dx = FileMetaDataEx(fmd=d, parent_id="")
+                        return dx
+
         elif location == DATCORE_STR:
+            # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
             _dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             data = []  # await _dcw.list_file(file_uuid)
@@ -391,32 +396,36 @@ class DataStorageManager:
         For datcore we need the full path
         """
         if location == SIMCORE_S3_STR:
+            # FIXME: operation MUST be atomic, transaction??
+
             to_delete = []
             async with self.engine.acquire() as conn:
-
-                # FIXME: <====== ACCESS RIGHTS
-
-                query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.file_uuid == file_uuid
+                can: Optional[AccessRights] = await get_file_access_rights(
+                    conn, int(user_id), file_uuid
                 )
-                async for row in conn.execute(query):
-                    result_dict = dict(zip(row._result_proxy.keys, row._row))
-                    d = FileMetaData(**result_dict)
-                    # make sure this is the current user
-                    if d.user_id == user_id:
-                        if self.s3_client.remove_objects(
-                            d.bucket_name, [d.object_name]
-                        ):
-                            stmt = file_meta_data.delete().where(
-                                file_meta_data.c.file_uuid == file_uuid
-                            )
-                            to_delete.append(stmt)
+                if not can.delete:
+                    raise web.HTTPForbidden(
+                        reason=f"{user_id} does not has enough access rights to delete file {file_uuid}"
+                    )
 
-            async with self.engine.acquire() as conn:
-                for stmt in to_delete:
-                    await conn.execute(stmt)
+                query = sa.select(
+                    [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
+                ).where(file_meta_data.c.file_uuid == file_uuid)
+
+                async for row in conn.execute(query):
+                    if self.s3_client.remove_objects(
+                        row.bucket_name, [row.object_name]
+                    ):
+                        to_delete.append(file_uuid)
+
+                await conn.execute(
+                    file_meta_data.delete().where(
+                        file_meta_data.c.file_uuid.in_(to_delete)
+                    )
+                )
 
         elif location == DATCORE_STR:
+            # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
             dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
             # destination, filename = _parse_datcore(file_uuid)
@@ -433,7 +442,7 @@ class DataStorageManager:
 
         # actually we have to query the master db
 
-    async def metadata_file_updater(
+    async def _metadata_file_updater(
         self,
         file_uuid: str,
         bucket_name: str,
@@ -509,6 +518,16 @@ class DataStorageManager:
                 logger.error("Could not update file metadata for '%s'", file_uuid)
 
     async def upload_link(self, user_id: str, file_uuid: str):
+
+        async with self.engine.acquire() as conn:
+            can: Optional[AccessRights] = await get_file_access_rights(
+                conn, int(user_id), file_uuid
+            )
+            if not can.write:
+                raise web.HTTPForbidden(
+                    reason=f"{user_id} does not has enough access rights to upload file {file_uuid}"
+                )
+
         @retry(**postgres_service_retry_policy_kwargs)
         async def _init_metadata() -> Tuple[int, str]:
             async with self.engine.acquire() as conn:
@@ -516,13 +535,11 @@ class DataStorageManager:
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
                 fmd.user_id = user_id
 
-                # FIXME: <====== WRITE ACCESS RIGHTS
                 query = sa.select([file_meta_data]).where(
                     file_meta_data.c.file_uuid == file_uuid
                 )
                 # if file already exists, we might want to update a time-stamp
-                rows = await conn.execute(query)
-                exists = await rows.scalar()
+                exists = await (await conn.execute(query)).scalar()
                 if exists is None:
                     ins = file_meta_data.insert().values(**vars(fmd))
                     await conn.execute(ins)
@@ -536,7 +553,7 @@ class DataStorageManager:
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
         fire_and_forget_task(
-            self.metadata_file_updater(
+            self._metadata_file_updater(
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,
@@ -547,6 +564,8 @@ class DataStorageManager:
         return self.s3_client.create_presigned_put_url(bucket_name, object_name)
 
     async def copy_file_s3_s3(self, user_id: str, dest_uuid: str, source_uuid: str):
+        # FIXME: operation MUST be atomic
+
         # source is s3, location is s3
         to_bucket_name = self.simcore_bucket_name
         to_object_name = dest_uuid
@@ -557,6 +576,7 @@ class DataStorageManager:
         self.s3_client.copy_object(
             to_bucket_name, to_object_name, from_bucket_object_name
         )
+
         # update db
         async with self.engine.acquire() as conn:
             fmd = FileMetaData()
@@ -644,7 +664,17 @@ class DataStorageManager:
             if dest_location == SIMCORE_S3_STR:
                 await self.copy_file_datcore_s3(user_id, dest_uuid, source_uuid)
 
-    async def download_link_s3(self, file_uuid: str) -> str:
+    async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
+
+        # access layer
+        async with self.engine.acquire() as conn:
+            can: Optional[AccessRights] = await get_file_access_rights(
+                conn, int(user_id), file_uuid
+            )
+            if not can.write:
+                raise web.HTTPForbidden(
+                    reason=f"User does not have enough rights to download {file_uuid}"
+                )
 
         link = None
         bucket_name = self.simcore_bucket_name
@@ -800,17 +830,25 @@ class DataStorageManager:
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> web.Response:
+
         """Deletes all files from a given node in a project in simcore.s3 and updated db accordingly.
         If node_id is not given, then all the project files db entries are deleted.
         """
 
-        # FIXME: <====== DELETE ACCESS RIGHTS
+        # FIXME: operation MUST be atomic. Mark for deletion and remove from db when deletion fully confirmed
+
         async with self.engine.acquire() as conn:
-            delete_me = file_meta_data.delete().where(
-                and_(
-                    file_meta_data.c.user_id == user_id,
-                    file_meta_data.c.project_id == project_id,
+            # access layer
+            can: Optional[AccessRights] = await get_project_access_rights(
+                conn, int(user_id), UUID(project_id)
+            )
+            if not can.delete:
+                raise web.HTTPForbidden(
+                    reason=f"User does not have delete access for {project_id}"
                 )
+
+            delete_me = file_meta_data.delete().where(
+                file_meta_data.c.project_id == project_id,
             )
             if node_id:
                 delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
@@ -844,20 +882,24 @@ class DataStorageManager:
     ) -> List[FileMetaDataEx]:
         # Avoids using list_files since it accounts for projects/nodes
         # Storage should know NOTHING about those concepts
-        data = deque()
+        files_meta = deque()
 
-        # FIXME: <====== READ ACCESS RIGHTS
         async with self.engine.acquire() as conn:
+            # access layer
+            can_read_projects_ids = await get_readable_project_ids(conn, int(user_id))
+            has_read_access = (
+                file_meta_data.c.user_id == str(user_id)
+            ) | file_meta_data.c.project_id.in_(can_read_projects_ids)
+
             stmt = sa.select([file_meta_data]).where(
-                (file_meta_data.c.user_id == str(user_id))
-                & file_meta_data.c.file_uuid.startswith(prefix)
+                file_meta_data.c.file_uuid.startswith(prefix) & has_read_access
             )
 
             async for row in conn.execute(stmt):
                 meta = FileMetaData(**dict(row))
-                data.append(
+                files_meta.append(
                     FileMetaDataEx(
                         fmd=meta, parent_id=str(Path(meta.object_name).parent)
                     )
                 )
-        return list(data)
+        return list(files_meta)

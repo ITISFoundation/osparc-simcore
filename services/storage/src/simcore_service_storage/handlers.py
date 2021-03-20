@@ -230,7 +230,7 @@ async def download_file(request: web.Request):
     dsm = await _prepare_storage_manager(params, query, request)
     location = dsm.location_from_id(location_id)
     if location == SIMCORE_S3_STR:
-        link = await dsm.download_link_s3(file_uuid=file_uuid)
+        link = await dsm.download_link_s3(file_uuid, user_id)
     else:
         link, _filename = await dsm.download_link_datcore(user_id, file_uuid)
 
