@@ -89,7 +89,7 @@ async def list_projects_access_rights(
         OR jsonb_exists_any( access_rights, (
                SELECT ARRAY( SELECT gid::TEXT FROM user_to_groups WHERE uid = {user_id} )
             )
-        )sql
+        )
     )
     """
     )
@@ -133,7 +133,7 @@ async def get_project_access_rights(
         SELECT prj_owner, access_rights
         FROM projects
         WHERE (
-            ( uuid = {project_id} ) AND (
+            ( uuid = '{project_id}' ) AND (
                 prj_owner = {user_id}
                 OR jsonb_exists_any( access_rights, (
                     SELECT ARRAY( SELECT gid::TEXT FROM user_to_groups WHERE uid = {user_id} )
