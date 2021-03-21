@@ -16,7 +16,7 @@
         It is defined on top of every API entrypoint and applied just after authentication of the user.
 
     ## GROUP-BASED METHOD:
-        The second method is designed to share a resource among groups of users dynamically. A group
+        The second method is designed to dynamically share a resource among groups of users. A group
         defines a set of rules that apply to a resource and users can be added to the group dynamically.
         So far, there are two resources that define access rights (AR):
             - one applies to projects (read/write/delete) and
