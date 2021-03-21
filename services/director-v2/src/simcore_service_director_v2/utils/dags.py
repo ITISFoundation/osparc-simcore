@@ -199,6 +199,9 @@ async def compute_pipeline_details(
 
 @log_decorator(logger=logger)
 def topological_sort_grouping(dag_graph: nx.DiGraph) -> List[Dict[str, Dict[str, Any]]]:
+    """Returns a list of tasks grouped by the number of incoming edges. E.g. These groups may be inputed
+    to Celery as a group of tasks that can run in parallel before the next group, etc...
+    """
     # copy the graph
     graph_copy = dag_graph.copy()
     res = []
