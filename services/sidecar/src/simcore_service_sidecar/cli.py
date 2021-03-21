@@ -7,7 +7,7 @@ from servicelib.logging_utils import log_decorator
 
 from .celery_task_utils import cancel_task
 from .config import SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S
-from .core import inspect
+from .core import run_computational_task
 from .db import DBContextManager
 from .rabbitmq import RabbitMQ
 from .utils import wrap_async_call
@@ -61,7 +61,7 @@ async def run_sidecar(
     )
     try:
         async with DBContextManager() as db_engine, RabbitMQ() as rabbit_mq:
-            await inspect(
+            await run_computational_task(
                 db_engine,
                 rabbit_mq,
                 job_id,

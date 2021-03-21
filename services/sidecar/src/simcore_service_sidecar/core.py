@@ -36,7 +36,10 @@ async def _try_get_task_from_db(
         query=comp_tasks.select(for_update=True).where(
             (comp_tasks.c.node_id == node_id)
             & (comp_tasks.c.project_id == project_id)
-            & ((comp_tasks.c.state == StateType.PENDING) | (comp_tasks.c.state == StateType.PUBLISHED))
+            & (
+                (comp_tasks.c.state == StateType.PENDING)
+                | (comp_tasks.c.state == StateType.PUBLISHED)
+            )
         ),
     )
     task: RowProxy = await result.fetchone()
@@ -118,7 +121,7 @@ async def _set_tasks_state(
         await _set_task_state(conn, project_id, node_id, state)
 
 
-async def inspect(
+async def run_computational_task(
     # pylint: disable=too-many-arguments
     db_engine: Engine,
     rabbit_mq: RabbitMQ,
