@@ -374,12 +374,12 @@ services:
     networks:
       - default
       - interactive_services_subnet
-    healthcheck:
-      test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
-      interval: 3s
-      timeout: 1s
-      retries: 3
-      start_period: 20s
+    #healthcheck:
+    #  test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
+    #  interval: 3s
+    #  timeout: 1s
+    #  retries: 3
+    #  start_period: 20s
 
 volumes:
   input: {}
