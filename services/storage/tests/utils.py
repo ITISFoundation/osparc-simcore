@@ -11,6 +11,7 @@ from simcore_service_storage.models import (
     FileMetaData,
     file_meta_data,
     groups,
+    metadata,
     projects,
     user_to_groups,
     users,
@@ -76,25 +77,19 @@ def is_postgres_responsive(url) -> bool:
 
 
 def create_tables(url, engine=None):
-    meta = sa.MetaData()
     if not engine:
         engine = sa.create_engine(url)
 
-    meta.drop_all(
-        bind=engine,
-        tables=PG_TABLES_NEEDED_FOR_STORAGE,
-        checkfirst=True,
-    )
-    meta.create_all(bind=engine, tables=PG_TABLES_NEEDED_FOR_STORAGE)
+    metadata.drop_all(bind=engine)
+    metadata.create_all(bind=engine, tables=PG_TABLES_NEEDED_FOR_STORAGE)
     return engine
 
 
 def drop_tables(url, engine=None):
-    meta = sa.MetaData()
     if not engine:
         engine = sa.create_engine(url)
 
-    meta.drop_all(bind=engine, tables=PG_TABLES_NEEDED_FOR_STORAGE)
+    metadata.drop_all(bind=engine)
 
 
 def insert_metadata(url: str, fmd: FileMetaData):
@@ -122,34 +117,22 @@ def insert_metadata(url: str, fmd: FileMetaData):
     )
 
     engine = sa.create_engine(url)
-    conn = engine.connect()
-    conn.execute(ins)
-    engine.dispose()
+    try:
+        conn = engine.connect()
+        conn.execute(ins)
+    finally:
+        engine.dispose()
 
 
-def create_full_tables(url):
-    engine = create_tables(url)
-
-    for table in ["users", "file_meta_data", "projects"]:
-        with open(DATA_DIR / f"{table}.csv", "r") as file:
-            data_df = pd.read_csv(file)
-            data_df.to_sql(
-                table, con=engine, index=False, index_label="id", if_exists="append"
-            )
-
-
-def drop_all_tables(url):
-    meta = sa.MetaData()
+def fill_tables_from_csv_files(url):
     engine = sa.create_engine(url)
 
-    meta.drop_all(
-        bind=engine,
-        tables=[
-            file_meta_data,
-            projects,
-            users,
-            groups,
-            user_to_groups,
-        ],
-    )
-    engine.dispose()
+    try:
+        for table in ["users", "file_meta_data", "projects"]:
+            with open(DATA_DIR / f"{table}.csv", "r") as file:
+                data_df = pd.read_csv(file)
+                data_df.to_sql(
+                    table, con=engine, index=False, index_label="id", if_exists="append"
+                )
+    finally:
+        engine.dispose()

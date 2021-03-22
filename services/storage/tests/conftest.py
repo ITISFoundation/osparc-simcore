@@ -115,6 +115,9 @@ def docker_compose_file(here) -> Iterator[str]:
     os.environ = old
 
 
+# POSTGRES SERVICES FIXTURES---------------------
+
+
 @pytest.fixture(scope="session")
 def postgres_service(docker_services, docker_ip):
     url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
@@ -146,30 +149,35 @@ def postgres_service(docker_services, docker_ip):
     return postgres_service
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def postgres_service_url(postgres_service, docker_services, docker_ip):
-    postgres_service_url = (
-        "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-            user=USER,
-            password=PASS,
-            database=DATABASE,
-            host=docker_ip,
-            port=docker_services.port_for("postgres", 5432),
-        )
+    url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
+        user=USER,
+        password=PASS,
+        database=DATABASE,
+        host=docker_ip,
+        port=docker_services.port_for("postgres", 5432),
     )
 
-    return postgres_service_url
+    utils.create_tables(url)
+
+    yield url
+
+    utils.drop_tables(url)
 
 
 @pytest.fixture(scope="function")
 async def postgres_engine(loop, postgres_service_url):
-    postgres_engine = await create_engine(postgres_service_url)
+    pg_engine = await create_engine(postgres_service_url)
 
-    yield postgres_engine
+    yield pg_engine
 
-    if postgres_engine:
-        postgres_engine.close()
-        await postgres_engine.wait_closed()
+    if pg_engine:
+        pg_engine.close()
+        await pg_engine.wait_closed()
+
+
+## MINIO SERVICE FIXTURES ----------------------------------------------
 
 
 @pytest.fixture(scope="session")
@@ -211,6 +219,9 @@ def s3_client(minio_service):
     return s3_client
 
 
+## FAKE DATA FIXTURES ----------------------------------------------
+
+
 @pytest.fixture(scope="function")
 def mock_files_factory(tmpdir_factory):
     def _create_files(count):
@@ -230,8 +241,10 @@ def mock_files_factory(tmpdir_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[str, str]:
-    utils.create_full_tables(url=postgres_service_url)
+def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]:
+
+    utils.fill_tables_from_csv_files(url=postgres_service_url)
+
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
     file_1 = {
@@ -252,13 +265,10 @@ def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[str, str]:
     object_name = "{project_id}/{node_id}/{filename}".format(**file_2)
     s3_client.upload_file(bucket_name, object_name, f)
     yield (file_1, file_2)
-    utils.drop_all_tables(url=postgres_service_url)
 
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
-    # db
-    utils.create_tables(url=postgres_service_url)
 
     # s3 client
     bucket_name = BUCKET_NAME
@@ -336,13 +346,11 @@ def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
         total_count = total_count + 1
 
     assert total_count == N
+
     yield data
 
     # s3 client
     s3_client.remove_bucket(bucket_name, delete_contents=True)
-
-    # db
-    utils.drop_tables(url=postgres_service_url)
 
 
 @pytest.fixture(scope="function")
