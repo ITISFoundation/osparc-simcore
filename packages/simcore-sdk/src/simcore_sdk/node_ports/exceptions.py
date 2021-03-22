@@ -1,10 +1,8 @@
-# Errors raised by node_ports module
+# Errors raised by node_ports module as NodeportsException
 #
 #
 #  NOTE: Error message SHALL explain the reason for the error and it is prefered in one line, i.e. avoid '\n' in message
 #
-#  SEE tornado will fail while composing header
-#  https://github.com/tornadoweb/tornado/blob/master/tornado/http1connection.py#L456
 #
 
 from typing import Optional
