@@ -22,9 +22,6 @@ async def _prepare_storage_manager(
 
     user_id = query.get("user_id")
     location_id = params.get("location_id")
-    import pdb
-
-    pdb.set_trace()
     location = (
         dsm.location_from_id(location_id) if location_id is not None else INIT_STR
     )
@@ -327,9 +324,6 @@ async def delete_file(request: web.Request):
 async def create_folders_from_project(request: web.Request):
     # FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
     # params, query, body = await extract_and_validate(request)
-    import pdb
-
-    pdb.set_trace()
     user_id = request.query.get("user_id")
 
     body = await request.json()
