@@ -1,6 +1,7 @@
 import inspect
 from typing import Dict, Generator, Tuple, Any, Set, List, Union
 from pathlib import Path
+from pydantic import BaseModel
 
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
@@ -146,7 +147,7 @@ class BaseXLSXSheet:
         return f"<{self.__class__.__name__} name={self.name}, cell_styles={self.cell_styles}"
 
     def assemble_data_for_template(
-        self, **template_data_entires
+        self, template_data: BaseModel
     ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
         """
         Expected to be implemented by the user.
@@ -202,7 +203,7 @@ class BaseXLSXDocument:
     def _assemble_workbook(
         self,
         sheets_entries: Generator[Tuple[str, Any], None, None],
-        **template_data_entires,
+        template_data: BaseModel,
     ) -> Workbook:
         workbook = Workbook()
 
@@ -215,7 +216,7 @@ class BaseXLSXDocument:
             single_cells_cell_styles: Dict[str, BaseXLSXCellData] = {}
 
             all_cells = []
-            data_cells = sheet_data.assemble_data_for_template(**template_data_entires)
+            data_cells = sheet_data.assemble_data_for_template(template_data)
 
             if data_cells:
                 all_cells.extend(data_cells)
@@ -259,10 +260,10 @@ class BaseXLSXDocument:
 
         return workbook
 
-    def _generate_document(self, **template_data_entires) -> Workbook:
-        return self._assemble_workbook(self._get_sheets(), **template_data_entires)
+    def _generate_document(self, template_data: BaseModel) -> Workbook:
+        return self._assemble_workbook(self._get_sheets(), template_data)
 
-    def save_document(self, base_path: Path, **template_data_entires) -> None:
-        workbook = self._generate_document(**template_data_entires)
+    def save_document(self, base_path: Path, template_data: BaseModel) -> None:
+        workbook = self._generate_document(template_data)
         destination_path = base_path / Path(self.file_name)
         workbook.save(destination_path)
