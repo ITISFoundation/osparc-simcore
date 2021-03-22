@@ -7,16 +7,13 @@ import asyncio
 import logging
 import os
 import re
-import shutil
 import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
-from uuid import UUID
 
 import aiobotocore
-import aiofiles
 import attr
 import sqlalchemy as sa
 from aiohttp import web
@@ -55,7 +52,7 @@ from .settings import (
     SIMCORE_S3_ID,
     SIMCORE_S3_STR,
 )
-from .utils import expo
+from .utils import download_to_file_or_raise, expo
 
 logger = logging.getLogger(__name__)
 
@@ -470,6 +467,12 @@ class DataStorageManager:
                 logger.error("Could not update file metadata for '%s'", file_uuid)
 
     async def upload_link(self, user_id: str, file_uuid: str):
+        """
+        Creates pre-signed upload link and updates metadata table when
+        link is used and upload is successfuly completed
+
+        SEE _metadata_file_updater
+        """
 
         async with self.engine.acquire() as conn:
             can: Optional[AccessRights] = await get_file_access_rights(
@@ -577,26 +580,30 @@ class DataStorageManager:
     async def copy_file_s3_datcore(
         self, user_id: str, dest_uuid: str, source_uuid: str
     ):
+        session = get_client_session(self.app)
+
         # source is s3, get link and copy to datcore
         bucket_name = self.simcore_bucket_name
         object_name = source_uuid
         filename = source_uuid.split("/")[-1]
-        tmp_dirpath = tempfile.mkdtemp()
-        local_file_path = os.path.join(tmp_dirpath, filename)
-        url = self.s3_client.create_presigned_get_url(bucket_name, object_name)
-        session = get_client_session(self.app)
-        async with session.get(url) as resp:
-            if resp.status == 200:
-                f = await aiofiles.open(local_file_path, mode="wb")
-                await f.write(await resp.read())
-                await f.close()
-                # and then upload
-                await self.upload_file_to_datcore(
-                    user_id=user_id,
-                    local_file_path=local_file_path,
-                    destination_id=dest_uuid,
-                )
-        shutil.rmtree(tmp_dirpath)
+
+        s3_dowload_link = self.s3_client.create_presigned_get_url(
+            bucket_name, object_name
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # FIXME: connect download and upload streams
+            local_file_path = os.path.join(tmpdir, filename)
+
+            # Downloads S3 -> local
+            await download_to_file_or_raise(session, s3_dowload_link, local_file_path)
+
+            # Uploads local -> DATCore
+            await self.upload_file_to_datcore(
+                user_id=user_id,
+                local_file_path=local_file_path,
+                destination_id=dest_uuid,
+            )
 
     async def copy_file_datcore_s3(
         self,
@@ -605,6 +612,8 @@ class DataStorageManager:
         source_uuid: str,
         filename_missing: bool = False,
     ):
+        session = get_client_session(self.app)
+
         # 2 steps: Get download link for local copy, the upload link to s3
         # TODO: This should be a redirect stream!
         dc_link, filename = await self.download_link_datcore(
@@ -615,22 +624,26 @@ class DataStorageManager:
 
         s3_upload_link = await self.upload_link(user_id, dest_uuid)
 
-        # FIXME: user of mkdtemp is RESPONSIBLE to deleting it https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp
-        tmp_dirpath = tempfile.mkdtemp()
-        local_file_path = os.path.join(tmp_dirpath, filename)
-        session = get_client_session(self.app)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # FIXME: connect download and upload streams
 
-        async with session.get(dc_link) as resp:
-            if resp.status == 200:
-                async with aiofiles.open(local_file_path, mode="wb") as fh:
-                    await fh.write(await resp.read())
+            local_file_path = os.path.join(tmpdir, filename)
 
-                s3_upload_link = URL(s3_upload_link)
-                async with session.put(
-                    s3_upload_link, data=Path(local_file_path).open("rb")
-                ) as resp:
-                    if resp.status > 299:
-                        _response_text = await resp.text()
+            # Downloads DATCore -> local
+            await download_to_file_or_raise(session, dc_link, local_file_path)
+
+            # Uploads local -> S3
+            s3_upload_link = URL(s3_upload_link)
+            async with session.put(
+                s3_upload_link,
+                data=Path(local_file_path).open("rb"),
+                raise_for_status=True,
+            ) as resp:
+                logger.debug(
+                    "Uploaded local -> SIMCore %s . Status %s",
+                    s3_upload_link,
+                    resp.status,
+                )
 
         return dest_uuid
 

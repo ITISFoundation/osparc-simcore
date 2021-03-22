@@ -1,7 +1,9 @@
 import logging
 
+import aiofiles
 import tenacity
 from aiohttp import ClientSession
+from aiohttp.typedefs import StrOrURL
 from yarl import URL
 
 logger = logging.getLogger(__name__)
@@ -20,7 +22,7 @@ CONNECT_TIMEOUT_SECS = 30
 async def assert_enpoint_is_ok(
     session: ClientSession, url: URL, expected_response: int = 200
 ):
-    """ Tenace check to GET given url endpoint
+    """Tenace check to GET given url endpoint
 
     Typically used to check connectivity to a given service
 
@@ -56,3 +58,14 @@ def expo(base=1.2, factor=0.1, max_value=2):
             n += 1
         else:
             yield max_value
+
+
+async def download_to_file_or_raise(
+    session: ClientSession, url: StrOrURL, destination_path: str
+):
+    # FIXME: stream chunks
+
+    # raises aiohttp.ClientResponseError
+    async with session.get(url, raise_for_status=True) as resp:
+        async with aiofiles.open(destination_path, mode="wb") as fh:
+            await fh.write(await resp.read())
