@@ -200,7 +200,7 @@ async def get_file_access_rights(
     row: Optional[RowProxy] = await result.first()
 
     if row:
-        if row.user_id == user_id:
+        if int(row.user_id) == user_id:
             # is owner
             return AccessRights.all()
 

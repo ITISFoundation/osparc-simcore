@@ -406,7 +406,7 @@ class DataStorageManager:
                         "User %s was not allowed to delete file %s", user_id, file_uuid
                     )
                     raise web.HTTPForbidden(
-                        reason=f"{user_id} does not has enough access rights to delete file {file_uuid}"
+                        reason=f"User '{user_id}' does not has enough access rights to delete file {file_uuid}"
                     )
 
                 query = sa.select(
@@ -529,7 +529,7 @@ class DataStorageManager:
                     "User %s was not allowed to upload file %s", user_id, file_uuid
                 )
                 raise web.HTTPForbidden(
-                    reason=f"{user_id} does not has enough access rights to upload file {file_uuid}"
+                    reason=f"User '{user_id}' does not has enough access rights to upload file {file_uuid}"
                 )
 
         @retry(**postgres_service_retry_policy_kwargs)
