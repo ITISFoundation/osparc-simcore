@@ -45,7 +45,7 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from simcore_postgres_database.storage_models import file_meta_data
+from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
 from sqlalchemy.sql import text
 
 logger = logging.getLogger(__name__)
@@ -73,12 +73,40 @@ class NotAllowedError(Exception):
     ...
 
 
+async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
+    stmt = sa.select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
+    rows = await (await conn.execute(stmt)).fetchall()
+    user_group_ids = [g.gid for g in rows]
+    return user_group_ids
+
+
+def _aggregate_access_rights(
+    access_rights: Dict[str, Dict], group_ids: List[int]
+) -> AccessRights:
+    try:
+        prj_access = {"read": False, "write": False, "delete": False}
+        for gid, grp_access in access_rights.items():
+            if int(gid) in group_ids:
+                for operation in grp_access:
+                    prj_access[operation] |= grp_access[operation]
+
+        return AccessRights(**prj_access)
+    except KeyError:
+        # NOTE: database does NOT include schema for json access_rights column!
+        logger.warning(
+            "Invalid entry in projects.access_rights. Revoking all rights [%s]", row
+        )
+        return AccessRights.none()
+
+
 async def list_projects_access_rights(
     conn: SAConnection, user_id: int
 ) -> Dict[ProjectID, AccessRights]:
     """
     Returns access-rights of user (user_id) over all OWNED or SHARED projects
     """
+
+    user_group_ids: List[int] = await _get_user_groups_ids(conn, user_id)
 
     smt = text(
         f"""\
@@ -93,7 +121,6 @@ async def list_projects_access_rights(
     )
     """
     )
-
     projects_access_rights = {}
 
     async for row in conn.execute(smt):
@@ -101,32 +128,26 @@ async def list_projects_access_rights(
         assert isinstance(row.uuid, ProjectID)
 
         if row.access_rights:
-            try:
-                prj_access = {"read": False, "write": False, "delete": False}
-                for grp_access in row.access_rights.values():
-                    for key in grp_access:
-                        prj_access[key] |= grp_access[key]
+            # TODO: access_rights should be direclty filtered from result in stm instead calling again user_group_ids
+            projects_access_rights[row.uuid] = _aggregate_access_rights(
+                row.access_rights, user_group_ids
+            )
 
-                projects_access_rights[row.uuid] = AccessRights(**prj_access)
-            except KeyError:
-                # NOTE: database does NOT include schema for json access_rights column!
-                logger.warning("Invalid entry in projects.access_rights: %s", row)
         else:
             # backwards compatibility
             # - no access_rights defined BUT project is owned
-            projects_access_rights[row.uuid] = AccessRights(
-                read=True, write=True, delete=True
-            )
+            projects_access_rights[row.uuid] = AccessRights.all()
 
     return projects_access_rights
 
 
 async def get_project_access_rights(
-    conn: SAConnection, user_id: int, project_id: UUID
+    conn: SAConnection, user_id: int, project_id: ProjectID
 ) -> AccessRights:
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
+    user_group_ids: List[int] = await _get_user_groups_ids(conn, user_id)
 
     stmt = text(
         f"""\
@@ -156,7 +177,10 @@ async def get_project_access_rights(
 
     if row.prj_owner == user_id:
         return AccessRights.all()
-    return AccessRights(**dict(row.access_rights))
+
+    # determine user's access rights by aggregating AR of all groups
+    prj_access = _aggregate_access_rights(row.access_rights, user_group_ids)
+    return prj_access
 
 
 async def get_file_access_rights(
@@ -212,8 +236,9 @@ async def get_file_access_rights(
                 # ownership still not defined, so we assume it is user_id
                 return AccessRights.all()
 
+            _ = UUID(parent)  # tests parent as UUID
             access_rights = await get_project_access_rights(
-                conn, user_id, project_id=UUID(parent)
+                conn, user_id, project_id=parent
             )
             if not access_rights:
                 logger.warning(
