@@ -372,6 +372,8 @@ class DataStorageManager:
                         d = FileMetaData(**dict(row))
                         dx = FileMetaDataEx(fmd=d, parent_id="")
                         return dx
+                else:
+                    logger.debug("User %s was not read file %s", user_id, file_uuid)
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
@@ -400,6 +402,9 @@ class DataStorageManager:
                     conn, int(user_id), file_uuid
                 )
                 if not can.delete:
+                    logger.debug(
+                        "User %s was not allowed to delete file %s", user_id, file_uuid
+                    )
                     raise web.HTTPForbidden(
                         reason=f"{user_id} does not has enough access rights to delete file {file_uuid}"
                     )
@@ -520,6 +525,9 @@ class DataStorageManager:
                 conn, int(user_id), file_uuid
             )
             if not can.write:
+                logger.debug(
+                    "User %s was not allowed to upload file %s", user_id, file_uuid
+                )
                 raise web.HTTPForbidden(
                     reason=f"{user_id} does not has enough access rights to upload file {file_uuid}"
                 )
@@ -667,7 +675,14 @@ class DataStorageManager:
             can: Optional[AccessRights] = await get_file_access_rights(
                 conn, int(user_id), file_uuid
             )
-            if not can.write:
+            if not can.read:
+                # NOTE: this is tricky. A user with read access can download and data!
+                # If write permission would be required, then shared projects as views cannot
+                # recover data in nodes (e.g. jupyter cannot pull work data)
+                #
+                logger.debug(
+                    "User %s was not allowed to download file %s", user_id, file_uuid
+                )
                 raise web.HTTPForbidden(
                     reason=f"User does not have enough rights to download {file_uuid}"
                 )
@@ -839,6 +854,9 @@ class DataStorageManager:
                 conn, int(user_id), UUID(project_id)
             )
             if not can.delete:
+                logger.debug(
+                    "User %s was not allowed to delete project %s", user_id, project_id
+                )
                 raise web.HTTPForbidden(
                     reason=f"User does not have delete access for {project_id}"
                 )
