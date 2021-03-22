@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Type
 from pydantic import BaseModel
+from openpyxl.utils import get_column_letter
 
 
 def ensure_same_field_length(
@@ -25,3 +26,13 @@ def ensure_correct_instance(
         )
 
     return template_data
+
+
+def get_max_array_length(*arrays_of_elements) -> int:
+    return max([len(x) for x in arrays_of_elements])
+
+
+def column_iter(start_from: int, elements: int) -> str:
+    """maps columns index to letters"""
+    for column_index in range(start_from, start_from + elements):
+        yield get_column_letter(column_index)

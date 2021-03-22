@@ -1,4 +1,6 @@
 from typing import List, Tuple, Dict
+from pydantic import BaseModel, Field, StrictStr, validator
+from openpyxl.utils import get_column_letter
 from simcore_service_webserver.exporter.formatters.cmis.xlsx.xlsx_base import (
     BaseXLSXCellData,
     BaseXLSXSheet,
@@ -12,6 +14,192 @@ from simcore_service_webserver.exporter.formatters.cmis.xlsx.styling_components 
     Backgrounds,
     Borders,
 )
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.utils import (
+    ensure_same_field_length,
+    ensure_correct_instance,
+    get_max_array_length,
+    column_iter,
+)
+
+
+class DatasetDescriptionParams(BaseModel):
+    name: StrictStr = Field(
+        ...,
+        description=(
+            "Descriptive title for the data set. Equivalent to the title of a scientific "
+            "paper. The metadata associated with the published version of this dataset "
+            "does not currently make use of this field."
+        ),
+    )
+    description: StrictStr = Field(
+        ...,
+        description=(
+            "NOTE This field is not currently used when publishing a SPARC dataset. "
+            "Brief description of the study and the data set. Equivalent to the "
+            "abstract of a scientific paper. Include the rationale for the approach, "
+            "the types of data collected, the techniques used, formats and number of "
+            "files and an approximate size. The metadata associated with the published "
+            "version of this dataset does not currently make use of this field."
+        ),
+    )
+    keywords: StrictStr = Field(
+        "",
+        description="A set of 3-5 keywords other than the above that will aid in search",
+    )
+    contributors: List[StrictStr] = Field(
+        [],
+        description=(
+            "Name of any contributors to the dataset.  These individuals need not have "
+            "been authors on any publications describing the data, but should be "
+            "acknowledged for their role in producing and publishing the data set. "
+            "If more than one, add each contributor in a new column."
+        ),
+    )
+    contributor_orcid_id: List[StrictStr] = Field(
+        [],
+        description=(
+            "ORCID ID. If you don't have an ORCID, we suggest you sign up for one at "
+            "https://orcid.org/"
+        ),
+    )
+    contributor_affiliation: List[StrictStr] = Field(
+        [], description="Institutional affiliation for contributors"
+    )
+    contributor_role: List[StrictStr] = Field(
+        [],
+        description=(
+            "Contributor role, e.g., PrincipleInvestigator, Creator, CoInvestigator, "
+            "ContactPerson, DataCollector, DataCurator, DataManager, Distributor, Editor, "
+            "Producer, ProjectLeader, ProjectManager, ProjectMember, RelatedPerson, "
+            "Researcher, ResearchGroup, Sponsor, Supervisor, WorkPackageLeader, Other. "
+            "These roles are provided by the Data Cite schema.  If more than one, add "
+            "additional columns"
+        ),
+    )
+    is_contact_person: List[StrictStr] = Field(
+        [],
+        description="Yes or No if the contributor is a contact person for the dataset",
+    )
+    acknowledgements = Field(
+        "Thank you everyone!",
+        description="Acknowledgements beyond funding and contributors",
+    )
+    funding = Field("", description="Funding sources")
+
+    originating_article_doi: List[StrictStr] = Field(
+        [],
+        description="DOIs of published articles that were generated from this dataset",
+    )
+
+    protocol_url_or_doi: List[StrictStr] = Field(
+        [],
+        description=(
+            "URLs (if still private) / DOIs (if public) of protocols from protocols.io "
+            "related to this dataset"
+        ),
+    )
+
+    additional_links: List[StrictStr] = Field(
+        [],
+        description=(
+            "URLs of additional resources used by this dataset (e.g., a link to a "
+            "code repository)"
+        ),
+    )
+    link_description: List[StrictStr] = Field(
+        [],
+        description=(
+            "Short description of URL content, you do not need to fill this in "
+            "for Originating Article DOI or Protocol URL or DOI "
+        ),
+    )
+
+    number_of_subjects: int = Field(
+        0,
+        description=(
+            "Number of unique subjects in this dataset, should match subjects "
+            "metadata file."
+        ),
+    )
+    number_of_samples: int = Field(
+        0,
+        description=(
+            "Number of unique samples in this dataset, should match samples metadata "
+            "file. Set to zero if there are no samples."
+        ),
+    )
+
+    # footer in yellow
+    completeness_of_dataset: StrictStr = Field(
+        "",
+        description=(
+            "Is the data set as uploaded complete or is it part of an ongoing study. "
+            'Use "hasNext" to indicate that you expect more data on different subjects '
+            "as a continuation of this study. Use “hasChildren” to indicate that you "
+            "expect more data on the same subjects or samples derived from those subjects."
+        ),
+    )
+    parent_dataset_id: StrictStr = Field(
+        "",
+        description=(
+            "If this is a part of a larger data set, or refereces subjects or samples "
+            "from a parent dataset, what was the accession number of the prior batch. "
+            "You need only give us the number of the last batch, not all batches. If "
+            "samples and subjects are from multiple parent datasets please create a "
+            "comma separated list of all parent ids."
+        ),
+    )
+    title_for_complete_dataset: StrictStr = Field(
+        "", description="Please give us a provisional title for the entire data set."
+    )
+    metadata_version: StrictStr = Field(
+        "1.2.3", description="DO NOT CHANGE, this field is provided other groups"
+    )
+
+    @validator("is_contact_person")
+    @classmethod
+    def validate_same_contributor_fields_length(cls, v, values, **kwargs):
+        # pylint: disable=unused-argument
+        ensure_same_field_length(
+            fields_to_check=[
+                "contributors",
+                "contributor_orcid_id",
+                "contributor_affiliation",
+                "contributor_role",
+                "is_contact_person",
+            ],
+            values=values,
+        )
+
+        return v
+
+    @validator("protocol_url_or_doi")
+    @classmethod
+    def validate_same_doi_fields_length(cls, v, values, **kwargs):
+        # pylint: disable=unused-argument
+        ensure_same_field_length(
+            fields_to_check=[
+                "originating_article_doi",
+                "protocol_url_or_doi",
+            ],
+            values=values,
+        )
+
+        return v
+
+    @validator("link_description")
+    @classmethod
+    def validate_same_link_fields_length(cls, v, values, **kwargs):
+        # pylint: disable=unused-argument
+        ensure_same_field_length(
+            fields_to_check=[
+                "additional_links",
+                "link_description",
+            ],
+            values=values,
+        )
+
+        return v
 
 
 class SheetFirstDatasetDescription(BaseXLSXSheet):
@@ -170,6 +358,115 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
         ("A1:C21", Borders.medium_grid),
     ]
     column_dimensions = {"A": 30, "B": 55, "C": 40}
+
+    def assemble_data_for_template(
+        self, template_data: BaseModel
+    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+        params: DatasetDescriptionParams = ensure_correct_instance(
+            template_data, DatasetDescriptionParams
+        )
+
+        # it is important for cells to be added to the list left to right and top to bottom
+        # this is done to ensure styling is applied consistently, read more inside xlsx_base
+        cells = []
+
+        # assemble "Value x" headers
+        max_number_of_headers = max(
+            1,
+            get_max_array_length(
+                params.is_contact_person,
+                params.protocol_url_or_doi,
+                params.link_description,
+            ),
+        )
+
+        for k, column_letter in enumerate(column_iter(4, max_number_of_headers)):
+            cell_entry = (
+                f"{column_letter}1",
+                T(f"Value {k + 1}") | Backgrounds.blue | Borders.medium_grid,
+            )
+            cells.append(cell_entry)
+
+        # first batch of static cells
+        static_cells_first_batch = [
+            ("D2", T(params.name) | Borders.light_grid),
+            ("D3", T(params.description) | Borders.light_grid),
+            ("D4", T(params.keywords) | Borders.light_grid),
+        ]
+        cells.extend(static_cells_first_batch)
+
+        # adding contributors entries horizontally
+        for (
+            column_letter,
+            contributor,
+            orcid_id,
+            affiliation,
+            role,
+            is_contact_person,
+        ) in zip(
+            column_iter(4, get_max_array_length(params.is_contact_person)),
+            params.contributors,
+            params.contributor_orcid_id,
+            params.contributor_affiliation,
+            params.contributor_role,
+            params.is_contact_person,
+        ):
+            cells.append((f"{column_letter}5", T(contributor) | Borders.light_grid))
+            cells.append((f"{column_letter}6", T(orcid_id) | Borders.light_grid))
+            cells.append((f"{column_letter}7", T(affiliation) | Borders.light_grid))
+            cells.append((f"{column_letter}8", T(role) | Borders.light_grid))
+            cells.append(
+                (f"{column_letter}9", T(is_contact_person) | Borders.light_grid)
+            )
+
+        # adding doi entries horizontally
+        for (
+            column_letter,
+            originating_article_doi_entry,
+            protocol_url_or_doi_entry,
+        ) in zip(
+            column_iter(4, get_max_array_length(params.protocol_url_or_doi)),
+            params.originating_article_doi,
+            params.protocol_url_or_doi,
+        ):
+            cells.append(
+                (
+                    f"{column_letter}12",
+                    T(originating_article_doi_entry) | Borders.light_grid,
+                )
+            )
+            cells.append(
+                (
+                    f"{column_letter}13",
+                    T(protocol_url_or_doi_entry) | Borders.light_grid,
+                )
+            )
+
+        # adding link entries horizontally
+        for (column_letter, additional_link, link_description_entry,) in zip(
+            column_iter(4, get_max_array_length(params.link_description)),
+            params.additional_links,
+            params.link_description,
+        ):
+            cells.append(
+                (f"{column_letter}14", T(additional_link) | Borders.light_grid)
+            )
+            cells.append(
+                (f"{column_letter}15", T(link_description_entry) | Borders.light_grid)
+            )
+
+        # last part of static cells
+        static_cells_second_batch = [
+            ("D16", T(params.number_of_subjects) | Borders.light_grid),
+            ("D17", T(params.number_of_samples) | Borders.light_grid),
+            ("D18", T(params.completeness_of_dataset) | Borders.light_grid),
+            ("D19", T(params.parent_dataset_id) | Borders.light_grid),
+            ("D20", T(params.title_for_complete_dataset) | Borders.light_grid),
+            ("D21", T(params.metadata_version) | Borders.light_grid),
+        ]
+        cells.extend(static_cells_second_batch)
+
+        return cells
 
 
 class DatasetDescriptionXLSXDocument(BaseXLSXDocument):
