@@ -1,7 +1,6 @@
 """ Handlers for CRUD operations on /projects/
 
 """
-import asyncio
 import json
 import logging
 from typing import Any, Dict, List, Optional, Set
@@ -143,14 +142,24 @@ async def list_projects(request: web.Request):
             reraise=True,
         )
 
+    user_available_services: List[
+        Dict
+    ] = await catalog.get_services_for_user_in_product(
+        request.app, user_id, product_name, only_key_versions=True
+    )
+
     projects_list = []
     if ptype in ("template", "all"):
-        template_projects = await db.load_template_projects(user_id=user_id)
+        template_projects = await db.load_template_projects(
+            user_id=user_id, filter_by_services=user_available_services
+        )
         await set_all_project_states(template_projects, is_template=True)
         projects_list += template_projects
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        user_projects = await db.load_user_projects(user_id=user_id)
+        user_projects = await db.load_user_projects(
+            user_id=user_id, filter_by_services=user_available_services
+        )
         await set_all_project_states(user_projects, is_template=False)
         projects_list += user_projects
 
@@ -159,35 +168,7 @@ async def list_projects(request: web.Request):
 
     stop = min(start + count, len(projects_list))
     projects_list = projects_list[start:stop]
-    user_available_services: List[
-        Dict
-    ] = await catalog.get_services_for_user_in_product(
-        request.app, user_id, product_name, only_key_versions=True
-    )
-
-    # validate response
-    async def validate_project(prj: Dict[str, Any]) -> Dict[str, Any]:
-        try:
-
-            await asyncio.get_event_loop().run_in_executor(
-                None, projects_api.validate_project, request.app, prj
-            )
-            if await project_uses_available_services(prj, user_available_services):
-                return prj
-        except ValidationError:
-            log.warning(
-                "Invalid project with id='%s' in database."
-                "Skipping project from listed response."
-                "RECOMMENDED db data diagnose and cleanup",
-                prj.get("uuid", "undefined"),
-            )
-
-    validation_tasks = [validate_project(project) for project in projects_list]
-    # FIXME: if some invalid, then it should not reraise but instead
-    results = await logged_gather(*validation_tasks, reraise=True)
-    validated_projects = [r for r in results if r]
-
-    return {"data": validated_projects}
+    return {"data": projects_list}
 
 
 @login_required
