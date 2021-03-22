@@ -388,7 +388,6 @@ class ProjectDBAPI:
             except ProjectInvalidRightsError:
                 continue
             prj = dict(row.items())
-            # log.debug("found project: %s", pformat(prj))
             db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
