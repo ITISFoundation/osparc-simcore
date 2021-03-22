@@ -94,7 +94,8 @@ def _aggregate_access_rights(
     except KeyError:
         # NOTE: database does NOT include schema for json access_rights column!
         logger.warning(
-            "Invalid entry in projects.access_rights. Revoking all rights [%s]", row
+            "Invalid entry in projects.access_rights. Revoking all rights [%s]",
+            access_rights,
         )
         return AccessRights.none()
 

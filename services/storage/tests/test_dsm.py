@@ -115,10 +115,10 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
 
     # create file and upload
     filename = os.path.basename(tmp_file)
-    project_id = "22"
+    project_id = "api"  # "357879cc-f65d-48b2-ad6c-074e2b9aa1c7"
     project_name = "battlestar"
     node_name = "galactica"
-    node_id = "1006"
+    node_id = "b423b654-686d-4157-b74b-08fa9d90b36e"
     file_name = filename
     file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
     display_name = os.path.join(str(project_name), str(node_name), str(file_name))
@@ -170,7 +170,7 @@ async def test_links_s3(
 
     tmp_file2 = tmp_file + ".rec"
     user_id = 0
-    down_url = await dsm.download_link_s3(fmd.file_uuid)
+    down_url = await dsm.download_link_s3(fmd.file_uuid, user_id)
 
     urllib.request.urlretrieve(down_url, tmp_file2)
 
