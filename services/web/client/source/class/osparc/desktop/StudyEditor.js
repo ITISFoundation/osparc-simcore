@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   events: {
-    "studyIsLocked": "qx.event.type.Event",
+    "forceBackToDashboard": "qx.event.type.Event",
     "startStudy": "qx.event.type.Data"
   },
 
@@ -154,7 +154,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           if ("status" in err && err["status"] == 423) { // Locked
             const msg = study.getName() + this.tr(" is already opened");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            this.fireEvent("studyIsLocked");
+            this.fireEvent("forceBackToDashboard");
           } else {
             console.error(err);
           }

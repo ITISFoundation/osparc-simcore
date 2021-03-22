@@ -274,7 +274,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         studyEditor.setPageContext("workbench");
       }
 
-      this.__studyEditor.addListener("studyIsLocked", () => {
+      this.__studyEditor.addListener("forceBackToDashboard", () => {
         this.__showDashboard();
       }, this);
     },
