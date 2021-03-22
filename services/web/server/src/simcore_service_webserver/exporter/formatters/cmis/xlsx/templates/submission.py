@@ -1,4 +1,6 @@
 from typing import List, Tuple, Dict
+
+from pydantic import BaseModel, Field, StrictStr
 from simcore_service_webserver.exporter.formatters.cmis.xlsx.xlsx_base import (
     BaseXLSXCellData,
     BaseXLSXSheet,
@@ -10,6 +12,26 @@ from simcore_service_webserver.exporter.formatters.cmis.xlsx.styling_components 
     Backgrounds,
     Borders,
 )
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.utils import (
+    ensure_correct_instance,
+)
+
+
+class SubmissionDocumentParams(BaseModel):
+    award_number: StrictStr = Field(
+        ..., description="Grant number supporting the milestone"
+    )
+    milestone_archived: StrictStr = Field(
+        ..., description="From milestones supplied to NIH"
+    )
+    milestone_completion_date: StrictStr = Field(
+        ...,
+        description=(
+            "Date of milestone completion. This date starts the countdown for submission "
+            "(30 days after completion), length of embargo and publication date (12 "
+            "months from completion of milestone)"
+        ),
+    )
 
 
 class SheetFirstSubmission(BaseXLSXSheet):
@@ -35,15 +57,16 @@ class SheetFirstSubmission(BaseXLSXSheet):
     column_dimensions = {"A": 30, "B": 40, "C": 40}
 
     def assemble_data_for_template(
-        self, **template_data_entires
+        self, template_data: BaseModel
     ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
-        award_number = template_data_entires["award_number"]
-        milestone_archived = template_data_entires["milestone_archived"]
-        milestone_completion_date = template_data_entires["milestone_completion_date"]
+        params: SubmissionDocumentParams = ensure_correct_instance(
+            template_data, SubmissionDocumentParams
+        )
+
         return [
-            ("C2", T(award_number)),
-            ("C3", T(milestone_archived)),
-            ("C4", T(milestone_completion_date)),
+            ("C2", T(params.award_number)),
+            ("C3", T(params.milestone_archived)),
+            ("C4", T(params.milestone_completion_date)),
         ]
 
 
