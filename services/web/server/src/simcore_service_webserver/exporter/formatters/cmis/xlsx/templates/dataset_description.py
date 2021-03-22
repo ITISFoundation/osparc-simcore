@@ -1,6 +1,5 @@
 from typing import List, Tuple, Dict
 from pydantic import BaseModel, Field, StrictStr, validator
-from openpyxl.utils import get_column_letter
 from simcore_service_webserver.exporter.formatters.cmis.xlsx.xlsx_base import (
     BaseXLSXCellData,
     BaseXLSXSheet,
