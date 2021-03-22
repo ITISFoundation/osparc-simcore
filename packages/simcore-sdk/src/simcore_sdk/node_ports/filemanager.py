@@ -5,7 +5,7 @@ import logging
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import aiofiles
 from aiohttp import ClientPayloadError, ClientSession, ClientTimeout
@@ -69,14 +69,14 @@ def api_client():
         del client
 
 
-def _handle_api_exception(store_id: str, err: ApiException):
+def _handle_api_exception(store_id: Union[int, str], err: ApiException):
     if err.status > 399 and err.status < 500:
         # something invalid
-        raise exceptions.StorageInvalidCall(err)
+        raise exceptions.StorageInvalidCall(err.reason)
     if err.status > 499:
         # something went bad inside the storage server
-        raise exceptions.StorageServerIssue(err)
-    raise exceptions.StorageConnectionError(store_id, err)
+        raise exceptions.StorageServerIssue(err.reason)
+    raise exceptions.StorageConnectionError(store_id, err.reason)
 
 
 async def _get_location_id_from_location_name(store: str, api: UsersApi):
