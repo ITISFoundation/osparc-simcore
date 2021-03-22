@@ -38,7 +38,8 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       check: ["UNKNOWN", "NOT_STARTED", "PUBLISHED", "PENDING", "STARTED", "RETRY", "SUCCESS", "FAILED", "ABORTED"],
       nullable: true,
       init: null,
-      event: "changeRunning"
+      event: "changeRunning",
+      apply: "__recomputeOutput"
     },
 
     interactive: {
@@ -53,7 +54,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       nullable: true,
       init: null,
       event: "changeDependencies",
-      apply: "__applyDependencies"
+      apply: "__recomputeOutput"
     },
 
     modified: {
@@ -61,7 +62,14 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       nullable: true,
       init: null,
       event: "changeModified",
-      apply: "__applyModified"
+      apply: "__recomputeOutput"
+    },
+
+    output: {
+      check: ["not-available", "busy", "up-to-date", "out-of-date"],
+      nullable: false,
+      init: "not-available",
+      event: "changeOutput"
     },
 
     hasOutputs: {
@@ -79,15 +87,21 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       return false;
     },
 
-    __applyDependencies: function() {
-      this.__applyModified(this.hasDependencies());
-    },
-
-    __applyModified: function(modified) {
-      if (this.getHasOutputs()) {
-        this.setModified(modified || this.hasDependencies());
+    __recomputeOutput: function() {
+      const compRunning = this.getRunning();
+      const hasOutputs = this.getHasOutputs();
+      const modified = this.getModified();
+      const hasDependencies = this.hasDependencies();
+      if (["PUBLISHED", "PENDING", "STARTED"].includes(compRunning)) {
+        this.setOutput("busy");
+      } else if ([null, false].includes(hasOutputs)) {
+        this.setOutput("not-available");
+      } else if (hasOutputs && (modified || hasDependencies)) {
+        this.setOutput("out-of-date");
+      } else if (hasOutputs && !modified) {
+        this.setOutput("up-to-date");
       } else {
-        this.setModified(null);
+        console.error("Unknown output state");
       }
     }
   }
