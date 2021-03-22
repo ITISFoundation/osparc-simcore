@@ -1,6 +1,7 @@
 """ Handlers for CRUD operations on /projects/
 
 """
+import asyncio
 import json
 import logging
 from typing import Any, Dict, List, Optional, Set
@@ -167,7 +168,10 @@ async def list_projects(request: web.Request):
     # validate response
     async def validate_project(prj: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            projects_api.validate_project(request.app, prj)
+
+            await asyncio.get_event_loop().run_in_executor(
+                None, projects_api.validate_project, request.app, prj
+            )
             if await project_uses_available_services(prj, user_available_services):
                 return prj
         except ValidationError:
