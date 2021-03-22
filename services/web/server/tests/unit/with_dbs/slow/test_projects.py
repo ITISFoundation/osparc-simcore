@@ -796,6 +796,7 @@ async def test_new_template_from_project(
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
+@pytest.mark.skip(reason="https://github.com/ITISFoundation/osparc-simcore/issues/2041")
 @pytest.mark.parametrize(*standard_role_response())
 @pytest.mark.parametrize(
     "share_rights",
@@ -1374,6 +1375,7 @@ async def test_tags_to_studies(
     await assert_status(resp, web.HTTPNoContent)
 
 
+@pytest.mark.skip(reason="https://github.com/ITISFoundation/osparc-simcore/issues/2041")
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_2_users_locked(
     client,
@@ -1521,6 +1523,7 @@ async def test_open_shared_project_2_users_locked(
     )
 
 
+@pytest.mark.skip(reason="https://github.com/ITISFoundation/osparc-simcore/issues/2041")
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_at_same_time(
     loop,

@@ -311,13 +311,22 @@ class ProjectDBAPI:
         log.info("Loading projects for user %s", user_id)
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
+            # HOTFIX: disabled for now as there is an issue with shared data
+            # query = textwrap.dedent(
+            #     f"""\
+            #     SELECT *
+            #     FROM projects
+            #     WHERE projects.type != 'TEMPLATE'
+            #     AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+            #     OR prj_owner = {user_id})
+            #     """
+            # )
             query = textwrap.dedent(
                 f"""\
                 SELECT *
                 FROM projects
                 WHERE projects.type != 'TEMPLATE'
-                AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-                OR prj_owner = {user_id})
+                AND (prj_owner = {user_id})
                 """
             )
             projects_list = await self.__load_projects(
@@ -348,6 +357,7 @@ class ProjectDBAPI:
                 OR prj_owner = {user_id})
                 """
             )
+
             db_projects = await self.__load_projects(conn, query, user_id, user_groups)
 
             projects_list.extend(db_projects)
@@ -406,6 +416,19 @@ class ProjectDBAPI:
         user_groups: List[RowProxy] = await self.__load_user_groups(connection, user_id)
 
         # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
+        # HOTFIX: disabled for now as there is an issue with shared data
+        # query = textwrap.dedent(
+        #     f"""\
+        #     SELECT *
+        #     FROM projects
+        #     WHERE
+        #     {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
+        #     uuid = '{project_uuid}'
+        #     AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
+        #     OR prj_owner = {user_id})
+        #     {"FOR UPDATE" if for_update else ""}
+        #     """
+        # )
         query = textwrap.dedent(
             f"""\
             SELECT *
@@ -413,8 +436,7 @@ class ProjectDBAPI:
             WHERE
             {"" if include_templates else "projects.type != 'TEMPLATE' AND"}
             uuid = '{project_uuid}'
-            AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-            OR prj_owner = {user_id})
+            AND (prj_owner = {user_id})
             {"FOR UPDATE" if for_update else ""}
             """
         )
@@ -439,7 +461,9 @@ class ProjectDBAPI:
 
     async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid, include_templates=True)
+            project = await self._get_project(
+                conn, user_id, project_uuid, include_templates=True
+            )
             # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
             user_email = await self._get_user_email(conn, user_id)
@@ -451,7 +475,9 @@ class ProjectDBAPI:
 
     async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid, include_templates=True)
+            project = await self._get_project(
+                conn, user_id, project_uuid, include_templates=True
+            )
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
