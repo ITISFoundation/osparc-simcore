@@ -46,3 +46,18 @@ def write_xlsx_files(base_path: Path) -> None:
     code_description_xlsx.save_document(
         base_path=base_path, template_data=dataset_description_params
     )
+
+    # TODO: remove below after testing
+    from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.directory_manifest import (
+        DirectoryManifestXLSXDocument,
+        DirectoryManifestParams,
+    )
+
+    directory_manifest_params = DirectoryManifestParams.compose_from_directory(
+        base_path
+    )
+
+    directory_manifest_xlsx = DirectoryManifestXLSXDocument()
+    directory_manifest_xlsx.save_document(
+        base_path=base_path, template_data=directory_manifest_params
+    )
