@@ -1,8 +1,9 @@
 import inspect
-from typing import Dict, Generator, Tuple, Any, Set, List
+from typing import Dict, Generator, Tuple, Any, Set, List, Union
 from pathlib import Path
 
 from openpyxl import Workbook
+from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import Border, Alignment
 from openpyxl.cell import Cell
 
@@ -175,66 +176,19 @@ def _update_entry_in_cell(
     )
 
 
-def _assemble_workbook(
-    sheets_entries: Generator[Tuple[str, Any], None, None], **template_data_entires
-) -> Workbook:
-    workbook = Workbook()
-
-    for _, sheet_data in sheets_entries:
-        sheet_data: BaseXLSXSheet = sheet_data
-        sheet_name = sheet_data.name
-
-        xls_sheet = workbook.create_sheet(sheet_name)
-
-        single_cells_cell_styles: Dict[str, BaseXLSXCellData] = {}
-
-        all_cells = []
-        data_cells = sheet_data.assemble_data_for_template(**template_data_entires)
-
-        if data_cells:
-            all_cells.extend(data_cells)
-        all_cells.extend(sheet_data.cell_styles)
-
-        for cell_address, entry in all_cells:
-            if ":" in cell_address:
-                # ranges like A1:B4 will be flattened into single cell entries
-                for cell_row in xls_sheet[cell_address]:
-                    for cell in cell_row:
-                        _update_entry_in_cell(
-                            target=single_cells_cell_styles,
-                            address=cell.coordinate,
-                            new_entry=entry,
-                        )
-            else:
-                _update_entry_in_cell(
-                    target=single_cells_cell_styles,
-                    address=cell_address,
-                    new_entry=entry,
-                )
-
-        # finally apply data from cell cell_styles to xls cells
-        for cell_address, entry in single_cells_cell_styles.items():
-            _update_cell(xls_sheet[cell_address], entry)
-
-        # apply column widths
-        for column, width in sheet_data.column_dimensions.items():
-            xls_sheet.column_dimensions[column].width = width
-
-        # apply cell merging
-        for to_merge in sheet_data.cell_merge:
-            xls_sheet.merge_cells(to_merge)
-
-    # remove the default sheet
-    sheet_to_remove = workbook.get_sheet_by_name(workbook.get_sheet_names()[0])
-    workbook.remove(sheet_to_remove)
-
-    return workbook
-
-
 class BaseXLSXDocument:
-    def __init__(self, *args):
+    def _check_attribute(self, attribute_name: str):
+        if getattr(self, attribute_name) is None:
+            raise ValueError(f"'{attribute_name}' attribute is None, please define it")
+
+    def __init__(self, *args, file_name: Union[str, Path] = None):
         for k, entry in enumerate(args):
             self.__dict__[f"__sheet__entry__{k}"] = entry
+        self.file_name = (
+            self.__getattribute__("file_name") if file_name is None else file_name
+        )
+        self._check_attribute("file_name")
+        self._sheets_by_name: Dict[str, Worksheet] = {}
 
     def _get_sheets(self) -> Generator[Tuple[str, Any], None, None]:
         for member in inspect.getmembers(self):
@@ -245,9 +199,70 @@ class BaseXLSXDocument:
         formatted_sheets = "\n\t".join([f"{x[0]}={x[1]}" for x in self._get_sheets()])
         return f"<{self.__class__.__name__}\n\t{formatted_sheets}>"
 
-    def _generate_document(self, **template_data_entires) -> Workbook:
-        return _assemble_workbook(self._get_sheets(), **template_data_entires)
+    def _assemble_workbook(
+        self,
+        sheets_entries: Generator[Tuple[str, Any], None, None],
+        **template_data_entires,
+    ) -> Workbook:
+        workbook = Workbook()
 
-    def save_document(self, file_path: Path, **template_data_entires) -> None:
+        for _, sheet_data in sheets_entries:
+            sheet_data: BaseXLSXSheet = sheet_data
+            sheet_name = sheet_data.name
+
+            xls_sheet = workbook.create_sheet(sheet_name)
+
+            single_cells_cell_styles: Dict[str, BaseXLSXCellData] = {}
+
+            all_cells = []
+            data_cells = sheet_data.assemble_data_for_template(**template_data_entires)
+
+            if data_cells:
+                all_cells.extend(data_cells)
+            all_cells.extend(sheet_data.cell_styles)
+
+            for cell_address, entry in all_cells:
+                if ":" in cell_address:
+                    # ranges like A1:B4 will be flattened into single cell entries
+                    for cell_row in xls_sheet[cell_address]:
+                        for cell in cell_row:
+                            _update_entry_in_cell(
+                                target=single_cells_cell_styles,
+                                address=cell.coordinate,
+                                new_entry=entry,
+                            )
+                else:
+                    _update_entry_in_cell(
+                        target=single_cells_cell_styles,
+                        address=cell_address,
+                        new_entry=entry,
+                    )
+
+            # finally apply data from cell cell_styles to xls cells
+            for cell_address, entry in single_cells_cell_styles.items():
+                _update_cell(xls_sheet[cell_address], entry)
+
+            # apply column widths
+            for column, width in sheet_data.column_dimensions.items():
+                xls_sheet.column_dimensions[column].width = width
+
+            # apply cell merging
+            for to_merge in sheet_data.cell_merge:
+                xls_sheet.merge_cells(to_merge)
+
+            # store for future usage
+            self._sheets_by_name[sheet_data] = xls_sheet
+
+        # remove the default sheet
+        sheet_to_remove = workbook.get_sheet_by_name(workbook.get_sheet_names()[0])
+        workbook.remove(sheet_to_remove)
+
+        return workbook
+
+    def _generate_document(self, **template_data_entires) -> Workbook:
+        return self._assemble_workbook(self._get_sheets(), **template_data_entires)
+
+    def save_document(self, base_path: Path, **template_data_entires) -> None:
         workbook = self._generate_document(**template_data_entires)
-        workbook.save(file_path)
+        destination_path = base_path / Path(self.file_name)
+        workbook.save(destination_path)
