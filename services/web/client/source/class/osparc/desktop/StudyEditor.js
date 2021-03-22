@@ -160,13 +160,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             osparc.data.Resources.fetch("studies", "getActive", params)
               .then(studyData => {
                 if (studyData === null) {
-                  // This might happen when the socket connection is lost and the study gets closed
-                  this.fireEvent("forceBackToDashboard");
+                  this.__noLongerActive();
                 }
               })
-              .catch(() => {
-                this.fireEvent("forceBackToDashboard");
-              });
+              .catch(() => this.__noLongerActive());
           });
         })
         .catch(err => {
@@ -181,6 +178,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);
+    },
+
+    __noLongerActive: function() {
+      // This might happen when the socket connection is lost and the study gets closed
+      const msg = this.tr("Study was closed while you were offline");
+      osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+      this.fireEvent("forceBackToDashboard");
     },
 
 
