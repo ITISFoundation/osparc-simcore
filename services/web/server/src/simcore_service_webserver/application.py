@@ -93,7 +93,12 @@ def run_service(config: Dict[str, Any]):
 
     app.on_startup.append(welcome_banner)
 
-    web.run_app(app, host=config["main"]["host"], port=config["main"]["port"])
+    web.run_app(
+        app,
+        host=config["main"]["host"],
+        port=config["main"]["port"],
+        access_log_format='%a %t "%r" %s %b [%Tfs] "%{Referer}i" "%{User-Agent}i"',
+    )
 
 
 __all__ = ("create_application", "run_service")
