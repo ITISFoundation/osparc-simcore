@@ -1,4 +1,10 @@
+from collections import deque
+from typing import List, Optional, Tuple, Dict
+from pydantic import BaseModel, Field, StrictStr, validator
+
+
 from simcore_service_webserver.exporter.formatters.cmis.xlsx.xlsx_base import (
+    BaseXLSXCellData,
     BaseXLSXSheet,
     BaseXLSXDocument,
 )
@@ -11,6 +17,263 @@ from simcore_service_webserver.exporter.formatters.cmis.xlsx.styling_components 
     AllignTopCenter,
     AllignTop,
 )
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.utils import (
+    ensure_same_field_length,
+    ensure_correct_instance,
+    get_max_array_length,
+    column_iter,
+)
+
+
+class RRIDEntry(BaseModel):
+    rrid_term: StrictStr = Field(..., description="Associated tools or resources used")
+    rrod_identifier: StrictStr = Field(
+        ..., description="Associated tools or resources identifier (with 'RRID:')"
+    )
+    ontological_term: StrictStr = Field(
+        "", description="Associated ontological term (human-readable)"
+    )
+    ontological_identifier: StrictStr = Field(
+        "",
+        description=(
+            "Associated ontological identifier from SciCrunch https://scicrunch.org/sawg"
+        ),
+    )
+
+
+class CodeDescriptionModel(BaseModel):
+    rrid_entires: List[RRIDEntry] = Field(
+        [], description="composed from the classifiers"
+    )
+
+    # TSR
+    tsr1_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Develop and document the subject, purpose and intended use(s) of model,"
+            " simulation or data processing (MSoP) submission"
+        ),
+    )
+    tsr1_reference: StrictStr = Field("", description=("Reference to context of use"))
+    tsr2_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Employ relevant and traceable information in the development or "
+            "operation of the MSoP submission"
+        ),
+    )
+    tsr2_reference: StrictStr = Field(
+        "",
+        description=(
+            "Reference to relevant and traceable information employed in the "
+            "development or operation"
+        ),
+    )
+    tsr3_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Reference to relevant and traceable information employed in the "
+            "development or operation"
+        ),
+    )
+    tsr3_reference: StrictStr = Field(
+        "",
+        description=(
+            "Reference to verification, validation, uncertainty quantification "
+            "and sensitivity analysis"
+        ),
+    )
+    tsr4_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Restrictions, constraints or qualifications for, or on, the use "
+            "of the submission are available for consideration by the users"
+        ),
+    )
+    tsr4_reference: StrictStr = Field(
+        "",
+        description="Reference to restrictions, constraints or qualifcations for use",
+    )
+    tsr5_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Implement a system to trace the time history of MSoP activities, "
+            "including delineation of contributors' efforts"
+        ),
+    )
+    tsr5_reference: StrictStr = Field(
+        "", description="Reference to version control system"
+    )
+    tsr6_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Maintain up-to-date informative records of all MSoP activities, "
+            "including simulation code, model mark-up, scope and intended use "
+            "of the MSoP activities, as well as users' and developers' guides"
+        ),
+    )
+    tsr6_reference: StrictStr = Field(
+        "", description="Reference to documentation described above"
+    )
+    tsr7_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Publish all components of MSoP including simulation software, "
+            "models, simulation scenarios and results"
+        ),
+    )
+    tsr7_reference: StrictStr = Field("", description="Reference to publications")
+    tsr8_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Have the MSoP submission reviewed by nonpartisan third-party "
+            "users and developers"
+        ),
+    )
+    tsr8_reference: StrictStr = Field(
+        "", description="Reference to independent reviews"
+    )
+    tsr9_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Use contrasting MSoP execution strategies to compare the "
+            "conclusions of the different execution strategies against "
+            "each other"
+        ),
+    )
+    tsr9_reference: StrictStr = Field(
+        "", description="Reference to implementations tested"
+    )
+    tsr10a_rating: Optional[int] = Field(
+        None,
+        description=(
+            "Adopt and promote generally applicable and discipline-specific "
+            "operating procedures, guidelines and regulation accepted as "
+            "best practices"
+        ),
+    )
+    tsr10a_reference: StrictStr = Field(
+        "", description="Reference to conformance to standards"
+    )
+    tsr10b_relevant_standards: StrictStr = Field(
+        "", description="Reference to relevant standards"
+    )
+
+    # Annotations
+    ann1_status: StrictStr = Field(
+        "no",
+        description=(
+            "Provide assurance that the MSoP submissions is free of bugs "
+            "in the source code and numerical algorithms (yes/no)"
+        ),
+    )
+    ann1_reference: StrictStr = Field(
+        "", description="Link to the verification documentation"
+    )
+    ann2_status: StrictStr = Field(
+        "no",
+        description=(
+            "Assess the degree to which a computer model and simulation "
+            "framework is able to simulate a reality of interest"
+        ),
+    )
+    ann2_reference: StrictStr = Field("", description="Reference to assessment")
+    ann3_status: StrictStr = Field(
+        "no", description="The code has been certified externally (yes/no)"
+    )
+    ann3_reference: StrictStr = Field(
+        "", description="Reference to the certification, if it has been certified"
+    )
+    ann4_status: StrictStr = Field(
+        "no",
+        description=(
+            "The MSoP submission has been integrated into the o²S²PARC "
+            "platform and is publicly available"
+        ),
+    )
+    ann4_reference: StrictStr = Field(
+        "",
+        description=(
+            "The name of the onboarded service or template on the o²S²PARC platform"
+        ),
+    )
+    ann5_status: StrictStr = Field(
+        "no",
+        description=(
+            "The MSoP submission includes unit and integration testing on "
+            "the o²S²PARC platform"
+        ),
+    )
+    ann5_reference: StrictStr = Field(
+        "", description="Reference to the tests run on the onboarded MSoP submission"
+    )
+
+    # other
+    reppresentation_in_cell_ml: StrictStr = Field(
+        "", description="Analogous CellML/SED-ML model representation, if any"
+    )
+
+
+class InputsEntryModel(BaseModel):
+    service_name: StrictStr = Field(
+        ..., description="Name of the service containing this input"
+    )
+    service_version: StrictStr = Field(
+        ..., description="Version of the service containing this input"
+    )
+    input_name: StrictStr = Field(
+        "", description="An input field to the MSoP submission"
+    )
+    input_data_ontology_identifier = Field(
+        "",
+        description=(
+            "Ontology identifier for the input field, if applicable , "
+            "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term"
+        ),
+    )
+    input_data_type: StrictStr = Field(
+        "", description="Data type for the input field (in plain text)"
+    )
+    input_data_units: StrictStr = Field(
+        "", description="Units of data for the input field, if applicable"
+    )
+    input_data_default_value: StrictStr = Field(
+        "",
+        description="Default value for the input field, if applicable (doi or value)",
+    )
+
+
+class OutputsEntryModel(BaseModel):
+    service_name: StrictStr = Field(
+        ..., description="Name of the service containing this output"
+    )
+    service_version: StrictStr = Field(
+        ..., description="Version of the service containing this output"
+    )
+    output_name: StrictStr = Field(
+        "", description="An output field to the MSoP submission"
+    )
+    output_data_ontology_identifier: StrictStr = Field(
+        "",
+        description=(
+            "Ontology identifier for the input field, if applicable , "
+            "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term"
+        ),
+    )
+    output_data_type: StrictStr = Field(
+        "", description="Data type for the output field"
+    )
+    output_data_units: StrictStr = Field(
+        "", description="Units of data for the output field, if applicable"
+    )
+
+
+class CodeDescriptionParams(BaseModel):
+    code_description: CodeDescriptionModel = Field(
+        ..., description="code description data"
+    )
+    inputs: List[InputsEntryModel] = Field([], description="List of inputs, if any")
+    outputs: List[OutputsEntryModel] = Field([], description="List of outputs, if any")
 
 
 class SheetCodeDescription(BaseXLSXSheet):
@@ -436,6 +699,99 @@ class SheetCodeDescription(BaseXLSXSheet):
     ]
     column_dimensions = {"A": 40, "B": 55, "C": 35}
 
+    def assemble_data_for_template(
+        self, template_data: BaseModel
+    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+        params: CodeDescriptionParams = ensure_correct_instance(
+            template_data, CodeDescriptionParams
+        )
+        code_description: CodeDescriptionModel = params.code_description
+
+        # it is important for cells to be added to the list left to right and top to bottom
+        # this is done to ensure styling is applied consistently, read more inside xlsx_base
+        cells = deque()
+
+        # assemble "Value x" headers
+        max_number_of_headers = max(1, len(code_description.rrid_entires))
+        for k, column_letter in enumerate(column_iter(4, max_number_of_headers)):
+            cell_entry = (
+                f"{column_letter}1",
+                T(f"Value {k + 1}") | Backgrounds.blue | Borders.medium_grid,
+            )
+            cells.append(cell_entry)
+
+        # assemble RRIDs
+        for column_letter, rrid_entry in zip(
+            column_iter(4, len(code_description.rrid_entires)),
+            code_description.rrid_entires,
+        ):
+            rrid_entry: RRIDEntry = rrid_entry
+            cells.append(
+                (f"{column_letter}2", T(rrid_entry.rrid_term) | Borders.light_grid)
+            )
+            cells.append(
+                (
+                    f"{column_letter}3",
+                    T(rrid_entry.rrod_identifier) | Borders.light_grid,
+                )
+            )
+            cells.append(
+                (
+                    f"{column_letter}4",
+                    T(rrid_entry.ontological_term) | Borders.light_grid,
+                )
+            )
+            cells.append(
+                (
+                    f"{column_letter}5",
+                    T(rrid_entry.ontological_identifier) | Borders.light_grid,
+                )
+            )
+
+        static_cells = [
+            # TSR data
+            ("D7", T(code_description.tsr1_rating) | Borders.light_grid),
+            ("D8", T(code_description.tsr1_reference) | Borders.light_grid),
+            ("D9", T(code_description.tsr2_rating) | Borders.light_grid),
+            ("D10", T(code_description.tsr2_reference) | Borders.light_grid),
+            ("D11", T(code_description.tsr3_rating) | Borders.light_grid),
+            ("D12", T(code_description.tsr3_reference) | Borders.light_grid),
+            ("D13", T(code_description.tsr4_rating) | Borders.light_grid),
+            ("D14", T(code_description.tsr4_reference) | Borders.light_grid),
+            ("D15", T(code_description.tsr5_rating) | Borders.light_grid),
+            ("D16", T(code_description.tsr5_reference) | Borders.light_grid),
+            ("D17", T(code_description.tsr6_rating) | Borders.light_grid),
+            ("D18", T(code_description.tsr6_reference) | Borders.light_grid),
+            ("D19", T(code_description.tsr7_rating) | Borders.light_grid),
+            ("D20", T(code_description.tsr7_reference) | Borders.light_grid),
+            ("D21", T(code_description.tsr8_rating) | Borders.light_grid),
+            ("D22", T(code_description.tsr8_reference) | Borders.light_grid),
+            ("D23", T(code_description.tsr9_rating) | Borders.light_grid),
+            ("D24", T(code_description.tsr9_reference) | Borders.light_grid),
+            ("D25", T(code_description.tsr10a_rating) | Borders.light_grid),
+            ("D26", T(code_description.tsr10a_reference) | Borders.light_grid),
+            ("D27", T(code_description.tsr10b_relevant_standards) | Borders.light_grid),
+            # Annotations
+            ("D29", T(code_description.ann1_status) | Borders.light_grid),
+            ("D30", T(code_description.ann1_reference) | Borders.light_grid),
+            ("D31", T(code_description.ann2_status) | Borders.light_grid),
+            ("D32", T(code_description.ann2_reference) | Borders.light_grid),
+            ("D33", T(code_description.ann3_status) | Borders.light_grid),
+            ("D34", T(code_description.ann3_reference) | Borders.light_grid),
+            ("D35", T(code_description.ann4_status) | Borders.light_grid),
+            ("D36", T(code_description.ann4_reference) | Borders.light_grid),
+            ("D37", T(code_description.ann5_status) | Borders.light_grid),
+            ("D38", T(code_description.ann5_reference) | Borders.light_grid),
+            # other
+            (
+                "D41",
+                T(code_description.reppresentation_in_cell_ml) | Borders.light_grid,
+            ),
+        ]
+
+        cells.extend(static_cells)
+        return list(cells)
+
 
 class SheetInputs(BaseXLSXSheet):
     name = "Inputs"
@@ -494,6 +850,48 @@ class SheetInputs(BaseXLSXSheet):
         "H": 20,
     }
 
+    def assemble_data_for_template(
+        self, template_data: BaseModel
+    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+        params: CodeDescriptionParams = ensure_correct_instance(
+            template_data, CodeDescriptionParams
+        )
+        intputs: List[InputsEntryModel] = params.inputs
+
+        cells = deque()
+
+        for row_index, inputs_entry in zip(range(4, len(intputs)), intputs):
+            inputs_entry: InputsEntryModel = inputs_entry
+            cells.append(
+                (f"{row_index}B", T(inputs_entry.service_name) | Borders.light_grid)
+            )
+            cells.append(
+                (f"{row_index}C", T(inputs_entry.service_version) | Borders.light_grid)
+            )
+            cells.append(
+                (f"{row_index}D", T(inputs_entry.input_name) | Borders.light_grid)
+            )
+            cells.append(
+                (
+                    f"{row_index}E",
+                    T(inputs_entry.input_data_ontology_identifier) | Borders.light_grid,
+                )
+            )
+            cells.append(
+                (f"{row_index}F", T(inputs_entry.input_data_type) | Borders.light_grid)
+            )
+            cells.append(
+                (f"{row_index}G", T(inputs_entry.input_data_units) | Borders.light_grid)
+            )
+            cells.append(
+                (
+                    f"{row_index}H",
+                    T(inputs_entry.input_data_default_value) | Borders.light_grid,
+                )
+            )
+
+        return list(cells)
+
 
 class SheetOutputs(BaseXLSXSheet):
     name = "Outputs"
@@ -539,6 +937,49 @@ class SheetOutputs(BaseXLSXSheet):
         ("A1:G3", Borders.medium_grid),
     ]
     column_dimensions = {"A": 10, "B": 20, "C": 20, "D": 20, "E": 20, "F": 20, "G": 20}
+
+    def assemble_data_for_template(
+        self, template_data: BaseModel
+    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+        params: CodeDescriptionParams = ensure_correct_instance(
+            template_data, CodeDescriptionParams
+        )
+        outputs: List[OutputsEntryModel] = params.outputs
+
+        cells = deque()
+
+        for row_index, outputs_entry in zip(range(4, len(outputs)), outputs):
+            outputs_entry: OutputsEntryModel = outputs_entry
+            cells.append(
+                (f"{row_index}B", T(outputs_entry.service_name) | Borders.light_grid)
+            )
+            cells.append(
+                (f"{row_index}C", T(outputs_entry.service_version) | Borders.light_grid)
+            )
+            cells.append(
+                (f"{row_index}D", T(outputs_entry.output_name) | Borders.light_grid)
+            )
+            cells.append(
+                (
+                    f"{row_index}E",
+                    T(outputs_entry.output_data_ontology_identifier)
+                    | Borders.light_grid,
+                )
+            )
+            cells.append(
+                (
+                    f"{row_index}F",
+                    T(outputs_entry.output_data_type) | Borders.light_grid,
+                )
+            )
+            cells.append(
+                (
+                    f"{row_index}G",
+                    T(outputs_entry.output_data_units) | Borders.light_grid,
+                )
+            )
+
+        return list(cells)
 
 
 class SheetTSRRating(BaseXLSXSheet):
@@ -605,5 +1046,3 @@ class CodeDescriptionXLSXDocument(BaseXLSXDocument):
     inputs = SheetInputs()
     outputs = SheetOutputs()
     tsr_rating = SheetTSRRating()
-
-    # TODO: attach here methods to populate with data
