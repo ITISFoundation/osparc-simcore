@@ -186,6 +186,8 @@ class DataStorageManager:
 
         return False
 
+    # LIST/GET ---------------------------
+
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
@@ -382,66 +384,15 @@ class DataStorageManager:
             data = []  # await _dcw.list_file(file_uuid)
             return data
 
-    async def delete_file(self, user_id: str, location: str, file_uuid: str):
-        """Deletes a file given its fmd and location
-
-        Additionally requires a user_id for 3rd party auth
-
-        For internal storage, the db state should be updated upon completion via
-        Notification mechanism
-
-        For simcore.s3 we can use the file_name
-        For datcore we need the full path
-        """
-        if location == SIMCORE_S3_STR:
-            # FIXME: operation MUST be atomic, transaction??
-
-            to_delete = []
-            async with self.engine.acquire() as conn:
-                can: Optional[AccessRights] = await get_file_access_rights(
-                    conn, int(user_id), file_uuid
-                )
-                if not can.delete:
-                    logger.debug(
-                        "User %s was not allowed to delete file %s", user_id, file_uuid
-                    )
-                    raise web.HTTPForbidden(
-                        reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
-                    )
-
-                query = sa.select(
-                    [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
-                ).where(file_meta_data.c.file_uuid == file_uuid)
-
-                async for row in conn.execute(query):
-                    if self.s3_client.remove_objects(
-                        row.bucket_name, [row.object_name]
-                    ):
-                        to_delete.append(file_uuid)
-
-                await conn.execute(
-                    file_meta_data.delete().where(
-                        file_meta_data.c.file_uuid.in_(to_delete)
-                    )
-                )
-
-        elif location == DATCORE_STR:
-            # FIXME: review return inconsistencies
-            api_token, api_secret = self._get_datcore_tokens(user_id)
-            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-            # destination, filename = _parse_datcore(file_uuid)
-            file_id = file_uuid
-            return await dcw.delete_file_by_id(file_id)
+    # UPLOAD/DOWNLOAD LINKS ---------------------------
 
     async def upload_file_to_datcore(
         self, user_id: str, local_file_path: str, destination_id: str
-    ):  # pylint: disable=W0613
+    ):
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         api_token, api_secret = self._get_datcore_tokens(user_id)
         dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
         await dcw.upload_file_to_id(destination_id, local_file_path)
-
-        # actually we have to query the master db
 
     async def _metadata_file_updater(
         self,
@@ -537,7 +488,7 @@ class DataStorageManager:
             async with self.engine.acquire() as conn:
                 fmd = FileMetaData()
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
-                fmd.user_id = user_id
+                fmd.user_id = user_id  # NOTE: takes ownership of uploaded data
 
                 query = sa.select([file_meta_data]).where(
                     file_meta_data.c.file_uuid == file_uuid
@@ -566,6 +517,40 @@ class DataStorageManager:
             )
         )
         return self.s3_client.create_presigned_put_url(bucket_name, object_name)
+
+    async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
+
+        # access layer
+        async with self.engine.acquire() as conn:
+            can: Optional[AccessRights] = await get_file_access_rights(
+                conn, int(user_id), file_uuid
+            )
+            if not can.read:
+                # NOTE: this is tricky. A user with read access can download and data!
+                # If write permission would be required, then shared projects as views cannot
+                # recover data in nodes (e.g. jupyter cannot pull work data)
+                #
+                logger.debug(
+                    "User %s was not allowed to download file %s", user_id, file_uuid
+                )
+                raise web.HTTPForbidden(
+                    reason=f"User does not have enough rights to download {file_uuid}"
+                )
+
+        link = None
+        bucket_name = self.simcore_bucket_name
+        object_name = file_uuid
+        link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
+        return link
+
+    async def download_link_datcore(self, user_id: str, file_id: str) -> Dict[str, str]:
+        link = ""
+        api_token, api_secret = self._get_datcore_tokens(user_id)
+        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+        link, filename = await dcw.download_link_by_id(file_id)
+        return link, filename
+
+    # COPY -----------------------------
 
     async def copy_file_s3_s3(self, user_id: str, dest_uuid: str, source_uuid: str):
         # FIXME: operation MUST be atomic
@@ -637,9 +622,9 @@ class DataStorageManager:
 
         async with session.get(dc_link) as resp:
             if resp.status == 200:
-                f = await aiofiles.open(local_file_path, mode="wb")
-                await f.write(await resp.read())
-                await f.close()
+                async with aiofiles.open(local_file_path, mode="wb") as fh:
+                    await fh.write(await resp.read())
+
                 s3_upload_link = URL(s3_upload_link)
                 async with session.put(
                     s3_upload_link, data=Path(local_file_path).open("rb")
@@ -667,38 +652,6 @@ class DataStorageManager:
                 raise NotImplementedError("copy files from datcore 2 datcore not impl")
             if dest_location == SIMCORE_S3_STR:
                 await self.copy_file_datcore_s3(user_id, dest_uuid, source_uuid)
-
-    async def download_link_s3(self, file_uuid: str, user_id: int) -> str:
-
-        # access layer
-        async with self.engine.acquire() as conn:
-            can: Optional[AccessRights] = await get_file_access_rights(
-                conn, int(user_id), file_uuid
-            )
-            if not can.read:
-                # NOTE: this is tricky. A user with read access can download and data!
-                # If write permission would be required, then shared projects as views cannot
-                # recover data in nodes (e.g. jupyter cannot pull work data)
-                #
-                logger.debug(
-                    "User %s was not allowed to download file %s", user_id, file_uuid
-                )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have enough rights to download {file_uuid}"
-                )
-
-        link = None
-        bucket_name = self.simcore_bucket_name
-        object_name = file_uuid
-        link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
-        return link
-
-    async def download_link_datcore(self, user_id: str, file_id: str) -> Dict[str, str]:
-        link = ""
-        api_token, api_secret = self._get_datcore_tokens(user_id)
-        dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
-        link, filename = await dcw.download_link_by_id(file_id)
-        return link, filename
 
     async def deep_copy_project_simcore_s3(
         self, user_id: str, source_project, destination_project, node_mapping
@@ -863,6 +816,59 @@ class DataStorageManager:
                 ins = file_meta_data.insert().values(**vars(fmd))
                 await conn.execute(ins)
 
+    # DELETE -------------------------------------
+
+    async def delete_file(self, user_id: str, location: str, file_uuid: str):
+        """Deletes a file given its fmd and location
+
+        Additionally requires a user_id for 3rd party auth
+
+        For internal storage, the db state should be updated upon completion via
+        Notification mechanism
+
+        For simcore.s3 we can use the file_name
+        For datcore we need the full path
+        """
+        if location == SIMCORE_S3_STR:
+            # FIXME: operation MUST be atomic, transaction??
+
+            to_delete = []
+            async with self.engine.acquire() as conn:
+                can: Optional[AccessRights] = await get_file_access_rights(
+                    conn, int(user_id), file_uuid
+                )
+                if not can.delete:
+                    logger.debug(
+                        "User %s was not allowed to delete file %s", user_id, file_uuid
+                    )
+                    raise web.HTTPForbidden(
+                        reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
+                    )
+
+                query = sa.select(
+                    [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
+                ).where(file_meta_data.c.file_uuid == file_uuid)
+
+                async for row in conn.execute(query):
+                    if self.s3_client.remove_objects(
+                        row.bucket_name, [row.object_name]
+                    ):
+                        to_delete.append(file_uuid)
+
+                await conn.execute(
+                    file_meta_data.delete().where(
+                        file_meta_data.c.file_uuid.in_(to_delete)
+                    )
+                )
+
+        elif location == DATCORE_STR:
+            # FIXME: review return inconsistencies
+            api_token, api_secret = self._get_datcore_tokens(user_id)
+            dcw = DatcoreWrapper(api_token, api_secret, self.loop, self.pool)
+            # destination, filename = _parse_datcore(file_uuid)
+            file_id = file_uuid
+            return await dcw.delete_file_by_id(file_id)
+
     async def delete_project_simcore_s3(
         self, user_id: str, project_id: str, node_id: Optional[str] = None
     ) -> web.Response:
@@ -876,7 +882,7 @@ class DataStorageManager:
         async with self.engine.acquire() as conn:
             # access layer
             can: Optional[AccessRights] = await get_project_access_rights(
-                conn, int(user_id), UUID(project_id)
+                conn, int(user_id), project_id
             )
             if not can.delete:
                 logger.debug(
@@ -916,6 +922,8 @@ class DataStorageManager:
                     )
                     return response
 
+    # SEARCH -------------------------------------
+
     async def search_files_starting_with(
         self, user_id: int, prefix: str
     ) -> List[FileMetaDataEx]:
@@ -935,10 +943,9 @@ class DataStorageManager:
             )
 
             async for row in conn.execute(stmt):
-                meta = FileMetaData(**dict(row))
-                files_meta.append(
-                    FileMetaDataEx(
-                        fmd=meta, parent_id=str(Path(meta.object_name).parent)
-                    )
+                meta = FileMetaDataEx(
+                    fmd=FileMetaData(**dict(row)),
+                    parent_id=str(Path(meta.object_name).parent),
                 )
+                files_meta.append(meta)
         return list(files_meta)
