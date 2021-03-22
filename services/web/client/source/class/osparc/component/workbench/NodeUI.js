@@ -222,7 +222,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
           converter: dependencies => {
             if (dependencies !== null) {
-              return osparc.utils.StatusUI.getColor(dependencies.length ? "failed" : "ready");
+              return osparc.utils.StatusUI.getColor(dependencies.length ? "modified" : "ready");
             }
             return osparc.utils.StatusUI.getColor();
           }
