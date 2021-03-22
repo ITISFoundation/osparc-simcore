@@ -26,7 +26,6 @@ def main(job_id: str, user_id: str, project_id: str, node_id: str) -> None:
         wrap_async_call(run_sidecar(job_id, user_id, project_id, node_id=node_id))
     except Exception:  # pylint: disable=broad-except
         log.exception("Unexpected problem while running sidecar")
-        return None
 
 
 @log_decorator(logger=log, level=logging.INFO)
