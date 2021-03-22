@@ -10,6 +10,11 @@ from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.dataset_d
     DatasetDescriptionParams,
 )
 
+from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.code_description import (
+    CodeDescriptionXLSXDocument,
+    CodeDescriptionParams,
+)
+
 
 def write_xlsx_files(base_path: Path) -> None:
     # TODO: all the params should be provided to this function as arguments
@@ -24,10 +29,20 @@ def write_xlsx_files(base_path: Path) -> None:
     submission_xlsx.save_document(base_path=base_path, template_data=submission_params)
 
     # dataset description
+    # TODO: inject more fields and move this to a test
     dataset_description_params = DatasetDescriptionParams(
         name="some study", description="more about this study"
     )
     dataset_description_xlsx = DatasetDescriptionXLSXDocument()
     dataset_description_xlsx.save_document(
+        base_path=base_path, template_data=dataset_description_params
+    )
+
+    # code description
+    # TODO: inject more fields and move this to a test
+    dataset_description_params = CodeDescriptionParams(**{"code_description": {}})
+
+    code_description_xlsx = CodeDescriptionXLSXDocument()
+    code_description_xlsx.save_document(
         base_path=base_path, template_data=dataset_description_params
     )
