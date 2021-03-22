@@ -26,6 +26,7 @@ from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
+from sqlalchemy.sql.functions import user
 from tenacity import retry
 from yarl import URL
 
@@ -406,7 +407,7 @@ class DataStorageManager:
                         "User %s was not allowed to delete file %s", user_id, file_uuid
                     )
                     raise web.HTTPForbidden(
-                        reason=f"User '{user_id}' does not has enough access rights to delete file {file_uuid}"
+                        reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
                     )
 
                 query = sa.select(
@@ -529,7 +530,7 @@ class DataStorageManager:
                     "User %s was not allowed to upload file %s", user_id, file_uuid
                 )
                 raise web.HTTPForbidden(
-                    reason=f"User '{user_id}' does not has enough access rights to upload file {file_uuid}"
+                    reason=f"User does not have enough access rights to upload file {file_uuid}"
                 )
 
         @retry(**postgres_service_retry_policy_kwargs)
@@ -723,6 +724,29 @@ class DataStorageManager:
         source_folder = source_project["uuid"]
         dest_folder = destination_project["uuid"]
 
+        # access layer
+        async with self.engine.acquire() as conn:
+            can = await get_project_access_rights(
+                conn, int(user_id), project_id=source_folder
+            )
+            if not can.read:
+                logger.debug(
+                    "User %s was not allowed to copy project %s", user_id, source_folder
+                )
+                raise web.HTTPForbidden(
+                    reason=f"User does not have enough access rights to copy project '{source_folder}'"
+                )
+            can = await get_project_access_rights(
+                conn, int(user_id), project_id=dest_folder
+            )
+            if not can.write:
+                logger.debug(
+                    "User %s was not allowed to copy project %s", user_id, dest_folder
+                )
+                raise web.HTTPForbidden(
+                    reason=f"User does not have enough access rights to copy project '{dest_folder}'"
+                )
+
         # build up naming map based on labels
         uuid_name_dict = {}
         uuid_name_dict[dest_folder] = destination_project["name"]
@@ -823,6 +847,8 @@ class DataStorageManager:
 
         # step 4 sync db
         async with self.engine.acquire() as conn:
+
+            # TODO: upsert in one statment of ALL
             for fmd in fmds:
                 query = sa.select([file_meta_data]).where(
                     file_meta_data.c.file_uuid == fmd.file_uuid

@@ -321,6 +321,7 @@ async def delete_file(request: web.Request):
 # Exclusive for simcore-s3 storage -----------------------
 
 
+# POST /simcore-s3/folders: copy_folders_from_project
 async def create_folders_from_project(request: web.Request):
     # FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
     # params, query, body = await extract_and_validate(request)
