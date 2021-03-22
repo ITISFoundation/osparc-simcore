@@ -30,4 +30,5 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
 
 
 class DirectoryManifestXLSXDocument(BaseXLSXDocument):
+    file_name = "manifest.xlsx"
     sheet1 = SheetFirstDirectoryManifest()

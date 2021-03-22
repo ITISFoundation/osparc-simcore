@@ -173,10 +173,5 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
 
 
 class DatasetDescriptionXLSXDocument(BaseXLSXDocument):
+    file_name = "dataset_description.xlsx"
     sheet1 = SheetFirstDatasetDescription()
-
-
-if __name__ == "__main__":
-    document = DatasetDescriptionXLSXDocument()
-    template_data_entires = {}
-    document.save_document("test.xlsx", **template_data_entires)

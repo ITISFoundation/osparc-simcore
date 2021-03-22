@@ -48,4 +48,5 @@ class SheetFirstSubmission(BaseXLSXSheet):
 
 
 class SubmissionXLSXDocument(BaseXLSXDocument):
+    file_name = "submission.xlsx"
     sheet1 = SheetFirstSubmission()
