@@ -152,7 +152,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
           const socket = osparc.wrapper.WebSocket.getInstance();
           socket.addListener("connect", () => {
-            console.log("CONNECT");
             const params = {
               url: {
                 tabId: osparc.utils.Utils.getClientSessionID()
@@ -372,11 +371,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __startAutoSaveTimer: function() {
-      let diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
+      const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       // Save every 3 seconds
       const interval = 3000;
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
+        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
+          return;
+        }
         const newObj = this.getStudy().serialize();
         const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
         if (delta) {
