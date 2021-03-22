@@ -14,6 +14,35 @@ from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 log = logging.getLogger(__name__)
 
 
+async def _prepare_storage_manager(
+    params: Dict, query: Dict, request: web.Request
+) -> DataStorageManager:
+    INIT_STR = "init"
+    dsm: DataStorageManager = request.app[APP_DSM_KEY]
+
+    user_id = query.get("user_id")
+    location_id = params.get("location_id")
+    import pdb
+
+    pdb.set_trace()
+    location = (
+        dsm.location_from_id(location_id) if location_id is not None else INIT_STR
+    )
+
+    if user_id and location in (INIT_STR, DATCORE_STR):
+        # TODO: notify from db instead when tokens changed, then invalidate resource which enforces
+        # re-query when needed.
+
+        # updates from db
+        token_info = await get_api_token_and_secret(request.app, user_id)
+        if all(token_info):
+            dsm.datcore_tokens[user_id] = DatCoreApiToken(*token_info)
+        else:
+            dsm.datcore_tokens.pop(user_id, None)
+    return dsm
+
+
+# HANDLERS ---------------------------------------------------
 async def check_health(request: web.Request):
     log.debug("CHECK HEALTH INCOMING PATH %s", request.path)
     await extract_and_validate(request)
@@ -298,7 +327,9 @@ async def delete_file(request: web.Request):
 async def create_folders_from_project(request: web.Request):
     # FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
     # params, query, body = await extract_and_validate(request)
+    import pdb
 
+    pdb.set_trace()
     user_id = request.query.get("user_id")
 
     body = await request.json()
@@ -357,29 +388,3 @@ async def search_files_starting_with(request: web.Request):
     log.debug("Found %d files starting with '%s'", len(data), startswith)
 
     return [{**attr.asdict(d.fmd), "parent_id": d.parent_id} for d in data]
-
-
-# HELPERS -----------------------------------------------------
-INIT_STR = "init"
-
-
-async def _prepare_storage_manager(
-    params: Dict, query: Dict, request: web.Request
-) -> DataStorageManager:
-    dsm = request.app[APP_DSM_KEY]
-
-    user_id = query.get("user_id")
-    location_id = params.get("location_id")
-    location = dsm.location_from_id(location_id) if location_id else INIT_STR
-
-    if user_id and location in (INIT_STR, DATCORE_STR):
-        # TODO: notify from db instead when tokens changed, then invalidate resource which enforces
-        # re-query when needed.
-
-        # updates from db
-        token_info = await get_api_token_and_secret(request, user_id)
-        if all(token_info):
-            dsm.datcore_tokens[user_id] = DatCoreApiToken(*token_info)
-        else:
-            dsm.datcore_tokens.pop(user_id, None)
-    return dsm

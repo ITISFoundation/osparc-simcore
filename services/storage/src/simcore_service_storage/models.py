@@ -3,7 +3,7 @@
 """
 import datetime
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Union
 from uuid import UUID
 
 import attr
@@ -42,15 +42,15 @@ def _locations():
     return [simcore_s3, datcore]
 
 
-def _location_from_id(location_id: str) -> str:
-    # TODO create a map to sync _location_from_id and _location_from_str
-    loc_str = "undefined"
-    if location_id == "0":
-        loc_str = SIMCORE_S3_STR
-    elif location_id == "1":
-        loc_str = DATCORE_STR
+_LOCATION_ID_TO_STR_MAP = {0: SIMCORE_S3_STR, 1: DATCORE_STR}
 
-    return loc_str
+
+def _location_from_id(location_id: Union[str, int]) -> str:
+    try:
+        loc_id = int(location_id)
+        return _LOCATION_ID_TO_STR_MAP[loc_id]
+    except (ValueError, KeyError):
+        return "undefined"
 
 
 def _location_from_str(location: str) -> str:

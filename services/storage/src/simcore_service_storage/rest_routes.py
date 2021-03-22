@@ -87,6 +87,7 @@ def create(specs: OpenApiSpec) -> List[web.RouteDef]:
     operation_id = specs.paths[path].operations["post"].operation_id
     routes.append(web.post(BASEPATH + path, handle, name=operation_id))
 
+    # copy_folders_from_project
     path, handle = "/simcore-s3/folders", handlers.create_folders_from_project
     operation_id = specs.paths[path].operations["post"].operation_id
     routes.append(web.post(BASEPATH + path, handle, name=operation_id))
