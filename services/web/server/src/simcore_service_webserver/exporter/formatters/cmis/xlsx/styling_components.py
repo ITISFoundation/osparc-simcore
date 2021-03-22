@@ -24,7 +24,8 @@ class T(BaseXLSXCellData):
     alignment = Alignment(wrap_text=True)
 
     def __init__(self, text: str):
-        super().__init__(value=text)
+        # when text is none write emptystring
+        super().__init__(value="" if text is None else text)
 
 
 class TB(T):
