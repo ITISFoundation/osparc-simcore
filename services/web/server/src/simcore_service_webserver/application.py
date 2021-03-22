@@ -97,7 +97,7 @@ def run_service(config: Dict[str, Any]):
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        access_log_format='%a %t "%r" %s %b [%Tfs] "%{Referer}i" "%{User-Agent}i"',
+        access_log_format='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
 
 
