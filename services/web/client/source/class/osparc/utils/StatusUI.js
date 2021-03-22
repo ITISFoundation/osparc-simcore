@@ -59,6 +59,8 @@ qx.Class.define("osparc.utils.StatusUI", {
           return "@FontAwesome5Solid/exclamation-circle/12";
         case "up-to-date":
           return "@FontAwesome5Solid/check/12";
+        case "running":
+          return "@FontAwesome5Solid/circle-notch/12";
 
         default:
           return "";
