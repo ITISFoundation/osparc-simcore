@@ -1,45 +1,33 @@
 from pathlib import Path
 
-from pydantic import BaseModel, Field, StrictStr
 
 from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.submission import (
     SubmissionXLSXDocument,
+    SubmissionDocumentParams,
 )
 from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.dataset_description import (
     DatasetDescriptionXLSXDocument,
+    DatasetDescriptionParams,
 )
 
 
-class SubmissionDocumentParams(BaseModel):
-    award_number: StrictStr = Field(
-        ..., description="Grant number supporting the milestone"
-    )
-    milestone_archived: StrictStr = Field(
-        ..., description="From milestones supplied to NIH"
-    )
-    milestone_completion_date: StrictStr = Field(
-        ...,
-        description=(
-            "Date of milestone completion. This date starts the countdown for submission "
-            "(30 days after completion), length of embargo and publication date (12 "
-            "months from completion of milestone)"
-        ),
-    )
-
-
 def write_xlsx_files(base_path: Path) -> None:
+    # TODO: all the params should be provided to this function as arguments
+    # submission
+    # TODO: move all this examples to an integration test folder
     submission_params = SubmissionDocumentParams(
         award_number="182y3187236871263",
         milestone_archived="182y3812y38",
         milestone_completion_date="some date here",
     )
-
     submission_xlsx = SubmissionXLSXDocument()
-    submission_xlsx.save_document(base_path=base_path, **submission_params.dict())
+    submission_xlsx.save_document(base_path=base_path, template_data=submission_params)
 
-    dataset_description_params = {}
-
+    # dataset description
+    dataset_description_params = DatasetDescriptionParams(
+        name="some study", description="more about this study"
+    )
     dataset_description_xlsx = DatasetDescriptionXLSXDocument()
     dataset_description_xlsx.save_document(
-        base_path=base_path, **dataset_description_params
+        base_path=base_path, template_data=dataset_description_params
     )
