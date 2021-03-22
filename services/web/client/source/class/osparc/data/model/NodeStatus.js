@@ -56,17 +56,17 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       apply: "__applyDependencies"
     },
 
-    hasOutputs: {
-      check: "Boolean",
-      init: false
-    },
-
     modified: {
       check: "Boolean",
       nullable: true,
       init: null,
       event: "changeModified",
       apply: "__applyModified"
+    },
+
+    hasOutputs: {
+      check: "Boolean",
+      init: false
     }
   },
 
