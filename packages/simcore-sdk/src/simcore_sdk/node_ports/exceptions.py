@@ -1,3 +1,10 @@
+# Errors raised by node_ports module as NodeportsException
+#
+#
+#  NOTE: Error message SHALL explain the reason for the error and it is prefered in one line, i.e. avoid '\n' in message
+#
+#
+
 from typing import Optional
 
 
@@ -48,7 +55,7 @@ class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
 
     def __init__(self, dct, msg: Optional[str] = None):
-        super().__init__(f"Invalid protocol used: {dct}\n{msg}")
+        super().__init__(f"Invalid protocol used: {dct} [{msg}]")
         self.dct = dct
 
 
