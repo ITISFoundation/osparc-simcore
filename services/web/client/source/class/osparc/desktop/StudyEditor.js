@@ -149,6 +149,26 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const portKey = data["portKey"];
             this.__updatePipelineAndRetrieve(node, portKey);
           }, this);
+
+          const socket = osparc.wrapper.WebSocket.getInstance();
+          socket.addListener("connect", () => {
+            console.log("CONNECT");
+            const params = {
+              url: {
+                tabId: osparc.utils.Utils.getClientSessionID()
+              }
+            };
+            osparc.data.Resources.fetch("studies", "getActive", params)
+              .then(studyData => {
+                if (studyData === null) {
+                  // This might happen when the socket connection is lost and the study gets closed
+                  this.fireEvent("forceBackToDashboard");
+                }
+              })
+              .catch(() => {
+                this.fireEvent("forceBackToDashboard");
+              });
+          });
         })
         .catch(err => {
           if ("status" in err && err["status"] == 423) { // Locked
