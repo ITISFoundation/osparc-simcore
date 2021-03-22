@@ -26,7 +26,6 @@ from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
-from sqlalchemy.sql.functions import user
 from tenacity import retry
 from yarl import URL
 
@@ -41,8 +40,8 @@ from .models import (
     DatasetMetaData,
     FileMetaData,
     FileMetaDataEx,
-    _location_from_id,
     file_meta_data,
+    get_location_from_id,
     projects,
 )
 from .s3 import get_config_s3
@@ -163,7 +162,7 @@ class DataStorageManager:
 
     @classmethod
     def location_from_id(cls, location_id: str):
-        return _location_from_id(location_id)
+        return get_location_from_id(location_id)
 
     async def ping_datcore(self, user_id: str) -> bool:
         """Checks whether user account in datcore is accesible

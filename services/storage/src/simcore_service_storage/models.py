@@ -25,42 +25,26 @@ from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE
 # pylint: disable=R0902
 
 
+_LOCATION_ID_TO_TAG_MAP = {0: SIMCORE_S3_STR, 1: DATCORE_STR}
+UNDEFINED_LOCATION_TAG: str = "undefined"
+
+
 def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
     # we should have 12/123123123/111.txt and return (12/123123123, 111.txt)
 
     file_path = Path(file_uuid)
-    destination = file_path.parent
-    file_name = file_path.name
+    destination = str(file_path.parent)
+    file_name = str(file_path.name)
 
     return destination, file_name
 
 
-def _locations():
-    # TODO: so far this is hardcoded
-    simcore_s3 = {"name": SIMCORE_S3_STR, "id": 0}
-    datcore = {"name": DATCORE_STR, "id": 1}
-    return [simcore_s3, datcore]
-
-
-_LOCATION_ID_TO_STR_MAP = {0: SIMCORE_S3_STR, 1: DATCORE_STR}
-
-
-def _location_from_id(location_id: Union[str, int]) -> str:
+def get_location_from_id(location_id: Union[str, int]) -> str:
     try:
         loc_id = int(location_id)
-        return _LOCATION_ID_TO_STR_MAP[loc_id]
+        return _LOCATION_ID_TO_TAG_MAP[loc_id]
     except (ValueError, KeyError):
-        return "undefined"
-
-
-def _location_from_str(location: str) -> str:
-    intstr = "undefined"
-    if location == SIMCORE_S3_STR:
-        intstr = "0"
-    elif location == DATCORE_STR:
-        intstr = "1"
-
-    return intstr
+        return UNDEFINED_LOCATION_TAG
 
 
 @attr.s(auto_attribs=True)
