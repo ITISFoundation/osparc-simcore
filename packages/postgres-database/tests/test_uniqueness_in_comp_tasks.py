@@ -8,10 +8,7 @@ import json
 import pytest
 import sqlalchemy as sa
 from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
-from pytest_simcore.helpers.fakers_rawdata_for_db import (
-    fake_pipeline,
-    fake_task_factory,
-)
+from pytest_simcore.helpers.rawdata_fakers import fake_pipeline, fake_task_factory
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
 

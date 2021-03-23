@@ -1,9 +1,13 @@
 """
-    Collection of functions that generate fake raw data that can be used
-    to populate postgres database
+    Collection of functions that create fake raw data that can be used
+    to populate postgres database, create datasets with consistent values, etc
 
-    Notice that the outputs are all Dict-like structures that fit at least
-    required of postgres_database.models tables
+    Built on top of the idea of Faker library (https://faker.readthedocs.io/en/master/),
+    that generate fake data to bootstrap a database, fill-in stress tests, anonymize data ...
+    etc
+
+    NOTE: all outputs MUST be Dict-like or built-in data structures that fit at least
+    required fields in postgres_database.models tables or pydantic models.
 """
 
 import itertools

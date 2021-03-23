@@ -11,7 +11,7 @@ import psycopg2.errors
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
-from pytest_simcore.helpers.fakers_rawdata_for_db import random_group
+from pytest_simcore.helpers.rawdata_fakers import random_group
 from simcore_postgres_database.models import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
