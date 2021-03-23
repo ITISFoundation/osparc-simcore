@@ -71,22 +71,29 @@ async def create_job(
 
     solver = await catalog_client.get_solver(user_id, solver_key, version)
 
-    # TODO: validate inputs against solver input schema
-    #   -> catalog
+    async def _draft_impl():
+        #
+        # NOTE: KEEP here as draft for next PR
+        #
 
-    job = await create_job_impl(solver.id, solver.version, inputs, url_for)
+        # TODO: validate inputs against solver input schema
+        #   -> catalog
 
-    # TODO: from job -> create project body for webserver.create_project(project)
-    #   -> webserver
-    project_in: NewProjectIn = create_project_model_for_job(solver, job, inputs)
+        job = await create_job_impl(solver.id, solver.version, inputs, url_for)
 
-    #  job (resource in api-server API) -- 1:1 -- project (resource in web-server API)
-    # create project
-    new_project: Project = await webserver_api.create_project(project_in)
-    assert new_project
-    assert new_project.uuid == job.id
+        # TODO: from job -> create project body for webserver.create_project(project)
+        #   -> webserver
+        project_in: NewProjectIn = create_project_model_for_job(solver, job, inputs)
 
-    return job
+        #  job (resource in api-server API) -- 1:1 -- project (resource in web-server API)
+        # create project
+        new_project: Project = await webserver_api.create_project(project_in)
+        assert new_project
+        assert new_project.uuid == job.id
+
+        return job
+
+    return await create_job_impl(solver.id, solver.version, inputs, url_for)
 
 
 @router.get("/{solver_key:path}/releases/{version}/jobs/{job_id}", response_model=Job)
