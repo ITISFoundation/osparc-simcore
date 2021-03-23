@@ -48,6 +48,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}- ${val}`
         });
+        node.getStatus().bind("dependencies", btn.getChildControl("label"), "font", {
+          converter: dependencies => (dependencies && dependencies.length) ? "text-14" : "title-14"
+        });
         node.getStatus().bind("dependencies", btn.getChildControl("label"), "textColor", {
           converter: dependencies => (dependencies && dependencies.length) ? "material-button-text-disabled" : "material-button-text"
         });
