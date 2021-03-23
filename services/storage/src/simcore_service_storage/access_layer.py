@@ -237,7 +237,8 @@ async def get_file_access_rights(
                 # ownership still not defined, so we assume it is user_id
                 return AccessRights.all()
 
-            _ = UUID(parent)  # tests parent as UUID
+            # otherwise assert 'parent' string corresponds to a valid UUID
+            UUID(parent)  # raises ValueError
             access_rights = await get_project_access_rights(
                 conn, user_id, project_id=parent
             )
