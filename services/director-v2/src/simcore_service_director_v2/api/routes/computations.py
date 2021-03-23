@@ -63,7 +63,7 @@ def celery_on_message(body: Any) -> None:
 def background_on_message(task: Any) -> None:
     # FIXME: this might become handy when we stop starting tasks recursively
     try:
-        _ = task.get(on_message=celery_on_message, propagate=True)
+        task.get(on_message=celery_on_message, propagate=True)
     except celery_exceptions.TimeoutError:
         log.error("timeout on waiting for task %s", task)
     except Exception:  # pylint: disable=broad-except
@@ -158,7 +158,7 @@ async def create_computation(
             topologically_sorted_grouped_nodes: List[
                 Dict[str, Dict[str, Any]]
             ] = topological_sort_grouping(computational_dag)
-            log.warning("THE grouped nodes: %s", topologically_sorted_grouped_nodes)
+            log.debug("grouped nodes: %s", topologically_sorted_grouped_nodes)
 
             # find what are the nodes requirements
             async def _set_nodes_requirements(
