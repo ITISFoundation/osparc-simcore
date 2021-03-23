@@ -6,7 +6,9 @@
 import filecmp
 from pathlib import Path
 from typing import Callable
+from uuid import uuid4
 
+import np_helpers
 import pytest
 from simcore_sdk.node_ports import exceptions, filemanager
 
@@ -71,11 +73,12 @@ async def test_invalid_file_path(
         )
 
 
-async def test_invalid_fileid(
+async def test_errors_upon_invalid_file_identifiers(
     tmpdir: Path,
     bucket: str,
     filemanager_cfg: None,
     user_id: str,
+    project_id: str,
     s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
@@ -87,7 +90,8 @@ async def test_invalid_fileid(
         await filemanager.upload_file(
             store_id=store, s3_object="", local_file_path=file_path
         )
-    with pytest.raises(exceptions.StorageServerIssue):
+
+    with pytest.raises(exceptions.StorageInvalidCall):
         await filemanager.upload_file(
             store_id=store, s3_object="file_id", local_file_path=file_path
         )
@@ -97,9 +101,12 @@ async def test_invalid_fileid(
         await filemanager.download_file_from_s3(
             store_id=store, s3_object="", local_folder=download_folder
         )
+
     with pytest.raises(exceptions.InvalidDownloadLinkError):
         await filemanager.download_file_from_s3(
-            store_id=store, s3_object="file_id", local_folder=download_folder
+            store_id=store,
+            s3_object=np_helpers.file_uuid("invisible.txt", project_id, uuid4()),
+            local_folder=download_folder,
         )
 
 
