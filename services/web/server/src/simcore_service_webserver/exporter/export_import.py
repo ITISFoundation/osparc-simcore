@@ -18,6 +18,7 @@ async def study_export(
     tmp_dir: str,
     project_id: str,
     user_id: int,
+    product_name: str,
     archive: bool = False,
 ) -> Path:
     """
@@ -34,7 +35,7 @@ async def study_export(
     # The formatter will always be chosen to be the highest availabel version
     formatter = FormatterV2(root_folder=destination)
     await formatter.format_export_directory(
-        app=app, project_id=project_id, user_id=user_id
+        app=app, project_id=project_id, user_id=user_id, product_name=product_name
     )
 
     if archive is False:

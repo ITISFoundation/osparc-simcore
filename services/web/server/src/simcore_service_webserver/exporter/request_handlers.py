@@ -6,6 +6,7 @@ from aiohttp.web_request import FileField
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
+from ..constants import RQ_PRODUCT_KEY
 from .config import get_settings
 from .exceptions import ExporterException
 from .export_import import study_export, study_import, study_duplicate
@@ -41,6 +42,7 @@ async def export_project(request: web.Request):
             tmp_dir=temp_dir,
             project_id=project_uuid,
             user_id=user_id,
+            product_name=request[RQ_PRODUCT_KEY],
             archive=True,
         )
         log.info("File to download '%s'", file_to_download)
