@@ -87,7 +87,7 @@ async def filemanager_cfg(
 
 
 @pytest.fixture
-def file_uuid(project_id: str, node_uuid: str) -> Callable:
+def create_valid_file_uuid(project_id: str, node_uuid: str) -> Callable:
     def create(file_path: Path, project: str = None, node: str = None):
         if project is None:
             project = project_id
@@ -95,7 +95,7 @@ def file_uuid(project_id: str, node_uuid: str) -> Callable:
             node = node_uuid
         return np_helpers.file_uuid(file_path, project, node)
 
-    yield create
+    return create
 
 
 @pytest.fixture()
@@ -130,13 +130,15 @@ def node_link() -> Callable:
 
 
 @pytest.fixture()
-def store_link(minio_service, bucket, file_uuid, s3_simcore_location) -> Callable:
+def store_link(
+    minio_service, bucket, create_valid_file_uuid, s3_simcore_location
+) -> Callable:
     def create_store_link(
         file_path: Path, project_id: str = None, node_id: str = None
     ) -> Dict[str, str]:
         # upload the file to S3
         assert Path(file_path).exists()
-        file_id = file_uuid(file_path, project_id, node_id)
+        file_id = create_valid_file_uuid(file_path, project_id, node_id)
         # using the s3 client the path must be adapted
         # TODO: use the storage sdk instead
         s3_object = Path(project_id, node_id, Path(file_path).name).as_posix()

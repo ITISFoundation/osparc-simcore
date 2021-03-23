@@ -5,6 +5,7 @@
 
 import filecmp
 from pathlib import Path
+from typing import Callable
 
 import pytest
 from simcore_sdk.node_ports import exceptions, filemanager
@@ -19,14 +20,14 @@ async def test_valid_upload_download(
     bucket: str,
     filemanager_cfg: None,
     user_id: str,
-    file_uuid: str,
+    create_valid_file_uuid: Callable,
     s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = file_uuid(file_path)
+    file_id = create_valid_file_uuid(file_path)
     store_id, e_tag = await filemanager.upload_file(
         store_id=s3_simcore_location, s3_object=file_id, local_file_path=file_path
     )
@@ -47,14 +48,14 @@ async def test_invalid_file_path(
     bucket: str,
     filemanager_cfg: None,
     user_id: str,
-    file_uuid: str,
+    create_valid_file_uuid: Callable,
     s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = file_uuid(file_path)
+    file_id = create_valid_file_uuid(file_path)
     store = s3_simcore_location
     with pytest.raises(FileNotFoundError):
         await filemanager.upload_file(
@@ -107,14 +108,14 @@ async def test_invalid_store(
     bucket: str,
     filemanager_cfg: None,
     user_id: str,
-    file_uuid: str,
+    create_valid_file_uuid: Callable,
     s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = file_uuid(file_path)
+    file_id = create_valid_file_uuid(file_path)
     store = "somefunkystore"
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.upload_file(
@@ -133,14 +134,14 @@ async def test_valid_metadata(
     bucket: str,
     filemanager_cfg: None,
     user_id: str,
-    file_uuid: str,
+    create_valid_file_uuid: Callable,
     s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
     file_path.write_text("I am a test file")
     assert file_path.exists()
 
-    file_id = file_uuid(file_path)
+    file_id = create_valid_file_uuid(file_path)
     store_id, e_tag = await filemanager.upload_file(
         store_id=s3_simcore_location, s3_object=file_id, local_file_path=file_path
     )
@@ -167,11 +168,11 @@ async def test_invalid_metadata(
     bucket: str,
     filemanager_cfg: None,
     user_id: str,
-    file_uuid: str,
+    create_valid_file_uuid: Callable,
     s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
-    file_id = file_uuid(file_path)
+    file_id = create_valid_file_uuid(file_path)
     assert file_path.exists() is False
 
     with pytest.raises(exceptions.NodeportsException) as exc_info:
