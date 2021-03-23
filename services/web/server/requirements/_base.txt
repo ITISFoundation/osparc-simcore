@@ -182,6 +182,8 @@ pyrsistent==0.16.0
     # via jsonschema
 python-engineio==3.13.2
     # via python-socketio
+python-magic==0.4.22
+    # via -r requirements/_base.in
 python-socketio==4.6.0
     # via -r requirements/_base.in
 pytz==2020.1

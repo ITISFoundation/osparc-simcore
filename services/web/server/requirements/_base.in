@@ -32,6 +32,7 @@ aiodebug
 json2html
 parfive
 openpyxl
+python-magic
 
 pydantic[email]
 orjson
