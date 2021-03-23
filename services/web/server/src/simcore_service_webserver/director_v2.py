@@ -104,6 +104,9 @@ async def get_computation_task(
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
         return task_out
     except _DirectorServiceError as exc:
+        if exc.status == web.HTTPNotFound.status_code:
+            # the pipeline might not exist and that is ok
+            return
         log.warning("getting pipeline for project %s failed: %s.", project_id, exc)
 
 

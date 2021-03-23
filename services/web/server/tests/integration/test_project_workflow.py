@@ -12,6 +12,7 @@ from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Optional, Union
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
@@ -265,10 +266,12 @@ async def test_workflow(
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
     modified_project["description"] = "John Raynor killed Kerrigan"
-    modified_project["workbench"]["ReNamed"] = modified_project["workbench"].pop(
+
+    new_node_id = str(uuid4())
+    modified_project["workbench"][new_node_id] = modified_project["workbench"].pop(
         list(modified_project["workbench"].keys())[0]
     )
-    modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
+    modified_project["workbench"][new_node_id]["position"]["x"] = 0
     # share with some group
     modified_project["accessRights"].update(
         {str(standard_groups[0]["gid"]): {"read": True, "write": True, "delete": False}}
