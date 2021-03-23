@@ -11,13 +11,11 @@ import psycopg2.errors
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
-from sqlalchemy import literal_column
-
-from fake_creators import random_group
+from pytest_simcore.helpers.fakers_rawdata_for_db import random_group
 from simcore_postgres_database.models import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
-
+from sqlalchemy import literal_column
 
 
 @pytest.fixture
@@ -34,7 +32,6 @@ def classifiers_bundle(web_client_resource_folder: Path) -> Dict:
     bundle_path = web_client_resource_folder / "dev" / "classifiers.json"
     assert bundle_path.exists()
     return json.loads(bundle_path.read_text())
-
 
 
 async def test_operations_on_group_classifiers(
