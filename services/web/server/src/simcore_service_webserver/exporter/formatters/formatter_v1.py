@@ -124,7 +124,12 @@ async def extract_download_links(
 
 
 async def generate_directory_contents(
-    app: web.Application, root_folder: Path, project_id: str, user_id: int, version: str
+    app: web.Application,
+    root_folder: Path,
+    manifest_root_folder: Path,
+    project_id: str,
+    user_id: int,
+    version: str,
 ) -> None:
     try:
         project_data = await get_project_for_user(
@@ -151,7 +156,10 @@ async def generate_directory_contents(
         version=version,
         attachments=[str(x.store_path) for x in download_links],
     )
-    await ManifestFile.model_to_file(root_dir=root_folder, **manifest_params)
+    await ManifestFile.model_to_file(
+        root_dir=root_folder if manifest_root_folder is None else manifest_root_folder,
+        **manifest_params,
+    )
 
     # store project data on disk
     await ProjectFile.model_to_file(root_dir=root_folder, **project_data)
@@ -294,8 +302,9 @@ async def _remove_runtime_states(project: Project):
 
 
 async def import_files_and_validate_project(
-    app: web.Application, user_id: int, root_folder: Path
+    app: web.Application, user_id: int, root_folder: Path, manifest_root_folder: Path
 ) -> str:
+    log.error("the fuck code root_folder %s", root_folder)
     project_file = await ProjectFile.model_from_file(root_dir=root_folder)
     shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
 
@@ -309,7 +318,9 @@ async def import_files_and_validate_project(
     log.debug("Shuffled project data: %s", shuffled_project_file)
 
     # NOTE: it is not necessary to apply data shuffling to the manifest
-    manifest_file = await ManifestFile.model_from_file(root_dir=root_folder)
+    manifest_file = await ManifestFile.model_from_file(
+        root_dir=root_folder if manifest_root_folder is None else manifest_root_folder
+    )
 
     user: Dict = await get_user(app=app, user_id=user_id)
 
@@ -395,17 +406,20 @@ async def import_files_and_validate_project(
 
 
 class FormatterV1(BaseFormatter):
-    def __init__(self, root_folder: Path):
-        super().__init__(version="1", root_folder=root_folder)
+    def __init__(self, root_folder: Path, version: str = "1"):
+        super().__init__(version=version, root_folder=root_folder)
 
     async def format_export_directory(self, **kwargs) -> None:
         app: web.Application = kwargs["app"]
         project_id: str = kwargs["project_id"]
         user_id: int = kwargs["user_id"]
+        # injected by Formatter_V2
+        manifest_root_folder: Path = kwargs.get("manifest_root_folder")
 
         await generate_directory_contents(
             app=app,
             root_folder=self.root_folder,
+            manifest_root_folder=manifest_root_folder,
             project_id=project_id,
             user_id=user_id,
             version=self.version,
@@ -414,7 +428,12 @@ class FormatterV1(BaseFormatter):
     async def validate_and_import_directory(self, **kwargs) -> str:
         app: web.Application = kwargs["app"]
         user_id: int = kwargs["user_id"]
+        # injected by Formatter_V2
+        manifest_root_folder: Path = kwargs.get("manifest_root_folder")
 
         return await import_files_and_validate_project(
-            app=app, user_id=user_id, root_folder=self.root_folder
+            app=app,
+            user_id=user_id,
+            root_folder=self.root_folder,
+            manifest_root_folder=manifest_root_folder,
         )

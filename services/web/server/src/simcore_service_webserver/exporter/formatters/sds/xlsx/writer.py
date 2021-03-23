@@ -19,6 +19,8 @@ from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.directory_
     DirectoryManifestParams,
 )
 
+MANIFEST_DIRS = ["code", "docs", "derivative"]
+
 
 def write_xlsx_files(
     base_path: Path,
@@ -39,15 +41,13 @@ def write_xlsx_files(
         base_path=base_path, template_data=code_description_params
     )
 
-    # TODO: remove below after testing
-
-    directory_manifest_params = DirectoryManifestParams.compose_from_directory(
-        base_path
-    )
-
-    dirs_to_generate_manifests= []
-
-    directory_manifest_xlsx = DirectoryManifestXLSXDocument()
-    directory_manifest_xlsx.save_document(
-        base_path=base_path, template_data=directory_manifest_params
-    )
+    # automatically generating file manifests
+    generate_manifest_for = [base_path / x for x in MANIFEST_DIRS]
+    for dir_path in generate_manifest_for:
+        directory_manifest_params = DirectoryManifestParams.compose_from_directory(
+            dir_path
+        )
+        directory_manifest_xlsx = DirectoryManifestXLSXDocument()
+        directory_manifest_xlsx.save_document(
+            base_path=dir_path, template_data=directory_manifest_params
+        )

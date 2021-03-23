@@ -5,10 +5,11 @@ from pathlib import Path
 from .base_formatter import BaseFormatter
 from .models import ManifestFile
 from .formatter_v1 import FormatterV1
+from .formatter_v2 import FormatterV2
 
 
 # maps manifest version to available formatters
-_FORMATTERS_MAPPINGS: Dict[str, BaseFormatter] = {"1": FormatterV1}
+_FORMATTERS_MAPPINGS: Dict[str, BaseFormatter] = {"1": FormatterV1, "2": FormatterV2}
 
 
 async def validate_manifest(unzipped_root_folder: Path) -> BaseFormatter:
