@@ -10,19 +10,19 @@ from openpyxl import Workbook
 import pytest
 
 
-from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.submission import (
+from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.submission import (
     SubmissionXLSXDocument,
     SubmissionDocumentParams,
 )
 
-from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.dataset_description import (
+from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.dataset_description import (
     DatasetDescriptionXLSXDocument,
     DatasetDescriptionParams,
     ContributorEntryModel,
     DoiEntryModel,
     LinkEntryModel,
 )
-from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.code_description import (
+from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.code_description import (
     CodeDescriptionXLSXDocument,
     CodeDescriptionParams,
     CodeDescriptionModel,
@@ -30,7 +30,7 @@ from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.code_desc
     OutputsEntryModel,
     RRIDEntry,
 )
-from simcore_service_webserver.exporter.formatters.cmis.xlsx.templates.directory_manifest import (
+from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.directory_manifest import (
     DirectoryManifestXLSXDocument,
     DirectoryManifestParams,
     FileEntryModel,

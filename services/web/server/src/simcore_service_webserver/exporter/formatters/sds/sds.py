@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from simcore_service_webserver.exporter.formatters.cmis.text_files import (
+from simcore_service_webserver.exporter.formatters.sds.text_files import (
     write_text_files,
 )
-from simcore_service_webserver.exporter.formatters.cmis.xlsx import write_xlsx_files
+from simcore_service_webserver.exporter.formatters.sds.xlsx import write_xlsx_files
 
 
 def write_sds_directory_content(base_path: Path) -> None:
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # templates to generate all that we need
     import os
 
-    path_to_store = Path("/tmp/cmis_dir")  # nosec
+    path_to_store = Path("/tmp/sds_dir")  # nosec
 
     # recreate dir
     os.system(f"rm -rf {str(path_to_store)}")  # nosec
