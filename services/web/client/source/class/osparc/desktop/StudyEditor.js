@@ -59,7 +59,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
   },
 
   events: {
-    "studyIsLocked": "qx.event.type.Event",
+    "forceBackToDashboard": "qx.event.type.Event",
     "startStudy": "qx.event.type.Data"
   },
 
@@ -149,12 +149,28 @@ qx.Class.define("osparc.desktop.StudyEditor", {
             const portKey = data["portKey"];
             this.__updatePipelineAndRetrieve(node, portKey);
           }, this);
+
+          const socket = osparc.wrapper.WebSocket.getInstance();
+          socket.addListener("connect", () => {
+            const params = {
+              url: {
+                tabId: osparc.utils.Utils.getClientSessionID()
+              }
+            };
+            osparc.data.Resources.fetch("studies", "getActive", params)
+              .then(studyData => {
+                if (studyData === null) {
+                  this.__noLongerActive();
+                }
+              })
+              .catch(() => this.__noLongerActive());
+          });
         })
         .catch(err => {
           if ("status" in err && err["status"] == 423) { // Locked
             const msg = study.getName() + this.tr(" is already opened");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
-            this.fireEvent("studyIsLocked");
+            this.fireEvent("forceBackToDashboard");
           } else {
             console.error(err);
           }
@@ -162,6 +178,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);
+    },
+
+    __noLongerActive: function() {
+      // This might happen when the socket connection is lost and the study gets closed
+      const msg = this.tr("Study was closed while you were offline");
+      osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+      this.fireEvent("forceBackToDashboard");
     },
 
 
@@ -352,11 +375,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __startAutoSaveTimer: function() {
-      let diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
+      const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       // Save every 3 seconds
       const interval = 3000;
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
       timer.addListener("interval", () => {
+        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
+          return;
+        }
         const newObj = this.getStudy().serialize();
         const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
         if (delta) {
