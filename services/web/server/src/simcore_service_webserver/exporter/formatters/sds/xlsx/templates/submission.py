@@ -19,13 +19,13 @@ from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.utils impo
 
 class SubmissionDocumentParams(BaseModel):
     award_number: StrictStr = Field(
-        ..., description="Grant number supporting the milestone"
+        "", description="Grant number supporting the milestone"
     )
     milestone_archived: StrictStr = Field(
-        ..., description="From milestones supplied to NIH"
+        "", description="From milestones supplied to NIH"
     )
     milestone_completion_date: StrictStr = Field(
-        ...,
+        "",
         description=(
             "Date of milestone completion. This date starts the countdown for submission "
             "(30 days after completion), length of embargo and publication date (12 "

@@ -29,6 +29,7 @@ class RRIDEntry(BaseModel):
     rrod_identifier: StrictStr = Field(
         ..., description="Associated tools or resources identifier (with 'RRID:')"
     )
+    # the 2 items below are not enabled for now
     ontological_term: StrictStr = Field(
         "", description="Associated ontological term (human-readable)"
     )
