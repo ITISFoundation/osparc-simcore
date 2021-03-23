@@ -69,8 +69,24 @@ class AccessRights:
         return cls(False, False, False)
 
 
-class NotAllowedError(Exception):
-    ...
+class AccessLayerError(Exception):
+    """ Base class for access-layer related errors """
+
+
+class InvalidFileIdentifier(AccessLayerError):
+    """Identifier does not follow the criteria to
+    be a file identifier (see naming criteria below)
+    """
+
+    def __init__(self, identifier, reason=None, details=None):
+        self.identifier = identifier
+        self.reason = reason or "Invalid file identifier"
+        self.details = details
+
+        super().__init__(self.reason, self.details)
+
+    def __str__(self):
+        return "Error in {}: {} [{}]".format(self.identifier, self.reason, self.details)
 
 
 async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
@@ -189,6 +205,8 @@ async def get_file_access_rights(
 ) -> AccessRights:
     """
     Returns access-rights of user (user_id) over data file resource (file_uuid)
+
+    raises InvalidFileIdentifier
     """
 
     #
@@ -251,8 +269,9 @@ async def get_file_access_rights(
                 return AccessRights.none()
 
         except (ValueError, AttributeError) as err:
-            raise ValueError(
-                f"Invalid file_uuid. '{file_uuid}' does not follow any known pattern ({err})"
+            raise InvalidFileIdentifier(
+                identifier=file_uuid,
+                details=str(err),
             ) from err
 
     return access_rights
