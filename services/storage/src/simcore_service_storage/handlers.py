@@ -48,15 +48,17 @@ async def _prepare_storage_manager(
 
 @contextmanager
 def handle_storage_errors():
-    """
-    Translates low level errors into HTTP
-    """
+    """Basic policies to translate low-level errors into HTTP errors"""
+    # TODO: include _prepare_storage_manager?
+    # TODO: middleware? decorator?
     try:
+
         yield
+
     except InvalidFileIdentifier as err:
         raise web.HTTPUnprocessableEntity(
             reason=f"{err.identifier} is an invalid file identifier"
-        )
+        ) from err
 
 
 # HANDLERS ---------------------------------------------------
