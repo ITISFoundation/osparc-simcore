@@ -956,9 +956,10 @@ class DataStorageManager:
             )
 
             async for row in conn.execute(stmt):
-                meta = FileMetaDataEx(
-                    fmd=FileMetaData(**dict(row)),
+                meta = FileMetaData(**dict(row))
+                meta_extended = FileMetaDataEx(
+                    fmd=meta,
                     parent_id=str(Path(meta.object_name).parent),
                 )
-                files_meta.append(meta)
+                files_meta.append(meta_extended)
         return list(files_meta)
