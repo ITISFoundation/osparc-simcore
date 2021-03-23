@@ -399,6 +399,13 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
                 )
             )
 
+        # more static fields in the middle
+        static_cells_second_batch = [
+            ("D10", T(params.acknowledgements) | Borders.light_grid),
+            ("D11", T(params.funding) | Borders.light_grid),
+        ]
+        cells.extend(static_cells_second_batch)
+
         # adding doi entries horizontally
         for column_letter, doi_entry in zip(
             column_iter(4, len(params.doi_entries)), params.doi_entries
@@ -436,7 +443,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
             )
 
         # last part of static cells
-        static_cells_second_batch = [
+        static_cells_third_batch = [
             ("D16", T(params.number_of_subjects) | Borders.light_grid),
             ("D17", T(params.number_of_samples) | Borders.light_grid),
             ("D18", T(params.completeness_of_dataset) | Borders.light_grid),
@@ -444,7 +451,7 @@ class SheetFirstDatasetDescription(BaseXLSXSheet):
             ("D20", T(params.title_for_complete_dataset) | Borders.light_grid),
             ("D21", T(params.metadata_version) | Borders.light_grid),
         ]
-        cells.extend(static_cells_second_batch)
+        cells.extend(static_cells_third_batch)
 
         return cells
 

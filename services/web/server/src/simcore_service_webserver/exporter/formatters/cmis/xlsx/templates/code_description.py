@@ -222,7 +222,7 @@ class InputsEntryModel(BaseModel):
     input_name: StrictStr = Field(
         "", description="An input field to the MSoP submission"
     )
-    input_data_ontology_identifier = Field(
+    input_data_ontology_identifier: StrictStr = Field(
         "",
         description=(
             "Ontology identifier for the input field, if applicable , "
@@ -861,29 +861,29 @@ class SheetInputs(BaseXLSXSheet):
         for row_index, inputs_entry in zip(range(4, len(intputs)), intputs):
             inputs_entry: InputsEntryModel = inputs_entry
             cells.append(
-                (f"{row_index}B", T(inputs_entry.service_name) | Borders.light_grid)
+                (f"B{row_index}", T(inputs_entry.service_name) | Borders.light_grid)
             )
             cells.append(
-                (f"{row_index}C", T(inputs_entry.service_version) | Borders.light_grid)
+                (f"C{row_index}", T(inputs_entry.service_version) | Borders.light_grid)
             )
             cells.append(
-                (f"{row_index}D", T(inputs_entry.input_name) | Borders.light_grid)
+                (f"D{row_index}", T(inputs_entry.input_name) | Borders.light_grid)
             )
             cells.append(
                 (
-                    f"{row_index}E",
+                    f"E{row_index}",
                     T(inputs_entry.input_data_ontology_identifier) | Borders.light_grid,
                 )
             )
             cells.append(
-                (f"{row_index}F", T(inputs_entry.input_data_type) | Borders.light_grid)
+                (f"F{row_index}", T(inputs_entry.input_data_type) | Borders.light_grid)
             )
             cells.append(
-                (f"{row_index}G", T(inputs_entry.input_data_units) | Borders.light_grid)
+                (f"G{row_index}", T(inputs_entry.input_data_units) | Borders.light_grid)
             )
             cells.append(
                 (
-                    f"{row_index}H",
+                    f"H{row_index}",
                     T(inputs_entry.input_data_default_value) | Borders.light_grid,
                 )
             )
@@ -949,30 +949,30 @@ class SheetOutputs(BaseXLSXSheet):
         for row_index, outputs_entry in zip(range(4, len(outputs)), outputs):
             outputs_entry: OutputsEntryModel = outputs_entry
             cells.append(
-                (f"{row_index}B", T(outputs_entry.service_name) | Borders.light_grid)
+                (f"B{row_index}", T(outputs_entry.service_name) | Borders.light_grid)
             )
             cells.append(
-                (f"{row_index}C", T(outputs_entry.service_version) | Borders.light_grid)
+                (f"C{row_index}", T(outputs_entry.service_version) | Borders.light_grid)
             )
             cells.append(
-                (f"{row_index}D", T(outputs_entry.output_name) | Borders.light_grid)
+                (f"D{row_index}", T(outputs_entry.output_name) | Borders.light_grid)
             )
             cells.append(
                 (
-                    f"{row_index}E",
+                    f"E{row_index}",
                     T(outputs_entry.output_data_ontology_identifier)
                     | Borders.light_grid,
                 )
             )
             cells.append(
                 (
-                    f"{row_index}F",
+                    f"F{row_index}",
                     T(outputs_entry.output_data_type) | Borders.light_grid,
                 )
             )
             cells.append(
                 (
-                    f"{row_index}G",
+                    f"G{row_index}",
                     T(outputs_entry.output_data_units) | Borders.light_grid,
                 )
             )

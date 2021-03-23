@@ -263,7 +263,10 @@ class BaseXLSXDocument:
     def _generate_document(self, template_data: BaseModel) -> Workbook:
         return self._assemble_workbook(self._get_sheets(), template_data)
 
+    def document_path(self, base_path: Path) -> Path:
+        return base_path / Path(self.file_name)
+
     def save_document(self, base_path: Path, template_data: BaseModel) -> None:
         workbook = self._generate_document(template_data)
-        destination_path = base_path / Path(self.file_name)
+        destination_path = self.document_path(base_path)
         workbook.save(destination_path)

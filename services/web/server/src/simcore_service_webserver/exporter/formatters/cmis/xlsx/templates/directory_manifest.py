@@ -121,7 +121,7 @@ class SheetFirstDirectoryManifest(BaseXLSXSheet):
 
             # write additional metadata for each file
             for column_letter, additional_metadata_entry in zip(
-                column_iter(4, max_number_of_headers), file_entry.additional_metadata
+                column_iter(5, max_number_of_headers), file_entry.additional_metadata
             ):
                 cell_entry = (
                     f"{column_letter}{row_index}",
