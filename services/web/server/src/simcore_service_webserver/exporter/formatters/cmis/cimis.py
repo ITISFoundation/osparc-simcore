@@ -17,10 +17,10 @@ if __name__ == "__main__":
     # templates to generate all that we need
     import os
 
-    path_to_store = Path("/tmp/cmis_dir")
+    path_to_store = Path("/tmp/cmis_dir")  # nosec
 
     # recreate dir
-    os.system(f"rm -rf {str(path_to_store)}")
+    os.system(f"rm -rf {str(path_to_store)}")  # nosec
     path_to_store.mkdir(parents=True, exist_ok=True)
 
     write_cimis_directory_content(base_path=path_to_store)

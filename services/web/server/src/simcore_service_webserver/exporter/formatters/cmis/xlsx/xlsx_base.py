@@ -15,7 +15,7 @@ def _base_value_or(self_var: Any, entry_var: Any) -> Any:
     to also have their fields merged, like:
     borders and alignment
     """
-    if isinstance(self_var, Border):
+    if isinstance(self_var, Border):  # nosec
         return Border(
             left=self_var.left or entry_var.left,
             right=self_var.right or entry_var.right,
@@ -33,7 +33,7 @@ def _base_value_or(self_var: Any, entry_var: Any) -> Any:
             start=self_var.start or entry_var.start,
             end=self_var.end or entry_var.end,
         )
-    if isinstance(self_var, Alignment):
+    if isinstance(self_var, Alignment):  # nosec
         return Alignment(
             horizontal=self_var.horizontal or entry_var.horizontal,
             vertical=self_var.vertical or entry_var.vertical,
@@ -226,7 +226,7 @@ class BaseXLSXDocument:
                 if ":" in cell_address:
                     # ranges like A1:B4 will be flattened into single cell entries
                     for cell_row in xls_sheet[cell_address]:
-                        for cell in cell_row:
+                        for cell in cell_row:  # nosec
                             _update_entry_in_cell(
                                 target=single_cells_cell_styles,
                                 address=cell.coordinate,
