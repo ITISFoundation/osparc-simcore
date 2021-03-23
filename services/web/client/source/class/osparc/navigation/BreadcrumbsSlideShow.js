@@ -49,13 +49,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
           converter: val => `${pos+1}- ${val}`
         });
         node.getStatus().bind("dependencies", btn.getChildControl("label"), "textColor", {
-          converter: dependencies => {
-            let textColor = "material-button-text";
-            if (dependencies && dependencies.length) {
-              textColor = "material-button-text-disabled";
-            }
-            return textColor;
-          }
+          converter: dependencies => (dependencies && dependencies.length) ? "material-button-text-disabled" : "material-button-text"
         });
 
         const statusIcon = new qx.ui.basic.Image();
@@ -73,13 +67,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
                 return osparc.utils.StatusUI.getIconSource();
             }
           },
-          onUpdate: (source, target) => {
-            if (source.getOutput() === "busy") {
-              target.getContentElement().addClass("rotate");
-            } else {
-              target.getContentElement().removeClass("rotate");
-            }
-          }
+          onUpdate: (source, target) => (source.getOutput() === "busy") ? target.getContentElement().addClass("rotate") : target.getContentElement().removeClass("rotate")
         });
         node.getStatus().bind("output", statusIcon, "textColor", {
           converter: output => {
