@@ -19,6 +19,10 @@ import pytest
 import yaml
 from dotenv import dotenv_values
 
+from .helpers import (
+    FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
+    FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
+)
 from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
 
 
@@ -153,12 +157,10 @@ def ops_docker_compose(
 @pytest.fixture(scope="module")
 def core_services_selection(request) -> List[str]:
     """ Selection of services from the simcore stack """
-    core_services = getattr(
-        request.module, "pytest_simcore_core_services_selection", []
-    )
+    core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
     assert (
         core_services
-    ), f"Expected at least one service in 'pytest_simcore_core_services_selection' within '{request.module.__name__}'"
+    ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
     return core_services
 
 
@@ -181,7 +183,7 @@ def core_docker_compose_file(
 @pytest.fixture(scope="module")
 def ops_services_selection(request) -> List[str]:
     """ Selection of services from the ops stack """
-    ops_services = getattr(request.module, "pytest_simcore_ops_services_selection", [])
+    ops_services = getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
     return ops_services
 
 
