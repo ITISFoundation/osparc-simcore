@@ -1,4 +1,6 @@
 import logging
+from pathlib import Path
+from typing import Union
 
 import aiofiles
 import tenacity
@@ -9,6 +11,7 @@ from yarl import URL
 logger = logging.getLogger(__name__)
 
 
+MAX_CHUNK_SIZE = 1024
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
@@ -61,11 +64,31 @@ def expo(base=1.2, factor=0.1, max_value=2):
 
 
 async def download_to_file_or_raise(
-    session: ClientSession, url: StrOrURL, destination_path: str
-):
-    # FIXME: stream chunks
+    session: ClientSession,
+    url: StrOrURL,
+    destination_path: Union[str, Path],
+    *,
+    chunk_size=MAX_CHUNK_SIZE,
+) -> int:
+    """
+    Downloads content from url into destination_path
 
-    # raises aiohttp.ClientResponseError
-    async with session.get(url, raise_for_status=True) as resp:
-        async with aiofiles.open(destination_path, mode="wb") as fh:
-            await fh.write(await resp.read())
+    Returns downloaded file size
+
+    May raise aiohttp.ClientErrors:
+     - aiohttp.ClientResponseError if not 2XX
+     - aiohttp.ClientPayloadError while streaming chunks
+    """
+    # SEE Streaming API: https://docs.aiohttp.org/en/stable/streams.html
+
+    dest_file = Path(destination_path)
+
+    total_size = 0
+    async with session.get(url, raise_for_status=True) as response:
+        dest_file.parent.mkdir(parents=True, exist_ok=True)
+        async with aiofiles.open(dest_file, mode="wb") as fh:
+            async for chunk in response.content.iter_chunked(chunk_size):
+                await fh.write(chunk)
+                total_size += len(chunk)
+
+    return total_size
