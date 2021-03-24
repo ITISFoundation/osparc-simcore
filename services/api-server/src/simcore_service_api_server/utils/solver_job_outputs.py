@@ -35,10 +35,8 @@ async def get_solver_output_results(
             solver_output_results[port.key] = port.value
             if isinstance(port.value, BaseFileLink):
                 file_link: BaseFileLink = port.value
-                solver_output_results[port.key] = File(
-                    id=File.create_id(file_link.path),
-                    filename=Path(file_link.path).name,
-                    checksum=file_link.e_tag,
+                solver_output_results[port.key] = await File.create_from_file_link(
+                    file_link.path, file_link.e_tag
                 )
         return solver_output_results
 
