@@ -15,7 +15,6 @@ from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
-from ..dependencies.database import get_db_engine
 from ..dependencies.services import get_api_client
 
 logger = logging.getLogger(__name__)
@@ -130,6 +129,7 @@ async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: 
 
     from .jobs_faker import get_job_outputs_impl
 
+    # pylint: disable=unused-variable
     async def real_impl(
         user_id: int,
         project_id: ProjectID,
