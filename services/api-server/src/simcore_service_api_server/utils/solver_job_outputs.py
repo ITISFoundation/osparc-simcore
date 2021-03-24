@@ -36,7 +36,7 @@ async def get_solver_output_results(
             if isinstance(port.value, BaseFileLink):
                 file_link: BaseFileLink = port.value
                 solver_output_results[port.key] = File(
-                    id=file_link.path,
+                    id=File.create_id(file_link.path),
                     filename=Path(file_link.path).name,
                     checksum=file_link.e_tag,
                 )
