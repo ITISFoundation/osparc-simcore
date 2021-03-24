@@ -1,11 +1,16 @@
 import asyncio
 import logging
 from pathlib import Path
+from typing import Optional
 from concurrent.futures import ProcessPoolExecutor
 from collections import deque
 
 from aiohttp import web
+from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.engine import SAConnection
 
+from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
+from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 from simcore_service_webserver.exporter.formatters.formatter_v1 import FormatterV1
 from simcore_service_webserver.exporter.formatters.base_formatter import BaseFormatter
 from simcore_service_webserver.exporter.formatters.sds.sds import (
@@ -33,7 +38,14 @@ from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.catalog_client import get_service
 
 
-log = logging.getLogger(__name__ + "[SDS]")
+log = logging.getLogger(__name__)
+
+
+async def _get_scicrunch_resource(rrid: str, conn: SAConnection) -> Optional[RowProxy]:
+    res: ResultProxy = await conn.execute(
+        scicrunch_resources.select().where(scicrunch_resources.c.rrid == rrid)
+    )
+    return await res.first()
 
 
 async def _write_sds_content(
@@ -64,10 +76,24 @@ async def _write_sds_content(
 
     params_code_description = {}
 
-    # Classifiers
-    # TODO: continue with this
-    # List[classifier_id]
-    RRIDEntry(rrid_term="", rrod_identifier="")
+    rrid_entires = deque()
+
+    classifiers = project_data["classifiers"]
+    async with app[APP_DB_ENGINE_KEY].acquire() as conn:
+        for classifier in classifiers:
+            scicrunch_resource = await _get_scicrunch_resource(
+                rrid=classifier, conn=conn
+            )
+            if scicrunch_resource is None:
+                continue
+
+            rrid_entires.append(
+                RRIDEntry(
+                    rrid_term=scicrunch_resource.name,
+                    rrod_identifier=scicrunch_resource.rrid,
+                )
+            )
+    params_code_description["rrid_entires"] = list(rrid_entires)
 
     # adding TSR data
     quality_data = project_data["quality"]
