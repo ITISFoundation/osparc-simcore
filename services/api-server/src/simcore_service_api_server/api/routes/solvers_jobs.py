@@ -4,6 +4,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
+from ...models.api_resources import compose_resource_name
+from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.jobs import (
     Job,
     JobInputs,
@@ -11,8 +13,6 @@ from ...models.schemas.jobs import (
     JobStatus,
     KeywordArguments,
 )
-from ...models.api_resources import compose_resource_name
-from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import DirectorV2Api
@@ -24,6 +24,9 @@ from ..dependencies.webserver import AuthSession, get_webserver_session
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# pylint: disable=unused-variable
 
 
 ## JOBS ---------------
@@ -122,7 +125,7 @@ async def get_job(
 
     async def _draft_impl():
         #
-        #
+
         job_name = compose_resource_name(solver_key, version, job_id)
         project = await webserver_api.get_project(name=job_name, uuid=job_id)
 
@@ -223,7 +226,6 @@ async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: 
 
     from .jobs_faker import get_job_outputs_impl
 
-    # pylint: disable=unused-variable
     async def real_impl(
         user_id: int,
         project_id: ProjectID,
