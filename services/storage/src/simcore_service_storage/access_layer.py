@@ -189,7 +189,7 @@ async def get_project_access_rights(
         # Either project does not exists OR user_id has NO access
         return AccessRights.none()
 
-    assert isinstance(row.prj_owner, int)
+    assert row.prj_owner is None or isinstance(row.prj_owner, int)
     assert isinstance(row.access_rights, dict)
 
     if row.prj_owner == user_id:
