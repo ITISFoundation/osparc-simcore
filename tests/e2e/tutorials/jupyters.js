@@ -67,7 +67,7 @@ async function runTutorial() {
     const value = await nbIframe.evaluate(el => el.textContent, element);
     console.log('Results for the notebook cell is:', value);
     // NOTE: we need to wait here to get the results.
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(15000);
 
     const outFiles = [
       "TheNumberNumber.txt",
@@ -110,7 +110,7 @@ async function runTutorial() {
     console.log('Checking results for the jupyter lab cell:', jLabVvalue);
     await tutorial.takeScreenshot("pressRunJLab");
     // wait sufficiently before getting the results
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(15000);
 
     console.log('Checking results for the jupyter lab:');
     const outFiles2 = [

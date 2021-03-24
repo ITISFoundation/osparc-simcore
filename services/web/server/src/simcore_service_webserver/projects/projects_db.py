@@ -4,7 +4,8 @@
     - Shall be used as entry point for all the queries to the database regarding projects
 
 """
-
+import asyncio
+import concurrent.futures
 import logging
 import textwrap
 import uuid as uuidlib
@@ -22,6 +23,8 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from change_case import ChangeCase
+from jsonschema.exceptions import ValidationError
+from models_library.projects import ProjectAtDB
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import literal_column
@@ -37,6 +40,7 @@ from .projects_exceptions import (
     ProjectsException,
 )
 from .projects_fakes import Fake
+from .projects_utils import project_uses_available_services
 
 log = logging.getLogger(__name__)
 
@@ -307,7 +311,11 @@ class ProjectDBAPI:
                 prj["tags"] = []
             return prj
 
-    async def load_user_projects(self, user_id: int) -> List[Dict]:
+    async def load_user_projects(
+        self,
+        user_id: int,
+        filter_by_services: Optional[List[Dict]] = None,
+    ) -> List[Dict]:
         log.info("Loading projects for user %s", user_id)
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
@@ -330,13 +338,17 @@ class ProjectDBAPI:
                 """
             )
             projects_list = await self.__load_projects(
-                conn, query, user_id, user_groups
+                conn, query, user_id, user_groups, filter_by_services=filter_by_services
             )
 
         return projects_list
 
     async def load_template_projects(
-        self, user_id: int, *, only_published=False
+        self,
+        user_id: int,
+        *,
+        only_published=False,
+        filter_by_services: Optional[List[Dict]] = None,
     ) -> List[Dict]:
         log.info("Loading public template projects")
 
@@ -358,7 +370,9 @@ class ProjectDBAPI:
                 """
             )
 
-            db_projects = await self.__load_projects(conn, query, user_id, user_groups)
+            db_projects = await self.__load_projects(
+                conn, query, user_id, user_groups, filter_by_services
+            )
 
             projects_list.extend(db_projects)
 
@@ -378,7 +392,12 @@ class ProjectDBAPI:
         return user_groups
 
     async def __load_projects(
-        self, conn: SAConnection, query: str, user_id: int, user_groups: List[RowProxy]
+        self,
+        conn: SAConnection,
+        query: str,
+        user_id: int,
+        user_groups: List[RowProxy],
+        filter_by_services: Optional[List[Dict]] = None,
     ) -> List[Dict]:
         api_projects: List[Dict] = []  # API model-compatible projects
         db_projects: List[Dict] = []  # DB model-compatible projects
@@ -387,8 +406,23 @@ class ProjectDBAPI:
                 _check_project_permissions(row, user_id, user_groups, "read")
             except ProjectInvalidRightsError:
                 continue
+            try:
+
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    await asyncio.get_event_loop().run_in_executor(
+                        pool, ProjectAtDB.from_orm, row
+                    )
+            except ValidationError as exc:
+                log.warning(
+                    "project in db with uuid [%s] failed validation, please check. error: %s",
+                    row.get("id"),
+                    exc,
+                )
+                continue
             prj = dict(row.items())
-            log.debug("found project: %s", pformat(prj))
+            if filter_by_services:
+                if not await project_uses_available_services(prj, filter_by_services):
+                    continue
             db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
