@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, List, Optional
+from typing import Callable, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -13,7 +13,6 @@ from ...models.schemas.jobs import (
 )
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
-from ...utils.models_creators import create_project_model_for_job
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
@@ -72,10 +71,11 @@ async def create_job(
     solver = await catalog_client.get_solver(user_id, solver_key, version)
 
     async def _draft_impl():
+        from ...utils.models_creators import create_project_model_for_job
+
         #
         # NOTE: KEEP here as draft for next PR
         #
-
         # TODO: validate inputs against solver input schema
         #   -> catalog
 

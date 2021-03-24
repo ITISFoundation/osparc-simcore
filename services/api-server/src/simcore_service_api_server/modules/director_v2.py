@@ -7,11 +7,10 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
 from pydantic import AnyHttpUrl, BaseModel, Field, PositiveInt
-from pydantic.types import PositiveInt
-from simcore_service_director_v2.models.schemas.constants import UserID
 
 from ..core.settings import DirectorV2Settings
-from ..models.schemas.jobs import Job, JobInputs
+
+# from ..models.schemas.jobs import Job, JobInputs
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
@@ -81,7 +80,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        task = ComputationTaskOut(**data)
+        _task = ComputationTaskOut(**data)
 
 
 # MODULES APP SETUP -------------------------------------------------------------
