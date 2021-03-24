@@ -15,7 +15,7 @@ import pytest
 import sqlalchemy as sa
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
-from pytest_simcore.helpers.fakers_rawdata_for_db import random_project, random_user
+from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.storage_models import projects, users
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config, utils

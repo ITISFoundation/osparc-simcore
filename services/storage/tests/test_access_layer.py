@@ -8,7 +8,7 @@ from uuid import UUID
 
 import pytest
 from aiopg.sa.engine import Engine
-from pytest_simcore.helpers.fakers_rawdata_for_db import random_project, random_user
+from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.storage_models import projects, users
 from simcore_service_storage.access_layer import (
     AccessRights,
