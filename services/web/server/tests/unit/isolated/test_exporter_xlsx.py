@@ -318,6 +318,7 @@ def test_code_description(temp_dir: Path):
 
     inputs = [
         InputsEntryModel(
+            service_alias=random_text(f"service_alias{i}"),
             service_name=random_text(f"service_name{i}"),
             service_version=random_text(f"service_version{i}"),
             input_name=random_text(f"input_name{i}"),
@@ -332,6 +333,7 @@ def test_code_description(temp_dir: Path):
     ]
     outputs = [
         OutputsEntryModel(
+            service_alias=random_text(f"service_alias{i}"),
             service_name=random_text(f"service_name{i}"),
             service_version=random_text(f"service_version{i}"),
             output_name=random_text(f"output_name{i}"),
@@ -412,24 +414,26 @@ def test_code_description(temp_dir: Path):
     for row, input_entry in zip(range(4, len(inputs)), inputs):
         input_entry: InputsEntryModel = input_entry
 
-        expected_inputs[f"B{row}"] = input_entry.service_name
-        expected_inputs[f"C{row}"] = input_entry.service_version
-        expected_inputs[f"D{row}"] = input_entry.input_name
-        expected_inputs[f"E{row}"] = input_entry.input_data_ontology_identifier
-        expected_inputs[f"F{row}"] = input_entry.input_data_type
-        expected_inputs[f"G{row}"] = input_entry.input_data_units
-        expected_inputs[f"H{row}"] = input_entry.input_data_default_value
+        expected_inputs[f"B{row}"] = input_entry.service_alias
+        expected_inputs[f"C{row}"] = input_entry.service_name
+        expected_inputs[f"D{row}"] = input_entry.service_version
+        expected_inputs[f"E{row}"] = input_entry.input_name
+        expected_inputs[f"F{row}"] = input_entry.input_data_ontology_identifier
+        expected_inputs[f"G{row}"] = input_entry.input_data_type
+        expected_inputs[f"H{row}"] = input_entry.input_data_units
+        expected_inputs[f"I{row}"] = input_entry.input_data_default_value
 
     expected_outputs = expected_layout["Outputs"]
     for row, output_entry in zip(range(4, len(outputs)), outputs):
         output_entry: OutputsEntryModel = output_entry
 
-        expected_outputs[f"B{row}"] = output_entry.service_name
-        expected_outputs[f"C{row}"] = output_entry.service_version
-        expected_outputs[f"D{row}"] = output_entry.output_name
-        expected_outputs[f"E{row}"] = output_entry.output_data_ontology_identifier
-        expected_outputs[f"F{row}"] = output_entry.output_data_type
-        expected_outputs[f"G{row}"] = output_entry.output_data_units
+        expected_outputs[f"B{row}"] = output_entry.service_alias
+        expected_outputs[f"C{row}"] = output_entry.service_name
+        expected_outputs[f"D{row}"] = output_entry.service_version
+        expected_outputs[f"E{row}"] = output_entry.output_name
+        expected_outputs[f"F{row}"] = output_entry.output_data_ontology_identifier
+        expected_outputs[f"G{row}"] = output_entry.output_data_type
+        expected_outputs[f"H{row}"] = output_entry.output_data_units
 
     assert assert_expected_layout(workbook, expected_layout) is True
 

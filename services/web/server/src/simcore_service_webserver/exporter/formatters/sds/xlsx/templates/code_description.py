@@ -214,6 +214,9 @@ class CodeDescriptionModel(BaseModel):
 
 
 class InputsEntryModel(BaseModel):
+    service_alias: StrictStr = Field(
+        ..., description="Name of the service containing this input, given by the user"
+    )
     service_name: StrictStr = Field(
         ..., description="Name of the service containing this input"
     )
@@ -243,6 +246,9 @@ class InputsEntryModel(BaseModel):
 
 
 class OutputsEntryModel(BaseModel):
+    service_alias: StrictStr = Field(
+        ..., description="Name of the service producing this output, given by the user"
+    )
     service_name: StrictStr = Field(
         ..., description="Name of the service containing this output"
     )
@@ -800,38 +806,147 @@ class SheetInputs(BaseXLSXSheet):
         ("A2", T("Description")),
         ("A3", T("Example")),
         # column B
-        ("B1", TB("Service name")),
-        ("B2", T("Name of the service containing this input")),
+        ("B1", T("Service Alias (User-given name)")),
+        ("B2", T("Name of the service containing this input, given by the user")),
         ("B3", T("MembraneModel")),
         # column C
-        ("C1", TB("Service version")),
-        ("C2", T("Version of the service containing this input")),
-        ("C3", T("1.0.1")),
+        ("C1", TB("Service name")),
+        ("C2", T("Name of the service containing this input")),
+        ("C3", T("MembraneModel")),
         # column D
-        ("D1", TB("Input Name")),
-        ("D2", T("An input field to the MSoP submission")),
-        ("D3", T("Membrane Depolarization")),
+        ("D1", TB("Service version")),
+        ("D2", T("Version of the service containing this input")),
+        ("D3", T("1.0.1")),
         # column E
-        ("E1", TB("Input Data Ontology Identifier")),
+        ("E1", TB("Input Name")),
+        ("E2", T("An input field to the MSoP submission")),
+        ("E3", T("Membrane Depolarization")),
+        # column F
+        ("F1", TB("Input Data Ontology Identifier")),
         (
-            "E2",
+            "F2",
             Link(
                 "Ontology identifier for the input field, if applicable",
                 "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term",
             ),
         ),
-        ("E3", T("ILX:0103092")),
-        # column F
-        ("F1", TB("Input Data Type")),
-        ("F2", T("Data type for the input field (in plain text)")),
-        ("F3", T(".txt file")),
+        ("F3", T("ILX:0103092")),
         # column G
-        ("G1", TB("Input Data Units")),
-        ("G2", T("Units of data for the input field, if applicable")),
-        ("G3", T("millivolts")),
+        ("G1", TB("Input Data Type")),
+        ("G2", T("Data type for the input field (in plain text)")),
+        ("G3", T(".txt file")),
         # column H
-        ("H1", TB("Input Data Default Value")),
-        ("H2", T("Default value for the input field, if applicable (doi or value)")),
+        ("H1", TB("Input Data Units")),
+        ("H2", T("Units of data for the input field, if applicable")),
+        ("H3", T("millivolts")),
+        # column I
+        ("I1", TB("Input Data Default Value")),
+        ("I2", T("Default value for the input field, if applicable (doi or value)")),
+        # background & borders
+        ("A1:A3", Backgrounds.gray_background),
+        ("B1:I1", Backgrounds.yellow_dark),
+        ("B2:I3", Backgrounds.yellow),
+        ("A1:I3", Borders.medium_grid),
+    ]
+    column_dimensions = {
+        "A": 10,
+        "B": 20,
+        "C": 20,
+        "D": 20,
+        "E": 20,
+        "F": 20,
+        "G": 20,
+        "H": 20,
+        "I": 20,
+    }
+
+    def assemble_data_for_template(
+        self, template_data: BaseModel
+    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
+        params: CodeDescriptionParams = ensure_correct_instance(
+            template_data, CodeDescriptionParams
+        )
+        intputs: List[InputsEntryModel] = params.inputs
+
+        cells = deque()
+
+        for row_index, inputs_entry in zip(range(4, len(intputs)), intputs):
+            inputs_entry: InputsEntryModel = inputs_entry
+            cells.append(
+                (f"B{row_index}", T(inputs_entry.service_alias) | Borders.light_grid)
+            )
+            cells.append(
+                (f"C{row_index}", T(inputs_entry.service_name) | Borders.light_grid)
+            )
+            cells.append(
+                (f"D{row_index}", T(inputs_entry.service_version) | Borders.light_grid)
+            )
+            cells.append(
+                (f"E{row_index}", T(inputs_entry.input_name) | Borders.light_grid)
+            )
+            cells.append(
+                (
+                    f"F{row_index}",
+                    T(inputs_entry.input_data_ontology_identifier) | Borders.light_grid,
+                )
+            )
+            cells.append(
+                (f"G{row_index}", T(inputs_entry.input_data_type) | Borders.light_grid)
+            )
+            cells.append(
+                (f"H{row_index}", T(inputs_entry.input_data_units) | Borders.light_grid)
+            )
+            cells.append(
+                (
+                    f"I{row_index}",
+                    T(inputs_entry.input_data_default_value) | Borders.light_grid,
+                )
+            )
+
+        return list(cells)
+
+
+class SheetOutputs(BaseXLSXSheet):
+    name = "Outputs"
+    cell_styles = [
+        # column A
+        ("A1", T("Field")),
+        ("A2", T("Description")),
+        ("A3", T("Example")),
+        # column B
+        ("B1", TB("Service name")),
+        ("B2", T("Name of the service containing this output")),
+        ("B3", T("ThresholdModel")),
+        # column C
+        ("C1", TB("Service name")),
+        ("C2", T("Name of the service containing this output")),
+        ("C3", T("ThresholdModel")),
+        # column D
+        ("D1", TB("Service version")),
+        ("D2", T("Version of the service containing this output")),
+        ("D3", T("1.0.1")),
+        # column E
+        ("E1", TB("Output Name")),
+        ("E2", T("An output field to the MSoP submission")),
+        ("E3", T("Excitation Threshold")),
+        # column F
+        ("F1", TB("Output Data Ontology Identifier")),
+        (
+            "F2",
+            Link(
+                "Ontology identifier for the output field, if applicable",
+                "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term",
+            ),
+        ),
+        ("F3", T("ILX:0110906 ")),
+        # column G
+        ("G1", TB("Output Data Type")),
+        ("G2", T("Data type for the output field")),
+        ("G3", T("real number")),
+        # column H
+        ("H1", TB("Output Data Units")),
+        ("H2", T("Units of data for the output field, if applicable")),
+        ("H3", T("millivolts")),
         # background & borders
         ("A1:A3", Backgrounds.gray_background),
         ("B1:H1", Backgrounds.yellow_dark),
@@ -855,94 +970,6 @@ class SheetInputs(BaseXLSXSheet):
         params: CodeDescriptionParams = ensure_correct_instance(
             template_data, CodeDescriptionParams
         )
-        intputs: List[InputsEntryModel] = params.inputs
-
-        cells = deque()
-
-        for row_index, inputs_entry in zip(range(4, len(intputs)), intputs):
-            inputs_entry: InputsEntryModel = inputs_entry
-            cells.append(
-                (f"B{row_index}", T(inputs_entry.service_name) | Borders.light_grid)
-            )
-            cells.append(
-                (f"C{row_index}", T(inputs_entry.service_version) | Borders.light_grid)
-            )
-            cells.append(
-                (f"D{row_index}", T(inputs_entry.input_name) | Borders.light_grid)
-            )
-            cells.append(
-                (
-                    f"E{row_index}",
-                    T(inputs_entry.input_data_ontology_identifier) | Borders.light_grid,
-                )
-            )
-            cells.append(
-                (f"F{row_index}", T(inputs_entry.input_data_type) | Borders.light_grid)
-            )
-            cells.append(
-                (f"G{row_index}", T(inputs_entry.input_data_units) | Borders.light_grid)
-            )
-            cells.append(
-                (
-                    f"H{row_index}",
-                    T(inputs_entry.input_data_default_value) | Borders.light_grid,
-                )
-            )
-
-        return list(cells)
-
-
-class SheetOutputs(BaseXLSXSheet):
-    name = "Outputs"
-    cell_styles = [
-        # column A
-        ("A1", T("Field")),
-        ("A2", T("Description")),
-        ("A3", T("Example")),
-        # column B
-        ("B1", TB("Service name")),
-        ("B2", T("Name of the service containing this output")),
-        ("B3", T("ThresholdModel")),
-        # column C
-        ("C1", TB("Service version")),
-        ("C2", T("Version of the service containing this output")),
-        ("C3", T("1.0.1")),
-        # column D
-        ("D1", TB("Output Name")),
-        ("D2", T("An output field to the MSoP submission")),
-        ("D3", T("Excitation Threshold")),
-        # column E
-        ("E1", TB("Output Data Ontology Identifier")),
-        (
-            "E2",
-            Link(
-                "Ontology identifier for the output field, if applicable",
-                "https://scicrunch.org/scicrunch/interlex/search?q=NLXOEN&l=NLXOEN&types=term",
-            ),
-        ),
-        ("E3", T("ILX:0110906 ")),
-        # column F
-        ("F1", TB("Output Data Type")),
-        ("F2", T("Data type for the output field")),
-        ("F3", T("real number")),
-        # column G
-        ("G1", TB("Output Data Units")),
-        ("G2", T("Units of data for the output field, if applicable")),
-        ("G3", T("millivolts")),
-        # background & borders
-        ("A1:A3", Backgrounds.gray_background),
-        ("B1:G1", Backgrounds.yellow_dark),
-        ("B2:G3", Backgrounds.yellow),
-        ("A1:G3", Borders.medium_grid),
-    ]
-    column_dimensions = {"A": 10, "B": 20, "C": 20, "D": 20, "E": 20, "F": 20, "G": 20}
-
-    def assemble_data_for_template(
-        self, template_data: BaseModel
-    ) -> List[Tuple[str, Dict[str, BaseXLSXCellData]]]:
-        params: CodeDescriptionParams = ensure_correct_instance(
-            template_data, CodeDescriptionParams
-        )
         outputs: List[OutputsEntryModel] = params.outputs
 
         cells = deque()
@@ -950,30 +977,33 @@ class SheetOutputs(BaseXLSXSheet):
         for row_index, outputs_entry in zip(range(4, len(outputs)), outputs):
             outputs_entry: OutputsEntryModel = outputs_entry
             cells.append(
-                (f"B{row_index}", T(outputs_entry.service_name) | Borders.light_grid)
+                (f"B{row_index}", T(outputs_entry.service_alias) | Borders.light_grid)
             )
             cells.append(
-                (f"C{row_index}", T(outputs_entry.service_version) | Borders.light_grid)
+                (f"C{row_index}", T(outputs_entry.service_name) | Borders.light_grid)
             )
             cells.append(
-                (f"D{row_index}", T(outputs_entry.output_name) | Borders.light_grid)
+                (f"D{row_index}", T(outputs_entry.service_version) | Borders.light_grid)
+            )
+            cells.append(
+                (f"E{row_index}", T(outputs_entry.output_name) | Borders.light_grid)
             )
             cells.append(
                 (
-                    f"E{row_index}",
+                    f"F{row_index}",
                     T(outputs_entry.output_data_ontology_identifier)
                     | Borders.light_grid,
                 )
             )
             cells.append(
                 (
-                    f"F{row_index}",
+                    f"G{row_index}",
                     T(outputs_entry.output_data_type) | Borders.light_grid,
                 )
             )
             cells.append(
                 (
-                    f"G{row_index}",
+                    f"H{row_index}",
                     T(outputs_entry.output_data_units) | Borders.light_grid,
                 )
             )
