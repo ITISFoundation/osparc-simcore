@@ -187,7 +187,7 @@ async def catalog_subsystem_mock(monkeypatch, published_project):
 
 
 @pytest.fixture
-def mocks_on_projects_api(mocker) -> Dict:
+def mocks_on_projects_api(mocker) -> None:
     """
     All projects in this module are UNLOCKED
     """
@@ -195,6 +195,29 @@ def mocks_on_projects_api(mocker) -> Dict:
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
         return_value=future_with_result(ProjectLocked(value=False)),
     )
+
+
+@pytest.fixture
+async def storage_subsystem_mock(storage_subsystem_mock, mocker):
+    """
+    Mocks functions that require storage client
+    """
+    # Overrides + extends fixture in services/web/server/tests/unit/with_dbs/conftest.py
+    # SEE https://docs.pytest.org/en/stable/fixture.html#override-a-fixture-on-a-folder-conftest-level
+
+    # Mocks copy_data_folders_from_project BUT under studies_access
+    mock = mocker.patch(
+        "simcore_service_webserver.studies_access.copy_data_folders_from_project"
+    )
+
+    async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):
+        print(
+            f"MOCK copying data project {src_prj['uuid']} -> {dst_prj['uuid']} "
+            f"with {len(nodes_map)} s3 objects by user={user_id}"
+        )
+        return dst_prj
+
+    mock.side_effect = _mock_copy_data_from_project
 
 
 # TESTS ----------------------------------------------------------------------------------------------

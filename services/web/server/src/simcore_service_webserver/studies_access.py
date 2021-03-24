@@ -27,6 +27,7 @@ from .resource_manager.config import (
 )
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
+from .storage_api import copy_data_folders_from_project
 from .utils import compose_error_msg
 
 log = logging.getLogger(__name__)
@@ -152,7 +153,6 @@ async def copy_study_to_account(
         clone_project_document,
         substitute_parameterized_inputs,
     )
-    from .storage_api import copy_data_folders_from_project
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
     # TODO: move to project_api and add access layer
