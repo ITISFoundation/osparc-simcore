@@ -49,6 +49,9 @@ class DownloadLink(BaseModel):
 
 
 class BaseFileLink(BaseModel):
+    # TODO: constructor will always cast to str here. We should perhaps set is as str. Actually
+    # if we want to do hash in inputs/outputs ... we should have a single type for identifiers
+    # Recall lru_cache options regarding types!!
     store: Union[str, int] = Field(
         ...,
         description="The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
@@ -81,16 +84,16 @@ class BaseFileLink(BaseModel):
 class SimCoreFileLink(BaseFileLink):
     """ Input/Output is a reference to a dataset in the internal storage """
 
-    store: int = 0
+    store: str = "0"
 
     @validator("store")
     @classmethod
     def must_be_simcore_s3(cls, v):
         if v is None:
-            v = 0
-        if v != 0:
-            raise ValueError(f"store must be set to 0, got {v}")
-        return v
+            v = "0"
+        if v != "0":
+            raise ValueError(f"SimCore store must be set to 0, got {v}")
+        return "0"
 
     @validator("label", always=True, pre=True)
     @classmethod
