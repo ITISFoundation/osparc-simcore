@@ -1,27 +1,23 @@
 import logging
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import FastAPI
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
 from models_library.projects_pipeline import ComputationTask
-from pydantic import AnyHttpUrl, BaseModel, Field, PositiveInt
+from pydantic import AnyHttpUrl, Field, PositiveInt
 
 from ..core.settings import DirectorV2Settings
-
-# from ..models.schemas.jobs import Job, JobInputs
+from ..models.schemas.jobs import JobStatus, TaskStates
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
+PercentageInt = conint(ge=0, le=100)
 
 # API MODELS ---------------------------------------------
 # NOTE: as services/director-v2/src/simcore_service_director_v2/models/schemas/comp_tasks.py
 # TODO: shall schemas of internal APIs be in models_library as well?? or is against
-
-UserID = PositiveInt
 
 
 class ComputationTaskOut(ComputationTask):
@@ -32,31 +28,22 @@ class ComputationTaskOut(ComputationTask):
         None, description="the link where to stop the task"
     )
 
+    def guess_progress(self) -> PercentageInt:
+        # guess progress based on self.state
+        if self.state in [TaskStates.SUCCESS, TaskStates.FAILED]:
+            return 100
+        elif self.state in [TaskStates.RUNNING]:
+            return 50
+        return 0
 
-class ComputationTaskCreate(BaseModel):
-    user_id: UserID
-    project_id: ProjectID
-    start_pipeline: Optional[bool] = Field(
-        False, description="if True the computation pipeline will start right away"
-    )
-    subgraph: Optional[List[NodeID]] = Field(
-        None,
-        description="An optional set of nodes that must be executed, if empty the whole pipeline is executed",
-    )
-    force_restart: Optional[bool] = Field(
-        False, description="if True will force re-running all dependent nodes"
-    )
-
-
-class ComputationTaskStop(BaseModel):
-    user_id: UserID
-
-
-class ComputationTaskDelete(ComputationTaskStop):
-    force: Optional[bool] = Field(
-        False,
-        description="if True then the pipeline will be removed even if it is running",
-    )
+    def create_as_jobstatus(self) -> JobStatus:
+        """ Creates a JobStatus instance out of this task """
+        return JobStatus(
+            job_id=self.id,
+            state=self.state,
+            progress=self.guess_progress()
+            # FIXME: submitted_at =
+        )
 
 
 # API CLASS ---------------------------------------------
@@ -70,7 +57,11 @@ class DirectorV2Api(BaseServiceClientApi):
 
     # TODO: error handling
 
-    async def create_computation(self, project_id: UUID, user_id: PositiveInt):
+    # director2 API ---------------------------
+
+    async def create_computation(
+        self, project_id: UUID, user_id: PositiveInt
+    ) -> ComputationTaskOut:
         data = await self.client.post(
             "/computations",
             json={
@@ -80,7 +71,68 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        _task = ComputationTaskOut(**data)
+        computation_task = ComputationTask(**data)
+        return computation_task
+
+    async def get_computation(
+        self, project_id: UUID, user_id: PositiveInt
+    ) -> ComputationTaskOut:
+        data = await self.client.get(
+            f"/computations/{project_id}",
+            json={
+                "user_id": user_id,
+            },
+        )
+        computation_task = ComputationTaskOut(**data)
+        return computation_task
+
+    async def start_computation(
+        self, project_id: UUID, user_id: PositiveInt
+    ) -> ComputationTaskOut:
+        data = await self.client.post(
+            "/computations",
+            json={
+                "user_id": user_id,
+                "project_id": project_id,
+                "start_pipeline": True,
+            },
+        )
+
+        computation_task = ComputationTaskOut(**data)
+        return computation_task
+
+    async def stop_computation(
+        self, project_id: UUID, user_id: PositiveInt
+    ) -> ComputationTaskOut:
+        data = await self.client.post(
+            f"/computations/{project_id}:stop",
+            json={
+                "user_id": user_id,
+            },
+        )
+
+        computation_task = ComputationTaskOut(**data)
+        return computation_task
+
+    async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
+        await self.client.delete(
+            f"/computations/{project_id}",
+            json={
+                "user_id": user_id,
+                "force": True,
+            },
+        )
+
+    # TODO: HIGHER lever interface with job* resources
+    # or better in another place?
+    async def create_job(self):
+        pass
+
+    async def list_jobs(self):
+        pass
+
+    async def get_job(self):
+        pass
 
 
 # MODULES APP SETUP -------------------------------------------------------------

@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Union
@@ -6,7 +7,73 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, HttpUrl, conint, validator
 
 from ...models.schemas.files import File
-from ..api_resources import RelativeResourceName
+from ..api_resources import RelativeResourceName, compose_resource_name
+
+# INPUTS/OUTPUTS ----------
+#
+
+
+# FIXME: all ints and bools will be floats
+ArgumentType = Union[File, float, int, bool, str, None]
+KeywordArguments = Dict[str, ArgumentType]
+PositionalArguments = List[ArgumentType]
+
+
+class JobInputs(BaseModel):
+    # NOTE: this is different from the resource JobInput (TBD)
+    values: KeywordArguments
+
+    # TODO: gibt es platz fuer metadata?
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "values": {
+                    "x": 4.33,
+                    "n": 55,
+                    "title": "Temperature",
+                    "enabled": True,
+                    "input_file": File(
+                        filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
+                    ),
+                }
+            }
+        }
+
+    def compute_checksum(self):
+        # FIXME: this is wront since spaces can change checksum?
+        return hashlib.sha256(" ".join(self.json()).encode("utf-8")).hexdigest()
+
+
+class JobOutputs(BaseModel):
+    # TODO: JobOutputs is a resources!
+
+    job_id: UUID = Field(..., description="Job that produced this output")
+
+    # TODO: an output could be computed before than the others? has a state? not-ready/ready?
+    results: KeywordArguments
+
+    # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
+    # on one specific output.
+    # errors: List[JobErrors] = []
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
+                "results": {
+                    "maxSAR": 4.33,
+                    "n": 55,
+                    "title": "Specific Absorption Rate",
+                    "enabled": False,
+                    "output_file": File(
+                        filename="sar_matrix.txt",
+                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+                    ),
+                },
+            }
+        }
+
 
 # JOBS ----------
 #  - A job can be create on a specific solver or other type of future runner (e.g. a pipeline)
@@ -81,6 +148,14 @@ class Job(BaseModel):
             outputs_url=None,
         )
 
+    @classmethod
+    def create_from_solver(cls, solver_id, solver_version, inputs: JobInputs) -> "Job":
+        # TODO: check if job exists already?? Do not consider date??
+        job = Job.create_now(
+            compose_resource_name(solver_id, solver_version), inputs.compute_checksum()
+        )
+        return job
+
 
 # TODO: these need to be in sync with celery task states
 class TaskStates(str, Enum):
@@ -115,65 +190,3 @@ class JobStatus(BaseModel):
     def take_snapshot(self, event: str = "submitted"):
         setattr(self, f"{event}_at", datetime.utcnow())
         return getattr(self, f"{event}_at")
-
-
-# INPUTS/OUTPUTS ----------
-#
-
-
-# FIXME: all ints and bools will be floats
-ArgumentType = Union[File, float, int, bool, str, None]
-KeywordArguments = Dict[str, ArgumentType]
-PositionalArguments = List[ArgumentType]
-
-
-class JobInputs(BaseModel):
-    # NOTE: this is different from the resource JobInput (TBD)
-    values: KeywordArguments
-
-    # TODO: gibt es platz fuer metadata?
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "values": {
-                    "x": 4.33,
-                    "n": 55,
-                    "title": "Temperature",
-                    "enabled": True,
-                    "input_file": File(
-                        filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
-                    ),
-                }
-            }
-        }
-
-
-class JobOutputs(BaseModel):
-    # TODO: JobOutputs is a resources!
-
-    job_id: UUID = Field(..., description="Job that produced this output")
-
-    # TODO: an output could be computed before than the others? has a state? not-ready/ready?
-    results: KeywordArguments
-
-    # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
-    # on one specific output.
-    # errors: List[JobErrors] = []
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
-                "results": {
-                    "maxSAR": 4.33,
-                    "n": 55,
-                    "title": "Specific Absorption Rate",
-                    "enabled": False,
-                    "output_file": File(
-                        filename="sar_matrix.txt",
-                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                    ),
-                },
-            }
-        }

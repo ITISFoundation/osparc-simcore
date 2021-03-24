@@ -4,6 +4,7 @@
 import uuid
 from datetime import datetime
 from functools import lru_cache
+from pprint import pformat
 
 from ..models.domain.projects import (
     InputTypes,
@@ -38,6 +39,12 @@ def now_str() -> str:
 # CREATE HELPERS --------
 
 
+def get_node_id(project_id, solver_id) -> str:
+    # By clumsy design, the webserver needs a global uuid,
+    # so we decieded to compose as this
+    return compose_uuid_from(project_id, solver_id)
+
+
 def create_project_model_for_job(
     solver: Solver, job: Job, inputs: JobInputs
 ) -> NewProjectIn:
@@ -45,7 +52,7 @@ def create_project_model_for_job(
     Creates a project for a solver's job
     """
     project_id = job.id
-    solver_id = compose_uuid_from(project_id, solver.id)
+    solver_id = get_node_id(project_id, solver.id)
 
     # solver
 
@@ -72,10 +79,16 @@ def create_project_model_for_job(
     )
 
     # Ensembles project model so it can be used as input for create_project
-    new_project = NewProjectIn(
+    job_info = pformat(
+        job.asdict(include={"id", "name", "inputs_checksum", "created_at"})
+    )
+
+    create_project_body = NewProjectIn(
         uuid=project_id,
-        name=f"API Job {job.name}",
-        description=f"Study associated to solver job {job.name}",
+        name={
+            job.name
+        },  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
+        description=f"Study associated to solver job:\n{job_info}",
         thumbnail="https://placeimg.com/171/96/tech/grayscale/?0.jpg",
         workbench={solver_id: solver_service},
         ui=StudyUI(
@@ -90,4 +103,4 @@ def create_project_model_for_job(
         accessRights={},
     )
 
-    return new_project
+    return create_project_body
