@@ -222,18 +222,24 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
           converter: dependencies => {
             if (dependencies !== null) {
-              return osparc.utils.StatusUI.getColor(dependencies.length ? "failed" : "ready");
+              return osparc.utils.StatusUI.getColor(dependencies.length ? "modified" : "ready");
             }
             return osparc.utils.StatusUI.getColor();
           }
         });
       } else {
-        this.getNode().getStatus().bind("modified", portLabel, "textColor", {
-          converter: modified => {
-            if (modified === null) {
-              return osparc.utils.StatusUI.getColor();
+        this.getNode().getStatus().bind("output", portLabel, "textColor", {
+          converter: output => {
+            switch (output) {
+              case "up-to-date":
+                return osparc.utils.StatusUI.getColor("ready");
+              case "out-of-date":
+              case "busy":
+                return osparc.utils.StatusUI.getColor("modified");
+              case "not-available":
+              default:
+                return osparc.utils.StatusUI.getColor();
             }
-            return osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
           }
         });
       }

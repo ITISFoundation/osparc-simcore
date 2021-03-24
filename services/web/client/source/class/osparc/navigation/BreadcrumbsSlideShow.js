@@ -48,34 +48,49 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideShow", {
         node.bind("label", btn, "label", {
           converter: val => `${pos+1}- ${val}`
         });
-        node.getStatus().bind("dependencies", btn.getChildControl("label"), "textColor", {
-          converter: dependencies => {
-            let textColor = "material-button-text";
-            if (dependencies && dependencies.length) {
-              textColor = "material-button-text-disabled";
-            }
-            return textColor;
-          }
+        node.getStatus().bind("dependencies", btn.getChildControl("label"), "font", {
+          converter: dependencies => (dependencies && dependencies.length) ? "text-14" : "title-14"
         });
-        node.getStatus().bind("modified", btn, "label", {
-          converter: modified => {
-            const label = btn.getLabel();
-            const lastCharacter = label.slice(-1);
-            if (modified === true && lastCharacter !== "*") {
-              return label + "*"; // add star suffix
-            } else if ((modified === false || modified === null) && lastCharacter === "*") {
-              return label.slice(0, -1); // remove star suffix
-            }
-            return label;
-          }
+        node.getStatus().bind("dependencies", btn.getChildControl("label"), "textColor", {
+          converter: dependencies => (dependencies && dependencies.length) ? "material-button-text-disabled" : "material-button-text"
         });
 
-        const statusUI = new osparc.ui.basic.NodeStatusUI(node);
-        const statusLabel = statusUI.getChildControl("label");
-        const statusIcon = statusUI.getChildControl("icon");
+        const statusIcon = new qx.ui.basic.Image();
+        node.getStatus().bind("output", statusIcon, "source", {
+          converter: output => {
+            switch (output) {
+              case "up-to-date":
+                return osparc.utils.StatusUI.getIconSource("up-to-date");
+              case "out-of-date":
+                return osparc.utils.StatusUI.getIconSource("modified");
+              case "busy":
+                return osparc.utils.StatusUI.getIconSource("running");
+              case "not-available":
+              default:
+                return osparc.utils.StatusUI.getIconSource();
+            }
+          },
+          onUpdate: (source, target) => (source.getOutput() === "busy") ? target.getContentElement().addClass("rotate") : target.getContentElement().removeClass("rotate")
+        });
+        node.getStatus().bind("output", statusIcon, "textColor", {
+          converter: output => {
+            switch (output) {
+              case "up-to-date":
+                return osparc.utils.StatusUI.getColor("ready");
+              case "out-of-date":
+              case "busy":
+                return osparc.utils.StatusUI.getColor("modified");
+              case "not-available":
+              default:
+                return osparc.utils.StatusUI.getColor();
+            }
+          }
+        }, this);
         // eslint-disable-next-line no-underscore-dangle
         btn._add(statusIcon);
 
+        const statusUI = new osparc.ui.basic.NodeStatusUI(node);
+        const statusLabel = statusUI.getChildControl("label");
         statusLabel.bind("value", btn, "toolTipText", {
           converter: status => `${node.getLabel()} - ${status}`
         });
