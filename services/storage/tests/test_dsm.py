@@ -109,16 +109,16 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
 
 
 def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
-    utils.create_tables(url=postgres_url)
+
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
 
     # create file and upload
     filename = os.path.basename(tmp_file)
-    project_id = "22"
+    project_id = "api"  # "357879cc-f65d-48b2-ad6c-074e2b9aa1c7"
     project_name = "battlestar"
     node_name = "galactica"
-    node_id = "1006"
+    node_id = "b423b654-686d-4157-b74b-08fa9d90b36e"
     file_name = filename
     file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
     display_name = os.path.join(str(project_name), str(node_name), str(file_name))
@@ -154,7 +154,6 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
 async def test_links_s3(
     postgres_service_url, s3_client, mock_files_factory, dsm_fixture
 ):
-    utils.create_tables(url=postgres_service_url)
 
     tmp_file = mock_files_factory(1)[0]
     fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
@@ -170,7 +169,7 @@ async def test_links_s3(
 
     tmp_file2 = tmp_file + ".rec"
     user_id = 0
-    down_url = await dsm.download_link_s3(fmd.file_uuid)
+    down_url = await dsm.download_link_s3(fmd.file_uuid, user_id)
 
     urllib.request.urlretrieve(down_url, tmp_file2)
 
@@ -180,7 +179,6 @@ async def test_links_s3(
 async def test_copy_s3_s3(
     postgres_service_url, s3_client, mock_files_factory, dsm_fixture
 ):
-    utils.create_tables(url=postgres_service_url)
 
     tmp_file = mock_files_factory(1)[0]
     fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
@@ -229,8 +227,6 @@ async def test_dsm_datcore(
     if not has_datcore_tokens():
         return
 
-    utils.create_tables(url=postgres_service_url)
-
     dsm = dsm_fixture
     user_id = "0"
     data = await dsm.list_files(
@@ -264,7 +260,7 @@ async def test_dsm_s3_to_datcore(
 ):
     if not has_datcore_tokens():
         return
-    utils.create_tables(url=postgres_service_url)
+
     tmp_file = mock_files_factory(1)[0]
 
     fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
@@ -314,7 +310,7 @@ async def test_dsm_datcore_to_local(
 ):
     if not has_datcore_tokens():
         return
-    utils.create_tables(url=postgres_service_url)
+
     dsm = dsm_fixture
     user_id = USER_ID
     data = await dsm.list_files(
@@ -343,7 +339,7 @@ async def test_dsm_datcore_to_S3(
 ):
     if not has_datcore_tokens():
         return
-    utils.create_tables(url=postgres_service_url)
+
     # create temporary file
     tmp_file = mock_files_factory(1)[0]
     dest_fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
@@ -396,7 +392,6 @@ async def test_copy_datcore(
 ):
     if not has_datcore_tokens():
         return
-    utils.create_tables(url=postgres_service_url)
 
     # the fixture should provide 3 files
     dsm = dsm_fixture
@@ -501,7 +496,8 @@ async def test_deep_copy_project_simcore_s3(
     if not has_datcore_tokens():
         return
     dsm = dsm_fixture
-    utils.create_full_tables(url=postgres_service_url)
+
+    utils.fill_tables_from_csv_files(url=postgres_service_url)
 
     path_in_datcore = datcore_structured_testbucket["file_id3"]
     file_name_in_datcore = Path(datcore_structured_testbucket["filename3"]).name

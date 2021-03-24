@@ -5,30 +5,60 @@
 
 import asyncio
 import json
-import sys
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 import np_helpers
 import pytest
 import sqlalchemy as sa
+from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from simcore_postgres_database.storage_models import projects, users
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_sdk.node_ports import node_config
 from yarl import URL
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+@pytest.fixture
+def user_id(postgres_engine: sa.engine.Engine) -> Iterable[int]:
+    # inject user in db
+
+    # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
+    # in time, the webserver service would bring more dependencies to other services
+    # which would turn this test too complex.
+
+    # pylint: disable=no-value-for-parameter
+    stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
+    print(str(stmt))
+    with postgres_engine.connect() as conn:
+        result = conn.execute(stmt)
+        [usr_id] = result.fetchone()
+
+    yield usr_id
+
+    with postgres_engine.connect() as conn:
+        conn.execute(users.delete().where(users.c.id == usr_id))
 
 
 @pytest.fixture
-def user_id() -> int:
-    # see fixtures/postgres.py
-    yield 1258
+def project_id(user_id: int, postgres_engine: sa.engine.Engine) -> Iterable[str]:
+    # inject project for user in db. This will give user_id, the full project's ownership
 
+    # pylint: disable=no-value-for-parameter
+    stmt = (
+        projects.insert()
+        .values(**random_project(prj_owner=user_id))
+        .returning(projects.c.uuid)
+    )
+    print(str(stmt))
+    with postgres_engine.connect() as conn:
+        result = conn.execute(stmt)
+        [prj_uuid] = result.fetchone()
 
-@pytest.fixture
-def project_id() -> str:
-    return str(uuid.uuid4())
+    yield prj_uuid
+
+    with postgres_engine.connect() as conn:
+        conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
 
 
 @pytest.fixture
@@ -57,7 +87,7 @@ async def filemanager_cfg(
 
 
 @pytest.fixture
-def file_uuid(project_id: str, node_uuid: str) -> Callable:
+def create_valid_file_uuid(project_id: str, node_uuid: str) -> Callable:
     def create(file_path: Path, project: str = None, node: str = None):
         if project is None:
             project = project_id
@@ -65,7 +95,7 @@ def file_uuid(project_id: str, node_uuid: str) -> Callable:
             node = node_uuid
         return np_helpers.file_uuid(file_path, project, node)
 
-    yield create
+    return create
 
 
 @pytest.fixture()
@@ -100,13 +130,15 @@ def node_link() -> Callable:
 
 
 @pytest.fixture()
-def store_link(minio_service, bucket, file_uuid, s3_simcore_location) -> Callable:
+def store_link(
+    minio_service, bucket, create_valid_file_uuid, s3_simcore_location
+) -> Callable:
     def create_store_link(
         file_path: Path, project_id: str = None, node_id: str = None
     ) -> Dict[str, str]:
         # upload the file to S3
         assert Path(file_path).exists()
-        file_id = file_uuid(file_path, project_id, node_id)
+        file_id = create_valid_file_uuid(file_path, project_id, node_id)
         # using the s3 client the path must be adapted
         # TODO: use the storage sdk instead
         s3_object = Path(project_id, node_id, Path(file_path).name).as_posix()
