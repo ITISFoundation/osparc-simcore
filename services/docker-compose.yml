@@ -263,6 +263,21 @@ services:
     networks:
       - default
 
+  postgres_pgbouncer:
+    image: bitnami/pgbouncer:latest
+    init: true
+    environment:
+      - POSTGRESQL_USERNAME=${POSTGRES_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRES_DB}
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_PORT=${POSTGRES_PORT}
+      - PGBOUNCER_PORT=${POSTGRES_PORT}
+    networks:
+      - default
+      - interactive_services_subnet
+      - computational_services_subnet
+
   postgres:
     image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     init: true
