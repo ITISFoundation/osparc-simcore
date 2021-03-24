@@ -68,10 +68,6 @@ docopt==0.6.2
     #   -c requirements/_base.txt
     #   coveralls
     #   docker-compose
-fabric==2.6.0
-    # via fake
-fake==0.8
-    # via -r requirements/_test.in
 idna-ssl==1.1.0
     # via
     #   -c requirements/_base.txt
@@ -91,8 +87,6 @@ importlib-metadata==2.0.0
     #   pytest
 iniconfig==1.1.1
     # via pytest
-invoke==1.5.0
-    # via fabric
 isort==5.7.0
     # via pylint
 jsonschema==3.2.0
@@ -119,11 +113,7 @@ packaging==20.9
 pandas==1.1.5
     # via -r requirements/_test.in
 paramiko==2.7.2
-    # via
-    #   docker
-    #   fabric
-pathlib2==2.3.5
-    # via fabric
+    # via docker
 pluggy==0.13.1
     # via pytest
 ptvsd==4.3.2
@@ -194,7 +184,6 @@ six==1.15.0
     #   docker
     #   dockerpty
     #   jsonschema
-    #   pathlib2
     #   pynacl
     #   python-dateutil
     #   websocket-client

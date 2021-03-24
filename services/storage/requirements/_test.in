@@ -22,7 +22,6 @@ pylint
 coverage
 coveralls
 codecov
-fake
 
 # remote debugging
 ptvsd
