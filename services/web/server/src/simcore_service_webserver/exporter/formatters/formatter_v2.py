@@ -119,8 +119,7 @@ async def _write_sds_content(
     for entry in workbench.values():
         service_key = entry["key"]
         service_version = entry["version"]
-        # TODO: add this filed to the format
-        # label = entry["label"] a field for this will come later
+        label = entry["label"]
 
         service_data = await get_service(
             app=app,
@@ -134,6 +133,7 @@ async def _write_sds_content(
 
         for service_input in service_data_inputs.values():
             input_entry = InputsEntryModel(
+                service_alias=label,
                 service_name=service_data["name"],
                 service_version=service_data["version"],
                 input_name=service_input["label"],
@@ -150,6 +150,7 @@ async def _write_sds_content(
         service_data_outputs = service_data["outputs"]
         for service_output in service_data_outputs.values():
             output_entry = OutputsEntryModel(
+                service_alias=label,
                 service_name=service_data["name"],
                 service_version=service_data["version"],
                 output_name=service_output["label"],
