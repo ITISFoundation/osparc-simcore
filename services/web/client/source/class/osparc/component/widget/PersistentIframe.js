@@ -52,10 +52,10 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     /**
      * Show Restore/Maximize
      */
-    showActionButton: {
+    showZoomButton: {
       check: "Boolean",
       init: true,
-      apply: "__applyShowActionButton"
+      apply: "__applyShowZoomButton"
     },
 
     /**
@@ -81,7 +81,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
     __iframe: null,
     __syncScheduled: null,
     __restartButton: null,
-    __actionButton: null,
+    __zoomButton: null,
 
     // override
     _createContentElement : function() {
@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       appRoot.add(restartButton, {
         top:-10000
       });
-      let actionButton = this.__actionButton = new qx.ui.form.Button(null).set({
+      let actionButton = this.__zoomButton = new qx.ui.form.Button(null).set({
         icon: this.self().getIcon(false),
         zIndex: 20,
         backgroundColor: "transparent",
@@ -171,14 +171,14 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.fireEvent("restore");
         this.removeState("maximized");
       }
-      const actionButton = this.__actionButton;
+      const actionButton = this.__zoomButton;
       actionButton.setIcon(this.self().getIcon(maximize));
       osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     },
 
-    __applyShowActionButton: function(show) {
-      show ? this.__actionButton.show() : this.__actionButton.exclude();
+    __applyShowZoomButton: function(show) {
+      show ? this.__zoomButton.show() : this.__zoomButton.exclude();
     },
 
     __applyShowRestartButton: function(show) {
@@ -211,7 +211,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right) + 35
         });
-        this.__actionButton.setLayoutProperties({
+        this.__zoomButton.setLayoutProperties({
           top: (divPos.top - iframeParentPos.top),
           right: (iframeParentPos.right - iframeParentPos.left - divPos.right)
         });
