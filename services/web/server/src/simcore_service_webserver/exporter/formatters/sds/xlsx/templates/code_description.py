@@ -1,4 +1,3 @@
-# nosec
 from collections import deque
 from typing import List, Optional, Tuple, Dict
 from pydantic import BaseModel, Field, StrictStr
