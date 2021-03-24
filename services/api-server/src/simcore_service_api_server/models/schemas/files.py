@@ -52,6 +52,17 @@ class File(BaseModel):
         )
 
     @classmethod
+    async def create_from_file_link(cls, s3_link: str, e_tag: str) -> "File":
+        file_with_ext = Path(s3_link).name
+        mime_content_type, _ = guess_type(file_with_ext)
+        return cls(
+            id=cls.create_id(s3_link, e_tag),
+            filename=file_with_ext,
+            content_type=mime_content_type,
+            checksum=e_tag,
+        )
+
+    @classmethod
     async def create_from_uploaded(
         cls, file: UploadFile, *, file_size=None, created_at=None
     ) -> "File":

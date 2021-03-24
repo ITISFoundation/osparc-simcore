@@ -4,7 +4,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from ...models.schemas.jobs import Job, JobInputs, JobOutputs, JobStatus
+from ...models.schemas.jobs import (
+    Job,
+    JobInputs,
+    JobOutputs,
+    JobStatus,
+    KeywordArguments,
+)
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ..dependencies.application import get_reverse_url_mapper
@@ -116,7 +122,29 @@ async def inspect_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID
     response_model=JobOutputs,
 )
 async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
-    # Outputs is NOT a collection but a sub-resource of a jobid
+
+    import aiopg
+    from models_library.projects import ProjectID
+    from models_library.projects_nodes_io import NodeID
+
     from .jobs_faker import get_job_outputs_impl
+
+    # pylint: disable=unused-variable
+    async def real_impl(
+        user_id: int,
+        project_id: ProjectID,
+        node_uuid: NodeID,
+        db_engine: aiopg.sa.Engine,
+    ):
+
+        from ...utils.solver_job_outputs import get_solver_output_results
+
+        results: KeywordArguments = await get_solver_output_results(
+            user_id=user_id,
+            project_uuid=project_id,
+            node_uuid=node_uuid,
+            db_engine=db_engine,
+        )
+        return results
 
     return await get_job_outputs_impl(solver_key, version, job_id)

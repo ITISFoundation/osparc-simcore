@@ -10,11 +10,11 @@ from ...db.repositories import BaseRepository
 logger = logging.getLogger(__name__)
 
 
-def _get_db_engine(request: Request) -> Engine:
+def get_db_engine(request: Request) -> Engine:
     return request.app.state.engine
 
 
-async def _acquire_connection(engine: Engine = Depends(_get_db_engine)) -> SAConnection:
+async def _acquire_connection(engine: Engine = Depends(get_db_engine)) -> SAConnection:
     logger.debug(
         "Acquiring pg connection from pool: pool size=%d, acquired=%d, free=%d, reserved=[%d, %d]",
         engine.size,
