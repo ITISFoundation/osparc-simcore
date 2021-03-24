@@ -66,7 +66,8 @@ async def _write_sds_content(
 
     # Classifiers
     # TODO: continue with this
-    RRIDEntry()
+    # List[classifier_id]
+    RRIDEntry(rrid_term="", rrod_identifier="")
 
     # adding TSR data
     quality_data = project_data["quality"]
@@ -102,7 +103,6 @@ async def _write_sds_content(
             service_version=service_version,
             product_name=product_name,
         )
-        log.error("Have data to use for compiling inputs and outputs %s", service_data)
 
         service_data_inputs = service_data["inputs"]
 
