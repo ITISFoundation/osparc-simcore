@@ -19,6 +19,7 @@ import aiohttp
 import aiopg
 import aioredis
 import pytest
+import psycopg2
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
@@ -247,10 +248,16 @@ async def grant_access_rights(db_engine: aiopg.sa.Engine) -> None:
         )
 
         async with db_engine.acquire() as conn:
-            await conn.execute(services_meta_data.insert().values(**metada_data_values))
-            await conn.execute(
-                services_access_rights.insert().values(**access_rights_values)
-            )
+            try:
+                await conn.execute(
+                    services_meta_data.insert().values(**metada_data_values)
+                )
+                await conn.execute(
+                    services_access_rights.insert().values(**access_rights_values)
+                )
+            except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
+                # do not care if already exists
+                pass
 
     async def remove_access_right(service_key: str, service_version: str) -> None:
         async with db_engine.acquire() as conn:
