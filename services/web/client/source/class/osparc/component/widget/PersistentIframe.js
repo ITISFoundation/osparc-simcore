@@ -29,7 +29,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
   },
 
   statics: {
-    getIcon: function(maximize) {
+    getZoomIcon: function(maximize) {
       const iconURL = maximize ? "window-restore" : "window-maximize";
       return osparc.theme.common.Image.URLS[iconURL]+"/20";
     },
@@ -114,20 +114,20 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       appRoot.add(restartButton, {
         top:-10000
       });
-      let actionButton = this.__zoomButton = new qx.ui.form.Button(null).set({
-        icon: this.self().getIcon(false),
+      let zoomButton = this.__zoomButton = new qx.ui.form.Button(null).set({
+        icon: this.self().getZoomIcon(false),
         zIndex: 20,
         backgroundColor: "transparent",
         decorator: null
       });
-      osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(false));
-      appRoot.add(actionButton, {
+      osparc.utils.Utils.setIdToWidget(zoomButton, this.self().getMaximizeWidgetId(false));
+      appRoot.add(zoomButton, {
         top:-10000
       });
-      actionButton.addListener("execute", e => {
+      zoomButton.addListener("execute", e => {
         this.maximizeIFrame(!this.hasState("maximized"));
       }, this);
-      appRoot.add(actionButton);
+      appRoot.add(zoomButton);
       standin.addListener("appear", e => {
         this.__syncIframePos();
       });
@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         restartButton.setLayoutProperties({
           top: -10000
         });
-        actionButton.setLayoutProperties({
+        zoomButton.setLayoutProperties({
           top: -10000
         });
       });
@@ -172,7 +172,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         this.removeState("maximized");
       }
       const actionButton = this.__zoomButton;
-      actionButton.setIcon(this.self().getIcon(maximize));
+      actionButton.setIcon(this.self().getZoomIcon(maximize));
       osparc.utils.Utils.setIdToWidget(actionButton, this.self().getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     },
