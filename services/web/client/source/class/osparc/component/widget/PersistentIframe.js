@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       const restartButton = this.__restartButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/redo-alt/14").set({
         zIndex: 20,
         paddingLeft: 8,
-        paddingRight: 8,
+        paddingRight: 4,
         paddingTop: 6,
         paddingBottom: 6,
         backgroundColor: "transparent",
@@ -200,7 +200,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
         let divPos = qx.bom.element.Location.get(domElement, "scroll");
         let divSize = qx.bom.element.Dimension.getSize(domElement);
         this.__iframe.setLayoutProperties({
-          top: divPos.top - iframeParentPos.top,
+          top: divPos.top - iframeParentPos.top + 25,
           left: (divPos.left - iframeParentPos.left)
         });
         this.__iframe.set({
