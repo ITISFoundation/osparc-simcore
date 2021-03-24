@@ -36,12 +36,20 @@ def prepare_all_services(
 ) -> Dict:
 
     setattr(
-        request.module, "core_services", list(simcore_docker_compose["services"].keys())
+        request.module,
+        "pytest_simcore_core_services_selection",
+        list(simcore_docker_compose["services"].keys()),
     )
-    core_services = getattr(request.module, "core_services", [])
+    core_services = getattr(
+        request.module, "pytest_simcore_core_services_selection", []
+    )
 
-    setattr(request.module, "ops_services", list(ops_docker_compose["services"].keys()))
-    ops_services = getattr(request.module, "ops_services", [])
+    setattr(
+        request.module,
+        "pytest_simcore_ops_services_selection",
+        list(ops_docker_compose["services"].keys()),
+    )
+    ops_services = getattr(request.module, "pytest_simcore_ops_services_selection", [])
 
     services = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
     return services

@@ -9,9 +9,9 @@ from pathlib import Path
 import pytest
 from simcore_sdk.node_ports import exceptions, filemanager
 
-core_services = ["postgres", "storage"]
+pytest_simcore_core_services_selection = ["postgres", "storage"]
 
-ops_services = ["minio"]
+pytest_simcore_ops_services_selection = ["minio"]
 
 
 async def test_valid_upload_download(
