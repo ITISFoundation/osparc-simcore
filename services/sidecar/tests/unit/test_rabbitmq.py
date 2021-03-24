@@ -12,7 +12,7 @@ from models_library.settings.rabbit import RabbitConfig
 from simcore_service_sidecar import config
 from simcore_service_sidecar.rabbitmq import RabbitMQ
 
-core_services = ["rabbit"]
+pytest_simcore_core_services_selection = ["rabbit"]
 
 
 @pytest.fixture

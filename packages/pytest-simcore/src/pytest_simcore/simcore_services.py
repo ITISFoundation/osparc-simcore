@@ -21,10 +21,10 @@ SERVICE_HEALTHCHECK_ENTRYPOINT = {"director-v2": "/"}
 
 @pytest.fixture(scope="module")
 def services_endpoint(
-    core_services: List[str], docker_stack: Dict, devel_environ: Dict
+    core_services_selection: List[str], docker_stack: Dict, devel_environ: Dict
 ) -> Dict[str, URL]:
     services_endpoint = {}
-    for service in core_services:
+    for service in core_services_selection:
         assert f"simcore_{service}" in docker_stack["services"]
         if not service in SERVICES_TO_SKIP:
             endpoint = URL(

@@ -23,7 +23,7 @@ from typing import Dict, List
 import pytest
 import trafaret_config
 import yaml
-
+from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_config import app_schema
@@ -83,7 +83,7 @@ def webserver_environ(
     environ.update(docker_compose_environ)
 
     # get the list of core services the test module wants
-    core_services = getattr(request.module, "core_services", [])
+    core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
     # OVERRIDES:
     #   One of the biggest differences with respect to the real system

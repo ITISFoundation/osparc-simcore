@@ -6,7 +6,7 @@ from collections import Counter
 import pytest
 from simcore_service_sidecar import mpi_lock
 
-core_services = ["redis"]
+pytest_simcore_core_services_selection = ["redis"]
 
 
 @pytest.fixture

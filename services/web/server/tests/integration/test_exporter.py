@@ -52,7 +52,7 @@ from yarl import URL
 
 log = logging.getLogger(__name__)
 
-core_services = [
+pytest_simcore_core_services_selection = [
     "redis",
     "rabbit",
     "catalog",
@@ -61,7 +61,7 @@ core_services = [
     "postgres",
     "storage",
 ]
-ops_services = ["minio"]
+pytest_simcore_ops_services_selection = ["minio"]
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
