@@ -2,10 +2,7 @@ import logging
 from typing import Callable, List
 from uuid import UUID
 
-import aiopg
 from fastapi import APIRouter, Depends
-from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 
 from ...models.schemas.jobs import (
     Job,
@@ -16,7 +13,6 @@ from ...models.schemas.jobs import (
 )
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
-from ...utils.solver_job_outputs import get_solver_output_results
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import get_db_engine
@@ -128,25 +124,27 @@ async def inspect_job(solver_key: SolverKeyId, version: VersionStr, job_id: UUID
 )
 async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
 
+    import aiopg
+    from models_library.projects import ProjectID
+    from models_library.projects_nodes_io import NodeID
+
     from .jobs_faker import get_job_outputs_impl
 
+    async def real_impl(
+        user_id: int,
+        project_id: ProjectID,
+        node_uuid: NodeID,
+        db_engine: aiopg.sa.Engine,
+    ):
+
+        from ...utils.solver_job_outputs import get_solver_output_results
+
+        results: KeywordArguments = await get_solver_output_results(
+            user_id=user_id,
+            project_uuid=project_id,
+            node_uuid=node_uuid,
+            db_engine=db_engine,
+        )
+        return results
+
     return await get_job_outputs_impl(solver_key, version, job_id)
-
-
-@router.get(
-    "/test/{project_id}/{node_uuid}",
-    response_model=KeywordArguments,
-)
-async def test(
-    project_id: ProjectID,
-    node_uuid: NodeID,
-    user_id: int = Depends(get_current_user_id),
-    db_engine: aiopg.sa.Engine = Depends(get_db_engine),
-):
-    results = await get_solver_output_results(
-        user_id=user_id,
-        project_uuid=project_id,
-        node_uuid=node_uuid,
-        db_engine=db_engine,
-    )
-    return results
