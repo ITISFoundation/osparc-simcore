@@ -41,6 +41,13 @@ from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.storage import setup_storage
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.products import setup_products
+from simcore_service_webserver.catalog import setup_catalog
+from simcore_service_webserver.constants import X_PRODUCT_NAME_HEADER
+from simcore_postgres_database.models.services import (
+    services_meta_data,
+    services_access_rights,
+)
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -48,6 +55,7 @@ log = logging.getLogger(__name__)
 core_services = [
     "redis",
     "rabbit",
+    "catalog",
     "director",
     "director-v2",
     "postgres",
@@ -62,7 +70,7 @@ API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
 # store only lowercase "v1", "v2", etc...
-SUPPORTED_EXPORTER_VERSIONS = {"v1"}
+SUPPORTED_EXPORTER_VERSIONS = {"v1", "v2"}
 
 REMAPPING_KEY = "__reverse__remapping__dict__key__"
 KEYS_TO_IGNORE_FROM_COMPARISON = {
@@ -157,6 +165,8 @@ def client(
     setup_director_v2(app)
     setup_exporter(app)
     setup_storage(app)
+    setup_products(app)
+    setup_catalog(app)
     assert setup_resource_manager(app)
 
     yield loop.run_until_complete(
@@ -213,13 +223,63 @@ async def monkey_patch_asyncio_subporcess(mocker):
     mocker.patch("asyncio.create_subprocess_exec", side_effect=create_subprocess_exec)
 
 
+@pytest.fixture
+async def grant_access_rights(db_engine: aiopg.sa.Engine) -> None:
+    # pylint: disable=no-value-for-parameter
+
+    # services which require access
+    services = [
+        ("simcore/services/comp/itis/sleeper", "2.1.1"),
+    ]
+
+    async def add_access_rights(service_key: str, service_version: str) -> None:
+        # a user is required in the database for ownership of metadata
+        metada_data_values = dict(
+            key=service_key, version=service_version, owner=1, name="", description=""
+        )
+
+        access_rights_values = dict(
+            key=service_key,
+            version=service_version,
+            gid=1,
+            execute_access=True,
+            write_access=True,
+        )
+
+        async with db_engine.acquire() as conn:
+            await conn.execute(services_meta_data.insert().values(**metada_data_values))
+            await conn.execute(
+                services_access_rights.insert().values(**access_rights_values)
+            )
+
+    async def remove_access_right(service_key: str, service_version: str) -> None:
+        async with db_engine.acquire() as conn:
+            await conn.execute(
+                services_meta_data.delete().where(
+                    services_meta_data.c.key == service_key,
+                    services_meta_data.c.version == service_version,
+                )
+            )
+
+    for service_key, service_version in services:
+        await add_access_rights(service_key, service_version)
+
+    yield
+
+    for service_key, service_version in services:
+        await remove_access_right(service_key, service_version)
+
+
 @pytest.fixture(scope="session")
-def push_services_to_registry(
-    docker_registry: str, node_meta_schema: Dict
-) -> Dict[str, str]:
+def push_services_to_registry(docker_registry: str, node_meta_schema: Dict) -> None:
     """Adds a itisfoundation/sleeper in docker registry"""
-    return _pull_push_service(
+    # Used by V1 study
+    _pull_push_service(
         "itisfoundation/sleeper", "2.0.2", docker_registry, node_meta_schema
+    )
+    # Used by V2 study (mainly for the addition of units)
+    _pull_push_service(
+        "itisfoundation/sleeper", "2.1.1", docker_registry, node_meta_schema
     )
 
 
@@ -445,6 +505,7 @@ async def test_import_export_import_duplicate(
     monkey_patch_asyncio_subporcess,
     simcore_services,
     monkey_patch_aiohttp_request_url,
+    grant_access_rights,
 ):
     """
     Checks if the full "import -> export -> import -> duplicate" cycle
@@ -463,12 +524,16 @@ async def test_import_export_import_duplicate(
 
     imported_project_uuid = await import_study_from_file(client, export_version)
 
+    headers = {X_PRODUCT_NAME_HEADER: "osparc"}
+
     # export newly imported project
     url_export = client.app.router["export_project"].url_for(
         project_id=imported_project_uuid
     )
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
-    async with await client.post(url_export, timeout=10) as export_response:
+    async with await client.post(
+        url_export, headers=headers, timeout=10
+    ) as export_response:
         assert export_response.status == 200, await export_response.text()
 
         content_disposition_header = export_response.headers["Content-Disposition"]
@@ -493,7 +558,9 @@ async def test_import_export_import_duplicate(
     assert url_duplicate == URL(
         API_PREFIX + f"/projects/{imported_project_uuid}:duplicate"
     )
-    async with await client.post(url_duplicate, timeout=10) as duplicate_response:
+    async with await client.post(
+        url_duplicate, headers=headers, timeout=10
+    ) as duplicate_response:
         assert duplicate_response.status == 200, await duplicate_response.text()
         reply_data = await duplicate_response.json()
         assert reply_data.get("data") is not None
