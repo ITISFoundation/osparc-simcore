@@ -1,6 +1,5 @@
-import asyncio
-
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
+import asyncio
 import cgi
 import itertools
 import json
@@ -12,7 +11,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, Tuple
+from typing import Any, Callable, Dict, List, Set, Tuple, Coroutine
 
 import aiofiles
 import aiohttp
@@ -225,56 +224,49 @@ async def monkey_patch_asyncio_subporcess(mocker):
 
 
 @pytest.fixture
-async def grant_access_rights(db_engine: aiopg.sa.Engine) -> None:
-    # pylint: disable=no-value-for-parameter
-
-    # services which require access
-    services = [
-        ("simcore/services/comp/itis/sleeper", "2.1.1"),
-    ]
-
-    async def add_access_rights(service_key: str, service_version: str) -> None:
-        # a user is required in the database for ownership of metadata
-        metada_data_values = dict(
-            key=service_key, version=service_version, owner=1, name="", description=""
-        )
-
-        access_rights_values = dict(
-            key=service_key,
-            version=service_version,
-            gid=1,
-            execute_access=True,
-            write_access=True,
-        )
-
-        async with db_engine.acquire() as conn:
-            try:
-                await conn.execute(
-                    services_meta_data.insert().values(**metada_data_values)
-                )
-                await conn.execute(
-                    services_access_rights.insert().values(**access_rights_values)
-                )
-            except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
-                # do not care if already exists
-                pass
-
-    async def remove_access_right(service_key: str, service_version: str) -> None:
-        async with db_engine.acquire() as conn:
-            await conn.execute(
-                services_meta_data.delete().where(
-                    services_meta_data.c.key == service_key,
-                    services_meta_data.c.version == service_version,
-                )
+async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
+    async def grant_rights_to_services(services: List[Tuple[str, str]]) -> None:
+        for service_key, service_version in services:
+            metada_data_values = dict(
+                key=service_key,
+                version=service_version,
+                owner=1,  # a user is required in the database for ownership of metadata
+                name="",
+                description="",
             )
 
-    for service_key, service_version in services:
-        await add_access_rights(service_key, service_version)
+            access_rights_values = dict(
+                key=service_key,
+                version=service_version,
+                gid=1,
+                execute_access=True,
+                write_access=True,
+            )
 
-    yield
+            async with db_engine.acquire() as conn:
+                try:
+                    # pylint: disable=no-value-for-parameter
+                    await conn.execute(
+                        services_meta_data.insert().values(**metada_data_values)
+                    )
+                    await conn.execute(
+                        services_access_rights.insert().values(**access_rights_values)
+                    )
+                except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
+                    # do not care if already exists
+                    pass
 
-    for service_key, service_version in services:
-        await remove_access_right(service_key, service_version)
+    yield grant_rights_to_services
+
+
+@pytest.fixture
+async def grant_access_rights(apply_access_rights: Coroutine) -> None:
+    # services which require access
+    services = [
+        ("simcore/services/comp/itis/sleeper", "2.0.2"),
+        ("simcore/services/comp/itis/sleeper", "2.1.1"),
+    ]
+    await apply_access_rights(services)
 
 
 @pytest.fixture(scope="session")
