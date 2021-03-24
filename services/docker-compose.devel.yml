@@ -13,6 +13,7 @@ services:
       - DEBUG=true
     volumes:
       - ./api-server:/devel/services/api-server
+      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   catalog:
