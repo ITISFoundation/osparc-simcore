@@ -9,6 +9,41 @@ from openpyxl.styles import Border, Alignment
 from openpyxl.cell import Cell
 
 
+def border_or(self: Border, other: Border) -> Border:
+    return Border(
+        left=self.left or other.left,
+        right=self.right or other.right,
+        top=self.top or other.top,
+        bottom=self.bottom or other.bottom,
+        diagonal=self.diagonal or other.diagonal,
+        diagonal_direction=(self.diagonal_direction or other.diagonal_direction),
+        vertical=self.vertical or other.vertical,
+        horizontal=self.horizontal or other.horizontal,
+        diagonalUp=self.diagonalUp or other.diagonalUp,
+        diagonalDown=self.diagonalDown or other.diagonalDown,
+        outline=self.outline or other.outline,
+        start=self.start or other.start,
+        end=self.end or other.end,
+    )
+
+
+def alignment_or(self: Alignment, other: Alignment) -> Alignment:
+    return Alignment(
+        horizontal=self.horizontal or other.horizontal,
+        vertical=self.vertical or other.vertical,
+        textRotation=self.textRotation or other.textRotation,
+        wrapText=self.wrapText or other.wrapText,
+        shrinkToFit=self.shrinkToFit or other.shrinkToFit,
+        indent=self.indent or other.indent,
+        relativeIndent=self.relativeIndent or other.relativeIndent,
+        justifyLastLine=self.justifyLastLine or other.justifyLastLine,
+        readingOrder=self.readingOrder or other.readingOrder,
+        text_rotation=self.text_rotation or other.text_rotation,
+        wrap_text=self.wrap_text or other.wrap_text,
+        shrink_to_fit=self.shrink_to_fit or other.shrink_to_fit,
+    )
+
+
 def _base_value_or(self_var: Any, entry_var: Any) -> Any:
     """
     For some properties it is more convenient
@@ -16,38 +51,9 @@ def _base_value_or(self_var: Any, entry_var: Any) -> Any:
     borders and alignment
     """
     if isinstance(self_var, Border):
-        return Border(
-            left=self_var.left or entry_var.left,
-            right=self_var.right or entry_var.right,
-            top=self_var.top or entry_var.top,
-            bottom=self_var.bottom or entry_var.bottom,
-            diagonal=self_var.diagonal or entry_var.diagonal,
-            diagonal_direction=(
-                self_var.diagonal_direction or entry_var.diagonal_direction
-            ),
-            vertical=self_var.vertical or entry_var.vertical,
-            horizontal=self_var.horizontal or entry_var.horizontal,
-            diagonalUp=self_var.diagonalUp or entry_var.diagonalUp,
-            diagonalDown=self_var.diagonalDown or entry_var.diagonalDown,
-            outline=self_var.outline or entry_var.outline,
-            start=self_var.start or entry_var.start,
-            end=self_var.end or entry_var.end,
-        )
+        return border_or(self_var, entry_var)
     if isinstance(self_var, Alignment):
-        return Alignment(
-            horizontal=self_var.horizontal or entry_var.horizontal,
-            vertical=self_var.vertical or entry_var.vertical,
-            textRotation=self_var.textRotation or entry_var.textRotation,
-            wrapText=self_var.wrapText or entry_var.wrapText,
-            shrinkToFit=self_var.shrinkToFit or entry_var.shrinkToFit,
-            indent=self_var.indent or entry_var.indent,
-            relativeIndent=self_var.relativeIndent or entry_var.relativeIndent,
-            justifyLastLine=self_var.justifyLastLine or entry_var.justifyLastLine,
-            readingOrder=self_var.readingOrder or entry_var.readingOrder,
-            text_rotation=self_var.text_rotation or entry_var.text_rotation,
-            wrap_text=self_var.wrap_text or entry_var.wrap_text,
-            shrink_to_fit=self_var.shrink_to_fit or entry_var.shrink_to_fit,
-        )
+        return alignment_or(self_var, entry_var)
 
     return self_var or entry_var
 
