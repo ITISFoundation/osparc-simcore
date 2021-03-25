@@ -128,7 +128,7 @@ class _BaseSettingEncoder(json.JSONEncoder):
 
 @pytest.fixture
 def web_server(
-    loop, aiohttp_server, app_cfg: Dict, monkeypatch, postgres_db
+    loop, app_cfg: Dict, monkeypatch, postgres_db, aiohttp_server
 ) -> TestServer:
     print(
         "Inits webserver with app_cfg",
@@ -147,7 +147,9 @@ def web_server(
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, web_server, mock_orphaned_services) -> TestClient:
+def client(
+    loop, aiohttp_client, web_server: TestServer, mock_orphaned_services
+) -> TestClient:
     cli = loop.run_until_complete(aiohttp_client(web_server))
     return cli
 
@@ -206,7 +208,7 @@ async def storage_subsystem_mock(loop, mocker):
     """
     # requests storage to copy data
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.copy_data_folders_from_project"
+        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project"
     )
 
     async def _mock_copy_data_from_project(*args):
@@ -333,7 +335,7 @@ def postgres_service(docker_services, postgres_dsn):
     return url
 
 
-@pytest.fixture
+@pytest.fixture()
 def postgres_db(
     postgres_dsn: Dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:

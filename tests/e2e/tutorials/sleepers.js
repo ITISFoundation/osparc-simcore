@@ -30,16 +30,14 @@ async function runTutorial() {
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 60000);
 
-    await tutorial.openNodeFiles(0);
     const outFiles = [
       "logs.zip",
       "out_1"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
 
     console.log('Checking results for the last sleeper:');
-    await tutorial.openNodeFiles(4);
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(4, outFiles);
 
     await tutorial.toDashboard();
 

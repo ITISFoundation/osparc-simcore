@@ -35,12 +35,11 @@ async function runTutorial () {
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 120000);
 
-    await tutorial.openNodeFiles(0);
     const outFiles = [
       "logs.zip",
       "outputController.dat"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
 
 
     // open kember viewer
@@ -73,14 +72,13 @@ async function runTutorial () {
     await utils.takeScreenshot(page, screenshotPrefix + 'notebook_run');
 
     // check output
-    await tutorial.openNodeFiles(1);
     const outFiles2 = [
       "Hear_Rate.csv",
       "notebooks.zip",
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
-    await tutorial.checkResults(outFiles2.length);
+    await tutorial.checkNodeResults(1, outFiles2);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

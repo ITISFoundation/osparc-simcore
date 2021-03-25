@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-astroid==2.4.2
+astroid==2.5.1
     # via pylint
 attrs==20.3.0
     # via
@@ -18,12 +18,12 @@ chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==5.4
+coverage==5.5
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.0.0
+coveralls==3.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
@@ -32,7 +32,7 @@ idna==2.10
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   -c requirements/_base.txt
     #   pluggy
@@ -43,7 +43,7 @@ iniconfig==1.1.1
     #   pytest
 isort==5.7.0
     # via pylint
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.5.2
     # via astroid
 mccabe==0.6.1
     # via pylint
@@ -60,7 +60,7 @@ py==1.10.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pylint==2.6.0
+pylint==2.7.2
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via
@@ -85,10 +85,6 @@ requests==2.25.1
     # via
     #   -c requirements/_base.txt
     #   coveralls
-six==1.15.0
-    # via
-    #   -c requirements/_base.txt
-    #   astroid
 termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2

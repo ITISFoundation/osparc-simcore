@@ -15,6 +15,9 @@
 -e ../../packages/models-library
 -e ../../packages/postgres-database
 -e ../../packages/pytest-simcore/
+-e ../../packages/simcore-sdk
+-e ../../packages/service-library
+-e ../../services/storage/client-sdk/python/
 
 # installs current package
 -e .

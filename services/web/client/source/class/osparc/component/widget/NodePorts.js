@@ -49,24 +49,56 @@ qx.Class.define("osparc.component.widget.NodePorts", {
     });
     node.bind("label", this, "title");
 
-    node.getStatus().bind("modified", this.getChildControl("icon"), "source", {
-      converter: modified => {
-        if (modified === null) {
-          return osparc.utils.StatusUI.getIconSource();
+    node.getStatus().bind("output", this.getChildControl("icon"), "source", {
+      converter: output => {
+        switch (output) {
+          case "up-to-date":
+            return osparc.utils.StatusUI.getIconSource("up-to-date");
+          case "out-of-date":
+            return osparc.utils.StatusUI.getIconSource("modified");
+          case "busy":
+            return osparc.utils.StatusUI.getIconSource("running");
+          case "not-available":
+          default:
+            return osparc.utils.StatusUI.getIconSource();
         }
-        return osparc.utils.StatusUI.getIconSource(modified === true ? "modified" : "up-to-date");
+      },
+      onUpdate: (source, target) => {
+        if (source.getOutput() === "busy") {
+          target.getContentElement().addClass("rotate");
+        } else {
+          target.getContentElement().removeClass("rotate");
+        }
       }
     }, this);
-    node.getStatus().bind("modified", this.getChildControl("icon"), "textColor", {
-      converter: modified => {
-        if (modified === null) {
-          return osparc.utils.StatusUI.getColor();
+    node.getStatus().bind("output", this.getChildControl("icon"), "textColor", {
+      converter: output => {
+        switch (output) {
+          case "up-to-date":
+            return osparc.utils.StatusUI.getColor("ready");
+          case "out-of-date":
+          case "busy":
+            return osparc.utils.StatusUI.getColor("modified");
+          case "not-available":
+          default:
+            return osparc.utils.StatusUI.getColor();
         }
-        return osparc.utils.StatusUI.getColor(modified === true ? "modified" : "up-to-date");
       }
     }, this);
-    node.getStatus().bind("modified", this.getChildControl("icon"), "toolTipText", {
-      converter: modified => modified === true ? this.tr("Out of date") : ""
+    node.getStatus().bind("output", this.getChildControl("icon"), "toolTipText", {
+      converter: output => {
+        switch (output) {
+          case "up-to-date":
+            return this.tr("Ready");
+          case "out-of-date":
+            return this.tr("Out of date");
+          case "busy":
+            return this.tr("Not ready yet");
+          case "not-available":
+          default:
+            return "";
+        }
+      }
     }, this);
   },
 

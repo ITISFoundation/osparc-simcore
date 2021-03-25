@@ -10743,7 +10743,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/projects/{project_id}:xport':
+  '/projects/{project_id}:export':
     parameters:
       - name: project_id
         in: path

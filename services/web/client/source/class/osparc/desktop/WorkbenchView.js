@@ -429,7 +429,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __connectEvents: function() {
       const workbench = this.getStudy().getWorkbench();
-      workbench.addListener("workbenchChanged", this.__workbenchChanged, this);
+      workbench.addListener("nNodesChanged", this.__workbenchChanged, this);
 
       workbench.addListener("showInLogger", ev => {
         const data = ev.getData();

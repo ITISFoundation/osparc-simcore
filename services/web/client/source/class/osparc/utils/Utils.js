@@ -198,6 +198,22 @@ qx.Class.define("osparc.utils.Utils", {
       return Math.round(bytes / Math.pow(1024, i), 2) + " " + sizes[i];
     },
 
+    retrieveURLAndDownload: function(locationId, fileId) {
+      let fileName = fileId.split("/");
+      fileName = fileName[fileName.length-1];
+      const download = true;
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getPresignedLink(download, locationId, fileId)
+        .then(presignedLinkData => {
+          if (presignedLinkData.presignedLink) {
+            const link = presignedLinkData.presignedLink.link;
+            const fileNameFromLink = this.fileNameFromPresignedLink(link);
+            fileName = fileNameFromLink ? fileNameFromLink : fileName;
+            this.downloadLink(link, "GET", fileName);
+          }
+        });
+    },
+
     downloadLink: function(url, method, fileName, downloadStartedCB) {
       return new Promise((resolve, reject) => {
         let xhr = new XMLHttpRequest();

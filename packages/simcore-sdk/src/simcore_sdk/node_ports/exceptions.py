@@ -1,3 +1,10 @@
+# Errors raised by node_ports module as NodeportsException
+#
+#
+#  NOTE: Error message SHALL explain the reason for the error and it is prefered in one line, i.e. avoid '\n' in message
+#
+#
+
 from typing import Optional
 
 
@@ -48,16 +55,16 @@ class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
 
     def __init__(self, dct, msg: Optional[str] = None):
-        super().__init__(f"Invalid protocol used: {dct}\n{msg}")
+        super().__init__(f"Invalid protocol used: {dct} [{msg}]")
         self.dct = dct
 
 
 class StorageInvalidCall(NodeportsException):
-    """S3 transfer error"""
+    """Storage returned an error 400<=status<500"""
 
 
 class StorageServerIssue(NodeportsException):
-    """S3 transfer error"""
+    """Storage returned an error status>=500"""
 
 
 class S3TransferError(NodeportsException):

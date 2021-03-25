@@ -32,13 +32,12 @@ async function runTutorial() {
     await tutorial.runPipeline();
     await tutorial.waitForStudyDone(studyId, 30000);
 
-    await tutorial.openNodeFiles(1);
     const outFiles = [
       "logs.zip",
       "output.h5",
       "log.tgz"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(1, outFiles);
 
     await tutorial.toDashboard();
 

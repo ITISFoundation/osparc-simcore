@@ -31,11 +31,10 @@ async function runTutorial () {
     await tutorial.waitFor(10000);
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    await tutorial.openNodeFiles(1);
     const outFiles = [
       "data.zip"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(1, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

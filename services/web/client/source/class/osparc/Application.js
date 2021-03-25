@@ -30,6 +30,11 @@ qx.Class.define("osparc.Application", {
     qx.locale.MTranslation
   ],
 
+  statics: {
+    MIN_WIDTH: 1240,
+    MIN_HEIGHT: 700
+  },
+
   members: {
     __current: null,
     __mainPage: null,
@@ -61,15 +66,9 @@ qx.Class.define("osparc.Application", {
       }
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
-      webSocket.addListener("connect", () => {
-        osparc.io.WatchDog.getInstance().setOnLine(true);
-      });
-      webSocket.addListener("disconnect", () => {
-        osparc.io.WatchDog.getInstance().setOnLine(false);
-      });
-      webSocket.addListener("logout", e => {
-        this.logout();
-      });
+      webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnLine(true));
+      webSocket.addListener("disconnect", () => osparc.io.WatchDog.getInstance().setOnLine(false));
+      webSocket.addListener("logout", () => this.logout());
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible
       // to provide our own message here
@@ -88,15 +87,62 @@ qx.Class.define("osparc.Application", {
       }
 
       // Setting up auth manager
-      osparc.auth.Manager.getInstance().addListener("logout", function() {
-        this.__restart();
-      }, this);
+      osparc.auth.Manager.getInstance().addListener("logout", () => this.__restart(), this);
 
       this.__initRouting();
       this.__loadCommonCss();
 
       this.__updateTabName();
       this.__checkCookiesAccepted();
+
+      // onload, load, DOMContentLoaded, appear... didn't work
+      // bit of a hack
+      setTimeout(() => this.__checkScreenSize(), 100);
+      window.addEventListener("resize", () => this.__checkScreenSize());
+    },
+
+    __checkScreenSize: function() {
+      const title = this.tr("Oops, the window is a bit too small!");
+      const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", title).set({
+        height: 100,
+        width: 400,
+        layout: new qx.ui.layout.VBox(),
+        appearance: "service-window",
+        showMinimize: false,
+        showMaximize: false,
+        showClose: false,
+        resizable: false,
+        modal: true,
+        contentPadding: 10
+      });
+      const w = document.documentElement.clientWidth;
+      const h = document.documentElement.clientHeight;
+      if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
+        const msg = this.tr(`
+          oSPARC is designed for slightly bigger window size.<br>\
+          A mininum window size of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
+          Touch devices are not fully supported.
+        `);
+        const label = new qx.ui.basic.Label().set({
+          value: msg,
+          rich: true
+        });
+        tooSmallWindow.add(label, {
+          flex: 1
+        });
+        const okBtn = new qx.ui.form.Button(this.tr("Got it")).set({
+          allowGrowX: false,
+          allowGrowY: false,
+          alignX: "right"
+        });
+        okBtn.addListener("execute", () => tooSmallWindow.close());
+        tooSmallWindow.add(okBtn);
+        setTimeout(() => tooSmallWindow.center(), 100);
+        tooSmallWindow.center();
+        tooSmallWindow.open();
+      } else {
+        tooSmallWindow.close();
+      }
     },
 
     __initRouting: function() {
@@ -262,9 +308,7 @@ qx.Class.define("osparc.Application", {
     __loadLoginPage: function() {
       this.__disconnectWebSocket();
       const view = new osparc.auth.LoginPage();
-      view.addListener("done", function(msg) {
-        this.__restart();
-      }, this);
+      view.addListener("done", () => this.__restart(), this);
       this.__loadView(view, {
         top: "10%"
       });

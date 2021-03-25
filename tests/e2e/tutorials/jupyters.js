@@ -67,14 +67,13 @@ async function runTutorial() {
     const value = await nbIframe.evaluate(el => el.textContent, element);
     console.log('Results for the notebook cell is:', value);
     // NOTE: we need to wait here to get the results.
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(15000);
 
-    await tutorial.openNodeFiles(1);
     const outFiles = [
       "TheNumberNumber.txt",
       "notebooks.zip"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(1, outFiles);
 
 
     // open jupyter lab
@@ -89,7 +88,7 @@ async function runTutorial() {
     const jLabIframe = iframes2.find(iframe => iframe._url.endsWith("lab?"));
 
     // inside the iFrame, open the first notebook
-    const input2outputFileSelector = '[title*="input2output.ipynb"]';
+    const input2outputFileSelector = '[title~="input2output.ipynb"]';
     await jLabIframe.waitForSelector(input2outputFileSelector);
     await jLabIframe.click(input2outputFileSelector, {
       clickCount: 2
@@ -111,14 +110,14 @@ async function runTutorial() {
     console.log('Checking results for the jupyter lab cell:', jLabVvalue);
     await tutorial.takeScreenshot("pressRunJLab");
     // wait sufficiently before getting the results
-    await tutorial.waitFor(10000);
+    await tutorial.waitFor(15000);
+
     console.log('Checking results for the jupyter lab:');
-    await tutorial.openNodeFiles(2);
     const outFiles2 = [
       "work.zip",
       "TheNumber.txt"
     ];
-    await tutorial.checkResults(outFiles2.length);
+    await tutorial.checkNodeResults(2, outFiles2);
   }
   catch (err) {
     tutorial.setTutorialFailed(true);

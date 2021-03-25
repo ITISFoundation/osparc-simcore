@@ -39,11 +39,13 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --app simcore_service_sidecar.celery:app \
     --concurrency ${CONCURRENCY} \
     --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
-    --pool=${POOL}
+    --pool=${POOL} \
+    --hostname=sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@%h
 else
   exec celery worker \
     --app simcore_service_sidecar.celery:app \
     --concurrency ${CONCURRENCY} \
     --loglevel="${SIDECAR_LOGLEVEL-WARNING}" \
-    --pool=${POOL}
+    --pool=${POOL} \
+    --hostname=sidecar."$(cat ${SIDECAR_HOST_HOSTNAME_PATH})"@%h
 fi
