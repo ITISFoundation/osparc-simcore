@@ -346,7 +346,7 @@ async def _upload_files_to_storage(
 
 
 async def import_files_and_validate_project(
-    app: web.Application, user_id: int, root_folder: Path
+    app: web.Application, user_id: int, root_folder: Path, manifest_root_folder: Path
 ) -> str:
     project_file = await ProjectFile.model_from_file(root_dir=root_folder)
     shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
@@ -361,7 +361,9 @@ async def import_files_and_validate_project(
     log.debug("Shuffled project data: %s", shuffled_project_file)
 
     # NOTE: it is not necessary to apply data shuffling to the manifest
-    manifest_file = await ManifestFile.model_from_file(root_dir=root_folder)
+    manifest_file = await ManifestFile.model_from_file(
+        root_dir=root_folder if manifest_root_folder is None else manifest_root_folder
+    )
 
     user: Dict = await get_user(app=app, user_id=user_id)
 
