@@ -91,8 +91,6 @@ qx.Class.define("osparc.desktop.MainPage", {
                 });
             }
           }, this);
-
-
         } else {
           this.__showDashboard();
         }
