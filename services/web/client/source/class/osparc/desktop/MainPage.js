@@ -70,6 +70,8 @@ qx.Class.define("osparc.desktop.MainPage", {
         if (this.__studyEditor) {
           const msg = this.tr("Do you really want to close the study?");
           const win = new osparc.ui.window.Confirmation(msg);
+          const confirmButton = win.getConfirmButton();
+          osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
           win.center();
           win.open();
           win.addListener("close", () => {
