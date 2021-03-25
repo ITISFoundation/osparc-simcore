@@ -183,6 +183,21 @@ def _update_entry_in_cell(
     )
 
 
+def _parse_multiple_cell_ranges(
+    single_cells_cell_styles: Dict[str, BaseXLSXCellData],
+    xls_sheet: Worksheet,
+    entry: BaseXLSXCellData,
+    cell_address: str,
+):
+    for cell_row in xls_sheet[cell_address]:
+        for cell in cell_row:
+            _update_entry_in_cell(
+                target=single_cells_cell_styles,
+                address=cell.coordinate,
+                new_entry=entry,
+            )
+
+
 class BaseXLSXDocument:
     def _check_attribute(self, attribute_name: str):
         if getattr(self, attribute_name) is None:
@@ -231,13 +246,12 @@ class BaseXLSXDocument:
             for cell_address, entry in all_cells:
                 if ":" in cell_address:
                     # ranges like A1:B4 will be flattened into single cell entries
-                    for cell_row in xls_sheet[cell_address]:
-                        for cell in cell_row:
-                            _update_entry_in_cell(
-                                target=single_cells_cell_styles,
-                                address=cell.coordinate,
-                                new_entry=entry,
-                            )
+                    _parse_multiple_cell_ranges(
+                        single_cells_cell_styles=single_cells_cell_styles,
+                        xls_sheet=xls_sheet,
+                        entry=entry,
+                        cell_address=cell_address,
+                    )
                 else:
                     _update_entry_in_cell(
                         target=single_cells_cell_styles,
