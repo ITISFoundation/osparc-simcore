@@ -144,7 +144,9 @@ class AuthSession:
     async def create_project(self, project: NewProjectIn):
         resp = await self.client.post(
             "/projects",
-            data=project.json(by_alias=True),
+            data=project.json(
+                by_alias=True, exclude={"state"}
+            ),  ## FIXME: REEAAAALY HACKY!
             cookies=self.session_cookies,
         )
 

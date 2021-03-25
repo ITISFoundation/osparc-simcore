@@ -10,6 +10,7 @@ from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import JobStatus, TaskStates
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+from ..utils.serialization import json_dumps
 
 logger = logging.getLogger(__name__)
 
@@ -63,16 +64,17 @@ class DirectorV2Api(BaseServiceClientApi):
     async def create_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskOut:
-        data = await self.client.post(
+        resp = await self.client.post(
             "/computations",
             json={
                 "user_id": user_id,
-                "project_id": project_id,
+                "project_id": str(project_id),
                 "start_pipeline": False,
             },
         )
 
-        computation_task = ComputationTaskOut(**data.json())
+        resp.raise_for_status()  # raises HTTPStatusError if error
+        computation_task = ComputationTaskOut(**resp.json())
         return computation_task
 
     async def get_computation(
@@ -80,7 +82,7 @@ class DirectorV2Api(BaseServiceClientApi):
     ) -> ComputationTaskOut:
         data = await self.client.get(
             f"/computations/{project_id}",
-            json={
+            params={
                 "user_id": user_id,
             },
         )

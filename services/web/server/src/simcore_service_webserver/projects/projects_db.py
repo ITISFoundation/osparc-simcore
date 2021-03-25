@@ -21,7 +21,7 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import RowProxy
 from change_case import ChangeCase
 from pydantic import ValidationError
 from models_library.projects import ProjectAtDB
@@ -292,8 +292,6 @@ class ProjectDBAPI:
             while retry:
                 try:
                     query = projects.insert().values(**kargs)
-                    print("=" * 100)
-                    print(str(query))
                     result = await conn.execute(query)
                     await result.first()
                     retry = False
@@ -762,7 +760,7 @@ class ProjectDBAPI:
     async def _get_user_email(self, conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
-        email: ResultProxy = await conn.scalar(
+        email: Optional[str] = await conn.scalar(
             sa.select([users.c.email]).where(users.c.id == user_id)
         )
         return email or "Unknown"
