@@ -173,9 +173,13 @@ async def create_minimal_computational_graph_based_on_selection(
 async def compute_pipeline_details(
     complete_dag: nx.DiGraph, pipeline_dag: nx.DiGraph, comp_tasks: List[CompTaskAtDB]
 ) -> PipelineDetails:
-
-    # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
-    await _set_computational_nodes_states(complete_dag)
+    try:
+        # FIXME: this problem of cyclic graphs for control loops create all kinds of issues that must be fixed
+        # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
+        await _set_computational_nodes_states(complete_dag)
+    except nx.NetworkXUnfeasible:
+        # not acyclic
+        pass
     return PipelineDetails(
         adjacency_list=nx.to_dict_of_lists(pipeline_dag),
         node_states={

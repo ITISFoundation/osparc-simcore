@@ -8,9 +8,12 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
+from pytest_simcore.helpers import (
+    FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
+    FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
+)
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
@@ -32,18 +35,17 @@ def prepare_all_services(
     services = []
     for service in simcore_docker_compose["services"].keys():
         services.append(service)
-    setattr(request.module, "core_services", services)
-    core_services = getattr(request.module, "core_services", [])
+    setattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, services)
+    core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
     services = []
     for service in ops_docker_compose["services"].keys():
         services.append(service)
-    setattr(request.module, "ops_services", services)
-    ops_services = getattr(request.module, "ops_services", [])
+    setattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, services)
+    ops_services = getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
 
     services = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
     return services
-
 
 
 @pytest.fixture(scope="module")

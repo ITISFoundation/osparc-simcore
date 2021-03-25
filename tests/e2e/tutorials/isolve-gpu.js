@@ -29,15 +29,15 @@ async function runTutorial() {
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
 
-    await tutorial.runPipeline(studyId, 20000);
-    console.log('Checking isolve-gpu results:');
-    await tutorial.openNodeFiles(1);
+    await tutorial.runPipeline();
+    await tutorial.waitForStudyDone(studyId, 30000);
+
     const outFiles = [
       "logs.zip",
       "output.h5",
       "log.tgz"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(1, outFiles);
 
     await tutorial.toDashboard();
 

@@ -10743,7 +10743,7 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
-  '/projects/{project_id}:xport':
+  '/projects/{project_id}:export':
     parameters:
       - name: project_id
         in: path
@@ -15099,65 +15099,15 @@ paths:
       summary: Get Compatible Outputs Given Target Input
   /viewers:
     get:
-      operationId: get_viewer_for_file
+      operationId: list_viewers
       parameters:
         - in: query
           name: file_type
-          required: true
+          required: false
           schema:
             title: File Type
+            description: Filters list to viewers supporting that filetype
             type: string
-        - in: query
-          name: file_name
-          required: false
-          schema:
-            title: File Name
-            type: string
-        - in: query
-          name: file_size
-          required: false
-          schema:
-            title: File Size in Bytes
-            type: integer
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  data:
-                    properties:
-                      file_type:
-                        title: File Type
-                        type: string
-                      redirection_url:
-                        description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
-                        format: uri
-                        maxLength: 2083
-                        minLength: 1
-                        title: Redirection Url
-                        type: string
-                      viewer_title:
-                        description: Short formatted label with name and version of the viewer
-                        title: Viewer Title
-                        type: string
-                    required:
-                      - file_type
-                      - viewer_title
-                      - redirection_url
-                    title: FileType2Viewer
-                    type: object
-                required:
-                  - data
-                title: FielType2ViewerEnveloped
-                type: object
-          description: Successful Response
-      summary: Get Viewer For File
-      tags:
-        - viewer
-  /viewers/filetypes:
-    get:
-      operationId: list_supported_filetypes
       responses:
         '200':
           content:
@@ -15170,30 +15120,81 @@ paths:
                         file_type:
                           title: File Type
                           type: string
-                        redirection_url:
-                          description: 'Base url to redirect to this viewer. Needs appending file_size, [file_name] and download_link'
+                          description: Identifier for the file type
+                        view_url:
+                          description: 'Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters'
                           format: uri
                           maxLength: 2083
                           minLength: 1
                           title: Redirection Url
                           type: string
-                        viewer_title:
+                        title:
                           description: Short formatted label with name and version of the viewer
                           title: Viewer Title
                           type: string
                       required:
                         - file_type
                         - viewer_title
-                        - redirection_url
-                      title: FileType2Viewer
+                        - view_url
+                      title: Viewer
                       type: object
                     type: array
                 required:
                   - data
-                title: FieldType2ViewerListEnveloped
+                title: ViewerListEnveloped
                 type: object
           description: Successful Response
-      summary: List Supported Filetypes
+      summary: Lists viewers
+      description: Lists all publicaly available viewers. Notice that this might contain multiple services for the same filetype
+      tags:
+        - viewer
+  /viewers/default:
+    get:
+      operationId: list_default_viewers
+      parameters:
+        - in: query
+          name: file_type
+          required: false
+          schema:
+            title: File Type
+            description: Filters list to viewers supporting that filetype
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      file_type:
+                        title: File Type
+                        type: string
+                        description: Identifier for the file type
+                      view_url:
+                        description: 'Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters'
+                        format: uri
+                        maxLength: 2083
+                        minLength: 1
+                        title: Redirection Url
+                        type: string
+                      title:
+                        description: Short formatted label with name and version of the viewer
+                        title: Viewer Title
+                        type: string
+                    required:
+                      - file_type
+                      - viewer_title
+                      - view_url
+                    title: Viewer
+                    type: object
+                required:
+                  - data
+                title: ViewerEnveloped
+                type: object
+          description: Successful Response
+      summary: List Default Viewers
+      description: Lists a default viewer for each supported filetype. Only publicaly available viewers.
       tags:
         - viewer
 components:

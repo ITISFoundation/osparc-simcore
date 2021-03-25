@@ -17,9 +17,9 @@ from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 
-core_services = ["postgres", "storage"]
+pytest_simcore_core_services_selection = ["postgres", "storage"]
 
-ops_services = ["minio"]
+pytest_simcore_ops_services_selection = ["minio"]
 
 
 async def _check_port_valid(
@@ -174,12 +174,21 @@ async def test_port_file_accessors(
     item_value: str,
     item_pytype: Type,
     config_value: Dict[str, str],
+    project_id,
+    node_uuid,
     e_tag: str,
 ):  # pylint: disable=W0613, W0621
-    config_dict, project_id, node_uuid = special_configuration(
+
+    config_value["path"] = f"{project_id}/{node_uuid}/{Path(config_value['path']).name}"
+
+    config_dict, _project_id, _node_uuid = special_configuration(
         inputs=[("in_1", item_type, config_value)],
         outputs=[("out_34", item_type, None)],
     )
+
+    assert _project_id == project_id
+    assert _node_uuid == node_uuid
+
     PORTS = await node_ports_v2.ports()
     await check_config_valid(PORTS, config_dict)
     assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness

@@ -25,19 +25,21 @@ async function runTutorial () {
     const studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
+    const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    const nodeIdViewer = workbenchData["nodeIds"][1];
+
     // Some time for loading the workbench
     await tutorial.waitFor(10000);
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
-    await tutorial.runPipeline(studyId, 120000);
-    await utils.takeScreenshot(page, screenshotPrefix + 'pipeline_run');
+    await tutorial.runPipeline();
+    await tutorial.waitForStudyDone(studyId, 120000);
 
-    await tutorial.openNodeFiles(0);
     const outFiles = [
       "logs.zip",
       "outputController.dat"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
 
 
     // open kember viewer
@@ -46,8 +48,13 @@ async function runTutorial () {
     await tutorial.waitFor(2000);
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
     const iframeHandles = await page.$$("iframe");
-    // expected just one iframe = kember-notebook
-    const frame = await iframeHandles[0].contentFrame();
+    const iframes = [];
+    for (let i=0; i<iframeHandles.length; i++) {
+      const frame = await iframeHandles[i].contentFrame();
+      iframes.push(frame);
+    }
+    // url/x/nodeIdViewer
+    const frame = iframes.find(iframe => iframe._url.includes(nodeIdViewer));
 
     // restart kernel: click restart and accept
     const restartSelector = "#run_int > button:nth-child(3)";
@@ -65,14 +72,13 @@ async function runTutorial () {
     await utils.takeScreenshot(page, screenshotPrefix + 'notebook_run');
 
     // check output
-    await tutorial.openNodeFiles(1);
     const outFiles2 = [
       "Hear_Rate.csv",
       "notebooks.zip",
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
-    await tutorial.checkResults(outFiles2.length);
+    await tutorial.checkNodeResults(1, outFiles2);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

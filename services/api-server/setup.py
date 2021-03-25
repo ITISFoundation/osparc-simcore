@@ -27,6 +27,8 @@ version = (current_dir / "VERSION").read_text().strip()
 install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
     "simcore-models-library",
     "simcore-postgres-database",
+    "simcore-sdk",
+    "simcore-service-library",
 ]
 
 test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")

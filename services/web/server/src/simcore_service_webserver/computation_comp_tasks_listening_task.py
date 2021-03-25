@@ -126,7 +126,7 @@ async def listen(app: web.Application):
                 # find the user(s) linked to that project
                 the_project_owner = await _get_project_owner(conn, project_uuid)
 
-                if "outputs" in task_changes:
+                if any(f in task_changes for f in ["outputs", "run_hash"]):
                     new_outputs = task_data.get("outputs", {})
                     new_run_hash = task_data.get("run_hash", None)
                     await _update_project_outputs(

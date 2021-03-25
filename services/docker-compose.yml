@@ -144,10 +144,14 @@ services:
         - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         - traefik.enable=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.server.port=8080
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
     networks:
       - default
       - interactive_services_subnet
@@ -194,6 +198,7 @@ services:
       - REGISTRY_PW=${REGISTRY_PW}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - SIDECAR_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - SIDECAR_HOST_HOSTNAME_PATH=${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
       - START_AS_MODE_CPU=${SIDECAR_FORCE_CPU_NODE:-0}
 
     networks:
@@ -272,6 +277,18 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "--username",
+          "${POSTGRES_USER}",
+          "--dbname",
+          "${POSTGRES_DB}",
+        ]
+      interval: 15s
+      retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
     # in the meantime postgres allows to set a configuration through CLI.
@@ -299,6 +316,11 @@ services:
     networks:
       - default
       - computational_services_subnet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
 
   traefik:
     image: traefik:v2.2.1
@@ -306,6 +328,9 @@ services:
     command:
       - "--api=true"
       - "--api.dashboard=true"
+      - "--ping=true"
+      - "--entryPoints.ping.address=:9082"
+      - "--ping.entryPoint=ping"
       - "--log.level=WARNING"
       - "--accesslog=false"
       - "--metrics.prometheus=true"
@@ -322,6 +347,8 @@ services:
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.network=${SWARM_STACK_NAME}_default"
       - "--providers.docker.swarmMode=true"
+      # https://github.com/traefik/traefik/issues/7886
+      - "--providers.docker.swarmModeRefreshSeconds=1"
       - "--providers.docker.exposedByDefault=false"
       - "--providers.docker.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
       - "--tracing=true"
@@ -347,6 +374,12 @@ services:
     networks:
       - default
       - interactive_services_subnet
+    #healthcheck:
+    #  test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
+    #  interval: 3s
+    #  timeout: 1s
+    #  retries: 3
+    #  start_period: 20s
 
 volumes:
   input: {}

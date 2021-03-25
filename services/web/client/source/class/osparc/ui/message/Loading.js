@@ -115,7 +115,7 @@ qx.Class.define("osparc.ui.message.Loading", {
       if (showMaximize) {
         const maximize = false;
         const maxButton = this.__maxButton = new qx.ui.form.Button(null).set({
-          icon: osparc.component.widget.PersistentIframe.getIcon(maximize),
+          icon: osparc.component.widget.PersistentIframe.getZoomIcon(maximize),
           decorator: null
         });
         osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
@@ -160,7 +160,7 @@ qx.Class.define("osparc.ui.message.Loading", {
         this.removeState("maximized");
       }
       const maxButton = this.__maxButton;
-      maxButton.setIcon(osparc.component.widget.PersistentIframe.getIcon(maximize));
+      maxButton.setIcon(osparc.component.widget.PersistentIframe.getZoomIcon(maximize));
       osparc.utils.Utils.setIdToWidget(maxButton, osparc.component.widget.PersistentIframe.getMaximizeWidgetId(maximize));
       qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", this.hasState("maximized"));
     }

@@ -1,76 +1,98 @@
 """ Handles requests to the Rest API
 
+NOTE: openapi section for these handlers was generated using
+   services/web/server/tests/sandbox/viewers_openapi_generator.py
 """
 from typing import Optional
 
 from aiohttp import web
 from pydantic import BaseModel, Field
-from pydantic.types import PositiveInt
+from pydantic.networks import HttpUrl
 
-from ._core import (
-    MatchNotFoundError,
-    ValidationMixin,
-    ViewerInfo,
-    find_compatible_viewer,
-    iter_supported_filetypes,
-)
+from ._core import ViewerInfo, list_viewers_info
+from .handlers_redirects import compose_dispatcher_prefix_url
 
 
-def _get_redirect_url(request: web.Request, **query_params) -> str:
-    absolute_url = request.url.join(
-        request.app.router["get_redirection_to_viewer"]
-        .url_for()
-        .with_query(**query_params)
+class Viewer(BaseModel):
+    """
+    API model for a viewer resource
+
+    A viewer is a service with an associated filetype.
+    You can think of it as a tuple (filetype, service)
+
+    The service could consume other filetypes BUT at this
+    interface this is represented in yet another viewer resource
+
+    For instance, the same service can be in two different viewer resources
+      - viewer1=(JPEG, RawGraph service)
+      - viewer2=(CSV, RawGraph service)
+
+    A viewer can be dispatched using the view_url and appending the
+    """
+
+    title: str = Field(
+        ..., description="Short formatted label with name and version of the viewer"
     )
-    return str(absolute_url)
-
-
-# GET /v0/viewers/filetypes
-async def list_supported_filetypes(request: web.Request):
-    data = []
-    for file_type, viewer in iter_supported_filetypes():
-        data.append(
-            {
-                "file_type": file_type,
-                "viewer_title": viewer.title,
-                "redirection_url": _get_redirect_url(request, file_type=file_type),
-            }
-        )
-    return data
-
-
-# GET /v0/viewers -----
-# TODO: create dynamically with pydantic class: https://pydantic-docs.helpmanual.io/usage/models/#dynamic-model-creation
-class RequestParams(BaseModel, ValidationMixin):
-    file_type: str  # TODO: mime-types??
-    file_name: Optional[str] = None
-    file_size: Optional[PositiveInt] = Field(
-        None, description="Expected file size in bytes"
+    file_type: str = Field(..., description="Identifier for the file type")
+    view_url: HttpUrl = Field(
+        ...,
+        description="Base url to execute viewer. Needs appending file_size,[file_name] and download_link as query parameters",
     )
 
-
-async def get_viewer_for_file(request: web.Request):
-    try:
-        params = RequestParams.from_request(request)
-
-        # find the best viewer match for file setup (tmp hard-coded)
-        viewer: ViewerInfo = find_compatible_viewer(params.file_type, params.file_size)
-
-        return {
-            "file_type": params.file_type,
-            "viewer_title": viewer.title,
-            "redirection_url": _get_redirect_url(
+    @classmethod
+    def create(cls, request: web.Request, viewer: ViewerInfo):
+        return cls(
+            file_type=viewer.filetype,
+            title=viewer.title,
+            view_url=compose_dispatcher_prefix_url(
                 request,
-                **params.dict(
-                    exclude_defaults=True, exclude_unset=True, exclude_none=True
-                )
+                viewer,
             ),
-        }
+        )
 
-    except MatchNotFoundError as err:
-        raise web.HTTPUnprocessableEntity(reason=err.reason)
+
+# GET /v0/viewers
+# WARNING: this entry is NOT access protected
+async def list_viewers(request: web.Request):
+    """Lists all publicaly available viewers
+
+    Notice that this might contain multiple services for the same filetype
+
+    If file_type is provided, then it filters viewer for that filetype
+    """
+    # filter: file_type=*
+    file_type: Optional[str] = request.query.get("file_type", None)
+
+    viewers = [
+        Viewer.create(request, viewer).dict()
+        for viewer in await list_viewers_info(request.app, file_type=file_type)
+    ]
+    return viewers
+
+
+# GET /v0/viewers/default
+# WARNING: this entry is NOT access protected
+async def list_default_viewers(request: web.Request):
+    """Lists the default viewer for each supported filetype
+
+    This was interfaced as a subcollection of viewers because it is a very common use-case
+
+    Only publicaly available viewers
+
+    If file_type is provided, then it filters viewer for that filetype
+    """
+    # filter: file_type=*
+    file_type: Optional[str] = request.query.get("file_type", None)
+
+    viewers = [
+        Viewer.create(request, viewer).dict()
+        for viewer in await list_viewers_info(
+            request.app, file_type=file_type, only_default=True
+        )
+    ]
+    return viewers
 
 
 rest_handler_functions = {
-    fun.__name__: fun for fun in [list_supported_filetypes, get_viewer_for_file]
+    fun.__name__: fun for fun in [list_default_viewers, list_viewers]
 }

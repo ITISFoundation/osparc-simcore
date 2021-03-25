@@ -21,6 +21,10 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
     const infoText = this.tr("For your protection, store your access keys securely and do not share them. You will not be able to access the key again once this window is closed.");
     this.base(arguments, caption, infoText);
 
+    this.set({
+      clickAwayClose: false
+    });
+
     this.__populateTokens(key, secret);
   },
 

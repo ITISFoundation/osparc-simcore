@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           return;
         }
         if (this.__studyEditor) {
-          const dashboardBtn = navBar.getDashboardButton();
+          const dashboardBtn = navBar.getChildControl("dashboard-button");
           dashboardBtn.setFetching(true);
           const studyId = this.__studyEditor.getStudy().getUuid();
           this.__studyEditor.updateStudyDocument()
@@ -274,7 +274,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         studyEditor.setPageContext("workbench");
       }
 
-      this.__studyEditor.addListener("studyIsLocked", () => {
+      this.__studyEditor.addListener("forceBackToDashboard", () => {
         this.__showDashboard();
       }, this);
     },

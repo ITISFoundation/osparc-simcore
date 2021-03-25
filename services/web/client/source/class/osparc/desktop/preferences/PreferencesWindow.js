@@ -55,6 +55,11 @@ qx.Class.define("osparc.desktop.preferences.PreferencesWindow", {
     osparc.utils.Utils.setIdToWidget(secBtn, "preferencesSecurityTabBtn");
     tabView.add(secPage);
 
+    const tokensPage = new osparc.desktop.preferences.pages.TokensPage();
+    const tokensBtn = tokensPage.getChildControl("button");
+    osparc.utils.Utils.setIdToWidget(tokensBtn, "preferencesTokensTabBtn");
+    tabView.add(tokensPage);
+
     const expPage = new osparc.desktop.preferences.pages.ExperimentalPage();
     const expBtn = expPage.getChildControl("button");
     osparc.utils.Utils.setIdToWidget(expBtn, "preferencesExperimentalTabBtn");

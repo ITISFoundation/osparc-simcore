@@ -12,14 +12,13 @@ from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict, List, Optional, Union
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
-from pytest_simcore.helpers.utils_projects import delete_all_projects
 from servicelib.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
@@ -38,14 +37,14 @@ from simcore_service_webserver.session import setup_session
 API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
-core_services = [
+pytest_simcore_core_services_selection = [
     "catalog",
     "director",
     "postgres",
     "redis",
 ]
 
-ops_services = ["adminer"]  # + ["adminer"]
+pytest_simcore_ops_services_selection = ["adminer"]  # + ["adminer"]
 
 
 @pytest.fixture
@@ -126,21 +125,6 @@ def fake_project_data(fake_data_dir: Path) -> Dict:
 
 
 @pytest.fixture
-async def logged_user(client):  # , role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: role fixture is defined as a parametrization below
-    """
-    role = UserRole.USER  # TODO: parameterize roles
-
-    async with LoggedUser(
-        client, {"role": role.name}, check_if_succeeds=role != UserRole.ANONYMOUS
-    ) as user:
-        yield user
-        await delete_all_projects(client.app)
-
-
-@pytest.fixture
 async def storage_subsystem_mock(loop, mocker):
     """
     Patches client calls to storage service
@@ -148,8 +132,9 @@ async def storage_subsystem_mock(loop, mocker):
     Patched functions are exposed within projects but call storage subsystem
     """
     # requests storage to copy data
+
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.copy_data_folders_from_project"
+        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project"
     )
 
     async def _mock_copy_data_from_project(*args):
@@ -239,6 +224,7 @@ async def _request_delete(client, pid):
     await assert_status(resp, web.HTTPNoContent)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_workflow(
     postgres_db: sa.engine.Engine,
     docker_registry: str,
@@ -281,10 +267,12 @@ async def test_workflow(
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
     modified_project["description"] = "John Raynor killed Kerrigan"
-    modified_project["workbench"]["ReNamed"] = modified_project["workbench"].pop(
+
+    new_node_id = str(uuid4())
+    modified_project["workbench"][new_node_id] = modified_project["workbench"].pop(
         list(modified_project["workbench"].keys())[0]
     )
-    modified_project["workbench"]["ReNamed"]["position"]["x"] = 0
+    modified_project["workbench"][new_node_id]["position"]["x"] = 0
     # share with some group
     modified_project["accessRights"].update(
         {str(standard_groups[0]["gid"]): {"read": True, "write": True, "delete": False}}
@@ -324,6 +312,7 @@ async def test_workflow(
     assert not projects
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_get_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
@@ -337,6 +326,7 @@ async def test_get_invalid_project(
     await assert_status(resp, web.HTTPNotFound)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_update_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
@@ -350,6 +340,7 @@ async def test_update_invalid_project(
     await assert_status(resp, web.HTTPNotFound)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_delete_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
@@ -363,6 +354,7 @@ async def test_delete_invalid_project(
     await assert_status(resp, web.HTTPNotFound)
 
 
+@pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_list_template_projects(
     client,
     postgres_db: sa.engine.Engine,

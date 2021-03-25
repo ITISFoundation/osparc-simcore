@@ -1,10 +1,11 @@
 import logging
 from pathlib import Path
-from shutil import make_archive, move, unpack_archive
+from shutil import move
 from tempfile import TemporaryDirectory
 from typing import Optional, Union
 
 from simcore_sdk.node_ports import config, filemanager
+from servicelib.archiving_utils import archive_dir, unarchive_dir
 
 log = logging.getLogger(__name__)
 
@@ -31,13 +32,16 @@ async def push(file_or_folder: Path, rename_to: Optional[str] = None):
     with TemporaryDirectory() as tmp_dir_name:
         log.info("compressing %s into %s...", file_or_folder.name, tmp_dir_name)
         # compress the files
-        compressed_file_wo_ext = Path(tmp_dir_name) / (
-            rename_to if rename_to else file_or_folder.stem
+        archive_file_path = Path(tmp_dir_name) / (
+            "%s.zip" % (rename_to if rename_to else file_or_folder.stem)
         )
-        archive_file = Path(
-            make_archive(str(compressed_file_wo_ext), "zip", root_dir=file_or_folder)
-        )  # , base_dir=folder))
-        return await _push_file(archive_file, None)
+        await archive_dir(
+            dir_to_compress=file_or_folder,
+            destination=archive_file_path,
+            compress=False,  # disabling compression for faster speeds
+            store_relative_path=True,
+        )
+        return await _push_file(archive_file_path, None)
 
 
 async def _pull_file(file_path: Path):
@@ -53,13 +57,31 @@ async def _pull_file(file_path: Path):
     log.info("%s successfuly pulled", file_path)
 
 
+def _get_archive_name(path: Path) -> str:
+    return f"{path.stem}.zip"
+
+
 async def pull(file_or_folder: Path):
     if file_or_folder.is_file():
         return await _pull_file(file_or_folder)
     # we have a folder, so we need somewhere to extract it to
     with TemporaryDirectory() as tmp_dir_name:
-        archive_file = Path(tmp_dir_name) / "{}.zip".format(file_or_folder.stem)
+        archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
         await _pull_file(archive_file)
         log.info("extracting data from %s", archive_file)
-        unpack_archive(str(archive_file), extract_dir=file_or_folder)
+        await unarchive_dir(
+            archive_to_extract=str(archive_file), destination_folder=file_or_folder
+        )
         log.info("extraction completed")
+
+
+async def is_file_present_in_storage(file_path: Path) -> bool:
+    """
+    :retruns True if an entry is present inside the files_metadata else False
+    """
+    s3_object = _create_s3_object(_get_archive_name(file_path))
+    log.debug("Checking if s3_object='%s' is present", s3_object)
+    return await filemanager.entry_exists(
+        store_id=0,  # this is for simcore.s3
+        s3_object=s3_object,
+    )

@@ -38,10 +38,11 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
-    * @param showUsersTree {Boolean} Show the user's tree on the right side. True by default
     */
-  construct: function(node, showUsersTree = true) {
+  construct: function(node) {
     this.base(arguments);
+
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
       node: node
@@ -49,75 +50,22 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
     osparc.utils.Utils.setIdToWidget(this, "nodeDataManager");
 
-    const nodeDataManagerLayout = new qx.ui.layout.VBox(10);
-    this._setLayout(nodeDataManagerLayout);
-
-    const treesLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-    this._add(treesLayout, {
-      flex: 1
-    });
-
-    const nodeTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    const nodeReloadBtn = this._createChildControlImpl("reloadButton");
-    nodeReloadBtn.addListener("execute", function() {
-      this.__reloadNodeTree();
-    }, this);
-    nodeTreeLayout.add(nodeReloadBtn);
-    const nodeFilesTree = this.__nodeFilesTree = this._createChildControlImpl("nodeTree");
-    osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerNodeFilesTree");
-    nodeFilesTree.setDragMechnism(true);
-    nodeFilesTree.addListener("selectionChanged", () => {
-      this.__selectionChanged("node");
-    }, this);
-    nodeTreeLayout.add(nodeFilesTree, {
-      flex: 1
-    });
-    treesLayout.add(nodeTreeLayout, {
-      flex: 1
-    });
-
-    if (showUsersTree) {
-      const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const userReloadBtn = this._createChildControlImpl("reloadButton");
-      userReloadBtn.addListener("execute", function() {
-        this.__userFilesTree.resetCache();
-        this.__reloadUserTree();
-      }, this);
-      userTreeLayout.add(userReloadBtn);
-      const userFilesTree = this.__userFilesTree = this._createChildControlImpl("userTree");
-      osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
-      userFilesTree.setDropMechnism(true);
-      userFilesTree.addListener("selectionChanged", () => {
-        this.__selectionChanged("user");
-      }, this);
-      userFilesTree.addListener("fileCopied", e => {
-        const fileMetadata = e.getData();
-        if (fileMetadata) {
-          console.log("file copied", fileMetadata);
-        }
-      }, this);
-      userTreeLayout.add(userFilesTree, {
-        flex: 1
-      });
-      treesLayout.add(userTreeLayout, {
-        flex: 1
-      });
-    }
-
-    const selectedFileLayout = this.__selectedFileLayout = this._createChildControlImpl("selectedFileLayout");
-    selectedFileLayout.addListener("fileDeleted", e => {
-      const fileMetadata = e.getData();
-      this.__reloadNodeTree();
-      this.__reloadUserTree(fileMetadata["locationId"]);
-    }, this);
-
+    this.__buildLayout();
     this.__reloadNodeTree();
     this.__reloadUserTree();
   },
 
   properties: {
     node: {
-      check: "osparc.data.model.Node"
+      check: "osparc.data.model.Node",
+      nullable: false
+    },
+
+    showMyData: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeShowMyData"
     }
   },
 
@@ -129,18 +77,41 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "reloadButton":
+        case "show-my-data-checkbox":
+          control = new qx.ui.form.CheckBox().set({
+            label: this.tr("Show My Data"),
+            alignX: "right",
+            value: this.getShowMyData()
+          });
+          this._add(control);
+          break;
+        case "files-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "reload-button":
           control = new qx.ui.form.Button().set({
             label: this.tr("Reload"),
             icon: "@FontAwesome5Solid/sync-alt/16",
             allowGrowX: false
           });
           break;
-        case "nodeTree":
-        case "userTree":
-          control = new osparc.file.FilesTree();
+        case "node-tree-folder-layout":
+          control = new qx.ui.splitpane.Pane("horizontal");
           break;
-        case "selectedFileLayout":
+        case "node-files-tree":
+        case "user-files-tree":
+          control = new osparc.file.FilesTree().set({
+            minWidth: 150,
+            width: 200
+          });
+          break;
+        case "folder-viewer":
+          control = new osparc.file.FolderViewer();
+          break;
+        case "selected-file-layout":
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
@@ -151,22 +122,90 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       return control || this.base(arguments, id);
     },
 
-    getWindow: function() {
-      const win = new qx.ui.window.Window(this.getNode().getLabel()).set({
-        appearance: "service-window",
-        layout: new qx.ui.layout.Grow(),
-        autoDestroy: true,
-        contentPadding: 0,
-        height: 600,
-        modal: true,
-        showMinimize: false,
-        width: 900
+    __buildLayout: function() {
+      const showMyData = this.getChildControl("show-my-data-checkbox");
+      showMyData.exclude();
+      showMyData.bind("value", this, "showMyData");
+
+      const treesLayout = this.getChildControl("files-layout");
+
+
+      const nodeTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+
+      const nodeReloadBtn = this.getChildControl("reload-button");
+      nodeReloadBtn.addListener("execute", function() {
+        this.__reloadNodeTree();
+      }, this);
+      nodeTreeLayout.add(nodeReloadBtn);
+
+      const nodeFilesTree = this.__nodeFilesTree = this.getChildControl("node-files-tree").set({
+        showLeafs: false,
+        dragMechanism: true
       });
-      const closeBtn = win.getChildControl("close-button");
-      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
-      win.add(this);
-      win.center();
-      return win;
+      const nodeFolder = this.getChildControl("folder-viewer");
+      const nodeTreeFolderLayout = this.getChildControl("node-tree-folder-layout");
+      nodeTreeFolderLayout.add(nodeFilesTree, 0);
+      nodeTreeFolderLayout.add(nodeFolder, 1);
+
+      nodeFilesTree.addListener("selectionChanged", () => {
+        const selectionData = nodeFilesTree.getSelectedItem();
+        this.__selectionChanged(selectionData, "node");
+        if (selectionData) {
+          if (osparc.file.FilesTree.isDir(selectionData) || (selectionData.getChildren && selectionData.getChildren().length)) {
+            nodeFolder.setFolder(selectionData);
+          }
+        }
+      }, this);
+      nodeFolder.addListener("selectionChanged", e => {
+        const selectionData = e.getData();
+        this.__selectionChanged(selectionData);
+      }, this);
+
+      nodeTreeLayout.add(nodeTreeFolderLayout, {
+        flex: 1
+      });
+
+      treesLayout.add(nodeTreeLayout, {
+        flex: 1
+      });
+
+
+      const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      this.bind("showMyData", userTreeLayout, "visibility", {
+        converter: showMyDataValue => showMyDataValue ? "visible" : "excluded"
+      });
+
+      const userReloadBtn = this.getChildControl("reload-button");
+      userReloadBtn.addListener("execute", function() {
+        this.__userFilesTree.resetCache();
+        this.__reloadUserTree();
+      }, this);
+      userTreeLayout.add(userReloadBtn);
+
+      const userFilesTree = this.__userFilesTree = this.getChildControl("user-files-tree");
+      osparc.utils.Utils.setIdToWidget(nodeFilesTree, "nodeDataManagerUserFilesTree");
+      userFilesTree.setDropMechnism(true);
+      userFilesTree.addListener("fileCopied", e => {
+        const fileMetadata = e.getData();
+        if (fileMetadata) {
+          console.log("file copied", fileMetadata);
+        }
+      }, this);
+      userTreeLayout.add(userFilesTree, {
+        flex: 1
+      });
+
+      treesLayout.add(userTreeLayout, {
+        flex: 1
+      });
+
+
+      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
+      selectedFileLayout.addListener("fileDeleted", e => {
+        const fileMetadata = e.getData();
+        this.__reloadNodeTree();
+        this.__reloadUserTree(fileMetadata["locationId"]);
+      }, this);
     },
 
     __reloadNodeTree: function() {
@@ -181,19 +220,14 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
       }
     },
 
-    __selectionChanged: function(selectedTree) {
-      let selectionData = null;
+    __selectionChanged: function(selectionData, selectedTree = "node") {
       if (selectedTree === "user") {
         this.__nodeFilesTree.resetSelection();
-        selectionData = this.__userFilesTree.getSelectedFile();
-      } else {
-        if (this.__userFilesTree) {
-          this.__userFilesTree.resetSelection();
-        }
-        selectionData = this.__nodeFilesTree.getSelectedFile();
+      } else if (this.__userFilesTree) {
+        this.__userFilesTree.resetSelection();
       }
       if (selectionData) {
-        this.__selectedFileLayout.itemSelected(selectionData["selectedItem"], selectionData["isFile"]);
+        this.__selectedFileLayout.itemSelected(selectionData);
       }
     }
   }

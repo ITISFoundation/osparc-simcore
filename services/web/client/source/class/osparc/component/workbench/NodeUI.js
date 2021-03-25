@@ -222,18 +222,24 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.getNode().getStatus().bind("dependencies", portLabel, "textColor", {
           converter: dependencies => {
             if (dependencies !== null) {
-              return osparc.utils.StatusUI.getColor(dependencies.length ? "failed" : "ready");
+              return osparc.utils.StatusUI.getColor(dependencies.length ? "modified" : "ready");
             }
             return osparc.utils.StatusUI.getColor();
           }
         });
       } else {
-        this.getNode().getStatus().bind("modified", portLabel, "textColor", {
-          converter: modified => {
-            if (modified === null) {
-              return osparc.utils.StatusUI.getColor();
+        this.getNode().getStatus().bind("output", portLabel, "textColor", {
+          converter: output => {
+            switch (output) {
+              case "up-to-date":
+                return osparc.utils.StatusUI.getColor("ready");
+              case "out-of-date":
+              case "busy":
+                return osparc.utils.StatusUI.getColor("modified");
+              case "not-available":
+              default:
+                return osparc.utils.StatusUI.getColor();
             }
-            return osparc.utils.StatusUI.getColor(modified ? "failed" : "ready");
           }
         });
       }
@@ -292,9 +298,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), false);
-      const win = nodeDataManager.getWindow();
-      win.open();
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
+      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, this.getNode().getLabel(), 900, 600).set({
+        appearance: "service-window"
+      });
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     },
 
     getEdgePoint: function(port) {

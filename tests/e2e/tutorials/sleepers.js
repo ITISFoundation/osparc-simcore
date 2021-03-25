@@ -27,18 +27,17 @@ async function runTutorial() {
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
 
-    await tutorial.runPipeline(studyId, 60000);
-    console.log('Checking results for the first sleeper:');
-    await tutorial.openNodeFiles(0);
+    await tutorial.runPipeline();
+    await tutorial.waitForStudyDone(studyId, 60000);
+
     const outFiles = [
       "logs.zip",
       "out_1"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
 
     console.log('Checking results for the last sleeper:');
-    await tutorial.openNodeFiles(4);
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(4, outFiles);
 
     await tutorial.toDashboard();
 

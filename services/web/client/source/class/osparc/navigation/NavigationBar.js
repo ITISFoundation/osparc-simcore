@@ -99,35 +99,30 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   members: {
-    __dashboardBtn: null,
-    __dashboardLabel: null,
-    __readOnlyIcon: null,
-    __startSlidesBtn: null,
-    __stopSlidesBtn: null,
-    __studyTitle: null,
+    __serverStatics: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.__dashboardBtn = this.getChildControl("dashboard-button");
-      this.__dashboardLabel = this.getChildControl("dashboard-label");
+      this.getChildControl("dashboard-button");
+      this.getChildControl("dashboard-label");
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.__startSlidesBtn = this.getChildControl("slideshow-start").set({
+      this.getChildControl("slideshow-start").set({
         visibility: "excluded"
       });
-      this.__stopSlidesBtn = this.getChildControl("slideshow-stop").set({
+      this.getChildControl("slideshow-stop").set({
         visibility: "excluded"
       });
 
       this._add(new qx.ui.core.Spacer(20));
 
-      this.__readOnlyIcon = this.getChildControl("read-only-icon");
+      this.getChildControl("read-only-icon");
 
-      const studyTitle = this.__studyTitle = this.getChildControl("study-title");
+      const studyTitle = this.getChildControl("study-title");
       studyTitle.addListener("editValue", evt => {
         if (evt.getData() !== studyTitle.getValue()) {
           studyTitle.setFetching(true);
@@ -239,25 +234,21 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return control || this.base(arguments, id);
     },
 
-    getDashboardButton: function() {
-      return this.__dashboardBtn;
-    },
-
     _applyPageContext: function(newCtxt) {
       switch (newCtxt) {
         case "dashboard":
-          this.__dashboardLabel.show();
-          this.__dashboardBtn.exclude();
-          this.__readOnlyIcon.exclude();
+          this.getChildControl("dashboard-label").show();
+          this.getChildControl("dashboard-button").exclude();
+          this.getChildControl("read-only-icon").exclude();
           this.__resetSlidesBtnsVis(false);
-          this.__studyTitle.exclude();
+          this.getChildControl("study-title").exclude();
           break;
         case "workbench":
         case "slideshow":
-          this.__dashboardLabel.exclude();
-          this.__dashboardBtn.show();
+          this.getChildControl("dashboard-label").exclude();
+          this.getChildControl("dashboard-button").show();
           this.__resetSlidesBtnsVis(true);
-          this.__studyTitle.show();
+          this.getChildControl("study-title").show();
           break;
       }
     },
@@ -267,19 +258,19 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       const context = ["workbench", "slideshow"].includes(this.getPageContext());
       if (areSlidesEnabled && context) {
         const study = this.getStudy();
-        if (Object.keys(study.getUi().getSlideshow()).length) {
+        if (study && Object.keys(study.getUi().getSlideshow()).length) {
           if (this.getPageContext() === "slideshow") {
-            this.__startSlidesBtn.exclude();
-            this.__stopSlidesBtn.show();
+            this.getChildControl("slideshow-start").exclude();
+            this.getChildControl("slideshow-stop").show();
           } else if (this.getPageContext() === "workbench") {
-            this.__startSlidesBtn.show();
-            this.__stopSlidesBtn.exclude();
+            this.getChildControl("slideshow-start").show();
+            this.getChildControl("slideshow-stop").exclude();
           }
           return;
         }
       }
-      this.__startSlidesBtn.exclude();
-      this.__stopSlidesBtn.exclude();
+      this.getChildControl("slideshow-start").exclude();
+      this.getChildControl("slideshow-stop").exclude();
     },
 
     __createSlideStartBtn: function() {
@@ -488,8 +479,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
     _applyStudy: function(study) {
       if (study) {
-        study.bind("name", this.__studyTitle, "value");
-        study.bind("readOnly", this.__readOnlyIcon, "visibility", {
+        study.bind("name", this.getChildControl("study-title"), "value");
+        study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
         study.getUi().addListener("changeSlideshow", () => {

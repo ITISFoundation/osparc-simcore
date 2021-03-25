@@ -3,7 +3,7 @@
 """
 import json
 import logging
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Coroutine, Dict, List, Optional, Set
 
 import aioredlock
 from aiohttp import web
@@ -17,11 +17,12 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from ..security_api import check_permission
 from ..security_decorators import permission_required
+from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_utils import project_uses_available_services
+from .projects_utils import clone_project_document, project_uses_available_services
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -50,6 +51,7 @@ async def create_projects(request: web.Request):
 
     try:
         project = {}
+        clone_data_coro: Optional[Coroutine] = None
 
         if as_template:  # create template from
             await check_permission(request, "project.template.create")
@@ -60,16 +62,28 @@ async def create_projects(request: web.Request):
                 user_id=user_id,
                 include_templates=False,
             )
-            project = await projects_api.clone_project(request, source_project, user_id)
+            # clone user project as tempalte
+            project, nodes_map = clone_project_document(
+                source_project, forced_copy_project_id=False
+            )
+            clone_data_coro = copy_data_folders_from_project(
+                request.app, source_project, project, nodes_map, user_id
+            )
 
         elif template_uuid:  # create from template
-            template_prj = await db.get_template_project(template_uuid)
-            if not template_prj:
+            source_project = await db.get_template_project(template_uuid)
+            if not source_project:
                 raise web.HTTPNotFound(
                     reason="Invalid template uuid {}".format(template_uuid)
                 )
+            # clone template as user project
+            project, nodes_map = clone_project_document(
+                source_project, forced_copy_project_id=False
+            )
+            clone_data_coro = copy_data_folders_from_project(
+                request.app, source_project, project, nodes_map, user_id
+            )
 
-            project = await projects_api.clone_project(request, template_prj, user_id)
             # remove template access rights
             project["accessRights"] = {}
             # FIXME: parameterized inputs should get defaults provided by service
@@ -93,6 +107,11 @@ async def create_projects(request: web.Request):
         project = await db.add_project(
             project, user_id, force_as_template=as_template is not None
         )
+
+        # copies the project's DATA IF cloned
+        if clone_data_coro:
+            await clone_data_coro
+
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2.create_or_update_pipeline(
             request.app, user_id, project["uuid"]
@@ -142,14 +161,24 @@ async def list_projects(request: web.Request):
             reraise=True,
         )
 
+    user_available_services: List[
+        Dict
+    ] = await catalog.get_services_for_user_in_product(
+        request.app, user_id, product_name, only_key_versions=True
+    )
+
     projects_list = []
     if ptype in ("template", "all"):
-        template_projects = await db.load_template_projects(user_id=user_id)
+        template_projects = await db.load_template_projects(
+            user_id=user_id, filter_by_services=user_available_services
+        )
         await set_all_project_states(template_projects, is_template=True)
         projects_list += template_projects
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        user_projects = await db.load_user_projects(user_id=user_id)
+        user_projects = await db.load_user_projects(
+            user_id=user_id, filter_by_services=user_available_services
+        )
         await set_all_project_states(user_projects, is_template=False)
         projects_list += user_projects
 
@@ -158,32 +187,7 @@ async def list_projects(request: web.Request):
 
     stop = min(start + count, len(projects_list))
     projects_list = projects_list[start:stop]
-    user_available_services: List[
-        Dict
-    ] = await catalog.get_services_for_user_in_product(
-        request.app, user_id, product_name, only_key_versions=True
-    )
-
-    # validate response
-    async def validate_project(prj: Dict[str, Any]) -> Dict[str, Any]:
-        try:
-            projects_api.validate_project(request.app, prj)
-            if await project_uses_available_services(prj, user_available_services):
-                return prj
-        except ValidationError:
-            log.warning(
-                "Invalid project with id='%s' in database."
-                "Skipping project from listed response."
-                "RECOMMENDED db data diagnose and cleanup",
-                prj.get("uuid", "undefined"),
-            )
-
-    validation_tasks = [validate_project(project) for project in projects_list]
-    # FIXME: if some invalid, then it should not reraise but instead
-    results = await logged_gather(*validation_tasks, reraise=True)
-    validated_projects = [r for r in results if r]
-
-    return {"data": validated_projects}
+    return {"data": projects_list}
 
 
 @login_required
@@ -271,7 +275,7 @@ async def replace_project(request: web.Request):
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
 
-        new_project = await db.update_user_project(
+        new_project = await db.replace_user_project(
             new_project, user_id, project_uuid, include_templates=True
         )
         await director_v2.create_or_update_pipeline(request.app, user_id, project_uuid)

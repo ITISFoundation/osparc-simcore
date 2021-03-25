@@ -28,16 +28,15 @@ async function runTutorial () {
     await tutorial.waitFor(10000);
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
-    await tutorial.runPipeline(studyId, 30000);
-    await utils.takeScreenshot(page, screenshotPrefix + 'pipeline_run');
+    await tutorial.runPipeline();
+    await tutorial.waitForStudyDone(studyId, 30000);
 
-    await tutorial.openNodeFiles(0);
     const outFiles = [
       "results.json",
       "logs.zip",
       "membrane-potential.csv"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(0, outFiles);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);

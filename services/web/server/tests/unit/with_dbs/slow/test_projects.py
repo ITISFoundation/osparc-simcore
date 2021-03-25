@@ -25,9 +25,10 @@ from models_library.projects_state import (
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, log_client_in
+from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
+from servicelib import async_utils
 from servicelib.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
@@ -102,22 +103,6 @@ def client(
     )
 
     # teardown here ...
-
-
-@pytest.fixture()
-async def logged_user(client, user_role: UserRole):
-    """adds a user in db and logs in with client
-
-    NOTE: `user_role` fixture is defined as a parametrization below!!!
-    """
-    async with LoggedUser(
-        client,
-        {"role": user_role.name},
-        check_if_succeeds=user_role != UserRole.ANONYMOUS,
-    ) as user:
-        print("-----> logged in user", user["name"], user_role)
-        yield user
-        print("<----- logged out user", user["name"], user_role)
 
 
 @pytest.fixture
@@ -884,6 +869,11 @@ async def test_share_project(
         )
 
 
+@pytest.fixture()
+def ensure_run_in_sequence_context_is_empty():
+    async_utils.sequential_jobs_contexts = {}
+
+
 # PUT --------
 @pytest.mark.parametrize(
     "user_role,expected,expected_change_access",
@@ -901,6 +891,7 @@ async def test_replace_project(
     expected,
     expected_change_access,
     all_group,
+    ensure_run_in_sequence_context_is_empty,
 ):
     project_update = deepcopy(user_project)
     project_update["description"] = "some updated from original project!!!"
@@ -923,10 +914,7 @@ async def test_replace_project(
     ],
 )
 async def test_replace_project_updated_inputs(
-    client,
-    logged_user,
-    user_project,
-    expected,
+    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
 ):
     project_update = deepcopy(user_project)
     #
@@ -954,10 +942,7 @@ async def test_replace_project_updated_inputs(
     ],
 )
 async def test_replace_project_updated_readonly_inputs(
-    client,
-    logged_user,
-    user_project,
-    expected,
+    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
 ):
     project_update = deepcopy(user_project)
     project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][

@@ -45,7 +45,7 @@ from yarl import URL
 
 log = logging.getLogger(__name__)
 
-core_services = [
+pytest_simcore_core_services_selection = [
     "redis",
     "rabbit",
     "director",
@@ -53,7 +53,7 @@ core_services = [
     "postgres",
     "storage",
 ]
-ops_services = ["minio"]
+pytest_simcore_ops_services_selection = ["minio"]
 
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -467,7 +467,7 @@ async def test_import_export_import_duplicate(
     url_export = client.app.router["export_project"].url_for(
         project_id=imported_project_uuid
     )
-    assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
+    assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:export")
     async with await client.post(url_export, timeout=10) as export_response:
         assert export_response.status == 200, await export_response.text()
 

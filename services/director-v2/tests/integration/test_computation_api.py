@@ -35,7 +35,7 @@ from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 
-core_services = [
+pytest_simcore_core_services_selection = [
     "director",
     "redis",
     "rabbit",
@@ -43,7 +43,7 @@ core_services = [
     "storage",
     "postgres",
 ]
-ops_services = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 COMPUTATION_URL: str = "v2/computations"
 

@@ -50,7 +50,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       osparc.utils.Utils.setIdToWidget(moreInfoButton, "moreInfoBtn");
       moreInfoButton.addListener("execute", () => {
         if (osparc.utils.Resources.isService(resourceData)) {
-          this._openServiceDetailsEditor(resourceData);
+          this._openServiceDetails(resourceData);
         } else {
           this.__openStudyDetails(resourceData);
         }
@@ -90,7 +90,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
     },
 
-    _openServiceDetailsEditor: function(serviceData) {
+    _openServiceDetails: function(serviceData) {
       throw new Error("Abstract method called!");
     },
 

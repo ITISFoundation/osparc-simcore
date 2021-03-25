@@ -6,17 +6,12 @@ import json
 import sys
 from pathlib import Path
 from typing import Callable, Dict
-from aiohttp.web_exceptions import HTTPCreated
 
 import pytest
 import sqlalchemy as sa
-from aiohttp import web
-from socketio.exceptions import ConnectionError as SocketConnectionError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
-from yarl import URL
-
-
 from _helpers import ExpectedResponse, standard_role_response
+from aiohttp import web
+from aiohttp.web_exceptions import HTTPCreated
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -41,6 +36,9 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.users import setup_users
+from socketio.exceptions import ConnectionError as SocketConnectionError
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from yarl import URL
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -48,7 +46,7 @@ API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
 # Selection of core and tool services started in this swarm fixture (integration)
-core_services = [
+pytest_simcore_core_services_selection = [
     "redis",
     "rabbit",
     "director",
@@ -58,7 +56,7 @@ core_services = [
     "storage",
 ]
 
-ops_services = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 @pytest.fixture

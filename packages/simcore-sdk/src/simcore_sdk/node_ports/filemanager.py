@@ -5,7 +5,7 @@ import logging
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import aiofiles
 from aiohttp import ClientPayloadError, ClientSession, ClientTimeout
@@ -66,17 +66,24 @@ def api_client():
     except ApiException:
         log.exception(msg="connection to storage service failed")
     finally:
-        del client.rest_client
+        del client
 
 
-def _handle_api_exception(store_id: str, err: ApiException):
+def _handle_api_exception(store_id: Union[int, str], err: ApiException):
+    """ Maps client's ApiException -> NodeportsException """
+
+    #  NOTE: ApiException produces a long __str__ with multiple lines which is not
+    #  allowed when composing header
+    #  SEE https://github.com/tornadoweb/tornado/blob/master/tornado/http1connection.py#L456
+    error_reason: str = err.reason.replace("\n", "-")
+
     if err.status > 399 and err.status < 500:
         # something invalid
-        raise exceptions.StorageInvalidCall(err)
+        raise exceptions.StorageInvalidCall(error_reason)
     if err.status > 499:
         # something went bad inside the storage server
-        raise exceptions.StorageServerIssue(err)
-    raise exceptions.StorageConnectionError(store_id, err)
+        raise exceptions.StorageServerIssue(error_reason)
+    raise exceptions.StorageConnectionError(store_id, error_reason)
 
 
 async def _get_location_id_from_location_name(store: str, api: UsersApi):
@@ -297,3 +304,23 @@ async def upload_file(
                 return store_id, e_tag
 
     raise exceptions.S3InvalidPathError(s3_object)
+
+
+async def entry_exists(store_id: str, s3_object: str) -> bool:
+    """Returns True if metadata for s3_object is present"""
+    user_id = config.USER_ID
+    with api_client() as client:
+        api = UsersApi(client)
+        try:
+            log.debug("Will request metadata for s3_object=%s", s3_object)
+            result = await api.get_file_metadata(s3_object, store_id, user_id)
+            log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
+            is_metadata_present = result.data.object_name == s3_object
+            return is_metadata_present
+        except Exception as e:  # pylint: disable=broad-except
+            log.exception(
+                "Could not find metadata for requested store_id=%s s3_object=%s",
+                store_id,
+                s3_object,
+            )
+            raise exceptions.NodeportsException(msg=str(e))

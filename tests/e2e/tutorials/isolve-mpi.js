@@ -27,15 +27,15 @@ async function runTutorial() {
     // Some time for loading the workbench
     await tutorial.waitFor(5000);
 
-    await tutorial.runPipeline(studyId, 20000);
-    console.log('Checking isolve-mpi results:');
-    await tutorial.openNodeFiles(1);
+    await tutorial.runPipeline();
+    await tutorial.waitForStudyDone(studyId, 120000);
+
     const outFiles = [
       "logs.zip",
       "output.h5",
       "log.tgz"
     ];
-    await tutorial.checkResults(outFiles.length);
+    await tutorial.checkNodeResults(1, outFiles);
 
     // check logs
     const mustHave = "Running MPI version 3.1 on 2 processes";

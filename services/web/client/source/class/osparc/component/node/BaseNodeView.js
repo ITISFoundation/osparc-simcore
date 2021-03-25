@@ -334,7 +334,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     _addButtons: function() {
       this.__buttonContainer.removeAll();
-      if (this.getNode().isDynamic() && this.getNode().isRealService()) {
+      if (this.getNode().isDynamic()) {
         const retrieveBtn = new qx.ui.form.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
         osparc.utils.Utils.setIdToWidget(retrieveBtn, "nodeViewRetrieveBtn");
         retrieveBtn.addListener("execute", e => {
@@ -376,15 +376,20 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __openNodeDataManager: function() {
-      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode(), true);
-      const win = nodeDataManager.getWindow();
-      win.open();
+      const nodeDataManager = new osparc.component.widget.NodeDataManager(this.getNode());
+      const win = osparc.ui.window.Window.popUpInWindow(nodeDataManager, this.getNode().getLabel(), 900, 600).set({
+        appearance: "service-window"
+      });
+      const closeBtn = win.getChildControl("close-button");
+      osparc.utils.Utils.setIdToWidget(closeBtn, "nodeDataManagerCloseBtn");
     },
 
     __openServiceDetails: function() {
-      const serviceDetails = new osparc.component.metadata.ServiceDetails(this.getNode().getMetaData());
-      const title = qx.locale.Manager.tr("Service information") + " · " + serviceDetails.getService().name;
-      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, 700, 800);
+      const serviceDetails = new osparc.servicecard.Large(this.getNode().getMetaData());
+      const title = this.tr("Service information");
+      const width = 600;
+      const height = 700;
+      osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
     },
 
     getInputsView: function() {

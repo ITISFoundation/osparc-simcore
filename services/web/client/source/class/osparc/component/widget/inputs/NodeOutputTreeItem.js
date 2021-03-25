@@ -149,11 +149,12 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
             url: presignedLinkData.presignedLink.link
           });
         }
-      } else if (typeof value === "object" && "donwloadLink" in value) {
+      } else if (typeof value === "object" && "downloadLink" in value) {
         // it's a link
+        const filename = (value.filename && value.filename.length > 0) ? value.filename : osparc.file.FileDownloadLink.extractLabelFromLink(value["downloadLink"]);
         this.__labelLink.set({
-          value: value.filename,
-          url: value.donwloadLink
+          value: filename,
+          url: value.downloadLink
         });
       } else {
         this.__label.setValue(value);
@@ -180,7 +181,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       if (value.getDownloadLink) {
         // it's a link
         return {
-          donwloadLink: value.getDownloadLink(),
+          downloadLink: value.getDownloadLink(),
           filename: value.getLabel()
         };
       }
