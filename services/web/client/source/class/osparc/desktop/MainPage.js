@@ -68,21 +68,31 @@ qx.Class.define("osparc.desktop.MainPage", {
           return;
         }
         if (this.__studyEditor) {
-          const dashboardBtn = navBar.getChildControl("dashboard-button");
-          dashboardBtn.setFetching(true);
-          const studyId = this.__studyEditor.getStudy().getUuid();
-          this.__studyEditor.updateStudyDocument()
-            .then(() => {
-              this.__studyEditor.closeEditor();
-              const reloadUserStudiesPromise = this.__showDashboard();
-              reloadUserStudiesPromise
+          const msg = this.tr("Do you really want to close the study?");
+          const win = new osparc.ui.window.Confirmation(msg);
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              const dashboardBtn = navBar.getChildControl("dashboard-button");
+              dashboardBtn.setFetching(true);
+              const studyId = this.__studyEditor.getStudy().getUuid();
+              this.__studyEditor.updateStudyDocument()
                 .then(() => {
-                  this.__closeStudy(studyId);
+                  this.__studyEditor.closeEditor();
+                  const reloadUserStudiesPromise = this.__showDashboard();
+                  reloadUserStudiesPromise
+                    .then(() => {
+                      this.__closeStudy(studyId);
+                    });
+                })
+                .finally(() => {
+                  dashboardBtn.setFetching(false);
                 });
-            })
-            .finally(() => {
-              dashboardBtn.setFetching(false);
-            });
+            }
+          }, this);
+
+
         } else {
           this.__showDashboard();
         }
