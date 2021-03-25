@@ -11,8 +11,9 @@ from urllib.parse import quote
 
 import pytest
 from aiohttp import web
+from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.db import setup_db
-from simcore_service_storage.dsm import APP_DSM_KEY, setup_dsm
+from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_dsm
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
@@ -292,19 +293,51 @@ def get_project_with_data():
     return projects
 
 
+@pytest.fixture
+def mock_datcore_download(mocker, client):
+    # Use to mock downloading from DATCore
+    async def _fake_download_to_file_or_raise(session, url, dest_path):
+        print(f"Faking download:  {url} -> {dest_path}")
+        Path(dest_path).write_text("FAKE: test_create_and_delete_folders_from_project")
+
+    mocker.patch(
+        "simcore_service_storage.dsm.download_to_file_or_raise",
+        side_effect=_fake_download_to_file_or_raise,
+    )
+
+    dsm = client.app[APP_DSM_KEY]
+    assert dsm
+    assert isinstance(dsm, DataStorageManager)
+
+    mock = mocker.patch.object(dsm, "download_link_datcore")
+    mock.return_value = Future()
+    mock.return_value.set_result(("https://httpbin.org/image", "foo.txt"))
+
+
+@pytest.fixture
+def mock_get_project_access_rights(mocker):
+    # NOTE: this avoid having to inject project in database
+    for module in ("dsm", "access_layer"):
+        mock = mocker.patch(
+            f"simcore_service_storage.{module}.get_project_access_rights"
+        )
+        mock.return_value = Future()
+        mock.return_value.set_result(AccessRights.all())
+
+
 @pytest.mark.parametrize(
     "project_name,project", [(prj["name"], prj) for prj in get_project_with_data()]
 )
 async def test_create_and_delete_folders_from_project(
-    client, dsm_mockup_db, project_name, project, mocker
+    client,
+    dsm_mockup_db,
+    project_name,
+    project,
+    mock_get_project_access_rights,
+    mock_datcore_download,
 ):
     source_project = project
     destination_project, nodes_map = clone_project_data(source_project)
-
-    dsm = client.app[APP_DSM_KEY]
-    mock_dsm = mocker.patch.object(dsm, "copy_file_datcore_s3")
-    mock_dsm.return_value = Future()
-    mock_dsm.return_value.set_result("Howdie")
 
     # CREATING
     url = (

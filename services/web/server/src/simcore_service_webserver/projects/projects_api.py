@@ -40,7 +40,6 @@ from ..socketio.events import (
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     post_group_messages,
 )
-from ..storage_api import copy_data_folders_from_project  # mocked in unit-tests
 from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
@@ -48,7 +47,6 @@ from ..storage_api import (
 from ..users_api import get_user_name
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
-from .projects_utils import clone_project_document
 
 log = logging.getLogger(__name__)
 
@@ -97,34 +95,28 @@ async def get_project_for_user(
     return project
 
 
-async def clone_project(
-    request: web.Request, project: Dict, user_id: int, forced_copy_project_id: str = ""
-) -> Dict:
-    """Clones both document and data folders of a project
-
-    - document
-        - get new identifiers for project and nodes
-    - data folders
-        - folder name composes as project_uuid/node_uuid
-        - data is deep-copied to new folder corresponding to new identifiers
-        - managed by storage uservice
-
-    TODO: request to application
-
-    :param request: http request
-    :type request: web.Request
-    :param project: source project document
-    :type project: Dict
-    :return: project document with updated data links
-    :rtype: Dict
-    """
-    cloned_project, nodes_map = clone_project_document(project, forced_copy_project_id)
-
-    updated_project = await copy_data_folders_from_project(
-        request.app, project, cloned_project, nodes_map, user_id
-    )
-
-    return updated_project
+# NOTE: Needs refactoring after access-layer in storage. DO NOT USE but keep
+#       here since it documents well the concept
+#
+# async def clone_project(
+#     request: web.Request, project: Dict, user_id: int, forced_copy_project_id: str = ""
+# ) -> Dict:
+#     """Clones both document and data folders of a project
+#
+#     - document
+#         - get new identifiers for project and nodes
+#     - data folders
+#         - folder name composes as project_uuid/node_uuid
+#         - data is deep-copied to new folder corresponding to new identifiers
+#         - managed by storage uservice
+#     """
+#     cloned_project, nodes_map = clone_project_document(project, forced_copy_project_id)
+#
+#     updated_project = await copy_data_folders_from_project(
+#         request.app, project, cloned_project, nodes_map, user_id
+#     )
+#
+#     return updated_project
 
 
 async def start_project_interactive_services(

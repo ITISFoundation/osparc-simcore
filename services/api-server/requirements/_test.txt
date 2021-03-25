@@ -110,8 +110,9 @@ immutables==0.14
     # via
     #   -c requirements/_base.txt
     #   contextvars
-importlib-metadata==3.7.0
+importlib-metadata==3.7.3
     # via
+    #   -c requirements/_base.txt
     #   jsonschema
     #   pluggy
     #   pytest
@@ -120,9 +121,13 @@ iniconfig==1.1.1
 isort==5.7.0
     # via pylint
 jsonschema==3.2.0
-    # via docker-compose
-lazy-object-proxy==1.5.2
-    # via astroid
+    # via
+    #   -c requirements/_base.txt
+    #   docker-compose
+lazy-object-proxy==1.4.3
+    # via
+    #   -c requirements/_base.txt
+    #   astroid
 mako==1.1.4
     # via alembic
 markupsafe==1.1.1
@@ -164,7 +169,9 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   packaging
 pyrsistent==0.17.3
-    # via jsonschema
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 pytest-asyncio==0.14.0
     # via -r requirements/_test.in
 pytest-cov==2.11.1
@@ -184,6 +191,7 @@ pytest==6.2.2
     #   pytest-mock
 python-dateutil==2.8.1
     # via
+    #   -c requirements/_base.txt
     #   alembic
     #   faker
 python-dotenv==0.15.0
