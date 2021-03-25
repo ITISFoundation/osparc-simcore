@@ -25,6 +25,7 @@ pytest-sugar
 aiopg
 docker
 python-dotenv
+faker
 
 # tools for CI
 pylint

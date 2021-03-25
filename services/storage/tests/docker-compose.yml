@@ -28,3 +28,12 @@ services:
     ports:
       - "9001:9000"
     command: server /data
+  adminer:
+    image: adminer:4.7.6
+    init: true
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DESIGN=nette
+      - ADMINER_PLUGINS=json-column
+    ports:
+      - "18080:8080"

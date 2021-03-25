@@ -5,9 +5,8 @@ import logging
 from pprint import pformat
 
 from aiohttp import web
-from yarl import URL
-
 from servicelib.rest_responses import unwrap_envelope
+from yarl import URL
 
 from .storage_config import get_client_session, get_storage_config
 
@@ -44,6 +43,9 @@ async def copy_data_folders_from_project(
         ssl=False,
     ) as resp:
         payload = await resp.json()
+
+        # FIXME: relying on storage to change the project is not a good idea since
+        # it is not storage responsibility to deal with projects
         updated_project, error = unwrap_envelope(payload)
         if error:
             msg = "Cannot copy project data in storage: %s" % pformat(error)

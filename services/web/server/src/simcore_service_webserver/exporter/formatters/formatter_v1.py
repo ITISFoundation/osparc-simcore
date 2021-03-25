@@ -293,26 +293,13 @@ async def _remove_runtime_states(project: Project):
         node_data.state.dependencies = None
 
 
-async def import_files_and_validate_project(
-    app: web.Application, user_id: int, root_folder: Path
-) -> str:
-    project_file = await ProjectFile.model_from_file(root_dir=root_folder)
-    shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
-
-    # replace shuffled_data in project
-    # NOTE: there is no reason to write the shuffled data to file
-    log.debug("Loaded project data:  %s", project_file)
-    shuffled_project_file = project_file.new_instance_from_shuffled_data(
-        shuffled_data=shuffled_data
-    )
-
-    log.debug("Shuffled project data: %s", shuffled_project_file)
-
-    # NOTE: it is not necessary to apply data shuffling to the manifest
-    manifest_file = await ManifestFile.model_from_file(root_dir=root_folder)
-
-    user: Dict = await get_user(app=app, user_id=user_id)
-
+async def _upload_files_to_storage(
+    app: web.Application,
+    user_id: int,
+    root_folder: Path,
+    manifest_file: ManifestFile,
+    shuffled_data: ShuffledData,
+) -> List[Tuple[LinkAndPath2, ETag]]:
     # check all attachments are present
     client_timeout = ClientTimeout(total=UPLOAD_HTTP_TIMEOUT, connect=5, sock_connect=5)
     async with ClientSession(timeout=client_timeout) as session:
@@ -347,7 +334,30 @@ async def import_files_and_validate_project(
             )
         links_to_new_e_tags = await asyncio.gather(*run_in_parallel)
 
-    # finally create and add the project
+    return links_to_new_e_tags
+
+
+async def import_files_and_validate_project(
+    app: web.Application, user_id: int, root_folder: Path
+) -> str:
+    project_file = await ProjectFile.model_from_file(root_dir=root_folder)
+    shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
+
+    # replace shuffled_data in project
+    # NOTE: there is no reason to write the shuffled data to file
+    log.debug("Loaded project data:  %s", project_file)
+    shuffled_project_file = project_file.new_instance_from_shuffled_data(
+        shuffled_data=shuffled_data
+    )
+
+    log.debug("Shuffled project data: %s", shuffled_project_file)
+
+    # NOTE: it is not necessary to apply data shuffling to the manifest
+    manifest_file = await ManifestFile.model_from_file(root_dir=root_folder)
+
+    user: Dict = await get_user(app=app, user_id=user_id)
+
+    # create and add the project
     project = Project(
         uuid=shuffled_project_file.uuid,
         name=shuffled_project_file.name,
@@ -367,14 +377,23 @@ async def import_files_and_validate_project(
     project_uuid = str(project.uuid)
 
     try:
+        await _remove_runtime_states(project)
+        await add_new_project(app, project, user_id)
+
+        # upload files to storage
+        links_to_new_e_tags = await _upload_files_to_storage(
+            app=app,
+            user_id=user_id,
+            root_folder=root_folder,
+            manifest_file=manifest_file,
+            shuffled_data=shuffled_data,
+        )
+        # fix etags
         await _fix_file_e_tags(project, links_to_new_e_tags)
         # NOTE: first fix the file eTags, and then the run hashes
         await _fix_node_run_hashes_based_on_old_project(
             project, project_file, shuffled_data
         )
-
-        await _remove_runtime_states(project)
-        await add_new_project(app, project, user_id)
     except Exception as e:
         log.warning(
             "The below error occurred during import\n%s", traceback.format_exc()

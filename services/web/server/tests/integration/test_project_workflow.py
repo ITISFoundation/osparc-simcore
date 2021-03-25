@@ -132,8 +132,9 @@ async def storage_subsystem_mock(loop, mocker):
     Patched functions are exposed within projects but call storage subsystem
     """
     # requests storage to copy data
+
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.copy_data_folders_from_project"
+        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project"
     )
 
     async def _mock_copy_data_from_project(*args):
