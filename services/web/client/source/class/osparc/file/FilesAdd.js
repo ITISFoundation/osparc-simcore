@@ -33,7 +33,7 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesAdd = new osparc.file.FilesAdd(this.tr("Add file"));
+ *   let filesAdd = new osparc.file.FilesAdd();
  *   this.getRoot().add(filesAdd);
  * </pre>
  */
@@ -44,7 +44,7 @@ qx.Class.define("osparc.file.FilesAdd", {
   /**
     * @param label {String} Text to be displayed in the button
     */
-  construct: function(label = this.tr("Add file")) {
+  construct: function() {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.HBox(10));
@@ -54,9 +54,7 @@ qx.Class.define("osparc.file.FilesAdd", {
     });
     this.getContentElement().add(input);
 
-    const btn = this._createChildControlImpl("addButton").set({
-      label: label
-    });
+    const btn = this.getChildControl("addButton");
     btn.addListener("execute", e => {
       input.getDomElement().click();
     });
@@ -89,7 +87,7 @@ qx.Class.define("osparc.file.FilesAdd", {
           this._addAt(control, 0);
           break;
         case "addButton":
-          control = new qx.ui.toolbar.Button();
+          control = new qx.ui.toolbar.Button(this.tr("Upload"), "@FontAwesome5Solid/cloud-upload-alt/16");
           this._add(control);
           break;
       }
