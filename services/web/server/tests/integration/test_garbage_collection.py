@@ -40,8 +40,8 @@ from utils import get_fake_project
 
 log = logging.getLogger(__name__)
 
-core_services = ["postgres", "redis", "storage"]
-ops_services = ["minio"]
+pytest_simcore_core_services_selection = ["postgres", "redis", "storage"]
+pytest_simcore_ops_services_selection = ["minio"]
 
 
 API_VERSION = "v0"

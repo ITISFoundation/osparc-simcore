@@ -11,11 +11,11 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer=pcrespov
 
 RUN set -eux; \
-	apt-get update; \
-	apt-get install -y gosu; \
-	rm -rf /var/lib/apt/lists/*; \
-# verify that the binary works
-	gosu nobody true
+    apt-get update; \
+    apt-get install -y gosu; \
+    rm -rf /var/lib/apt/lists/*; \
+    # verify that the binary works
+    gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -56,10 +56,10 @@ FROM base as build
 ENV SC_BUILD_TARGET=build
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends \
     build-essential \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 
 # NOTE: python virtualenv is used here such that installed
@@ -91,6 +91,7 @@ ENV SC_BUILD_TARGET cache
 
 COPY --chown=scu:scu packages /build/packages
 COPY --chown=scu:scu services/api-server /build/services/api-server
+COPY --chown=scu:scu services/storage/client-sdk /build/services/storage/client-sdk
 
 WORKDIR /build/services/api-server
 

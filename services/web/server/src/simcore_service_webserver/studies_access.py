@@ -17,7 +17,6 @@ from typing import Dict
 
 from aiohttp import web
 from aioredlock import Aioredlock
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
@@ -28,6 +27,7 @@ from .resource_manager.config import (
 )
 from .security_api import is_anonymous, remember
 from .statics import INDEX_RESOURCE_NAME
+from .storage_api import copy_data_folders_from_project
 from .utils import compose_error_msg
 
 log = logging.getLogger(__name__)
@@ -149,8 +149,10 @@ async def copy_study_to_account(
     """
     from .projects.projects_db import APP_PROJECT_DBAPI
     from .projects.projects_exceptions import ProjectNotFoundError
-    from .projects.projects_utils import substitute_parameterized_inputs
-    from .projects.projects_api import clone_project
+    from .projects.projects_utils import (
+        clone_project_document,
+        substitute_parameterized_inputs,
+    )
 
     # FIXME: ONLY projects should have access to db since it avoids access layer
     # TODO: move to project_api and add access layer
@@ -169,10 +171,11 @@ async def copy_study_to_account(
         # FIXME: if template is parametrized and user has already a copy, then delete it and create a new one??
 
     except ProjectNotFoundError:
-        # new project from template
-        project = await clone_project(
-            request, template_project, user["id"], forced_copy_project_id=project_uuid
+        # New project cloned from template
+        project, nodes_map = clone_project_document(
+            template_project, forced_copy_project_id=project_uuid
         )
+
         # remove template access rights
         # FIXME: temporary fix until. Unify access management while cloning a project. Right not, at least two workflows have different implementations
         project["accessRights"] = {}
@@ -184,7 +187,15 @@ async def copy_study_to_account(
                 substitute_parameterized_inputs(project, template_parameters) or project
             )
 
+        # add project model + copy data TODO: guarantee order and atomicity
         await db.add_project(project, user["id"], force_project_uuid=True)
+        await copy_data_folders_from_project(
+            request.app,
+            template_project,
+            project,
+            nodes_map,
+            user["id"],
+        )
 
     return project_uuid
 

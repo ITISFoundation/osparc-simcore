@@ -60,11 +60,11 @@ class InvalidProtocolError(NodeportsException):
 
 
 class StorageInvalidCall(NodeportsException):
-    """S3 transfer error"""
+    """Storage returned an error 400<=status<500"""
 
 
 class StorageServerIssue(NodeportsException):
-    """S3 transfer error"""
+    """Storage returned an error status>=500"""
 
 
 class S3TransferError(NodeportsException):

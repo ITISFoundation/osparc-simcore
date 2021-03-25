@@ -4,7 +4,6 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import wraps
-from pathlib import Path
 from typing import List, Optional, Tuple
 
 import attr
@@ -12,13 +11,7 @@ import attr
 from .datcore import DatcoreClient
 from .models import FileMetaData, FileMetaDataEx
 
-FileMetaDataVec = List[FileMetaData]
-FileMetaDataExVec = List[FileMetaDataEx]
-
-CURRENT_DIR = Path(__file__).resolve().parent
 logger = logging.getLogger(__name__)
-
-# pylint: disable=W0703
 
 
 @contextmanager
@@ -49,11 +42,11 @@ def make_async(func):
 
 
 class DatcoreWrapper:
-    """ Wrapper to call the python2 api from datcore
+    """Wrapper to call the python2 api from datcore
 
-        This can go away now. Next cleanup round...
+    This can go away now. Next cleanup round...
 
-        NOTE: Auto-disables client
+    NOTE: Auto-disables client
 
     """
 
@@ -72,13 +65,13 @@ class DatcoreWrapper:
                 api_secret=api_secret,
                 host="https://api.blackfynn.io",
             )
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             self.d_client = None  # Disabled: any call will raise AttributeError
             logger.warning("Failed to setup datcore. Disabling client.", exc_info=True)
 
     @property
     def is_communication_enabled(self) -> bool:
-        """ Wrapper class auto-disables if client cannot be created
+        """Wrapper class auto-disables if client cannot be created
 
             e.g. if endpoint service is down
 
@@ -88,7 +81,7 @@ class DatcoreWrapper:
         return self.d_client is not None
 
     @make_async
-    def list_files_recursively(self) -> FileMetaDataVec:  # pylint: disable=W0613
+    def list_files_recursively(self) -> List[FileMetaData]:  # pylint: disable=W0613
         files = []
 
         with safe_call(error_msg="Error listing datcore files"):
@@ -97,7 +90,7 @@ class DatcoreWrapper:
         return files
 
     @make_async
-    def list_files_raw(self) -> FileMetaDataExVec:  # pylint: disable=W0613
+    def list_files_raw(self) -> List[FileMetaDataEx]:  # pylint: disable=W0613
         files = []
 
         with safe_call(error_msg="Error listing datcore files"):
@@ -108,7 +101,7 @@ class DatcoreWrapper:
     @make_async
     def list_files_raw_dataset(
         self, dataset_id: str
-    ) -> FileMetaDataExVec:  # pylint: disable=W0613
+    ) -> List[FileMetaDataEx]:  # pylint: disable=W0613
         files = []
         with safe_call(error_msg="Error listing datcore files"):
             files = self.d_client.list_files_raw_dataset(dataset_id)

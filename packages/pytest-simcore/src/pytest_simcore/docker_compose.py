@@ -19,6 +19,10 @@ import pytest
 import yaml
 from dotenv import dotenv_values
 
+from .helpers import (
+    FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
+    FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
+)
 from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
 
 
@@ -151,18 +155,18 @@ def ops_docker_compose(
 
 
 @pytest.fixture(scope="module")
-def core_services(request) -> List[str]:
+def core_services_selection(request) -> List[str]:
     """ Selection of services from the simcore stack """
-    core_services = getattr(request.module, "core_services", [])
+    core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
     assert (
         core_services
-    ), f"Expected at least one service in 'core_services' within '{request.module.__name__}'"
+    ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
     return core_services
 
 
 @pytest.fixture(scope="module")
 def core_docker_compose_file(
-    core_services: List[str], temp_folder: Path, simcore_docker_compose: Dict
+    core_services_selection: List[str], temp_folder: Path, simcore_docker_compose: Dict
 ) -> Path:
     """Creates a docker-compose config file for every stack of services in'core_services' module variable
     File is created in a temp folder
@@ -170,28 +174,31 @@ def core_docker_compose_file(
     docker_compose_path = Path(temp_folder / "simcore_docker_compose.filtered.yml")
 
     _filter_services_and_dump(
-        core_services, simcore_docker_compose, docker_compose_path
+        core_services_selection, simcore_docker_compose, docker_compose_path
     )
 
     return docker_compose_path
 
 
 @pytest.fixture(scope="module")
-def ops_services(request) -> List[str]:
-    ops_services = getattr(request.module, "ops_services", [])
+def ops_services_selection(request) -> List[str]:
+    """ Selection of services from the ops stack """
+    ops_services = getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
     return ops_services
 
 
 @pytest.fixture(scope="module")
 def ops_docker_compose_file(
-    ops_services: List[str], temp_folder: Path, ops_docker_compose: Dict
+    ops_services_selection: List[str], temp_folder: Path, ops_docker_compose: Dict
 ) -> Path:
     """Creates a docker-compose config file for every stack of services in 'ops_services' module variable
     File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")
 
-    _filter_services_and_dump(ops_services, ops_docker_compose, docker_compose_path)
+    _filter_services_and_dump(
+        ops_services_selection, ops_docker_compose, docker_compose_path
+    )
 
     return docker_compose_path
 

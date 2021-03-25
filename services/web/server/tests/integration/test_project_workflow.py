@@ -37,14 +37,14 @@ from simcore_service_webserver.session import setup_session
 API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
-core_services = [
+pytest_simcore_core_services_selection = [
     "catalog",
     "director",
     "postgres",
     "redis",
 ]
 
-ops_services = ["adminer"]  # + ["adminer"]
+pytest_simcore_ops_services_selection = ["adminer"]  # + ["adminer"]
 
 
 @pytest.fixture
@@ -132,8 +132,9 @@ async def storage_subsystem_mock(loop, mocker):
     Patched functions are exposed within projects but call storage subsystem
     """
     # requests storage to copy data
+
     mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_api.copy_data_folders_from_project"
+        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project"
     )
 
     async def _mock_copy_data_from_project(*args):
