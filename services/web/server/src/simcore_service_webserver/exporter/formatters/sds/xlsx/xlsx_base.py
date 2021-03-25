@@ -9,7 +9,7 @@ from openpyxl.styles import Border, Alignment
 from openpyxl.cell import Cell
 
 
-def border_or(self: Border, other: Border) -> Border:
+def _border_or(self: Border, other: Border) -> Border:
     return Border(
         left=self.left or other.left,
         right=self.right or other.right,
@@ -27,7 +27,7 @@ def border_or(self: Border, other: Border) -> Border:
     )
 
 
-def alignment_or(self: Alignment, other: Alignment) -> Alignment:
+def _alignment_or(self: Alignment, other: Alignment) -> Alignment:
     return Alignment(
         horizontal=self.horizontal or other.horizontal,
         vertical=self.vertical or other.vertical,
@@ -51,9 +51,9 @@ def _base_value_or(self_var: Any, entry_var: Any) -> Any:
     borders and alignment
     """
     if isinstance(self_var, Border):
-        return border_or(self_var, entry_var)
+        return _border_or(self_var, entry_var)
     if isinstance(self_var, Alignment):
-        return alignment_or(self_var, entry_var)
+        return _alignment_or(self_var, entry_var)
 
     return self_var or entry_var
 
