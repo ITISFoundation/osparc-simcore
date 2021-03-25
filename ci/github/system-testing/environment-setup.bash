@@ -13,7 +13,6 @@ install() {
   pip3 install -r requirements/ci.txt
   popd
   make .env
-  apt-get install -y --no-install-recommends libmagic-dev
 }
 
 test() {

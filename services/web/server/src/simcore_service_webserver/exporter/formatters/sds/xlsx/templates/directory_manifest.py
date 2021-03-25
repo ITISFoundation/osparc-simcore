@@ -4,7 +4,6 @@ from collections import deque
 from typing import List, Tuple, Dict
 from pathlib import Path
 
-import magic
 from pydantic import BaseModel, Field, StrictStr
 
 from simcore_service_webserver.exporter.formatters.sds.xlsx.xlsx_base import (
@@ -51,6 +50,8 @@ class DirectoryManifestParams(BaseModel):
     def compose_from_directory(
         cls, start_path: Path
     ) -> List["DirectoryManifestParams"]:
+        import magic  # avoids an issue with a dependency in all [sys] testing cases
+
         file_entries = deque()
         for file_entry in get_files_in_dir(start_path):
             full_file_path, relative_file_name = file_entry
