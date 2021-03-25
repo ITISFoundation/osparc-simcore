@@ -143,7 +143,9 @@ class AuthSession:
 
     async def create_project(self, project: NewProjectIn):
         resp = await self.client.post(
-            "/projects", json=project.dict(), cookies=self.session_cookies
+            "/projects",
+            data=project.json(by_alias=True),
+            cookies=self.session_cookies,
         )
 
         data: Optional[Json] = self._process(resp)

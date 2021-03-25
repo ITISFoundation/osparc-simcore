@@ -80,27 +80,28 @@ def create_project_model_for_job(
 
     # Ensembles project model so it can be used as input for create_project
     job_info = pformat(
-        job.asdict(include={"id", "name", "inputs_checksum", "created_at"})
+        job.dict(include={"id", "name", "inputs_checksum", "created_at"})
     )
 
     create_project_body = NewProjectIn(
         uuid=project_id,
-        name={
-            job.name
-        },  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
+        name=job.name,  # NOTE: this IS an identifier as well. MUST NOT be changed in the case of project APIs!
         description=f"Study associated to solver job:\n{job_info}",
         thumbnail="https://placeimg.com/171/96/tech/grayscale/?0.jpg",
         workbench={solver_id: solver_service},
         ui=StudyUI(
             workbench={
                 solver_id: {"position": {"x": 633, "y": 229}},
-            }
+            },
+            slideshow={},
+            currentNodeId=solver_id,
         ),
         # FIXME: these should be unnecessary
         prjOwner="api-placeholder@osparc.io",
         creationDate=now_str(),
         lastChangeDate=now_str(),
         accessRights={},
+        dev={},
     )
 
     return create_project_body

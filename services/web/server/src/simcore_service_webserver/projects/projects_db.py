@@ -292,6 +292,8 @@ class ProjectDBAPI:
             while retry:
                 try:
                     query = projects.insert().values(**kargs)
+                    print("=" * 100)
+                    print(str(query))
                     result = await conn.execute(query)
                     await result.first()
                     retry = False

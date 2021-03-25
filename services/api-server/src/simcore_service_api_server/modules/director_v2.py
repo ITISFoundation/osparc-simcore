@@ -1,10 +1,10 @@
 import logging
-from typing import Optional
+from typing import Optional, Type
 from uuid import UUID
 
 from fastapi import FastAPI
 from models_library.projects_pipeline import ComputationTask
-from pydantic import AnyHttpUrl, Field, PositiveInt
+from pydantic import AnyHttpUrl, Field, PositiveInt, conint
 
 from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import JobStatus, TaskStates
@@ -13,7 +13,7 @@ from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
-PercentageInt = conint(ge=0, le=100)
+PercentageInt: Type[int] = conint(ge=0, le=100)
 
 # API MODELS ---------------------------------------------
 # NOTE: as services/director-v2/src/simcore_service_director_v2/models/schemas/comp_tasks.py
@@ -30,6 +30,7 @@ class ComputationTaskOut(ComputationTask):
 
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
+        # FIXME: incomplete!
         if self.state in [TaskStates.SUCCESS, TaskStates.FAILED]:
             return 100
         elif self.state in [TaskStates.RUNNING]:
@@ -71,7 +72,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        computation_task = ComputationTask(**data)
+        computation_task = ComputationTaskOut(**data.json())
         return computation_task
 
     async def get_computation(
@@ -83,7 +84,7 @@ class DirectorV2Api(BaseServiceClientApi):
                 "user_id": user_id,
             },
         )
-        computation_task = ComputationTaskOut(**data)
+        computation_task = ComputationTaskOut(**data.json())
         return computation_task
 
     async def start_computation(
@@ -98,7 +99,7 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        computation_task = ComputationTaskOut(**data)
+        computation_task = ComputationTaskOut(**data.json())
         return computation_task
 
     async def stop_computation(
@@ -111,10 +112,11 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        computation_task = ComputationTaskOut(**data)
+        computation_task = ComputationTaskOut(**data.json())
         return computation_task
 
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
+        # FIXME:
         await self.client.delete(
             f"/computations/{project_id}",
             json={

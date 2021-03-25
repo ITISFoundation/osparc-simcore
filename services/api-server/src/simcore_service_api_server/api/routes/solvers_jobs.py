@@ -3,6 +3,7 @@ from typing import Callable, List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
+from pydantic.types import PositiveInt
 
 from ...models.api_resources import compose_resource_name
 from ...models.domain.projects import NewProjectIn, Project
@@ -44,7 +45,7 @@ router = APIRouter()
 async def list_jobs(
     solver_key: SolverKeyId,
     version: str,
-    user_id: int = Depends(get_current_user_id),
+    user_id: PositiveInt = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -67,7 +68,7 @@ async def create_job(
     solver_key: SolverKeyId,
     version: str,
     inputs: JobInputs,
-    user_id: int = Depends(get_current_user_id),
+    user_id: PositiveInt = Depends(get_current_user_id),
     catalog_client: CatalogApi = Depends(get_api_client(CatalogApi)),
     webserver_api: AuthSession = Depends(get_webserver_session),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
@@ -77,12 +78,17 @@ async def create_job(
 
     NOTE: This operation does **not** start the job
     """
-    from .jobs_faker import create_job_impl
 
-    solver = await catalog_client.get_solver(user_id, solver_key, version)
+    async def _fake_impl():
+        from .jobs_faker import create_job_impl
+
+        solver = await catalog_client.get_solver(user_id, solver_key, version)
+        return await create_job_impl(solver.id, solver.version, inputs, url_for)
 
     async def _draft_impl():
         from ...utils.models_creators import create_project_model_for_job
+
+        solver = await catalog_client.get_solver(user_id, solver_key, version)
 
         #
         # NOTE: KEEP here as draft for next PR
@@ -95,7 +101,7 @@ async def create_job(
         # TODO: from job -> create project body for webserver.create_project(project)
 
         #   -> webserver
-        project_in: NewProjectIn = create_project_model_for_job(solver, job.id, inputs)
+        project_in: NewProjectIn = create_project_model_for_job(solver, job, inputs)
 
         #  job (resource in api-server API) -- 1:1 -- project (resource in web-server API)
         # create project
@@ -103,11 +109,12 @@ async def create_job(
         assert new_project
         assert new_project.uuid == job.id
 
-        await director2_api.create_computation(job.id, user_id)
+        computation_task = await director2_api.create_computation(job.id, user_id)
+        assert computation_task.id == job.id
 
         return job
 
-    return await create_job_impl(solver.id, solver.version, inputs, url_for)
+    return await _draft_impl()
 
 
 @router.get("/{solver_key:path}/releases/{version}/jobs/{job_id}", response_model=Job)
@@ -115,7 +122,7 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: PositiveInt = Depends(get_current_user_id),
     webserver_api: AuthSession = Depends(get_webserver_session),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
@@ -149,7 +156,7 @@ async def start_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -172,7 +179,7 @@ async def stop_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -198,7 +205,7 @@ async def inspect_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: int = Depends(get_current_user_id),
+    user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
@@ -227,7 +234,7 @@ async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: 
     from .jobs_faker import get_job_outputs_impl
 
     async def real_impl(
-        user_id: int,
+        user_id: PositiveInt,
         project_id: ProjectID,
         node_uuid: NodeID,
         db_engine: aiopg.sa.Engine,
