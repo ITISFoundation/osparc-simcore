@@ -411,7 +411,7 @@ def test_code_description(temp_dir: Path):
         ] = rrid_entry.ontological_identifier
 
     expected_inputs = expected_layout["Inputs"]
-    for row, input_entry in zip(range(4, len(inputs)), inputs):
+    for row, input_entry in zip(range(4, len(inputs) + 4), inputs):
         input_entry: InputsEntryModel = input_entry
 
         expected_inputs[f"B{row}"] = input_entry.service_alias
@@ -424,7 +424,7 @@ def test_code_description(temp_dir: Path):
         expected_inputs[f"I{row}"] = input_entry.input_data_default_value
 
     expected_outputs = expected_layout["Outputs"]
-    for row, output_entry in zip(range(4, len(outputs)), outputs):
+    for row, output_entry in zip(range(4, len(outputs) + 4), outputs):
         output_entry: OutputsEntryModel = output_entry
 
         expected_outputs[f"B{row}"] = output_entry.service_alias
@@ -464,7 +464,7 @@ def test_directory_manifest(temp_dir: Path, dir_with_random_content: Path):
 
     expected_sheet1 = expected_layout["Sheet1"]
     for row, file_entry in zip(
-        range(2, len(directory_manifest_params.file_entries)),
+        range(2, len(directory_manifest_params.file_entries) + 2),
         directory_manifest_params.file_entries,
     ):
         file_entry: FileEntryModel = file_entry
