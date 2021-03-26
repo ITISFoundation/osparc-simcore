@@ -7,7 +7,7 @@ import inspect
 import json
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Iterable
 
 import aio_pika
 import pytest
