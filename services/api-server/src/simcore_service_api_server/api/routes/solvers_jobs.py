@@ -164,6 +164,7 @@ async def start_job(
 ):
     async def _draft_impl():
         job_name = compose_resource_name(solver_key, version, job_id)
+        logger.debug("Start Job %s", job_name)
 
         computation_task = await director2_api.start_computation(job_id, user_id)
         job_status = computation_task.as_jobstatus()
@@ -174,7 +175,7 @@ async def start_job(
 
         return await start_job_impl(solver_key, version, job_id)
 
-    return _draft_impl()
+    return await _draft_impl()
 
 
 @router.post(
@@ -191,11 +192,11 @@ async def stop_job(
     from .jobs_faker import stop_job_impl
 
     async def _draft_impl():
-        _job_name = compose_resource_name(solver_key, version, job_id)
+        job_name = compose_resource_name(solver_key, version, job_id)
         await director2_api.stop_computation(job_id, user_id)
 
         computation_task = await director2_api.get_computation(job_id, user_id)
-        job_status = computation_task.create_as_jobstatus()
+        job_status = computation_task.as_jobstatus()
         # TODO: url_for
         return job_status
 
@@ -212,35 +213,41 @@ async def inspect_job(
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    from .jobs_faker import inspect_job_impl
-
     async def _draft_impl():
-        _job_name = compose_resource_name(solver_key, version, job_id)
+        job_name = compose_resource_name(solver_key, version, job_id)
+        logger.debug("Inspecting Job %s", job_name)
+
         computation_task = await director2_api.get_computation(job_id, user_id)
-        job_status = computation_task.create_as_jobstatus()
-        # TODO: url_for
+        job_status = computation_task.as_jobstatus()
+
         return job_status
 
-    return await inspect_job_impl(solver_key, version, job_id)
+    async def _fake_impl():
+        from .jobs_faker import inspect_job_impl
+
+        return await inspect_job_impl(solver_key, version, job_id)
+
+    return await _draft_impl()
 
 
 @router.get(
     "/{solver_key:path}/releases/{version}/jobs/{job_id}/outputs",
     response_model=JobOutputs,
 )
-async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: UUID):
+async def get_job_outputs(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    job_id: UUID,
+    user_id: PositiveInt = Depends(get_current_user_id),
+):
 
-    import aiopg
-    from models_library.projects import ProjectID
+    import aiopg.sa
     from models_library.projects_nodes_io import NodeID
 
     from .jobs_faker import get_job_outputs_impl
 
     async def real_impl(
-        user_id: PositiveInt,
-        project_id: ProjectID,
         node_uuid: NodeID,
         db_engine: aiopg.sa.Engine,
     ):
@@ -249,7 +256,7 @@ async def get_job_outputs(solver_key: SolverKeyId, version: VersionStr, job_id: 
 
         results: KeywordArguments = await get_solver_output_results(
             user_id=user_id,
-            project_uuid=project_id,
+            project_uuid=job_id,
             node_uuid=node_uuid,
             db_engine=db_engine,
         )
