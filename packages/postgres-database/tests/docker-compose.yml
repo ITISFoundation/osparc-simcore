@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.7"
 services:
   postgres_pgbouncer:
     image: pgbouncer/pgbouncer:1.15.0
@@ -10,6 +10,9 @@ services:
       - DATABASES_PASSWORD=test
       - DATABASES_DBNAME=test
       - PGBOUNCER_LISTEN_PORT=5432
+      - PGBOUNCER_LISTEN_ADDE=*
+      - PGBOUNCER_POOL_MODE=transaction
+      - PGBOUNCER_ADMIN_USERS=${POSTGRES_USER}
 
     ports:
       - "6432:5432"
@@ -58,7 +61,12 @@ services:
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
   adminer:
-    image: adminer
+    image: adminer:4.8.0
+    init: true
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DESIGN=nette
+      - ADMINER_PLUGINS=json-column
     ports:
       - 18080:8080
     depends_on:
