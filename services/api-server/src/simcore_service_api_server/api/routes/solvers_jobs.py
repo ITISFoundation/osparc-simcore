@@ -19,6 +19,7 @@ from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import DirectorV2Api
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
+from ..dependencies.database import Engine, get_db_engine
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
 from .jobs_faker import the_fake_impl
@@ -247,6 +248,8 @@ async def get_job_outputs(
     version: VersionStr,
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
+    db_engine: Engine = Depends(get_db_engine),
+    webserver_api: AuthSession = Depends(get_webserver_session),
 ):
     async def _fake_impl():
         from .jobs_faker import get_job_outputs_impl
@@ -254,22 +257,21 @@ async def get_job_outputs(
         return await get_job_outputs_impl(solver_key, version, job_id)
 
     async def _draft_impl():
-        import aiopg.sa
-        from models_library.projects_nodes_io import NodeID
+        from ...utils.solver_job_outputs import get_solver_output_results
 
-        async def real_impl(
-            node_uuid: NodeID,
-            db_engine: aiopg.sa.Engine,
-        ):
+        job_name = compose_resource_name(solver_key, version, job_id)
+        logger.debug("Get Job outputs %s", job_name)
 
-            from ...utils.solver_job_outputs import get_solver_output_results
+        project = await webserver_api.get_project(project_id=job_id)
+        node_ids = list(project.workbench.keys())
+        assert len(node_ids) == 1
 
-            results: KeywordArguments = await get_solver_output_results(
-                user_id=user_id,
-                project_uuid=job_id,
-                node_uuid=node_uuid,
-                db_engine=db_engine,
-            )
-            return results
+        results: KeywordArguments = await get_solver_output_results(
+            user_id=user_id,
+            project_uuid=job_id,
+            node_uuid=UUID(node_ids[0]),
+            db_engine=db_engine,
+        )
+        return JobOutputs(job_id=job_id, results=results)
 
-    return await _fake_impl()
+    return await _draft_impl()
