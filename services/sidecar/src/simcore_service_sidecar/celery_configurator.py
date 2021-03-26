@@ -8,8 +8,6 @@ use a look ahead function to check the type of upcoming task and
 schedule it accordingly.
 """
 import logging
-from functools import wraps
-from typing import Callable
 
 from celery import Celery
 from celery.contrib.abortable import AbortableTask
@@ -18,7 +16,11 @@ from kombu import Queue
 from . import config
 from .boot_mode import BootMode, get_boot_mode, set_boot_mode
 from .celery_task import entrypoint
-from .celery_task_utils import on_task_failure_handler, on_task_success_handler
+from .celery_task_utils import (
+    on_task_failure_handler,
+    on_task_retry_handler,
+    on_task_success_handler,
+)
 from .utils import is_gpu_node, start_as_mpi_node
 
 log = logging.getLogger(__name__)
@@ -31,26 +33,7 @@ CELERY_APP_CONFIGS = {
 }
 
 
-def celery_adapter(app: Celery) -> Callable:
-    """this decorator allows passing additional paramters to celery tasks.
-    This allows to create a task of type `def function(*args, **kwargs, app: Celery)
-    """
-
-    def decorator(func) -> Callable:
-        @wraps(func)
-        def wrapped(*args, **kwargs) -> Callable:
-            return func(*args, **kwargs, app=app)
-
-        return wrapped
-
-    return decorator
-
-
 def define_celery_task(app: Celery, name: str) -> None:
-    # we need to have the app in the entrypoint
-    # TODO: use functools.partial instead
-    partial_entrypoint = celery_adapter(app)(entrypoint)
-
     task = app.task(
         name=name,
         base=AbortableTask,
@@ -58,9 +41,10 @@ def define_celery_task(app: Celery, name: str) -> None:
         autoretry_for=(Exception,),
         retry_kwargs={"max_retries": 2, "countdown": 2},
         on_failure=on_task_failure_handler,
+        on_retry=on_task_retry_handler,
         on_success=on_task_success_handler,
         track_started=True,
-    )(partial_entrypoint)
+    )(entrypoint)
     log.debug("Created task %s", task.name)
 
 
@@ -75,18 +59,10 @@ def configure_node(bootmode: BootMode) -> Celery:
     app.conf.task_default_queue = "celery"
     app.conf.task_queues = [
         Queue("celery"),
-        Queue(config.MAIN_QUEUE_NAME),
         Queue(CELERY_APP_CONFIGS[bootmode]["queue_name"]),
     ]
-    app.conf.task_routes = {
-        config.MAIN_QUEUE_NAME: config.MAIN_QUEUE_NAME,
-        config.CPU_QUEUE_NAME: config.CPU_QUEUE_NAME,
-        config.GPU_QUEUE_NAME: config.GPU_QUEUE_NAME,
-        config.MPI_QUEUE_NAME: config.MPI_QUEUE_NAME,
-    }
 
-    define_celery_task(app, config.MAIN_QUEUE_NAME)
-    define_celery_task(app, CELERY_APP_CONFIGS[bootmode]["queue_name"])
+    define_celery_task(app, config.CELERY_CONFIG.task_name)
     set_boot_mode(bootmode)
     log.info("Initialized celery app in %s", get_boot_mode())
     return app

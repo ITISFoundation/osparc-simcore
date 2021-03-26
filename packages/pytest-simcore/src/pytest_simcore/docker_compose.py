@@ -205,11 +205,9 @@ def ops_docker_compose_file(
 
 # HELPERS ---------------------------------------------
 def _minio_fix(service_environs: Dict) -> Dict:
-    """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work.
-    172.17.0.1 is the docker0 interface, which redirect from inside a container onto the host network interface.
-    """
+    """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
-        service_environs["S3_ENDPOINT"] = "172.17.0.1:9001"
+        service_environs["S3_ENDPOINT"] = f"{_get_ip()}:9001"
     return service_environs
 
 

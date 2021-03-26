@@ -1,15 +1,16 @@
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import Any, Dict, List
 
-from celery import Celery, Task
+from celery import Celery, Task, group, signature
+from celery.canvas import Signature, chord
 from celery.contrib.abortable import AbortableAsyncResult
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.settings.celery import CeleryConfig
 
 from ..models.schemas.constants import UserID
-from ..utils.client_decorators import handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,40 @@ def setup(app: FastAPI, settings: CeleryConfig) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+def _computation_task_signature(
+    settings: CeleryConfig,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    routing_queue: str,
+) -> Signature:
+    """returns the signature of the computation task (see celery canvas)"""
+    task_signature = signature(
+        settings.task_name,
+        queue=f"{settings.task_name}.{routing_queue}",
+        kwargs={
+            "user_id": user_id,
+            "project_id": str(project_id),
+            "node_id": str(node_id),
+        },
+    )
+    return task_signature
+
+
+def _create_celery_flow(celery_groups: List[group], index: int = 0):
+    """creates a celery worlflow by using the CHORD primitive to ensure each group wait on the previous one before running
+    NOTE: Only chaining groups does not work as celery does not wait for a preceding group to fully complete before running the next one.
+    """
+    if index < len(celery_groups):
+        body = _create_celery_flow(celery_groups, index + 1)
+        return (
+            chord(header=celery_groups[index], body=body)
+            if body
+            else celery_groups[index]
+        )
+    return None
+
+
 @dataclass
 class CeleryClient:
     client: Celery
@@ -50,17 +85,37 @@ class CeleryClient:
     def instance(cls, app: FastAPI) -> "CeleryClient":
         return app.state.celery_client
 
-    @handle_retry(logger)
-    def send_task(self, task_name: str, *args, **kwargs) -> Task:
-        # TODO: check what can happen when exceptions are thrown (see [https://docs.celeryproject.org/en/2.4-archived/reference/celery.exceptions.html?highlight=exceptions#module-celery.exceptions])
-        return self.client.send_task(task_name, *args, **kwargs)
+    def send_computation_tasks(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        topologically_sorted_nodes: List[Dict[str, Dict[str, Any]]],
+    ) -> Task:
 
-    def send_computation_task(self, user_id: UserID, project_id: ProjectID) -> Task:
-        return self.send_task(
-            self.settings.task_name,
-            expires=self.settings.publication_timeout,
-            kwargs={"user_id": user_id, "project_id": str(project_id)},
-        )
+        # create the // tasks
+        celery_groups = []
+        for node_group in topologically_sorted_nodes:
+            celery_groups.append(
+                group(
+                    [
+                        _computation_task_signature(
+                            self.settings,
+                            user_id,
+                            project_id,
+                            node_id,
+                            node_data["runtime_requirements"],
+                        )
+                        for node_id, node_data in node_group.items()
+                    ]
+                )
+            )
+
+        celery_flow = _create_celery_flow(celery_groups)
+
+        # publish the tasks through Celery
+        task = celery_flow.apply_async()
+        logger.debug("created celery workflow: %s", str(celery_flow))
+        return task
 
     @classmethod
     def abort_computation_tasks(cls, task_ids: List[str]) -> None:
