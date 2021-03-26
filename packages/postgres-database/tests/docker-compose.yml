@@ -1,7 +1,24 @@
-version: '3.4'
+version: "3.4"
 services:
+  postgres_pgbouncer:
+    image: pgbouncer/pgbouncer:1.15.0
+    init: true
+    environment:
+      - DATABASES_HOST=postgres
+      - DATABASES_PORT=5432
+      - DATABASES_USER=test
+      - DATABASES_PASSWORD=test
+      - DATABASES_DBNAME=test
+      - PGBOUNCER_LISTEN_PORT=5432
+
+    ports:
+      - "6432:5432"
+    depends_on:
+      - postgres
+
   postgres:
     image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
+    init: true
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
@@ -15,13 +32,20 @@ services:
     command:
       [
         "postgres",
-        "-c", "log_connections=true",
-        "-c", "log_disconnections=true",
-        "-c", "log_duration=true",
-        "-c", "log_line_prefix=[%p] [%a] [%c] [%x] ",
-        "-c", "tcp_keepalives_idle=600",
-        "-c", "tcp_keepalives_interval=600",
-        "-c", "tcp_keepalives_count=5"
+        "-c",
+        "log_connections=true",
+        "-c",
+        "log_disconnections=true",
+        "-c",
+        "log_duration=true",
+        "-c",
+        "log_line_prefix=[%p] [%a] [%c] [%x] ",
+        "-c",
+        "tcp_keepalives_idle=600",
+        "-c",
+        "tcp_keepalives_interval=600",
+        "-c",
+        "tcp_keepalives_count=5",
       ]
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
@@ -38,4 +62,4 @@ services:
     ports:
       - 18080:8080
     depends_on:
-      - postgres
+      - postgres_pgbouncer
