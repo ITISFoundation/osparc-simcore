@@ -152,12 +152,8 @@ urllib3==1.26.4
     #   requests
 uvicorn[standard]==0.13.3
     # via fastapi
-uvloop==0.14.0 ; python_version < "3.7"
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   uvicorn
+uvloop==0.14.0
+    # via uvicorn
 watchgod==0.6
     # via uvicorn
 websockets==8.1
