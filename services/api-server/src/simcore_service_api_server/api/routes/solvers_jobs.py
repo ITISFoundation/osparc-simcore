@@ -21,6 +21,7 @@ from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
 from ..dependencies.webserver import AuthSession, get_webserver_session
+from .jobs_faker import the_fake_impl
 
 logger = logging.getLogger(__name__)
 
@@ -87,18 +88,14 @@ async def create_job(
 
     async def _draft_impl():
         from ...utils.models_creators import create_project_model_for_job
+        from .jobs_faker import _copy_n_update
 
         solver = await catalog_client.get_solver(user_id, solver_key, version)
 
-        #
-        # NOTE: KEEP here as draft for next PR
-        #
-        # TODO: validate inputs against solver input schema
         #   -> catalog
+        # TODO: validate inputs against solver input schema
 
         job = Job.create_from_solver(solver.id, solver.version, inputs)
-
-        # TODO: from job -> create project body for webserver.create_project(project)
 
         #   -> webserver
         project_in: NewProjectIn = create_project_model_for_job(solver, job, inputs)
@@ -111,6 +108,10 @@ async def create_job(
 
         computation_task = await director2_api.create_computation(job.id, user_id)
         assert computation_task.id == job.id
+
+        # FIXME: keeps local cache
+        job = _copy_n_update(job, url_for, solver.id, solver.version)
+        the_fake_impl.jobs[job.name] = job
 
         return job
 
@@ -128,11 +129,13 @@ async def get_job(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ Gets job of a given solver """
-    from .jobs_faker import get_job_impl
+
+    async def _fake_impl():
+        from .jobs_faker import get_job_impl
+
+        return await get_job_impl(solver_key, version, job_id, url_for)
 
     async def _draft_impl():
-        #
-
         job_name = compose_resource_name(solver_key, version, job_id)
         project = await webserver_api.get_project(name=job_name, uuid=job_id)
 
@@ -141,11 +144,11 @@ async def get_job(
         job.created_at = project.creation_date
 
         computation_task = await director2_api.get_computation(job_id, user_id)
-        job_status = computation_task.create_as_jobstatus()
+        job_status = computation_task.as_jobstatus()
         # TODO: fillurl_for
         return job_status
 
-    return await get_job_impl(solver_key, version, job_id, url_for)
+    return await _fake_impl()
 
 
 @router.post(
@@ -158,18 +161,20 @@ async def start_job(
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    from .jobs_faker import start_job_impl
-
     async def _draft_impl():
-        _job_name = compose_resource_name(solver_key, version, job_id)
+        job_name = compose_resource_name(solver_key, version, job_id)
+
         computation_task = await director2_api.start_computation(job_id, user_id)
-        job_status = computation_task.create_as_jobstatus()
-        # TODO: url_for
+        job_status = computation_task.as_jobstatus()
         return job_status
 
-    return await start_job_impl(solver_key, version, job_id)
+    async def _fake_impl():
+        from .jobs_faker import start_job_impl
+
+        return await start_job_impl(solver_key, version, job_id)
+
+    return _draft_impl()
 
 
 @router.post(

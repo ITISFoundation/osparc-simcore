@@ -159,11 +159,15 @@ class Job(BaseModel):
 
 # TODO: these need to be in sync with celery task states
 class TaskStates(str, Enum):
-    UNDEFINED = "undefined"
-    PENDING = "pending"
-    RUNNING = "running"
-    SUCCESS = "success"
-    FAILED = "failed"
+    UNKNOWN = "UNKNOWN"
+    PUBLISHED = "PUBLISHED"
+    NOT_STARTED = "NOT_STARTED"
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    RETRY = "RETRY"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    ABORTED = "ABORTED"
 
 
 class JobStatus(BaseModel):

@@ -79,8 +79,8 @@ def create_project_model_for_job(
     )
 
     # Ensembles project model so it can be used as input for create_project
-    job_info = pformat(
-        job.dict(include={"id", "name", "inputs_checksum", "created_at"})
+    job_info = job.json(
+        include={"id", "name", "inputs_checksum", "created_at"}, indent=2
     )
 
     create_project_body = NewProjectIn(

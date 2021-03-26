@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
 from typing import Optional, Type
 from uuid import UUID
 
 from fastapi import FastAPI
 from models_library.projects_pipeline import ComputationTask
+from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, Field, PositiveInt, conint
 
 from ..core.settings import DirectorV2Settings
@@ -12,9 +14,11 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
 from ..utils.serialization import json_dumps
 
+PercentageInt: Type[int] = conint(ge=0, le=100)
+
+
 logger = logging.getLogger(__name__)
 
-PercentageInt: Type[int] = conint(ge=0, le=100)
 
 # API MODELS ---------------------------------------------
 # NOTE: as services/director-v2/src/simcore_service_director_v2/models/schemas/comp_tasks.py
@@ -32,20 +36,32 @@ class ComputationTaskOut(ComputationTask):
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
         # FIXME: incomplete!
-        if self.state in [TaskStates.SUCCESS, TaskStates.FAILED]:
+        if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
             return 100
-        elif self.state in [TaskStates.RUNNING]:
-            return 50
         return 0
 
-    def create_as_jobstatus(self) -> JobStatus:
+    def as_jobstatus(self) -> JobStatus:
         """ Creates a JobStatus instance out of this task """
-        return JobStatus(
+        job_status = JobStatus(
             job_id=self.id,
             state=self.state,
-            progress=self.guess_progress()
-            # FIXME: submitted_at =
+            progress=self.guess_progress(),
+            submitted_at=datetime.utcnow(),
         )
+
+        # FIXME: timestamp is wrong but at least it will stop run
+        if job_status.state in [
+            TaskStates.SUCCESS,
+            TaskStates.FAILED,
+            TaskStates.ABORTED,
+        ]:
+            job_status.take_snapshot("stopped")
+        elif job_status.state in [
+            TaskStates.STARTED,
+        ]:
+            job_status.take_snapshot("started")
+
+        return job_status
 
 
 # API CLASS ---------------------------------------------
@@ -57,9 +73,12 @@ class DirectorV2Api(BaseServiceClientApi):
     async def get(self, path: str, *args, **kwargs) -> JsonDataType:
         return await self.client.get(path, *args, **kwargs)
 
-    # TODO: error handling
-
     # director2 API ---------------------------
+    # TODO: error handling
+    #
+    #  HTTPStatusError: 404 Not Found
+    #  ValidationError
+    #
 
     async def create_computation(
         self, project_id: UUID, user_id: PositiveInt
@@ -73,35 +92,36 @@ class DirectorV2Api(BaseServiceClientApi):
             },
         )
 
-        resp.raise_for_status()  # raises HTTPStatusError if error
+        resp.raise_for_status()
+        computation_task = ComputationTaskOut(**resp.json())
+        return computation_task
+
+    async def start_computation(
+        self, project_id: UUID, user_id: PositiveInt
+    ) -> ComputationTaskOut:
+        resp = await self.client.post(
+            "/computations",
+            json={
+                "user_id": user_id,
+                "project_id": str(project_id),
+                "start_pipeline": True,
+            },
+        )
+        resp.raise_for_status()
         computation_task = ComputationTaskOut(**resp.json())
         return computation_task
 
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskOut:
-        data = await self.client.get(
+        resp = await self.client.get(
             f"/computations/{project_id}",
             params={
                 "user_id": user_id,
             },
         )
-        computation_task = ComputationTaskOut(**data.json())
-        return computation_task
-
-    async def start_computation(
-        self, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskOut:
-        data = await self.client.post(
-            "/computations",
-            json={
-                "user_id": user_id,
-                "project_id": project_id,
-                "start_pipeline": True,
-            },
-        )
-
-        computation_task = ComputationTaskOut(**data.json())
+        resp.raise_for_status()
+        computation_task = ComputationTaskOut(**resp.json())
         return computation_task
 
     async def stop_computation(

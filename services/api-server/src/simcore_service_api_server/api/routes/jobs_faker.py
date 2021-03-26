@@ -75,7 +75,7 @@ class JobsFaker:
         if not job_status:
             job_status = JobStatus(
                 job_id=job.id,
-                state=TaskStates.UNDEFINED,
+                state=TaskStates.UNKNOWN,
                 progress=0,
                 submitted_at=datetime.utcnow(),
             )
