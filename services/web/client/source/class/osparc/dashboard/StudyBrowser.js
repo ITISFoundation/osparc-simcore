@@ -724,7 +724,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const processinglabel = this.tr("Processing study");
             importingStudyCard.getChildControl("state-label").setValue(processinglabel);
             importTask.setSubtitle(processinglabel);
-            importingStudyCard.getProgressBar().exclude();
+            importingStudyCard.getChildControl("progress-bar").exclude();
           }
         } else {
           console.log("Unable to compute progress information since the total size is unknown");

@@ -1185,7 +1185,7 @@ qx.Class.define("osparc.data.model.Node", {
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {
-        if (nodeEntry[key] !== null) {
+        if (nodeEntry[key] !== null || key === "parent") {
           filteredNodeEntry[key] = nodeEntry[key];
         }
       }
