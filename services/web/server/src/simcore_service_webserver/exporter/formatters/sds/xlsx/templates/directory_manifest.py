@@ -58,11 +58,16 @@ class DirectoryManifestParams(BaseModel):
             last_modified_date = datetime.datetime.fromtimestamp(
                 full_file_path.stat().st_mtime
             )
-            file_type = magic.from_file(str(full_file_path))
+            description = magic.from_file(str(full_file_path))
+            str_full_file_path = str(full_file_path)
+            file_type = (
+                str_full_file_path.split(".")[-1] if "." in str_full_file_path else ""
+            )
 
             file_entry_model = FileEntryModel(
                 filename=relative_file_name,
                 timestamp=last_modified_date.strftime("%A %d. %B %Y"),
+                description=description,
                 file_type=file_type,
             )
 
