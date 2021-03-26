@@ -58,6 +58,11 @@ services:
       - simcore_default
       - interactive_services_subnet
       - computational_services_subnet
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
 
   redis-commander:
     image: rediscommander/redis-commander:latest
