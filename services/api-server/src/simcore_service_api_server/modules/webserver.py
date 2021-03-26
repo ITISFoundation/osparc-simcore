@@ -93,7 +93,7 @@ class AuthSession:
         data, error = None, None
         try:
             body = resp.json()
-            data, error = body["data"], body["error"]
+            data, error = body.get("data"), body.get("error")
         except (json.JSONDecodeError, KeyError):
             logger.warning("Failed to unenvelop webserver response", exc_info=True)
 
@@ -104,7 +104,9 @@ class AuthSession:
                 resp.reason_phrase,
                 error,
             )
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE, detail=resp.reason_phrase
+            )
 
         if codes.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase

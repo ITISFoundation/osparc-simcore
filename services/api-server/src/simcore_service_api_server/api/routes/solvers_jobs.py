@@ -145,16 +145,19 @@ async def get_job(
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Getting Job %s", job_name)
 
-        project = await webserver_api.get_project(project_id=job_id)
+        project: Project = await webserver_api.get_project(project_id=job_id)
 
         assert len(project.workbench) == 1
         node_id = list(project.workbench.keys())[0]
         node: Node = project.workbench[node_id]
 
+        # FIXME: Convert SimCoreFileLink to File?
         job = Job.create_from_solver(
-            solver_key, version, JobInputs(values=node.inputs.dict())
+            solver_key,
+            version,
+            JobInputs(values={}),  # JobInputs(values=node.inputs.dict())
         )
-        # job.created_at = project.creation_date # TODO: parase
+        # job.created_at = project.creation_date # FIXME: parse dates
         job = _copy_n_update(job, url_for, solver_key, version)
 
         return job
@@ -268,7 +271,7 @@ async def get_job_outputs(
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Get Job outputs %s", job_name)
 
-        project = await webserver_api.get_project(project_id=job_id)
+        project: Project = await webserver_api.get_project(project_id=job_id)
         node_ids = list(project.workbench.keys())
         assert len(node_ids) == 1
 
