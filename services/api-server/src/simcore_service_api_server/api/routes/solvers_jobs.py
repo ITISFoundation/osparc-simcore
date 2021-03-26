@@ -102,20 +102,19 @@ async def create_job(
 
         job = Job.create_from_solver(solver.id, solver.version, inputs)
 
-        #   -> webserver
+        #   -> webserver:  job = project
         project_in: NewProjectIn = create_project_model_for_job(solver, job, inputs)
-
-        #  job (resource in api-server API) -- 1:1 -- project (resource in web-server API)
-        # create project
         new_project: Project = await webserver_api.create_project(project_in)
         assert new_project
         assert new_project.uuid == job.id
 
+        #   -> director2:  job-status = computation_task
         computation_task = await director2_api.create_computation(job.id, user_id)
         assert computation_task.id == job.id
 
-        # FIXME: keeps local cache
         job = _copy_n_update(job, url_for, solver.id, solver.version)
+
+        # FIXME: keeps local cache??
         the_fake_impl.jobs[job.name] = job
 
         return job
@@ -128,9 +127,7 @@ async def get_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     job_id: UUID,
-    user_id: PositiveInt = Depends(get_current_user_id),
     webserver_api: AuthSession = Depends(get_webserver_session),
-    director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     """ Gets job of a given solver """
@@ -141,19 +138,28 @@ async def get_job(
         return await get_job_impl(solver_key, version, job_id, url_for)
 
     async def _draft_impl():
+        from models_library.projects_nodes import Node
+
+        from .jobs_faker import _copy_n_update
+
         job_name = compose_resource_name(solver_key, version, job_id)
-        project = await webserver_api.get_project(name=job_name, uuid=job_id)
+        logger.debug("Getting Job %s", job_name)
 
-        inputs = project.inputs.values()[0].dict()  # one and only
-        job = Job.create_from_solver(solver_key, version, inputs)
-        job.created_at = project.creation_date
+        project = await webserver_api.get_project(project_id=job_id)
 
-        computation_task = await director2_api.get_computation(job_id, user_id)
-        job_status = computation_task.as_jobstatus()
-        # TODO: fillurl_for
-        return job_status
+        assert len(project.workbench) == 1
+        node_id = list(project.workbench.keys())[0]
+        node: Node = project.workbench[node_id]
 
-    return await _fake_impl()
+        job = Job.create_from_solver(
+            solver_key, version, JobInputs(values=node.inputs.dict())
+        )
+        # job.created_at = project.creation_date # TODO: parase
+        job = _copy_n_update(job, url_for, solver_key, version)
+
+        return job
+
+    return await _draft_impl()
 
 
 @router.post(
