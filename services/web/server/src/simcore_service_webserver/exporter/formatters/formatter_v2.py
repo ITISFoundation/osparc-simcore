@@ -130,7 +130,6 @@ async def _write_sds_content(
         )
 
         service_data_inputs = service_data["inputs"]
-
         for service_input in service_data_inputs.values():
             input_entry = InputsEntryModel(
                 service_alias=label,

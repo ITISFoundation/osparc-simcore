@@ -870,7 +870,7 @@ class SheetInputs(BaseXLSXSheet):
 
         cells = deque()
 
-        for row_index, inputs_entry in zip(range(4, len(intputs)), intputs):
+        for row_index, inputs_entry in zip(range(4, len(intputs) + 4), intputs):
             inputs_entry: InputsEntryModel = inputs_entry
             cells.append(
                 (f"B{row_index}", T(inputs_entry.service_alias) | Borders.light_grid)
@@ -974,7 +974,7 @@ class SheetOutputs(BaseXLSXSheet):
 
         cells = deque()
 
-        for row_index, outputs_entry in zip(range(4, len(outputs)), outputs):
+        for row_index, outputs_entry in zip(range(4, len(outputs) + 4), outputs):
             outputs_entry: OutputsEntryModel = outputs_entry
             cells.append(
                 (f"B{row_index}", T(outputs_entry.service_alias) | Borders.light_grid)
