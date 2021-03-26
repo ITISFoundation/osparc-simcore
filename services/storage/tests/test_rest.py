@@ -315,7 +315,6 @@ def mock_datcore_download(mocker, client):
     assert isinstance(dsm, DataStorageManager)
 
     mock = mocker.patch.object(dsm, "download_link_datcore")
-    mock.return_value = Future()
     mock.return_value.set_result(("https://httpbin.org/image", "foo.txt"))
 
 
@@ -326,7 +325,6 @@ def mock_get_project_access_rights(mocker) -> None:
         mock = mocker.patch(
             f"simcore_service_storage.{module}.get_project_access_rights"
         )
-        mock.return_value = Future()
         mock.return_value.set_result(AccessRights.all())
 
 
