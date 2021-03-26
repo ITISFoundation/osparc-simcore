@@ -92,7 +92,9 @@ tenacity==7.0.0
 trafaret==2.1.0
     # via -r requirements/_base.in
 typing-extensions==3.7.4.3
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   pydantic
 ujson==4.0.2
     # via -r requirements/_base.in
 werkzeug==1.0.1

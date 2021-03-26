@@ -137,7 +137,9 @@ trafaret==2.1.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   trafaret-config
 typing-extensions==3.7.4.3
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   pydantic
 ujson==4.0.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 werkzeug==1.0.1
