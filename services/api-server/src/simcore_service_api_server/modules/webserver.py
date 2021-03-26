@@ -104,9 +104,7 @@ class AuthSession:
                 resp.reason_phrase,
                 error,
             )
-            raise HTTPException(
-                status.HTTP_503_SERVICE_UNAVAILABLE, detail=resp.reason_phrase
-            )
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
         if codes.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase

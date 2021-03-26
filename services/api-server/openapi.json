@@ -711,7 +711,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start": {
@@ -774,7 +779,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:stop": {
@@ -837,7 +847,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:inspect": {
@@ -900,7 +915,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs": {
@@ -963,7 +983,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     }
   },
@@ -1453,11 +1478,15 @@
       "TaskStates": {
         "title": "TaskStates",
         "enum": [
-          "undefined",
-          "pending",
-          "running",
-          "success",
-          "failed"
+          "UNKNOWN",
+          "PUBLISHED",
+          "NOT_STARTED",
+          "PENDING",
+          "STARTED",
+          "RETRY",
+          "SUCCESS",
+          "FAILED",
+          "ABORTED"
         ],
         "type": "string",
         "description": "An enumeration."
