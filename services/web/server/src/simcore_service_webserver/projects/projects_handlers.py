@@ -151,7 +151,9 @@ async def list_projects(request: web.Request):
     db = request.config_dict[APP_PROJECT_DBAPI]
 
     # TODO: improve dbapi to list project
-    async def set_all_project_states(projects: List[Dict[str, Any]], is_template: bool):
+    async def set_all_project_states(
+        projects: List[Dict[str, Any]], project_types: List[bool]
+    ):
         await logged_gather(
             *[
                 projects_api.add_project_states_for_user(
@@ -160,7 +162,7 @@ async def list_projects(request: web.Request):
                     is_template=is_template,
                     app=request.app,
                 )
-                for prj in projects
+                for prj, is_template in zip(projects, project_types)
             ],
             reraise=True,
         )
@@ -172,25 +174,29 @@ async def list_projects(request: web.Request):
     )
 
     projects_list = []
+    project_types_list: List[bool] = []
     if ptype in ("template", "all"):
         template_projects = await db.load_template_projects(
             user_id=user_id, filter_by_services=user_available_services
         )
-        await set_all_project_states(template_projects, is_template=True)
+
         projects_list += template_projects
+        project_types_list += [True for i in range(len(template_projects))]
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
         user_projects = await db.load_user_projects(
             user_id=user_id, filter_by_services=user_available_services
         )
-        await set_all_project_states(user_projects, is_template=False)
         projects_list += user_projects
+        project_types_list += [False for i in range(len(template_projects))]
 
     start = int(request.query.get("start", 0))
     count = int(request.query.get("count", len(projects_list)))
 
     stop = min(start + count, len(projects_list))
     projects_list = projects_list[start:stop]
+    project_types_list = project_types_list[start:stop]
+    await set_all_project_states(projects_list, project_types_list)
     return {"data": projects_list}
 
 
