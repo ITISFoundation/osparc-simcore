@@ -10,7 +10,7 @@ import pytest
 
 
 @pytest.fixture
-def dir_with_random_content() -> Path:
+def dir_with_random_content(tmpdir) -> Path:
     def random_string(length: int) -> str:
         return "".join(secrets.choice(string.ascii_letters) for i in range(length))
 
@@ -44,22 +44,21 @@ def dir_with_random_content() -> Path:
     def get_dirs_and_subdris_in_path(path_to_scan: Path) -> Iterator[Path]:
         return [path for path in path_to_scan.rglob("*") if path.is_dir()]
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir_path = Path(temp_dir)
-        data_container = ensure_dir(temp_dir_path / "study_data")
+    temp_dir_path = Path(tmpdir)
+    data_container = ensure_dir(temp_dir_path / "study_data")
 
-        make_subdirectories_with_content(
-            subdir_name=data_container, max_subdirectories_count=5, max_file_count=5
-        )
-        make_files_in_dir(dir_path=data_container, file_count=5)
+    make_subdirectories_with_content(
+        subdir_name=data_container, max_subdirectories_count=5, max_file_count=5
+    )
+    make_files_in_dir(dir_path=data_container, file_count=5)
 
-        # creates a good amount of files
-        for _ in range(4):
-            for subdirectory_path in get_dirs_and_subdris_in_path(data_container):
-                make_subdirectories_with_content(
-                    subdir_name=subdirectory_path,
-                    max_subdirectories_count=3,
-                    max_file_count=3,
-                )
+    # creates a good amount of files
+    for _ in range(4):
+        for subdirectory_path in get_dirs_and_subdris_in_path(data_container):
+            make_subdirectories_with_content(
+                subdir_name=subdirectory_path,
+                max_subdirectories_count=3,
+                max_file_count=3,
+            )
 
-        yield temp_dir_path
+    yield temp_dir_path
