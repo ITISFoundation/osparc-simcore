@@ -108,7 +108,7 @@ def test_code_submission(temp_dir: Path):
         "Sheet1": {
             "C2": award_number,
             "C3": milestone_archived,
-            "C4": milestone_completion_date,
+            "C4": milestone_completion_date.strftime("%d/%m/%Y"),
         }
     }
 
