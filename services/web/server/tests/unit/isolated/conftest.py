@@ -3,7 +3,6 @@ import string
 import secrets
 import random
 import os
-import tempfile
 from typing import Iterator
 
 import pytest
