@@ -8,40 +8,44 @@ from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.styles import Border, Alignment
 from openpyxl.cell import Cell
 
+BORDER_ATTRIBUTES: Set[str] = {
+    "left",
+    "right",
+    "top",
+    "bottom",
+    "diagonal",
+    "diagonal_direction",
+    "vertical",
+    "horizontal",
+    "diagonalUp",
+    "diagonalDown",
+    "outline",
+    "start",
+    "end",
+}
 
-def _border_or(self: Border, other: Border) -> Border:
-    return Border(
-        left=self.left or other.left,
-        right=self.right or other.right,
-        top=self.top or other.top,
-        bottom=self.bottom or other.bottom,
-        diagonal=self.diagonal or other.diagonal,
-        diagonal_direction=(self.diagonal_direction or other.diagonal_direction),
-        vertical=self.vertical or other.vertical,
-        horizontal=self.horizontal or other.horizontal,
-        diagonalUp=self.diagonalUp or other.diagonalUp,
-        diagonalDown=self.diagonalDown or other.diagonalDown,
-        outline=self.outline or other.outline,
-        start=self.start or other.start,
-        end=self.end or other.end,
-    )
+ALIGNMENT_ATTRIBUTES: Set[str] = {
+    "horizontal",
+    "vertical",
+    "textRotation",
+    "wrapText",
+    "shrinkToFit",
+    "indent",
+    "relativeIndent",
+    "justifyLastLine",
+    "readingOrder",
+    "text_rotation",
+    "wrap_text",
+    "shrink_to_fit",
+}
 
 
-def _alignment_or(self: Alignment, other: Alignment) -> Alignment:
-    return Alignment(
-        horizontal=self.horizontal or other.horizontal,
-        vertical=self.vertical or other.vertical,
-        textRotation=self.textRotation or other.textRotation,
-        wrapText=self.wrapText or other.wrapText,
-        shrinkToFit=self.shrinkToFit or other.shrinkToFit,
-        indent=self.indent or other.indent,
-        relativeIndent=self.relativeIndent or other.relativeIndent,
-        justifyLastLine=self.justifyLastLine or other.justifyLastLine,
-        readingOrder=self.readingOrder or other.readingOrder,
-        text_rotation=self.text_rotation or other.text_rotation,
-        wrap_text=self.wrap_text or other.wrap_text,
-        shrink_to_fit=self.shrink_to_fit or other.shrink_to_fit,
-    )
+def _apply_or_to_objects(
+    self_var: Any, other_var: Any, attributes: Set[str]
+) -> Dict[str, Any]:
+    return {
+        x: getattr(self_var, x, None) or getattr(other_var, x, None) for x in attributes
+    }
 
 
 def _base_value_or(self_var: Any, entry_var: Any) -> Any:
@@ -51,9 +55,11 @@ def _base_value_or(self_var: Any, entry_var: Any) -> Any:
     borders and alignment
     """
     if isinstance(self_var, Border):
-        return _border_or(self_var, entry_var)
+        return Border(**_apply_or_to_objects(self_var, entry_var, BORDER_ATTRIBUTES))
     if isinstance(self_var, Alignment):
-        return _alignment_or(self_var, entry_var)
+        return Alignment(
+            **_apply_or_to_objects(self_var, entry_var, ALIGNMENT_ATTRIBUTES)
+        )
 
     return self_var or entry_var
 
