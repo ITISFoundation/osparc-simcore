@@ -1,3 +1,6 @@
+from typing import List
+
+
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.comments import Comment as PyXLComment
 from openpyxl.styles.borders import BORDER_THIN, BORDER_MEDIUM
@@ -70,43 +73,23 @@ class BorderWithStyle(BaseXLSXCellData):
         super().__init__(border=Border(**{x: side for x in borders_sides}))
 
 
+def _all_borders() -> List[str]:
+    return ["top", "left", "right", "bottom", "outline", "vertical", "horizontal"]
+
+
 class Borders:
     """Collector for different border styles"""
 
     light_grid = BorderWithStyle(
-        "top",
-        "left",
-        "right",
-        "bottom",
-        "outline",
-        "vertical",
-        "horizontal",
-        border_style=BORDER_THIN,
-        color=COLOR_GRAY,
+        *_all_borders(), border_style=BORDER_THIN, color=COLOR_GRAY
     )
 
     medium_grid = BorderWithStyle(
-        "top",
-        "left",
-        "right",
-        "bottom",
-        "outline",
-        "vertical",
-        "horizontal",
-        border_style=BORDER_THIN,
-        color=COLOR_BLACK,
+        *_all_borders(), border_style=BORDER_THIN, color=COLOR_BLACK
     )
 
     bold_grid = BorderWithStyle(
-        "top",
-        "left",
-        "right",
-        "bottom",
-        "outline",
-        "vertical",
-        "horizontal",
-        border_style=BORDER_MEDIUM,
-        color=COLOR_BLACK,
+        *_all_borders(), border_style=BORDER_MEDIUM, color=COLOR_BLACK
     )
 
     border_bottom_thick = BorderWithStyle(
