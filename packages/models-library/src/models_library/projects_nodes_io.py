@@ -77,8 +77,8 @@ class BaseFileLink(BaseModel):
         examples=["MyFile.txt"],
     )
 
-    class Config:
-        extra = Extra.forbid
+    # class Config:
+    #    extra = Extra.forbid
 
 
 class SimCoreFileLink(BaseFileLink):
@@ -86,7 +86,7 @@ class SimCoreFileLink(BaseFileLink):
 
     store: str = "0"
 
-    @validator("store")
+    @validator("store", always=True)
     @classmethod
     def must_be_simcore_s3(cls, v):
         if v is None:
@@ -105,6 +105,13 @@ class SimCoreFileLink(BaseFileLink):
 
     class Config:
         extra = Extra.forbid
+        schema_extra = {
+            "example": {
+                "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
+                "label": "input.txt",
+            }
+        }
 
 
 class DatCoreFileLink(BaseFileLink):
