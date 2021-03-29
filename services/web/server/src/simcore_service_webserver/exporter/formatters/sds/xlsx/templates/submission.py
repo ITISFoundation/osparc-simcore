@@ -23,6 +23,7 @@ class SubmissionDocumentParams(BaseModel):
         ),
     )
 
+    # pylint: disable=unused-argument
     @validator("milestone_completion_date")
     @classmethod
     def format_milestone_completion_date(cls, v, values):

@@ -29,6 +29,7 @@ class FileEntryModel(BaseModel):
         [], description="optional field containing Additional metadata fields the file"
     )
 
+    # pylint: disable=unused-argument
     @validator("timestamp")
     @classmethod
     def format_timestamp(cls, v, values):
