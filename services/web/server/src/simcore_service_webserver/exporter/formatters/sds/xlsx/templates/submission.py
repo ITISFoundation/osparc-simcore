@@ -1,6 +1,7 @@
+import datetime
 from typing import List, Tuple, Dict
 
-from pydantic import BaseModel, Field, StrictStr
+from pydantic import BaseModel, Field, StrictStr, validator
 from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
 from ..styling_components import T, TB, Backgrounds, Borders
 from .utils import ensure_correct_instance
@@ -13,7 +14,7 @@ class SubmissionDocumentParams(BaseModel):
     milestone_archived: StrictStr = Field(
         "", description="From milestones supplied to NIH"
     )
-    milestone_completion_date: StrictStr = Field(
+    milestone_completion_date: datetime.datetime = Field(
         "",
         description=(
             "Date of milestone completion. This date starts the countdown for submission "
@@ -21,6 +22,11 @@ class SubmissionDocumentParams(BaseModel):
             "months from completion of milestone)"
         ),
     )
+
+    @validator("milestone_completion_date")
+    @classmethod
+    def format_milestone_completion_date(cls, v, values):
+        return v.strftime("%d/%m/%Y")
 
 
 class SheetFirstSubmission(BaseXLSXSheet):

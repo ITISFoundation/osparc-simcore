@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+import datetime
 from typing import Any, Dict
 from pathlib import Path
 import random
@@ -92,7 +93,7 @@ def column_iter(start_letter: str, elements: int) -> str:
 def test_code_submission(temp_dir: Path):
     award_number = random_text()
     milestone_archived = random_text()
-    milestone_completion_date = random_text()
+    milestone_completion_date = datetime.datetime.now()
 
     submission_params = SubmissionDocumentParams(
         award_number=award_number,

@@ -4,7 +4,7 @@ from collections import deque
 from typing import List, Tuple, Dict
 from pathlib import Path
 
-from pydantic import BaseModel, Field, StrictStr
+from pydantic import BaseModel, Field, StrictStr, validator
 
 from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
 from ..styling_components import T, TB, Backgrounds, Borders
@@ -21,13 +21,18 @@ def get_files_in_dir(dir_path: Path) -> List[Tuple[Path, str]]:
 
 class FileEntryModel(BaseModel):
     filename: StrictStr = Field(..., description="name of the file")
-    timestamp: StrictStr = Field(..., description="last change time stamp")
+    timestamp: datetime.datetime = Field(..., description="last change time stamp")
     description: StrictStr = Field("", description="additional information on the file")
     file_type: StrictStr = Field(..., description="mime type of the file")
 
     additional_metadata: List[StrictStr] = Field(
         [], description="optional field containing Additional metadata fields the file"
     )
+
+    @validator("timestamp")
+    @classmethod
+    def format_timestamp(cls, v, values):
+        return v.strftime("%A %d. %B %Y")
 
 
 class DirectoryManifestParams(BaseModel):
@@ -53,7 +58,7 @@ class DirectoryManifestParams(BaseModel):
 
             file_entry_model = FileEntryModel(
                 filename=relative_file_name,
-                timestamp=last_modified_date.strftime("%A %d. %B %Y"),
+                timestamp=last_modified_date,
                 description=description,
                 file_type=file_type,
             )
