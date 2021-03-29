@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, HttpUrl, conint, validator
 
 from ...models.schemas.files import File
+from ...models.schemas.solvers import Solver
 from ..api_resources import RelativeResourceName, compose_resource_name
 
 # JOB INPUTS/OUTPUTS ----------
@@ -154,10 +155,10 @@ class Job(BaseModel):
         )
 
     @classmethod
-    def create_from_solver(cls, solver_id, solver_version, inputs: JobInputs) -> "Job":
-        # TODO: check if job exists already?? Do not consider date??
+    def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
+        solver_name = compose_resource_name(solver.id, solver.version)
         job = Job.create_now(
-            compose_resource_name(solver_id, solver_version), inputs.compute_checksum()
+            parent=solver_name, inputs_checksum=inputs.compute_checksum()
         )
         return job
 

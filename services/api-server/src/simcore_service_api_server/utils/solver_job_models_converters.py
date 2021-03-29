@@ -1,14 +1,16 @@
 """
-    Helper functions to create and transform models
+    Helper functions to convert models used in
+    services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
+import urllib.parse
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from mimetypes import guess_type
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Optional, Tuple
 
 from models_library.projects_nodes import InputID, InputTypes
 
+from ..models.api_resources import compose_resource_name
 from ..models.domain.projects import (
     InputTypes,
     NewProjectIn,
@@ -57,7 +59,7 @@ def get_args(annotation) -> Tuple:
     return tuple(map(_transform, annotated_types))
 
 
-# TRANSFORMATIONS --------------
+# CONVERTERS --------------
 #
 # - creates a model in one API composing models in others
 #
@@ -122,7 +124,7 @@ def get_node_id(project_id, solver_id) -> str:
     return compose_uuid_from(project_id, solver_id)
 
 
-def create_project_from_job(
+def create_new_project_for_job(
     solver: Solver, job: Job, inputs: JobInputs
 ) -> NewProjectIn:
     """
@@ -140,8 +142,6 @@ def create_project_from_job(
     """
     project_id = job.id
     solver_id = get_node_id(project_id, solver.id)
-
-    # solver
 
     # map Job inputs with solveri nputs
     # TODO: ArgumentType -> InputTypes dispatcher and reversed
@@ -186,12 +186,7 @@ def create_project_from_job(
     return create_project_body
 
 
-# TODO:
-# def create_job_from_data(project, computation_task):
-#    pass
-
-
-def copy_n_update_urls(
+def _copy_n_update_urls(
     job: Job, url_for: Callable, solver_key: SolverKeyId, version: VersionStr
 ):
     return job.copy(
@@ -216,30 +211,43 @@ def copy_n_update_urls(
 
 def create_job_from_project(
     solver_key: SolverKeyId,
-    version: VersionStr,
+    solver_version: VersionStr,
     project: Project,
-    url_for: Callable,
+    url_for: Optional[Callable] = None,
 ) -> Job:
     """
     Given a project, creates a job
 
-    Complementary from create_project_from_job
+    - Complementary from create_project_from_job
+    - Assumes project created via solver's job
+
     raise ValidationError
     """
     assert len(project.workbench) == 1
+    assert solver_version in project.name
+    assert urllib.parse.quote_plus(solver_key) in project.name
 
+    # get solver node
     node_id = list(project.workbench.keys())[0]
     solver_node: Node = project.workbench[node_id]
-
     job_inputs: JobInputs = create_job_inputs_from_node_inputs(
         inputs=solver_node.inputs or {}
     )
 
-    job = Job.create_from_solver(
-        solver_id=solver_key, solver_version=version, inputs=job_inputs
+    # create solver's job
+    solver_name = compose_resource_name(solver_key, solver_version)
+
+    job = Job(
+        id=project.uuid,
+        name=project.name,
+        inputs_checksum=job_inputs.compute_checksum(),
+        created_at=project.creation_date,
+        runner_name=solver_name,
     )
-    # job.created_at = project.creation_date # FIXME: parse dates
-    job = copy_n_update_urls(job, url_for, solver_key, version)
+    if url_for:
+        job = _copy_n_update_urls(job, url_for, solver_key, solver_version)
+        assert all(getattr(job, f) for f in job.__fields__ if f.startswith("url"))
+
     return job
 
 

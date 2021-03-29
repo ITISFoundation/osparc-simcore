@@ -4,16 +4,17 @@
 
 from typing import Dict
 
+from models_library.projects import Project
 from models_library.projects_nodes import Inputs, InputTypes, SimCoreFileLink
-from models_library.projects_nodes_io import NodeID
 from pydantic import create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentType, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.utils.solver_job_models_converters import (
+    create_job_from_project,
     create_job_inputs_from_node_inputs,
+    create_new_project_for_job,
     create_node_inputs_from_job_inputs,
-    create_project_from_job,
     get_args,
 )
 
@@ -47,12 +48,104 @@ def test_create_project_model_for_job():
 
     print(inputs.json(indent=2))
 
-    job = Job.create_from_solver(solver.id, solver.version, inputs)
+    job = Job.create_solver_job(solver=solver, inputs=inputs)
 
     # body of create project!
-    createproject_body = create_project_from_job(solver, job, inputs)
+    createproject_body = create_new_project_for_job(solver, job, inputs)
 
+    # ensures one-to-one relation
     assert createproject_body.uuid == job.id
+    assert createproject_body.name == job.name
+
+
+def test_create_job_from_project():
+
+    project = Project.parse_obj(
+        {
+            "uuid": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
+            "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
+            "description": 'Study associated to solver job:\n{\n  "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",\n  "inputs_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",\n  "created_at": "2021-03-26T10:43:27.828975"\n}',
+            "thumbnail": "https://2xx2gy2ovf3r21jclkjio3x8-wpengine.netdna-ssl.com/wp-content/uploads/2018/12/API-Examples.jpg",
+            "prjOwner": "foo@itis.swiss",
+            "creationDate": "2021-03-26T10:43:27.867Z",
+            "lastChangeDate": "2021-03-26T10:43:33.595Z",
+            "workbench": {
+                "e694de0b-2e91-5be7-9319-d89404170991": {
+                    "key": "simcore/services/comp/itis/sleeper",
+                    "version": "2.0.2",
+                    "label": "sleeper",
+                    "progress": 100,
+                    "thumbnail": None,
+                    "runHash": "1c4e09777dbf6fb1ab4bfb02f8e62c7b6fc07393d8c880d5762a86afeddb30b5",
+                    "inputs": {
+                        "input_3": 0,
+                        "input_2": 3,
+                        "input_1": {
+                            "store": "0",
+                            "path": "api/bfb821c0-a4ef-305e-a23b-4d79065f0078/file_with_number.txt",
+                            "eTag": None,
+                            "label": "file_with_number.txt",
+                        },
+                    },
+                    "inputAccess": None,
+                    "inputNodes": [],
+                    "outputs": {
+                        "output_1": {
+                            "store": "0",
+                            "path": "f925e30f-19de-42dc-acab-3ce93ea0a0a7/e694de0b-2e91-5be7-9319-d89404170991/single_number.txt",
+                            "eTag": "6c22e9b968b205c0dd3614edd1b28d35-1",
+                        },
+                        "output_2": 1,
+                    },
+                    "outputNode": None,
+                    "outputNodes": None,
+                    "parent": None,
+                    "position": None,
+                    "state": {
+                        "currentStatus": "SUCCESS",
+                        "modified": False,
+                        "dependencies": [],
+                    },
+                }
+            },
+            "accessRights": {"2": {"read": True, "write": True, "delete": True}},
+            "dev": {},
+            "classifiers": [],
+            "ui": {
+                "slideshow": {},
+                "workbench": {
+                    "e694de0b-2e91-5be7-9319-d89404170991": {
+                        "position": {"x": 633, "y": 229}
+                    }
+                },
+                "currentNodeId": "e694de0b-2e91-5be7-9319-d89404170991",
+            },
+            "quality": {},
+            "tags": [],
+            "state": {"locked": {"value": False}, "state": {"value": "SUCCESS"}},
+        },
+    )
+
+    expected_job = Job.parse_obj(
+        {
+            "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
+            "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
+            "created_at": "2021-03-26T10:43:27.867Z",
+            "runner_name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2",
+            "input_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",
+        }
+    )
+
+    solver_key = "simcore/services/comp/itis/sleeper"
+    solver_version = "2.0.2"
+
+    job = create_job_from_project(solver_key, solver_version, project)
+
+    assert job.id == project.uuid
+    assert job.name == project.name
+    assert not any(getattr(job, f) for f in job.__fields__ if f.startswith("url"))
+
+    assert job == expected_job
 
 
 def test_job_to_node_inputs_conversion():

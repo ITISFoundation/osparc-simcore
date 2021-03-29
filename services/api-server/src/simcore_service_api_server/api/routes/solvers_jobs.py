@@ -18,6 +18,12 @@ from ...models.schemas.jobs import (
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import ComputationTaskOut, DirectorV2Api
+from ...utils.solver_job_models_converters import (
+    create_job_from_project,
+    create_jobstatus_from_task,
+    create_new_project_for_job,
+)
+from ...utils.solver_job_outputs import get_solver_output_results
 from ..dependencies.application import get_reverse_url_mapper
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.database import Engine, get_db_engine
@@ -58,11 +64,6 @@ async def list_jobs(
         return await list_jobs_impl(solver.id, solver.version, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_models_converters import (
-            copy_n_update_urls,
-            create_job_from_project,
-        )
-
         solver = await catalog_client.get_solver(user_id, solver_key, version)
         logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
@@ -71,7 +72,8 @@ async def list_jobs(
         for prj in projects:
             job = create_job_from_project(solver_key, version, prj, url_for)
             assert job.id == prj.uuid
-            job = copy_n_update_urls(job, url_for, solver.id, solver.version)
+            assert job.name == prj.name
+
             jobs.append(job)
 
         return list(jobs)
@@ -105,34 +107,43 @@ async def create_job(
         return await create_job_impl(solver.id, solver.version, inputs, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_models_converters import (
-            copy_n_update_urls,
-            create_jobstatus_from_task,
-            create_project_from_job,
-        )
 
+        # ensures user has access to solver
         solver = await catalog_client.get_solver(user_id, solver_key, version)
 
-        #   -> catalog
+        # creates NEW job as prototype
+        pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
+        logger.debug("Creating Job '%s'", pre_job.name)
+
+        # -> catalog
         # TODO: validate inputs against solver input schema
-        job = Job.create_from_solver(solver.id, solver.version, inputs)
-        logger.debug("Creating Job '%s'", job.name)
 
         #   -> webserver:  NewProjectIn = Job
-        project_in: NewProjectIn = create_project_from_job(solver, job, inputs)
+        project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
         new_project: Project = await webserver_api.create_project(project_in)
         assert new_project
-        assert new_project.uuid == job.id
+        assert new_project.uuid == pre_job.id
 
-        #   -> director2:   ComputationTaskOut = JobStatus
+        # for consistency, it rebuild job
+        job = create_job_from_project(
+            solver_key=solver.id,
+            solver_version=solver.version,
+            project=new_project,
+            url_for=url_for,
+        )
+        assert job.id == pre_job.id
+        assert job.name == pre_job.name
+
+        # -> director2:   ComputationTaskOut = JobStatus
+        # consistency check
         task: ComputationTaskOut = await director2_api.create_computation(
             job.id, user_id
         )
-        job_status: JobStatus = create_jobstatus_from_task(task)
         assert task.id == job.id
+
+        job_status: JobStatus = create_jobstatus_from_task(task)
         assert job.id == job_status.job_id
 
-        job = copy_n_update_urls(job, url_for, solver.id, solver.version)
         return job
 
     return await _draft_impl()
@@ -154,8 +165,6 @@ async def get_job(
         return await get_job_impl(solver_key, version, job_id, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_models_converters import create_job_from_project
-
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Getting Job '%s'", job_name)
 
@@ -185,8 +194,6 @@ async def start_job(
         return await start_job_impl(solver_key, version, job_id)
 
     async def _draft_impl():
-        from ...utils.solver_job_models_converters import create_jobstatus_from_task
-
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Start Job '%s'", job_name)
 
@@ -214,8 +221,6 @@ async def stop_job(
         return await stop_job_impl(solver_key, version, job_id, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_models_converters import create_jobstatus_from_task
-
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Stopping Job '%s'", job_name)
 
@@ -245,8 +250,6 @@ async def inspect_job(
         return await inspect_job_impl(solver_key, version, job_id)
 
     async def _draft_impl():
-        from ...utils.solver_job_models_converters import create_jobstatus_from_task
-
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Inspecting Job '%s'", job_name)
 
@@ -275,8 +278,6 @@ async def get_job_outputs(
         return await get_job_outputs_impl(solver_key, version, job_id)
 
     async def _draft_impl():
-        from ...utils.solver_job_outputs import get_solver_output_results
-
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Get Job '%s' outputs", job_name)
 
