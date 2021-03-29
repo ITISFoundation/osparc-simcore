@@ -58,7 +58,7 @@ async def list_jobs(
         return await list_jobs_impl(solver.id, solver.version, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_transformations import (
+        from ...utils.solver_job_models_converters import (
             copy_n_update_urls,
             create_job_from_project,
         )
@@ -105,10 +105,10 @@ async def create_job(
         return await create_job_impl(solver.id, solver.version, inputs, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_transformations import (
+        from ...utils.solver_job_models_converters import (
             copy_n_update_urls,
             create_jobstatus_from_task,
-            create_project_model_for_job,
+            create_project_from_job,
         )
 
         solver = await catalog_client.get_solver(user_id, solver_key, version)
@@ -119,7 +119,7 @@ async def create_job(
         logger.debug("Creating Job '%s'", job.name)
 
         #   -> webserver:  NewProjectIn = Job
-        project_in: NewProjectIn = create_project_model_for_job(solver, job, inputs)
+        project_in: NewProjectIn = create_project_from_job(solver, job, inputs)
         new_project: Project = await webserver_api.create_project(project_in)
         assert new_project
         assert new_project.uuid == job.id
@@ -154,7 +154,7 @@ async def get_job(
         return await get_job_impl(solver_key, version, job_id, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_transformations import create_job_from_project
+        from ...utils.solver_job_models_converters import create_job_from_project
 
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Getting Job '%s'", job_name)
@@ -185,7 +185,7 @@ async def start_job(
         return await start_job_impl(solver_key, version, job_id)
 
     async def _draft_impl():
-        from ...utils.solver_job_transformations import create_jobstatus_from_task
+        from ...utils.solver_job_models_converters import create_jobstatus_from_task
 
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Start Job '%s'", job_name)
@@ -214,7 +214,7 @@ async def stop_job(
         return await stop_job_impl(solver_key, version, job_id, url_for)
 
     async def _draft_impl():
-        from ...utils.solver_job_transformations import create_jobstatus_from_task
+        from ...utils.solver_job_models_converters import create_jobstatus_from_task
 
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Stopping Job '%s'", job_name)
@@ -245,7 +245,7 @@ async def inspect_job(
         return await inspect_job_impl(solver_key, version, job_id)
 
     async def _draft_impl():
-        from ...utils.solver_job_transformations import create_jobstatus_from_task
+        from ...utils.solver_job_models_converters import create_jobstatus_from_task
 
         job_name = compose_resource_name(solver_key, version, job_id)
         logger.debug("Inspecting Job '%s'", job_name)

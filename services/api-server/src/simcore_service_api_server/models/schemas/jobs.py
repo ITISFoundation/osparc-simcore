@@ -9,7 +9,10 @@ from pydantic import BaseModel, Field, HttpUrl, conint, validator
 from ...models.schemas.files import File
 from ..api_resources import RelativeResourceName, compose_resource_name
 
-# INPUTS/OUTPUTS ----------
+# JOB INPUTS/OUTPUTS ----------
+#
+#  - Wrappers for input/output values
+#  - Input/outputs are defined in service metadata
 #
 
 
@@ -132,6 +135,8 @@ class Job(BaseModel):
         if not v.endswith(f"/{_id}"):
             raise ValueError(f"Resource name [{v}] and id [{_id}] do not match")
         return v
+
+    # constructors ------
 
     @classmethod
     def create_now(cls, parent: RelativeResourceName, inputs_checksum: str) -> "Job":

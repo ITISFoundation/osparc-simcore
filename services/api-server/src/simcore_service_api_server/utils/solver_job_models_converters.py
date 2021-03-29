@@ -4,7 +4,10 @@
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from typing import Callable
+from mimetypes import guess_type
+from typing import Callable, Dict
+
+from models_library.projects_nodes import InputID, InputTypes
 
 from ..models.domain.projects import (
     InputTypes,
@@ -15,7 +18,7 @@ from ..models.domain.projects import (
     StudyUI,
 )
 from ..models.schemas.files import File
-from ..models.schemas.jobs import Job, JobInputs, JobStatus, TaskStates
+from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
 from ..models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ..modules.director_v2 import ComputationTaskOut
 
@@ -38,7 +41,67 @@ def now_str() -> str:
     return format_dt(datetime.utcnow())
 
 
-# CREATE HELPERS --------
+def get_args(annotation):
+    # TODO: py3.8 use typings.get_args
+    return annotation.__args__
+
+
+# TRANSFORMATIONS --------------
+#
+# - creates a model in one API composing models in others
+#
+
+
+def create_node_inputs_from_job_inputs(inputs: JobInputs) -> Dict[InputID, InputTypes]:
+
+    # map Job inputs with solver inputs
+    # TODO: ArgumentType -> InputTypes dispatcher
+
+    node_inputs: Dict[InputID, InputTypes] = {}
+    for name, value in inputs.values.items():
+
+        # TODO: py3.8 use typings.get_args
+        assert isinstance(value, get_args(ArgumentType))
+
+        if isinstance(value, File):
+            # FIXME: ensure this aligns with storage policy
+            node_inputs[name] = SimCoreFileLink(
+                path=f"api/{value.id}/{value.filename}", label=value.filename
+            )
+        else:
+            node_inputs[name] = value
+
+    # TODO: validate Inputs??
+
+    return node_inputs
+
+
+def create_job_inputs_from_node_inputs(inputs: Dict[InputID, InputTypes]) -> JobInputs:
+    """Reverse  from create_node_inputs_from_job_inputs
+
+    raises ValidationError
+    """
+    input_values: Dict[str, ArgumentType] = {}
+    for name, value in inputs.items():
+
+        assert isinstance(name, InputID)
+        assert isinstance(value, get_args(InputTypes))
+
+        if isinstance(value, SimCoreFileLink):
+            # FIXME: ensure this aligns with storage policy
+            _api, file_id, filename = value.path.split("/")
+            assert _api == "api"
+            input_values[name] = File(
+                id=file_id,
+                filename=filename,
+                content_type=guess_type(filename),
+                checksum=value.e_tag,
+            )
+        else:
+            input_values[name] = value
+
+    job_inputs = JobInputs(values=input_values)  # raises ValidationError
+    return job_inputs
 
 
 def get_node_id(project_id, solver_id) -> str:
@@ -47,11 +110,21 @@ def get_node_id(project_id, solver_id) -> str:
     return compose_uuid_from(project_id, solver_id)
 
 
-def create_project_model_for_job(
+def create_project_from_job(
     solver: Solver, job: Job, inputs: JobInputs
 ) -> NewProjectIn:
     """
     Creates a project for a solver's job
+
+    Returns model used in the body of create_project at the web-server API
+
+    In reality, we also need solvers and inputs to produce
+    the project, but the name of the function is intended
+    to stress the one-to-one equivalence between a project
+    (model at web-server API) and a job (model at api-server API)
+
+
+    raises ValidationError
     """
     project_id = job.id
     solver_id = get_node_id(project_id, solver.id)
@@ -59,19 +132,10 @@ def create_project_model_for_job(
     # solver
 
     # map Job inputs with solveri nputs
-    # TODO: ArgumentType -> InputTypes dispatcher
-
-    solver_inputs = {}
-    for input_name, value in inputs.values.items():
-        assert InputTypes
-        # TODO: assert type(value) in InputTypes
-
-        if isinstance(value, File):
-            solver_inputs[input_name] = SimCoreFileLink(
-                path=f"api/{value.id}/{value.filename}", label=value.filename
-            )
-        else:
-            solver_inputs[input_name] = value
+    # TODO: ArgumentType -> InputTypes dispatcher and reversed
+    solver_inputs: Dict[InputID, InputTypes] = create_node_inputs_from_job_inputs(
+        inputs
+    )
 
     solver_service = Node(
         key=solver.id,
@@ -98,6 +162,7 @@ def create_project_model_for_job(
             slideshow={},
             currentNodeId=solver_id,
         ),
+        ## hidden=True,  # FIXME: add
         # FIXME: these should be unnecessary
         prjOwner="api-placeholder@osparc.io",
         creationDate=now_str(),
@@ -143,17 +208,23 @@ def create_job_from_project(
     project: Project,
     url_for: Callable,
 ) -> Job:
+    """
+    Given a project, creates a job
 
-    # check if correct job
+    Complementary from create_project_from_job
+    raise ValidationError
+    """
     assert len(project.workbench) == 1
-    node_id = list(project.workbench.keys())[0]
-    _node: Node = project.workbench[node_id]
 
-    # FIXME: Convert SimCoreFileLink to File?
+    node_id = list(project.workbench.keys())[0]
+    solver_node: Node = project.workbench[node_id]
+
+    job_inputs: JobInputs = create_job_inputs_from_node_inputs(
+        inputs=solver_node.inputs or {}
+    )
+
     job = Job.create_from_solver(
-        solver_key,
-        version,
-        JobInputs(values={}),  # JobInputs(values=node.inputs.dict())
+        solver_id=solver_key, solver_version=version, inputs=job_inputs
     )
     # job.created_at = project.creation_date # FIXME: parse dates
     job = copy_n_update_urls(job, url_for, solver_key, version)
