@@ -14,6 +14,7 @@ from ..styling_components import (
     AllignTop,
 )
 from .utils import ensure_correct_instance, column_iter
+from simcore_service_webserver.catalog_api_models import ServiceVersion
 
 
 class RRIDEntry(BaseModel):
@@ -213,7 +214,7 @@ class InputsEntryModel(BaseModel):
     service_name: StrictStr = Field(
         ..., description="Name of the service containing this input"
     )
-    service_version: StrictStr = Field(
+    service_version: ServiceVersion = Field(
         ..., description="Version of the service containing this input"
     )
     input_name: StrictStr = Field(
@@ -245,7 +246,7 @@ class OutputsEntryModel(BaseModel):
     service_name: StrictStr = Field(
         ..., description="Name of the service containing this output"
     )
-    service_version: StrictStr = Field(
+    service_version: ServiceVersion = Field(
         ..., description="Version of the service containing this output"
     )
     output_name: StrictStr = Field(
