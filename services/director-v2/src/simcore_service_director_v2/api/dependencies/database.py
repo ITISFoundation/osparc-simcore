@@ -1,7 +1,7 @@
 import logging
 from typing import AsyncGenerator, Callable, Type
 
-from aiopg.sa import Engine, SAConnection
+from aiopg.sa import Engine
 from fastapi import Depends
 from fastapi.requests import Request
 
