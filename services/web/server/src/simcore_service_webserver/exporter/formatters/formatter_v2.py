@@ -12,7 +12,7 @@ from aiopg.sa.engine import SAConnection
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 from simcore_service_webserver.exporter.formatters.formatter_v1 import FormatterV1
 from simcore_service_webserver.exporter.formatters.base_formatter import BaseFormatter
-from simcore_service_webserver.exporter.formatters.sds.sds import (
+from simcore_service_webserver.exporter.formatters.sds import (
     write_sds_directory_content,
 )
 
