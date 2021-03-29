@@ -188,7 +188,9 @@ class FormatterV2(BaseFormatter):
     def code_folder(self) -> Path:
         return self.root_folder / "code"
 
-    async def format_export_directory(self, **kwargs) -> None:
+    async def format_export_directory(
+        self, app: web.Application, project_id: str, user_id: int, **kwargs
+    ) -> None:
         kwargs["manifest_root_folder"] = self.root_folder
 
         self.code_folder.mkdir(parents=True, exist_ok=True)
@@ -198,9 +200,6 @@ class FormatterV2(BaseFormatter):
         await formatter_v1.format_export_directory(**kwargs)
         # extract data to pass to the rest
 
-        app: web.Application = kwargs["app"]
-        project_id: str = kwargs["project_id"]
-        user_id: int = kwargs["user_id"]
         product_name: str = kwargs["product_name"]
 
         await _write_sds_content(
