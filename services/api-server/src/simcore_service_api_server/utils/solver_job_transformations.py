@@ -1,21 +1,23 @@
 """
-    Helper functions to create models from mother modules
+    Helper functions to create and transform models
 """
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from pprint import pformat
+from typing import Callable
 
 from ..models.domain.projects import (
     InputTypes,
     NewProjectIn,
     Node,
+    Project,
     SimCoreFileLink,
     StudyUI,
 )
 from ..models.schemas.files import File
-from ..models.schemas.jobs import Job, JobInputs
-from ..models.schemas.solvers import Solver
+from ..models.schemas.jobs import Job, JobInputs, JobStatus, TaskStates
+from ..models.schemas.solvers import Solver, SolverKeyId, VersionStr
+from ..modules.director_v2 import ComputationTaskOut
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
@@ -110,3 +112,73 @@ def create_project_model_for_job(
 # TODO:
 # def create_job_from_data(project, computation_task):
 #    pass
+
+
+def copy_n_update_urls(
+    job: Job, url_for: Callable, solver_key: SolverKeyId, version: VersionStr
+):
+    return job.copy(
+        update={
+            "url": url_for(
+                "get_job", solver_key=solver_key, version=version, job_id=job.id
+            ),
+            "runner_url": url_for(
+                "get_solver_release",
+                solver_key=solver_key,
+                version=version,
+            ),
+            "outputs_url": url_for(
+                "get_job_outputs",
+                solver_key=solver_key,
+                version=version,
+                job_id=job.id,
+            ),
+        }
+    )
+
+
+def create_job_from_project(
+    solver_key: SolverKeyId,
+    version: VersionStr,
+    project: Project,
+    url_for: Callable,
+) -> Job:
+
+    # check if correct job
+    assert len(project.workbench) == 1
+    node_id = list(project.workbench.keys())[0]
+    _node: Node = project.workbench[node_id]
+
+    # FIXME: Convert SimCoreFileLink to File?
+    job = Job.create_from_solver(
+        solver_key,
+        version,
+        JobInputs(values={}),  # JobInputs(values=node.inputs.dict())
+    )
+    # job.created_at = project.creation_date # FIXME: parse dates
+    job = copy_n_update_urls(job, url_for, solver_key, version)
+    return job
+
+
+def create_jobstatus_from_task(task: ComputationTaskOut) -> JobStatus:
+
+    job_status = JobStatus(
+        job_id=task.id,
+        state=task.state,
+        progress=task.guess_progress(),
+        submitted_at=datetime.utcnow(),
+    )
+
+    # FIXME: timestamp is wrong but at least it will stop run
+    if job_status.state in [
+        TaskStates.SUCCESS,
+        TaskStates.FAILED,
+        TaskStates.ABORTED,
+    ]:
+        job_status.take_snapshot("stopped")
+    elif job_status.state in [
+        TaskStates.STARTED,
+    ]:
+        job_status.take_snapshot("started")
+
+    return job_status

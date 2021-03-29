@@ -12,7 +12,6 @@ from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import JobStatus, TaskStates
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
-from ..utils.serialization import json_dumps
 
 PercentageInt: Type[int] = conint(ge=0, le=100)
 

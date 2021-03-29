@@ -2,7 +2,7 @@ import base64
 import json
 import logging
 from contextlib import suppress
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 import attr
@@ -160,6 +160,10 @@ class AuthSession:
 
         data: Optional[Json] = self._process(resp)
         return Project.parse_obj(data)
+
+    async def list_projects(self, solver_name: str) -> List[Project]:
+        # FIXME: list with filter of solver_name and api
+        raise NotImplementedError()
 
 
 # TODO: init client and then build sessions from client using depenencies

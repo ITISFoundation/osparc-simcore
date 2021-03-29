@@ -4,7 +4,7 @@
 
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
-from simcore_service_api_server.utils.models_creators import (
+from simcore_service_api_server.utils.solver_job_transformations import (
     create_project_model_for_job,
 )
 
