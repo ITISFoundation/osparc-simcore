@@ -6,8 +6,9 @@ import string
 
 
 import openpyxl
-from openpyxl import Workbook
 import pytest
+from openpyxl import Workbook
+from faker import Faker
 
 
 from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.submission import (
@@ -71,21 +72,9 @@ def assert_expected_layout(
     return True
 
 
-RANDOM_CHARS = (
-    string.ascii_lowercase
-    + string.ascii_uppercase
-    + string.ascii_letters
-    + string.digits
-)
-
-
-def _random_word() -> str:
-    return "".join(random.choice(RANDOM_CHARS) for i in range(random.randrange(5, 20)))
-
-
 def random_text(prefix: str = "") -> str:
     prefix_str = f"{prefix}__" if prefix else ""
-    return prefix_str + " ".join(_random_word() for i in range(random.randrange(1, 15)))
+    return prefix_str + Faker().text()
 
 
 def column_iter(start_letter: str, elements: int) -> str:
