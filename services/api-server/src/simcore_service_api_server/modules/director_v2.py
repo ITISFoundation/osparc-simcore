@@ -9,12 +9,9 @@ from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, Field, PositiveInt, conint
 
 from ..core.settings import DirectorV2Settings
-from ..models.schemas.jobs import JobStatus, TaskStates
+from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
-
-PercentageInt: Type[int] = conint(ge=0, le=100)
-
 
 logger = logging.getLogger(__name__)
 
@@ -38,29 +35,6 @@ class ComputationTaskOut(ComputationTask):
         if self.state in [RunningState.SUCCESS, RunningState.FAILED]:
             return 100
         return 0
-
-    def as_jobstatus(self) -> JobStatus:
-        """ Creates a JobStatus instance out of this task """
-        job_status = JobStatus(
-            job_id=self.id,
-            state=self.state,
-            progress=self.guess_progress(),
-            submitted_at=datetime.utcnow(),
-        )
-
-        # FIXME: timestamp is wrong but at least it will stop run
-        if job_status.state in [
-            TaskStates.SUCCESS,
-            TaskStates.FAILED,
-            TaskStates.ABORTED,
-        ]:
-            job_status.take_snapshot("stopped")
-        elif job_status.state in [
-            TaskStates.STARTED,
-        ]:
-            job_status.take_snapshot("started")
-
-        return job_status
 
 
 # API CLASS ---------------------------------------------

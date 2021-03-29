@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, validator
@@ -170,6 +170,9 @@ class TaskStates(str, Enum):
     ABORTED = "ABORTED"
 
 
+PercentageInt: Type[int] = conint(ge=0, le=100)
+
+
 class JobStatus(BaseModel):
     # NOTE: About naming. The result of an inspection on X returns a Status object
     #  What is the status of X? What sort of state is X in?
@@ -177,7 +180,7 @@ class JobStatus(BaseModel):
 
     job_id: UUID
     state: TaskStates
-    progress: conint(ge=0, le=100) = 0
+    progress: PercentageInt = 0
 
     # Timestamps on states
     # TODO: sync state events and timestamps
