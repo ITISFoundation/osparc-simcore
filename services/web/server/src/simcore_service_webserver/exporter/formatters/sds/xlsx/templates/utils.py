@@ -29,7 +29,7 @@ def ensure_correct_instance(
 
 
 def get_max_array_length(*arrays_of_elements) -> int:
-    return max([len(x) for x in arrays_of_elements])
+    return max(len(x) for x in arrays_of_elements)
 
 
 def column_iter(start_from: int, elements: int) -> str:
