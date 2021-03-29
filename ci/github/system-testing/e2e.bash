@@ -1,15 +1,14 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
 # https://github.com/GoogleChrome/puppeteer/blob/master/docs/troubleshooting.md#running-puppeteer-on-travis-ci
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
 DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
-
 
 install() {
   pushd tests/e2e
@@ -23,7 +22,6 @@ test() {
   popd
 }
 
-
 setup_images() {
   echo "--------------- preparing docker images..."
   make pull-version || ( (make pull-cache || true) && make build-x tag-version)
@@ -35,7 +33,7 @@ clean_up() {
   echo "--------------- listing services running..."
   docker service ls
   echo "--------------- listing service details..."
-  docker service ps --no-trunc $(docker service ls --quiet)
+  docker service ps --no-trunc "$(docker service ls --quiet)"
   echo "--------------- listing container details..."
   docker container ps -a
   echo "--------------- listing images available..."
@@ -50,16 +48,16 @@ dump_docker_logs() {
   # get docker logs
   # NOTE: Timeout avoids issue with dumping logs that hang!
   mkdir --parents simcore_logs
-  (timeout 30 docker service logs --timestamps --tail=300 --details ${SWARM_STACK_NAME}_webserver >simcore_logs/webserver.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=300 --details "${SWARM_STACK_NAME:-test}"_webserver >simcore_logs/webserver.log 2>&1) || true
   # then the rest (alphabetically)
-  (timeout 30 docker service logs --timestamps --tail=100 --details ${SWARM_STACK_NAME}_api-server  >simcore_logs/api-server.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_catalog     >simcore_logs/catalog.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director    >simcore_logs/director.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_director-v2 >simcore_logs/director-v2.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_sidecar     >simcore_logs/sidecar.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_storage     >simcore_logs/storage.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_migration   >simcore_logs/migration.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details ${SWARM_STACK_NAME}_postgres    >simcore_logs/postgres.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=100 --details "${SWARM_STACK_NAME:-test}"_api-server >simcore_logs/api-server.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_catalog >simcore_logs/catalog.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_director >simcore_logs/director.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_director-v2 >simcore_logs/director-v2.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_sidecar >simcore_logs/sidecar.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_storage >simcore_logs/storage.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_migration >simcore_logs/migration.log 2>&1) || true
+  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_postgres >simcore_logs/postgres.log 2>&1) || true
 }
 
 # Check if the function exists (bash specific)
