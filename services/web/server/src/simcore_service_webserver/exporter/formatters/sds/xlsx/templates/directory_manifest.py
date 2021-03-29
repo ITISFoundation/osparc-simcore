@@ -10,6 +10,12 @@ from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
 from ..styling_components import T, TB, Backgrounds, Borders
 from .utils import ensure_correct_instance, get_max_array_length, column_iter
 
+# replaces lib-magic's description with these
+DESCRIPTION_OVERWRITES: Dict[str, str] = {
+    "project.json": "serialized pipeline service list and connections",
+    "README": "file containing information on this directory's content",
+}
+
 
 def get_files_in_dir(dir_path: Path) -> List[Tuple[Path, str]]:
     str_dir_path = str(dir_path) + "/"
@@ -51,7 +57,11 @@ class DirectoryManifestParams(BaseModel):
             last_modified_date = datetime.datetime.fromtimestamp(
                 full_file_path.stat().st_mtime
             )
-            description = magic.from_file(str(full_file_path))
+            description = (
+                DESCRIPTION_OVERWRITES[relative_file_name]
+                if relative_file_name in DESCRIPTION_OVERWRITES
+                else magic.from_file(str(full_file_path))
+            )
             str_full_file_path = str(full_file_path)
             file_type = (
                 str_full_file_path.split(".")[-1] if "." in str_full_file_path else ""
