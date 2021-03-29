@@ -48,6 +48,9 @@ from simcore_postgres_database.models.services import (
     services_meta_data,
     services_access_rights,
 )
+from simcore_service_webserver.scicrunch.submodule_setup import (
+    setup_scicrunch_submodule,
+)
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -167,6 +170,7 @@ def client(
     setup_storage(app)
     setup_products(app)
     setup_catalog(app)
+    setup_scicrunch_submodule(app)
     assert setup_resource_manager(app)
 
     yield loop.run_until_complete(
