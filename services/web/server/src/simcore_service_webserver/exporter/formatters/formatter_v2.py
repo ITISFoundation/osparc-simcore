@@ -9,7 +9,6 @@ from aiohttp import web
 from aiopg.sa.result import ResultProxy, RowProxy
 from aiopg.sa.engine import SAConnection
 
-from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
 from simcore_service_webserver.exporter.formatters.formatter_v1 import FormatterV1
 from simcore_service_webserver.exporter.formatters.base_formatter import BaseFormatter
@@ -36,7 +35,7 @@ from ..exceptions import ExporterException
 from simcore_service_webserver.projects.projects_exceptions import ProjectsException
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.catalog_client import get_service
-
+from simcore_service_webserver.scicrunch.scicrunch_db import ResearchResourceRepository
 
 log = logging.getLogger(__name__)
 
@@ -78,21 +77,19 @@ async def _write_sds_content(
 
     rrid_entires = deque()
 
+    repo = ResearchResourceRepository(app)
     classifiers = project_data["classifiers"]
-    async with app[APP_DB_ENGINE_KEY].acquire() as conn:
-        for classifier in classifiers:
-            scicrunch_resource = await _get_scicrunch_resource(
-                rrid=classifier, conn=conn
-            )
-            if scicrunch_resource is None:
-                continue
+    for classifier in classifiers:
+        scicrunch_resource = await repo.get(rrid=classifier)
+        if scicrunch_resource is None:
+            continue
 
-            rrid_entires.append(
-                RRIDEntry(
-                    rrid_term=scicrunch_resource.name,
-                    rrod_identifier=scicrunch_resource.rrid,
-                )
+        rrid_entires.append(
+            RRIDEntry(
+                rrid_term=scicrunch_resource.name,
+                rrod_identifier=scicrunch_resource.rrid,
             )
+        )
     params_code_description["rrid_entires"] = list(rrid_entires)
 
     # adding TSR data
