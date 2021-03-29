@@ -23,7 +23,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from change_case import ChangeCase
-from jsonschema.exceptions import ValidationError
+from pydantic.error_wrappers import ValidationError
 from models_library.projects import ProjectAtDB
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import ProjectType, projects
