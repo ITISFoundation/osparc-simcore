@@ -102,7 +102,7 @@ async def _generate_tasks_list_from_project(
 
         task_state = node.state.current_status
         if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
-            task_state = RunningState.PUBLISHED
+            task_state = RunningState.PENDING
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
