@@ -1,11 +1,8 @@
-from simcore_service_webserver.exporter.formatters.sds.xlsx.xlsx_base import (
-    BaseXLSXCellData,
-)
-
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.comments import Comment as PyXLComment
 from openpyxl.styles.borders import BORDER_THIN, BORDER_MEDIUM
 
+from .xlsx_base import BaseXLSXCellData
 
 COLOR_BLACK = "FF000000"
 COLOR_GRAY = "FFC9C9C9"

@@ -3,12 +3,8 @@ from typing import List, Optional, Tuple, Dict
 from pydantic import BaseModel, Field, StrictStr
 
 
-from simcore_service_webserver.exporter.formatters.sds.xlsx.xlsx_base import (
-    BaseXLSXCellData,
-    BaseXLSXSheet,
-    BaseXLSXDocument,
-)
-from simcore_service_webserver.exporter.formatters.sds.xlsx.styling_components import (
+from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
+from ..styling_components import (
     T,
     TB,
     Link,
@@ -17,10 +13,7 @@ from simcore_service_webserver.exporter.formatters.sds.xlsx.styling_components i
     AllignTopCenter,
     AllignTop,
 )
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.utils import (
-    ensure_correct_instance,
-    column_iter,
-)
+from .utils import ensure_correct_instance, column_iter
 
 
 class RRIDEntry(BaseModel):

@@ -1,20 +1,9 @@
 from typing import List, Tuple, Dict
 
 from pydantic import BaseModel, Field, StrictStr
-from simcore_service_webserver.exporter.formatters.sds.xlsx.xlsx_base import (
-    BaseXLSXCellData,
-    BaseXLSXSheet,
-    BaseXLSXDocument,
-)
-from simcore_service_webserver.exporter.formatters.sds.xlsx.styling_components import (
-    T,
-    TB,
-    Backgrounds,
-    Borders,
-)
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.utils import (
-    ensure_correct_instance,
-)
+from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
+from ..styling_components import T, TB, Backgrounds, Borders
+from .utils import ensure_correct_instance
 
 
 class SubmissionDocumentParams(BaseModel):

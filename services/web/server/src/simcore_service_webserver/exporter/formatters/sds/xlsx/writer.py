@@ -1,20 +1,16 @@
 from pathlib import Path
 
-
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.submission import (
-    SubmissionXLSXDocument,
-    SubmissionDocumentParams,
-)
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.dataset_description import (
+from .templates.submission import SubmissionXLSXDocument, SubmissionDocumentParams
+from .templates.dataset_description import (
     DatasetDescriptionXLSXDocument,
     DatasetDescriptionParams,
 )
 
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.code_description import (
+from .templates.code_description import (
     CodeDescriptionXLSXDocument,
     CodeDescriptionParams,
 )
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.directory_manifest import (
+from .templates.directory_manifest import (
     DirectoryManifestXLSXDocument,
     DirectoryManifestParams,
 )
