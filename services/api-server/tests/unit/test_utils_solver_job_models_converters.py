@@ -2,7 +2,11 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from typing import Dict
+
 from models_library.projects_nodes import Inputs, InputTypes, SimCoreFileLink
+from models_library.projects_nodes_io import NodeID
+from pydantic import create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentType, Job, JobInputs
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -51,9 +55,10 @@ def test_create_project_model_for_job():
     assert createproject_body.uuid == job.id
 
 
-def test_job_to_node_inputs_transformations():
-    # two equivalent inputs
+def test_job_to_node_inputs_conversion():
+    # TODO: add here service input schemas and cast correctly?
 
+    # Two equivalent inputs
     job_inputs = JobInputs(
         values={
             "x": 4.33,
@@ -77,8 +82,7 @@ def test_job_to_node_inputs_transformations():
         "enabled": True,
         "input_file": SimCoreFileLink(
             path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-            id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-            e_tag="859fda0cb82fc4acb4686510a172d9a9-1",
+            eTag="859fda0cb82fc4acb4686510a172d9a9-1",
             label="input.txt",
         ),
     }
@@ -90,6 +94,10 @@ def test_job_to_node_inputs_transformations():
     # test transformations in both directions
     got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
     got_job_inputs = create_job_inputs_from_node_inputs(inputs=node_inputs)
+
+    NodeInputs = create_model("NodeInputs", __root__=(Dict[str, InputTypes], ...))
+    print(NodeInputs.parse_obj(got_node_inputs).json(indent=2))
+    print(got_job_inputs.json(indent=2))
 
     assert got_job_inputs == job_inputs
     assert got_node_inputs == node_inputs

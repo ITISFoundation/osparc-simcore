@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from functools import lru_cache
 from mimetypes import guess_type
-from typing import Callable, Dict
+from typing import Callable, Dict, Tuple
 
 from models_library.projects_nodes import InputID, InputTypes
 
@@ -41,9 +41,20 @@ def now_str() -> str:
     return format_dt(datetime.utcnow())
 
 
-def get_args(annotation):
+def get_args(annotation) -> Tuple:
     # TODO: py3.8 use typings.get_args
-    return annotation.__args__
+    try:
+        annotated_types = annotation.__args__
+    except AttributeError:
+        annotated_types = (annotation,)
+
+    def _transform(annotated_type):
+        for primitive_type in (float, bool, int, str):
+            if issubclass(annotated_type, primitive_type):
+                return primitive_type
+        return annotated_type
+
+    return tuple(map(_transform, annotated_types))
 
 
 # TRANSFORMATIONS --------------
@@ -66,7 +77,9 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> Dict[InputID, Input
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
             node_inputs[name] = SimCoreFileLink(
-                path=f"api/{value.id}/{value.filename}", label=value.filename
+                path=f"api/{value.id}/{value.filename}",
+                label=value.filename,
+                eTag=value.checksum,
             )
         else:
             node_inputs[name] = value
@@ -84,7 +97,7 @@ def create_job_inputs_from_node_inputs(inputs: Dict[InputID, InputTypes]) -> Job
     input_values: Dict[str, ArgumentType] = {}
     for name, value in inputs.items():
 
-        assert isinstance(name, InputID)
+        assert isinstance(name, get_args(InputID))
         assert isinstance(value, get_args(InputTypes))
 
         if isinstance(value, SimCoreFileLink):
@@ -94,7 +107,6 @@ def create_job_inputs_from_node_inputs(inputs: Dict[InputID, InputTypes]) -> Job
             input_values[name] = File(
                 id=file_id,
                 filename=filename,
-                content_type=guess_type(filename),
                 checksum=value.e_tag,
             )
         else:
