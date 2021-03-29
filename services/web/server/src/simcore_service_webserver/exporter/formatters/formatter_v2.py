@@ -194,7 +194,9 @@ class FormatterV2(BaseFormatter):
         formatter_v1 = FormatterV1(root_folder=self.code_folder, version=self.version)
 
         # generate structure for directory
-        await formatter_v1.format_export_directory(**kwargs)
+        await formatter_v1.format_export_directory(
+            app=app, project_id=project_id, user_id=user_id, **kwargs
+        )
         # extract data to pass to the rest
 
         product_name: str = kwargs["product_name"]
