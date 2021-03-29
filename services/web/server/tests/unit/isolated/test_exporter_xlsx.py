@@ -310,7 +310,7 @@ def test_code_description(temp_dir: Path):
         InputsEntryModel(
             service_alias=random_text(f"service_alias{i}"),
             service_name=random_text(f"service_name{i}"),
-            service_version=random_text(f"service_version{i}"),
+            service_version="1.2.3",
             input_name=random_text(f"input_name{i}"),
             input_data_ontology_identifier=random_text(
                 f"input_data_ontology_identifier{i}"
@@ -325,7 +325,7 @@ def test_code_description(temp_dir: Path):
         OutputsEntryModel(
             service_alias=random_text(f"service_alias{i}"),
             service_name=random_text(f"service_name{i}"),
-            service_version=random_text(f"service_version{i}"),
+            service_version="1.2.3",
             output_name=random_text(f"output_name{i}"),
             output_data_ontology_identifier=random_text(
                 f"output_data_ontology_identifier{i}"
