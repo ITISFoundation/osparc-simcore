@@ -1,12 +1,11 @@
 import logging
-from datetime import datetime
-from typing import Optional, Type
+from typing import Optional
 from uuid import UUID
 
 from fastapi import FastAPI
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
-from pydantic import AnyHttpUrl, Field, PositiveInt, conint
+from pydantic import AnyHttpUrl, Field, PositiveInt
 
 from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import PercentageInt

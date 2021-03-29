@@ -114,7 +114,7 @@ class JobsFaker:
             await asyncio.sleep(random.randint(*MOCK_PENDING_TIME))  # nosec
 
             # -------------------------------------------------
-            job_status.state = TaskStates.RUNNING
+            job_status.state = TaskStates.STARTED
             job_status.take_snapshot("started")
             logger.info(job_status)
 

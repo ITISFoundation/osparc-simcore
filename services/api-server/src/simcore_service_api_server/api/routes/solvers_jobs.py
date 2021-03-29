@@ -1,3 +1,6 @@
+# pylint: disable=too-many-arguments
+# TODO: user_id should be injected every request in api instances, i.e. a new api-instance per request
+
 import logging
 from collections import deque
 from typing import Callable, Deque, List
@@ -58,7 +61,7 @@ async def list_jobs(
     """ List of all jobs in a specific released solver """
 
     async def _fake_impl():
-        from .jobs_faker import list_jobs_impl
+        from ._jobs_faker import list_jobs_impl
 
         solver = await catalog_client.get_solver(user_id, solver_key, version)
         return await list_jobs_impl(solver.id, solver.version, url_for)
@@ -101,7 +104,7 @@ async def create_job(
     """
 
     async def _fake_impl():
-        from .jobs_faker import create_job_impl
+        from ._jobs_faker import create_job_impl
 
         solver = await catalog_client.get_solver(user_id, solver_key, version)
         return await create_job_impl(solver.id, solver.version, inputs, url_for)
@@ -160,7 +163,7 @@ async def get_job(
     """ Gets job of a given solver """
 
     async def _fake_impl():
-        from .jobs_faker import get_job_impl
+        from ._jobs_faker import get_job_impl
 
         return await get_job_impl(solver_key, version, job_id, url_for)
 
@@ -189,7 +192,7 @@ async def start_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
     async def _fake_impl():
-        from .jobs_faker import start_job_impl
+        from ._jobs_faker import start_job_impl
 
         return await start_job_impl(solver_key, version, job_id)
 
@@ -216,7 +219,7 @@ async def stop_job(
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
     async def _fake_impl():
-        from .jobs_faker import stop_job_impl
+        from ._jobs_faker import stop_job_impl
 
         return await stop_job_impl(solver_key, version, job_id, url_for)
 
@@ -245,7 +248,7 @@ async def inspect_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
     async def _fake_impl():
-        from .jobs_faker import inspect_job_impl
+        from ._jobs_faker import inspect_job_impl
 
         return await inspect_job_impl(solver_key, version, job_id)
 
@@ -273,7 +276,7 @@ async def get_job_outputs(
     webserver_api: AuthSession = Depends(get_webserver_session),
 ):
     async def _fake_impl():
-        from .jobs_faker import get_job_outputs_impl
+        from ._jobs_faker import get_job_outputs_impl
 
         return await get_job_outputs_impl(solver_key, version, job_id)
 
