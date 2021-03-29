@@ -1064,7 +1064,7 @@ class SheetTSRRating(BaseXLSXSheet):
 
 
 class CodeDescriptionXLSXDocument(BaseXLSXDocument):
-    file_name = "code_description_rev2.xlsx"
+    file_name = "code_submission.xlsx"
     code_description = SheetCodeDescription()
     inputs = SheetInputs()
     outputs = SheetOutputs()
