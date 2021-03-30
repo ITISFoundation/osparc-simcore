@@ -26,9 +26,9 @@ class CompPipelinesRepository(BaseRepository):
                 )
             )
             row: RowProxy = await result.fetchone()
-            if not row:
-                raise PipelineNotFoundError(str(project_id))
-            return CompPipelineAtDB.from_orm(row)
+        if not row:
+            raise PipelineNotFoundError(str(project_id))
+        return CompPipelineAtDB.from_orm(row)
 
     @log_decorator(logger=logger)
     async def upsert_pipeline(

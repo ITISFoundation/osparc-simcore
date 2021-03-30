@@ -31,6 +31,7 @@ class GroupsRepository(BaseRepository):
                     sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
                 )
             ).first()
+        if row:
             return GroupAtDB(**row)
 
     async def get_user_gid_from_email(

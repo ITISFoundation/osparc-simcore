@@ -23,8 +23,8 @@ class DAGsRepository(BaseRepository):
             row: RowProxy = await (
                 await conn.execute(dags.select().where(dags.c.id == dag_id))
             ).first()
-            if row:
-                return DAGAtDB(**row)
+        if row:
+            return DAGAtDB(**row)
 
     async def create_dag(self, dag: DAGIn) -> int:
         async with self.db_engine.acquire() as conn:

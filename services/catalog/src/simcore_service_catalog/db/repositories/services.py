@@ -87,6 +87,7 @@ class ServicesRepository(BaseRepository):
             )
         async with self.db_engine.acquire() as conn:
             row: RowProxy = await (await conn.execute(query)).first()
+        if row:
             return ServiceMetaDataAtDB(**row)
 
     async def create_service(
@@ -129,8 +130,8 @@ class ServicesRepository(BaseRepository):
                     .returning(literal_column("*"))
                 )
             ).first()
-            updated_service = ServiceMetaDataAtDB(**row)
-            return updated_service
+        updated_service = ServiceMetaDataAtDB(**row)
+        return updated_service
 
     async def get_service_access_rights(
         self,
