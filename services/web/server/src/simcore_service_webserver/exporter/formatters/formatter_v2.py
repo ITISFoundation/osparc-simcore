@@ -95,18 +95,29 @@ async def _write_sds_content(
     # adding TSR data
     quality_data = project_data["quality"]
     if quality_data.get("enabled", False):
-        tsr_data = quality_data["tsr_current"]
-        for i in range(1, 11):
-            tsr_entry_key = "r%.02d" % i
-            tsr_entry = tsr_data[tsr_entry_key]
+        # some projects may not have a "tsr_current" entry,
+        #  because this field is enforced by the frontend
+        tsr_data = quality_data.get("tsr_current", {})
+        tsr_data_len = len(tsr_data)
 
-            rating_store_key = f"tsr{i}_rating" if i != 10 else f"tsr{i}a_rating"
-            reference_store_key = (
-                f"tsr{i}_reference" if i != 10 else f"tsr{i}a_reference"
+        # make sure all 10 entries are present for a valid format
+        if tsr_data_len == 10:
+            for i in range(1, tsr_data_len + 1):
+                tsr_entry_key = "r%.02d" % i
+                tsr_entry = tsr_data[tsr_entry_key]
+
+                rating_store_key = f"tsr{i}_rating" if i != 10 else f"tsr{i}a_rating"
+                reference_store_key = (
+                    f"tsr{i}_reference" if i != 10 else f"tsr{i}a_reference"
+                )
+
+                params_code_description[rating_store_key] = tsr_entry["level"]
+                params_code_description[reference_store_key] = tsr_entry["references"]
+        else:
+            log.warning(
+                "Skipping TSR entries, not all 10 entries were present: %s",
+                quality_data,
             )
-
-            params_code_description[rating_store_key] = tsr_entry["level"]
-            params_code_description[reference_store_key] = tsr_entry["references"]
 
     workbench = project_data["workbench"]
 
