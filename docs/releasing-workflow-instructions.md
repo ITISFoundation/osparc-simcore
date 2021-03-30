@@ -105,18 +105,19 @@ The team decides to release to production the lastest staging version of ``DAJIA
 3. Press the **Publish release** button
 4. The CI will be automatically triggered and will deploy the staging release
 
+See ![img/git-release-workflow.svg](img/git-release-workflow.svg)
+
 ## Hotfix process
 
-A hotfix is **ALWAYS made from an already released version**. A branch is created from the tagged release version (must be named hotfix_v*) and the fix is implemented there following usual best practices. On each commit in that branch the CI is triggered and will generate the following images in Dockerhub:
+A hotfix is **ALWAYS made from an already released version**. A branch, named after *hotfix_v.\**, is created from the tagged release version having an issue. The bugfix is implemented in that branch following usual best practices. On each commit pushed to github the CI is triggered (as in master for usual development) and will generate the following images in Dockerhub:
 
 - ``itisfoundation/[image_name]:hotfix-[CINAME]-latest``
 - ``itisfoundation/[image_name]:hotfix-[CINAME]-[BUILD_DATE]--[BUILD_TIME].[GIT_SHA]``
 
-Once ready, the release-hotfix process starts by leveraging *Github*  release mechanism. The CI will trigger again and pull the docker images (based on git SHA or latest hotfix image) and push a new release version.
+
+Once the bugfix is ready, the *release-hotfix* process starts by leveraging *Github*  release mechanism. The CI will trigger again and pull the hotfix docker images (based on git SHA or latest hotfix image), tag to new release version and push the images back to dockerhub.
 
 Each docker build marked as released are tagged as described in the Release process.
-
-See ![img/git-release-workflow.svg](img/git-release-workflow.svg)
 
 ### Hotfix example
 
@@ -132,8 +133,15 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
   ```bash
   git clone https://github.com/ITISFoundation/osparc-simcore.git
   cd osparc-simcore
+  # let's checkout the release with the issue, typically a release tag such as v1.4.5
   git checkout VERSION_TAG_FOR_HOTFIXING
-  # make the fix through usual PR process
+  # create the hotfix branch, the name must follow the hotfix_v* convention, what lies after v is free
+  git checkout -b hotfix_v1_4_x
+  # develop the fix here, git commit, git push, have someone review your code
+  # git commit -m "this is my awsome fix for this problematic issue"
+  # git push --set-upstream origin/hotfix_v1_4_x
+  # wait until the CI completed the its run (going through ALL the tests and generating the docker images)
+  # once ALL the images are in dockerhub, create the new version
   make release-hotfix version=MAJ.MIN.PATCH (git_sha=OPTIONAL)
   ```
 
