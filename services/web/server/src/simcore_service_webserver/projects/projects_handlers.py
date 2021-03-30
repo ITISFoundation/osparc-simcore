@@ -224,7 +224,7 @@ async def get_project(request: web.Request):
             raise web.HTTPNotFound(
                 reason=(
                     f"Project '{project_uuid}' uses unavailable services. Please ask "
-                    "for permission for the following services {formatted_services}"
+                    f"for permission for the following services {formatted_services}"
                 )
             )
         return {"data": project}
