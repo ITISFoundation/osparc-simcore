@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
 import httpx
 import osparc
@@ -26,6 +26,109 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.schemas",
 ]
+
+
+@pytest.fixture(scope="session")
+def user_email() -> str:
+    return "first.last@mymail.com"
+
+
+@pytest.fixture(scope="session")
+def services_registry(
+    docker_registry_image_injector: Callable, user_email: str
+) -> Dict[str, Any]:
+    # See injected fixture in
+    # packages/pytest-simcore/src/pytest_simcore/docker_registry.py
+
+    sleeper_service = docker_registry_image_injector(
+        "itisfoundation/sleeper", "2.1.1", user_email
+    )
+    assert sleeper_service["image"]["tag"] == "2.1.1"
+    assert sleeper_service["image"]["name"] == "simcore/services/comp/itis/sleeper"
+    assert sleeper_service["schema"] == {
+        "authors": [
+            {
+                "affiliation": "IT'IS Foundation",
+                "email": "guidon@itis.swiss",
+                "name": "Manuel Guidon",
+            },
+            {
+                "affiliation": "IT'IS Foundation",
+                "email": "maiz@itis.swiss",
+                "name": "Odei Maiz",
+            },
+            {
+                "affiliation": "IT'IS Foundation",
+                "email": "neagu@itis.swiss",
+                "name": "Andrei Neagu",
+            },
+        ],
+        "contact": user_email,
+        "description": "A service which awaits for time to pass, two times.",
+        "inputs": {
+            "input_1": {
+                "description": "Pick a file containing only one " "integer",
+                "displayOrder": 1,
+                "fileToKeyMap": {"single_number.txt": "input_1"},
+                "label": "File with int number",
+                "type": "data:text/plain",
+            },
+            "input_2": {
+                "defaultValue": 2,
+                "description": "Choose an amount of time to sleep",
+                "displayOrder": 2,
+                "label": "Sleep interval",
+                "type": "integer",
+                "unit": "second",
+            },
+            "input_3": {
+                "defaultValue": False,
+                "description": "If set to true will cause service to "
+                "fail after it sleeps",
+                "displayOrder": 3,
+                "label": "Fail after sleep",
+                "type": "boolean",
+            },
+            "input_4": {
+                "defaultValue": 0,
+                "description": "It will first walk the distance to " "bed",
+                "displayOrder": 4,
+                "label": "Distance to bed",
+                "type": "integer",
+                "unit": "meter",
+            },
+        },
+        "integration-version": "1.0.0",
+        "key": "simcore/services/comp/itis/sleeper",
+        "name": "sleeper",
+        "outputs": {
+            "output_1": {
+                "description": "Integer is generated in range [1-9]",
+                "displayOrder": 1,
+                "fileToKeyMap": {"single_number.txt": "output_1"},
+                "label": "File containing one random integer",
+                "type": "data:text/plain",
+            },
+            "output_2": {
+                "description": "Interval is generated in range " "[1-9]",
+                "displayOrder": 2,
+                "label": "Random sleep interval",
+                "type": "integer",
+                "unit": "second",
+            },
+        },
+        "type": "computational",
+        "version": "2.1.1",
+    }
+
+    return {
+        "sleeper_service": {
+            "name": sleeper_service["image"]["name"],
+            "version": sleeper_service["image"]["tag"],
+            "schema": sleeper_service["schema"],
+        },
+        # add here more
+    }
 
 
 @pytest.fixture(scope="module")
@@ -56,20 +159,6 @@ def prepare_all_services(
 
 
 @pytest.fixture(scope="module")
-def services_registry(sleeper_service) -> Dict[str, Any]:
-    # See other service fixtures in
-    # packages/pytest-simcore/src/pytest_simcore/docker_registry.py
-    return {
-        "sleeper_service": {
-            "name": sleeper_service["image"]["name"],
-            "version": sleeper_service["image"]["tag"],
-            "schema": sleeper_service["schema"],
-        },
-        # add here more
-    }
-
-
-@pytest.fixture(scope="module")
 def make_up_prod(
     prepare_all_services: Dict,
     simcore_docker_compose: Dict,
@@ -93,10 +182,10 @@ def make_up_prod(
 
 
 @pytest.fixture(scope="module")
-def registered_user(make_up_prod):
+def registered_user(make_up_prod, user_email):
 
     user = {
-        "email": "first.last@mymail.com",
+        "email": user_email,
         "password": "my secret",
         "api_key": None,
         "api_secret": None,

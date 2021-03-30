@@ -31,35 +31,38 @@ def sleeper_solver(
         solver_key=sleeper["name"], version=sleeper["version"]
     )
 
+    assert isinstance(solver, Solver)
+    assert solver.version == "2.1.1"
+
     # returns Dict[SolverInputSchema] and SolverInputSchema is a schema?
     # solvers_api.get_solver_inputs(name = solver.name, )
-    # "inputs":
-    #  {
-    #    "input_1": {
-    #         "displayOrder": 1,
-    #         "label": "File with int number",
-    #         "description": "Pick a file containing only one integer",
-    #         "type": "data:text/plain",
-    #         },
-    #     "input_2": {
-    #         "displayOrder": 2,
-    #         "label": "Sleep interval",
-    #         "description": "Choose an amount of time to sleep",
-    #         "type": "integer",
-    #         "defaultValue": 2,
-    #         "unit": null,
-    #         },
-    #     "input_3": {
-    #         "displayOrder": 3,
-    #         "label": "Fail after sleep",
-    #         "description": "If set to true will cause service to fail after it sleeps",
-    #         "type": "boolean",
-    #         "defaultValue": false,
-    #         "unit": null,
-    #         }
-    #     },
-
-    assert isinstance(solver, Solver)
+    #
+    #
+    # 'input_1': {'description': 'Pick a file containing only one '
+    #                             'integer',
+    #             'displayOrder': 1,
+    #             'fileToKeyMap': {'single_number.txt': 'input_1'},
+    #             'label': 'File with int number',
+    #             'type': 'data:text/plain'},
+    # 'input_2': {'defaultValue': 2,
+    #             'description': 'Choose an amount of time to sleep',
+    #             'displayOrder': 2,
+    #             'label': 'Sleep interval',
+    #             'type': 'integer',
+    #             'unit': 'second'},
+    # 'input_3': {'defaultValue': False,
+    #             'description': 'If set to true will cause service to '
+    #                             'fail after it sleeps',
+    #             'displayOrder': 3,
+    #             'label': 'Fail after sleep',
+    #             'type': 'boolean'},
+    # 'input_4': {'defaultValue': 0,
+    #             'description': 'It will first walk the distance to '
+    #                             'bed',
+    #             'displayOrder': 4,
+    #             'label': 'Distance to bed',
+    #             'type': 'integer',
+    #             'unit': 'meter'}},
     return solver
 
 
@@ -91,7 +94,14 @@ def test_create_job(
     job = solvers_api.create_job(
         solver.id,
         solver.version,
-        JobInputs({"input_1": uploaded_input_file, "input_2": 33, "input_3": False}),
+        JobInputs(
+            {
+                "input_1": uploaded_input_file,
+                "input_2": 33,
+                "input_3": False,
+                "input_4": 2,
+            }
+        ),
     )
     assert isinstance(job, Job)
 
@@ -103,7 +113,14 @@ def test_create_job(
     job2 = solvers_api.create_job(
         solver.id,
         solver.version,
-        JobInputs({"input_1": uploaded_input_file, "input_2": 33, "input_3": False}),
+        JobInputs(
+            {
+                "input_1": uploaded_input_file,
+                "input_2": 33,
+                "input_3": False,
+                "input_4": 2,
+            }
+        ),
     )
     assert isinstance(job2, Job)
 
@@ -124,14 +141,21 @@ def test_run_job(
     job = solvers_api.create_job(
         solver.id,
         solver.version,
-        JobInputs({"input_1": uploaded_input_file, "input_2": 35, "input_3": True}),
+        JobInputs(
+            {
+                "input_1": uploaded_input_file,
+                "input_2": 35,
+                "input_3": True,
+                "input_4": 2,
+            }
+        ),
     )
 
     # start job
     status: JobStatus = solvers_api.start_job(solver.id, solver.version, job.id)
     assert isinstance(status, JobStatus)
 
-    assert status.state == "undefined"
+    assert status.state == "PUBLISHED"
     assert status.progress == 0
     assert (
         job.created_at < status.submitted_at < (job.created_at + timedelta(seconds=2))
@@ -147,7 +171,7 @@ def test_run_job(
 
     # done, either successfully or with failures!
     assert status.progress == 100
-    assert status.state in ["success", "failed"]
+    assert status.state in ["SUCCESS", "FAILED"]
     assert status.submitted_at < status.started_at
     assert status.started_at < status.stopped_at
 
@@ -157,24 +181,22 @@ def test_run_job(
     assert outputs.job_id == job.id
     assert len(outputs.results) == 2
 
-    # "output_1": {
-    #   "displayOrder": 1,
-    #   "label": "File containing one random integer",
-    #   "description": "Integer is generated in range [1-9]",
-    #   "type": "data:text/plain",
-    # },
-    # "output_2": {
-    #   "displayOrder": 2,
-    #   "label": "Random sleep interval",
-    #   "description": "Interval is generated in range [1-9]",
-    #   "type": "integer",
-    #   "defaultValue": null,
-    #   "unit": null,
-    # }
+    # 'outputs': {'output_1': {'description': 'Integer is generated in range [1-9]',
+    #                         'displayOrder': 1,
+    #                         'fileToKeyMap': {'single_number.txt': 'output_1'},
+    #                         'label': 'File containing one random integer',
+    #                         'type': 'data:text/plain'},
+    #             'output_2': {'description': 'Interval is generated in range '
+    #                                         '[1-9]',
+    #                         'displayOrder': 2,
+    #                         'label': 'Random sleep interval',
+    #                         'type': 'integer',
+    #                         'unit': 'second'}},
+
     output_file = outputs.results["output_1"]
     number = outputs.results["output_2"]
 
-    if status.state == "success":
+    if status.state == "SUCCESS":
         assert isinstance(output_file, File)
         assert isinstance(number, float)
     else:
@@ -182,8 +204,7 @@ def test_run_job(
         assert output_file is None or number is None
 
     # file exists in the cloud
-    # FIXME: when director-v2 is connected instead of fake
-    # assert files_api.get_file(output_file.id) == output_file
+    assert files_api.get_file(output_file.id) == output_file
 
 
 def test_sugar_syntax_on_solver_setup(
@@ -194,10 +215,16 @@ def test_sugar_syntax_on_solver_setup(
     solver_tag = solver.id, solver.version
 
     job = solvers_api.create_job(
-        job_inputs=JobInputs({"input_2": 33, "input_3": False}), *solver_tag
+        job_inputs=JobInputs(
+            {
+                "input_1": uploaded_input_file,
+                "input_2": 33,
+                "input_3": False,
+                "input_4": 2,
+            }
+        ),
+        *solver_tag,
     )
     assert isinstance(job, Job)
 
-    assert job.runner_name == "solvers/{}/releases/{}".format(
-        quote_plus(str(solver.id)), solver.version
-    )
+    assert job.runner_name == "solvers/{}/releases/{}".format(solver.id, solver.version)
