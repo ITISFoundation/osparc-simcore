@@ -66,7 +66,10 @@ def handle_errors_context(project_id: UUID):
 
         # server errors are logged and re-raised as 503
         assert codes.is_server_error(err.response.status_code)
-        logger.error("%s. Re-rasing as service unavailable (503)", msg)
+        logger.exception(
+            "director-v2 service failed: %s. Re-rasing as service unavailable (503)",
+            msg,
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Director service failed",
