@@ -25,10 +25,8 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       label: confirmBtnText
     });
 
-    this.addListener("appear", () => {
-      const command = new qx.ui.command.Command("Enter");
-      confirmButton.setCommand(command);
-    });
+    const command = new qx.ui.command.Command("Enter");
+    confirmButton.setCommand(command);
   },
 
   properties: {
