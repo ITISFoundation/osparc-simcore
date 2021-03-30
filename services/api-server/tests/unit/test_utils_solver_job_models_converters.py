@@ -132,7 +132,10 @@ def test_create_job_from_project():
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "created_at": "2021-03-26T10:43:27.867Z",
             "runner_name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2",
-            "input_checksum": "aac0bb28285d6e5918121630fa8c368130c6b05f80fd9622760078608fc44e96",
+            "inputs_checksum": "7e50212f0a228191edd91e9e8378468bc8eeb78e8991c87c96128f125db1eaa9",
+            "url": None,
+            "runner_url": None,
+            "outputs_url": None,
         }
     )
 
