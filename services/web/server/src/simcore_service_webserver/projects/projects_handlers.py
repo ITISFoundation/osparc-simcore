@@ -22,7 +22,11 @@ from ..users_api import get_user_name
 from . import projects_api
 from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_utils import clone_project_document, project_uses_available_services
+from .projects_utils import (
+    clone_project_document,
+    project_uses_available_services,
+    get_project_unavilable_services,
+)
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -211,8 +215,17 @@ async def get_project(request: web.Request):
             include_state=True,
         )
         if not await project_uses_available_services(project, user_available_services):
+            unavilable_services = get_project_unavilable_services(
+                project, user_available_services
+            )
+            formatted_services = ", ".join(
+                f"{service}:{version}" for service, version in unavilable_services
+            )
             raise web.HTTPNotFound(
-                reason=f"Project '{project_uuid}' uses unavailable services. Please ask your administrator."
+                reason=(
+                    f"Project '{project_uuid}' uses unavailable services. Please ask "
+                    f"for permission for the following services {formatted_services}"
+                )
             )
         return {"data": project}
 
