@@ -2,6 +2,7 @@
     Helper functions to convert models used in
     services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
+import sys
 import urllib.parse
 import uuid
 from datetime import datetime
@@ -35,16 +36,20 @@ def compose_uuid_from(*values) -> str:
     return str(new_uuid)
 
 
-def format_dt(snapshot: datetime) -> str:
+def format_datetime(snapshot: datetime) -> str:
     return "{}Z".format(snapshot.isoformat(timespec="milliseconds"))
 
 
 def now_str() -> str:
-    return format_dt(datetime.utcnow())
+    # NOTE: backend MUST use UTC
+    return format_datetime(datetime.utcnow())
 
 
 def get_args(annotation) -> Tuple:
-    # TODO: py3.8 use typings.get_args
+    assert (  # nosec
+        sys.version_info.major == 3 and sys.version_info.minor < 8  # nosec
+    ), "TODO: py3.8 replace __args__ with typings.get_args"
+
     try:
         annotated_types = annotation.__args__
     except AttributeError:
