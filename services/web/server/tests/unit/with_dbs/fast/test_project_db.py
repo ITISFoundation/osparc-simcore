@@ -643,3 +643,36 @@ async def test_patch_user_project_workbench_concurrently(
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )
+
+    # now concurrently remove the outputs
+    for n in range(_NUMBER_OF_NODES):
+        exp_project["workbench"][node_uuids[n]]["outputs"] = {}
+    patched_projects: List[
+        Tuple[Dict[str, Any], Dict[str, Any]]
+    ] = await asyncio.gather(
+        *[
+            db_api.patch_user_project_workbench(
+                {node_uuids[n]: {"outputs": {}}},
+                logged_user["id"],
+                new_project["uuid"],
+            )
+            for n in range(_NUMBER_OF_NODES)
+        ]
+    )
+
+    # get the latest change date
+    latest_change_date = max(
+        to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects
+    )
+
+    # check the nodes are completely patched as expected
+    _assert_project_db_row(
+        postgres_db,
+        exp_project,
+        prj_owner=logged_user["id"],
+        access_rights={
+            str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        },
+        creation_date=to_datetime(new_project["creationDate"]),
+        last_change_date=latest_change_date,
+    )
