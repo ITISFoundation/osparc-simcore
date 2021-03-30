@@ -5,7 +5,7 @@ from models_library.projects import AccessRights, Node, Project, StudyUI
 from models_library.projects_nodes import InputTypes, OutputTypes
 from models_library.projects_nodes_io import SimCoreFileLink
 
-from ...utils.serialization import json_dumps, orjson
+from ...utils.serialization import json_dumps, json_loads
 
 
 class NewProjectIn(Project):
@@ -21,7 +21,7 @@ class NewProjectIn(Project):
     # - thumbnail
     # - workbench
     class Config:
-        json_loads = orjson.loads
+        json_loads = json_loads
         json_dumps = json_dumps
 
 
