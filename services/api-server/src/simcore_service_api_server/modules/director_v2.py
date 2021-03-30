@@ -1,16 +1,21 @@
 import logging
+from contextlib import contextmanager
 from typing import Optional
 from uuid import UUID
 
 from fastapi import FastAPI
+from fastapi.exceptions import HTTPException
+from httpx import HTTPStatusError, codes
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, Field, PositiveInt
+from simcore_service_api_server.models.raw_data import JsonDict
+from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+from ..utils.client_decorators import JsonDataType
 
 logger = logging.getLogger(__name__)
 
@@ -39,18 +44,49 @@ class ComputationTaskOut(ComputationTask):
 # API CLASS ---------------------------------------------
 
 
+@contextmanager
+def handle_errors_context(project_id: UUID):
+    try:
+
+        yield
+
+    # except ValidationError
+    except HTTPStatusError as err:
+        msg = (
+            f"Failed {err.request.url} with status={err.response.status_code}: {err.response.json()}",
+        )
+        if codes.is_client_error(err.response.status_code):
+            # client errors are mapped
+            logger.debug(msg)
+            if err.response.status_code == status.HTTP_404_NOT_FOUND:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Job {project_id} not found",
+                ) from err
+
+            raise err
+        else:
+            # server errors are logged and re-raised as 503
+            logger.error("%s. Re-rasing as service unavailable (503)", msg)
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Director service failed",
+            ) from err
+
+
 class DirectorV2Api(BaseServiceClientApi):
-    @handle_errors("director", logger, return_json=True)
-    @handle_retry(logger)
-    async def get(self, path: str, *args, **kwargs) -> JsonDataType:
-        return await self.client.get(path, *args, **kwargs)
+    # NOTE: keep here tmp as reference
+    # @handle_errors("director", logger, return_json=True)
+    # @handle_retry(logger)
+    # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+    #     return await self.client.get(path, *args, **kwargs)
 
     # director2 API ---------------------------
     # TODO: error handling
     #
     #  HTTPStatusError: 404 Not Found
     #  ValidationError
-    #
+    #  ServiceUnabalabe: 503
 
     async def create_computation(
         self, project_id: UUID, user_id: PositiveInt
@@ -71,17 +107,19 @@ class DirectorV2Api(BaseServiceClientApi):
     async def start_computation(
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskOut:
-        resp = await self.client.post(
-            "/computations",
-            json={
-                "user_id": user_id,
-                "project_id": str(project_id),
-                "start_pipeline": True,
-            },
-        )
-        resp.raise_for_status()
-        computation_task = ComputationTaskOut(**resp.json())
-        return computation_task
+
+        with handle_errors_context(project_id):
+            resp = await self.client.post(
+                "/computations",
+                json={
+                    "user_id": user_id,
+                    "project_id": str(project_id),
+                    "start_pipeline": True,
+                },
+            )
+            resp.raise_for_status()
+            computation_task = ComputationTaskOut(**resp.json())
+            return computation_task
 
     async def get_computation(
         self, project_id: UUID, user_id: PositiveInt
