@@ -115,6 +115,8 @@ class SimCoreFileLink(BaseFileLink):
 
 
 class DatCoreFileLink(BaseFileLink):
+    store: str = "1"
+
     label: str = Field(
         ...,
         description="The real file name",
@@ -125,6 +127,15 @@ class DatCoreFileLink(BaseFileLink):
         description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
         example=["N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"],
     )
+
+    @validator("store", always=True)
+    @classmethod
+    def must_be_datcore(cls, v):
+        if v is None:
+            v = "1"
+        if v != "1":
+            raise ValueError(f"Datcore store must be set to 1, got {v}")
+        return "1"
 
     class Config:
         extra = Extra.forbid
