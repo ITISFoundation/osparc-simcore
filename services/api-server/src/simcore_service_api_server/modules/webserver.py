@@ -173,11 +173,13 @@ class AuthSession:
         # FIXME: move filter to webserver API (next PR)
         projects: Deque[Project] = deque()
         for prj in data:
-            if prj.get("name", "").startswith("simcore%2Fservices%2Fcomp"):
+            if prj.get("name", "") == solver_name:
                 try:
                     projects.append(Project.parse_obj(prj))
                 except ValidationError as err:
-                    logger.warning("Invalid prj %s: %s", prj.get("uuid"), err)
+                    logger.warning(
+                        "Invalid prj %s [%s]: %s", prj.get("uuid"), solver_name, err
+                    )
 
         return list(projects)
 

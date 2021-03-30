@@ -9,13 +9,11 @@ from httpx import HTTPStatusError, codes
 from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import RunningState
 from pydantic import AnyHttpUrl, Field, PositiveInt
-from simcore_service_api_server.models.raw_data import JsonDict
 from starlette import status
 
 from ..core.settings import DirectorV2Settings
 from ..models.schemas.jobs import PercentageInt
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
-from ..utils.client_decorators import JsonDataType
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +63,14 @@ def handle_errors_context(project_id: UUID):
                 ) from err
 
             raise err
-        else:
-            # server errors are logged and re-raised as 503
-            logger.error("%s. Re-rasing as service unavailable (503)", msg)
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Director service failed",
-            ) from err
+
+        # server errors are logged and re-raised as 503
+        assert codes.is_server_error(err.response.status_code)
+        logger.error("%s. Re-rasing as service unavailable (503)", msg)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Director service failed",
+        ) from err
 
 
 class DirectorV2Api(BaseServiceClientApi):
