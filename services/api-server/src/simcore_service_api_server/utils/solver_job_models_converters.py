@@ -243,6 +243,9 @@ def create_job_from_project(
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,
         runner_name=solver_name,
+        url=None,
+        runner_url=None,
+        outputs_url=None,
     )
     if url_for:
         job = _copy_n_update_urls(job, url_for, solver_key, solver_version)
