@@ -188,7 +188,7 @@ async def list_projects(request: web.Request):
             user_id=user_id, filter_by_services=user_available_services
         )
         projects_list += user_projects
-        project_types_list += [False for i in range(len(template_projects))]
+        project_types_list += [False for i in range(len(user_projects))]
 
     start = int(request.query.get("start", 0))
     count = int(request.query.get("count", len(projects_list)))
