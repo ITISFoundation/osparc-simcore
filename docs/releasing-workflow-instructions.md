@@ -148,5 +148,7 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
 2. Adjust the list of changes if needed
 3. Press the **Publish release** button
 4. The CI will be automatically triggered and will deploy the staging release
+5. **Once the deploy was successfully done: create a PR from that branch to the master branch if it applies
+6. The branch can be safely deleted afterwards
 
 See ![img/git-hotfix-workflow.svg](img/git-hotfix-workflow.svg)
