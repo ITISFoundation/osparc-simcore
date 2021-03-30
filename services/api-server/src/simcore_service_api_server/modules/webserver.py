@@ -15,7 +15,7 @@ from starlette import status
 
 from ..core.settings import WebServerSettings
 from ..models.domain.projects import NewProjectIn, Project
-from ..models.raw_data import Json, JsonList
+from ..models.raw_data import JSON, ListAnyDict
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class AuthSession:
         )
 
     @classmethod
-    def _process(cls, resp: Response) -> Optional[Json]:
+    def _process(cls, resp: Response) -> Optional[JSON]:
         # enveloped answer
         data, error = None, None
         try:
@@ -119,7 +119,7 @@ class AuthSession:
     # TODO: policy to retry if NetworkError/timeout?
     # TODO: add ping to healthcheck
 
-    async def get(self, path: str) -> Optional[Json]:
+    async def get(self, path: str) -> Optional[JSON]:
         url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
@@ -130,7 +130,7 @@ class AuthSession:
 
         return self._process(resp)
 
-    async def put(self, path: str, body: Dict) -> Optional[Json]:
+    async def put(self, path: str, body: Dict) -> Optional[JSON]:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
@@ -152,7 +152,7 @@ class AuthSession:
             cookies=self.session_cookies,
         )
 
-        data: Optional[Json] = self._process(resp)
+        data: Optional[JSON] = self._process(resp)
         return Project.parse_obj(data)
 
     async def get_project(self, project_id: UUID) -> Project:
@@ -160,7 +160,7 @@ class AuthSession:
             f"/projects/{project_id}", cookies=self.session_cookies
         )
 
-        data: Optional[Json] = self._process(resp)
+        data: Optional[JSON] = self._process(resp)
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> List[Project]:
@@ -168,7 +168,7 @@ class AuthSession:
             "/projects", params={"type": "user"}, cookies=self.session_cookies
         )
 
-        data: JsonList = self._process(resp) or []
+        data: ListAnyDict = self._process(resp) or []
 
         # FIXME: move filter to webserver API (next PR)
         projects: Deque[Project] = deque()

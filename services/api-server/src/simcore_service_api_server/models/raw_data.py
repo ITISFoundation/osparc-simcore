@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Union
 
-JsonDict = Dict[str, Any]
-JsonList = List[JsonDict]
-Json = Union[JsonDict, JsonList]
+AnyDict = Dict[str, Any]
+ListAnyDict = List[AnyDict]
+
+# Represent the type returned by e.g. json.load
+JSON = Union[AnyDict, ListAnyDict]

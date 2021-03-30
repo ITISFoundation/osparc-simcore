@@ -12,7 +12,7 @@ from ..core.settings import CatalogSettings
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+## from ..utils.client_decorators import JSON, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
 # TODO: handlers should not capture outputs
 # @handle_errors("catalog", logger, return_json=True)
 # @handle_retry(logger)
-# async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+# async def get(self, path: str, *args, **kwargs) -> JSON:
 #     return await self.client.get(path, *args, **kwargs)
 
 

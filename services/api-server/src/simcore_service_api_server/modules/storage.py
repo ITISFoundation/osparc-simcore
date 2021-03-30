@@ -13,7 +13,7 @@ from ..core.settings import StorageSettings
 from ..models.schemas.files import File
 from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+## from ..utils.client_decorators import JSON, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class StorageApi(BaseServiceClientApi):
     # FIXME: error handling and retrying policies?
     # @handle_errors("storage", logger, return_json=True)
     # @handle_retry(logger)
-    # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+    # async def get(self, path: str, *args, **kwargs) -> JSON:
     #     return await self.client.get(path, *args, **kwargs)
 
     async def list_files(self, user_id: int) -> List[StorageFileMetaData]:

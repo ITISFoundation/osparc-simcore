@@ -80,7 +80,7 @@ class DirectorV2Api(BaseServiceClientApi):
     # NOTE: keep here tmp as reference
     # @handle_errors("director", logger, return_json=True)
     # @handle_retry(logger)
-    # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+    # async def get(self, path: str, *args, **kwargs) -> JSON:
     #     return await self.client.get(path, *args, **kwargs)
 
     # director2 API ---------------------------
