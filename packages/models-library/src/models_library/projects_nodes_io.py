@@ -21,7 +21,7 @@ NodeID_AsDictKey = constr(regex=UUID_REGEX)
 
 
 class PortLink(BaseModel):
-    """ Input/Output is a reference to the output port of another node in the project """
+    """ I/O port type to reference to an output port of another node in the same project """
 
     node_uuid: NodeID = Field(
         ...,
@@ -41,6 +41,8 @@ class PortLink(BaseModel):
 
 
 class DownloadLink(BaseModel):
+    """ I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc) """
+
     download_link: AnyUrl = Field(..., alias="downloadLink")
     label: Optional[str]
 
@@ -49,6 +51,8 @@ class DownloadLink(BaseModel):
 
 
 class BaseFileLink(BaseModel):
+    """ Base class for I/O port types with links to storage services"""
+
     # TODO: constructor will always cast to str here. We should perhaps set is as str. Actually
     # if we want to do hash in inputs/outputs ... we should have a single type for identifiers
     # Recall lru_cache options regarding types!!
@@ -77,12 +81,9 @@ class BaseFileLink(BaseModel):
         examples=["MyFile.txt"],
     )
 
-    # class Config:
-    #    extra = Extra.forbid
-
 
 class SimCoreFileLink(BaseFileLink):
-    """ Input/Output is a reference to a dataset in the internal storage """
+    """ I/O port type to hold a link to a file in simcore S3 storage """
 
     store: str = "0"
 
@@ -115,6 +116,8 @@ class SimCoreFileLink(BaseFileLink):
 
 
 class DatCoreFileLink(BaseFileLink):
+    """ I/O port type to hold a link to a file in DATCORE storage """
+
     store: str = "1"
 
     label: str = Field(
