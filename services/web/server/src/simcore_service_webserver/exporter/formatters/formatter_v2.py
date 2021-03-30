@@ -10,20 +10,14 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from aiopg.sa.engine import SAConnection
 
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
-from simcore_service_webserver.exporter.formatters.formatter_v1 import FormatterV1
-from simcore_service_webserver.exporter.formatters.base_formatter import BaseFormatter
-from simcore_service_webserver.exporter.formatters.sds import (
-    write_sds_directory_content,
-)
 
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.submission import (
-    SubmissionDocumentParams,
-)
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.dataset_description import (
-    DatasetDescriptionParams,
-)
-
-from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.code_description import (
+from ..exceptions import ExporterException
+from .formatter_v1 import FormatterV1
+from .base_formatter import BaseFormatter
+from .sds import write_sds_directory_content
+from .sds.xlsx.templates.submission import SubmissionDocumentParams
+from .sds.xlsx.templates.dataset_description import DatasetDescriptionParams
+from .sds.xlsx.templates.code_description import (
     CodeDescriptionParams,
     CodeDescriptionModel,
     RRIDEntry,
@@ -31,7 +25,6 @@ from simcore_service_webserver.exporter.formatters.sds.xlsx.templates.code_descr
     OutputsEntryModel,
 )
 
-from ..exceptions import ExporterException
 from simcore_service_webserver.projects.projects_exceptions import ProjectsException
 from simcore_service_webserver.projects.projects_api import get_project_for_user
 from simcore_service_webserver.catalog_client import get_service
