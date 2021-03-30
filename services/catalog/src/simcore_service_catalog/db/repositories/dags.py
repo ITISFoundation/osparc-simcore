@@ -15,8 +15,7 @@ class DAGsRepository(BaseRepository):
         dagraphs = []
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(dags.select()):
-                if row:
-                    dagraphs.append(DAGAtDB(**row))
+                dagraphs.append(DAGAtDB(**row))
         return dagraphs
 
     async def get_dag(self, dag_id: int) -> Optional[DAGAtDB]:
