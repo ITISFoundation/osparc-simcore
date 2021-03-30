@@ -78,8 +78,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> Dict[InputID, Input
     node_inputs: Dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
 
-        # TODO: py3.8 use typings.get_args
-        assert isinstance(value, get_args(ArgumentType))
+        assert isinstance(value, get_args(ArgumentType))  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
@@ -104,13 +103,13 @@ def create_job_inputs_from_node_inputs(inputs: Dict[InputID, InputTypes]) -> Job
     input_values: Dict[str, ArgumentType] = {}
     for name, value in inputs.items():
 
-        assert isinstance(name, get_args(InputID))
-        assert isinstance(value, get_args(InputTypes))
+        assert isinstance(name, get_args(InputID))  # nosec
+        assert isinstance(value, get_args(InputTypes))  # nosec
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy
             _api, file_id, filename = value.path.split("/")
-            assert _api == "api"
+            assert _api == "api"  # nosec
             input_values[name] = File(
                 id=file_id,
                 filename=filename,
@@ -228,9 +227,9 @@ def create_job_from_project(
 
     raise ValidationError
     """
-    assert len(project.workbench) == 1
-    assert solver_version in project.name
-    assert urllib.parse.quote_plus(solver_key) in project.name
+    assert len(project.workbench) == 1  # nosec
+    assert solver_version in project.name  # nosec
+    assert urllib.parse.quote_plus(solver_key) in project.name  # nosec
 
     # get solver node
     node_id = list(project.workbench.keys())[0]
@@ -254,7 +253,9 @@ def create_job_from_project(
     )
     if url_for:
         job = _copy_n_update_urls(job, url_for, solver_key, solver_version)
-        assert all(getattr(job, f) for f in job.__fields__ if f.startswith("url"))
+        assert all(
+            getattr(job, f) for f in job.__fields__ if f.startswith("url")
+        )  # nosec
 
     return job
 

@@ -74,8 +74,8 @@ async def list_jobs(
         jobs: Deque[Job] = deque()
         for prj in projects:
             job = create_job_from_project(solver_key, version, prj, url_for)
-            assert job.id == prj.uuid
-            assert job.name == prj.name
+            assert job.id == prj.uuid  # nosec
+            assert job.name == prj.name  # nosec
 
             jobs.append(job)
 
@@ -124,8 +124,8 @@ async def create_job(
         #   -> webserver:  NewProjectIn = Job
         project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
         new_project: Project = await webserver_api.create_project(project_in)
-        assert new_project
-        assert new_project.uuid == pre_job.id
+        assert new_project  # nosec
+        assert new_project.uuid == pre_job.id  # nosec
 
         # for consistency, it rebuild job
         job = create_job_from_project(
@@ -134,18 +134,18 @@ async def create_job(
             project=new_project,
             url_for=url_for,
         )
-        assert job.id == pre_job.id
-        assert job.name == pre_job.name
+        assert job.id == pre_job.id  # nosec
+        assert job.name == pre_job.name  # nosec
 
         # -> director2:   ComputationTaskOut = JobStatus
         # consistency check
         task: ComputationTaskOut = await director2_api.create_computation(
             job.id, user_id
         )
-        assert task.id == job.id
+        assert task.id == job.id  # nosec
 
         job_status: JobStatus = create_jobstatus_from_task(task)
-        assert job.id == job_status.job_id
+        assert job.id == job_status.job_id  # nosec
 
         return job
 
@@ -174,8 +174,8 @@ async def get_job(
         project: Project = await webserver_api.get_project(project_id=job_id)
 
         job = create_job_from_project(solver_key, version, project, url_for)
-        assert job.id == job_id
-        return job
+        assert job.id == job_id  # nosec
+        return job  # nosec
 
     return await _draft_impl()
 
@@ -286,7 +286,7 @@ async def get_job_outputs(
 
         project: Project = await webserver_api.get_project(project_id=job_id)
         node_ids = list(project.workbench.keys())
-        assert len(node_ids) == 1
+        assert len(node_ids) == 1  # nosec
 
         results: KeywordArguments = await get_solver_output_results(
             user_id=user_id,

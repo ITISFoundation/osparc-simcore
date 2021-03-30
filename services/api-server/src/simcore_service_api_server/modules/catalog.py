@@ -125,9 +125,9 @@ class CatalogApi(BaseServiceClientApi):
         resp.raise_for_status()
 
         service = TruncatedCatalogServiceOut.parse_obj(resp.json())
-        assert (
+        assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
-        ), "Expected by SolverName regex"  # nosec
+        ), "Expected by SolverName regex"
 
         return service.to_solver()
 
