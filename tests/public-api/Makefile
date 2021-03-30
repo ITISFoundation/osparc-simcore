@@ -42,7 +42,7 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 
 
 .PHONY: test-dev
-test-ci:
+test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 	@pytest \
 	-vv \
 	--color=yes \

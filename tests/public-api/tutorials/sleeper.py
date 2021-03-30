@@ -1,3 +1,10 @@
+## pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@is1865/apirunners
+##
+## export MY_API_KEY=***
+## export MY_API_SECRET=***
+## python sleeper.py
+##
+
 import os
 import time
 from pathlib import Path
