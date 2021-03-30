@@ -1,19 +1,21 @@
 import base64
 import json
 import logging
+from collections import deque
 from contextlib import suppress
-from typing import Dict, List, Optional
+from typing import Deque, Dict, List, Optional
 from uuid import UUID
 
 import attr
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response, codes
+from pydantic import ValidationError
 from starlette import status
 
 from ..core.settings import WebServerSettings
 from ..models.domain.projects import NewProjectIn, Project
-from ..models.raw_data import Json
+from ..models.raw_data import Json, JsonList
 
 logger = logging.getLogger(__name__)
 
@@ -162,8 +164,22 @@ class AuthSession:
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> List[Project]:
-        # FIXME: list with filter of solver_name and api
-        raise NotImplementedError()
+        resp = await self.client.get(
+            "/projects", params={"type": "user"}, cookies=self.session_cookies
+        )
+
+        data: JsonList = self._process(resp) or []
+
+        # FIXME: move filter to webserver API (next PR)
+        projects: Deque[Project] = deque()
+        for prj in data:
+            if prj.get("name", "").startswith("simcore%2Fservices%2Fcomp"):
+                try:
+                    projects.append(Project.parse_obj(prj))
+                except ValidationError as err:
+                    logger.warning("Invalid prj %s: %s", prj.get("uuid"), err)
+
+        return list(projects)
 
 
 # TODO: init client and then build sessions from client using depenencies
