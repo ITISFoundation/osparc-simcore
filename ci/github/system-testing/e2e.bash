@@ -33,7 +33,8 @@ clean_up() {
   echo "--------------- listing services running..."
   docker service ls
   echo "--------------- listing service details..."
-  docker service ps --no-trunc "$(docker service ls --quiet)"
+  # shellcheck disable=SC2046
+  docker service ps --no-trunc $(docker service ls --quiet)
   echo "--------------- listing container details..."
   docker container ps -a
   echo "--------------- listing images available..."
