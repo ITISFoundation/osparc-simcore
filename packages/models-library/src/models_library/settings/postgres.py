@@ -38,7 +38,7 @@ class PostgresSettings(BaseSettings):
             raise ValueError(f"assert minsize={values['minsize']} <= maxsize={v}")
         return v
 
-    @validator("dsn", pre=True)
+    @validator("dsn", pre=True, always=True)
     @classmethod
     def autofill_dsn(cls, v, values):
         if not v and all(key in values for key in cls.__fields__ if key != "dsn"):
