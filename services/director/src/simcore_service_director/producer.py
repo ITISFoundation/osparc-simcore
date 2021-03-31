@@ -989,21 +989,23 @@ async def _start_docker_service_with_dynamic_service(
     compose_spec: Optional[str] = _get_value_from_label(
         image_labels, "simcore.service.compose-spec"
     )
+
+    labels_for_involved_services: Dict[str, Any] = {}
     if compose_spec is not None:
         compose_spec = json.loads(compose_spec)
+
+        labels_for_involved_services = await _extract_osparc_involved_service_labels(
+            app=app,
+            service_key=service["key"],
+            service_tag=service["tag"],
+            service_labels=image_labels,
+            compose_spec=compose_spec,
+        )
+    logging.info("labels_for_involved_services=%s", labels_for_involved_services)
 
     target_container = _get_value_from_label(
         image_labels, "simcore.service.target-container"
     )
-
-    labels_for_involved_services = await _extract_osparc_involved_service_labels(
-        app=app,
-        service_key=service["key"],
-        service_tag=service["tag"],
-        service_labels=image_labels,
-        compose_spec=compose_spec,
-    )
-    logging.info("labels_for_involved_services=%s", labels_for_involved_services)
 
     # merge the settings from the all the involved services
     settings: Deque[Dict[str, Any]] = deque()
