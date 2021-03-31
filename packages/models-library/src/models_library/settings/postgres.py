@@ -41,7 +41,9 @@ class PostgresSettings(BaseSettings):
     @validator("dsn", pre=True, always=True)
     @classmethod
     def autofill_dsn(cls, v, values):
-        if not v and all(key in values for key in cls.__fields__ if key != "dsn"):
+        if not v and all(
+            key in values for key in ["user", "password", "host", "port", "db"]
+        ):
             return PostgresDsn.build(
                 scheme="postgresql",
                 user=values["user"],
