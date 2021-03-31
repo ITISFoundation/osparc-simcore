@@ -3,8 +3,8 @@ from enum import Enum
 from typing import Optional
 
 from models_library.settings.http_clients import ClientRequestSettings
+from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, SecretStr, validator
-from yarl import URL
 
 
 class BootModeEnum(str, Enum):
@@ -63,29 +63,8 @@ class DirectorV2Settings(BaseServiceSettings):
         env_prefix = "DIRECTOR2_"
 
 
-class PostgresSettings(BaseSettings):
-    enabled: bool = Field(
-        True, description="Enables/Disables connection with postgres service"
-    )
-    user: str
-    password: SecretStr
-    db: str
-    host: str
-    port: int = 5432
-
-    minsize: int = 10
-    maxsize: int = 10
-
-    @property
-    def dsn(self) -> URL:
-        return URL.build(
-            scheme="postgresql",
-            user=self.user,
-            password=self.password.get_secret_value(),
-            host=self.host,
-            port=self.port,
-            path=f"/{self.db}",
-        )
+class PGSettings(PostgresSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
 
     class Config(_CommonConfig):
         env_prefix = "POSTGRES_"
@@ -99,7 +78,7 @@ class AppSettings(BaseSettings):
     def create_from_env(cls) -> "AppSettings":
         # This call triggers parsers
         return cls(
-            postgres=PostgresSettings(),
+            postgres=PGSettings(),
             webserver=WebServerSettings(),
             client_request=ClientRequestSettings(),
             catalog=CatalogSettings(),
@@ -129,7 +108,7 @@ class AppSettings(BaseSettings):
         return getattr(logging, self.log_level_name)
 
     # POSTGRES
-    postgres: PostgresSettings
+    postgres: PGSettings
 
     # SERVICES with http API
     webserver: WebServerSettings
