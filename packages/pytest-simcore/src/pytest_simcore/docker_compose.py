@@ -32,7 +32,6 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     Loads and extends .env-devel returning
     all environment variables key=value
     """
-
     env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
     # get from environ if applicable
     env_devel = {

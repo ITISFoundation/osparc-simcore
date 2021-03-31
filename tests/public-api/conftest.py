@@ -4,8 +4,6 @@
 
 import logging
 import os
-import sys
-from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict
 
@@ -15,7 +13,6 @@ import pytest
 from osparc.configuration import Configuration
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
 
 
@@ -29,13 +26,23 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
+def devel_environ(devel_environ: Dict[str, str]) -> Dict[str, str]:
+    # OVERRDIES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::devel_environ fixture
+
+    # help faster update of service_metadata table by catalog
+    devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
+    return devel_environ.copy()
+
+
+@pytest.fixture(scope="session")
 def user_email() -> str:
     return "first.last@mymail.com"
 
 
 @pytest.fixture(scope="session")
 def services_registry(
-    docker_registry_image_injector: Callable, user_email: str
+    docker_registry_image_injector: Callable,
+    user_email: str,
 ) -> Dict[str, Any]:
     # See injected fixture in
     # packages/pytest-simcore/src/pytest_simcore/docker_registry.py
@@ -43,6 +50,14 @@ def services_registry(
     sleeper_service = docker_registry_image_injector(
         "itisfoundation/sleeper", "2.1.1", user_email
     )
+
+    # sleeper_service = {}
+    # sleeper_service["image"] = {
+    #    "name": "simcore/services/comp/itis/sleeper",
+    #    "tag": "2.1.1",
+    # }
+    # sleeper_service["schema"] =
+
     assert sleeper_service["image"]["tag"] == "2.1.1"
     assert sleeper_service["image"]["name"] == "simcore/services/comp/itis/sleeper"
     assert sleeper_service["schema"] == {
@@ -183,7 +198,7 @@ def make_up_prod(
 
 @pytest.fixture(scope="module")
 def registered_user(make_up_prod, user_email):
-
+    # DEBUG: def registered_user(user_email):
     user = {
         "email": user_email,
         "password": "my secret",

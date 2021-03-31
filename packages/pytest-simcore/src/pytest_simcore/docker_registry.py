@@ -125,13 +125,11 @@ def _pull_push_service(
         df_path.write_text(f"FROM {pull_key}:{tag}")
 
         try:
-            image2, build_logs_iter = client.images.build(
+            # Rebuild to override image labels AND re-tag
+            image2, _ = client.images.build(
                 path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned"
             )
-            for log in build_logs_iter:
-                print("", log)
-
-            print(json.dumps(dict(image2.labels), indent=2))
+            print(json.dumps(image2.labels, indent=2))
             image = image2
 
         finally:
