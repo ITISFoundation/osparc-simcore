@@ -38,6 +38,7 @@ docker_compose_service_names = [
     "webserver",
     "rabbit",
     "postgres",
+    "postgres_pgbouncer",
     "redis",
     "traefik",
     "whoami",
