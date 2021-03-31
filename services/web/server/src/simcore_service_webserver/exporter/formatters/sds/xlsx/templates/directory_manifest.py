@@ -4,6 +4,7 @@ from collections import deque
 from typing import List, Tuple, Dict
 from pathlib import Path
 
+import magic
 from pydantic import BaseModel, Field, StrictStr, validator
 
 from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
@@ -49,7 +50,6 @@ class DirectoryManifestParams(BaseModel):
     def compose_from_directory(
         cls, start_path: Path
     ) -> List["DirectoryManifestParams"]:
-        import magic  # avoids an issue with a dependency in all [sys] testing cases
 
         file_entries = deque()
         for file_entry in get_files_in_dir(start_path):

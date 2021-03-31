@@ -73,7 +73,7 @@ ENV SC_BUILD_TARGET build
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     build-essential \
-    libmagic-dev \
+    libmagic1 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -138,6 +138,13 @@ WORKDIR /home/scu
 
 # bring installed package without build tools
 COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+# libmagic is requried by the exporter
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    libmagic1 \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/web/server/docker services/web/server/docker
