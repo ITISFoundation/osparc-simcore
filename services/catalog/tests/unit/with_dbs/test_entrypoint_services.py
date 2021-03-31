@@ -25,7 +25,7 @@ from simcore_service_catalog.models.schemas.services import ServiceOut
 from starlette.testclient import TestClient
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "postgres_pgbouncer"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
