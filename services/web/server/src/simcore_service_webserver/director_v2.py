@@ -60,10 +60,15 @@ async def _request_director_v2(
             payload: Dict = await resp.json()
             return payload
 
-    except (ClientError, TimeoutError) as err:
+    except TimeoutError as err:
         raise _DirectorServiceError(
             web.HTTPServiceUnavailable.status_code,
-            reason="director-v2 service is unavailable",
+            reason=f"request to director-v2 timed-out: {err}",
+        ) from err
+    except ClientError as err:
+        raise _DirectorServiceError(
+            web.HTTPServiceUnavailable.status_code,
+            reason=f"request to director-v2 service unexpected error {err}",
         ) from err
 
 
