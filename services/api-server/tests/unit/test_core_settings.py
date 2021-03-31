@@ -5,7 +5,8 @@
 
 import logging
 
-from simcore_service_api_server.core.settings import URL, AppSettings, BootModeEnum
+from simcore_service_api_server.core.settings import AppSettings, BootModeEnum
+from yarl import URL
 
 
 def test_min_environ_for_settings(project_env_devel_environment, monkeypatch):
