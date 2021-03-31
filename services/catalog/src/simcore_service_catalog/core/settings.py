@@ -2,11 +2,10 @@ import logging
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseSettings, Field, SecretStr, validator
-from pydantic.types import PositiveInt
-from yarl import URL
-
 from models_library.settings.http_clients import ClientRequestSettings
+from models_library.settings.postgres import PostgresSettings
+from pydantic import BaseSettings, Field, validator
+from pydantic.types import PositiveInt
 
 
 class BootModeEnum(str, Enum):
@@ -36,29 +35,8 @@ class DirectorSettings(BaseSettings):
         env_prefix = "DIRECTOR_"
 
 
-class PostgresSettings(BaseSettings):
-    enabled: bool = Field(
-        True, description="Enables/Disables connection with postgres service"
-    )
-    user: str
-    password: SecretStr
-    db: str
-    host: str
-    port: int = 5432
-
-    minsize: int = 10
-    maxsize: int = 30
-
-    @property
-    def dsn(self) -> URL:
-        return URL.build(
-            scheme="postgresql",
-            user=self.user,
-            password=self.password.get_secret_value(),
-            host=self.host,
-            port=self.port,
-            path=f"/{self.db}",
-        )
+class PGSettings(PostgresSettings):
+    enabled: bool = Field(True, description="Enables/Disables connection with service")
 
     class Config(_CommonConfig):
         env_prefix = "POSTGRES_"
@@ -69,7 +47,7 @@ class AppSettings(BaseSettings):
     def create_default(cls) -> "AppSettings":
         # This call triggers parsers
         return cls(
-            postgres=PostgresSettings(),
+            postgres=PGSettings(),
             director=DirectorSettings(),
             client_request=ClientRequestSettings(),
         )
