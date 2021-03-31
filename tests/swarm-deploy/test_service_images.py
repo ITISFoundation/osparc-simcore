@@ -24,11 +24,11 @@ async def test_python_package_installation(
     simcore_docker_compose: Dict,
     osparc_simcore_root_dir: Path,
 ):
-    def _extract_from_dockerfile():
+    def _extract_from_dockerfile(service_name: str) -> None:
         dockerfile_path: Path = (
             osparc_simcore_root_dir
             / "services"
-            / ("web" if service == "webserver" else service)
+            / ("web" if service_name == "webserver" else service_name)
             / "Dockerfile"
         )
 
@@ -37,9 +37,8 @@ async def test_python_package_installation(
         assert m, f"{dockerfile_path} has no 'base' alias!?"
         return m.group(0)
 
-    docker_base_name = _extract_from_dockerfile()
-
     for service in services:
+        docker_base_name = _extract_from_dockerfile(service)
         print("Service", service, "has a base image from", docker_base_name)
 
         # tests failing installation undetected
