@@ -97,6 +97,16 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
 
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
 
+      const cbConfirmBackToDashboard = new qx.ui.form.CheckBox(this.tr("Back to Dashboard"));
+      preferencesSettings.bind("confirmBackToDashboard", cbConfirmBackToDashboard, "value");
+      cbConfirmBackToDashboard.bind("value", preferencesSettings, "confirmBackToDashboard");
+      box.add(cbConfirmBackToDashboard);
+
+      const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete Study"));
+      preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
+      cbConfirmDeleteStudy.bind("value", preferencesSettings, "confirmDeleteStudy");
+      box.add(cbConfirmDeleteStudy);
+
       const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete Node"));
       preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
       cbConfirmDeleteNode.bind("value", preferencesSettings, "confirmDeleteNode");
