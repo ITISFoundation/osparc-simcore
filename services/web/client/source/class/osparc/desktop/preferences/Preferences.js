@@ -42,6 +42,13 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       event: "changeAutoOpenNode"
     },
 
+    confirmDeleteStudy: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      event: "changeConfirmDeleteStudy"
+    },
+
     confirmDeleteNode: {
       nullable: false,
       init: true,
