@@ -364,24 +364,34 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (nodeId === this.__currentNodeId) {
         return;
       }
-      const msg = this.tr("Are you sure you want to delete node?");
-      const win = new osparc.ui.window.Confirmation(msg);
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          const workbench = this.getStudy().getWorkbench();
-          const connectedEdges = workbench.getConnectedEdges(nodeId);
-          if (workbench.removeNode(nodeId)) {
-            // remove first the connected edges
-            for (let i = 0; i < connectedEdges.length; i++) {
-              const edgeId = connectedEdges[i];
-              this.__workbenchUI.clearEdge(edgeId);
-            }
-            this.__workbenchUI.clearNode(nodeId);
+
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteNode()) {
+        const msg = this.tr("Are you sure you want to delete node?");
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__doRemoveNode(nodeId);
           }
+        }, this);
+      } else {
+        this.__doRemoveNode(nodeId);
+      }
+    },
+
+    __doRemoveNode: function(nodeId) {
+      const workbench = this.getStudy().getWorkbench();
+      const connectedEdges = workbench.getConnectedEdges(nodeId);
+      if (workbench.removeNode(nodeId)) {
+        // remove first the connected edges
+        for (let i = 0; i < connectedEdges.length; i++) {
+          const edgeId = connectedEdges[i];
+          this.__workbenchUI.clearEdge(edgeId);
         }
-      }, this);
+        this.__workbenchUI.clearNode(nodeId);
+      }
     },
 
     __removeEdge: function(edgeId) {
