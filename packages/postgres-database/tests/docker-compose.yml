@@ -1,6 +1,6 @@
 version: "3.7"
 services:
-  postgres_pgbouncer:
+  pgbouncer:
     image: pgbouncer/pgbouncer:1.15.0
     init: true
     environment:
@@ -70,4 +70,4 @@ services:
     ports:
       - 18080:8080
     depends_on:
-      - postgres_pgbouncer
+      - pgbouncer

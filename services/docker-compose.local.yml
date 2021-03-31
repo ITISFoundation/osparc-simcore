@@ -55,7 +55,7 @@ services:
       - "8080"
       - "3001:3000"
 
-  postgres_pgbouncer:
+  pgbouncer:
     ports:
       - "6432:5432"
 

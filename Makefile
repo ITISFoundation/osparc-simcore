@@ -213,7 +213,7 @@ endif
 define _show_endpoints
 # The following endpoints are available
 echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                                 - oSparc platform"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres_pgbouncer&username=scu&db=simcoredb&ns=public  - Postgres DB"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=pgbouncer&username=scu&db=simcoredb&ns=public  - Postgres DB"
 echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                                 - Portainer"
 endef
 

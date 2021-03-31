@@ -263,7 +263,7 @@ services:
     networks:
       - default
 
-  postgres_pgbouncer:
+  pgbouncer:
     image: pgbouncer/pgbouncer:1.15.0
     init: true
     environment:
