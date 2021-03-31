@@ -20,4 +20,6 @@ def test_min_environ_for_settings(project_env_devel_environment, monkeypatch):
     assert settings.boot_mode == BootModeEnum.PRODUCTION
     assert settings.loglevel == logging.DEBUG
 
-    assert settings.postgres.dsn == URL("postgresql://test:test@127.0.0.1:5432/test")
+    assert URL(settings.postgres.dsn) == URL(
+        "postgresql://test:test@127.0.0.1:5432/test"
+    )
