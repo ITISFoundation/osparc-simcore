@@ -364,7 +364,7 @@ async def import_files_and_validate_project(
     # between the original and new study
     shuffled_project_file.name = "%s %s" % (
         shuffled_project_file.name,
-        datetime.datetime.now().strftime("%H:%M:%S"),
+        datetime.datetime.now().strftime("%Y:%m:%d:%H:%M:%S"),
     )
 
     log.debug("Shuffled project data: %s", shuffled_project_file)
