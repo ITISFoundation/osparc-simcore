@@ -41,6 +41,7 @@ pytest_simcore_core_services_selection = [
     "catalog",
     "director",
     "postgres",
+    "postgres_pgbouncer",
     "redis",
 ]
 

@@ -52,6 +52,7 @@ pytest_simcore_core_services_selection = [
     "director",
     "director-v2",
     "postgres",
+    "postgres_pgbouncer",
     "sidecar",
     "storage",
 ]
