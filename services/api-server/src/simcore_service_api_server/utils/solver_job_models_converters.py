@@ -11,7 +11,6 @@ from typing import Callable, Dict, Optional, Tuple
 
 from models_library.projects_nodes import InputID, InputTypes
 
-from ..models.api_resources import compose_resource_name
 from ..models.domain.projects import (
     InputTypes,
     NewProjectIn,
@@ -239,7 +238,7 @@ def create_job_from_project(
     )
 
     # create solver's job
-    solver_name = compose_resource_name(solver_key, solver_version)
+    solver_name = Solver.compose_resource_name(solver_key, solver_version)
 
     job = Job(
         id=project.uuid,

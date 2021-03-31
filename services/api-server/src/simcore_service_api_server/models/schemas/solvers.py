@@ -7,6 +7,8 @@ from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerD
 from packaging.version import LegacyVersion, Version
 from pydantic import BaseModel, Extra, Field, HttpUrl, constr
 
+from ..api_resources import compose_resource_name
+
 # NOTE:
 # - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry deployed. This constraint
 #   should be responsibility of the catalog. Those prefix
@@ -96,6 +98,9 @@ class Solver(BaseModel):
     @property
     def name(self) -> str:
         """ Resource name """
-        _id = urllib.parse.quote_plus(self.id)
-        _version = urllib.parse.quote_plus(self.version)
-        return f"solvers/{_id}/releases/{_version}"
+        return self.compose_resource_name(self.id, self.version)
+
+    @classmethod
+    def compose_resource_name(cls, solver_key, solver_version) -> str:
+        # TODO: test sync with paths??
+        return compose_resource_name("solvers", solver_key, "releases", solver_version)

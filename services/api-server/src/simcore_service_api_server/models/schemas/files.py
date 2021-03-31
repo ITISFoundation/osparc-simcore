@@ -68,11 +68,11 @@ class File(BaseModel):
         )
 
     @classmethod
-    async def create_from_file_link(cls, s3_link: str, e_tag: str) -> "File":
-        file_with_ext = Path(s3_link).name
+    async def create_from_file_link(cls, s3_object_path: str, e_tag: str) -> "File":
+        filename = Path(s3_object_path).name
         return cls(
-            id=cls.create_id(s3_link, e_tag),
-            filename=file_with_ext,
+            id=cls.create_id(e_tag, filename),
+            filename=filename,
             checksum=e_tag,
         )
 
