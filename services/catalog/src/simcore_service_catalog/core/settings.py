@@ -74,7 +74,7 @@ class AppSettings(BaseSettings):
         return getattr(logging, self.log_level_name)
 
     # POSTGRES
-    postgres: PostgresSettings
+    postgres: PGSettings
 
     client_request: ClientRequestSettings
 
