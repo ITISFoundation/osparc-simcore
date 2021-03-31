@@ -27,7 +27,7 @@ class PostgresSettings(BaseSettings):
 
     # pool connection limits
     minsize: conint(ge=1) = 10
-    maxsize: conint(ge=1) = 10
+    maxsize: conint(ge=1) = 100
 
     dsn: Optional[PostgresDsn] = Field(None, description="Database Source Name")
 
