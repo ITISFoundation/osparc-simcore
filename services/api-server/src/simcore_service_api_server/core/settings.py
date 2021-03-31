@@ -66,7 +66,7 @@ class DirectorV2Settings(BaseServiceSettings):
 class PGSettings(PostgresSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
-    class Config(_CommonConfig):
+    class Config(_CommonConfig, PostgresSettings.Config):
         env_prefix = "POSTGRES_"
 
 

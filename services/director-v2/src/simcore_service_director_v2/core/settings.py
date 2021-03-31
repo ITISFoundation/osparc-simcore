@@ -69,7 +69,7 @@ class DynamicServicesSettings(BaseSettings):
 class PGSettings(PostgresSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
-    class Config(CommonConfig):
+    class Config(CommonConfig, PostgresSettings.Config):
         env_prefix = "POSTGRES_"
 
 
