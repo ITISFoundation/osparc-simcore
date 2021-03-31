@@ -40,6 +40,13 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeAutoOpenNode"
+    },
+
+    confirmDeleteNode: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      event: "changeConfirmDeleteNode"
     }
   }
 });
