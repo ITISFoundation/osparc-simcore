@@ -13,3 +13,8 @@ aiodocker
 aiofiles
 PyYAML
 async-timeout
+
+# there is an issue with migrations & other packages, freezing these dependencies for now
+aiohttp==3.7.3
+chardet<4.0,>=2.0
+urllib3==1.26.3
