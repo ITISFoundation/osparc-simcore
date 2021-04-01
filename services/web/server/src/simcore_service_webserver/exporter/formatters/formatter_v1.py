@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import datetime
 import traceback
 from collections import deque
 from itertools import chain
@@ -358,6 +359,12 @@ async def import_files_and_validate_project(
     log.debug("Loaded project data:  %s", project_file)
     shuffled_project_file = project_file.new_instance_from_shuffled_data(
         shuffled_data=shuffled_data
+    )
+    # creating an unique name to help the user distinguish 
+    # between the original and new study
+    shuffled_project_file.name = "%s %s" % (
+        shuffled_project_file.name,
+        datetime.datetime.utcnow().strftime("%Y:%m:%d:%H:%M:%S"),
     )
 
     log.debug("Shuffled project data: %s", shuffled_project_file)
