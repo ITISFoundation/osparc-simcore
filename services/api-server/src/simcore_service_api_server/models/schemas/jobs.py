@@ -19,12 +19,12 @@ PositionalArguments = List[ArgumentType]
 
 def compute_checksum(kwargs: KeywordArguments):
     _dump_str = ""
-    for key in frozenset(kwargs.keys()):
-        try:
-            value = hash(kwargs[key])
-        except TypeError:
-            assert isinstance(kwargs[key], BaseModel)
-            value = hash(frozenset(kwargs[key].dict().items()))
+    for key in sorted(kwargs.keys()):
+        value = kwargs[key]
+        if isinstance(value, File):
+            value = compute_checksum(value.dict())
+        else:
+            value = str(value)
         _dump_str += f"{key}:{value}"
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
 

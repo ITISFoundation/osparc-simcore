@@ -58,6 +58,54 @@ def test_create_project_model_for_job():
     assert createproject_body.name == job.name
 
 
+def test_job_to_node_inputs_conversion():
+    # TODO: add here service input schemas and cast correctly?
+
+    # Two equivalent inputs
+    job_inputs = JobInputs(
+        values={
+            "x": 4.33,
+            "n": 55,
+            "title": "Temperature",
+            "enabled": True,
+            "input_file": File(
+                filename="input.txt",
+                id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+                checksum="859fda0cb82fc4acb4686510a172d9a9-1",
+            ),
+        }
+    )
+    for name, value in job_inputs.values.items():
+        assert isinstance(value, get_args(ArgumentType)), f"Invalid type in {name}"
+
+    node_inputs: Inputs = {
+        "x": 4.33,
+        "n": 55,
+        "title": "Temperature",
+        "enabled": True,
+        "input_file": SimCoreFileLink(
+            path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+            eTag="859fda0cb82fc4acb4686510a172d9a9-1",
+            label="input.txt",
+        ),
+    }
+
+    for name, value in node_inputs.items():
+        # TODO: py3.8 use typings.get_args
+        assert isinstance(value, get_args(InputTypes)), f"Invalid type in {name}"
+
+    # test transformations in both directions
+    got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
+    got_job_inputs = create_job_inputs_from_node_inputs(inputs=node_inputs)
+
+    NodeInputs = create_model("NodeInputs", __root__=(Dict[str, InputTypes], ...))
+    print(NodeInputs.parse_obj(got_node_inputs).json(indent=2))
+    print(got_job_inputs.json(indent=2))
+
+    assert got_job_inputs == job_inputs
+    assert got_node_inputs == node_inputs
+
+
 def test_create_job_from_project():
 
     project = Project.parse_obj(
@@ -131,8 +179,8 @@ def test_create_job_from_project():
             "id": "f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2/jobs/f925e30f-19de-42dc-acab-3ce93ea0a0a7",
             "created_at": "2021-03-26T10:43:27.867Z",
-            "runner_name": "simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/2.0.2",
-            "inputs_checksum": "7e50212f0a228191edd91e9e8378468bc8eeb78e8991c87c96128f125db1eaa9",
+            "runner_name": "solvers/simcore%2Fservices%2Fcomp%2Fitis%2Fsleeper/releases/2.0.2",
+            "inputs_checksum": "8f57551eb8c0798a7986b63face0eef8fed8da79dd66f871a73c27e64cd01c5f",
             "url": None,
             "runner_url": None,
             "outputs_url": None,
@@ -148,52 +196,7 @@ def test_create_job_from_project():
     assert job.name == project.name
     assert not any(getattr(job, f) for f in job.__fields__ if f.startswith("url"))
 
+    assert (
+        job.inputs_checksum == expected_job.inputs_checksum
+    )  # this tends to be a problem
     assert job == expected_job
-
-
-def test_job_to_node_inputs_conversion():
-    # TODO: add here service input schemas and cast correctly?
-
-    # Two equivalent inputs
-    job_inputs = JobInputs(
-        values={
-            "x": 4.33,
-            "n": 55,
-            "title": "Temperature",
-            "enabled": True,
-            "input_file": File(
-                filename="input.txt",
-                id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                checksum="859fda0cb82fc4acb4686510a172d9a9-1",
-            ),
-        }
-    )
-    for name, value in job_inputs.values.items():
-        assert isinstance(value, get_args(ArgumentType)), f"Invalid type in {name}"
-
-    node_inputs: Inputs = {
-        "x": 4.33,
-        "n": 55,
-        "title": "Temperature",
-        "enabled": True,
-        "input_file": SimCoreFileLink(
-            path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-            eTag="859fda0cb82fc4acb4686510a172d9a9-1",
-            label="input.txt",
-        ),
-    }
-
-    for name, value in node_inputs.items():
-        # TODO: py3.8 use typings.get_args
-        assert isinstance(value, get_args(InputTypes)), f"Invalid type in {name}"
-
-    # test transformations in both directions
-    got_node_inputs = create_node_inputs_from_job_inputs(inputs=job_inputs)
-    got_job_inputs = create_job_inputs_from_node_inputs(inputs=node_inputs)
-
-    NodeInputs = create_model("NodeInputs", __root__=(Dict[str, InputTypes], ...))
-    print(NodeInputs.parse_obj(got_node_inputs).json(indent=2))
-    print(got_job_inputs.json(indent=2))
-
-    assert got_job_inputs == job_inputs
-    assert got_node_inputs == node_inputs
