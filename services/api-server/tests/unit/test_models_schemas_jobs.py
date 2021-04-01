@@ -7,10 +7,15 @@ from copy import deepcopy
 from pprint import pformat
 
 import pytest
-from simcore_service_api_server.models.schemas.jobs import Job, JobInputs, JobOutputs
+from simcore_service_api_server.models.schemas.jobs import (
+    Job,
+    JobInputs,
+    JobOutputs,
+    JobStatus,
+)
 
 
-@pytest.mark.parametrize("model_cls", (Job, JobInputs, JobOutputs))
+@pytest.mark.parametrize("model_cls", (Job, JobInputs, JobOutputs, JobStatus))
 def test_jobs_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
@@ -60,4 +65,6 @@ def test_job_io_checksums(repeat):
     print(inputs2)
 
     assert inputs1 == inputs2
-    assert inputs1.compute_checksum() == inputs2.compute_checksum()
+    assert (
+        inputs1.compute_checksum() == inputs2.compute_checksum()
+    ), f"{inputs1}!={inputs2}"

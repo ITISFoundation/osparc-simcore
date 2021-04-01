@@ -11,13 +11,6 @@ from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
 from ..api_resources import RelativeResourceName, compose_resource_name
 
-# JOB INPUTS/OUTPUTS ----------
-#
-#  - Wrappers for input/output values
-#  - Input/outputs are defined in service metadata
-#
-
-
 # FIXME: all ints and bools will be floats
 ArgumentType = Union[File, float, int, bool, str, None]
 KeywordArguments = Dict[str, ArgumentType]
@@ -34,6 +27,13 @@ def compute_checksum(kwargs: KeywordArguments):
             value = hash(frozenset(kwargs[key].dict().items()))
         _dump_str += f"{key}:{value}"
     return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
+
+
+# JOB INPUTS/OUTPUTS ----------
+#
+#  - Wrappers for input/output values
+#  - Input/outputs are defined in service metadata
+#
 
 
 class JobInputs(BaseModel):
@@ -76,6 +76,8 @@ class JobOutputs(BaseModel):
     # errors: List[JobErrors] = []
 
     class Config(BaseConfig):
+        frozen = True
+        allow_mutation = False
         schema_extra = {
             "example": {
                 "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
@@ -218,7 +220,18 @@ class JobStatus(BaseModel):
     )
 
     class Config(BaseConfig):
-        pass
+        frozen = True
+        allow_mutation = False
+        schema_extra = {
+            "example": {
+                "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
+                "state": TaskStates.STARTED,
+                "progress": 3,
+                "submitted_at": "2021-04-01 07:15:54.631007",
+                "started_at": "2021-04-01 07:16:43.670610",
+                "stopped_at": None,
+            }
+        }
 
     def take_snapshot(self, event: str = "submitted"):
         setattr(self, f"{event}_at", datetime.utcnow())
