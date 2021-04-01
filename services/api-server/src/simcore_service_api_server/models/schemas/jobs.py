@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, validator
 
+from ...models.config import BaseConfig
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
 from ..api_resources import RelativeResourceName, compose_resource_name
@@ -23,13 +24,27 @@ KeywordArguments = Dict[str, ArgumentType]
 PositionalArguments = List[ArgumentType]
 
 
+def compute_checksum(kwargs: KeywordArguments):
+    _dump_str = ""
+    for key in frozenset(kwargs.keys()):
+        try:
+            value = hash(kwargs[key])
+        except TypeError:
+            assert isinstance(kwargs[key], BaseModel)
+            value = hash(frozenset(kwargs[key].dict().items()))
+        _dump_str += f"{key}:{value}"
+    return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
+
+
 class JobInputs(BaseModel):
     # NOTE: this is different from the resource JobInput (TBD)
     values: KeywordArguments
 
     # TODO: gibt es platz fuer metadata?
 
-    class Config:
+    class Config(BaseConfig):
+        frozen = True
+        allow_mutation = False
         schema_extra = {
             "example": {
                 "values": {
@@ -45,8 +60,7 @@ class JobInputs(BaseModel):
         }
 
     def compute_checksum(self):
-        # FIXME: this is wront since spaces can change checksum?
-        return hashlib.sha256(" ".join(self.json()).encode("utf-8")).hexdigest()
+        return compute_checksum(self.values)
 
 
 class JobOutputs(BaseModel):
@@ -61,7 +75,7 @@ class JobOutputs(BaseModel):
     # on one specific output.
     # errors: List[JobErrors] = []
 
-    class Config:
+    class Config(BaseConfig):
         schema_extra = {
             "example": {
                 "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
@@ -77,6 +91,9 @@ class JobOutputs(BaseModel):
                 },
             }
         }
+
+    def compute_results_checksum(self):
+        return compute_checksum(self.results)
 
 
 # JOBS ----------
@@ -115,7 +132,7 @@ class Job(BaseModel):
         ..., description="Link to the job outputs (sub-collection"
     )
 
-    class Config:
+    class Config(BaseConfig):
         schema_extra = {
             "example": {
                 "id": "f622946d-fd29-35b9-a193-abdd1095167c",
@@ -199,6 +216,9 @@ class JobStatus(BaseModel):
         None,
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
+
+    class Config(BaseConfig):
+        pass
 
     def take_snapshot(self, event: str = "submitted"):
         setattr(self, f"{event}_at", datetime.utcnow())
