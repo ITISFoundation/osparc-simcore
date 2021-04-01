@@ -192,6 +192,11 @@ def make_up_prod(
             resp = httpx.get("http://127.0.0.1:9081/v0/")
             resp.raise_for_status()
 
+    # Extra sleep to allow catalog background task to update
+    import time
+
+    time.sleep(10)
+
     stack_configs = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
     return stack_configs
 

@@ -46,6 +46,8 @@ def test_get_all_releases(solvers_api: SolversApi):
         Solver
     ] = solvers_api.list_solvers_releases()  # all release of all solvers
 
+    assert all_releases
+
     one_solver = random.choice(all_releases)
     all_releases_of_given_solver: List[Solver] = solvers_api.list_solver_releases(
         one_solver.id
