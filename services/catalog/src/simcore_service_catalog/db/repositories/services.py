@@ -45,9 +45,8 @@ class ServicesRepository(BaseRepository):
                     )
                 )
             )
-
-        async for row in self.connection.execute(query):
-            if row:
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(query):
                 services_in_db.append(ServiceMetaDataAtDB(**row))
         return services_in_db
 
@@ -86,7 +85,8 @@ class ServicesRepository(BaseRepository):
                     )
                 )
             )
-        row: RowProxy = await (await self.connection.execute(query)).first()
+        async with self.db_engine.acquire() as conn:
+            row: RowProxy = await (await conn.execute(query)).first()
         if row:
             return ServiceMetaDataAtDB(**row)
 
@@ -95,38 +95,41 @@ class ServicesRepository(BaseRepository):
         new_service: ServiceMetaDataAtDB,
         new_service_access_rights: List[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
-        row: RowProxy = await (
-            await self.connection.execute(
-                # pylint: disable=no-value-for-parameter
-                services_meta_data.insert()
-                .values(**new_service.dict(by_alias=True))
-                .returning(literal_column("*"))
-            )
-        ).first()
-        created_service = ServiceMetaDataAtDB(**row)
-        for rights in new_service_access_rights:
-            insert_stmt = insert(services_access_rights).values(
-                **rights.dict(by_alias=True)
-            )
-            await self.connection.execute(insert_stmt)
+        async with self.db_engine.acquire() as conn:
+            async with conn.begin() as _transaction:  # NOTE: this ensure proper rollback in case of issue
+                row: RowProxy = await (
+                    await conn.execute(
+                        # pylint: disable=no-value-for-parameter
+                        services_meta_data.insert()
+                        .values(**new_service.dict(by_alias=True))
+                        .returning(literal_column("*"))
+                    )
+                ).first()
+                created_service = ServiceMetaDataAtDB(**row)
+                for rights in new_service_access_rights:
+                    insert_stmt = insert(services_access_rights).values(
+                        **rights.dict(by_alias=True)
+                    )
+                    await conn.execute(insert_stmt)
         return created_service
 
     async def update_service(
         self, patched_service: ServiceMetaDataAtDB
     ) -> ServiceMetaDataAtDB:
         # update the services_meta_data table
-        row: RowProxy = await (
-            await self.connection.execute(
-                # pylint: disable=no-value-for-parameter
-                services_meta_data.update()
-                .where(
-                    (services_meta_data.c.key == patched_service.key)
-                    & (services_meta_data.c.version == patched_service.version)
+        async with self.db_engine.acquire() as conn:
+            row: RowProxy = await (
+                await conn.execute(
+                    # pylint: disable=no-value-for-parameter
+                    services_meta_data.update()
+                    .where(
+                        (services_meta_data.c.key == patched_service.key)
+                        & (services_meta_data.c.version == patched_service.version)
+                    )
+                    .values(**patched_service.dict(by_alias=True, exclude_unset=True))
+                    .returning(literal_column("*"))
                 )
-                .values(**patched_service.dict(by_alias=True, exclude_unset=True))
-                .returning(literal_column("*"))
-            )
-        ).first()
+            ).first()
         updated_service = ServiceMetaDataAtDB(**row)
         return updated_service
 
@@ -142,8 +145,8 @@ class ServicesRepository(BaseRepository):
             & (services_access_rights.c.version == version)
             & (services_access_rights.c.product_name == product_name)
         )
-        async for row in self.connection.execute(query):
-            if row:
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(query):
                 services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
 
@@ -165,10 +168,11 @@ class ServicesRepository(BaseRepository):
                 set_=rights.dict(by_alias=True, exclude_unset=True),
             )
             try:
-                await self.connection.execute(
-                    # pylint: disable=no-value-for-parameter
-                    on_update_stmt
-                )
+                async with self.db_engine.acquire() as conn:
+                    await conn.execute(
+                        # pylint: disable=no-value-for-parameter
+                        on_update_stmt
+                    )
             except ForeignKeyViolation:
                 logger.warning(
                     "The service %s:%s is missing from services_meta_data",
@@ -179,13 +183,14 @@ class ServicesRepository(BaseRepository):
     async def delete_service_access_rights(
         self, delete_access_rights: List[ServiceAccessRightsAtDB]
     ) -> None:
-        for rights in delete_access_rights:
-            await self.connection.execute(
-                # pylint: disable=no-value-for-parameter
-                services_access_rights.delete().where(
-                    (services_access_rights.c.key == rights.key)
-                    & (services_access_rights.c.version == rights.version)
-                    & (services_access_rights.c.gid == rights.gid)
-                    & (services_access_rights.c.product_name == rights.product_name)
+        async with self.db_engine.acquire() as conn:
+            for rights in delete_access_rights:
+                await conn.execute(
+                    # pylint: disable=no-value-for-parameter
+                    services_access_rights.delete().where(
+                        (services_access_rights.c.key == rights.key)
+                        & (services_access_rights.c.version == rights.version)
+                        & (services_access_rights.c.gid == rights.gid)
+                        & (services_access_rights.c.product_name == rights.product_name)
+                    )
                 )
-            )

@@ -79,6 +79,7 @@ REMAPPING_KEY = "__reverse__remapping__dict__key__"
 KEYS_TO_IGNORE_FROM_COMPARISON = {
     "id",
     "uuid",
+    "name",
     "creation_date",
     "last_change_date",
     "runHash",  # this changes after import, but the runnable states should remain the same
