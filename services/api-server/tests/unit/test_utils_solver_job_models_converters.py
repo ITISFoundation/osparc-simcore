@@ -4,8 +4,10 @@
 
 from typing import Dict
 
+import pytest
 from models_library.projects import Project
 from models_library.projects_nodes import Inputs, InputTypes, SimCoreFileLink
+from models_library.projects_pipeline import ComputationTask
 from pydantic import create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentType, Job, JobInputs
@@ -13,6 +15,7 @@ from simcore_service_api_server.models.schemas.solvers import Solver
 from simcore_service_api_server.utils.solver_job_models_converters import (
     create_job_from_project,
     create_job_inputs_from_node_inputs,
+    create_jobstatus_from_task,
     create_new_project_for_job,
     create_node_inputs_from_job_inputs,
     get_args,
@@ -200,3 +203,19 @@ def test_create_job_from_project():
         job.inputs_checksum == expected_job.inputs_checksum
     )  # this tends to be a problem
     assert job == expected_job
+
+
+@pytest.mark.skip(reason="TODO: next PR")
+def test_create_jobstatus_from_task():
+    from simcore_service_api_server.models.schemas.jobs import JobStatus
+    from simcore_service_api_server.modules.director_v2 import ComputationTaskOut
+
+    task = ComputationTaskOut.parse_obj({})  # TODO:
+    job_status = create_jobstatus_from_task(task)
+
+    assert job_status.job_id == task.id
+
+    # TODO: activate
+    # #frozen = True
+    # #allow_mutation = False
+    # and remove take_snapshot by generating A NEW JobStatus!

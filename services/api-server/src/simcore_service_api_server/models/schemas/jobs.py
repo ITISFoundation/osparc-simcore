@@ -220,8 +220,8 @@ class JobStatus(BaseModel):
     )
 
     class Config(BaseConfig):
-        frozen = True
-        allow_mutation = False
+        # frozen = True
+        # allow_mutation = False
         schema_extra = {
             "example": {
                 "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
