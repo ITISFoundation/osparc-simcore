@@ -7,7 +7,6 @@ from typing import Dict
 import pytest
 from models_library.projects import Project
 from models_library.projects_nodes import Inputs, InputTypes, SimCoreFileLink
-from models_library.projects_pipeline import ComputationTask
 from pydantic import create_model
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.models.schemas.jobs import ArgumentType, Job, JobInputs
@@ -211,7 +210,7 @@ def test_create_jobstatus_from_task():
     from simcore_service_api_server.modules.director_v2 import ComputationTaskOut
 
     task = ComputationTaskOut.parse_obj({})  # TODO:
-    job_status = create_jobstatus_from_task(task)
+    job_status: JobStatus = create_jobstatus_from_task(task)
 
     assert job_status.job_id == task.id
 
