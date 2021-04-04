@@ -14,7 +14,7 @@ from osparc.models import Solver
 from packaging.version import parse as parse_version
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sleeper_key_and_version(services_registry: Dict[str, Any]) -> Tuple[str, str]:
     # image in registry
     repository_name = services_registry["sleeper_service"]["name"]

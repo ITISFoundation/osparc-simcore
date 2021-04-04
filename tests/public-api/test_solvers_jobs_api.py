@@ -19,7 +19,7 @@ from osparc import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sleeper_solver(
     solvers_api: SolversApi,
     services_registry: Dict[str, Any],
@@ -66,8 +66,10 @@ def sleeper_solver(
     return solver
 
 
-@pytest.fixture()
-def uploaded_input_file(tmpdir, files_api: FilesApi) -> File:
+@pytest.fixture(scope="module")
+def uploaded_input_file(tmpdir_factory, files_api: FilesApi) -> File:
+
+    tmpdir = tmpdir_factory.mktemp("uploaded_input_file")
 
     # produce an input file in place
     input_path = Path(tmpdir) / "file-with-number.txt"

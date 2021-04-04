@@ -5,7 +5,7 @@
 import logging
 import os
 from pprint import pformat
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 import httpx
 import osparc
@@ -27,25 +27,116 @@ pytest_plugins = [
 
 @pytest.fixture(scope="session")
 def devel_environ(devel_environ: Dict[str, str]) -> Dict[str, str]:
-    # OVERRDIES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::devel_environ fixture
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::devel_environ fixture
 
     # help faster update of service_metadata table by catalog
     devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
     return devel_environ.copy()
 
 
-@pytest.fixture(scope="session")
-def user_email() -> str:
-    return "first.last@mymail.com"
+@pytest.fixture(scope="module")
+def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
+    """ Selection of services from the simcore stack """
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
+    all_core_services = list(simcore_docker_compose["services"].keys())
+    return all_core_services
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
+def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
+    """ Selection of services from the ops stack """
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
+    all_ops_services = list(ops_docker_compose["services"].keys())
+    return all_ops_services
+
+
+@pytest.fixture(scope="module")
+def make_up_prod(
+    # prepare_all_services: Dict,
+    # simcore_docker_compose: Dict,
+    # ops_docker_compose: Dict,
+    docker_stack: Dict,
+    docker_registry,
+) -> Dict:
+
+    for attempt in Retrying(
+        wait=wait_fixed(5),
+        stop=stop_after_attempt(60),
+        reraise=True,
+        before_sleep=before_sleep_log(log, logging.INFO),
+    ):
+        with attempt:
+            resp = httpx.get("http://127.0.0.1:9081/v0/")
+            resp.raise_for_status()
+
+    return docker_stack
+
+
+@pytest.fixture(scope="module")
+def registered_user(make_up_prod):
+    import pdb
+
+    pdb.set_trace()
+    user = {
+        "email": "first.last@mymail.com",
+        "password": "my secret",
+        "api_key": None,
+        "api_secret": None,
+    }
+
+    with httpx.Client(base_url="http://127.0.0.1:9081/v0") as client:
+        # setup user via web-api
+        resp = client.post(
+            "/auth/login",
+            json={
+                "email": user["email"],
+                "password": user["password"],
+            },
+        )
+
+        if resp.status_code != 200:
+            resp = client.post(
+                "/auth/register",
+                json={
+                    "email": user["email"],
+                    "password": user["password"],
+                    "confirm": user["password"],
+                },
+            )
+            resp.raise_for_status()
+
+        # create a key via web-api
+        resp = client.post("/auth/api-keys", json={"display_name": "test-public-api"})
+
+        print(resp.text)
+        resp.raise_for_status()
+
+        data = resp.json()["data"]
+        assert data["display_name"] == "test-public-api"
+
+        user.update({"api_key": data["api_key"], "api_secret": data["api_secret"]})
+
+        yield user
+
+        resp = client.request(
+            "DELETE", "/auth/api-keys", json={"display_name": "test-public-api"}
+        )
+
+
+@pytest.fixture(scope="module")
 def services_registry(
     docker_registry_image_injector: Callable,
-    user_email: str,
+    registered_user: Dict[str, str],
 ) -> Dict[str, Any]:
-    # See injected fixture in
-    # packages/pytest-simcore/src/pytest_simcore/docker_registry.py
+    # NOTE: service image MUST be injected in registry AFTER user is registered
+    #
+    # See injected fixture in packages/pytest-simcore/src/pytest_simcore/docker_registry.py
+    #
+    user_email = registered_user["email"]
+
+    import pdb
+
+    pdb.set_trace()
 
     sleeper_service = docker_registry_image_injector(
         "itisfoundation/sleeper", "2.1.1", user_email
@@ -62,21 +153,7 @@ def services_registry(
     assert sleeper_service["image"]["name"] == "simcore/services/comp/itis/sleeper"
     assert sleeper_service["schema"] == {
         "authors": [
-            {
-                "affiliation": "IT'IS Foundation",
-                "email": "guidon@itis.swiss",
-                "name": "Manuel Guidon",
-            },
-            {
-                "affiliation": "IT'IS Foundation",
-                "email": "maiz@itis.swiss",
-                "name": "Odei Maiz",
-            },
-            {
-                "affiliation": "IT'IS Foundation",
-                "email": "neagu@itis.swiss",
-                "name": "Andrei Neagu",
-            },
+            {"name": "Tester", "email": user_email, "affiliation": "IT'IS Foundation"}
         ],
         "contact": user_email,
         "description": "A service which awaits for time to pass, two times.",
@@ -147,110 +224,6 @@ def services_registry(
 
 
 @pytest.fixture(scope="module")
-def prepare_all_services(
-    simcore_docker_compose: Dict,
-    ops_docker_compose: Dict,
-    request,
-) -> Dict:
-
-    setattr(
-        request.module,
-        "pytest_simcore_core_services_selection",
-        list(simcore_docker_compose["services"].keys()),
-    )
-    core_services = getattr(
-        request.module, "pytest_simcore_core_services_selection", []
-    )
-
-    setattr(
-        request.module,
-        "pytest_simcore_ops_services_selection",
-        list(ops_docker_compose["services"].keys()),
-    )
-    ops_services = getattr(request.module, "pytest_simcore_ops_services_selection", [])
-
-    services = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return services
-
-
-@pytest.fixture(scope="module")
-def make_up_prod(
-    prepare_all_services: Dict,
-    simcore_docker_compose: Dict,
-    ops_docker_compose: Dict,
-    docker_stack: Dict,
-    services_registry,
-) -> Dict:
-
-    for attempt in Retrying(
-        wait=wait_fixed(5),
-        stop=stop_after_attempt(60),
-        reraise=True,
-        before_sleep=before_sleep_log(log, logging.INFO),
-    ):
-        with attempt:
-            resp = httpx.get("http://127.0.0.1:9081/v0/")
-            resp.raise_for_status()
-
-    # Extra sleep to allow catalog background task to update
-    import time
-
-    time.sleep(10)
-
-    stack_configs = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return stack_configs
-
-
-@pytest.fixture(scope="module")
-def registered_user(make_up_prod, user_email):
-    # DEBUG: def registered_user(user_email):
-    user = {
-        "email": user_email,
-        "password": "my secret",
-        "api_key": None,
-        "api_secret": None,
-    }
-
-    with httpx.Client(base_url="http://127.0.0.1:9081/v0") as client:
-        # setup user via web-api
-        resp = client.post(
-            "/auth/login",
-            json={
-                "email": user["email"],
-                "password": user["password"],
-            },
-        )
-
-        if resp.status_code != 200:
-            resp = client.post(
-                "/auth/register",
-                json={
-                    "email": user["email"],
-                    "password": user["password"],
-                    "confirm": user["password"],
-                },
-            )
-            resp.raise_for_status()
-
-        # create a key via web-api
-        resp = client.post("/auth/api-keys", json={"display_name": "test-public-api"})
-
-        print(resp.text)
-        resp.raise_for_status()
-
-        data = resp.json()["data"]
-        assert data["display_name"] == "test-public-api"
-
-        user.update({"api_key": data["api_key"], "api_secret": data["api_secret"]})
-
-        yield user
-
-        resp = client.request(
-            "DELETE", "/auth/api-keys", json={"display_name": "test-public-api"}
-        )
-
-
-@pytest.fixture
 def api_client(registered_user) -> osparc.ApiClient:
     cfg = Configuration(
         host=os.environ.get("OSPARC_API_URL", "http://127.0.0.1:8006"),
@@ -271,11 +244,11 @@ def api_client(registered_user) -> osparc.ApiClient:
         yield api_client
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def files_api(api_client) -> osparc.FilesApi:
     return osparc.FilesApi(api_client)
 
 
-@pytest.fixture()
-def solvers_api(api_client):
+@pytest.fixture(scope="module")
+def solvers_api(api_client) -> osparc.SolversApi:
     return osparc.SolversApi(api_client)
