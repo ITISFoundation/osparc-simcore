@@ -497,9 +497,8 @@ async def import_study_from_file(client, file_path: Path) -> str:
     return imported_project_uuid
 
 
-@pytest.mark.skip(
-    reason="FIXME: validation errors. SEE https://github.com/ITISFoundation/osparc-simcore/pull/2220/checks?check_run_id=2244051004. Fix in next PR"
-)
+
+# TODO: Fix this https://github.com/ITISFoundation/osparc-simcore/pull/2220/checks?check_run_id=2244051004
 @pytest.mark.parametrize("export_version", get_exported_projects())
 async def test_import_export_import_duplicate(
     loop,
