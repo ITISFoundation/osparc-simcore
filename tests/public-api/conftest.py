@@ -37,6 +37,7 @@ def devel_environ(devel_environ: Dict[str, str]) -> Dict[str, str]:
 @pytest.fixture(scope="module")
 def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
     """ Selection of services from the simcore stack """
+    # TODO: this should be the default if NOT defined
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
     all_core_services = list(simcore_docker_compose["services"].keys())
     return all_core_services
@@ -74,9 +75,6 @@ def make_up_prod(
 
 @pytest.fixture(scope="module")
 def registered_user(make_up_prod):
-    import pdb
-
-    pdb.set_trace()
     user = {
         "email": "first.last@mymail.com",
         "password": "my secret",
@@ -134,20 +132,9 @@ def services_registry(
     #
     user_email = registered_user["email"]
 
-    import pdb
-
-    pdb.set_trace()
-
     sleeper_service = docker_registry_image_injector(
         "itisfoundation/sleeper", "2.1.1", user_email
     )
-
-    # sleeper_service = {}
-    # sleeper_service["image"] = {
-    #    "name": "simcore/services/comp/itis/sleeper",
-    #    "tag": "2.1.1",
-    # }
-    # sleeper_service["schema"] =
 
     assert sleeper_service["image"]["tag"] == "2.1.1"
     assert sleeper_service["image"]["name"] == "simcore/services/comp/itis/sleeper"
