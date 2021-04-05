@@ -4,6 +4,7 @@
 
 import logging
 import os
+import time
 from pprint import pformat
 from typing import Any, Callable, Dict, List
 
@@ -125,6 +126,7 @@ def registered_user(make_up_prod):
 def services_registry(
     docker_registry_image_injector: Callable,
     registered_user: Dict[str, str],
+    devel_environ: Dict[str, str],
 ) -> Dict[str, Any]:
     # NOTE: service image MUST be injected in registry AFTER user is registered
     #
@@ -200,6 +202,14 @@ def services_registry(
         "version": "2.1.1",
     }
 
+    wait_for_catalog_to_detect = float(
+        devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"]
+    )
+    print(
+        "Catalog should take %s to detect new services ...", wait_for_catalog_to_detect
+    )
+    time.sleep(wait_for_catalog_to_detect)
+
     return {
         "sleeper_service": {
             "name": sleeper_service["image"]["name"],
@@ -237,5 +247,6 @@ def files_api(api_client) -> osparc.FilesApi:
 
 
 @pytest.fixture(scope="module")
-def solvers_api(api_client) -> osparc.SolversApi:
+def solvers_api(api_client, services_registry) -> osparc.SolversApi:
+    # services_registry fixture dependency ensures that services are injected in registry
     return osparc.SolversApi(api_client)
