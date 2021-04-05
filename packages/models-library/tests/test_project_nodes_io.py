@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from pprint import pformat
 from typing import Any, Dict
 
 import pytest
@@ -34,3 +35,14 @@ def test_simcore_file_link_with_label(minimal_simcore_file_link: Dict[str, Any])
     assert simcore_file_link.path == minimal_simcore_file_link["path"]
     assert simcore_file_link.label == "some new label that is amazing"
     assert simcore_file_link.e_tag == None
+
+
+@pytest.mark.parametrize("model_cls", (SimCoreFileLink,))
+def test_project_nodes_io_model_examples(model_cls, model_cls_examples):
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
+
+        model_instance = model_cls(**example)
+
+        assert model_instance, f"Failed with {name}"
+        print(name, ":", model_instance)

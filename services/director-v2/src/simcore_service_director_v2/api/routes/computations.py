@@ -1,3 +1,5 @@
+# pylint: disable=too-many-arguments
+
 import logging
 from typing import Any, Dict, List
 
@@ -91,7 +93,6 @@ async def _abort_pipeline_tasks(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_computation(
-    # pylint: disable=too-many-arguments
     job: ComputationTaskCreate,
     request: Request,
     project_repo: ProjectsRepository = Depends(get_repository(ProjectsRepository)),

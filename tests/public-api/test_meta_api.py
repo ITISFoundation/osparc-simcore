@@ -7,7 +7,7 @@ import pytest
 from osparc.models import Meta
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def meta_api(api_client):
     return osparc.MetaApi(api_client)
 

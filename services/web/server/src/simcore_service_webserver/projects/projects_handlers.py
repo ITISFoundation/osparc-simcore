@@ -1,6 +1,8 @@
 """ Handlers for CRUD operations on /projects/
 
 """
+# pylint: disable=too-many-branches
+
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
@@ -44,7 +46,6 @@ log = logging.getLogger(__name__)
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
-    # pylint: disable=too-many-branches
     # TODO: keep here since is async and parser thinks it is a handler
 
     user_id = request[RQT_USERID_KEY]

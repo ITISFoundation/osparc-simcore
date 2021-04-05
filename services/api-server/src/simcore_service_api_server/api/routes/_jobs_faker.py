@@ -75,7 +75,7 @@ class JobsFaker:
         if not job_status:
             job_status = JobStatus(
                 job_id=job.id,
-                state=TaskStates.UNDEFINED,
+                state=TaskStates.UNKNOWN,
                 progress=0,
                 submitted_at=datetime.utcnow(),
             )
@@ -114,7 +114,7 @@ class JobsFaker:
             await asyncio.sleep(random.randint(*MOCK_PENDING_TIME))  # nosec
 
             # -------------------------------------------------
-            job_status.state = TaskStates.RUNNING
+            job_status.state = TaskStates.STARTED
             job_status.take_snapshot("started")
             logger.info(job_status)
 

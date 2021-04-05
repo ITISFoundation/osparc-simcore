@@ -11,7 +11,7 @@
 
 import functools
 import logging
-from typing import Callable, Dict, List, Union
+from typing import Callable, Union
 
 import httpx
 from fastapi import HTTPException
@@ -24,7 +24,7 @@ from tenacity import (
     wait_fixed,
 )
 
-JsonDataType = Union[Dict, List]
+from ..models.raw_data import JSON
 
 
 def handle_retry(logger: logging.Logger):
@@ -56,7 +56,7 @@ def handle_errors(
 
     def decorator_func(request_func: Callable):
         @functools.wraps(request_func)
-        async def wrapper_func(*args, **kwargs) -> Union[JsonDataType, httpx.Response]:
+        async def wrapper_func(*args, **kwargs) -> Union[JSON, httpx.Response]:
             try:
                 # TODO: assert signature!?
                 resp: httpx.Response = await request_func(*args, **kwargs)
@@ -81,7 +81,7 @@ def handle_errors(
                         service_name,
                         resp.reason_phrase,
                         resp.status_code,
-                        resp.text(),
+                        resp.text,
                     )
                     raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
