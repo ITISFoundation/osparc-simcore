@@ -20,6 +20,8 @@ def sleeper_key_and_version(services_registry: Dict[str, Any]) -> Tuple[str, str
     repository_name = services_registry["sleeper_service"]["name"]
     tag = services_registry["sleeper_service"]["version"]
 
+    assert repository_name == "simcore/services/comp/itis/sleeper"
+    assert tag == "2.1.1"
     # this is how image info map into solvers identifiers
     #
     #  repository_name -> solver_key
@@ -37,6 +39,7 @@ def test_get_latest_solver(solvers_api: SolversApi):
 
         solver_names.append(latest.id)
 
+    assert solver_names
     assert sorted(solver_names) == sorted(set(solver_names))
 
 
