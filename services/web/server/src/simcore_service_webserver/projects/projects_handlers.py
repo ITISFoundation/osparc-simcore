@@ -26,8 +26,8 @@ from .projects_db import APP_PROJECT_DBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
     clone_project_document,
-    project_uses_available_services,
     get_project_unavilable_services,
+    project_uses_available_services,
 )
 
 OVERRIDABLE_DOCUMENT_KEYS = [
@@ -166,6 +166,7 @@ async def list_projects(request: web.Request):
                 for prj, is_template in zip(projects, project_types)
             ],
             reraise=True,
+            max_concurrency=100,
         )
 
     user_available_services: List[

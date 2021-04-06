@@ -97,7 +97,9 @@ def webserver_environ(
         if "ports" in simcore_docker_compose["services"][name]
     ]
     for name in services_with_published_ports:
-
+        if name == "pgbouncer":
+            # skip it since pgbouncer wraps postgres and uses the same envs
+            continue
         host_key = f"{name.upper().replace('-', '_')}_HOST"
         port_key = f"{name.upper().replace('-', '_')}_PORT"
 
