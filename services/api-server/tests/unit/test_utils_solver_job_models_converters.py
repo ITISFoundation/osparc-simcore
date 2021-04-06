@@ -86,6 +86,7 @@ def test_job_to_node_inputs_conversion():
         "title": "Temperature",
         "enabled": True,
         "input_file": SimCoreFileLink(
+            store=0,
             path="api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
             eTag="859fda0cb82fc4acb4686510a172d9a9-1",
             label="input.txt",
