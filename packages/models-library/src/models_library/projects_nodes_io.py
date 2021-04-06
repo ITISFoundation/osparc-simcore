@@ -58,7 +58,7 @@ class BaseFileLink(BaseModel):
     # Recall lru_cache options regarding types!!
     store: Union[str, int] = Field(
         ...,
-        description="The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
+        description="The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore",
         examples=["0", 1],
     )
 
@@ -70,11 +70,6 @@ class BaseFileLink(BaseModel):
             "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
             "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
         ],
-    )
-
-    dataset: Optional[str] = Field(
-        None,
-        description="Unique identifier to access the dataset on datcore (only REQUIRED for datcore)",
     )
 
     label: Optional[str] = Field(
@@ -93,15 +88,18 @@ class BaseFileLink(BaseModel):
 class SimCoreFileLink(BaseFileLink):
     """ I/O port type to hold a link to a file in simcore S3 storage """
 
-    store: str = "0"
+    dataset: Optional[str] = Field(
+        None,
+        deprecated=True
+        # TODO: Remove with storage refactoring
+    )
 
     @validator("store", always=True)
     @classmethod
-    def must_be_simcore_s3(cls, v):
-        if v is None:
-            v = "0"
+    def check_discriminator(cls, v):
+        """ Used as discriminator to cast to this class """
         if v != "0":
-            raise ValueError(f"SimCore store must be set to 0, got {v}")
+            raise ValueError(f"SimCore store identifier must be set to 0, got {v}")
         return "0"
 
     @validator("label", always=True, pre=True)
@@ -109,13 +107,13 @@ class SimCoreFileLink(BaseFileLink):
     def pre_fill_label_with_filename_ext(cls, v, values):
         if v is None and "path" in values:
             return Path(values["path"]).name
-
         return v
 
     class Config:
         extra = Extra.forbid
         schema_extra = {
             "example": {
+                "store": "0",
                 "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
                 "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
                 "label": "input.txt",
@@ -123,6 +121,7 @@ class SimCoreFileLink(BaseFileLink):
             "examples": [
                 # minimal
                 {
+                    "store": "0",
                     "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
                 }
             ],
@@ -131,8 +130,6 @@ class SimCoreFileLink(BaseFileLink):
 
 class DatCoreFileLink(BaseFileLink):
     """ I/O port type to hold a link to a file in DATCORE storage """
-
-    store: str = "1"
 
     label: str = Field(
         ...,
@@ -148,29 +145,21 @@ class DatCoreFileLink(BaseFileLink):
 
     @validator("store", always=True)
     @classmethod
-    def must_be_datcore(cls, v):
-        if v is None:
-            v = "1"
+    def check_discriminator(cls, v):
+        """ Used as discriminator to cast to this class """
+
         if v != "1":
-            raise ValueError(f"Datcore store must be set to 1, got {v}")
+            raise ValueError(f"DatCore store must be set to 1, got {v}")
         return "1"
 
     class Config:
         extra = Extra.forbid
         schema_extra = {
             "example": {
-                "store": "1",
-                "path": "f551278e-54ee-11eb-bf88-02420a00005a/377059c7-27c1-4428-943e-52d91bb9311f/single_number.txt",
-                "eTag": "28394b3e806aca87776a6bef9be23fd4-1",
-                "label": "single_number.txt",
-                "dataset": "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041",
-            },
-            "examples": [
                 # minimal
-                {
-                    "path": "f551278e-54ee-11eb-bf88-02420a00005a/377059c7-27c1-4428-943e-52d91bb9311f/input.txt",
-                    "label": "input.txt",
-                    "dataset": "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041",
-                }
-            ],
+                "store": 1,
+                "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                "label": "initial_WTstates",
+            },
         }
