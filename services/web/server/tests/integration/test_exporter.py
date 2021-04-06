@@ -193,7 +193,7 @@ async def login_user(client):
 def get_exported_projects() -> List[Path]:
     # TODO: explain how to re-generate these files?
     exporter_dir = CURRENT_DIR / ".." / "data" / "exporter"
-    return [x for x in exporter_dir.glob("*.osparc")]
+    return sorted([x for x in exporter_dir.glob("*.osparc")])
 
 
 @pytest.fixture
