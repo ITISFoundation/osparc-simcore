@@ -17,7 +17,6 @@ import aiofiles
 import aiohttp
 import aiopg
 import aioredis
-import psycopg2
 import pytest
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
@@ -51,6 +50,7 @@ from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.storage import setup_storage
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from simcore_service_webserver.users import setup_users
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -66,8 +66,8 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = ["minio"]
 
-
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
@@ -191,12 +191,14 @@ async def login_user(client):
 
 
 def get_exported_projects() -> List[Path]:
-    exporter_dir = CURRENT_DIR / ".." / "data" / "exporter"
+    # These files are generated from the front-end
+    # when the formatter be finished
+    exporter_dir = CURRENT_DIR.parent / "data" / "exporter"
     return [x for x in exporter_dir.glob("*.osparc")]
 
 
 @pytest.fixture
-async def monkey_patch_asyncio_subporcess(mocker):
+async def monkey_patch_asyncio_subprocess(mocker):
     # TODO: The below bug is not allowing me to fully test,
     # mocking and waiting for an update
     # https://bugs.python.org/issue35621
@@ -237,7 +239,7 @@ async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
                 version=service_version,
                 owner=1,  # a user is required in the database for ownership of metadata
                 name="",
-                description="",
+                description=f"OVERRIDEN BY TEST in {__file__}",
             )
 
             access_rights_values = dict(
@@ -249,17 +251,31 @@ async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
             )
 
             async with db_engine.acquire() as conn:
-                try:
-                    # pylint: disable=no-value-for-parameter
-                    await conn.execute(
-                        services_meta_data.insert().values(**metada_data_values)
+                # pylint: disable=no-value-for-parameter
+                await conn.execute(
+                    pg_insert(services_meta_data)
+                    .values(**metada_data_values)
+                    .on_conflict_do_update(
+                        index_elements=[
+                            services_meta_data.c.key,
+                            services_meta_data.c.version,
+                        ],
+                        set_=metada_data_values,
                     )
-                    await conn.execute(
-                        services_access_rights.insert().values(**access_rights_values)
+                )
+                await conn.execute(
+                    pg_insert(services_access_rights)
+                    .values(**access_rights_values)
+                    .on_conflict_do_update(
+                        index_elements=[
+                            services_access_rights.c.key,
+                            services_access_rights.c.version,
+                            services_access_rights.c.gid,
+                            services_access_rights.c.product_name,
+                        ],
+                        set_=access_rights_values,
                     )
-                except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
-                    # do not care if already exists
-                    pass
+                )
 
     yield grant_rights_to_services
 
@@ -497,10 +513,9 @@ async def import_study_from_file(client, file_path: Path) -> str:
     return imported_project_uuid
 
 
-@pytest.mark.skip(
-    reason="FIXME: validation errors. SEE https://github.com/ITISFoundation/osparc-simcore/pull/2220/checks?check_run_id=2244051004. Fix in next PR"
+@pytest.mark.parametrize(
+    "export_version", get_exported_projects(), ids=(lambda p: p.name)
 )
-@pytest.mark.parametrize("export_version", get_exported_projects())
 async def test_import_export_import_duplicate(
     loop,
     client,
@@ -509,7 +524,7 @@ async def test_import_export_import_duplicate(
     db_engine,
     redis_client,
     export_version,
-    monkey_patch_asyncio_subporcess,
+    monkey_patch_asyncio_subprocess,
     simcore_services,
     monkey_patch_aiohttp_request_url,
     grant_access_rights,

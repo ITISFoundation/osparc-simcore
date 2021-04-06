@@ -30,6 +30,7 @@ from .projects_nodes_ui import Position
 from .projects_state import RunningState
 from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
 
+# NOTE: WARNING the order here matters
 InputTypes = Union[
     StrictBool,
     StrictInt,
