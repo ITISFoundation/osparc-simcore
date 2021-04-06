@@ -119,7 +119,13 @@ class SimCoreFileLink(BaseFileLink):
                 "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
                 "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
                 "label": "input.txt",
-            }
+            },
+            "examples": [
+                # minimal
+                {
+                    "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                }
+            ],
         }
 
 
@@ -133,6 +139,7 @@ class DatCoreFileLink(BaseFileLink):
         description="The real file name",
         examples=["MyFile.txt"],
     )
+
     dataset: str = Field(
         ...,
         description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
@@ -157,5 +164,13 @@ class DatCoreFileLink(BaseFileLink):
                 "eTag": "28394b3e806aca87776a6bef9be23fd4-1",
                 "label": "single_number.txt",
                 "dataset": "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041",
-            }
+            },
+            "examples": [
+                # minimal
+                {
+                    "path": "f551278e-54ee-11eb-bf88-02420a00005a/377059c7-27c1-4428-943e-52d91bb9311f/input.txt",
+                    "label": "input.txt",
+                    "dataset": "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041",
+                }
+            ],
         }
