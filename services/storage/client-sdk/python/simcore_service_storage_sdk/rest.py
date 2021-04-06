@@ -30,7 +30,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_http_client_request_aiohttp_connect_timeout() -> Optional[int]:
-    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", 0)) or None
+    return (
+        int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "0")) or None
+    )
 
 
 def get_http_client_request_aiohttp_sock_connect_timeout() -> Optional[int]:
