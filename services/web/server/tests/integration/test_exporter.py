@@ -17,7 +17,6 @@ import aiofiles
 import aiohttp
 import aiopg
 import aioredis
-import psycopg2
 import pytest
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
@@ -66,6 +65,8 @@ pytest_simcore_core_services_selection = [
     "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio"]
+
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 API_VERSION = "v0"
@@ -189,10 +190,10 @@ async def login_user(client):
     return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
 
 
-def get_exported_projects(project_tests_dir) -> List[Path]:
+def get_exported_projects() -> List[Path]:
     # These files are generated from the front-end
     # when the formatter be finished
-    exporter_dir = project_tests_dir / "data" / "exporter"
+    exporter_dir = CURRENT_DIR.parent / "data" / "exporter"
     return [x for x in exporter_dir.glob("*.osparc")]
 
 
@@ -473,7 +474,7 @@ async def download_files_and_get_checksums(
         return checksums
 
 
-async def get_checksums_for_files_in_storage(
+async def get_checksmus_for_files_in_storage(
     app: aiohttp.web.Application,
     project: Dict[str, Any],
     normalized_project: Dict[str, Any],
@@ -619,19 +620,19 @@ async def test_import_export_import_duplicate(
     )
 
     # check files in storage fingerprint matches
-    imported_files_checksums = await get_checksums_for_files_in_storage(
+    imported_files_checksums = await get_checksmus_for_files_in_storage(
         app=client.app,
         project=imported_project,
         normalized_project=normalized_imported_project,
         user_id=user["id"],
     )
-    reimported_files_checksums = await get_checksums_for_files_in_storage(
+    reimported_files_checksums = await get_checksmus_for_files_in_storage(
         app=client.app,
         project=reimported_project,
         normalized_project=normalized_reimported_project,
         user_id=user["id"],
     )
-    duplicated_files_checksums = await get_checksums_for_files_in_storage(
+    duplicated_files_checksums = await get_checksmus_for_files_in_storage(
         app=client.app,
         project=duplicated_project,
         normalized_project=normalized_duplicated_project,
