@@ -51,6 +51,7 @@ from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.storage import setup_storage
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from simcore_service_webserver.users import setup_users
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -66,8 +67,6 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = ["minio"]
 
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
@@ -190,14 +189,15 @@ async def login_user(client):
     return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
 
 
-def get_exported_projects() -> List[Path]:
-    # TODO: explain how to re-generate these files?
-    exporter_dir = CURRENT_DIR / ".." / "data" / "exporter"
-    return sorted([x for x in exporter_dir.glob("*.osparc")])
+def get_exported_projects(project_tests_dir) -> List[Path]:
+    # These files are generated from the front-end
+    # when the formatter be finished
+    exporter_dir = project_tests_dir / "data" / "exporter"
+    return [x for x in exporter_dir.glob("*.osparc")]
 
 
 @pytest.fixture
-async def monkey_patch_asyncio_subporcess(mocker):
+async def monkey_patch_asyncio_subprocess(mocker):
     # TODO: The below bug is not allowing me to fully test,
     # mocking and waiting for an update
     # https://bugs.python.org/issue35621
@@ -238,7 +238,7 @@ async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
                 version=service_version,
                 owner=1,  # a user is required in the database for ownership of metadata
                 name="",
-                description="",
+                description=f"OVERRIDEN BY TEST in {__file__}",
             )
 
             access_rights_values = dict(
@@ -250,17 +250,31 @@ async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
             )
 
             async with db_engine.acquire() as conn:
-                try:
-                    # pylint: disable=no-value-for-parameter
-                    await conn.execute(
-                        services_meta_data.insert().values(**metada_data_values)
+                # pylint: disable=no-value-for-parameter
+                await conn.execute(
+                    pg_insert(services_meta_data)
+                    .values(**metada_data_values)
+                    .on_conflict_do_update(
+                        index_elements=[
+                            services_meta_data.c.key,
+                            services_meta_data.c.version,
+                        ],
+                        set_=metada_data_values,
                     )
-                    await conn.execute(
-                        services_access_rights.insert().values(**access_rights_values)
+                )
+                await conn.execute(
+                    pg_insert(services_access_rights)
+                    .values(**access_rights_values)
+                    .on_conflict_do_update(
+                        index_elements=[
+                            services_access_rights.c.key,
+                            services_access_rights.c.version,
+                            services_access_rights.c.gid,
+                            services_access_rights.c.product_name,
+                        ],
+                        set_=access_rights_values,
                     )
-                except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
-                    # do not care if already exists
-                    pass
+                )
 
     yield grant_rights_to_services
 
@@ -459,7 +473,7 @@ async def download_files_and_get_checksums(
         return checksums
 
 
-async def get_checksmus_for_files_in_storage(
+async def get_checksums_for_files_in_storage(
     app: aiohttp.web.Application,
     project: Dict[str, Any],
     normalized_project: Dict[str, Any],
@@ -498,7 +512,9 @@ async def import_study_from_file(client, file_path: Path) -> str:
     return imported_project_uuid
 
 
-@pytest.mark.parametrize("export_version", get_exported_projects())
+@pytest.mark.parametrize(
+    "export_version", get_exported_projects(), ids=(lambda p: p.name)
+)
 async def test_import_export_import_duplicate(
     loop,
     client,
@@ -507,7 +523,7 @@ async def test_import_export_import_duplicate(
     db_engine,
     redis_client,
     export_version,
-    monkey_patch_asyncio_subporcess,
+    monkey_patch_asyncio_subprocess,
     simcore_services,
     monkey_patch_aiohttp_request_url,
     grant_access_rights,
@@ -603,19 +619,19 @@ async def test_import_export_import_duplicate(
     )
 
     # check files in storage fingerprint matches
-    imported_files_checksums = await get_checksmus_for_files_in_storage(
+    imported_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=imported_project,
         normalized_project=normalized_imported_project,
         user_id=user["id"],
     )
-    reimported_files_checksums = await get_checksmus_for_files_in_storage(
+    reimported_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=reimported_project,
         normalized_project=normalized_reimported_project,
         user_id=user["id"],
     )
-    duplicated_files_checksums = await get_checksmus_for_files_in_storage(
+    duplicated_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=duplicated_project,
         normalized_project=normalized_duplicated_project,
