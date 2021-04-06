@@ -221,7 +221,7 @@ async def request_retrieve_dyn_service(
     try:
         # request to director-v2
         client_timeout = ClientTimeout(
-            total=SERVICE_RETRIEVE_HTTP_TIMEOUT, connect=5, sock_connect=5
+            total=SERVICE_RETRIEVE_HTTP_TIMEOUT, connect=None, sock_connect=5
         )
         await _request_director_v2(
             app, "POST", backend_url, data=body, timeout=client_timeout
