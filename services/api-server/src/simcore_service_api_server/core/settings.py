@@ -57,6 +57,7 @@ class StorageSettings(BaseServiceSettings):
 class DirectorV2Settings(BaseServiceSettings):
     host: str = "director-v2"
     port: int = 8000
+    vtag: str = "v2"
 
     class Config(_CommonConfig):
         env_prefix = "DIRECTOR2_"

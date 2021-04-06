@@ -5,7 +5,7 @@ from uuid import UUID, uuid3
 
 import aiofiles
 from fastapi import UploadFile
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 from ...utils.hash import create_md5_checksum
 
@@ -30,35 +30,49 @@ class File(BaseModel):
 
     class Config:
         schema_extra = {
-            "example": {
-                "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
-                "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
-                "content_type": "application/pdf",
-                "checksum": "de47d0e1229aa2dfb80097389094eadd-1",
-            }
+            "examples": [
+                # complete
+                {
+                    "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
+                    "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
+                    "content_type": "application/pdf",
+                    "checksum": "de47d0e1229aa2dfb80097389094eadd-1",
+                },
+                # minimum
+                {
+                    "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
+                    "filename": "whitepaper.pdf",
+                },
+            ]
         }
+
+    @validator("content_type", always=True, pre=True)
+    @classmethod
+    def guess_content_type(cls, v, values):
+        if v is None:
+            filename = values.get("filename")
+            if filename:
+                mime_content_type, _ = guess_type(filename, strict=False)
+                return mime_content_type
+        return v
 
     @classmethod
     async def create_from_path(cls, path: Path) -> "File":
         async with aiofiles.open(path, mode="rb") as file:
             md5check = await create_md5_checksum(file)
 
-        mime_content_type, _ = guess_type(path.name)
         return cls(
             id=cls.create_id(md5check, path.name),
             filename=path.name,
-            content_type=mime_content_type,
             checksum=md5check,
         )
 
     @classmethod
-    async def create_from_file_link(cls, s3_link: str, e_tag: str) -> "File":
-        file_with_ext = Path(s3_link).name
-        mime_content_type, _ = guess_type(file_with_ext)
+    async def create_from_file_link(cls, s3_object_path: str, e_tag: str) -> "File":
+        filename = Path(s3_object_path).name
         return cls(
-            id=cls.create_id(s3_link, e_tag),
-            filename=file_with_ext,
-            content_type=mime_content_type,
+            id=cls.create_id(e_tag, filename),
+            filename=filename,
             checksum=e_tag,
         )
 
