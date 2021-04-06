@@ -61,6 +61,7 @@ class BaseFileLink(BaseModel):
         description="The store identifier, '0' or 0 for simcore S3, '1' or 1 for datcore",
         examples=["0", 1],
     )
+
     path: str = Field(
         ...,
         regex=r"^.+$",
@@ -70,15 +71,22 @@ class BaseFileLink(BaseModel):
             "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
         ],
     )
-    e_tag: Optional[str] = Field(
+
+    dataset: Optional[str] = Field(
         None,
-        description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
-        alias="eTag",
+        description="Unique identifier to access the dataset on datcore (only REQUIRED for datcore)",
     )
+
     label: Optional[str] = Field(
         None,
         description="The real file name",
         examples=["MyFile.txt"],
+    )
+
+    e_tag: Optional[str] = Field(
+        None,
+        description="Entity tag that uniquely represents the file. The method to generate the tag is not specified (black box).",
+        alias="eTag",
     )
 
 
@@ -142,3 +150,12 @@ class DatCoreFileLink(BaseFileLink):
 
     class Config:
         extra = Extra.forbid
+        schema_extra = {
+            "example": {
+                "store": "1",
+                "path": "f551278e-54ee-11eb-bf88-02420a00005a/377059c7-27c1-4428-943e-52d91bb9311f/single_number.txt",
+                "eTag": "28394b3e806aca87776a6bef9be23fd4-1",
+                "label": "single_number.txt",
+                "dataset": "N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041",
+            }
+        }

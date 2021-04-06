@@ -6,7 +6,7 @@ from pprint import pformat
 from typing import Any, Dict
 
 import pytest
-from models_library.projects_nodes_io import SimCoreFileLink
+from models_library.projects_nodes_io import DatCoreFileLink, SimCoreFileLink
 
 
 @pytest.fixture()
@@ -37,7 +37,7 @@ def test_simcore_file_link_with_label(minimal_simcore_file_link: Dict[str, Any])
     assert simcore_file_link.e_tag == None
 
 
-@pytest.mark.parametrize("model_cls", (SimCoreFileLink,))
+@pytest.mark.parametrize("model_cls", (SimCoreFileLink, DatCoreFileLink))
 def test_project_nodes_io_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
