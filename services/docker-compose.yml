@@ -264,7 +264,7 @@ services:
       - default
 
   pgbouncer:
-    image: pgbouncer/pgbouncer:1.15.0
+    image: "pgbouncer/pgbouncer:1.15.0@sha256:eb9e09528efac231afef1e41dfb0346e239b242c7728881dddce7e6984a97370"
     init: true
     environment:
       - DATABASES_HOST=postgres
