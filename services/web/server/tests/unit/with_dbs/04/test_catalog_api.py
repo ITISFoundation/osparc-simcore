@@ -73,7 +73,7 @@ def patch_app_client_session(client, mocker):
     client_session.request.return_value = context_mock
 
     mocker.patch(
-        "simcore_service_webserver.catalog.get_client_session",
+        "simcore_service_webserver.catalog_client.get_client_session",
         return_value=client_session,
     )
 
