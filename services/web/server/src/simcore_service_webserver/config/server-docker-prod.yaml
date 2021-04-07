@@ -31,7 +31,7 @@ db:
     long_running_session_host: ${POSTGRES_LONG_RUNNING_SESSION_HOST}
     port: ${POSTGRES_PORT}
     minsize: 10
-    maxsize: 40
+    maxsize: 100
 resource_manager:
   enabled: True
   resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}

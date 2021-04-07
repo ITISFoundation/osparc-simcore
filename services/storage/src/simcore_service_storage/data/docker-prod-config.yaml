@@ -13,7 +13,7 @@ postgres:
   host: ${POSTGRES_HOST}
   port: ${POSTGRES_PORT}
   minsize: 10
-  maxsize: 15
+  maxsize: 100
 s3:
   endpoint: ${S3_ENDPOINT}
   access_key: ${S3_ACCESS_KEY}
