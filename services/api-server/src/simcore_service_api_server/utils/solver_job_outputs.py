@@ -33,10 +33,14 @@ async def get_solver_output_results(
             )
             solver_output_results[port.key] = port.value
             if isinstance(port.value, BaseFileLink):
+                # FIXME: this file is NOT stored in S3 as files/{}/file.txt
                 file_link: BaseFileLink = port.value
                 solver_output_results[port.key] = await File.create_from_file_link(
                     file_link.path, file_link.e_tag
                 )
+
+                # TODO: produce a link as api/.../
+
         return solver_output_results
 
     except node_ports_v2.exceptions.NodeNotFound as err:

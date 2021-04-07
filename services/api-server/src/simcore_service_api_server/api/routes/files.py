@@ -21,7 +21,6 @@ from ...models.schemas.files import File
 from ...modules.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ..dependencies.authentication import get_current_user_id
 from ..dependencies.services import get_api_client
-from .files_faker import the_fake_impl
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -120,6 +119,8 @@ async def upload_files(files: List[UploadFile] = FileParam(...)):
     # Since there is no inmediate need of this functions, we decided to disable it
     #
     async def save_file(file):
+        from ._files_faker import the_fake_impl
+
         metadata = await the_fake_impl.save(file)
         return metadata
 

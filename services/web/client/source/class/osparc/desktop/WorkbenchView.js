@@ -424,6 +424,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __showInMainView: function(widget, nodeId) {
       this.__mainPanel.setMainView(widget);
 
+      if (widget.getNode && widget.getInputsView) {
+        setTimeout(() => {
+          widget.getInputsView().setCollapsed(widget.getNode().getInputNodes().length === 0);
+        }, 150);
+      }
+
       this.__nodesTree.nodeSelected(nodeId);
       this.__loggerView.setCurrentNodeId(nodeId);
 

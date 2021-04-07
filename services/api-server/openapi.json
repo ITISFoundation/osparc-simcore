@@ -711,7 +711,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:start": {
@@ -774,7 +779,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:stop": {
@@ -837,7 +847,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}:inspect": {
@@ -900,7 +915,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     },
     "/v0/solvers/{solver_key}/releases/{version}/jobs/{job_id}/outputs": {
@@ -963,7 +983,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ]
       }
     }
   },
@@ -1013,13 +1038,7 @@
             "description": "MD5 hash of the file's content [EXPERIMENTAL]"
           }
         },
-        "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud.",
-        "example": {
-          "id": "f0e1fb11-208d-3ed2-b5ef-cab7a7398f78",
-          "filename": "Architecture-of-Scalable-Distributed-ETL-System-whitepaper.pdf",
-          "content_type": "application/pdf",
-          "checksum": "de47d0e1229aa2dfb80097389094eadd-1"
-        }
+        "description": "Represents a file stored on the server side i.e. a unique reference to a file in the cloud."
       },
       "Groups": {
         "title": "Groups",
@@ -1171,7 +1190,8 @@
             "enabled": true,
             "input_file": {
               "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-              "filename": "input.txt"
+              "filename": "input.txt",
+              "content_type": "text/plain"
             }
           }
         }
@@ -1220,7 +1240,8 @@
             "enabled": false,
             "output_file": {
               "id": "0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-              "filename": "sar_matrix.txt"
+              "filename": "sar_matrix.txt",
+              "content_type": "text/plain"
             }
           }
         }
@@ -1266,6 +1287,13 @@
             "description": "Timestamp at which the solver finished or killed execution or None if the event did not occur",
             "format": "date-time"
           }
+        },
+        "example": {
+          "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
+          "state": "STARTED",
+          "progress": 3,
+          "submitted_at": "2021-04-01 07:15:54.631007",
+          "started_at": "2021-04-01 07:16:43.670610"
         }
       },
       "Meta": {
@@ -1453,11 +1481,15 @@
       "TaskStates": {
         "title": "TaskStates",
         "enum": [
-          "undefined",
-          "pending",
-          "running",
-          "success",
-          "failed"
+          "UNKNOWN",
+          "PUBLISHED",
+          "NOT_STARTED",
+          "PENDING",
+          "STARTED",
+          "RETRY",
+          "SUCCESS",
+          "FAILED",
+          "ABORTED"
         ],
         "type": "string",
         "description": "An enumeration."

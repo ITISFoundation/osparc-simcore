@@ -192,7 +192,7 @@ async def compute_pipeline_details(
                 ),
             )
             for node_id, node_data in complete_dag.nodes.data()
-            if _is_node_computational(node_data["key"])
+            if _is_node_computational(node_data.get("key", ""))
         },
     )
 

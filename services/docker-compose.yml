@@ -263,6 +263,25 @@ services:
     networks:
       - default
 
+  pgbouncer:
+    image: "pgbouncer/pgbouncer:1.15.0@sha256:aa8a38b7b33e5fe70c679053f97a8e55c74d52b00c195f0880845e52b50ce516"
+    init: true
+    environment:
+      - DATABASES_HOST=postgres
+      - DATABASES_PORT=${POSTGRES_PORT}
+      - DATABASES_USER=${POSTGRES_USER}
+      - DATABASES_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASES_DBNAME=${POSTGRES_DB}
+      - PGBOUNCER_LISTEN_ADDE=*
+      - PGBOUNCER_LISTEN_PORT=${POSTGRES_PORT}
+      - PGBOUNCER_POOL_MODE=transaction
+      - PGBOUNCER_ADMIN_USERS=${POSTGRES_USER}
+    networks:
+      - default
+      - interactive_services_subnet
+      - computational_services_subnet
+      - postgres_network
+
   postgres:
     image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     init: true
@@ -273,9 +292,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - default
-      - interactive_services_subnet
-      - computational_services_subnet
+      - postgres_network
     healthcheck:
       test:
         [
@@ -388,6 +405,8 @@ volumes:
 
 networks:
   default:
+    attachable: true
+  postgres_network:
     attachable: true
   interactive_services_subnet:
     driver: overlay
