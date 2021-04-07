@@ -10,12 +10,10 @@ from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive
 from .meta import api_version, api_version_prefix, app_name
 
-vx = f"/{api_version_prefix}"
-
 routes = RouteTableDef()
 
 
-@routes.get(f"{vx}/status")
+@routes.get(f"/{api_version_prefix}/status")
 async def get_app_status(request: Request):
     # NOTE: all calls here must NOT raise
 
