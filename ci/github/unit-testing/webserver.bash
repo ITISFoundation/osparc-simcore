@@ -38,16 +38,17 @@ test_with_db_medium() {
     -v -m "not travis" services/web/server/tests/unit/with_dbs/medium
 }
 
+test_with_db() {
+  echo "testing in services/web/server/tests/unit/with_dbs/$1"
+  pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    -v -m "not travis" services/web/server/tests/unit/with_dbs/$1
+}
+
 test_with_db_fast() {
   pytest --cov=simcore_service_webserver --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     -v -m "not travis" services/web/server/tests/unit/with_dbs/fast
-}
-
-test_with_db_01() {
-  pytest --cov=simcore_service_webserver --durations=10 --cov-append \
-    --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v -m "not travis" services/web/server/tests/unit/with_dbs/01
 }
 
 # Check if the function exists (bash specific)
