@@ -15,13 +15,21 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
-from servicelib.application_keys import APP_DB_ENGINE_KEY
+from servicelib.aiopg_utils import (
+    DataSourceName,
+    PostgresRetryPolicyUponInitialization,
+    create_pg_engine,
+    raise_if_not_responsive,
+)
+from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import DB_CHANNEL_NAME, projects
 from sqlalchemy.sql import select
+from tenacity import Retrying
 
 from .computation_api import convert_state_from_db
+from .db_config import CONFIG_SECTION_NAME
 from .projects import projects_api, projects_exceptions
 from .projects.projects_utils import project_get_depending_nodes
 
@@ -89,9 +97,9 @@ async def _update_project_outputs(
     )
 
 
-async def listen(app: web.Application):
+async def listen(app: web.Application, db_engine: Engine):
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    db_engine: Engine = app[APP_DB_ENGINE_KEY]
+
     async with db_engine.acquire() as conn:
         await conn.execute(listen_query)
 
@@ -165,12 +173,39 @@ async def listen(app: web.Application):
                 continue
 
 
+async def listening_channel_pg_engine(app: web.Application) -> Engine:
+    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    pg_cfg = cfg["postgres"]
+
+    dsn = DataSourceName(
+        application_name=f"{__name__}_{id(app)}",
+        database=pg_cfg["database"],
+        user=pg_cfg["user"],
+        password=pg_cfg["password"],
+        host=pg_cfg["long_running_session_host"],
+        port=pg_cfg["port"],
+    )
+    MIN_SIZE = 1
+    MAX_SIZE = 1
+    log.info("Creating listening pg engine for %s", dsn)
+    for attempt in Retrying(**PostgresRetryPolicyUponInitialization(log).kwargs):
+        with attempt:
+            engine = await create_pg_engine(dsn, minsize=MIN_SIZE, maxsize=MAX_SIZE)
+            await raise_if_not_responsive(engine)
+
+    assert engine  # nosec
+
+    return engine  # -------------------
+
+
 async def comp_tasks_listening_task(app: web.Application) -> None:
     log.info("starting comp_task db listening task...")
     while True:
         try:
+            # create a special connection here
+            db_engine = await listening_channel_pg_engine(app)
             log.info("listening to comp_task events...")
-            await listen(app)
+            await listen(app, db_engine)
         except asyncio.CancelledError:
             # we are closing the app..
             return
@@ -179,6 +214,9 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
                 "caught unhandled comp_task db listening task exception, restarting...",
                 exc_info=True,
             )
+        finally:
+            db_engine.close()
+            await db_engine.wait_closed()
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):

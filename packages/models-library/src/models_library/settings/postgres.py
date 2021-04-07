@@ -17,6 +17,10 @@ class PostgresSettings(BaseSettings):
     # entrypoint
     host: str
     port: PortInt = 5432
+    long_running_session_host: Optional[str] = Field(
+        None,
+        description="host for long running sessions (e.g. listen/notify, prepared statements, etc...)",
+    )
 
     # auth
     user: str
