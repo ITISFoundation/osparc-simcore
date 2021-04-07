@@ -12,7 +12,7 @@ from models_library.app_diagnostics import AppStatusCheck
 from servicelib import openapi
 from servicelib.utils import logged_gather
 
-from . import __version__, db, director_v2, storage_api
+from . import __version__, catalog_client, db, director_v2, storage_api
 from ._meta import api_version, app_name
 from .diagnostics_core import HealthError, assert_healthy_app
 from .utils import get_task_info, get_tracemalloc_info
@@ -40,7 +40,7 @@ async def get_app_health(request: web.Request):
 async def get_app_diagnostics(request: web.Request):
     """
     Usage
-        /v0/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
+        /v0/status/diagnostics?top_tracemalloc=10 with display top 10 files allocating the most memory
     """
     # tasks in loop
     data = {"loop_tasks": [get_task_info(task) for task in asyncio.Task.all_tasks()]}
@@ -55,43 +55,60 @@ async def get_app_diagnostics(request: web.Request):
 
 async def get_app_status(request: Request):
     # TODO: add tester required
-    # TODO: add gather
+
+    SERVICES = ("postgres", "storage", "director_v2", "catalog")
+
+    def _get_url_for(operation_id):
+        return str(
+            request.url.with_path(str(request.app.router[operation_id].url_for()))
+        )
+
     check = AppStatusCheck.parse_obj(
         {
-            "name": app_name,
+            "app_name": app_name,
             "version": api_version,
-            "services": {
-                "postgres": {"healthy": False},
-                "storage": {"healthy": False},
-                "director_v2": {"healthy": False},
-            },
+            "services": {name: {"healthy": False} for name in SERVICES},
+            #
+            "url": _get_url_for("get_app_status"),
+            "diagnostics_url": _get_url_for("get_app_diagnotics"),
         }
     )
 
+    # concurrent checks of service states
+
     async def _check_pg():
-        check.services["postgres"] = (
-            {
-                "healthy": await db.is_service_responsive(request.app),
-                "pool": db.get_engine_state(request.app),
-            },
-        )
+        check.services["postgres"] = {
+            "healthy": await db.is_service_responsive(request.app),
+            "pool": db.get_engine_state(request.app),
+        }
 
     async def _check_storage():
-        check.services["storage"] = {
-            "healthy": await storage_api.is_healthy(request.app)
-        }
-        with suppress(ClientError):
-            check.services["storage"]["status"] = await storage_api.get_app_status(
-                request.app
-            )
+        is_healthy = await storage_api.is_healthy(request.app)
+        status = None
+
+        if is_healthy:
+            with suppress(ClientError):
+                status = await storage_api.get_app_status(request.app)
+
+        check.services["storage"] = {"healthy": is_healthy, "status": status}
 
     async def _check_director2():
         check.services["director_v2"] = {
             "healthy": await director_v2.is_healthy(request.app)
         }
 
+    async def _check_catalog():
+        check.services["catalog"] = {
+            "healthy": await catalog_client.is_service_responsive(request.app)
+        }
+
     await logged_gather(
-        _check_pg(), _check_storage(), _check_director2(), log=log, reraise=False
+        _check_pg(),
+        _check_storage(),
+        _check_director2(),
+        _check_catalog(),
+        log=log,
+        reraise=False,
     )
 
     return check.dict()
@@ -108,8 +125,10 @@ def create_rest_routes(specs: openapi.Spec) -> List[web.RouteDef]:
     routes.append(web.get(base_path + path, handle, name=operation_id))
 
     # NOTE: Internal. Not shown in api/docs
-    path, handle = "/diagnostics", get_app_diagnostics
-    operation_id = "get_diagnotics"  # specs.paths[path].operations['get'].operation_id
+    path, handle = "/status/diagnostics", get_app_diagnostics
+    operation_id = (
+        "get_app_diagnotics"  # specs.paths[path].operations['get'].operation_id
+    )
     routes.append(web.get(base_path + path, handle, name=operation_id))
 
     path, handle = "/status", get_app_status

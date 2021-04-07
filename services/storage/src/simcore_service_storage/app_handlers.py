@@ -23,7 +23,7 @@ async def get_app_status(request: Request):
 
     status = AppStatusCheck.parse_obj(
         {
-            "name": app_name,
+            "app_name": app_name,
             "version": api_version,
             "services": {
                 "postgres": {
