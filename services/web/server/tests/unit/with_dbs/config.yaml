@@ -20,6 +20,7 @@ db:
     user: admin
     password: admin
     host: 127.0.0.1
+    long_running_session_host: postgres
     port: 5432
     maxsize: 5
     minsize: 1
