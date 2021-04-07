@@ -201,6 +201,7 @@ async def listening_channel_pg_engine(app: web.Application) -> Engine:
 async def comp_tasks_listening_task(app: web.Application) -> None:
     log.info("starting comp_task db listening task...")
     while True:
+        db_engine: Engine = None
         try:
             # create a special connection here
             db_engine = await listening_channel_pg_engine(app)
