@@ -1,27 +1,34 @@
-## pip install git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@is1865/apirunners
-##
-## export MY_API_KEY=***
-## export MY_API_SECRET=***
-## python sleeper.py
-##
+"""
+
+ $ cd examples
+ $ make install-ci
+ $ make .env
+
+"""
 
 import os
 import time
 from pathlib import Path
 
 import osparc
+from dotenv import load_dotenv
 from osparc import UsersApi
 from osparc.api import FilesApi, SolversApi
 from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 
+assert osparc.__version__ == "0.4.3"
+
 Path("file_with_number.txt").write_text("3")
 
 
+load_dotenv()
+
 cfg = osparc.Configuration(
     host=os.environ.get("OSPARC_API_URL", "http://127.0.0.1:8006"),
-    username=os.environ["MY_API_KEY"],
-    password=os.environ["MY_API_SECRET"],
+    username=os.environ["OSPARC_API_KEY"],
+    password=os.environ["OSPARC_API_SECRET"],
 )
+print(cfg.host)
 
 with osparc.ApiClient(cfg) as api_client:
 
