@@ -313,7 +313,8 @@ def mock_datcore_download(mocker, client):
     assert isinstance(dsm, DataStorageManager)
 
     mock = mocker.patch.object(dsm, "download_link_datcore")
-    mock.return_value.set_result(("https://httpbin.org/image", "foo.txt"))
+    # FIXME: fails in py3.8
+    mock.return_value.set_result(["https://httpbin.org/image", "foo.txt"])
 
 
 @pytest.fixture
