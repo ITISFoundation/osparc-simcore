@@ -72,6 +72,19 @@ async def _request_director_v2(
         ) from err
 
 
+async def is_healthy(app: web.Application) -> bool:
+    try:
+        session = get_client_session(app)
+        settings: Directorv2Settings = get_settings(app)
+        health_check_url = URL(settings.endpoint).parent
+        await session.get(url=health_check_url, raise_for_status=True)
+        return True
+    except ClientError as err:
+        # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
+        log.warning("Director is NOT healthy: %s", err)
+        return False
+
+
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID

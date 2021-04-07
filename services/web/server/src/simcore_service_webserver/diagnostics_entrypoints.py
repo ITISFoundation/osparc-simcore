@@ -11,7 +11,7 @@ from aiohttp.web import Request
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib import openapi
 
-from . import __version__, db, storage_api
+from . import __version__, db, director_v2, storage_api
 from ._meta import api_version, app_name
 from .diagnostics_core import HealthError, assert_healthy_app
 from .utils import get_task_info, get_tracemalloc_info
@@ -64,6 +64,7 @@ async def get_app_status(request: Request):
                     "pool": db.get_engine_state(request.app),
                 },
                 "storage": {"healthy": await storage_api.is_healthy(request.app)},
+                "director_v2": {"healthy": await director_v2.is_healthy(request.app)},
             },
         }
     )
