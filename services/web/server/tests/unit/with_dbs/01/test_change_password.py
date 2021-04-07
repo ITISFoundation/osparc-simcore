@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.login.cfg import APP_LOGIN_CONFIG
@@ -14,7 +13,12 @@ NEW_PASSWORD = "NewPassword1*&^"
 async def test_unauthorized(client):
     url = client.app.router["auth_change_password"].url_for()
     rsp = await client.post(
-        url, json={"current": " fake", "new": NEW_PASSWORD, "confirm": NEW_PASSWORD,}
+        url,
+        json={
+            "current": " fake",
+            "new": NEW_PASSWORD,
+            "confirm": NEW_PASSWORD,
+        },
     )
     assert rsp.status == 401
     await assert_status(rsp, web.HTTPUnauthorized)
@@ -83,7 +87,11 @@ async def test_success(client):
         assert rsp.url_obj.path == logout_url.path
 
         rsp = await client.post(
-            login_url, json={"email": user["email"], "password": NEW_PASSWORD,}
+            login_url,
+            json={
+                "email": user["email"],
+                "password": NEW_PASSWORD,
+            },
         )
         assert rsp.status == 200
         assert rsp.url_obj.path == login_url.path
