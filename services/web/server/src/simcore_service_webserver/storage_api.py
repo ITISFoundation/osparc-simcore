@@ -94,7 +94,7 @@ async def is_healthy(app: web.Application) -> bool:
     try:
         await client.get(url=(api_endpoint / ""), raise_for_status=True)
         return True
-    except ClientError as err:
+    except (ClientError, TimeoutError) as err:
         # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
         log.debug("Storage is NOT healthy: %s", err)
         return False

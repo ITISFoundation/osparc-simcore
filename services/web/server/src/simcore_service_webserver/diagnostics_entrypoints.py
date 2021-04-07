@@ -10,6 +10,7 @@ from aiohttp import ClientError, web
 from aiohttp.web import Request
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib import openapi
+from servicelib.utils import logged_gather
 
 from . import __version__, db, director_v2, storage_api
 from ._meta import api_version, app_name
@@ -54,25 +55,44 @@ async def get_app_diagnostics(request: web.Request):
 
 async def get_app_status(request: Request):
     # TODO: add tester required
+    # TODO: add gather
     check = AppStatusCheck.parse_obj(
         {
             "name": app_name,
             "version": api_version,
             "services": {
-                "postgres": {
-                    "healthy": await db.is_service_responsive(request.app),
-                    "pool": db.get_engine_state(request.app),
-                },
-                "storage": {"healthy": await storage_api.is_healthy(request.app)},
-                "director_v2": {"healthy": await director_v2.is_healthy(request.app)},
+                "postgres": {"healthy": False},
+                "storage": {"healthy": False},
+                "director_v2": {"healthy": False},
             },
         }
     )
 
-    with suppress(ClientError):
-        check.services["storage"]["status"] = await storage_api.get_app_status(
-            request.app
+    async def _check_pg():
+        check.services["postgres"] = (
+            {
+                "healthy": await db.is_service_responsive(request.app),
+                "pool": db.get_engine_state(request.app),
+            },
         )
+
+    async def _check_storage():
+        check.services["storage"] = {
+            "healthy": await storage_api.is_healthy(request.app)
+        }
+        with suppress(ClientError):
+            check.services["storage"]["status"] = await storage_api.get_app_status(
+                request.app
+            )
+
+    async def _check_director2():
+        check.services["director_v2"] = {
+            "healthy": await director_v2.is_healthy(request.app)
+        }
+
+    await logged_gather(
+        _check_pg(), _check_storage(), _check_director2(), log=log, reraise=False
+    )
 
     return check.dict()
 
