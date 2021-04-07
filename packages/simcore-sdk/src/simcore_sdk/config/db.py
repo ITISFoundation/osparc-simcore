@@ -15,6 +15,9 @@ CONFIG_SCHEMA = T.Dict(
         "host": T.Or(T.String, T.Null),
         "port": T.Or(T.ToInt, T.Null),
         "endpoint": T.Or(T.String, T.Null),
+        T.Key("long_running_session_host", default=None, optional=True): T.Or(
+            T.String, T.Null
+        ),
     }
 )
 

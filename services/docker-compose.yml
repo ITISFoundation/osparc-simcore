@@ -154,6 +154,7 @@ services:
     networks:
       - default
       - interactive_services_subnet
+      - postgres_network # for access to listen/notify channel
 
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -264,18 +265,23 @@ services:
       - default
 
   pgbouncer:
-    image: "pgbouncer/pgbouncer:1.15.0@sha256:aa8a38b7b33e5fe70c679053f97a8e55c74d52b00c195f0880845e52b50ce516"
+    image: "edoburu/pgbouncer:1.15.0@sha256:2f47bf272fa9fdf25c100d11f1972b23af61a351a136d3721bfa6bdb52630426"
     init: true
     environment:
-      - DATABASES_HOST=postgres
-      - DATABASES_PORT=${POSTGRES_PORT}
-      - DATABASES_USER=${POSTGRES_USER}
-      - DATABASES_PASSWORD=${POSTGRES_PASSWORD}
-      - DATABASES_DBNAME=${POSTGRES_DB}
-      - PGBOUNCER_LISTEN_ADDE=*
-      - PGBOUNCER_LISTEN_PORT=${POSTGRES_PORT}
-      - PGBOUNCER_POOL_MODE=transaction
-      - PGBOUNCER_ADMIN_USERS=${POSTGRES_USER}
+      - DB_HOST=postgres
+      - DB_PORT=${POSTGRES_PORT}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      # pgbouncer.ini variables
+      - LISTEN_ADDR=*
+      - LISTEN_PORT=${POSTGRES_PORT}
+      - POOL_MODE=transaction
+      - MAX_CLIENT_CONN=10000 # we keep some for other OPS higher level services
+      - DEFAULT_POOL_SIZE=20
+      - MAX_DB_CONNECTIONS=90
+      - APPLICATION_NAME_ADD_HOST=1
+      - ADMIN_USERS=${POSTGRES_USER}
     networks:
       - default
       - interactive_services_subnet
