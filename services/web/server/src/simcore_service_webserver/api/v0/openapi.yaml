@@ -285,6 +285,15 @@ paths:
                             message: Password is not secure
                             field: pasword
                         status: 400
+  /status:
+    get:
+      tags:
+        - maintenance
+      summary: checks status of self and connected services
+      operationId: get_app_status
+      responses:
+        '200':
+          description: returns app status check
   '/check/{action}':
     post:
       tags:

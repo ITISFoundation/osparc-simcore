@@ -3,8 +3,10 @@
 """
 import logging
 from pprint import pformat
+from typing import Any, Dict, Tuple
 
-from aiohttp import web
+from aiohttp import ClientError, ClientSession, web
+from servicelib.aiopg_utils import get_pg_engine_stateinfo
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
@@ -13,7 +15,7 @@ from .storage_config import get_client_session, get_storage_config
 log = logging.getLogger(__name__)
 
 
-def _get_storage_client(app: web.Application):
+def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
     cfg = get_storage_config(app)
 
     # storage service API endpoint
@@ -85,3 +87,27 @@ async def delete_data_folders_of_project_node(
     )
 
     await _delete(session, url)
+
+
+async def is_healthy(app: web.Application) -> bool:
+    client, api_endpoint = _get_storage_client(app)
+    try:
+        await client.get(url=(api_endpoint / ""), raise_for_status=True)
+        return True
+    except ClientError as err:
+        # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
+        log.debug("Storage is NOT healthy: %s", err)
+        return False
+
+
+async def get_app_status(app: web.Application) -> Dict[str, Any]:
+    client, api_endpoint = _get_storage_client(app)
+
+    data = {}
+    async with client.get(
+        url=api_endpoint / "status",
+    ) as resp:
+        payload = await resp.json()
+        data = payload["data"]
+
+    return data
