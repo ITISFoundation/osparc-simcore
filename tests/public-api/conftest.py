@@ -4,10 +4,9 @@
 
 import logging
 import os
-import sys
-from pathlib import Path
+import time
 from pprint import pformat
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List
 
 import httpx
 import osparc
@@ -15,7 +14,6 @@ import pytest
 from osparc.configuration import Configuration
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
 
 
@@ -28,54 +26,39 @@ pytest_plugins = [
 ]
 
 
-@pytest.fixture(scope="module")
-def prepare_all_services(
-    simcore_docker_compose: Dict,
-    ops_docker_compose: Dict,
-    request,
-) -> Dict:
+@pytest.fixture(scope="session")
+def devel_environ(devel_environ: Dict[str, str]) -> Dict[str, str]:
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::devel_environ fixture
 
-    setattr(
-        request.module,
-        "pytest_simcore_core_services_selection",
-        list(simcore_docker_compose["services"].keys()),
-    )
-    core_services = getattr(
-        request.module, "pytest_simcore_core_services_selection", []
-    )
-
-    setattr(
-        request.module,
-        "pytest_simcore_ops_services_selection",
-        list(ops_docker_compose["services"].keys()),
-    )
-    ops_services = getattr(request.module, "pytest_simcore_ops_services_selection", [])
-
-    services = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return services
+    # help faster update of service_metadata table by catalog
+    devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
+    return devel_environ.copy()
 
 
 @pytest.fixture(scope="module")
-def services_registry(sleeper_service) -> Dict[str, Any]:
-    # See other service fixtures in
-    # packages/pytest-simcore/src/pytest_simcore/docker_registry.py
-    return {
-        "sleeper_service": {
-            "name": sleeper_service["image"]["name"],
-            "version": sleeper_service["image"]["tag"],
-            "schema": sleeper_service["schema"],
-        },
-        # add here more
-    }
+def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
+    """ Selection of services from the simcore stack """
+    # TODO: this should be the default if NOT defined
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
+    all_core_services = list(simcore_docker_compose["services"].keys())
+    return all_core_services
+
+
+@pytest.fixture(scope="module")
+def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
+    """ Selection of services from the ops stack """
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
+    all_ops_services = list(ops_docker_compose["services"].keys())
+    return all_ops_services
 
 
 @pytest.fixture(scope="module")
 def make_up_prod(
-    prepare_all_services: Dict,
-    simcore_docker_compose: Dict,
-    ops_docker_compose: Dict,
+    # prepare_all_services: Dict,
+    # simcore_docker_compose: Dict,
+    # ops_docker_compose: Dict,
     docker_stack: Dict,
-    services_registry,
+    docker_registry,
 ) -> Dict:
 
     for attempt in Retrying(
@@ -88,13 +71,11 @@ def make_up_prod(
             resp = httpx.get("http://127.0.0.1:9081/v0/")
             resp.raise_for_status()
 
-    stack_configs = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return stack_configs
+    return docker_stack
 
 
 @pytest.fixture(scope="module")
 def registered_user(make_up_prod):
-
     user = {
         "email": "first.last@mymail.com",
         "password": "my secret",
@@ -141,7 +122,105 @@ def registered_user(make_up_prod):
         )
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
+def services_registry(
+    docker_registry_image_injector: Callable,
+    registered_user: Dict[str, str],
+    devel_environ: Dict[str, str],
+) -> Dict[str, Any]:
+    # NOTE: service image MUST be injected in registry AFTER user is registered
+    #
+    # See injected fixture in packages/pytest-simcore/src/pytest_simcore/docker_registry.py
+    #
+    user_email = registered_user["email"]
+
+    sleeper_service = docker_registry_image_injector(
+        "itisfoundation/sleeper", "2.1.1", user_email
+    )
+
+    assert sleeper_service["image"]["tag"] == "2.1.1"
+    assert sleeper_service["image"]["name"] == "simcore/services/comp/itis/sleeper"
+    assert sleeper_service["schema"] == {
+        "authors": [
+            {"name": "Tester", "email": user_email, "affiliation": "IT'IS Foundation"}
+        ],
+        "contact": user_email,
+        "description": "A service which awaits for time to pass, two times.",
+        "inputs": {
+            "input_1": {
+                "description": "Pick a file containing only one " "integer",
+                "displayOrder": 1,
+                "fileToKeyMap": {"single_number.txt": "input_1"},
+                "label": "File with int number",
+                "type": "data:text/plain",
+            },
+            "input_2": {
+                "defaultValue": 2,
+                "description": "Choose an amount of time to sleep",
+                "displayOrder": 2,
+                "label": "Sleep interval",
+                "type": "integer",
+                "unit": "second",
+            },
+            "input_3": {
+                "defaultValue": False,
+                "description": "If set to true will cause service to "
+                "fail after it sleeps",
+                "displayOrder": 3,
+                "label": "Fail after sleep",
+                "type": "boolean",
+            },
+            "input_4": {
+                "defaultValue": 0,
+                "description": "It will first walk the distance to " "bed",
+                "displayOrder": 4,
+                "label": "Distance to bed",
+                "type": "integer",
+                "unit": "meter",
+            },
+        },
+        "integration-version": "1.0.0",
+        "key": "simcore/services/comp/itis/sleeper",
+        "name": "sleeper",
+        "outputs": {
+            "output_1": {
+                "description": "Integer is generated in range [1-9]",
+                "displayOrder": 1,
+                "fileToKeyMap": {"single_number.txt": "output_1"},
+                "label": "File containing one random integer",
+                "type": "data:text/plain",
+            },
+            "output_2": {
+                "description": "Interval is generated in range " "[1-9]",
+                "displayOrder": 2,
+                "label": "Random sleep interval",
+                "type": "integer",
+                "unit": "second",
+            },
+        },
+        "type": "computational",
+        "version": "2.1.1",
+    }
+
+    wait_for_catalog_to_detect = float(
+        devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"]
+    )
+    print(
+        "Catalog should take %s to detect new services ...", wait_for_catalog_to_detect
+    )
+    time.sleep(wait_for_catalog_to_detect)
+
+    return {
+        "sleeper_service": {
+            "name": sleeper_service["image"]["name"],
+            "version": sleeper_service["image"]["tag"],
+            "schema": sleeper_service["schema"],
+        },
+        # add here more
+    }
+
+
+@pytest.fixture(scope="module")
 def api_client(registered_user) -> osparc.ApiClient:
     cfg = Configuration(
         host=os.environ.get("OSPARC_API_URL", "http://127.0.0.1:8006"),
@@ -162,11 +241,12 @@ def api_client(registered_user) -> osparc.ApiClient:
         yield api_client
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def files_api(api_client) -> osparc.FilesApi:
     return osparc.FilesApi(api_client)
 
 
-@pytest.fixture()
-def solvers_api(api_client):
+@pytest.fixture(scope="module")
+def solvers_api(api_client, services_registry) -> osparc.SolversApi:
+    # services_registry fixture dependency ensures that services are injected in registry
     return osparc.SolversApi(api_client)

@@ -222,7 +222,7 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic[dotenv,email]==1.7.3
+pydantic[dotenv,email]==1.8.1
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -324,6 +324,7 @@ typing-extensions==3.7.4.3
     # via
     #   aiohttp
     #   importlib-metadata
+    #   pydantic
     #   uvicorn
     #   yarl
 ujson==3.2.0

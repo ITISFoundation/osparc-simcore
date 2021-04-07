@@ -1,12 +1,14 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Type
 
 import httpx
 from fastapi import FastAPI
 
+from .app_data import AppDataMixin
+
 
 @dataclass
-class BaseServiceClientApi:
+class BaseServiceClientApi(AppDataMixin):
     """
     - wrapper around thin-client to simplify service's API calls
     - sets endspoint upon construction
@@ -16,27 +18,8 @@ class BaseServiceClientApi:
     """
 
     client: httpx.AsyncClient
-    service_name: str = ""
+    service_name: str
     health_check_path: str = "/"
-
-    @classmethod
-    def create(cls, app: FastAPI, **kwargs):
-        if not hasattr(cls, "state_attr_name"):
-            cls.state_attr_name = f"client_{cls.__name__.lower()}"
-        instance = cls(**kwargs)
-        setattr(app.state, cls.state_attr_name, instance)
-        return instance
-
-    @classmethod
-    def get_instance(cls, app: FastAPI) -> Optional["BaseServiceClientApi"]:
-        try:
-            obj = getattr(app.state, cls.state_attr_name)
-        except AttributeError:
-            return None
-        return obj
-
-    async def aclose(self):
-        await self.client.aclose()
 
     async def is_responsive(self) -> bool:
         try:
@@ -45,3 +28,34 @@ class BaseServiceClientApi:
             return True
         except (httpx.HTTPStatusError, httpx.RequestError):
             return False
+
+
+# HELPERS -------------------------------------------------------------
+
+
+def setup_client_instance(
+    app: FastAPI,
+    api_cls: Type[BaseServiceClientApi],
+    api_baseurl,
+    service_name: str,
+    **extra_fields
+) -> None:
+    """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
+
+    assert issubclass(api_cls, BaseServiceClientApi)
+
+    def _create_instance() -> None:
+        api_cls.create_once(
+            app,
+            client=httpx.AsyncClient(base_url=api_baseurl),
+            service_name=service_name,
+            **extra_fields
+        )
+
+    async def _cleanup_instance() -> None:
+        api_obj: Optional[BaseServiceClientApi] = api_cls.pop_instance(app)
+        if api_obj:
+            await api_obj.client.aclose()
+
+    app.add_event_handler("startup", _create_instance)
+    app.add_event_handler("shutdown", _cleanup_instance)

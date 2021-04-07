@@ -98,5 +98,10 @@ def test_convert_between_file_models():
 def test_file_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
+
         model_instance = model_cls(**example)
+
         assert model_instance, f"Failed with {name}"
+        print(name, ":", model_instance)
+
+        assert model_instance.content_type is not None
