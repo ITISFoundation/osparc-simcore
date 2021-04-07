@@ -1137,6 +1137,54 @@ jobs:
           name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
+  unit-test-webserver-10:
+    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 10"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 10
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}
+          path: codeclimate.${{ github.job }}_coverage.json
+
   build-test-images:
     # make PR faster by executing this one straight as PR cannot push to the registry anyway
     runs-on: ubuntu-20.04
@@ -1643,6 +1691,7 @@ jobs:
         unit-test-webserver-07,
         unit-test-webserver-08,
         unit-test-webserver-09,
+        unit-test-webserver-10,
         integration-test-webserver,
         integration-test-director-v2,
         integration-test-sidecar,
@@ -1734,6 +1783,10 @@ jobs:
           path: all_coverages
       - uses: actions/download-artifact@v2
         with:
+          name: unit-test-webserver-10
+          path: all_coverages
+      - uses: actions/download-artifact@v2
+        with:
           name: integration_webserver_coverage
           path: all_coverages
       - uses: actions/download-artifact@v2
@@ -1787,6 +1840,7 @@ jobs:
         unit-test-webserver-07,
         unit-test-webserver-08,
         unit-test-webserver-09,
+        unit-test-webserver-10,
         integration-test-webserver,
         integration-test-director-v2,
         integration-test-sidecar,
