@@ -6,10 +6,11 @@ import logging
 from contextlib import suppress
 from typing import List
 
-from aiohttp import ClientError, web
+from aiohttp import ClientError, ClientSession, web
 from aiohttp.web import Request
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib import openapi
+from servicelib.client_session import get_client_session
 from servicelib.utils import logged_gather
 
 from . import __version__, catalog_client, db, director_v2, storage_api
@@ -63,11 +64,29 @@ async def get_app_status(request: Request):
             request.url.with_path(str(request.app.router[operation_id].url_for()))
         )
 
+    def _get_client_session_info():
+
+        # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession
+        client: ClientSession = get_client_session(request.app)
+        info = {"instance": str(client)}
+
+        if not client.closed:
+            # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.BaseConnector
+            info.update(
+                {
+                    "limit": client.connector.limit,
+                    "limit_per_host": client.connector.limit_per_host,
+                }
+            )
+
+        return info
+
     check = AppStatusCheck.parse_obj(
         {
             "app_name": app_name,
             "version": api_version,
             "services": {name: {"healthy": False} for name in SERVICES},
+            "sessions": {"main": _get_client_session_info()},
             #
             "url": _get_url_for("get_app_status"),
             "diagnostics_url": _get_url_for("get_app_diagnotics"),
@@ -111,7 +130,7 @@ async def get_app_status(request: Request):
         reraise=False,
     )
 
-    return check.dict()
+    return check.dict(exclude_unset=True)
 
 
 def create_rest_routes(specs: openapi.Spec) -> List[web.RouteDef]:

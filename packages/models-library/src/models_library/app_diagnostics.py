@@ -10,6 +10,11 @@ class AppStatusCheck(BaseModel):
         {}, description="Other backend services connected from this service"
     )
 
+    sessions: Optional[Dict[str, Any]] = Field(
+        {},
+        description="Client sessions info. If single session per app, then is denoted as main",
+    )
+
     url: Optional[AnyUrl] = Field(
         None,
         description="Link to current resource",

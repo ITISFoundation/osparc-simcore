@@ -37,4 +37,4 @@ async def get_app_status(request: Request):
         }
     )
 
-    return status.dict()
+    return status.dict(exclude_unset=True)
