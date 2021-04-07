@@ -89,6 +89,10 @@ def get_pg_engine_stateinfo(engine: Engine) -> Dict[str, Any]:
 
 async def raise_if_not_responsive(engine: Engine):
     async with engine.acquire() as conn:
+        # NOTE: Hacks aiopg.sa.SAConnection interface to override connection timeout
+        # pylint: disable=protected-access
+        assert conn._cursor is None  # nosec
+        conn._cursor = await conn._connection.cursor(timeout=1)
         await conn.execute("SELECT 1 as is_alive")
 
 
