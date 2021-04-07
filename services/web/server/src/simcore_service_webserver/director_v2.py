@@ -77,7 +77,12 @@ async def is_healthy(app: web.Application) -> bool:
         session = get_client_session(app)
         settings: Directorv2Settings = get_settings(app)
         health_check_url = URL(settings.endpoint).parent
-        await session.get(url=health_check_url, raise_for_status=True)
+        await session.get(
+            url=health_check_url,
+            ssl=False,
+            raise_for_status=True,
+            timeout=ClientTimeout(total=2, connect=1),
+        )
         return True
     except (ClientError, TimeoutError) as err:
         # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL

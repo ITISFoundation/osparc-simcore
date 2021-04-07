@@ -5,7 +5,7 @@ import logging
 from pprint import pformat
 from typing import Any, Dict, Tuple
 
-from aiohttp import ClientError, ClientSession, web
+from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
@@ -89,9 +89,14 @@ async def delete_data_folders_of_project_node(
 
 
 async def is_healthy(app: web.Application) -> bool:
-    client, api_endpoint = _get_storage_client(app)
     try:
-        await client.get(url=(api_endpoint / ""), raise_for_status=True)
+        client, api_endpoint = _get_storage_client(app)
+        await client.get(
+            url=(api_endpoint / ""),
+            raise_for_status=True,
+            ssl=False,
+            timeout=ClientTimeout(total=2, connect=1),
+        )
         return True
     except (ClientError, TimeoutError) as err:
         # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
