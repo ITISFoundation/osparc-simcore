@@ -154,6 +154,7 @@ services:
     networks:
       - default
       - interactive_services_subnet
+      - postgres_network # for access to listen/notify channel
 
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
