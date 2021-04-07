@@ -14,7 +14,7 @@
 
 import functools
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import attr
 import sqlalchemy as sa
@@ -76,6 +76,15 @@ def create_pg_engine(dsn: DataSourceName, minsize: int = 1, maxsize: int = 4):
         maxsize=maxsize,
     )
     return awaitable_engine_coro
+
+
+def get_pg_engine_stateinfo(engine: Engine) -> Dict[str, Any]:
+    return {
+        "size": engine.size,
+        "acquired": engine.size - engine.freesize,
+        "free": engine.freesize,
+        "reserved": {"min": engine.minsize, "max": engine.maxsize},
+    }
 
 
 async def raise_if_not_responsive(engine: Engine):
