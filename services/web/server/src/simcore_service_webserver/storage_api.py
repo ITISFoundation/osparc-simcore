@@ -6,7 +6,6 @@ from pprint import pformat
 from typing import Any, Dict, Tuple
 
 from aiohttp import ClientError, ClientSession, web
-from servicelib.aiopg_utils import get_pg_engine_stateinfo
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
