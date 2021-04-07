@@ -215,8 +215,9 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
                 exc_info=True,
             )
         finally:
-            db_engine.close()
-            await db_engine.wait_closed()
+            if db_engine:
+                db_engine.close()
+                await db_engine.wait_closed()
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):
