@@ -13,6 +13,8 @@ from servicelib.utils import logged_gather
 from . import catalog_client, db, director_v2, storage_api
 from ._meta import __version__, api_version, api_version_prefix, app_name
 from .diagnostics_core import HealthError, assert_healthy_app
+from .login.decorators import login_required
+from .security_decorators import permission_required
 from .utils import get_task_info, get_tracemalloc_info
 
 log = logging.getLogger(__name__)
@@ -38,6 +40,8 @@ async def get_app_health(request: web.Request):
 
 
 @routes.get(f"/{api_version_prefix}/status/diagnostics", name="get_app_diagnostics")
+@login_required
+@permission_required("diagnostics.read")
 async def get_app_diagnostics(request: web.Request):
     """
     Usage
@@ -55,6 +59,8 @@ async def get_app_diagnostics(request: web.Request):
 
 
 @routes.get(f"/{api_version_prefix}/status", name="get_app_status")
+@login_required
+@permission_required("diagnostics.read")
 async def get_app_status(request: web.Request):
     SERVICES = ("postgres", "storage", "director_v2", "catalog")
 
@@ -128,6 +134,8 @@ async def get_app_status(request: web.Request):
 
 
 @routes.get(f"/{api_version_prefix}/status/{{service_name}}", name="get_service_status")
+@login_required
+@permission_required("diagnostics.read")
 async def get_service_status(request: web.Request):
     service_name = request.match_info["service_name"]
 
