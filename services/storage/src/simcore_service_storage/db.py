@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
@@ -7,6 +7,7 @@ from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
     create_pg_engine,
+    get_pg_engine_stateinfo,
     init_pg_tables,
     is_pg_responsive,
     raise_if_not_responsive,
@@ -69,15 +70,10 @@ async def is_service_responsive(app: web.Application):
     return is_responsive
 
 
-def get_engine_state(app: web.Application):
+def get_engine_state(app: web.Application) -> Dict[str, Any]:
     engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
     if engine:
-        return {
-            "size": engine.size,
-            "acquired": engine.size - engine.freesize,
-            "free": engine.freesize,
-            "reserved": {"min": engine.minsize, "max": engine.maxsize},
-        }
+        return get_pg_engine_stateinfo(engine)
     return {}
 
 

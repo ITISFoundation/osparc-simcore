@@ -38,13 +38,13 @@ paths:
                 $ref: '#/components/schemas/HealthCheckEnveloped'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  /check:
+  /status:
     get:
-      summary: checks and returns diagnostics report
-      operationId: check_all
+      summary: checks status of self and connected services
+      operationId: get_status
       responses:
         '200':
-          description: returns diagnostics
+          description: returns app status check
   '/check/{action}':
     post:
       summary: Test checkpoint to ask server to fail or echo back the transmitted data
