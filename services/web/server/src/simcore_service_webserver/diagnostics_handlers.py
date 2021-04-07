@@ -1,26 +1,26 @@
-""" Handler functions and routing for diagnostics entrypoints
+""" Handler functions and routing for diagnostics
 
 """
 import asyncio
 import logging
 from contextlib import suppress
-from typing import List
 
 from aiohttp import ClientError, ClientSession, web
-from aiohttp.web import Request
 from models_library.app_diagnostics import AppStatusCheck
-from servicelib import openapi
 from servicelib.client_session import get_client_session
 from servicelib.utils import logged_gather
 
-from . import __version__, catalog_client, db, director_v2, storage_api
-from ._meta import api_version, app_name
+from . import catalog_client, db, director_v2, storage_api
+from ._meta import __version__, api_version, api_version_prefix, app_name
 from .diagnostics_core import HealthError, assert_healthy_app
 from .utils import get_task_info, get_tracemalloc_info
 
 log = logging.getLogger(__name__)
 
+routes = web.RouteTableDef()
 
+
+@routes.get(f"/{api_version_prefix}/health", name="check_health")
 async def get_app_health(request: web.Request):
     # diagnostics of incidents
     try:
@@ -30,14 +30,14 @@ async def get_app_health(request: web.Request):
         raise web.HTTPServiceUnavailable()
 
     data = {
-        "name": __name__.split(".")[0],
-        "version": str(__version__),
-        "status": "SERVICE_RUNNING",
-        "api_version": str(__version__),
+        "name": app_name,
+        "version": __version__,
+        "api_version": api_version,
     }
     return data
 
 
+@routes.get(f"/{api_version_prefix}/status/diagnostics", name="get_app_diagnostics")
 async def get_app_diagnostics(request: web.Request):
     """
     Usage
@@ -51,27 +51,25 @@ async def get_app_diagnostics(request: web.Request):
         top = int(request.query["top_tracemalloc"])
         data.update({"top_tracemalloc": get_tracemalloc_info(top)})
 
-    return web.json_response(data)
+    return data
 
 
-async def get_app_status(request: Request):
-    # TODO: add tester required
-
+@routes.get(f"/{api_version_prefix}/status", name="get_app_status")
+async def get_app_status(request: web.Request):
     SERVICES = ("postgres", "storage", "director_v2", "catalog")
 
-    def _get_url_for(operation_id):
+    def _get_url_for(operation_id, **kwargs):
         return str(
-            request.url.with_path(str(request.app.router[operation_id].url_for()))
+            request.url.with_path(
+                str(request.app.router[operation_id].url_for(**kwargs))
+            )
         )
 
     def _get_client_session_info():
-
-        # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientSession
         client: ClientSession = get_client_session(request.app)
         info = {"instance": str(client)}
 
         if not client.closed:
-            # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.BaseConnector
             info.update(
                 {
                     "limit": client.connector.limit,
@@ -87,9 +85,9 @@ async def get_app_status(request: Request):
             "version": api_version,
             "services": {name: {"healthy": False} for name in SERVICES},
             "sessions": {"main": _get_client_session_info()},
-            #
+            # hyperlinks
             "url": _get_url_for("get_app_status"),
-            "diagnostics_url": _get_url_for("get_app_diagnotics"),
+            "diagnostics_url": _get_url_for("get_app_diagnostics"),
         }
     )
 
@@ -102,14 +100,10 @@ async def get_app_status(request: Request):
         }
 
     async def _check_storage():
-        is_healthy = await storage_api.is_healthy(request.app)
-        status = None
-
-        if is_healthy:
-            with suppress(ClientError):
-                status = await storage_api.get_app_status(request.app)
-
-        check.services["storage"] = {"healthy": is_healthy, "status": status}
+        check.services["storage"] = {
+            "healthy": await storage_api.is_healthy(request.app),
+            "status_url": _get_url_for("get_service_status", service_name="storage"),
+        }
 
     async def _check_director2():
         check.services["director_v2"] = {
@@ -133,25 +127,12 @@ async def get_app_status(request: Request):
     return check.dict(exclude_unset=True)
 
 
-def create_rest_routes(specs: openapi.Spec) -> List[web.RouteDef]:
-    # NOTE: these are routes with paths starting with v0/*
+@routes.get(f"/{api_version_prefix}/status/{{service_name}}", name="get_service_status")
+async def get_service_status(request: web.Request):
+    service_name = request.match_info["service_name"]
 
-    routes = []
-    base_path: str = openapi.get_base_path(specs)
+    if service_name == "storage":
+        with suppress(ClientError):
+            return await storage_api.get_app_status(request.app)
 
-    path, handle = "/health", get_app_health
-    operation_id = specs.paths[path].operations["get"].operation_id
-    routes.append(web.get(base_path + path, handle, name=operation_id))
-
-    # NOTE: Internal. Not shown in api/docs
-    path, handle = "/status/diagnostics", get_app_diagnostics
-    operation_id = (
-        "get_app_diagnotics"  # specs.paths[path].operations['get'].operation_id
-    )
-    routes.append(web.get(base_path + path, handle, name=operation_id))
-
-    path, handle = "/status", get_app_status
-    operation_id = specs.paths[path].operations["get"].operation_id
-    routes.append(web.get(base_path + path, handle, name=operation_id))
-
-    return routes
+    raise web.HTTPNotFound()

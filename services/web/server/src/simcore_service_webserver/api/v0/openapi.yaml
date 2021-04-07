@@ -294,6 +294,28 @@ paths:
       responses:
         '200':
           description: returns app status check
+  /status/diagnostics:
+    get:
+      tags:
+        - maintenance
+      operationId: get_app_diagnostics
+      responses:
+        '200':
+          description: returns app diagnostics report
+  '/status/{service_name}':
+    get:
+      tags:
+        - maintenance
+      operationId: get_service_status
+      parameters:
+        - in: path
+          required: true
+          name: service_name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: returns status of connected service
   '/check/{action}':
     post:
       tags:

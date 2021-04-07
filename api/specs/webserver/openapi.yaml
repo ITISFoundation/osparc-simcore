@@ -60,6 +60,12 @@ paths:
   /status:
     $ref: "./openapi-diagnostics.yaml#/paths/~1status"
 
+  /status/diagnostics:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1status~1diagnostics"
+
+  /status/{service_name}:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1status~1{service_name}"
+
   /check/{action}:
     $ref: "./openapi-diagnostics.yaml#/paths/~1check~1{action}"
 
