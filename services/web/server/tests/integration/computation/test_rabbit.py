@@ -31,7 +31,12 @@ from simcore_service_webserver.socketio import setup_socketio
 API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
-pytest_simcore_core_services_selection = ["postgres", "redis", "rabbit"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "pgbouncer",
+    "redis",
+    "rabbit",
+]
 
 pytest_simcore_ops_services_selection = []
 

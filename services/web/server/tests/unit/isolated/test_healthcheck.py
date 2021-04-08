@@ -8,24 +8,24 @@ import time
 from typing import Coroutine
 
 import pytest
+import simcore_service_webserver
 from aiohttp import web
-from tenacity import before_log, retry, stop_after_attempt, wait_fixed
-from yarl import URL
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.application import create_safe_application
 from servicelib.application_keys import APP_CONFIG_KEY
+from simcore_service_webserver.diagnostics import (
+    kMAX_AVG_RESP_LATENCY,
+    setup_diagnostics,
+)
 from simcore_service_webserver.diagnostics_core import (
     HealthError,
     assert_healthy_app,
     kLATENCY_PROBE,
 )
-from simcore_service_webserver.diagnostics import (
-    kMAX_AVG_RESP_LATENCY,
-    setup_diagnostics,
-)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
+from tenacity import before_log, retry, stop_after_attempt, wait_fixed
+from yarl import URL
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
         slow_duration_secs=SLOW_HANDLER_DELAY_SECS / 10,
         max_task_delay=SLOW_HANDLER_DELAY_SECS,
         max_avg_response_latency=2.0,
-        start_sensing_delay=0 # inmidiately!
+        start_sensing_delay=0,  # inmidiately!
     )
 
     assert app[kMAX_AVG_RESP_LATENCY] == 2.0
@@ -156,7 +156,7 @@ async def test_healthy_app(client, api_version_prefix):
     assert not error
 
     assert data["name"] == "simcore_service_webserver"
-    assert data["status"] == "SERVICE_RUNNING"
+    assert data["version"] == simcore_service_webserver.__version__
 
 
 async def test_unhealthy_app_with_slow_callbacks(client, api_version_prefix):

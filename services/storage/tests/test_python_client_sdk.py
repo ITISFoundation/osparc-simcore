@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from typing import Dict
+
 import pytest
 
 TEMPLATE_CODE_NEEDED_HINT = """
@@ -10,25 +11,30 @@ TEMPLATE_CODE_NEEDED_HINT = """
 
 import os
 
-def get_http_client_request_aiohttp_connect_timeout() -> int:
-    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "5"))
+def get_http_client_request_aiohttp_connect_timeout() -> Optional[int]:
+    return (
+        int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "0")) or None
+    )
 
 
-def get_http_client_request_aiohttp_sock_connect_timeout() -> int:
-    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
+def get_http_client_request_aiohttp_sock_connect_timeout() -> Optional[int]:
+    return (
+        int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
+        or None
+    )
 
 
 class RESTClientObject(object):
 
     def __init__(self, configuration, pools_size=4, maxsize=4):
-        
+
         ...
 
         # We are interested in fast connections, if a connection is established
         # there is no timeout for file download operations
         timeout = aiohttp.ClientTimeout(
-            total=None, 
-            connect=get_http_client_request_aiohttp_connect_timeout(), 
+            total=None,
+            connect=get_http_client_request_aiohttp_connect_timeout(),
             sock_connect=get_http_client_request_aiohttp_sock_connect_timeout(),
         )
         if configuration.proxy:
@@ -51,7 +57,7 @@ def search_dict() -> Dict[str, int]:
     return {
         "import os": 0,
         "timeout=timeout": 0,
-        '"HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "5"': 0,
+        '"HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "0"': 0,
         '"HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"': 0,
     }
 

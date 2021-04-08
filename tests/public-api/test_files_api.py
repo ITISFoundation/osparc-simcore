@@ -6,8 +6,6 @@ import time
 from pathlib import Path
 from uuid import UUID
 
-import osparc
-import pytest
 from osparc.api.files_api import FilesApi
 from osparc.models import File
 

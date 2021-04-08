@@ -1,16 +1,18 @@
 import logging
+from typing import Any, Dict, Optional
 
 from aiohttp import web
-from tenacity import Retrying
-
+from aiopg.sa import Engine
 from servicelib.aiopg_utils import (
     DataSourceName,
     PostgresRetryPolicyUponInitialization,
     create_pg_engine,
+    get_pg_engine_stateinfo,
     init_pg_tables,
     is_pg_responsive,
     raise_if_not_responsive,
 )
+from tenacity import Retrying
 
 from .models import metadata
 from .settings import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
@@ -63,11 +65,16 @@ async def pg_engine(app: web.Application):
 
 
 async def is_service_responsive(app: web.Application):
-    """ Returns true if the app can connect to db service
-
-    """
+    """Returns true if the app can connect to db service"""
     is_responsive = await is_pg_responsive(engine=app[APP_DB_ENGINE_KEY])
     return is_responsive
+
+
+def get_engine_state(app: web.Application) -> Dict[str, Any]:
+    engine: Optional[Engine] = app.get(APP_DB_ENGINE_KEY)
+    if engine:
+        return get_pg_engine_stateinfo(engine)
+    return {}
 
 
 def setup_db(app: web.Application):

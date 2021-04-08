@@ -1,12 +1,102 @@
+import hashlib
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, HttpUrl, conint, validator
 
+from ...models.config import BaseConfig
 from ...models.schemas.files import File
-from ..api_resources import RelativeResourceName
+from ...models.schemas.solvers import Solver
+from ..api_resources import RelativeResourceName, compose_resource_name
+
+# FIXME: all ints and bools will be floats
+ArgumentType = Union[File, float, int, bool, str, None]
+KeywordArguments = Dict[str, ArgumentType]
+PositionalArguments = List[ArgumentType]
+
+
+def compute_checksum(kwargs: KeywordArguments):
+    _dump_str = ""
+    for key in sorted(kwargs.keys()):
+        value = kwargs[key]
+        if isinstance(value, File):
+            value = compute_checksum(value.dict())
+        else:
+            value = str(value)
+        _dump_str += f"{key}:{value}"
+    return hashlib.sha256(_dump_str.encode("utf-8")).hexdigest()
+
+
+# JOB INPUTS/OUTPUTS ----------
+#
+#  - Wrappers for input/output values
+#  - Input/outputs are defined in service metadata
+#
+
+
+class JobInputs(BaseModel):
+    # NOTE: this is different from the resource JobInput (TBD)
+    values: KeywordArguments
+
+    # TODO: gibt es platz fuer metadata?
+
+    class Config(BaseConfig):
+        frozen = True
+        allow_mutation = False
+        schema_extra = {
+            "example": {
+                "values": {
+                    "x": 4.33,
+                    "n": 55,
+                    "title": "Temperature",
+                    "enabled": True,
+                    "input_file": File(
+                        filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
+                    ),
+                }
+            }
+        }
+
+    def compute_checksum(self):
+        return compute_checksum(self.values)
+
+
+class JobOutputs(BaseModel):
+    # TODO: JobOutputs is a resources!
+
+    job_id: UUID = Field(..., description="Job that produced this output")
+
+    # TODO: an output could be computed before than the others? has a state? not-ready/ready?
+    results: KeywordArguments
+
+    # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
+    # on one specific output.
+    # errors: List[JobErrors] = []
+
+    class Config(BaseConfig):
+        frozen = True
+        allow_mutation = False
+        schema_extra = {
+            "example": {
+                "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
+                "results": {
+                    "maxSAR": 4.33,
+                    "n": 55,
+                    "title": "Specific Absorption Rate",
+                    "enabled": False,
+                    "output_file": File(
+                        filename="sar_matrix.txt",
+                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
+                    ),
+                },
+            }
+        }
+
+    def compute_results_checksum(self):
+        return compute_checksum(self.results)
+
 
 # JOBS ----------
 #  - A job can be create on a specific solver or other type of future runner (e.g. a pipeline)
@@ -44,7 +134,7 @@ class Job(BaseModel):
         ..., description="Link to the job outputs (sub-collection"
     )
 
-    class Config:
+    class Config(BaseConfig):
         schema_extra = {
             "example": {
                 "id": "f622946d-fd29-35b9-a193-abdd1095167c",
@@ -66,6 +156,8 @@ class Job(BaseModel):
             raise ValueError(f"Resource name [{v}] and id [{_id}] do not match")
         return v
 
+    # constructors ------
+
     @classmethod
     def create_now(cls, parent: RelativeResourceName, inputs_checksum: str) -> "Job":
         global_uuid = uuid4()
@@ -81,14 +173,29 @@ class Job(BaseModel):
             outputs_url=None,
         )
 
+    @classmethod
+    def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
+        solver_name = compose_resource_name(solver.id, solver.version)
+        job = Job.create_now(
+            parent=solver_name, inputs_checksum=inputs.compute_checksum()
+        )
+        return job
+
 
 # TODO: these need to be in sync with celery task states
 class TaskStates(str, Enum):
-    UNDEFINED = "undefined"
-    PENDING = "pending"
-    RUNNING = "running"
-    SUCCESS = "success"
-    FAILED = "failed"
+    UNKNOWN = "UNKNOWN"
+    PUBLISHED = "PUBLISHED"
+    NOT_STARTED = "NOT_STARTED"
+    PENDING = "PENDING"
+    STARTED = "STARTED"
+    RETRY = "RETRY"
+    SUCCESS = "SUCCESS"
+    FAILED = "FAILED"
+    ABORTED = "ABORTED"
+
+
+PercentageInt: Type[int] = conint(ge=0, le=100)
 
 
 class JobStatus(BaseModel):
@@ -98,7 +205,7 @@ class JobStatus(BaseModel):
 
     job_id: UUID
     state: TaskStates
-    progress: conint(ge=0, le=100) = 0
+    progress: PercentageInt = 0
 
     # Timestamps on states
     # TODO: sync state events and timestamps
@@ -112,68 +219,20 @@ class JobStatus(BaseModel):
         description="Timestamp at which the solver finished or killed execution or None if the event did not occur",
     )
 
+    class Config(BaseConfig):
+        # frozen = True
+        # allow_mutation = False
+        schema_extra = {
+            "example": {
+                "job_id": "145beae4-a3a8-4fde-adbb-4e8257c2c083",
+                "state": TaskStates.STARTED,
+                "progress": 3,
+                "submitted_at": "2021-04-01 07:15:54.631007",
+                "started_at": "2021-04-01 07:16:43.670610",
+                "stopped_at": None,
+            }
+        }
+
     def take_snapshot(self, event: str = "submitted"):
         setattr(self, f"{event}_at", datetime.utcnow())
         return getattr(self, f"{event}_at")
-
-
-# INPUTS/OUTPUTS ----------
-#
-
-
-# FIXME: all ints and bools will be floats
-ArgumentType = Union[File, float, int, bool, str, None]
-KeywordArguments = Dict[str, ArgumentType]
-PositionalArguments = List[ArgumentType]
-
-
-class JobInputs(BaseModel):
-    # NOTE: this is different from the resource JobInput (TBD)
-    values: KeywordArguments
-
-    # TODO: gibt es platz fuer metadata?
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "values": {
-                    "x": 4.33,
-                    "n": 55,
-                    "title": "Temperature",
-                    "enabled": True,
-                    "input_file": File(
-                        filename="input.txt", id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f"
-                    ),
-                }
-            }
-        }
-
-
-class JobOutputs(BaseModel):
-    # TODO: JobOutputs is a resources!
-
-    job_id: UUID = Field(..., description="Job that produced this output")
-
-    # TODO: an output could be computed before than the others? has a state? not-ready/ready?
-    results: KeywordArguments
-
-    # TODO: an error might have occurred at the level of the job, i.e. affects all outputs, or only
-    # on one specific output.
-    # errors: List[JobErrors] = []
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "job_id": "99d9ac65-9f10-4e2f-a433-b5e412bb037b",
-                "results": {
-                    "maxSAR": 4.33,
-                    "n": 55,
-                    "title": "Specific Absorption Rate",
-                    "enabled": False,
-                    "output_file": File(
-                        filename="sar_matrix.txt",
-                        id="0a3b2c56-dbcd-4871-b93b-d454b7883f9f",
-                    ),
-                },
-            }
-        }

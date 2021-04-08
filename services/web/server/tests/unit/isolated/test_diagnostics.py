@@ -6,11 +6,15 @@ from typing import Dict
 from unittest.mock import Mock
 
 import pytest
-
 from servicelib.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from servicelib.application_setup import APP_SETUP_KEY
+from simcore_service_webserver import diagnostics_handlers
 from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.rest import get_openapi_specs_path, load_openapi_specs
+from simcore_service_webserver.rest import (
+    api_version_prefix,
+    get_openapi_specs_path,
+    load_openapi_specs,
+)
 
 
 class App(dict):
@@ -64,3 +68,15 @@ def test_unique_application_keys(app_mock, openapi_specs):
     assert any(key for key in app_mock if "diagnostics" in key)
 
     app_mock.assert_none_overriden()
+
+
+@pytest.mark.parametrize("route", diagnostics_handlers.routes, ids=lambda r: r.path)
+def test_route_against_openapi_specs(route, openapi_specs):
+
+    assert route.path.startswith(f"/{api_version_prefix}")
+    path = route.path.replace(f"/{api_version_prefix}", "")
+
+    assert (
+        openapi_specs.paths[path].operations[route.method.lower()].operation_id
+        == route.kwargs["name"]
+    ), f"openapi specs does not fit route {route}"

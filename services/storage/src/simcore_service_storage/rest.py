@@ -10,7 +10,7 @@ from aiohttp_swagger import setup_swagger
 from servicelib.openapi import get_base_path
 from servicelib.rest_middlewares import append_rest_middlewares
 
-from . import rest_routes
+from . import app_handlers, rest_routes
 from .resources import resources
 from .settings import APP_OPENAPI_SPECS_KEY
 
@@ -41,6 +41,7 @@ def setup(app: web.Application):
     # Connects handlers
     routes = rest_routes.create(api_specs)
     app.router.add_routes(routes)
+    app.router.add_routes(app_handlers.routes)
 
     log.debug("routes:\n\t%s", "\n\t".join(map(str, routes)))
 
