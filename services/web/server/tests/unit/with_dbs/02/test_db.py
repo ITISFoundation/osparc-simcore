@@ -9,7 +9,7 @@ import pytest
 import yaml
 from simcore_service_webserver.db import is_service_enabled, is_service_responsive
 
-pytestmark = pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hags")
+pytestmark = pytest.mark.skipif(sys.version_info >= (3, 8), reason="FIXME: py38 hangs")
 
 
 def test_uses_same_postgres_version(docker_compose_file, osparc_simcore_root_dir):
