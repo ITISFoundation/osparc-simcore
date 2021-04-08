@@ -72,7 +72,27 @@ class ServiceSidecarClient:
         self, service_sidecar_endpoint: str
     ) -> Optional[Dict[str, Any]]:
         """returns: None in case of error, otherwise a dict will be returned"""
-        url = get_url(service_sidecar_endpoint, "/containers/inspect")
+        url = get_url(service_sidecar_endpoint, "/containers:inspect")
+        try:
+            response = await self.httpx_client.get(url=url)
+            if response.status_code != 200:
+                logging.warning(
+                    "error during request status=%s, body=%s",
+                    response.status_code,
+                    response.text,
+                )
+                return None
+
+            return response.json()
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "GET", traceback.format_exc())
+            return None
+
+    async def containers_docker_status(
+        self, service_sidecar_endpoint: str
+    ) -> Optional[Dict[str, Dict[str, str]]]:
+        """returns: None in case of error, otherwise a dict will be returned"""
+        url = get_url(service_sidecar_endpoint, "/containers:docker-status")
         try:
             response = await self.httpx_client.get(url=url)
             if response.status_code != 200:

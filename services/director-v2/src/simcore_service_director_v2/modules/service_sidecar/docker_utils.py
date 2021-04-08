@@ -3,7 +3,6 @@ import asyncio
 import logging
 import time
 import json
-from enum import Enum
 from typing import Any, Deque, Dict, Tuple, Set, Optional
 
 import aiodocker
@@ -11,39 +10,21 @@ from asyncio_extras import async_contextmanager
 
 from .config import ServiceSidecarSettings
 from .constants import FIXED_SERVICE_NAME_SIDECAR, SERVICE_SIDECAR_PREFIX
+from .parse_docker_status import (
+    ServiceState,
+    extract_task_state,
+    TASK_STATES_ALL,
+    TASK_STATES_RUNNING,
+)
 from .exceptions import GenericDockerError, ServiceSidecarError
 from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 
 log = logging.getLogger(__name__)
 
-TASK_STATES_FAILED: Set[str] = {"failed", "rejected"}
-TASK_STATES_PENDING: Set[str] = {"pending"}
-TASK_STATES_PULLING: Set[str] = {"assigned", "accepted", "preparing"}
-TASK_STATES_STARTING: Set[str] = {"ready", "starting"}
-TASK_STATES_RUNNING: Set[str] = {"running"}
-TASK_STATES_COMPLETE: Set[str] = {"complete", "shutdown"}
-
-TASK_STATES_ALL: Set[str] = (
-    TASK_STATES_FAILED
-    | TASK_STATES_PENDING
-    | TASK_STATES_PULLING
-    | TASK_STATES_STARTING
-    | TASK_STATES_RUNNING
-    | TASK_STATES_COMPLETE
-)
 
 ServiceLabelsStoredData = Tuple[
     str, str, str, PathsMappingModel, ComposeSpecModel, Optional[str], str, str, int
 ]
-
-
-class ServiceState(Enum):
-    PENDING = "pending"
-    PULLING = "pulling"
-    STARTING = "starting"
-    RUNNING = "running"
-    COMPLETE = "complete"
-    FAILED = "failed"
 
 
 @async_contextmanager
@@ -264,24 +245,5 @@ async def get_service_sidecar_state(
         target_statuses=TASK_STATES_ALL,
     )
 
-    task_state = last_task["Status"]["State"]
-
-    # default
-    last_task_state = ServiceState.STARTING
-    last_task_error_msg = (
-        last_task["Status"]["Err"] if "Err" in last_task["Status"] else ""
-    )
-
-    if task_state in TASK_STATES_FAILED:
-        last_task_state = ServiceState.FAILED
-    elif task_state in TASK_STATES_PENDING:
-        last_task_state = ServiceState.PENDING
-    elif task_state in TASK_STATES_PULLING:
-        last_task_state = ServiceState.PULLING
-    elif task_state in TASK_STATES_STARTING:
-        last_task_state = ServiceState.STARTING
-    elif task_state in TASK_STATES_RUNNING:
-        last_task_state = ServiceState.RUNNING
-    elif task_state in TASK_STATES_COMPLETE:
-        last_task_state = ServiceState.COMPLETE
-    return (last_task_state, last_task_error_msg)
+    task_status = last_task["Status"]
+    return extract_task_state(task_status=task_status)
