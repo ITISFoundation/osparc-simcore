@@ -157,6 +157,11 @@ def ops_docker_compose(
 def core_services_selection(request) -> List[str]:
     """ Selection of services from the simcore stack """
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
+
+    if "postgres" in core_services:
+        assert (
+            "pgbouncer" in core_services
+        ), f"WARNING: the test is missing pgbouncer service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'. postgres alone is not accessible!!"
     assert (
         core_services
     ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"

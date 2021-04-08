@@ -82,6 +82,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> Dict[InputID, Input
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
             node_inputs[name] = SimCoreFileLink(
+                store=0,
                 path=f"api/{value.id}/{value.filename}",
                 label=value.filename,
                 eTag=value.checksum,

@@ -55,6 +55,10 @@ services:
       - "8080"
       - "3001:3000"
 
+  pgbouncer:
+    ports:
+      - "6432:5432"
+
   postgres:
     ports:
       - "5432:5432"
@@ -79,7 +83,7 @@ services:
         "-c",
         "log_line_prefix=%m [%p] %q%u@%d/%a ",
         "-c",
-        "listen_addresses=\"*\"",
+        'listen_addresses="*"',
       ]
 
   rabbit:

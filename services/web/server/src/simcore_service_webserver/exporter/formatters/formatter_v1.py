@@ -1,12 +1,12 @@
 import asyncio
+import datetime
 import json
 import logging
-import datetime
 import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Dict, List, Tuple, Optional
+from typing import Deque, Dict, List, Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
@@ -309,7 +309,9 @@ async def _upload_files_to_storage(
     shuffled_data: ShuffledData,
 ) -> List[Tuple[LinkAndPath2, ETag]]:
     # check all attachments are present
-    client_timeout = ClientTimeout(total=UPLOAD_HTTP_TIMEOUT, connect=5, sock_connect=5)
+    client_timeout = ClientTimeout(
+        total=UPLOAD_HTTP_TIMEOUT, connect=None, sock_connect=5
+    )
     async with ClientSession(timeout=client_timeout) as session:
         run_in_parallel = deque()
         for attachment in manifest_file.attachments:
@@ -360,7 +362,7 @@ async def import_files_and_validate_project(
     shuffled_project_file = project_file.new_instance_from_shuffled_data(
         shuffled_data=shuffled_data
     )
-    # creating an unique name to help the user distinguish 
+    # creating an unique name to help the user distinguish
     # between the original and new study
     shuffled_project_file.name = "%s %s" % (
         shuffled_project_file.name,

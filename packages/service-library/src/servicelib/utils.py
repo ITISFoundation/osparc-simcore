@@ -23,16 +23,19 @@ def is_production_environ() -> bool:
     return os.environ.get("SC_BUILD_TARGET") == "production"
 
 
-def get_http_client_request_total_timeout() -> int:
-    return int(os.environ.get("HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT", "20"))
+def get_http_client_request_total_timeout() -> Optional[int]:
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT", "20")) or None
 
 
-def get_http_client_request_aiohttp_connect_timeout() -> int:
-    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", "5"))
+def get_http_client_request_aiohttp_connect_timeout() -> Optional[int]:
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT", 0)) or None
 
 
-def get_http_client_request_aiohttp_sock_connect_timeout() -> int:
-    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
+def get_http_client_request_aiohttp_sock_connect_timeout() -> Optional[int]:
+    return (
+        int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
+        or None
+    )
 
 
 def is_osparc_repo_dir(path: Path) -> bool:
@@ -75,7 +78,7 @@ def fire_and_forget_task(
 
 # // tasks
 async def logged_gather(
-    *tasks, reraise: bool = True, log: logging.Logger = logger
+    *tasks, reraise: bool = True, log: logging.Logger = logger, max_concurrency: int = 0
 ) -> List[Any]:
     """
         Thin wrapper around asyncio.gather that allows excuting ALL tasks concurently until the end
@@ -93,7 +96,18 @@ async def logged_gather(
     :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
     :rtype: List[Any]
     """
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    wrapped_tasks = tasks
+    if max_concurrency > 0:
+        semaphore = asyncio.Semaphore(max_concurrency)
+
+        async def sem_task(task):
+            async with semaphore:
+                return await task
+
+        wrapped_tasks = [sem_task(t) for t in tasks]
+
+    results = await asyncio.gather(*wrapped_tasks, return_exceptions=True)
 
     error = None
     for i, value in enumerate(results):

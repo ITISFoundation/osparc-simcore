@@ -40,7 +40,12 @@ from utils import get_fake_project
 
 log = logging.getLogger(__name__)
 
-pytest_simcore_core_services_selection = ["postgres", "redis", "storage"]
+pytest_simcore_core_services_selection = [
+    "postgres",
+    "pgbouncer",
+    "redis",
+    "storage",
+]
 pytest_simcore_ops_services_selection = ["minio"]
 
 
