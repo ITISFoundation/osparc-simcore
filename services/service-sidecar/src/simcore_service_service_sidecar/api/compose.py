@@ -102,12 +102,20 @@ async def pull_docker_required_docker_images(
         return "No started spec to stop was found"
 
     command = "docker-compose -p {project} -f {file_path} pull --include-deps"
-    finished_without_errors, stdout = await write_file_and_run_command(
-        settings=settings,
-        file_content=stored_compose_content,
-        command=command,
-        command_timeout=command_timeout,
-    )
+
+    try:
+        # mark as pulling images
+        shared_store.set_is_pulling_containsers()
+
+        finished_without_errors, stdout = await write_file_and_run_command(
+            settings=settings,
+            file_content=stored_compose_content,
+            command=command,
+            command_timeout=command_timeout,
+        )
+    finally:
+        # remove mark
+        shared_store.unset_is_pulling_containsers()
 
     response.status_code = 200 if finished_without_errors else 400
     return stdout
