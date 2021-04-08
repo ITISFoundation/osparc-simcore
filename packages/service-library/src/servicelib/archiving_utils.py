@@ -1,10 +1,9 @@
 import asyncio
 import logging
 import zipfile
-from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
-from typing import Iterator
-
+from pathlib import Path
+from typing import Iterator, List, Set
 
 log = logging.getLogger(__name__)
 
@@ -32,20 +31,25 @@ def _read_in_chunks(file_object, chunk_size=1024 * 8):
 
 def _zipfile_single_file_extract_worker(
     zip_file_path: Path, file_in_archive: str, destination_folder: Path, is_dir: bool
-) -> None:
-    """Extracing in chunks to avoid memory pressure on zip/unzip"""
+) -> Path:
+    """Extracts file_in_archive from the archive zip_file_path -> destination_folder/file_in_archive
+
+    Extracts in chunks to avoid memory pressure on zip/unzip
+    Retuns a path to extracted file or directory
+    """
     with zipfile.ZipFile(zip_file_path) as zf:
         # assemble destination and ensure it exits
         destination_path = destination_folder / file_in_archive
 
         if is_dir:
             destination_path.mkdir(parents=True, exist_ok=True)
-            return
+            return destination_path
 
         with zf.open(name=file_in_archive) as zip_fp:
             with open(destination_path, "wb") as destination_fp:
                 for chunk in _read_in_chunks(zip_fp):
                     destination_fp.write(chunk)
+                return destination_path
 
 
 def ensure_destination_subdirectories_exist(
@@ -62,7 +66,14 @@ def ensure_destination_subdirectories_exist(
         Path(subdirectory).mkdir(parents=True, exist_ok=True)
 
 
-async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> None:
+async def unarchive_dir(
+    archive_to_extract: Path, destination_folder: Path
+) -> Set[Path]:
+    """Extracts zipped file archive_to_extract in destination_folder,
+    preserving all relative files and folders inside the archive
+
+    Returns a set of paths extracted from archive (NOTE: that these are both files and folders)
+    """
     with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
         with ProcessPoolExecutor() as pool:
             loop = asyncio.get_event_loop()
@@ -88,7 +99,9 @@ async def unarchive_dir(archive_to_extract: Path, destination_folder: Path) -> N
                 for zip_entry in zip_file_handler.infolist()
             ]
 
-            await asyncio.gather(*tasks)
+            extracted_paths: List[Path] = await asyncio.gather(*tasks)
+            # NOTE: extracted_paths includes files and folders
+            return set(extracted_paths)
 
 
 def _serial_add_to_archive(
