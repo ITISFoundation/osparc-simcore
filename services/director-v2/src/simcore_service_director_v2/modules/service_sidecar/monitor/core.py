@@ -9,7 +9,7 @@
 import asyncio
 import logging
 from asyncio import Lock, sleep
-from typing import Deque, Dict, Any, Optional
+from typing import Deque, Dict, Any, Optional, List, Tuple
 
 from aiohttp.web import Application
 from async_timeout import timeout
@@ -30,6 +30,7 @@ from .models import (
 from .service_sidecar_api import query_service, get_api_client, ServiceSidecarClient
 from .utils import AsyncResourceLock
 from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
+from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
 
 logger = logging.getLogger(__name__)
 
@@ -187,10 +188,33 @@ class ServiceSidecarsMonitor:
         """Computes the service sidecar """
 
         def make_error_status():
-            # TODO: check if this is correct and the frontend understands what it is
-            return dict(
+            error_status = dict(
+                dynamic_type="dynamic-sidecar",
                 service_state="error",
                 service_message=f"Could not find a service for node_uuid={node_uuid}",
+            )
+            logging.warning(
+                "Producting error status for service-sidecar with node_uuid=%s\n%s",
+                node_uuid,
+                error_status,
+            )
+            return error_status
+
+        def make_service_status(
+            monitor_data: MonitorData, service_state: ServiceState, service_message: str
+        ):
+            return dict(
+                dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
+                published_port=80,  # default for the proxy
+                entry_point="",  # can be removed when dynamic_type="dynamic-sidecar"
+                service_uuid=node_uuid,
+                service_key=monitor_data.service_key,
+                service_version=monitor_data.service_tag,
+                service_host=monitor_data.service_name,
+                service_port=monitor_data.service_port,
+                service_basepath="",  # not needed here
+                service_state=service_state,
+                service_message=service_message,
             )
 
         async with self._lock:
@@ -202,8 +226,8 @@ class ServiceSidecarsMonitor:
                 return make_error_status()
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
-
             service_sidecar_settings = get_settings(self._app)
+            services_sidecar_client: ServiceSidecarClient = get_api_client(self._app)
 
             service_state, service_message = await get_service_sidecar_state(
                 # the service_name is unique and will not collide with other names
@@ -212,18 +236,45 @@ class ServiceSidecarsMonitor:
                 service_sidecar_settings=service_sidecar_settings,
             )
 
-            return dict(
-                dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
-                published_port=80,  # default for the proxy
-                entry_point="",  # TODO: remove it? not used by any service (commented in all our services), the frontend still supports it
-                service_uuid=node_uuid,
-                service_key=monitor_data.service_key,
-                service_version=monitor_data.service_tag,
-                service_host=monitor_data.service_name,
-                service_port=monitor_data.service_port,
-                service_basepath="",  # not needed here
-                service_state=service_state.value,
-                service_message=service_message,
+            # while the service-sidecar state is not RUNNING report it's state
+            if service_state != ServiceState.RUNNING:
+                return make_service_status(
+                    monitor_data=monitor_data,
+                    service_state=service_state,
+                    service_message=service_message,
+                )
+
+            docker_statuses: Optional[
+                Dict[str, Dict[str, str]]
+            ] = await services_sidecar_client.containers_docker_status(
+                service_sidecar_endpoint=monitor_data.service_sidecar.endpoint
+            )
+
+            # error fetching docker_statues, probably someone should check
+            if docker_statuses is None:
+                return make_service_status(
+                    monitor_data=monitor_data,
+                    service_state=ServiceState.STARTING,
+                    service_message="There was an error while trying to fetch the stautes form the contianers",
+                )
+
+            # wait for containers to start
+            if len(docker_statuses) == 0:
+                # marks status as waiting for containers
+                return make_service_status(
+                    monitor_data=monitor_data,
+                    service_state=ServiceState.STARTING,
+                    service_message="",
+                )
+
+            # compute composed containers states
+            container_state, container_message = extract_containers_minimim_statuses(
+                docker_statuses
+            )
+            return make_service_status(
+                monitor_data=monitor_data,
+                service_state=container_state,
+                service_message=container_message,
             )
 
     async def _runner(self):
