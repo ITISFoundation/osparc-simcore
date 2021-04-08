@@ -37,7 +37,7 @@ setup(
         "Framework :: Pytest",
     ],
     long_description=readme,
-    python_requires="~=3.8",
+    python_requires=">=3.6",
     license="MIT license",
     install_requires=install_requirements,
     packages=find_packages(where="src"),

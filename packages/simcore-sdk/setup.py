@@ -26,7 +26,7 @@ setup(
     version="0.3.2",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
-    python_requires="~=3.8",
+    python_requires=">=3.6",
     install_requires=install_requirements,
     tests_require=test_requirements,
     extras_require={"test": test_requirements},
