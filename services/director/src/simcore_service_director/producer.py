@@ -789,7 +789,7 @@ async def _extract_osparc_involved_service_labels(
     service_key: str,
     service_tag: str,
     service_labels: Dict[str, str],
-    compose_spec: Optional[str],
+    compose_spec: Optional[Dict[str, Any]],
 ) -> Dict[str, Any]:
     """
     Returns all the involved oSPARC services from the provided service labels.
@@ -805,6 +805,9 @@ async def _extract_osparc_involved_service_labels(
     docker_image_name_by_services: Dict[str, Any] = {
         _assemble_key(service_key=service_key, service_tag=service_tag): service_labels
     }
+    if compose_spec is None:
+        return docker_image_name_by_services
+
     # maps form image_name to compose_spec key
     reverse_mapping: Dict[str, str] = {}
 
@@ -986,21 +989,22 @@ async def _start_docker_service_with_dynamic_service(
         )
     paths_mapping: Dict[str, Any] = json.loads(paths_mapping)
 
-    compose_spec: Optional[str] = _get_value_from_label(
+    str_compose_spec: Optional[str] = _get_value_from_label(
         image_labels, "simcore.service.compose-spec"
     )
+    compose_spec: Optional[Dict[str, Any]] = (
+        None if str_compose_spec is None else json.loads(str_compose_spec)
+    )
 
-    labels_for_involved_services: Dict[str, Any] = {}
-    if compose_spec is not None:
-        compose_spec = json.loads(compose_spec)
-
-        labels_for_involved_services = await _extract_osparc_involved_service_labels(
-            app=app,
-            service_key=service["key"],
-            service_tag=service["tag"],
-            service_labels=image_labels,
-            compose_spec=compose_spec,
-        )
+    labels_for_involved_services: Dict[
+        str, Any
+    ] = await _extract_osparc_involved_service_labels(
+        app=app,
+        service_key=service["key"],
+        service_tag=service["tag"],
+        service_labels=image_labels,
+        compose_spec=compose_spec,
+    )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
 
     target_container = _get_value_from_label(
@@ -1209,37 +1213,53 @@ async def start_service(
         return node_details
 
 
-def format_node_details_for_frontend(
-    published_port: int,
-    entry_point: str,
-    service_uuid: str,
-    service_key: str,
-    service_version: str,
-    service_host: str,
-    service_port: int,
-    service_basepath: str,
-    service_state: ServiceState,
-    service_message: str,
-    dynamic_type: Optional[str] = None,
-) -> Dict[str, Union[str, int]]:
-    node_status = {
-        "published_port": published_port,
-        "entry_point": entry_point,
-        "service_uuid": service_uuid,
-        "service_key": service_key,
-        "service_version": service_version,
-        "service_host": service_host,
-        "service_port": service_port,
-        "service_basepath": service_basepath,
-        "service_state": (
-            service_state if isinstance(service_state, str) else service_state.value
-        ),
-        "service_message": service_message,
-    }
+def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
+    """this is used to format the node_details for either old
+    or service-sidecar interactive services
 
+    Usually 10 (old interactive service) or 11 (service-sidecar) fields are provided.
+    When less the 10 fields are provided there is usually an error or something is still being formatted
+    """
+
+    def _format_service_state(
+        input_service_state: Optional[Union[str, ServiceState]]
+    ) -> str:
+        if input_service_state is None:
+            return ServiceState.PENDING.value
+        return (
+            input_service_state
+            if isinstance(input_service_state, str)
+            else input_service_state.value
+        )
+
+    node_status: Dict[str, Union[str, int]] = {}
+    dynamic_type: Optional[str] = kwargs.get("dynamic_type", None)
     if dynamic_type is not None:
         # if this field is preset the service will be served via dynamic-sidecar
         node_status["dynamic_type"] = dynamic_type
+
+    service_state: Optional[Union[str, ServiceState]] = kwargs.get(
+        "service_state", None
+    )
+
+    if len(kwargs) < 10:
+        # for the servie-sidecar sometimes the status is not availabe because:
+        # API not responding, generic errors
+        node_status["service_state"] = _format_service_state(service_state)
+        node_status["service_message"] = kwargs.get("service_message", "")
+        node_status["service_uuid"] = kwargs.get("service_uuid", "")
+        return node_status
+
+    node_status["published_port"] = kwargs["published_port"]
+    node_status["entry_point"] = kwargs["entry_point"]
+    node_status["service_uuid"] = kwargs["service_uuid"]
+    node_status["service_key"] = kwargs["service_key"]
+    node_status["service_version"] = kwargs["service_version"]
+    node_status["service_host"] = kwargs["service_host"]
+    node_status["service_port"] = kwargs["service_port"]
+    node_status["service_basepath"] = kwargs["service_basepath"]
+    node_status["service_state"] = _format_service_state(service_state)
+    node_status["service_message"] = kwargs["service_message"]
 
     return node_status
 
@@ -1253,6 +1273,12 @@ async def _compute_dynamic_sidecar_node_details(
         raise exceptions.DirectorException(
             f"Error while retriving status from service-sidecar for node {node_uuid}"
         )
+    if (
+        len(status_result) == 2
+        and "service_state" in status_result
+        and "service_message" in status_result
+    ):
+        return status_result
     return format_node_details_for_frontend(**status_result)
 
 
