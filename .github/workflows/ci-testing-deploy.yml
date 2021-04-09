@@ -112,6 +112,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
@@ -164,6 +165,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
@@ -210,6 +212,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
@@ -260,6 +263,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-sidecar:
@@ -306,6 +310,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
@@ -415,6 +420,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
@@ -461,6 +467,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
@@ -507,6 +514,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
@@ -553,6 +561,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
@@ -599,6 +608,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
@@ -645,6 +655,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-isolated:
@@ -691,6 +702,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-01:
@@ -738,6 +750,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
@@ -785,6 +798,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
@@ -832,6 +846,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-04:
@@ -879,6 +894,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-05:
@@ -926,6 +942,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-06:
@@ -973,6 +990,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-07:
@@ -1020,6 +1038,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-08:
@@ -1067,6 +1086,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-09:
@@ -1114,6 +1134,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-10:
@@ -1161,6 +1182,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   build-test-images:
@@ -1251,6 +1273,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-webserver-02:
@@ -1313,6 +1336,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
@@ -1375,6 +1399,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-sidecar:
@@ -1437,6 +1462,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
@@ -1499,6 +1525,7 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
+          name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
