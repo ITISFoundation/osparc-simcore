@@ -151,7 +151,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: unit_tests_catalog_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v1
         with:
@@ -247,7 +247,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: unit_tests_director_v2_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - uses: codecov/codecov-action@v1
         with:
@@ -1235,7 +1235,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_webserver_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
       - name: cleanup
         if: always()
@@ -1251,7 +1251,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_webserver_coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
@@ -1298,7 +1297,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_director-v2_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - name: cleanup
         if: always()
@@ -1314,7 +1313,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_director-v2_coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-sidecar:
@@ -1361,7 +1359,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_sidecar_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/sidecar/test_failures
       - name: cleanup
         if: always()
@@ -1377,7 +1375,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_sidecar_coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
@@ -1424,7 +1421,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_simcore_sdk_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
       - name: cleanup
         if: always()
@@ -1440,7 +1437,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_simcoresdk_coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
@@ -1590,19 +1586,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: e2e_docker_container_logs
+          name: ${{ github.job }}_docker_logs
           path: simcore_logs
       - name: upload screenshots
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: e2e_screenshots
+          name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: e2e_logs
+          name: ${{ github.job }}_logs
           path: tests/e2e/logs
       - name: cleanup
         if: always()
