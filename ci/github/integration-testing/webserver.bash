@@ -1,8 +1,8 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 # in case it's a Pull request, the env are never available, default to itisfoundation to get a maybe not too old version for caching
@@ -22,7 +22,7 @@ install() {
 test() {
   pytest --cov=simcore_service_webserver --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v -m "not travis" services/web/server/tests/integration --log-level=DEBUG
+    -v -m "not travis" "services/web/server/tests/integration/$1" --log-level=DEBUG
 }
 
 clean_up() {

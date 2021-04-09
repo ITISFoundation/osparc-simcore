@@ -647,7 +647,6 @@ jobs:
         with:
           path: codeclimate.${{ github.job }}_coverage.json
 
-  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-isolated:
     name: "[unit] webserver isolated"
     runs-on: ${{ matrix.os }}
@@ -975,6 +974,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: codeclimate.${{ github.job }}_coverage.json
+
   unit-test-webserver-07:
     timeout-minutes: 10 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 07"
@@ -1191,8 +1191,8 @@ jobs:
         if: github.event_name == 'push'
         run: ./ci/deploy/dockerhub-test-images.bash
 
-  integration-test-webserver:
-    name: "[int] webserver"
+  integration-test-webserver-01:
+    name: "[int] webserver 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1230,7 +1230,7 @@ jobs:
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
-        run: ./ci/github/integration-testing/webserver.bash test
+        run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v2
@@ -1252,6 +1252,65 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: codeclimate.${{ github.job }}_coverage.json
+
+  integration-test-webserver-02:
+    name: "[int] webserver 02"
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/integration-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/integration-testing/webserver.bash test 02
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/web/server/test_failures
+      - name: cleanup
+        if: always()
+        run: ./ci/github/integration-testing/webserver.bash clean_up
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: integrationtests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
 
   integration-test-director-v2:
     name: "[int] director-v2"
@@ -1666,7 +1725,8 @@ jobs:
         unit-test-webserver-08,
         unit-test-webserver-09,
         unit-test-webserver-10,
-        integration-test-webserver,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
         integration-test-director-v2,
         integration-test-sidecar,
         integration-test-simcore-sdk,
@@ -1719,7 +1779,8 @@ jobs:
         unit-test-webserver-08,
         unit-test-webserver-09,
         unit-test-webserver-10,
-        integration-test-webserver,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
         integration-test-director-v2,
         integration-test-sidecar,
         integration-test-simcore-sdk,
