@@ -574,48 +574,6 @@ def ensure_run_in_sequence_context_is_empty():
     async_utils.sequential_jobs_contexts = {}
 
 
-# DELETE -------
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
-async def test_delete_project(
-    client,
-    logged_user,
-    user_project,
-    expected,
-    storage_subsystem_mock,
-    mocked_director_subsystem,
-    catalog_subsystem_mock,
-    fake_services,
-):
-    # DELETE /v0/projects/{project_id}
-
-    fakes = fake_services(5)
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result(fakes)
-
-    await _delete_project(client, user_project, expected)
-
-    if expected == web.HTTPNoContent:
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].assert_called_once()
-        calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
-        mocked_director_subsystem["stop_service"].has_calls(calls)
-        # wait for the fire&forget to run
-        await asyncio.sleep(2)
-        await _assert_get_same_project(client, user_project, web.HTTPNotFound)
-
-
 @pytest.mark.parametrize(
     "user_role,expected",
     [
