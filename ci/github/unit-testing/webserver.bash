@@ -26,14 +26,12 @@ test_isolated() {
     -v -m "not travis" services/web/server/tests/unit/isolated
 }
 
-
 test_with_db() {
   echo "testing in services/web/server/tests/unit/with_dbs/$1"
   pytest --cov=simcore_service_webserver --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-    -v -m "not travis" services/web/server/tests/unit/with_dbs/$1
+    -v -m "not travis" "services/web/server/tests/unit/with_dbs/$1"
 }
-
 
 # Check if the function exists (bash specific)
 if declare -f "$1" >/dev/null; then
