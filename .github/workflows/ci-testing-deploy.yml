@@ -706,7 +706,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-01:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -754,7 +754,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -802,7 +802,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -850,7 +850,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-04:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 04"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -898,7 +898,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-05:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 05"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -946,7 +946,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-06:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 06"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -994,7 +994,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-07:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 07"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1042,7 +1042,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-08:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 08"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1090,7 +1090,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-09:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 09"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1138,7 +1138,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-10:
-    timeout-minutes: 10 # if this timeout gets too small, then split the tests
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 10"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1214,6 +1214,7 @@ jobs:
         run: ./ci/deploy/dockerhub-test-images.bash
 
   integration-test-webserver-01:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1277,6 +1278,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-webserver-02:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] webserver 02"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1340,6 +1342,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] director-v2"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1403,6 +1406,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-sidecar:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] sidecar"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1466,6 +1470,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1529,6 +1534,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1573,6 +1579,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1617,6 +1624,7 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1694,6 +1702,7 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-environment-setup:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[sys] environment setup"
     runs-on: ${{ matrix.os }}
     strategy:
