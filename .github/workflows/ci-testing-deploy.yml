@@ -1773,7 +1773,7 @@ jobs:
         run: |
           mkdir --parents all_coverages
           cp artifacts/codeclimate*/*.json all_coverages
-          ls -al all_coverages/*.json
+          ls --all -l all_coverages/*.json
       - name: install codeclimate test reporter
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
