@@ -1311,6 +1311,9 @@ jobs:
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
           ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
     name: "[int] director-v2"
