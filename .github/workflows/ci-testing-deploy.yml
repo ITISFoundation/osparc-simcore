@@ -108,12 +108,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_server_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_api_server_coverage
-          path: codeclimate.unit_api_server_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
     name: "[unit] catalog"
@@ -161,12 +160,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_catalog_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_catalog_coverage
-          path: codeclimate.unit_catalog_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
     name: "[unit] director"
@@ -208,12 +206,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_director_coverage
-          path: codeclimate.unit_director_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
     name: "[unit] director-v2"
@@ -259,12 +256,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_v2_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_director_v2_coverage
-          path: codeclimate.unit_director_v2_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-sidecar:
     name: "[unit] sidecar"
@@ -306,12 +302,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_sidecar_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_sidecar_coverage
-          path: codeclimate.unit_sidecar_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
     name: "[unit] frontend"
@@ -416,12 +411,11 @@ jobs:
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
           ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_postgresdb_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_postgresdb_coverage
-          path: codeclimate.unit_postgresdb_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
     name: "[unit] service-integration"
@@ -463,12 +457,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_service_integration_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_service_integration_coverage
-          path: codeclimate.unit_service_integration_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
     name: "[unit] service-library"
@@ -510,12 +503,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_servicelib_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_servicelib_coverage
-          path: codeclimate.unit_servicelib_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
     name: "[unit] models-library"
@@ -557,12 +549,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_modelslib_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_modelslib_coverage
-          path: codeclimate.unit_modelslib_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
     name: "[unit] simcore-sdk"
@@ -604,12 +595,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_simcoresdk_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_simcoresdk_coverage
-          path: codeclimate.unit_simcoresdk_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
     name: "[unit] storage"
@@ -651,12 +641,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_storage_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_storage_coverage
-          path: codeclimate.unit_storage_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-isolated:
@@ -699,12 +688,11 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_isolated_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_webserver_isolated_coverage
-          path: codeclimate.unit_webserver_isolated_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-01:
     timeout-minutes: 10 # if this timeout gets too small, then split the tests
@@ -751,7 +739,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
@@ -799,7 +786,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
@@ -847,7 +833,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-04:
@@ -895,7 +880,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-05:
@@ -943,7 +927,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-06:
@@ -991,7 +974,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
   unit-test-webserver-07:
     timeout-minutes: 10 # if this timeout gets too small, then split the tests
@@ -1038,7 +1020,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-08:
@@ -1086,7 +1067,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-09:
@@ -1134,7 +1114,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-10:
@@ -1182,7 +1161,6 @@ jobs:
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ github.job }}
           path: codeclimate.${{ github.job }}_coverage.json
 
   build-test-images:
@@ -1269,12 +1247,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_webserver_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
           name: integration_webserver_coverage
-          path: codeclimate.integration_webserver_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
     name: "[int] director-v2"
@@ -1332,12 +1310,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_director-v2_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
           name: integration_director-v2_coverage
-          path: codeclimate.integration_director-v2_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-sidecar:
     name: "[int] sidecar"
@@ -1395,12 +1373,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_sidecar_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
           name: integration_sidecar_coverage
-          path: codeclimate.integration_sidecar_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
     name: "[int] simcore-sdk"
@@ -1458,12 +1436,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_simcoresdk_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
           name: integration_simcoresdk_coverage
-          path: codeclimate.integration_simcoresdk_coverage.json
+          path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
     name: "[sys] public api"
