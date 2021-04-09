@@ -1768,9 +1768,11 @@ jobs:
       - uses: actions/download-artifact@v2
         name: download all artifacts
         with:
-          path: all_coverages
+          path: artifacts
       - name: put all artefacts together
         run: |
+          mkdir --parents all_coverages
+          cp artifacts/codeclimate*/*.json all_coverages
           ls -al all_coverages/*.json
       - name: install codeclimate test reporter
         run: |
