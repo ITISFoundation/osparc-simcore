@@ -737,50 +737,6 @@ async def test_get_active_project(
 
 
 @pytest.mark.parametrize(
-    "user_role, expected_ok, expected_forbidden",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPOk, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPOk, web.HTTPForbidden),
-        (UserRole.TESTER, web.HTTPOk, web.HTTPForbidden),
-    ],
-)
-async def test_delete_multiple_opened_project_forbidden(
-    client,
-    logged_user,
-    user_project,
-    mocked_director_api,
-    mocked_dynamic_service,
-    socketio_client,
-    client_session_id,
-    user_role,
-    expected_ok,
-    expected_forbidden,
-    mocked_director_subsystem,
-):
-    # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
-    service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
-    # open project in tab1
-    client_session_id1 = client_session_id()
-    try:
-        sio1 = await socketio_client(client_session_id1)
-    except SocketConnectionError:
-        if user_role != UserRole.ANONYMOUS:
-            pytest.fail("socket io connection should not fail")
-    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id1)
-    await assert_status(resp, expected_ok)
-    # delete project in tab2
-    client_session_id2 = client_session_id()
-    try:
-        sio2 = await socketio_client(client_session_id2)
-    except SocketConnectionError:
-        if user_role != UserRole.ANONYMOUS:
-            pytest.fail("socket io connection should not fail")
-    await _delete_project(client, user_project, expected_forbidden)
-
-
-@pytest.mark.parametrize(
     "user_role, create_exp, get_exp, deletion_exp",
     [
         (
