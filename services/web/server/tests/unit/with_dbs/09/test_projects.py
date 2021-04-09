@@ -790,3 +790,83 @@ async def test_new_template_from_project(
                 uuidlib.UUID(node_name)
             except ValueError:
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
+
+
+# PUT --------
+@pytest.mark.parametrize(
+    "user_role,expected,expected_change_access",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk, web.HTTPForbidden),
+        (UserRole.USER, web.HTTPOk, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk, web.HTTPOk),
+    ],
+)
+async def test_replace_project(
+    client,
+    logged_user,
+    user_project,
+    expected,
+    expected_change_access,
+    all_group,
+    ensure_run_in_sequence_context_is_empty,
+):
+    project_update = deepcopy(user_project)
+    project_update["description"] = "some updated from original project!!!"
+    await _replace_project(client, project_update, expected)
+
+    # replacing the owner access is not possible, it will keep the owner as well
+    project_update["accessRights"].update(
+        {str(all_group["gid"]): {"read": True, "write": True, "delete": True}}
+    )
+    await _replace_project(client, project_update, expected_change_access)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_replace_project_updated_inputs(
+    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
+):
+    project_update = deepcopy(user_project)
+    #
+    # "inputAccess": {
+    #    "Na": "ReadAndWrite", <--------
+    #    "Kr": "ReadOnly",
+    #    "BCL": "ReadAndWrite",
+    #    "NBeats": "ReadOnly",
+    #    "Ligand": "Invisible",
+    #    "cAMKII": "Invisible"
+    #  },
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
+        "Na"
+    ] = 55
+    await _replace_project(client, project_update, expected)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
+        (UserRole.GUEST, web.HTTPOk),
+        (UserRole.USER, web.HTTPOk),
+        (UserRole.TESTER, web.HTTPOk),
+    ],
+)
+async def test_replace_project_updated_readonly_inputs(
+    client, logged_user, user_project, expected, ensure_run_in_sequence_context_is_empty
+):
+    project_update = deepcopy(user_project)
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
+        "Na"
+    ] = 55
+    project_update["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]["inputs"][
+        "Kr"
+    ] = 5
+    await _replace_project(client, project_update, expected)
