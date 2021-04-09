@@ -5,7 +5,6 @@
 
 import pytest
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.application_keys import APP_CONFIG_KEY
@@ -36,7 +35,13 @@ async def test_login_with_wrong_password(client):
     assert cfg.MSG_WRONG_PASSWORD not in await r.text(), str(payload)
 
     async with NewUser() as user:
-        r = await client.post(url, json={"email": user["email"], "password": "wrong.",})
+        r = await client.post(
+            url,
+            json={
+                "email": user["email"],
+                "password": "wrong.",
+            },
+        )
         payload = await r.json()
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
     assert r.url_obj.path == url.path
@@ -101,13 +106,13 @@ async def test_proxy_login(client, cookie_enabled, expected):
         # Will be used as temporary solution until common authentication
         # service is in place
         #
-        import json
         import base64
+        import json
         import time
+
         from cryptography import fernet
 
         # Based on aiohttp_session and aiohttp_security
-
         # HACK to get secret for testing purposes
         cfg = client.app[APP_CONFIG_KEY]["session"]
         secret_key_bytes = cfg["secret_key"].encode("utf-8")

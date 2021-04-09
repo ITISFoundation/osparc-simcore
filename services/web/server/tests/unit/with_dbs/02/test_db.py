@@ -5,7 +5,6 @@
 import io
 
 import yaml
-
 from simcore_service_webserver.db import is_service_enabled, is_service_responsive
 
 
