@@ -6,6 +6,7 @@ import itertools
 import os
 import random
 import secrets
+import shutil
 import string
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
@@ -262,3 +263,72 @@ async def test_unarchive_in_same_dir_as_archive(
         tmp_path,
         None if store_relative_path else dir_with_random_content,
     )
+
+
+def test_override_and_prune_folder(tmp_path: Path):
+
+    # original
+    target_dir = tmp_path / "target"
+    target_dir.mkdir()
+    (target_dir / "d1").mkdir()
+    (target_dir / "d1" / "f1").write_text("o" * 100)
+    (target_dir / "d1" / "f2").write_text("o" * 100)
+    (target_dir / "empty").mkdir()
+    (target_dir / "d1" / "d1_1" / "d1_2").mkdir(parents=True, exist_ok=True)
+    (target_dir / "d1" / "d1_1" / "f3").touch()
+    (target_dir / "d1" / "d1_1" / "d1_2" / "f4").touch()
+
+    print("before ----")
+    for p in target_dir.rglob("*"):
+        print(f"{p.stat().st_size:>12.2f} {p}")
+
+    # download
+    download_dir = tmp_path / "download"
+    download_dir.mkdir()
+    (download_dir / "d1").mkdir()
+    (download_dir / "d1" / "f1").write_text("x")  # override
+    (download_dir / "d1" / "f2").write_text("x")  # override
+    # empty dir deleted
+    (download_dir / "d1" / "d1_1" / "d1_2").mkdir(parents=True, exist_ok=True)
+    # f3 and f4 are deleted
+    (download_dir / "d1" / "d1_1" / "d1_2" / "f5").touch()  # new
+    (download_dir / "d1" / "empty").mkdir()  # new
+
+    print("downloaded ----")
+    expected_paths = set(p.relative_to(download_dir) for p in download_dir.rglob("*"))
+    for p in download_dir.rglob("*"):
+        print(f"{p.stat().st_size:>12.2f} {p}")
+
+    # --------
+    # 1) evaluate prune
+    file_or_emptydir = lambda p: p.is_file() or (p.is_dir() and not any(p.glob("*")))
+
+    old_paths = set(p for p in target_dir.rglob("*") if file_or_emptydir(p))
+    new_paths = set(
+        target_dir / p.relative_to(download_dir)
+        for p in download_dir.rglob("*")
+        if file_or_emptydir(p)
+    )
+    to_delete = old_paths.difference(new_paths)
+
+    # 2) override download_dir -> target_dir
+    for p in download_dir.rglob("*"):
+        if file_or_emptydir(p):
+            shutil.move(str(p), str(target_dir / p.relative_to(download_dir)))
+
+    # 3) prune
+    for path in to_delete:
+        if path.is_file():
+            path.unlink()
+        elif path.is_dir():
+            path.rmdir()
+
+    # -------
+    got_paths = set(p.relative_to(target_dir) for p in target_dir.rglob("*"))
+
+    assert expected_paths == got_paths
+    assert old_paths != got_paths
+
+    print("after ----")
+    for p in target_dir.rglob("*"):
+        print(f"{p.stat().st_size:>12.2f} {p}")

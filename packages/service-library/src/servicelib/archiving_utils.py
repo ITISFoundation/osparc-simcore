@@ -69,7 +69,7 @@ def ensure_destination_subdirectories_exist(
 async def unarchive_dir(
     archive_to_extract: Path, destination_folder: Path
 ) -> Set[Path]:
-    """Extracts zipped file archive_to_extract in destination_folder,
+    """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive
 
     Returns a set of paths extracted from archive (NOTE: that these are both files and folders)
