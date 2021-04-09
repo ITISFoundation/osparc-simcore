@@ -5,13 +5,11 @@ import asyncio
 import json
 import time
 import unittest.mock as mock
-import uuid as uuidlib
 from asyncio import Future
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 from unittest.mock import call
 
-import aiohttp
 import pytest
 import socketio
 from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
