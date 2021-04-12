@@ -28,7 +28,7 @@ aiohttp==3.6.3
     #   aiohttp-swagger
     #   aiozipkin
     #   parfive
-aiopg[sa]==1.0.0
+aiopg[sa]==1.2.1
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -54,6 +54,7 @@ amqp==5.0.1
 async-timeout==3.0.1
     # via
     #   aiohttp
+    #   aiopg
     #   aioredis
 asyncpg==0.21.0
     # via -r requirements/_base.in
