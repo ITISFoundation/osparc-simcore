@@ -155,11 +155,24 @@ def is_leaf_path(p: Path):
 
 
 class PrunableFolder:
+    """
+    Use in conjunction with unarchive on the dest_dir to achieve
+    an update of a folder content without deleting updated files
+
+    folder = PrunableFolder(target_dir)
+
+    unarchived = await archive_dir(destination=target_dir, ... )
+
+    folder.prune(exclude=unarchived)
+
+    """
+
     def __init__(self, folder: Path):
         self.basedir = folder
         self.before_relpaths = set()
+        self.capture()
 
-    def capture_status(self):
+    def capture(self):
         # captures leaf paths in folder at this moment
         self.before_relpaths = set(
             p.relative_to(self.basedir)
@@ -167,13 +180,13 @@ class PrunableFolder:
             if is_leaf_path(p)
         )
 
-    def prune_to_match(self, updated: Set[Path]):
+    def prune(self, exclude: Set[Path]):
         """
-        Delete paths excess to match updated set
+        Deletes all paths in folder skipping the exclude set
         """
-        assert all(self.basedir in p.parents for p in updated)
+        assert all(self.basedir in p.parents for p in exclude)  # nosec
 
-        after_relpaths = set(p.relative_to(self.basedir) for p in updated)
+        after_relpaths = set(p.relative_to(self.basedir) for p in exclude)
         to_delete = self.before_relpaths.difference(after_relpaths)
 
         for p in to_delete:
@@ -192,7 +205,7 @@ class PrunableFolder:
         # second pass to delete empty folders
         # after deleting files, some folders might have been left empty
         for p in self.basedir.rglob("*"):
-            if p.is_dir() and p not in updated and not any(p.glob("*")):
+            if p.is_dir() and p not in exclude and not any(p.glob("*")):
                 p.rmdir()
 
 

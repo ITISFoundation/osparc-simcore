@@ -155,14 +155,13 @@ async def test_override_and_prune_from_archive(
     )
 
     folder = PrunableFolder(state_dir)
-    folder.capture_status()
 
     # unarchive download.zip into state_dir
     unarchived = await unarchive_dir(
         archive_to_extract=download_file, destination_folder=state_dir
     )
 
-    folder.prune_to_match(unarchived)
+    folder.prune(unarchived)
 
     after_relpaths = set(
         p.relative_to(state_dir) for p in state_dir.rglob("*") if is_leaf_path(p)
