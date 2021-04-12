@@ -1,2 +1,7 @@
+-c ../../../requirements/constraints.txt
+
 pytest
 pytest-cov
+
+# pinning dependencies
+pytest==6.2.2

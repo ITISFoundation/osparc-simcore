@@ -30,7 +30,7 @@ setup(
         "": "src",
     },
     include_package_data=True,
-    python_requires=">=3.8",
+    python_requires=">=3.6",
     install_requires=install_requires,
     tests_require=tests_require,
     setup_requires=["setuptools_scm"],

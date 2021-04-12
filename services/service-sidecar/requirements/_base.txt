@@ -8,10 +8,10 @@ aiodocker==0.19.1
     # via -r requirements/_base.in
 aiofiles==0.6.0
     # via -r requirements/_base.in
-aiohttp==3.7.3
-    # via
-    #   -r requirements/_base.in
-    #   aiodocker
+aiohttp==3.7.4.post0
+    # via aiodocker
+async-generator==1.10
+    # via -r requirements/_base.in
 async-timeout==3.0.1
     # via
     #   -r requirements/_base.in
@@ -31,42 +31,59 @@ cffi==1.14.5
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==3.0.4
+chardet==4.0.0
     # via
-    #   -r requirements/_base.in
     #   aiohttp
     #   requests
 click==7.1.2
     # via uvicorn
 cryptography==3.4.7
-    # via paramiko
-dataclasses==0.6
     # via
-    #   -r requirements/_base.in
-    #   pydantic
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   paramiko
+dataclasses==0.8
+    # via pydantic
 distro==1.5.0
     # via docker-compose
-docker-compose==1.28.6
-    # via -r requirements/_base.in
+dnspython==2.1.0
+    # via email-validator
+docker-compose==1.27.4
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 docker[ssh]==4.4.4
     # via docker-compose
 dockerpty==0.4.1
     # via docker-compose
 docopt==0.6.2
     # via docker-compose
+email-validator==1.1.2
+    # via pydantic
 fastapi==0.63.0
     # via -r requirements/_base.in
+greenlet==1.0.0
+    # via sqlalchemy
 h11==0.12.0
     # via uvicorn
 idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   email-validator
     #   idna-ssl
     #   requests
     #   yarl
 importlib-metadata==3.10.0
-    # via jsonschema
+    # via
+    #   jsonschema
+    #   sqlalchemy
 jsonschema==3.2.0
     # via docker-compose
 multidict==5.1.0
@@ -75,20 +92,26 @@ multidict==5.1.0
     #   yarl
 paramiko==2.7.2
     # via docker
+psycopg2-binary==2.8.6
+    # via sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic==1.8.1
+pydantic[email]==1.8.1
     # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
 pynacl==1.4.0
     # via paramiko
 pyrsistent==0.17.3
     # via jsonschema
-python-dotenv==0.16.0
+python-dotenv==0.17.0
     # via docker-compose
 pyyaml==5.4.1
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   docker-compose
 requests==2.25.1
@@ -103,6 +126,12 @@ six==1.15.0
     #   jsonschema
     #   pynacl
     #   websocket-client
+sqlalchemy[postgresql_psycopg2binary]==1.4.7
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
 starlette==0.13.6
     # via fastapi
 texttable==1.6.3
@@ -115,8 +144,12 @@ typing-extensions==3.7.4.3
     #   pydantic
     #   uvicorn
     #   yarl
-urllib3==1.26.3
-    # via requests
+urllib3==1.26.4
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   requests
 uvicorn==0.13.4
     # via -r requirements/_base.in
 websocket-client==0.58.0
@@ -124,7 +157,9 @@ websocket-client==0.58.0
     #   docker
     #   docker-compose
 yarl==1.6.3
-    # via aiohttp
+    # via
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   aiohttp
 zipp==3.4.1
     # via importlib-metadata
 

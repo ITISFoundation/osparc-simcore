@@ -10,15 +10,6 @@ APP_NAME := $(notdir $(CURDIR))
 _ensure-in-venv:
 	@python3 -c "import os; os.environ['VIRTUAL_ENV']" || (echo "\n>>>> You are not in a virtualenv. Activate one <<<<\n"; exit 1)
 
-.PHONY: reqs
-reqs: _ensure-in-venv ## compiles pip requirements (.in -> .txt)
-	@$(MAKE_C) requirements reqs
-
-.PHONY: compile-dependencies
-compile-dependencies: _ensure-in-venv ## snapshot test & package dependencies
-	@pip-compile --build-isolation requirements/_base.in --output-file requirements/_base.txt
-	@pip-compile --build-isolation requirements/_test.in --output-file requirements/_test.txt
-
 .PHONY: install-dev-dependencies
 install-dev-dependencies: _ensure-in-venv ## install depenencies for development
 	@pip install -r requirements/_base.txt
