@@ -1085,7 +1085,7 @@ async def _create_node(
         log.debug("Service to start info %s", service)
 
         # The platform currently supports 2 boot modes, legacy(which will be deprecated in the future)
-        # dynamic-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
+        # service-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
         # "service-sidecar", the dynamic sidecar will be used in place of the current system
 
         if boot_as_service_sidecar:
@@ -1235,7 +1235,7 @@ def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
     node_status: Dict[str, Union[str, int]] = {}
     dynamic_type: Optional[str] = kwargs.get("dynamic_type", None)
     if dynamic_type is not None:
-        # if this field is preset the service will be served via dynamic-sidecar
+        # if this field is preset the service will be served via service-sidecar
         node_status["dynamic_type"] = dynamic_type
 
     service_state: Optional[Union[str, ServiceState]] = kwargs.get(
@@ -1286,7 +1286,7 @@ async def _get_node_details(
     app: web.Application, client: aiodocker.docker.Docker, service: Dict
 ) -> Dict:
     is_dynamic_sidecar = (
-        service["Spec"]["Labels"].get("dynamic_type") == "dynamic-sidecar"
+        service["Spec"]["Labels"].get("dynamic_type") == "service-sidecar"
     )
     if is_dynamic_sidecar:
         return await _compute_dynamic_sidecar_node_details(
@@ -1419,7 +1419,7 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
 
-        if service_details.get("dynamic_type") == "dynamic-sidecar":
+        if service_details.get("dynamic_type") == "service-sidecar":
             # service-sidecar is exposed on port 8000 by default
             service_host_name = service_details["service_host"] + ":8000"
         else:

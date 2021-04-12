@@ -252,7 +252,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
             f"traefik.http.routers.{service_name}.middlewares": f"master-simcore_gzip@docker, {service_name}-security-headers",
             "type": "main",  # main is required to be monitored by the frontend
-            "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
+            "dynamic_type": "service-sidecar",  # tagged as dynamic service
             "study_id": project_id,
             "user_id": user_id,
             "uuid": node_uuid,  # needed for removal when project is closed

@@ -189,7 +189,7 @@ class ServiceSidecarsMonitor:
 
         def make_error_status():
             error_status = dict(
-                dynamic_type="dynamic-sidecar",
+                dynamic_type="service-sidecar",
                 service_state="error",
                 service_message=f"Could not find a service for node_uuid={node_uuid}",
             )
@@ -204,9 +204,9 @@ class ServiceSidecarsMonitor:
             monitor_data: MonitorData, service_state: ServiceState, service_message: str
         ):
             return dict(
-                dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
+                dynamic_type="service-sidecar",  # tells the frontend this is run with a dynamic sidecar
                 published_port=80,  # default for the proxy
-                entry_point="",  # can be removed when dynamic_type="dynamic-sidecar"
+                entry_point="",  # can be removed when dynamic_type="service-sidecar"
                 service_uuid=node_uuid,
                 service_key=monitor_data.service_key,
                 service_version=monitor_data.service_tag,

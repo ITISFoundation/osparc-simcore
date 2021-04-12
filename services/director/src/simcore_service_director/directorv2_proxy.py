@@ -118,7 +118,7 @@ async def start_service_sidecar_stack(
     director2_settings: Directorv2Settings = _get_settings(app)
 
     url = URL(
-        f"{director2_settings.endpoint}/dynamic-sidecar/start-service-sidecar-stack"
+        f"{director2_settings.endpoint}/service-sidecar/start-service-sidecar-stack"
     )
     data = dict(
         user_id=user_id,
@@ -149,7 +149,7 @@ async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
     director2_settings: Directorv2Settings = _get_settings(app)
 
     url = URL(
-        f"{director2_settings.endpoint}/dynamic-sidecar/stop-service-sidecar-stack"
+        f"{director2_settings.endpoint}/service-sidecar/stop-service-sidecar-stack"
     )
     data = dict(node_uuid=node_uuid)
 
@@ -170,7 +170,7 @@ async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str)
     director2_settings: Directorv2Settings = _get_settings(app)
 
     url = URL(
-        f"{director2_settings.endpoint}/dynamic-sidecar/service-sidecar-stack-status"
+        f"{director2_settings.endpoint}/service-sidecar/service-sidecar-stack-status"
     )
     data = dict(node_uuid=node_uuid)
 

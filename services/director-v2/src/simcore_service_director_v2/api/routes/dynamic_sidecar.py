@@ -17,7 +17,7 @@ router = APIRouter()
 HTTP_204_NO_CONTENT = 204
 
 
-@router.post("/dynamic-sidecar/start-service-sidecar-stack")
+@router.post("/service-sidecar/start-service-sidecar-stack")
 async def start_service_sidecar(
     start_service_sidecar_model: StartServiceSidecarModel,
     request: Request,
@@ -39,7 +39,7 @@ async def start_service_sidecar(
 
 
 @router.post(
-    "/dynamic-sidecar/stop-service-sidecar-stack",
+    "/service-sidecar/stop-service-sidecar-stack",
     responses={HTTP_204_NO_CONTENT: {"model": None}},
 )
 async def stop_service_sidecar(
@@ -52,7 +52,7 @@ async def stop_service_sidecar(
     return Response(status_code=HTTP_204_NO_CONTENT)
 
 
-@router.post("/dynamic-sidecar/service-sidecar-stack-status")
+@router.post("/service-sidecar/service-sidecar-stack-status")
 async def service_sidecar_stack_status(
     node_uuid_model: NodeUUIDModel, request: Request
 ) -> Dict[str, Any]:
