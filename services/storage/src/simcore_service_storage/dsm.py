@@ -702,22 +702,22 @@ class DataStorageManager:
             )
         if not source_access_rights.read:
             logger.debug(
-                "User %s was not allowed to copy project %s",
+                "User %s was not allowed to read from project %s",
                 user_id,
                 source_folder,
             )
             raise web.HTTPForbidden(
-                reason=f"User does not have enough access rights to copy project '{source_folder}'"
+                reason=f"User does not have enough access rights to read from project '{source_folder}'"
             )
 
         if not dest_access_rights.write:
             logger.debug(
-                "User %s was not allowed to copy project %s",
+                "User %s was not allowed to write to project %s",
                 user_id,
                 dest_folder,
             )
             raise web.HTTPForbidden(
-                reason=f"User does not have enough access rights to copy project '{dest_folder}'"
+                reason=f"User does not have enough access rights to write to project '{dest_folder}'"
             )
 
         # build up naming map based on labels
