@@ -35,14 +35,14 @@ ci-tox-mypy: ## runs mypy in a new enviornment
 
 .PHONY: ci-tox-tests
 ci-tox-tests: ## runs tests with coverage in a new enviornment
-	@tox -r -e py38,report
+	@tox -r -e py36,report
 
 .PHONY: ci-install-requirements
 ci-install-requirements: ## runs tests with coverage in a new enviornment
 	@pip install -r requirements/dev.txt
+	@pip install tox
 
 .PHONY: run-github-action-locally
 run-github-action-locally:  ## runs the defined github action from the workflow locally
 	# Note: ⚡ act is required https://github.com/nektos/act
-	# Note: ⚠️  "nektos/act-environments-ubuntu:18.04" image is 18Gb and takes a lot the first time
-	@act -C ../../. -P ubuntu-18.04=nektos/act-environments-ubuntu:18.04 -j unit-test-service-sidecar
+	@act -C ../../. -P ubuntu-20.04=catthehacker/ubuntu:act-20.04 -j unit-test-service-sidecar

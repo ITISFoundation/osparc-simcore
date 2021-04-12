@@ -129,10 +129,13 @@ jobs:
         run: |
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_buildx.bash
+          ./ci/github/helpers/setup_docker_compose.bash
+          apt update && apt install -y build-essential
           echo ::set-env name=DOCKER_BUILDX::1
+      - name: install make
+        run: sudo apt update && apt install -y build-essential
       - name: setup python environment
-        uses: actions/setup-python@v1.1.1
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -145,13 +148,21 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
       - name: setup requirements
-        run: make -C services/service-sidecar ci-install-requirements
+        run: |
+          export LC_ALL=C.UTF-8
+          make -C services/service-sidecar ci-install-requirements
       - name: pylint via tox
-        run: make -C services/service-sidecar ci-tox-pylint
+        run: |
+          export LC_ALL=C.UTF-8
+          make -C services/service-sidecar ci-tox-pylint
       - name: mypy via tox
-        run: make -C services/service-sidecar ci-tox-mypy
+        run: |
+          export LC_ALL=C.UTF-8
+          make -C services/service-sidecar ci-tox-mypy
       - name: tests via tox
-        run: make -C services/service-sidecar ci-tox-tests
+        run: |
+          export LC_ALL=C.UTF-8
+          make -C services/service-sidecar ci-tox-tests
 
   unit-test-catalog:
     name: "[unit] catalog"
