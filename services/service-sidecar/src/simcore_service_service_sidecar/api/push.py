@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ push_router = APIRouter()
 
 
 @push_router.post("/push")
-async def post_api(request: Request) -> str:
+async def post_api() -> str:
     logger.warning("TODO: still need to implement")
     return ""
 
