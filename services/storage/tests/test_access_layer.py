@@ -36,7 +36,7 @@ async def user_id(postgres_engine: Engine) -> Iterable[int]:
     yield row.id
 
     async with postgres_engine.acquire() as conn:
-        conn.execute(users.delete().where(users.c.id == row.id))
+        await conn.execute(users.delete().where(users.c.id == row.id))
 
 
 @pytest.fixture
@@ -57,7 +57,7 @@ async def project_id(user_id: int, postgres_engine: Engine) -> Iterable[UUID]:
     yield UUID(prj_uuid)
 
     async with postgres_engine.acquire() as conn:
-        conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
+        await conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
 
 
 @pytest.fixture

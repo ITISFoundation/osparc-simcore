@@ -201,39 +201,40 @@ class DataStorageManager:
         if location == SIMCORE_S3_STR:
             accesible_projects_ids = []
             async with self.engine.acquire() as conn:
-
-                accesible_projects_ids = await get_readable_project_ids(
-                    conn, int(user_id)
-                )
-                has_read_access = (
-                    file_meta_data.c.user_id == user_id
-                ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
-
-                query = sa.select([file_meta_data]).where(has_read_access)
-
-                async for row in conn.execute(query):
-                    d = FileMetaData(**dict(row))
-                    dex = FileMetaDataEx(
-                        fmd=d, parent_id=str(Path(d.object_name).parent)
+                async with conn.begin():
+                    accesible_projects_ids = await get_readable_project_ids(
+                        conn, int(user_id)
                     )
-                    data.append(dex)
+                    has_read_access = (
+                        file_meta_data.c.user_id == user_id
+                    ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
+
+                    query = sa.select([file_meta_data]).where(has_read_access)
+
+                    async for row in conn.execute(query):
+                        d = FileMetaData(**dict(row))
+                        dex = FileMetaDataEx(
+                            fmd=d, parent_id=str(Path(d.object_name).parent)
+                        )
+                        data.append(dex)
 
             if self.has_project_db:
                 uuid_name_dict = {}
                 # now parse the project to search for node/project names
                 try:
                     async with self.engine.acquire() as conn:
-                        query = sa.select([projects]).where(
-                            projects.c.uuid.in_(accesible_projects_ids)
-                        )
+                        async with conn.begin():
+                            query = sa.select([projects]).where(
+                                projects.c.uuid.in_(accesible_projects_ids)
+                            )
 
-                        async for row in conn.execute(query):
-                            proj_data = dict(row.items())
+                            async for row in conn.execute(query):
+                                proj_data = dict(row.items())
 
-                            uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
-                            wb = proj_data["workbench"]
-                            for node in wb.keys():
-                                uuid_name_dict[node] = wb[node]["label"]
+                                uuid_name_dict[proj_data["uuid"]] = proj_data["name"]
+                                wb = proj_data["workbench"]
+                                for node in wb.keys():
+                                    uuid_name_dict[node] = wb[node]["label"]
                 except DBAPIError as _err:
                     logger.exception("Error querying database for project names")
 
@@ -328,21 +329,22 @@ class DataStorageManager:
             if self.has_project_db:
                 try:
                     async with self.engine.acquire() as conn:
-                        readable_projects_ids = await get_readable_project_ids(
-                            conn, int(user_id)
-                        )
-                        has_read_access = projects.c.uuid.in_(readable_projects_ids)
-
-                        # FIXME: this DOES NOT read from file-metadata table!!!
-                        query = sa.select([projects.c.uuid, projects.c.name]).where(
-                            has_read_access
-                        )
-                        async for row in conn.execute(query):
-                            dmd = DatasetMetaData(
-                                dataset_id=row.uuid,
-                                display_name=row.name,
+                        async with conn.begin():
+                            readable_projects_ids = await get_readable_project_ids(
+                                conn, int(user_id)
                             )
-                            data.append(dmd)
+                            has_read_access = projects.c.uuid.in_(readable_projects_ids)
+
+                            # FIXME: this DOES NOT read from file-metadata table!!!
+                            query = sa.select([projects.c.uuid, projects.c.name]).where(
+                                has_read_access
+                            )
+                            async for row in conn.execute(query):
+                                dmd = DatasetMetaData(
+                                    dataset_id=row.uuid,
+                                    display_name=row.name,
+                                )
+                                data.append(dmd)
                 except DBAPIError as _err:
                     logger.exception("Error querying database for project names")
 
@@ -360,19 +362,20 @@ class DataStorageManager:
         if location == SIMCORE_S3_STR:
 
             async with self.engine.acquire() as conn:
-                can: Optional[AccessRights] = await get_file_access_rights(
-                    conn, int(user_id), file_uuid
-                )
-                if can.read:
-                    query = sa.select([file_meta_data]).where(
-                        file_meta_data.c.file_uuid == file_uuid
+                async with conn.begin():
+                    can: Optional[AccessRights] = await get_file_access_rights(
+                        conn, int(user_id), file_uuid
                     )
-                    async for row in conn.execute(query):
-                        d = FileMetaData(**dict(row))
-                        dx = FileMetaDataEx(fmd=d, parent_id="")
-                        return dx
-                else:
-                    logger.debug("User %s was not read file %s", user_id, file_uuid)
+                    if can.read:
+                        query = sa.select([file_meta_data]).where(
+                            file_meta_data.c.file_uuid == file_uuid
+                        )
+                        async for row in conn.execute(query):
+                            d = FileMetaData(**dict(row))
+                            dx = FileMetaDataEx(fmd=d, parent_id="")
+                            return dx
+                    else:
+                        logger.debug("User %s was not read file %s", user_id, file_uuid)
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
@@ -691,26 +694,31 @@ class DataStorageManager:
 
         # access layer
         async with self.engine.acquire() as conn:
-            can = await get_project_access_rights(
-                conn, int(user_id), project_id=source_folder
-            )
-            if not can.read:
-                logger.debug(
-                    "User %s was not allowed to copy project %s", user_id, source_folder
+            async with conn.begin():
+                can = await get_project_access_rights(
+                    conn, int(user_id), project_id=source_folder
                 )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to copy project '{source_folder}'"
+                if not can.read:
+                    logger.debug(
+                        "User %s was not allowed to copy project %s",
+                        user_id,
+                        source_folder,
+                    )
+                    raise web.HTTPForbidden(
+                        reason=f"User does not have enough access rights to copy project '{source_folder}'"
+                    )
+                can = await get_project_access_rights(
+                    conn, int(user_id), project_id=dest_folder
                 )
-            can = await get_project_access_rights(
-                conn, int(user_id), project_id=dest_folder
-            )
-            if not can.write:
-                logger.debug(
-                    "User %s was not allowed to copy project %s", user_id, dest_folder
-                )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to copy project '{dest_folder}'"
-                )
+                if not can.write:
+                    logger.debug(
+                        "User %s was not allowed to copy project %s",
+                        user_id,
+                        dest_folder,
+                    )
+                    raise web.HTTPForbidden(
+                        reason=f"User does not have enough access rights to copy project '{dest_folder}'"
+                    )
 
         # build up naming map based on labels
         uuid_name_dict = {}
@@ -812,22 +820,22 @@ class DataStorageManager:
 
         # step 4 sync db
         async with self.engine.acquire() as conn:
-
-            # TODO: upsert in one statment of ALL
-            for fmd in fmds:
-                query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.file_uuid == fmd.file_uuid
-                )
-                # if file already exists, we might w
-                rows = await conn.execute(query)
-                exists = await rows.scalar()
-                if exists:
-                    delete_me = file_meta_data.delete().where(
+            async with conn.begin():
+                # TODO: upsert in one statment of ALL
+                for fmd in fmds:
+                    query = sa.select([file_meta_data]).where(
                         file_meta_data.c.file_uuid == fmd.file_uuid
                     )
-                    await conn.execute(delete_me)
-                ins = file_meta_data.insert().values(**vars(fmd))
-                await conn.execute(ins)
+                    # if file already exists, we might w
+                    rows = await conn.execute(query)
+                    exists = await rows.scalar()
+                    if exists:
+                        delete_me = file_meta_data.delete().where(
+                            file_meta_data.c.file_uuid == fmd.file_uuid
+                        )
+                        await conn.execute(delete_me)
+                    ins = file_meta_data.insert().values(**vars(fmd))
+                    await conn.execute(ins)
 
     # DELETE -------------------------------------
 
@@ -847,32 +855,35 @@ class DataStorageManager:
 
             to_delete = []
             async with self.engine.acquire() as conn:
-                can: Optional[AccessRights] = await get_file_access_rights(
-                    conn, int(user_id), file_uuid
-                )
-                if not can.delete:
-                    logger.debug(
-                        "User %s was not allowed to delete file %s", user_id, file_uuid
+                async with conn.begin():
+                    can: Optional[AccessRights] = await get_file_access_rights(
+                        conn, int(user_id), file_uuid
                     )
-                    raise web.HTTPForbidden(
-                        reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
+                    if not can.delete:
+                        logger.debug(
+                            "User %s was not allowed to delete file %s",
+                            user_id,
+                            file_uuid,
+                        )
+                        raise web.HTTPForbidden(
+                            reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
+                        )
+
+                    query = sa.select(
+                        [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
+                    ).where(file_meta_data.c.file_uuid == file_uuid)
+
+                    async for row in conn.execute(query):
+                        if self.s3_client.remove_objects(
+                            row.bucket_name, [row.object_name]
+                        ):
+                            to_delete.append(file_uuid)
+
+                    await conn.execute(
+                        file_meta_data.delete().where(
+                            file_meta_data.c.file_uuid.in_(to_delete)
+                        )
                     )
-
-                query = sa.select(
-                    [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
-                ).where(file_meta_data.c.file_uuid == file_uuid)
-
-                async for row in conn.execute(query):
-                    if self.s3_client.remove_objects(
-                        row.bucket_name, [row.object_name]
-                    ):
-                        to_delete.append(file_uuid)
-
-                await conn.execute(
-                    file_meta_data.delete().where(
-                        file_meta_data.c.file_uuid.in_(to_delete)
-                    )
-                )
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
@@ -893,24 +904,27 @@ class DataStorageManager:
         # FIXME: operation MUST be atomic. Mark for deletion and remove from db when deletion fully confirmed
 
         async with self.engine.acquire() as conn:
-            # access layer
-            can: Optional[AccessRights] = await get_project_access_rights(
-                conn, int(user_id), project_id
-            )
-            if not can.delete:
-                logger.debug(
-                    "User %s was not allowed to delete project %s", user_id, project_id
+            async with conn.begin():
+                # access layer
+                can: Optional[AccessRights] = await get_project_access_rights(
+                    conn, int(user_id), project_id
                 )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have delete access for {project_id}"
-                )
+                if not can.delete:
+                    logger.debug(
+                        "User %s was not allowed to delete project %s",
+                        user_id,
+                        project_id,
+                    )
+                    raise web.HTTPForbidden(
+                        reason=f"User does not have delete access for {project_id}"
+                    )
 
-            delete_me = file_meta_data.delete().where(
-                file_meta_data.c.project_id == project_id,
-            )
-            if node_id:
-                delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
-            await conn.execute(delete_me)
+                delete_me = file_meta_data.delete().where(
+                    file_meta_data.c.project_id == project_id,
+                )
+                if node_id:
+                    delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
+                await conn.execute(delete_me)
 
         session = aiobotocore.get_session()
         async with session.create_client(
@@ -945,21 +959,24 @@ class DataStorageManager:
         files_meta = deque()
 
         async with self.engine.acquire() as conn:
-            # access layer
-            can_read_projects_ids = await get_readable_project_ids(conn, int(user_id))
-            has_read_access = (
-                file_meta_data.c.user_id == str(user_id)
-            ) | file_meta_data.c.project_id.in_(can_read_projects_ids)
-
-            stmt = sa.select([file_meta_data]).where(
-                file_meta_data.c.file_uuid.startswith(prefix) & has_read_access
-            )
-
-            async for row in conn.execute(stmt):
-                meta = FileMetaData(**dict(row))
-                meta_extended = FileMetaDataEx(
-                    fmd=meta,
-                    parent_id=str(Path(meta.object_name).parent),
+            async with conn.begin():
+                # access layer
+                can_read_projects_ids = await get_readable_project_ids(
+                    conn, int(user_id)
                 )
-                files_meta.append(meta_extended)
+                has_read_access = (
+                    file_meta_data.c.user_id == str(user_id)
+                ) | file_meta_data.c.project_id.in_(can_read_projects_ids)
+
+                stmt = sa.select([file_meta_data]).where(
+                    file_meta_data.c.file_uuid.startswith(prefix) & has_read_access
+                )
+
+                async for row in conn.execute(stmt):
+                    meta = FileMetaData(**dict(row))
+                    meta_extended = FileMetaDataEx(
+                        fmd=meta,
+                        parent_id=str(Path(meta.object_name).parent),
+                    )
+                    files_meta.append(meta_extended)
         return list(files_meta)

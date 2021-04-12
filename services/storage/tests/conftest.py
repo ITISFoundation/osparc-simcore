@@ -125,7 +125,7 @@ def postgres_service(docker_services, docker_ip):
         password=PASS,
         database=DATABASE,
         host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
+        port=docker_services.port_for("pgbouncer", 5432),
     )
 
     # Wait until service is responsive.
@@ -268,7 +268,9 @@ def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]
 
 
 @pytest.fixture(scope="function")
-def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
+def dsm_mockup_db(
+    postgres_service_url, s3_client, mock_files_factory
+) -> Dict[str, FileMetaData]:
 
     # s3 client
     bucket_name = BUCKET_NAME
