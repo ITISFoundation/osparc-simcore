@@ -93,8 +93,8 @@ async def raise_if_not_responsive(engine: Engine):
 
         # NOTE: Hacks aiopg.sa.SAConnection interface
         #       to override connection's cursor timeout
-        assert conn._cursor is None  # nosec
-        conn._cursor = await conn._connection.cursor(timeout=1)
+        assert conn._cursors.data == set()  # nosec
+        conn._cursors.add(await conn._connection.cursor(timeout=1))
         #
         await conn.execute("SELECT 1 as is_alive")
 
