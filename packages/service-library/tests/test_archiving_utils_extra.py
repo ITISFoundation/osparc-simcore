@@ -21,7 +21,7 @@ def print_tree(path: Path, level=0):
 
 @pytest.fixture
 def state_dir(tmp_path) -> Path:
-    """ Folder with some data """
+    """ Folder with some data, representing a given state"""
     base_dir = tmp_path / "original"
     base_dir.mkdir()
     (base_dir / "d1").mkdir()
@@ -58,9 +58,7 @@ def new_state_dir(tmp_path) -> Path:
     return base_dir
 
 
-def test_override_and_prune_folder(
-    tmp_path: Path, state_dir: Path, new_state_dir: Path
-):
+def test_override_and_prune_folder(state_dir: Path, new_state_dir: Path):
     """
     Test a concept that will be implemented in jupyter-commons
     Added here since in the latter there is no testing infrastructure and
@@ -100,3 +98,58 @@ def test_override_and_prune_folder(
 
     print("after ----")
     print_tree(state_dir)
+
+
+@pytest.mark.parametrize(
+    "compress",
+    [True, False],
+)
+async def test_override_and_prune_from_archive(
+    tmp_path: Path,
+    state_dir: Path,
+    new_state_dir: Path,
+    compress: bool,
+):
+
+    download_file = tmp_path / "download.zip"
+    expected_paths = set(
+        p.relative_to(new_state_dir)
+        for p in new_state_dir.rglob("*")
+        if is_leaf_path(p)
+    )
+
+    # archive new_state_dir -> download.zip
+    assert await archive_dir(
+        dir_to_compress=new_state_dir,
+        destination=download_file,
+        compress=compress,
+        store_relative_path=True,  # <=== relative!
+    )
+
+    before_relpaths = set(
+        p.relative_to(state_dir) for p in state_dir.rglob("*") if is_leaf_path(p)
+    )
+
+    # unarchive download.zip into state_dir
+    unarchived = await unarchive_dir(
+        archive_to_extract=download_file, destination_folder=state_dir
+    )
+
+    # prune outdated leaf paths
+    unarchived_relpaths = set(p.relative_to(state_dir) for p in unarchived)
+    to_delete = before_relpaths.difference(unarchived_relpaths)
+    for p in to_delete:
+        path = state_dir / p
+        assert path.exists()
+
+        if path.is_file():
+            path.unlink()
+        elif path.is_dir():
+            path.rmdir()
+
+    after_relpaths = set(
+        p.relative_to(state_dir) for p in state_dir.rglob("*") if is_leaf_path(p)
+    )
+
+    assert after_relpaths != before_relpaths
+    assert after_relpaths == unarchived_relpaths
