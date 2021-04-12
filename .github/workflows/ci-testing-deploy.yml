@@ -130,7 +130,6 @@ jobs:
           sudo ./ci/github/helpers/setup_docker_compose.bash
           ./ci/github/helpers/setup_docker_experimental.bash
           ./ci/github/helpers/setup_docker_compose.bash
-          apt update && apt install -y build-essential
           echo ::set-env name=DOCKER_BUILDX::1
       - name: install make
         run: sudo apt update && apt install -y build-essential
@@ -151,14 +150,10 @@ jobs:
         run: |
           export LC_ALL=C.UTF-8
           make -C services/service-sidecar ci-install-requirements
-      - name: pylint via tox
+      - name: run codestyle checks
         run: |
           export LC_ALL=C.UTF-8
-          make -C services/service-sidecar ci-tox-pylint
-      - name: mypy via tox
-        run: |
-          export LC_ALL=C.UTF-8
-          make -C services/service-sidecar ci-tox-mypy
+          make -C services/service-sidecar ci-tox-codestyle
       - name: tests via tox
         run: |
           export LC_ALL=C.UTF-8

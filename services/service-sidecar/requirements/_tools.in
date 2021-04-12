@@ -8,3 +8,5 @@
 # basic dev tools
 mypy
 pylint
+black
+isort

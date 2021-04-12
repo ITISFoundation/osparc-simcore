@@ -25,13 +25,9 @@ dev-run: _ensure-in-venv ## starts the container on its own
 			-v $(CURDIR):/devel/services/service-sidecar \
 			local/service-sidecar:development
 
-.PHONY: ci-tox-pylint
-ci-tox-pylint: ## runs pylint in a new enviornment
-	@tox -r -e pylint
-
-.PHONY: ci-tox-mypy
-ci-tox-mypy: ## runs mypy in a new enviornment
-	@tox -r -e mypy
+.PHONY: ci-tox-codestyle
+ci-tox-codestyle: ## runs codestyle checks
+	@tox -r -e codestyle
 
 .PHONY: ci-tox-tests
 ci-tox-tests: ## runs tests with coverage in a new enviornment
