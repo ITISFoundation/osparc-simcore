@@ -51,7 +51,7 @@ async def containers_docker_status(
     # if containers are being pulled, return pulling (fake status)
     if shared_store.is_pulling_containsers:
         # pulling is a fake state use to share more information with the frontend
-        return {assemble_entry(status="pulling") for x in container_names}
+        return {x: assemble_entry(status="pulling") for x in container_names}
 
     results = {}
 
