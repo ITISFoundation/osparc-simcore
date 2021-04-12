@@ -147,7 +147,7 @@ async def archive_dir(
         )
 
 
-def is_leaf_path(p: Path):
+def is_leaf_path(p: Path) -> bool:
     """Tests whether a path corresponds to a file or empty folder, i.e.
     some leaf item in a file-system tree structure
     """
@@ -172,7 +172,7 @@ class PrunableFolder:
         self.before_relpaths = set()
         self.capture()
 
-    def capture(self):
+    def capture(self) -> None:
         # captures leaf paths in folder at this moment
         self.before_relpaths = set(
             p.relative_to(self.basedir)
@@ -180,7 +180,7 @@ class PrunableFolder:
             if is_leaf_path(p)
         )
 
-    def prune(self, exclude: Set[Path]):
+    def prune(self, exclude: Set[Path]) -> None:
         """
         Deletes all paths in folder skipping the exclude set
         """
