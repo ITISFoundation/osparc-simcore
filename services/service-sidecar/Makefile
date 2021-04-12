@@ -27,7 +27,7 @@ dev-run: _ensure-in-venv ## starts the container on its own
 
 .PHONY: ci-tox-codestyle
 ci-tox-codestyle: ## runs codestyle checks
-	@tox -r -e codestyle
+	@tox -r -e codestyle-ci
 
 .PHONY: ci-tox-tests
 ci-tox-tests: ## runs tests with coverage in a new enviornment
