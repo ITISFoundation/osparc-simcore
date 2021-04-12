@@ -1,6 +1,7 @@
 # acts as mock for now
 
 import logging
+
 from fastapi import APIRouter, Request
 
 logger = logging.getLogger(__name__)

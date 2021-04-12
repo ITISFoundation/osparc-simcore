@@ -1,9 +1,8 @@
 import logging
 from typing import Optional
 
-from pydantic import BaseSettings, Field, PositiveInt, validator
-
 from models_library.basic_types import BootModeEnum, PortInt
+from pydantic import BaseSettings, Field, PositiveInt, validator
 
 
 class ServiceSidecarSettings(BaseSettings):

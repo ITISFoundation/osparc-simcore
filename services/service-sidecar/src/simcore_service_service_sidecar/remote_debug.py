@@ -17,7 +17,7 @@ def setup(app: FastAPI):
             #
             # SEE https://github.com/microsoft/ptvsd#enabling-debugging
             #
-            import ptvsd
+            import ptvsd  # pylint: disable=import-outside-toplevel
 
             ptvsd.enable_attach(address=(settings.host, settings.remote_debug_port))
 

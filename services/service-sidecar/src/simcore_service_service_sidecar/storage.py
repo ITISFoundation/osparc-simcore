@@ -34,7 +34,7 @@ class SharedStore:
             self._storage[self._K_COMPOSE_SPEC]
         )
 
-    def get_spec(self) -> str:
+    def get_spec(self) -> Optional[Any]:
         return self._storage.get(self._K_COMPOSE_SPEC)
 
     def get_container_names(self) -> List[str]:

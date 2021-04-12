@@ -1,15 +1,15 @@
 import asyncio
+import json
 import logging
-import tempfile
 import os
 import re
-import json
-from contextlib import asynccontextmanager
-from typing import List, Tuple, Dict, Any, Generator
+import tempfile
 from pathlib import Path
+from typing import Any, Dict, Generator, List, Tuple
 
 import aiofiles
 import yaml
+from async_generator import asynccontextmanager
 from async_timeout import timeout
 
 from .settings import ServiceSidecarSettings

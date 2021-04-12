@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import aiodocker
 from fastapi import APIRouter, Query, Request, Response
@@ -76,7 +76,7 @@ async def container_inspect(
 @container_router.delete("/container/remove")
 async def container_remove(
     request: Request, response: Response, container: str
-) -> bool:
+) -> Union[bool, Dict[str, Any]]:
     shared_store: SharedStore = request.app.state.shared_store
 
     if container not in shared_store.get_container_names():
