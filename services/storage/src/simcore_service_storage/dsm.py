@@ -693,32 +693,32 @@ class DataStorageManager:
         dest_folder = destination_project["uuid"]
 
         # access layer
-        async with self.engine.acquire() as conn:
-            async with conn.begin():
-                can = await get_project_access_rights(
-                    conn, int(user_id), project_id=source_folder
-                )
-                if not can.read:
-                    logger.debug(
-                        "User %s was not allowed to copy project %s",
-                        user_id,
-                        source_folder,
-                    )
-                    raise web.HTTPForbidden(
-                        reason=f"User does not have enough access rights to copy project '{source_folder}'"
-                    )
-                can = await get_project_access_rights(
-                    conn, int(user_id), project_id=dest_folder
-                )
-                if not can.write:
-                    logger.debug(
-                        "User %s was not allowed to copy project %s",
-                        user_id,
-                        dest_folder,
-                    )
-                    raise web.HTTPForbidden(
-                        reason=f"User does not have enough access rights to copy project '{dest_folder}'"
-                    )
+        async with self.engine.acquire() as conn, conn.begin():
+            source_access_rights = await get_project_access_rights(
+                conn, int(user_id), project_id=source_folder
+            )
+            dest_access_rights = await get_project_access_rights(
+                conn, int(user_id), project_id=dest_folder
+            )
+        if not source_access_rights.read:
+            logger.debug(
+                "User %s was not allowed to copy project %s",
+                user_id,
+                source_folder,
+            )
+            raise web.HTTPForbidden(
+                reason=f"User does not have enough access rights to copy project '{source_folder}'"
+            )
+
+        if not dest_access_rights.write:
+            logger.debug(
+                "User %s was not allowed to copy project %s",
+                user_id,
+                dest_folder,
+            )
+            raise web.HTTPForbidden(
+                reason=f"User does not have enough access rights to copy project '{dest_folder}'"
+            )
 
         # build up naming map based on labels
         uuid_name_dict = {}
@@ -819,23 +819,22 @@ class DataStorageManager:
                     fmds.append(fmd)
 
         # step 4 sync db
-        async with self.engine.acquire() as conn:
-            async with conn.begin():
-                # TODO: upsert in one statment of ALL
-                for fmd in fmds:
-                    query = sa.select([file_meta_data]).where(
+        async with self.engine.acquire() as conn, conn.begin():
+            # TODO: upsert in one statment of ALL
+            for fmd in fmds:
+                query = sa.select([file_meta_data]).where(
+                    file_meta_data.c.file_uuid == fmd.file_uuid
+                )
+                # if file already exists, we might w
+                rows = await conn.execute(query)
+                exists = await rows.scalar()
+                if exists:
+                    delete_me = file_meta_data.delete().where(
                         file_meta_data.c.file_uuid == fmd.file_uuid
                     )
-                    # if file already exists, we might w
-                    rows = await conn.execute(query)
-                    exists = await rows.scalar()
-                    if exists:
-                        delete_me = file_meta_data.delete().where(
-                            file_meta_data.c.file_uuid == fmd.file_uuid
-                        )
-                        await conn.execute(delete_me)
-                    ins = file_meta_data.insert().values(**vars(fmd))
-                    await conn.execute(ins)
+                    await conn.execute(delete_me)
+                ins = file_meta_data.insert().values(**vars(fmd))
+                await conn.execute(ins)
 
     # DELETE -------------------------------------
 
@@ -854,36 +853,35 @@ class DataStorageManager:
             # FIXME: operation MUST be atomic, transaction??
 
             to_delete = []
-            async with self.engine.acquire() as conn:
-                async with conn.begin():
-                    can: Optional[AccessRights] = await get_file_access_rights(
-                        conn, int(user_id), file_uuid
+            async with self.engine.acquire() as conn, conn.begin():
+                can: Optional[AccessRights] = await get_file_access_rights(
+                    conn, int(user_id), file_uuid
+                )
+                if not can.delete:
+                    logger.debug(
+                        "User %s was not allowed to delete file %s",
+                        user_id,
+                        file_uuid,
                     )
-                    if not can.delete:
-                        logger.debug(
-                            "User %s was not allowed to delete file %s",
-                            user_id,
-                            file_uuid,
-                        )
-                        raise web.HTTPForbidden(
-                            reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
-                        )
-
-                    query = sa.select(
-                        [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
-                    ).where(file_meta_data.c.file_uuid == file_uuid)
-
-                    async for row in conn.execute(query):
-                        if self.s3_client.remove_objects(
-                            row.bucket_name, [row.object_name]
-                        ):
-                            to_delete.append(file_uuid)
-
-                    await conn.execute(
-                        file_meta_data.delete().where(
-                            file_meta_data.c.file_uuid.in_(to_delete)
-                        )
+                    raise web.HTTPForbidden(
+                        reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
                     )
+
+                query = sa.select(
+                    [file_meta_data.c.bucket_name, file_meta_data.c.object_name]
+                ).where(file_meta_data.c.file_uuid == file_uuid)
+
+                async for row in conn.execute(query):
+                    if self.s3_client.remove_objects(
+                        row.bucket_name, [row.object_name]
+                    ):
+                        to_delete.append(file_uuid)
+
+                await conn.execute(
+                    file_meta_data.delete().where(
+                        file_meta_data.c.file_uuid.in_(to_delete)
+                    )
+                )
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
