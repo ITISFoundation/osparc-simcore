@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Optional, Tuple
 
 from fastapi import FastAPI
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 async def write_file_and_run_command(
     settings: ServiceSidecarSettings,
-    file_content: str,
+    file_content: Optional[str],
     command: str,
     command_timeout: float,
 ) -> Tuple[bool, str]:
@@ -31,7 +31,7 @@ async def write_file_and_run_command(
 
 async def remove_the_compose_spec(
     shared_store: SharedStore, settings: ServiceSidecarSettings, command_timeout: float
-) -> None:
+) -> Tuple[bool, str]:
 
     stored_compose_content = shared_store.get_spec()
     if stored_compose_content is None:

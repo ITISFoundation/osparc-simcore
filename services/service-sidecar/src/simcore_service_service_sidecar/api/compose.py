@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import PlainTextResponse
 
@@ -14,7 +16,7 @@ compose_router = APIRouter()
 )
 async def store_docker_compose_spec_for_later_usage(
     request: Request, response: Response
-) -> None:
+) -> Optional[str]:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     body_as_text = (await request.body()).decode("utf-8")
 
