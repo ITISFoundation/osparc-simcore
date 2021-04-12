@@ -72,7 +72,8 @@ async def unarchive_dir(
     """Extracts zipped file archive_to_extract to destination_folder,
     preserving all relative files and folders inside the archive
 
-    Returns a set of paths extracted from archive (NOTE: that these are both files and folders)
+    Returns a set with all the paths extracted from archive. It includes
+    all tree leafs, which might include files or empty folders
     """
     with zipfile.ZipFile(archive_to_extract, mode="r") as zip_file_handler:
         with ProcessPoolExecutor() as pool:
@@ -100,8 +101,13 @@ async def unarchive_dir(
             ]
 
             extracted_paths: List[Path] = await asyncio.gather(*tasks)
-            # NOTE: extracted_paths includes files and folders
-            return set(extracted_paths)
+
+            # NOTE: extracted_paths includes all tree leafs, which might include files and empty folders
+            return set(
+                p
+                for p in extracted_paths
+                if p.is_file() or (p.is_dir() and not any(p.glob("*")))
+            )
 
 
 def _serial_add_to_archive(
