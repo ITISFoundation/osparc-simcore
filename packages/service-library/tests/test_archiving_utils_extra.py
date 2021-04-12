@@ -4,7 +4,6 @@
 
 import shutil
 from pathlib import Path
-from typing import Set
 
 import pytest
 from servicelib.archiving_utils import (
