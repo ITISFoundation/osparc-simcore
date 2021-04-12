@@ -93,8 +93,8 @@ async def raise_if_not_responsive(engine: Engine):
 
         # NOTE: Hacks aiopg.sa.SAConnection interface
         #       to override connection's cursor timeout
-        cursor = await conn._open_cursor()
-        await cursor.execute("SELECT 1 as is_alive", timeout=1)
+        # cursor = await conn._open_cursor()
+        await conn.execute("SELECT 1 as is_alive", timeout=1)
 
 
 async def is_pg_responsive(engine: Engine, *, raise_if_fails=False) -> bool:
