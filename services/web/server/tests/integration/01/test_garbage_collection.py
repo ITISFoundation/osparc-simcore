@@ -42,7 +42,6 @@ log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
     "postgres",
-    "pgbouncer",
     "redis",
     "storage",
 ]

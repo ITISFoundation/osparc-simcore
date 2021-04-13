@@ -1,27 +1,5 @@
 version: "3.7"
 services:
-  pgbouncer:
-    image: "edoburu/pgbouncer:1.15.0@sha256:2f47bf272fa9fdf25c100d11f1972b23af61a351a136d3721bfa6bdb52630426"
-    init: true
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=test
-      - DB_PASSWORD=test
-      - DB_NAME=test
-      # pgbouncer.ini variables
-      - LISTEN_ADDR=*
-      - LISTEN_PORT=5432
-      - POOL_MODE=transaction
-      - MAX_CLIENT_CONN=90 # we keep some for other OPS higher level services
-      - APPLICATION_NAME_ADD_HOST=1
-      - ADMIN_USERS=${POSTGRES_USER}
-
-    ports:
-      - "6432:5432"
-    depends_on:
-      - postgres
-
   postgres:
     image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     init: true
@@ -73,4 +51,4 @@ services:
     ports:
       - 18080:8080
     depends_on:
-      - pgbouncer
+      - postgres

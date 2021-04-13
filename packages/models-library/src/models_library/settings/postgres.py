@@ -17,10 +17,6 @@ class PostgresSettings(BaseSettings):
     # entrypoint
     host: str
     port: PortInt = 5432
-    long_running_session_host: Optional[str] = Field(
-        None,
-        description="host for long running sessions (e.g. listen/notify, prepared statements, etc...)",
-    )
 
     # auth
     user: str
@@ -30,8 +26,8 @@ class PostgresSettings(BaseSettings):
     db: str
 
     # pool connection limits
-    minsize: conint(ge=1) = 10
-    maxsize: conint(ge=1) = 100
+    minsize: conint(ge=1) = 1
+    maxsize: conint(ge=1) = 50
 
     dsn: Optional[PostgresDsn] = Field(None, description="Database Source Name")
 

@@ -23,7 +23,6 @@ from .db_config import CONFIG_SECTION_NAME, assert_valid_config
 
 THIS_MODULE_NAME = __name__.split(".")[-1]
 THIS_SERVICE_NAME = "postgres"
-APP_LONG_RUNNING_DB_ENGINE_KEY = f"{__name__ }.long_running_db_engine"
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +80,6 @@ async def _create_pg_engine(
 
 
 async def pg_engines(app: web.Application) -> None:
-    # create the "normal" engine that connects through pgbouncer
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
     pg_cfg = cfg["postgres"]
 
@@ -95,27 +93,14 @@ async def pg_engines(app: web.Application) -> None:
     )
     normal_engine = await _create_pg_engine(dsn, pg_cfg["minsize"], pg_cfg["maxsize"])
     app[APP_DB_ENGINE_KEY] = normal_engine
-    # create the long running session engine that connects directly to postgres
-    dsn = DataSourceName(
-        application_name=f"{__name__}_{id(app)}",
-        database=pg_cfg["database"],
-        user=pg_cfg["user"],
-        password=pg_cfg["password"],
-        host=pg_cfg["long_running_session_host"],
-        port=pg_cfg["port"],
-    )
-    long_running_session_engine = await _create_pg_engine(dsn, min_size=1, max_size=1)
-    app[APP_LONG_RUNNING_DB_ENGINE_KEY] = long_running_session_engine
 
     yield  # -------------------
 
     # clean-up
     if normal_engine is not app.get(APP_DB_ENGINE_KEY):
         log.critical("app does not hold right db engine. Somebody has changed it??")
-    if long_running_session_engine is not app.get(APP_LONG_RUNNING_DB_ENGINE_KEY):
-        log.critical("app does not hold right db engine. Somebody has changed it??")
 
-    for engine in [normal_engine, long_running_session_engine]:
+    for engine in [normal_engine]:
         engine.close()
         await engine.wait_closed()
         log.debug(
@@ -155,7 +140,6 @@ def setup(app: web.Application):
 
     # ensures keys exist
     app[APP_DB_ENGINE_KEY] = None
-    app[APP_LONG_RUNNING_DB_ENGINE_KEY] = None
 
     # async connection to db
     # app.on_startup.append(_init_db) # TODO: review how is this disposed
