@@ -139,7 +139,8 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         if response.status > 299:
             raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_size = int(response.headers.get("content-length", 0)) or None
+        # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+        file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
                 desc=f"downloading {file_path} [{file_size} bytes]",
