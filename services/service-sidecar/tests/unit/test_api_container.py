@@ -50,16 +50,6 @@ def not_started_containers() -> List[str]:
     return [f"missing-container-{i}" for i in range(5)]
 
 
-@pytest.fixture
-def mock_containers_get(mocker) -> None:
-    async def mock_get(*args, **kwargs):
-        raise aiodocker.exceptions.DockerError(
-            status="mock", data=dict(message="aiodocker_mocked_error")
-        )
-
-    mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
-
-
 @pytest.mark.asyncio
 async def test_container_inspect_logs_remove(
     test_client: TestClient, started_containers: List[str]

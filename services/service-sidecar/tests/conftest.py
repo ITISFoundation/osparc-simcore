@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 
 import os
+import aiodocker
 import subprocess
 import sys
 from typing import AsyncGenerator
@@ -89,3 +90,13 @@ async def monkey_patch_asyncio_subprocess(mocker) -> None:
         return mock_response
 
     mocker.patch("asyncio.create_subprocess_exec", side_effect=create_subprocess_exec)
+
+
+@pytest.fixture
+def mock_containers_get(mocker) -> None:
+    async def mock_get(*args, **kwargs):
+        raise aiodocker.exceptions.DockerError(
+            status="mock", data=dict(message="aiodocker_mocked_error")
+        )
+
+    mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
