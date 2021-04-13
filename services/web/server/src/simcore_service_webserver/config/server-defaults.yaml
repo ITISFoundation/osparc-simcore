@@ -22,7 +22,6 @@ db:
     database: simcoredb
     endpoint: postgres:5432
     host: postgres
-    long_running_session_host: postgres
     maxsize: 5
     minsize: 1
     password: simcore

@@ -62,7 +62,6 @@ pytest_simcore_core_services_selection = [
     "director",
     "director-v2",
     "postgres",
-    "pgbouncer",
     "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio"]

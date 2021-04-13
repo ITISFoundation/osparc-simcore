@@ -125,7 +125,7 @@ def postgres_service(docker_services, docker_ip):
         password=PASS,
         database=DATABASE,
         host=docker_ip,
-        port=docker_services.port_for("pgbouncer", 5432),
+        port=docker_services.port_for("postgres", 5432),
     )
 
     # Wait until service is responsive.
