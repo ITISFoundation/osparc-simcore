@@ -31,8 +31,9 @@ cffi==1.14.5
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==4.0.0
+chardet==3.0.4
     # via
+    #   -r requirements/_base.in
     #   aiohttp
     #   requests
 click==7.1.2
@@ -67,8 +68,10 @@ fastapi==0.63.0
     # via -r requirements/_base.in
 greenlet==1.0.0
     # via sqlalchemy
-h11==0.12.0
-    # via uvicorn
+h11==0.9.0
+    # via
+    #   -r requirements/_base.in
+    #   uvicorn
 idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
@@ -80,7 +83,7 @@ idna==2.10
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.10.0
+importlib-metadata==3.10.1
     # via
     #   jsonschema
     #   sqlalchemy

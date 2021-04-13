@@ -33,7 +33,7 @@ filelock==3.0.12
     # via virtualenv
 identify==2.2.3
     # via pre-commit
-importlib-metadata==3.10.0
+importlib-metadata==3.10.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
