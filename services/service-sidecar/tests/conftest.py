@@ -2,12 +2,12 @@
 # pylint: disable=redefined-outer-name
 
 import os
-import aiodocker
 import subprocess
 import sys
 from typing import AsyncGenerator
 from unittest import mock
 
+import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI

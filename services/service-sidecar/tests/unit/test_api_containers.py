@@ -2,15 +2,12 @@
 # pylint: disable=unused-argument
 
 import json
-from typing import Any, Dict, List
+from contextlib import contextmanager
+from typing import Any, Dict, Generator, List
 
-import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from simcore_service_service_sidecar.storage import SharedStore
-
-from async_generator import asynccontextmanager
-from contextlib import contextmanager
 
 
 @pytest.fixture
@@ -102,7 +99,7 @@ async def test_containers_docker_status_pulling_containers(
     test_client: TestClient, started_containers: List[str]
 ):
     @contextmanager
-    def mark_pulling(shared_store: SharedStore) -> None:
+    def mark_pulling(shared_store: SharedStore) -> Generator[None, None, None]:
         try:
             shared_store.set_is_pulling_containsers()
             yield
