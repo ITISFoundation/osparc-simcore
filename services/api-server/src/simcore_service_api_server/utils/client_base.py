@@ -30,7 +30,7 @@ class BaseServiceClientApi(AppDataMixin):
             resp.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError) as err:
-            log.debug("%s not responsive: %s", self.service_name, err)
+            log.error("%s not responsive: %s", self.service_name, err)
             return False
 
 

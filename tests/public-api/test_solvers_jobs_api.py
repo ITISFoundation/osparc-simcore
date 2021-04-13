@@ -9,7 +9,8 @@
 # pylint:disable=redefined-outer-name
 
 import time
-from datetime import timedelta
+
+# from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote_plus
