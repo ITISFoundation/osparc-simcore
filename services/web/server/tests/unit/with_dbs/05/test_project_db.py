@@ -520,7 +520,7 @@ def test_find_changed_dict_keys(
         (UserRole.USER),
     ],
 )
-@pytest.mark.parametrize("number_of_nodes", [1, randint(250, 1000)])
+@pytest.mark.parametrize("number_of_nodes", [1, randint(250, 300)])
 async def test_patch_user_project_workbench_concurrently(
     fake_project: Dict[str, Any],
     postgres_db: sa.engine.Engine,
