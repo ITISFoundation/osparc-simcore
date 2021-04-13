@@ -52,9 +52,7 @@ docopt==0.6.2
     #   coveralls
     #   docker-compose
 idna==2.10
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   requests
+    # via requests
 importlib-metadata==3.7.0
     # via
     #   jsonschema

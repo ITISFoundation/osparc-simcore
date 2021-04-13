@@ -11,9 +11,7 @@ chardet==4.0.0
 docker==4.4.4
     # via -r requirements.in
 idna==2.10
-    # via
-    #   -c ../../../requirements/constraints.txt
-    #   requests
+    # via requests
 pyyaml==5.4.1
     # via
     #   -c ../../../requirements/constraints.txt
@@ -22,7 +20,6 @@ requests==2.25.1
     # via docker
 six==1.15.0
     # via
-    #   docker
     #   tenacity
     #   websocket-client
 tenacity==7.0.0

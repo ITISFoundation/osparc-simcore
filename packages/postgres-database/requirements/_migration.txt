@@ -18,7 +18,6 @@ docker==4.4.4
     # via -r requirements/_migration.in
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
 mako==1.1.4
