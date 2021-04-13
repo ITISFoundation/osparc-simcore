@@ -17,8 +17,3 @@ aiofiles
 PyYAML
 async-timeout
 async_generator
-
-
-# pinned dependencies
-chardet==3.0.4
-h11==0.9.0

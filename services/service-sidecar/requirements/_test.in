@@ -3,4 +3,5 @@
 pytest
 pytest-cov
 pytest-asyncio
-httpx
+async-asgi-testclient
+faker

@@ -81,6 +81,7 @@ regex==2021.4.4
 six==1.15.0
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2
     # via
