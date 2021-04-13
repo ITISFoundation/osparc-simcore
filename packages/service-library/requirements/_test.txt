@@ -50,11 +50,11 @@ cryptography==3.4.6
     #   paramiko
 distro==1.5.0
     # via docker-compose
-docker-compose==1.27.4
+docker-compose==1.29.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-docker
-docker[ssh]==4.4.4
+docker[ssh]==5.0.0
     # via docker-compose
 dockerpty==0.4.1
     # via docker-compose
@@ -158,7 +158,6 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
-    #   docker
     #   dockerpty
     #   jsonschema
     #   pynacl
