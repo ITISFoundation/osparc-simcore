@@ -200,7 +200,15 @@ def validate_compose_spec(
     try:
         parsed_compose_spec = yaml.safe_load(compose_file_content)
     except yaml.YAMLError as e:
-        raise InvalidComposeSpec(f"{str(e)}\nProvided yaml is not valid!") from e
+        raise InvalidComposeSpec(
+            f"{str(e)}\n{compose_file_content}\nProvided yaml is not valid!"
+        ) from e
+
+    if parsed_compose_spec is None or not isinstance(parsed_compose_spec, dict):
+        raise InvalidComposeSpec(f"{compose_file_content}\nProvided yaml is not valid!")
+
+    if not {"version", "services"}.issubset(set(parsed_compose_spec.keys())):
+        raise InvalidComposeSpec(f"{compose_file_content}\nProvided yaml is not valid!")
 
     version = parsed_compose_spec["version"]
     if version.startswith("1"):

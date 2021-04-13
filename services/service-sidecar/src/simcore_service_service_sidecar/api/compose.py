@@ -1,3 +1,5 @@
+import logging
+import traceback
 from typing import Optional
 
 from fastapi import APIRouter, Request, Response
@@ -8,6 +10,7 @@ from ..shared_handlers import remove_the_compose_spec, write_file_and_run_comman
 from ..storage import SharedStore
 from ..utils import InvalidComposeSpec
 
+logger = logging.getLogger(__name__)
 compose_router = APIRouter()
 
 
@@ -25,6 +28,7 @@ async def store_docker_compose_spec_for_later_usage(
     try:
         shared_store.put_spec(body_as_text)
     except InvalidComposeSpec as e:
+        logger.warning("Error detected %s", traceback.format_exc())
         response.status_code = 400
         return str(e)
 
@@ -46,6 +50,7 @@ async def create_docker_compose_configuration_containers_without_starting(
     try:
         shared_store.put_spec(body_as_text)
     except InvalidComposeSpec as e:
+        logger.warning("Error detected %s", traceback.format_exc())
         response.status_code = 400
         return str(e)
 
