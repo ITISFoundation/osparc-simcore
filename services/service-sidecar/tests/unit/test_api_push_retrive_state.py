@@ -2,10 +2,11 @@
 # pylint: disable=unused-argument
 
 
+import json
+
 import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
-import json
 
 
 def assert_200_empty(response: Response) -> bool:
