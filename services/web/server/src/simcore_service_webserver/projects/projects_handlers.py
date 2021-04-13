@@ -10,6 +10,7 @@ from typing import Any, Coroutine, Dict, List, Optional, Set
 import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
+from models_library.projects import ProjectType
 from models_library.projects_state import ProjectState
 from servicelib.utils import fire_and_forget_task, logged_gather
 
@@ -22,7 +23,7 @@ from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
 from . import projects_api
-from .projects_db import APP_PROJECT_DBAPI
+from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
     clone_project_document,
@@ -149,7 +150,7 @@ async def list_projects(request: web.Request):
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
     ptype = request.query.get("type", "all")  # TODO: get default for oaspecs
-    db = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
     # TODO: improve dbapi to list project
     async def set_all_project_states(
@@ -178,16 +179,20 @@ async def list_projects(request: web.Request):
     projects_list = []
     project_types_list: List[bool] = []
     if ptype in ("template", "all"):
-        template_projects = await db.load_template_projects(
-            user_id=user_id, filter_by_services=user_available_services
+        template_projects = await db.load_projects(
+            user_id=user_id,
+            project_type=ProjectType.TEMPLATE,
+            filter_by_services=user_available_services,
         )
 
         projects_list += template_projects
         project_types_list += [True for i in range(len(template_projects))]
 
     if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        user_projects = await db.load_user_projects(
-            user_id=user_id, filter_by_services=user_available_services
+        user_projects = await db.load_projects(
+            user_id=user_id,
+            project_type=ProjectType.STANDARD,
+            filter_by_services=user_available_services,
         )
         projects_list += user_projects
         project_types_list += [False for i in range(len(user_projects))]

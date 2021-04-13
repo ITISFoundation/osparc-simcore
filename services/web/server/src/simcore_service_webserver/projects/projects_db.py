@@ -23,8 +23,9 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from change_case import ChangeCase
-from pydantic import ValidationError
 from models_library.projects import ProjectAtDB
+from pydantic import ValidationError
+from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import literal_column
@@ -311,19 +312,22 @@ class ProjectDBAPI:
                 prj["tags"] = []
             return prj
 
-    async def load_user_projects(
+    async def load_projects(
         self,
-        user_id: int,
+        user_id: PositiveInt,
+        project_type: ProjectType,
+        *,
         filter_by_services: Optional[List[Dict]] = None,
-    ) -> List[Dict]:
-        log.info("Loading projects for user %s", user_id)
+        only_published: Optional[bool] = False,
+    ) -> List[Dict[str, Any]]:
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             query = textwrap.dedent(
                 f"""\
                 SELECT *
                 FROM projects
-                WHERE projects.type != 'TEMPLATE'
+                WHERE projects.type != {project_type.value}
+                {'AND projects.published ' if only_published else ''}
                 AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
                 OR prj_owner = {user_id})
                 """
@@ -331,41 +335,6 @@ class ProjectDBAPI:
             projects_list = await self.__load_projects(
                 conn, query, user_id, user_groups, filter_by_services=filter_by_services
             )
-
-        return projects_list
-
-    async def load_template_projects(
-        self,
-        user_id: int,
-        *,
-        only_published=False,
-        filter_by_services: Optional[List[Dict]] = None,
-    ) -> List[Dict]:
-        log.info("Loading public template projects")
-
-        # TODO: eliminate this and use mock to replace get_user_project instead
-        projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
-
-        async with self.engine.acquire() as conn:
-            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
-
-            # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
-            query = textwrap.dedent(
-                f"""\
-                SELECT *
-                FROM projects
-                WHERE projects.type = 'TEMPLATE'
-                {'AND projects.published ' if only_published else ''}
-                AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-                OR prj_owner = {user_id})
-                """
-            )
-
-            db_projects = await self.__load_projects(
-                conn, query, user_id, user_groups, filter_by_services
-            )
-
-            projects_list.extend(db_projects)
 
         return projects_list
 
@@ -474,7 +443,9 @@ class ProjectDBAPI:
 
     async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid, include_templates=True)
+            project = await self._get_project(
+                conn, user_id, project_uuid, include_templates=True
+            )
             # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
             user_email = await self._get_user_email(conn, user_id)
@@ -486,7 +457,9 @@ class ProjectDBAPI:
 
     async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid, include_templates=True)
+            project = await self._get_project(
+                conn, user_id, project_uuid, include_templates=True
+            )
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
