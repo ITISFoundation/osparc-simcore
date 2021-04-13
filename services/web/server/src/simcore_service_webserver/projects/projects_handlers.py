@@ -142,6 +142,9 @@ async def create_projects(request: web.Request):
         raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
 
 
+MAX_PROJECT_LISTING: int = 50
+
+
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
@@ -149,7 +152,10 @@ async def list_projects(request: web.Request):
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    ptype = request.query.get("type", "all")  # TODO: get default for oaspecs
+    project_type = request.query.get("type", "all")  # TODO: get default for oaspecs
+    offset = int(request.query.get("start", 0))
+    limit = int(request.query.get("count", MAX_PROJECT_LISTING))
+
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
     # TODO: improve dbapi to list project
@@ -178,7 +184,7 @@ async def list_projects(request: web.Request):
 
     projects_list = []
     project_types_list: List[bool] = []
-    if ptype in ("template", "all"):
+    if project_type in ("template", "all"):
         template_projects = await db.load_projects(
             user_id=user_id,
             project_type=ProjectType.TEMPLATE,
@@ -188,7 +194,10 @@ async def list_projects(request: web.Request):
         projects_list += template_projects
         project_types_list += [True for i in range(len(template_projects))]
 
-    if ptype in ("user", "all"):  # standard only (notice that templates will only)
+    if project_type in (
+        "user",
+        "all",
+    ):  # standard only (notice that templates will only)
         user_projects = await db.load_projects(
             user_id=user_id,
             project_type=ProjectType.STANDARD,
@@ -197,12 +206,9 @@ async def list_projects(request: web.Request):
         projects_list += user_projects
         project_types_list += [False for i in range(len(user_projects))]
 
-    start = int(request.query.get("start", 0))
-    count = int(request.query.get("count", len(projects_list)))
-
-    stop = min(start + count, len(projects_list))
-    projects_list = projects_list[start:stop]
-    project_types_list = project_types_list[start:stop]
+    stop = min(offset + limit, len(projects_list))
+    projects_list = projects_list[offset:stop]
+    project_types_list = project_types_list[offset:stop]
     await set_all_project_states(projects_list, project_types_list)
     return {"data": projects_list}
 
