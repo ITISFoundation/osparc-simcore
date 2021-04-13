@@ -29,13 +29,13 @@ async def get_container_logs(
         title="Display timestamps",
         description="Enabling this parameter will include timestamps in logs",
     ),
-) -> str:
+) -> Union[str, Dict[str, Any]]:
     """ Returns the logs of a given container if found """
     shared_store: SharedStore = request.app.state.shared_store
 
     if container not in shared_store.get_container_names():
         response.status_code = 400
-        return f"No container '{container}' was started"
+        return dict(error=f"No container '{container}' was started")
 
     docker = aiodocker.Docker()
 
@@ -49,7 +49,7 @@ async def get_container_logs(
         return await container_instance.log(**args)
     except aiodocker.exceptions.DockerError as e:
         response.status_code = 400
-        return e.message
+        return dict(error=e.message)
 
 
 @container_router.get("/container/inspect")
