@@ -4,13 +4,10 @@
 import json
 from typing import Any, Dict, List
 
+import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from simcore_service_service_sidecar.storage import SharedStore
-import aiodocker
-from importlib import reload
-
-from simcore_service_service_sidecar import api
 
 
 @pytest.fixture
@@ -56,7 +53,9 @@ def not_started_containers() -> List[str]:
 @pytest.fixture
 def mock_containers_get(mocker) -> None:
     async def mock_get(*args, **kwargs):
-        raise aiodocker.exceptions.DockerError(status="mock", data=dict(message="aiodocker_mocked_error"))
+        raise aiodocker.exceptions.DockerError(
+            status="mock", data=dict(message="aiodocker_mocked_error")
+        )
 
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
 
