@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import tempfile
+import traceback
 from pathlib import Path
 from typing import Any, Dict, Generator, List, Tuple
 
@@ -51,7 +52,10 @@ async def async_command(command, command_timeout: float) -> Tuple[bool, str]:
         async with timeout(command_timeout):
             stdout, _ = await proc.communicate()
     except asyncio.TimeoutError:
-        message = f"Timed out after {command_timeout} seconds while running {command}"
+        message = (
+            f"{traceback.format_exc()}\nTimed out after {command_timeout} "
+            f"seconds while running {command}"
+        )
         logger.warning(message)
         return False, message
 

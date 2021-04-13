@@ -44,7 +44,6 @@ async def create_docker_compose_configuration_containers_without_starting(
     body_as_text = (await request.body()).decode("utf-8")
 
     settings: ServiceSidecarSettings = request.app.state.settings
-
     shared_store: SharedStore = request.app.state.shared_store
 
     try:
@@ -67,26 +66,19 @@ async def create_docker_compose_configuration_containers_without_starting(
     return stdout
 
 
-@compose_router.put("/compose:stop", response_class=PlainTextResponse)
-async def stop_containers_without_removing_them(
+@compose_router.post("/compose", response_class=PlainTextResponse)
+async def start_or_update_docker_compose_configuration(
     request: Request, response: Response, command_timeout: float
 ) -> str:
-    """Stops the previously started service
-    and returns the docker-compose output"""
-    shared_store: SharedStore = request.app.state.shared_store
+    """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     settings: ServiceSidecarSettings = request.app.state.settings
+    shared_store: SharedStore = request.app.state.shared_store
 
-    stored_compose_content = shared_store.get_spec()
-    if stored_compose_content is None:
-        response.status_code = 400
-        return "No started spec to stop was found"
-
-    command = (
-        "docker-compose -p {project} -f {file_path} stop -t {stop_and_remove_timeout}"
-    )
+    # --no-build might be a security risk building is disabled
+    command = "docker-compose -p {project} -f {file_path} up --no-build -d"
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
-        file_content=stored_compose_content,
+        file_content=shared_store.get_spec(),
         command=command,
         command_timeout=command_timeout,
     )
@@ -128,19 +120,26 @@ async def pull_docker_required_docker_images(
     return stdout
 
 
-@compose_router.post("/compose", response_class=PlainTextResponse)
-async def start_or_update_docker_compose_configuration(
+@compose_router.put("/compose:stop", response_class=PlainTextResponse)
+async def stop_containers_without_removing_them(
     request: Request, response: Response, command_timeout: float
 ) -> str:
-    """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    settings: ServiceSidecarSettings = request.app.state.settings
+    """Stops the previously started service
+    and returns the docker-compose output"""
     shared_store: SharedStore = request.app.state.shared_store
+    settings: ServiceSidecarSettings = request.app.state.settings
 
-    # --no-build might be a security risk building is disabled
-    command = "docker-compose -p {project} -f {file_path} up --no-build -d"
+    stored_compose_content = shared_store.get_spec()
+    if stored_compose_content is None:
+        response.status_code = 400
+        return "No started spec to stop was found"
+
+    command = (
+        "docker-compose -p {project} -f {file_path} stop -t {stop_and_remove_timeout}"
+    )
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
-        file_content=shared_store.get_spec(),
+        file_content=stored_compose_content,
         command=command,
         command_timeout=command_timeout,
     )
@@ -157,7 +156,7 @@ async def remove_docker_compose_configuration(
     and returns the docker-compose output"""
     finished_without_errors, stdout = await remove_the_compose_spec(
         shared_store=request.app.state.shared_store,
-        settings=request.app.settings,
+        settings=request.app.state.settings,
         command_timeout=command_timeout,
     )
 
