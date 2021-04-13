@@ -97,9 +97,6 @@ def webserver_environ(
         if "ports" in simcore_docker_compose["services"][name]
     ]
     for name in services_with_published_ports:
-        if name == "pgbouncer":
-            # skip it since pgbouncer wraps postgres and uses the same envs
-            continue
         host_key = f"{name.upper().replace('-', '_')}_HOST"
         port_key = f"{name.upper().replace('-', '_')}_PORT"
 
@@ -113,12 +110,6 @@ def webserver_environ(
         published_port = get_service_published_port(name, int(environ.get(port_key)))
         environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
-        if name == "postgres":
-            # special case for postgres
-            assert (
-                "POSTGRES_LONG_RUNNING_SESSION_HOST" in environ
-            ), "POSTGRES_LONG_RUNNING_SESSION_HOST is missing from .env"
-            environ["POSTGRES_LONG_RUNNING_SESSION_HOST"] = "127.0.0.1"
 
     pprint(environ)  # NOTE: displayed only if error
     return environ

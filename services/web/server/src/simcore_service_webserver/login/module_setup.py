@@ -38,7 +38,6 @@ async def _setup_config_and_pgpool(app: web.Application):
         min_size=db_cfg["minsize"],
         max_size=db_cfg["maxsize"],
         loop=asyncio.get_event_loop(),
-        statement_cache_size=0,  # necessary for usage with pgbouncer
     )
 
     storage = AsyncpgStorage(pool)  # NOTE: this key belongs to cfg, not settings!

@@ -264,30 +264,6 @@ services:
     networks:
       - default
 
-  pgbouncer:
-    image: "edoburu/pgbouncer:1.15.0@sha256:2f47bf272fa9fdf25c100d11f1972b23af61a351a136d3721bfa6bdb52630426"
-    init: true
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=${POSTGRES_PORT}
-      - DB_USER=${POSTGRES_USER}
-      - DB_PASSWORD=${POSTGRES_PASSWORD}
-      - DB_NAME=${POSTGRES_DB}
-      # pgbouncer.ini variables
-      - LISTEN_ADDR=*
-      - LISTEN_PORT=${POSTGRES_PORT}
-      - POOL_MODE=transaction
-      - MAX_CLIENT_CONN=10000 # we keep some for other OPS higher level services
-      - DEFAULT_POOL_SIZE=20
-      - MAX_DB_CONNECTIONS=90
-      - APPLICATION_NAME_ADD_HOST=1
-      - ADMIN_USERS=${POSTGRES_USER}
-    networks:
-      - default
-      - interactive_services_subnet
-      - computational_services_subnet
-      - postgres_network
-
   postgres:
     image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     init: true
@@ -298,7 +274,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - postgres_network
+      - default
+      - interactive_services_subnet
+      - computational_services_subnet
     healthcheck:
       test:
         [

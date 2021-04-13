@@ -30,9 +30,7 @@ services:
     ports:
       - "18080:8080"
     networks:
-      # NOTE: simcore_default allows access to postgres through pgbouncer, postgres_network allows access directly to postgres
       - simcore_default
-      - postgres_network
 
   portainer:
     image: portainer/portainer-ce
@@ -103,7 +101,4 @@ networks:
     external: true
   computational_services_subnet:
     name: ${SWARM_STACK_NAME:-simcore}_computational_services_subnet
-    external: true
-  postgres_network:
-    name: ${SWARM_STACK_NAME:-simcore}_postgres_network
     external: true

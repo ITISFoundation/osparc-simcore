@@ -28,7 +28,6 @@ db:
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
-    long_running_session_host: ${POSTGRES_LONG_RUNNING_SESSION_HOST}
     port: ${POSTGRES_PORT}
     minsize: 10
     maxsize: 100
