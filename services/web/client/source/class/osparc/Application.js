@@ -104,7 +104,8 @@ qx.Class.define("osparc.Application", {
     __checkScreenSize: function() {
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
-          if (platformName !== "master") {
+          const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+          if (platformName !== "master" && preferencesSettings.getConfirmScreenSize()) {
             const title = this.tr("Oops, the window is a bit too small!");
             const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", title).set({
               height: 100,
