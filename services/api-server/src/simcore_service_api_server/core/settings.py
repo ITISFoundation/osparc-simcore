@@ -60,7 +60,7 @@ class DirectorV2Settings(BaseServiceSettings):
     vtag: str = "v2"
 
     class Config(_CommonConfig):
-        env_prefix = "DIRECTOR2_"
+        env_prefix = "DIRECTOR_V2_"
 
 
 class PGSettings(PostgresSettings):
