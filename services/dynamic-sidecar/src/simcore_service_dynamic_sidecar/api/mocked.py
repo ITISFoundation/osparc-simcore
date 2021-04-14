@@ -19,13 +19,13 @@ async def post_push() -> str:
     return ""
 
 
-@mocked_router.get("/retrive")
+@mocked_router.get("/retrieve")
 async def get_retrive() -> str:
     logger.warning("ignoring call GET /retrive from frontend")
     return ""
 
 
-@mocked_router.post("/retrive")
+@mocked_router.post("/retrieve")
 async def post_retrive() -> str:
     logger.warning("ignoring call POST /retrive from frontend")
     return ""
