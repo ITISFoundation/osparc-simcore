@@ -65,6 +65,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __userStudyContainer: null,
     __userStudies: null,
     __newStudyBtn: null,
+    __moreStudiesBtn: null,
 
     /**
      * Function that resets the selected item
@@ -94,25 +95,37 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      * Function that asks the backend for the list of studies belonging to the user
      * and sets it
      */
-    reloadUserStudies: function(start = 0, count = 15) {
+    reloadUserStudies: function(count = 3) {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
+        if (this.__moreStudiesBtn === null) {
+          this.__moreStudiesBtn = this.__createMoreStudiesButton();
+        }
+        this.__userStudyContainer.add(this.__moreStudiesBtn);
+        this.__moreStudiesBtn.setFetching(true);
         return new Promise((resolve, reject) => {
           const params = {
             url: {
-              start,
+              start: this.__moreStudiesBtn.getNStudies(),
               count
             }
           };
           // will never use the cache
           osparc.data.Resources.fetch("studies", "getSome", params)
             .then(studies => {
-              this._resetStudiesList(studies);
+              this.__userStudyContainer.remove(this.__moreStudiesBtn);
+              this.__moreStudiesBtn.setNStudies(this.__moreStudiesBtn.getNStudies() + studies.length);
+              const allStudies = this.__userStudies.concat(studies);
+              this._resetStudiesList(allStudies);
               this.resetSelection();
-              resolve(studies);
+              resolve(allStudies);
             })
             .catch(err => {
               console.error(err);
               reject(err);
+            })
+            .finally(() => {
+              this.__moreStudiesBtn.setFetching(false);
+              this.__userStudyContainer.add(this.__moreStudiesBtn);
             });
         });
       }
@@ -187,11 +200,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createNewStudyButton: function() {
-      const newStudyBtn = this.__newStudyBtn = new osparc.dashboard.StudyBrowserButtonNew();
+      const newStudyBtn = new osparc.dashboard.StudyBrowserButtonNew();
       newStudyBtn.subscribeToFilterGroup("sideSearchFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
       return newStudyBtn;
+    },
+
+    __createMoreStudiesButton: function() {
+      const loadMoreBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      loadMoreBtn.subscribeToFilterGroup("sideSearchFilter");
+      this.__userStudyContainer.add(loadMoreBtn);
+      loadMoreBtn.addListener("execute", () => {
+        loadMoreBtn.setValue(false);
+        this.reloadUserStudies();
+      }, this);
+      return loadMoreBtn;
     },
 
     __createButtonsLayout: function(title, content) {
@@ -206,7 +230,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createUserStudiesLayout: function() {
       const userStudyContainer = this.__userStudyContainer = this.__createStudyListLayout();
-      userStudyContainer.add(this.__createNewStudyButton());
+      const newStudyButton = this.__newStudyBtn = this.__createNewStudyButton();
+      userStudyContainer.add(newStudyButton);
       osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
