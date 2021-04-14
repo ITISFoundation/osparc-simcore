@@ -90,9 +90,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       // layout
       const box = this._createSectionBox("Confirmations preferences");
 
-      const label = this._createHelpLabel(this.tr(
-        "Provide warnings for the following actions:"
-      ));
+      const label = this._createHelpLabel(this.tr("Provide warnings for the following actions:"));
       box.add(label);
 
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
