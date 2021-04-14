@@ -272,14 +272,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this.__userStudyContainer.getSelection();
-        const win = this.__createConfirmWindow(selection.length > 1);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
-          }
-        }, this);
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (preferencesSettings.getConfirmDeleteStudy()) {
+          const win = this.__createConfirmWindow(selection.length > 1);
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+            }
+          }, this);
+        } else {
+          this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+        }
       }, this);
       return deleteButton;
     },
@@ -598,14 +603,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
-        const win = this.__createConfirmWindow(false);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteStudy(studyData);
-          }
-        }, this);
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (preferencesSettings.getConfirmDeleteStudy()) {
+          const win = this.__createConfirmWindow(false);
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__deleteStudy(studyData);
+            }
+          }, this);
+        } else {
+          this.__deleteStudy(studyData);
+        }
       }, this);
       return deleteButton;
     },
