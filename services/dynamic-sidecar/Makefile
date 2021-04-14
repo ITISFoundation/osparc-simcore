@@ -6,19 +6,6 @@ APP_NAME := $(notdir $(CURDIR))
 .DEFAULT_GOAL := help
 
 
-.PHONY: _ensure-in-venv
-_ensure-in-venv:
-	@python3 -c "import os; os.environ['VIRTUAL_ENV']" || (echo "\n>>>> You are not in a virtualenv. Activate one <<<<\n"; exit 1)
-
-
-.PHONY: dev-run
-dev-run: _ensure-in-venv ## starts the container on its own
-	@docker run -it --rm \
-			-p 8000:8000 \
-			-v $(CURDIR):/devel/services/dynamic-sidecar \
-			local/dynamic-sidecar:development
-
-
 .PHONY: codestyle
 codestyle: ## enforces codestyle and runs pylint and mypy
 	isort setup.py src/simcore_service_dynamic_sidecar tests
