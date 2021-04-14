@@ -18,11 +18,13 @@ import attr
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
+from aiopg.sa.result import RowProxy
 from blackfynn.base import UnauthorizedException
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
+from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 from yarl import URL
 
@@ -78,7 +80,7 @@ def setup_dsm(app: web.Application):
         testing = main_cfg["testing"]
         dsm = DataStorageManager(
             s3_client, engine, loop, pool, bucket_name, not testing, app
-        )
+        )  # type: ignore
 
         app[APP_DSM_KEY] = dsm
 
@@ -87,6 +89,16 @@ def setup_dsm(app: web.Application):
         # NOTE: write here clean up
 
     app.cleanup_ctx.append(_cleanup_context)
+
+
+def to_meta_extended(row: RowProxy) -> FileMetaDataEx:
+    assert row
+    meta = FileMetaData(**dict(row))  # type: ignore
+    meta_extended = FileMetaDataEx(
+        fmd=meta,
+        parent_id=str(Path(meta.object_name).parent),
+    )  # type: ignore
+    return meta_extended
 
 
 @attr.s(auto_attribs=True)
@@ -366,10 +378,9 @@ class DataStorageManager:
                     query = sa.select([file_meta_data]).where(
                         file_meta_data.c.file_uuid == file_uuid
                     )
-                    async for row in conn.execute(query):
-                        d = FileMetaData(**dict(row))
-                        dx = FileMetaDataEx(fmd=d, parent_id="")
-                        return dx
+                    result = await conn.execute(query)
+                    row = await result.first()
+                    return to_meta_extended(row) if row else None
                 else:
                     logger.debug("User %s was not read file %s", user_id, file_uuid)
 
@@ -963,10 +974,44 @@ class DataStorageManager:
             )
 
             async for row in conn.execute(stmt):
-                meta = FileMetaData(**dict(row))
-                meta_extended = FileMetaDataEx(
-                    fmd=meta,
-                    parent_id=str(Path(meta.object_name).parent),
-                )
+                meta_extended = to_meta_extended(row)
                 files_meta.append(meta_extended)
+
         return list(files_meta)
+
+    async def create_soft_link(
+        self, user_id: int, target_uuid: str, link_uuid: str
+    ) -> FileMetaDataEx:
+
+        # validate link_uuid
+        async with self.engine.acquire() as conn:
+            # TODO: select exists(select 1 from file_metadat where file_uuid=12)
+            found = await conn.scalar(
+                sa.select([file_meta_data.c.file_uuid]).where(
+                    file_meta_data.c.file_uuid == link_uuid
+                )
+            )
+            if found:
+                raise ValueError(f"Invalid link {link_uuid}. Link already exists")
+
+        # validate target_uuid
+        target = await self.list_file(str(user_id), SIMCORE_S3_STR, target_uuid)
+        if not target:
+            raise ValueError(
+                f"Invalid target '{target_uuid}'. File does not exists for this user"
+            )
+
+        # duplicate target and change the following columns:
+        target.fmd.file_uuid = link_uuid
+        # target.fmd.file_id = link_uuid
+
+        async with self.engine.acquire() as conn:
+            stmt = (
+                file_meta_data.insert()
+                .values(**attr.asdict(target.fmd))
+                .returning(literal_column("*"))
+            )
+
+            result = await conn.execute(stmt)
+            link = to_meta_extended(await result.first())
+            return link
