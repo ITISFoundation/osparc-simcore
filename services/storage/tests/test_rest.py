@@ -7,13 +7,16 @@ import os
 import sys
 from asyncio import Future
 from pathlib import Path
+from typing import Any, Dict
 from urllib.parse import quote
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_dsm
+from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
@@ -42,7 +45,7 @@ def parse_db(dsm_mockup_db):
 def client(
     loop,
     aiohttp_unused_port,
-    aiohttp_client,
+    aiohttp_client: TestClient,
     postgres_service,
     minio_service,
     osparc_api_specs_dir,
@@ -284,7 +287,7 @@ async def test_action_check(client):
     assert data["query_value"] == QUERY
 
 
-def get_project_with_data():
+def get_project_with_data() -> Dict[str, Any]:
     projects = []
     with open(current_dir / "data/projects_with_data.json") as fp:
         projects = json.load(fp)
@@ -315,7 +318,7 @@ def mock_datcore_download(mocker, client):
 
 
 @pytest.fixture
-def mock_get_project_access_rights(mocker):
+def mock_get_project_access_rights(mocker) -> None:
     # NOTE: this avoid having to inject project in database
     for module in ("dsm", "access_layer"):
         mock = mocker.patch(
@@ -325,19 +328,10 @@ def mock_get_project_access_rights(mocker):
         mock.return_value.set_result(AccessRights.all())
 
 
-@pytest.mark.parametrize(
-    "project_name,project", [(prj["name"], prj) for prj in get_project_with_data()]
-)
-async def test_create_and_delete_folders_from_project(
-    client,
-    dsm_mockup_db,
-    project_name,
-    project,
-    mock_get_project_access_rights,
-    mock_datcore_download,
+async def _create_and_delete_folders_from_project(
+    project: Dict[str, Any], client: TestClient
 ):
-    source_project = project
-    destination_project, nodes_map = clone_project_data(source_project)
+    destination_project, nodes_map = clone_project_data(project)
 
     # CREATING
     url = (
@@ -346,7 +340,7 @@ async def test_create_and_delete_folders_from_project(
     resp = await client.post(
         url,
         json={
-            "source": source_project,
+            "source": project,
             "destination": destination_project,
             "nodes_map": nodes_map,
         },
@@ -375,6 +369,43 @@ async def test_create_and_delete_folders_from_project(
     resp = await client.delete(url)
 
     await assert_status(resp, expected_cls=web.HTTPNoContent)
+
+
+@pytest.mark.parametrize(
+    "project_name,project", [(prj["name"], prj) for prj in get_project_with_data()]
+)
+async def test_create_and_delete_folders_from_project(
+    client: TestClient,
+    dsm_mockup_db: Dict[str, FileMetaData],
+    project_name: str,
+    project: Dict[str, Any],
+    mock_get_project_access_rights,
+    mock_datcore_download,
+):
+    source_project = project
+    await _create_and_delete_folders_from_project(source_project, client)
+
+
+@pytest.mark.parametrize(
+    "project_name,project", [(prj["name"], prj) for prj in get_project_with_data()]
+)
+async def test_create_and_delete_folders_from_project_burst(
+    client,
+    dsm_mockup_db,
+    project_name,
+    project,
+    mock_get_project_access_rights,
+    mock_datcore_download,
+):
+    source_project = project
+    import asyncio
+
+    await asyncio.gather(
+        *[
+            _create_and_delete_folders_from_project(source_project, client)
+            for _ in range(100)
+        ]
+    )
 
 
 async def test_s3_datasets_metadata(client):

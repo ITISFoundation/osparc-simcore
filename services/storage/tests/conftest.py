@@ -268,7 +268,9 @@ def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]
 
 
 @pytest.fixture(scope="function")
-def dsm_mockup_db(postgres_service_url, s3_client, mock_files_factory):
+def dsm_mockup_db(
+    postgres_service_url, s3_client, mock_files_factory
+) -> Dict[str, FileMetaData]:
 
     # s3 client
     bucket_name = BUCKET_NAME

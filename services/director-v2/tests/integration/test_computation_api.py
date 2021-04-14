@@ -42,7 +42,6 @@ pytest_simcore_core_services_selection = [
     "sidecar",
     "storage",
     "postgres",
-    "pgbouncer",
 ]
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 

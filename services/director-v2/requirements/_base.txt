@@ -10,7 +10,7 @@ aiofiles==0.5.0
     # via fastapi
 aiohttp==3.7.3
     # via aiodocker
-aiopg[sa]==1.0.0
+aiopg[sa]==1.2.1
     # via -r requirements/_base.in
 amqp==5.0.2
     # via kombu
@@ -25,7 +25,9 @@ async-generator==1.10 ; python_version < "3.7"
     #   -r requirements/_base.in
     #   fastapi
 async-timeout==3.0.1
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   aiopg
 attrs==20.3.0
     # via aiohttp
 billiard==3.6.3.0
@@ -182,8 +184,10 @@ urllib3==1.25.11
     #   requests
 uvicorn==0.11.8
     # via fastapi
-uvloop==0.14.0
-    # via uvicorn
+uvloop==0.14.0 ; python_version < "3.7"
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   uvicorn
 vine==5.0.0
     # via
     #   amqp

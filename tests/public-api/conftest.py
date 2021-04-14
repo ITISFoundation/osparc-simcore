@@ -54,9 +54,6 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 
 @pytest.fixture(scope="module")
 def make_up_prod(
-    # prepare_all_services: Dict,
-    # simcore_docker_compose: Dict,
-    # ops_docker_compose: Dict,
     docker_stack: Dict,
     docker_registry,
 ) -> Dict:

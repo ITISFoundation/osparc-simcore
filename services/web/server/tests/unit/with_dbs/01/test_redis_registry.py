@@ -7,7 +7,6 @@ from typing import Dict, List
 from uuid import uuid4
 
 import pytest
-
 from simcore_service_webserver.resource_manager.config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_SOCKET_REGISTRY_KEY,
