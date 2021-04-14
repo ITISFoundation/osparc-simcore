@@ -183,7 +183,7 @@ async def list_projects(request: web.Request):
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    projects, project_types = await db.load_projects(
+    projects, project_types, total_number_projects = await db.load_projects(
         user_id=user_id,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
         filter_by_services=user_available_services,
@@ -192,7 +192,24 @@ async def list_projects(request: web.Request):
     )
 
     await set_all_project_states(projects, project_types)
-    return {"data": projects}
+    return {
+        "data": projects,
+        "count": len(projects),
+        "total": total_number_projects,
+        "_links": {
+            "self": {"href": str(request.url)},
+            "first": {
+                "href": str(
+                    request.url.with_path(request.path).with_query(
+                        {"type": request.query["type"]}
+                    )
+                )
+            },
+            "prev": {"href": None},
+            "next": {"href": None},
+            "last": {"href": None},
+        },
+    }
 
 
 @login_required

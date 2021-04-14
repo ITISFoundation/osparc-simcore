@@ -321,7 +321,7 @@ class ProjectDBAPI:
         only_published: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = None,
-    ) -> Tuple[List[Dict[str, Any]], List[ProjectType]]:
+    ) -> Tuple[List[Dict[str, Any]], List[ProjectType], int]:
         project_type_where_clause = (
             f"= '{filter_by_project_type.value}'"
             if filter_by_project_type
@@ -338,12 +338,24 @@ class ProjectDBAPI:
                 AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
                 OR prj_owner = {user_id})
                 ORDER BY last_change_date DESC
-                OFFSET {offset}
-                LIMIT {limit or 'NULL'}
                 """
             )
-            return await self.__load_projects(
-                conn, query, user_id, user_groups, filter_by_services=filter_by_services
+            total_number_of_projects = await conn.scalar(
+                f"SELECT count(*) FROM ({query}) AS _pagination_query"
+            )
+
+            prjs, prj_types = await self.__load_projects(
+                conn,
+                query + f"OFFSET {offset} LIMIT {limit or 'NULL'}",
+                user_id,
+                user_groups,
+                filter_by_services=filter_by_services,
+            )
+
+            return (
+                prjs,
+                prj_types,
+                total_number_of_projects,
             )
 
     async def __load_user_groups(
