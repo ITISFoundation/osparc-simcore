@@ -1,32 +1,21 @@
-# pylint:disable=redefined-outer-name,unused-argument
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
-import os
-import tempfile
-import hashlib
-import random
-from pathlib import Path
 import asyncio
-from typing import Set, List, Dict, Iterator, Tuple
-from concurrent.futures import ProcessPoolExecutor
-import string
+import hashlib
+import itertools
+import os
+import random
 import secrets
-
+import string
+import tempfile
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
+from typing import Dict, List, Set, Tuple
 
 import pytest
-
 from servicelib.archiving_utils import archive_dir, unarchive_dir
-
-
-@pytest.fixture
-def temp_dir_one() -> Path:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
-
-
-@pytest.fixture
-def temp_dir_two(tmpdir) -> Path:
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
 
 
 @pytest.fixture
@@ -61,7 +50,7 @@ def dir_with_random_content() -> Path:
                 max_file_count=max_file_count,
             )
 
-    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> Iterator[Path]:
+    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> List[Path]:
         return [path for path in path_to_scan.rglob("*") if path.is_dir()]
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -86,8 +75,8 @@ def dir_with_random_content() -> Path:
 
 
 def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
-    to_strip = f"{str(to_strip)}/"
-    return Path(str(input_path).replace(to_strip, ""))
+    # NOTE: could use os.path.relpath instead or Path.relative_to ?
+    return Path(str(input_path).replace(str(to_strip) + "/", ""))
 
 
 def get_all_files_in_dir(dir_path: Path) -> Set[Path]:
@@ -171,20 +160,47 @@ async def assert_same_directory_content(
         )
 
 
-# end utils
+def assert_unarchived_paths(
+    unarchived_paths: Set[Path], src_dir: Path, dst_dir: Path, is_saved_as_relpath: bool
+):
+    is_file_or_emptydir = lambda p: p.is_file() or (p.is_dir() and not any(p.glob("*")))
+
+    # all unarchivedare under dst_dir
+    assert all(dst_dir in f.parents for f in unarchived_paths)
+
+    # can be also checked with strings
+    assert all(str(f).startswith(str(dst_dir)) for f in unarchived_paths)
+
+    # trim basedir and compare relative paths (alias 'tails') against src_dir
+    basedir = str(dst_dir)
+    if not is_saved_as_relpath:
+        basedir += str(src_dir)
+
+    got_tails = set(os.path.relpath(f, basedir) for f in unarchived_paths)
+    expected_tails = set(
+        os.path.relpath(f, src_dir)
+        for f in src_dir.rglob("*")
+        if is_file_or_emptydir(f)
+    )
+    assert got_tails == expected_tails
 
 
 @pytest.mark.parametrize(
     "compress,store_relative_path",
-    [[True, True], [True, False], [False, True], [False, False]],
+    itertools.product([True, False], repeat=2),
 )
 async def test_archive_unarchive_same_structure_dir(
     dir_with_random_content: Path,
-    temp_dir_one: Path,
-    temp_dir_two: Path,
+    tmp_path: Path,
     compress: bool,
     store_relative_path: bool,
 ):
+    temp_dir_one = tmp_path / "one"
+    temp_dir_two = tmp_path / "two"
+
+    temp_dir_one.mkdir()
+    temp_dir_two.mkdir()
+
     archive_file = temp_dir_one / "archive.zip"
 
     archive_result = await archive_dir(
@@ -195,8 +211,15 @@ async def test_archive_unarchive_same_structure_dir(
     )
     assert archive_result is True
 
-    await unarchive_dir(
+    unarchived_paths: Set[Path] = await unarchive_dir(
         archive_to_extract=archive_file, destination_folder=temp_dir_two
+    )
+
+    assert_unarchived_paths(
+        unarchived_paths,
+        src_dir=dir_with_random_content,
+        dst_dir=temp_dir_two,
+        is_saved_as_relpath=store_relative_path,
     )
 
     await assert_same_directory_content(
@@ -208,15 +231,15 @@ async def test_archive_unarchive_same_structure_dir(
 
 @pytest.mark.parametrize(
     "compress,store_relative_path",
-    [[True, True], [True, False], [False, True], [False, False]],
+    itertools.product([True, False], repeat=2),
 )
 async def test_unarchive_in_same_dir_as_archive(
     dir_with_random_content: Path,
-    temp_dir_one: Path,
+    tmp_path: Path,
     compress: bool,
     store_relative_path: bool,
 ):
-    archive_file = temp_dir_one / "archive.zip"
+    archive_file = tmp_path / "archive.zip"
 
     archive_result = await archive_dir(
         dir_to_compress=dir_with_random_content,
@@ -226,12 +249,21 @@ async def test_unarchive_in_same_dir_as_archive(
     )
     assert archive_result is True
 
-    await unarchive_dir(
-        archive_to_extract=archive_file, destination_folder=temp_dir_one
+    unarchived_paths = await unarchive_dir(
+        archive_to_extract=archive_file, destination_folder=tmp_path
     )
-    archive_file.unlink()
+
+    archive_file.unlink()  # delete before comparing contents
+
+    assert_unarchived_paths(
+        unarchived_paths,
+        src_dir=dir_with_random_content,
+        dst_dir=tmp_path,
+        is_saved_as_relpath=store_relative_path,
+    )
+
     await assert_same_directory_content(
         dir_with_random_content,
-        temp_dir_one,
+        tmp_path,
         None if store_relative_path else dir_with_random_content,
     )

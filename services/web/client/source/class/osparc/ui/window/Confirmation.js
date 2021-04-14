@@ -21,9 +21,12 @@ qx.Class.define("osparc.ui.window.Confirmation", {
 
     this.addCancelButton();
 
-    this.__confirmButton = this.getChildControl("confirm-button").set({
+    const confirmButton = this.__confirmButton = this.getChildControl("confirm-button").set({
       label: confirmBtnText
     });
+
+    const command = new qx.ui.command.Command("Enter");
+    confirmButton.setCommand(command);
   },
 
   properties: {

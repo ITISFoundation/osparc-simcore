@@ -18,7 +18,7 @@ aiohttp==3.7.4.post0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiozipkin
-aiopg[sa]==1.1.0
+aiopg[sa]==1.2.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -48,7 +48,9 @@ async-generator==1.10
     #   -r requirements/_base.in
     #   fastapi
 async-timeout==3.0.1
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   aiopg
 attrs==20.3.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -222,7 +224,7 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic[dotenv,email]==1.7.3
+pydantic[dotenv,email]==1.8.1
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -324,6 +326,7 @@ typing-extensions==3.7.4.3
     # via
     #   aiohttp
     #   importlib-metadata
+    #   pydantic
     #   uvicorn
     #   yarl
 ujson==3.2.0

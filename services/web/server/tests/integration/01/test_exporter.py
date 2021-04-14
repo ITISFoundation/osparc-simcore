@@ -11,18 +11,23 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Set, Tuple, Coroutine
+from typing import Any, Callable, Coroutine, Dict, List, Set, Tuple
 
 import aiofiles
 import aiohttp
 import aiopg
 import aioredis
 import pytest
-import psycopg2
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.application import create_safe_application
+from simcore_postgres_database.models.services import (
+    services_access_rights,
+    services_meta_data,
+)
+from simcore_service_webserver.catalog import setup_catalog
+from simcore_service_webserver.constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.director import setup_director
@@ -31,9 +36,13 @@ from simcore_service_webserver.exporter import setup_exporter
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
 from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
+from simcore_service_webserver.scicrunch.submodule_setup import (
+    setup_scicrunch_submodule,
+)
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
@@ -41,16 +50,7 @@ from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.storage import setup_storage
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from simcore_service_webserver.users import setup_users
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.catalog import setup_catalog
-from simcore_service_webserver.constants import X_PRODUCT_NAME_HEADER
-from simcore_postgres_database.models.services import (
-    services_meta_data,
-    services_access_rights,
-)
-from simcore_service_webserver.scicrunch.submodule_setup import (
-    setup_scicrunch_submodule,
-)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -66,8 +66,8 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = ["minio"]
 
-
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
@@ -79,6 +79,7 @@ REMAPPING_KEY = "__reverse__remapping__dict__key__"
 KEYS_TO_IGNORE_FROM_COMPARISON = {
     "id",
     "uuid",
+    "name",
     "creation_date",
     "last_change_date",
     "runHash",  # this changes after import, but the runnable states should remain the same
@@ -190,12 +191,14 @@ async def login_user(client):
 
 
 def get_exported_projects() -> List[Path]:
-    exporter_dir = CURRENT_DIR / ".." / "data" / "exporter"
+    # These files are generated from the front-end
+    # when the formatter be finished
+    exporter_dir = CURRENT_DIR.parent / "data" / "exporter"
     return [x for x in exporter_dir.glob("*.osparc")]
 
 
 @pytest.fixture
-async def monkey_patch_asyncio_subporcess(mocker):
+async def monkey_patch_asyncio_subprocess(mocker):
     # TODO: The below bug is not allowing me to fully test,
     # mocking and waiting for an update
     # https://bugs.python.org/issue35621
@@ -236,7 +239,7 @@ async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
                 version=service_version,
                 owner=1,  # a user is required in the database for ownership of metadata
                 name="",
-                description="",
+                description=f"OVERRIDEN BY TEST in {__file__}",
             )
 
             access_rights_values = dict(
@@ -248,17 +251,31 @@ async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
             )
 
             async with db_engine.acquire() as conn:
-                try:
-                    # pylint: disable=no-value-for-parameter
-                    await conn.execute(
-                        services_meta_data.insert().values(**metada_data_values)
+                # pylint: disable=no-value-for-parameter
+                await conn.execute(
+                    pg_insert(services_meta_data)
+                    .values(**metada_data_values)
+                    .on_conflict_do_update(
+                        index_elements=[
+                            services_meta_data.c.key,
+                            services_meta_data.c.version,
+                        ],
+                        set_=metada_data_values,
                     )
-                    await conn.execute(
-                        services_access_rights.insert().values(**access_rights_values)
+                )
+                await conn.execute(
+                    pg_insert(services_access_rights)
+                    .values(**access_rights_values)
+                    .on_conflict_do_update(
+                        index_elements=[
+                            services_access_rights.c.key,
+                            services_access_rights.c.version,
+                            services_access_rights.c.gid,
+                            services_access_rights.c.product_name,
+                        ],
+                        set_=access_rights_values,
                     )
-                except psycopg2.errors.UniqueViolation:  # pylint: disable=no-member
-                    # do not care if already exists
-                    pass
+                )
 
     yield grant_rights_to_services
 
@@ -496,7 +513,9 @@ async def import_study_from_file(client, file_path: Path) -> str:
     return imported_project_uuid
 
 
-@pytest.mark.parametrize("export_version", get_exported_projects())
+@pytest.mark.parametrize(
+    "export_version", get_exported_projects(), ids=(lambda p: p.name)
+)
 async def test_import_export_import_duplicate(
     loop,
     client,
@@ -505,7 +524,7 @@ async def test_import_export_import_duplicate(
     db_engine,
     redis_client,
     export_version,
-    monkey_patch_asyncio_subporcess,
+    monkey_patch_asyncio_subprocess,
     simcore_services,
     monkey_patch_aiohttp_request_url,
     grant_access_rights,

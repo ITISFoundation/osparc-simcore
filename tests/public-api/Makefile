@@ -41,8 +41,8 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	$(CURDIR)
 
 
-.PHONY: test-dev
-test-ci:
+.PHONY: test-ci
+test-ci: ## runs ci tests (i.e. w/o debug tools and with code coverage)
 	@pytest \
 	-vv \
 	--color=yes \

@@ -108,12 +108,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_api_server_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_api_server_coverage
-          path: codeclimate.unit_api_server_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-catalog:
     name: "[unit] catalog"
@@ -152,7 +152,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: unit_tests_catalog_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/catalog/test_failures
       - uses: codecov/codecov-action@v1
         with:
@@ -161,12 +161,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_catalog_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_catalog_coverage
-          path: codeclimate.unit_catalog_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director:
     name: "[unit] director"
@@ -208,12 +208,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_director_coverage
-          path: codeclimate.unit_director_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-director-v2:
     name: "[unit] director-v2"
@@ -250,7 +250,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: unit_tests_director_v2_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - uses: codecov/codecov-action@v1
         with:
@@ -259,12 +259,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_director_v2_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_director_v2_coverage
-          path: codeclimate.unit_director_v2_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-sidecar:
     name: "[unit] sidecar"
@@ -306,12 +306,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_sidecar_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_sidecar_coverage
-          path: codeclimate.unit_sidecar_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-frontend:
     name: "[unit] frontend"
@@ -416,12 +416,12 @@ jobs:
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter
           ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_postgresdb_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_postgresdb_coverage
-          path: codeclimate.unit_postgresdb_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-integration:
     name: "[unit] service-integration"
@@ -463,12 +463,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_service_integration_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_service_integration_coverage
-          path: codeclimate.unit_service_integration_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-service-library:
     name: "[unit] service-library"
@@ -510,12 +510,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_servicelib_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_servicelib_coverage
-          path: codeclimate.unit_servicelib_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-models-library:
     name: "[unit] models-library"
@@ -557,12 +557,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_modelslib_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_modelslib_coverage
-          path: codeclimate.unit_modelslib_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-simcore-sdk:
     name: "[unit] simcore-sdk"
@@ -604,12 +604,12 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_simcoresdk_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_simcoresdk_coverage
-          path: codeclimate.unit_simcoresdk_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-storage:
     name: "[unit] storage"
@@ -651,14 +651,13 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_storage_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_storage_coverage
-          path: codeclimate.unit_storage_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
-  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
   unit-test-webserver-isolated:
     name: "[unit] webserver isolated"
     runs-on: ${{ matrix.os }}
@@ -699,16 +698,16 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_isolated_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_webserver_isolated_coverage
-          path: codeclimate.unit_webserver_isolated_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
-  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
-  unit-test-webserver-slow:
-    name: "[unit] webserver slow"
+  unit-test-webserver-01:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -739,7 +738,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db_slow
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 01
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
@@ -747,16 +746,16 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_slow_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_webserver_slow_coverage
-          path: codeclimate.unit_webserver_slow_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
-  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
-  unit-test-webserver-medium:
-    name: "[unit] webserver medium"
+  unit-test-webserver-02:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -787,7 +786,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db_medium
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 02
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
@@ -795,16 +794,16 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_medium_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_webserver_medium_coverage
-          path: codeclimate.unit_webserver_medium_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
-  # webserver tested are split according to time https://github.com/ITISFoundation/osparc-simcore/pull/1711
-  unit-test-webserver-fast:
-    name: "[unit] webserver fast"
+  unit-test-webserver-03:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -835,7 +834,7 @@ jobs:
       - name: install webserver
         run: ./ci/github/unit-testing/webserver.bash install
       - name: test
-        run: ./ci/github/unit-testing/webserver.bash test_with_db_fast
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 03
       - uses: codecov/codecov-action@v1
         with:
           flags: unittests #optional
@@ -843,12 +842,348 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.unit_webserver_fast_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: unit_webserver_fast_coverage
-          path: codeclimate.unit_webserver_fast_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-04:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 04"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 04
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-05:
+    timeout-minutes: 15 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 05"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 05
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-06:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 06"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 06
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-07:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 07"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 07
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-08:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 08"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 08
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-09:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 09"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 09
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  unit-test-webserver-10:
+    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    name: "[unit] webserver 10"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install webserver
+        run: ./ci/github/unit-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/unit-testing/webserver.bash test_with_db 10
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   build-test-images:
     # make PR faster by executing this one straight as PR cannot push to the registry anyway
@@ -878,8 +1213,9 @@ jobs:
         if: github.event_name == 'push'
         run: ./ci/deploy/dockerhub-test-images.bash
 
-  integration-test-webserver:
-    name: "[int] webserver"
+  integration-test-webserver-01:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    name: "[int] webserver 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -917,12 +1253,12 @@ jobs:
       - name: install
         run: ./ci/github/integration-testing/webserver.bash install
       - name: test
-        run: ./ci/github/integration-testing/webserver.bash test
+        run: ./ci/github/integration-testing/webserver.bash test 01
       - name: upload failed tests logs
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_webserver_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/web/server/test_failures
       - name: cleanup
         if: always()
@@ -934,14 +1270,79 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_webserver_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_webserver_coverage
-          path: codeclimate.integration_webserver_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
+  integration-test-webserver-02:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    name: "[int] webserver 02"
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-webserver-${{ hashFiles('services/web/server/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-webserver-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/integration-testing/webserver.bash install
+      - name: test
+        run: ./ci/github/integration-testing/webserver.bash test 02
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./services/web/server/test_failures
+      - name: cleanup
+        if: always()
+        run: ./ci/github/integration-testing/webserver.bash clean_up
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: integrationtests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] director-v2"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -985,7 +1386,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_director-v2_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/director-v2/test_failures
       - name: cleanup
         if: always()
@@ -997,14 +1398,15 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_director-v2_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_director-v2_coverage
-          path: codeclimate.integration_director-v2_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-sidecar:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] sidecar"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1048,7 +1450,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_sidecar_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./services/sidecar/test_failures
       - name: cleanup
         if: always()
@@ -1060,14 +1462,15 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_sidecar_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_sidecar_coverage
-          path: codeclimate.integration_sidecar_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-simcore-sdk:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[int] simcore-sdk"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1111,7 +1514,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v2
         with:
-          name: integration_tests_simcore_sdk_docker_logs
+          name: ${{ github.job }}_docker_logs
           path: ./packages/simcore-sdk/test_failures
       - name: cleanup
         if: always()
@@ -1123,14 +1526,15 @@ jobs:
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
           chmod +x ./cc-test-reporter && ./cc-test-reporter --version
-          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.integration_simcoresdk_coverage.json coverage.xml
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
       - name: upload codeclimate coverage
         uses: actions/upload-artifact@v2
         with:
-          name: integration_simcoresdk_coverage
-          path: codeclimate.integration_simcoresdk_coverage.json
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1175,6 +1579,7 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash clean_up
 
   system-test-swarm-deploy:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[sys] deploy simcore"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1219,6 +1624,7 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
   system-test-e2e:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[sys] e2e"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -1277,25 +1683,26 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: e2e_docker_container_logs
+          name: ${{ github.job }}_docker_logs
           path: simcore_logs
       - name: upload screenshots
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: e2e_screenshots
+          name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
         if: always()
         uses: actions/upload-artifact@v2
         with:
-          name: e2e_logs
+          name: ${{ github.job }}_logs
           path: tests/e2e/logs
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-environment-setup:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
     name: "[sys] environment setup"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1347,10 +1754,18 @@ jobs:
         unit-test-simcore-sdk,
         unit-test-storage,
         unit-test-webserver-isolated,
-        unit-test-webserver-slow,
-        unit-test-webserver-medium,
-        unit-test-webserver-fast,
-        integration-test-webserver,
+        unit-test-webserver-01,
+        unit-test-webserver-02,
+        unit-test-webserver-03,
+        unit-test-webserver-04,
+        unit-test-webserver-05,
+        unit-test-webserver-06,
+        unit-test-webserver-07,
+        unit-test-webserver-08,
+        unit-test-webserver-09,
+        unit-test-webserver-10,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
         integration-test-director-v2,
         integration-test-sidecar,
         integration-test-simcore-sdk,
@@ -1359,84 +1774,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v2
+        name: download all artifacts
         with:
-          name: unit_api_server_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_catalog_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_director_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_director_v2_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_sidecar_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_service_integration_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_servicelib_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_modelslib_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_simcoresdk_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_storage_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_webserver_isolated_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_webserver_slow_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_webserver_medium_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: unit_webserver_fast_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: integration_webserver_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: integration_director-v2_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: integration_sidecar_coverage
-      - uses: actions/download-artifact@v1
-        with:
-          name: integration_simcoresdk_coverage
+          path: artifacts
       - name: put all artefacts together
         run: |
-          mkdir all_coverages
-          cp \
-            unit_api_server_coverage/*.json \
-            unit_catalog_coverage/*.json \
-            unit_director_coverage/*.json \
-            unit_director_v2_coverage/*.json \
-            unit_sidecar_coverage/*.json \
-            unit_service_integration_coverage/*.json \
-            unit_servicelib_coverage/*.json \
-            unit_modelslib_coverage/*.json \
-            unit_simcoresdk_coverage/*.json \
-            unit_storage_coverage/*.json \
-            unit_webserver_isolated_coverage/*.json \
-            unit_webserver_slow_coverage/*.json \
-            unit_webserver_medium_coverage/*.json \
-            unit_webserver_fast_coverage/*.json \
-            integration_webserver_coverage/*.json \
-            integration_director-v2_coverage/*.json \
-            integration_sidecar_coverage/*.json \
-            integration_simcoresdk_coverage/*.json \
-            all_coverages/
-          ls -al all_coverages
+          mkdir --parents all_coverages
+          cp artifacts/codeclimate*/*.json all_coverages
+          ls --all -l all_coverages/*.json
       - name: install codeclimate test reporter
         run: |
           curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
@@ -1464,10 +1810,18 @@ jobs:
         unit-test-simcore-sdk,
         unit-test-storage,
         unit-test-webserver-isolated,
-        unit-test-webserver-slow,
-        unit-test-webserver-medium,
-        unit-test-webserver-fast,
-        integration-test-webserver,
+        unit-test-webserver-01,
+        unit-test-webserver-02,
+        unit-test-webserver-03,
+        unit-test-webserver-04,
+        unit-test-webserver-05,
+        unit-test-webserver-06,
+        unit-test-webserver-07,
+        unit-test-webserver-08,
+        unit-test-webserver-09,
+        unit-test-webserver-10,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
         integration-test-director-v2,
         integration-test-sidecar,
         integration-test-simcore-sdk,

@@ -200,8 +200,7 @@ class DataStorageManager:
         data = deque()
         if location == SIMCORE_S3_STR:
             accesible_projects_ids = []
-            async with self.engine.acquire() as conn:
-
+            async with self.engine.acquire() as conn, conn.begin():
                 accesible_projects_ids = await get_readable_project_ids(
                     conn, int(user_id)
                 )
@@ -222,7 +221,7 @@ class DataStorageManager:
                 uuid_name_dict = {}
                 # now parse the project to search for node/project names
                 try:
-                    async with self.engine.acquire() as conn:
+                    async with self.engine.acquire() as conn, conn.begin():
                         query = sa.select([projects]).where(
                             projects.c.uuid.in_(accesible_projects_ids)
                         )
@@ -327,7 +326,7 @@ class DataStorageManager:
         if location == SIMCORE_S3_STR:
             if self.has_project_db:
                 try:
-                    async with self.engine.acquire() as conn:
+                    async with self.engine.acquire() as conn, conn.begin():
                         readable_projects_ids = await get_readable_project_ids(
                             conn, int(user_id)
                         )
@@ -359,7 +358,7 @@ class DataStorageManager:
 
         if location == SIMCORE_S3_STR:
 
-            async with self.engine.acquire() as conn:
+            async with self.engine.acquire() as conn, conn.begin():
                 can: Optional[AccessRights] = await get_file_access_rights(
                     conn, int(user_id), file_uuid
                 )
@@ -690,27 +689,32 @@ class DataStorageManager:
         dest_folder = destination_project["uuid"]
 
         # access layer
-        async with self.engine.acquire() as conn:
-            can = await get_project_access_rights(
+        async with self.engine.acquire() as conn, conn.begin():
+            source_access_rights = await get_project_access_rights(
                 conn, int(user_id), project_id=source_folder
             )
-            if not can.read:
-                logger.debug(
-                    "User %s was not allowed to copy project %s", user_id, source_folder
-                )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to copy project '{source_folder}'"
-                )
-            can = await get_project_access_rights(
+            dest_access_rights = await get_project_access_rights(
                 conn, int(user_id), project_id=dest_folder
             )
-            if not can.write:
-                logger.debug(
-                    "User %s was not allowed to copy project %s", user_id, dest_folder
-                )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to copy project '{dest_folder}'"
-                )
+        if not source_access_rights.read:
+            logger.debug(
+                "User %s was not allowed to read from project %s",
+                user_id,
+                source_folder,
+            )
+            raise web.HTTPForbidden(
+                reason=f"User does not have enough access rights to read from project '{source_folder}'"
+            )
+
+        if not dest_access_rights.write:
+            logger.debug(
+                "User %s was not allowed to write to project %s",
+                user_id,
+                dest_folder,
+            )
+            raise web.HTTPForbidden(
+                reason=f"User does not have enough access rights to write to project '{dest_folder}'"
+            )
 
         # build up naming map based on labels
         uuid_name_dict = {}
@@ -811,8 +815,7 @@ class DataStorageManager:
                     fmds.append(fmd)
 
         # step 4 sync db
-        async with self.engine.acquire() as conn:
-
+        async with self.engine.acquire() as conn, conn.begin():
             # TODO: upsert in one statment of ALL
             for fmd in fmds:
                 query = sa.select([file_meta_data]).where(
@@ -846,13 +849,15 @@ class DataStorageManager:
             # FIXME: operation MUST be atomic, transaction??
 
             to_delete = []
-            async with self.engine.acquire() as conn:
+            async with self.engine.acquire() as conn, conn.begin():
                 can: Optional[AccessRights] = await get_file_access_rights(
                     conn, int(user_id), file_uuid
                 )
                 if not can.delete:
                     logger.debug(
-                        "User %s was not allowed to delete file %s", user_id, file_uuid
+                        "User %s was not allowed to delete file %s",
+                        user_id,
+                        file_uuid,
                     )
                     raise web.HTTPForbidden(
                         reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
@@ -892,14 +897,16 @@ class DataStorageManager:
 
         # FIXME: operation MUST be atomic. Mark for deletion and remove from db when deletion fully confirmed
 
-        async with self.engine.acquire() as conn:
+        async with self.engine.acquire() as conn, conn.begin():
             # access layer
             can: Optional[AccessRights] = await get_project_access_rights(
                 conn, int(user_id), project_id
             )
             if not can.delete:
                 logger.debug(
-                    "User %s was not allowed to delete project %s", user_id, project_id
+                    "User %s was not allowed to delete project %s",
+                    user_id,
+                    project_id,
                 )
                 raise web.HTTPForbidden(
                     reason=f"User does not have delete access for {project_id}"
@@ -944,7 +951,7 @@ class DataStorageManager:
         # Storage should know NOTHING about those concepts
         files_meta = deque()
 
-        async with self.engine.acquire() as conn:
+        async with self.engine.acquire() as conn, conn.begin():
             # access layer
             can_read_projects_ids = await get_readable_project_ids(conn, int(user_id))
             has_read_access = (

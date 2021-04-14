@@ -60,11 +60,34 @@ async def _request_director_v2(
             payload: Dict = await resp.json()
             return payload
 
-    except (ClientError, TimeoutError) as err:
+    except TimeoutError as err:
         raise _DirectorServiceError(
             web.HTTPServiceUnavailable.status_code,
-            reason="director-v2 service is unavailable",
+            reason=f"request to director-v2 timed-out: {err}",
         ) from err
+    except ClientError as err:
+        raise _DirectorServiceError(
+            web.HTTPServiceUnavailable.status_code,
+            reason=f"request to director-v2 service unexpected error {err}",
+        ) from err
+
+
+async def is_healthy(app: web.Application) -> bool:
+    try:
+        session = get_client_session(app)
+        settings: Directorv2Settings = get_settings(app)
+        health_check_url = URL(settings.endpoint).parent
+        await session.get(
+            url=health_check_url,
+            ssl=False,
+            raise_for_status=True,
+            timeout=ClientTimeout(total=2, connect=1),
+        )
+        return True
+    except (ClientError, TimeoutError) as err:
+        # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
+        log.warning("Director is NOT healthy: %s", err)
+        return False
 
 
 @log_decorator(logger=log)
@@ -216,7 +239,7 @@ async def request_retrieve_dyn_service(
     try:
         # request to director-v2
         client_timeout = ClientTimeout(
-            total=SERVICE_RETRIEVE_HTTP_TIMEOUT, connect=5, sock_connect=5
+            total=SERVICE_RETRIEVE_HTTP_TIMEOUT, connect=None, sock_connect=5
         )
         await _request_director_v2(
             app, "POST", backend_url, data=body, timeout=client_timeout

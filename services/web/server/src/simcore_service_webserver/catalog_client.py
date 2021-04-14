@@ -5,7 +5,7 @@ import logging
 import urllib.parse
 from typing import Any, Dict, List, Optional
 
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession, ClientTimeout, web
 from aiohttp.client_exceptions import (
     ClientConnectionError,
     ClientResponseError,
@@ -32,7 +32,12 @@ async def is_service_responsive(app: web.Application):
             )
 
         client: ClientSession = get_client_session(app)
-        await client.get(origin, ssl=False, raise_for_status=True)
+        await client.get(
+            origin,
+            ssl=False,
+            raise_for_status=True,
+            timeout=ClientTimeout(total=2, connect=1),
+        )
 
     except (ClientConnectionError, ClientResponseError, InvalidURL, ValueError) as err:
         logger.warning("Catalog service unresponsive: %s", err)

@@ -117,6 +117,7 @@ async function toDashboard(page) {
   console.log("To Dashboard");
 
   await utils.waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
+  await utils.waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {

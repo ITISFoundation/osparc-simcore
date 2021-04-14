@@ -12,7 +12,6 @@ from typing import Dict, List
 import jsonschema
 import pytest
 import yaml
-
 from utils import current_repo_dir
 
 SYNCED_VERSIONS_SUFFIX = [
@@ -24,7 +23,7 @@ SYNCED_VERSIONS_SUFFIX = [
 # TODO: find json files under services with the word project or similar wildcard??
 PROJECTS_PATHS = [
     "services/web/server/tests/data/fake-project.json",
-    "services/web/server/tests/integration/computation/workbench_sleeper_payload.json",
+    "services/web/server/tests/integration/02/workbench_sleeper_payload.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.isan.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.osparc.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.json",
@@ -35,8 +34,8 @@ PROJECTS_PATHS = [
 # ./src/simcore_service_webserver/data/fake-modeler-LF-getItemList.json
 # ./src/simcore_service_webserver/data/fake-materialDB-LF-getItem.json
 # ./src/simcore_service_webserver/data/fake-materialDB-LF-Material2Entities.json
-# ./tests/integration/computation/workbench_sleeper_dag_adjacency_list.json
-# ./tests/integration/computation/workbench_sleeper_payload.json
+# ./tests/integration/02/workbench_sleeper_dag_adjacency_list.json
+# ./tests/integration/02/workbench_sleeper_payload.json
 
 
 def _load_data(fpath: Path):
@@ -68,7 +67,7 @@ def project_schema(request, api_specs_dir):
 @pytest.mark.parametrize("data_path", PROJECTS_PATHS)
 def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
     """
-        Both projects and workbench datasets are tested against the project schema
+    Both projects and workbench datasets are tested against the project schema
     """
     data = _load_data(this_repo_root_dir / data_path)
 

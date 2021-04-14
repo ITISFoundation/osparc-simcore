@@ -99,7 +99,6 @@ services:
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-      - POSTGRES_MAXSIZE=30
     env_file:
       - ../.env
     volumes:
@@ -155,6 +154,7 @@ services:
     networks:
       - default
       - interactive_services_subnet
+      - postgres_network # for access to listen/notify channel
 
   sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -277,6 +277,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+    shm_size: ‘256mb’
     healthcheck:
       test:
         [
@@ -308,6 +309,10 @@ services:
         "tcp_keepalives_interval=600",
         "-c",
         "tcp_keepalives_count=5",
+        "-c",
+        "max_connections=413",
+        "-c",
+        "shared_buffers=256MB"
       ]
 
   redis:
@@ -389,6 +394,8 @@ volumes:
 
 networks:
   default:
+    attachable: true
+  postgres_network:
     attachable: true
   interactive_services_subnet:
     driver: overlay
