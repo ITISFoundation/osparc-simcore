@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 
 from ..settings import DynamicSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
-from ..storage import SharedStore
+from ..shared_store import SharedStore
 from ..utils import InvalidComposeSpec
 
 logger = logging.getLogger(__name__)

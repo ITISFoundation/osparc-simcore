@@ -3,7 +3,7 @@ from typing import Any, Dict, Union
 import aiodocker
 from fastapi import APIRouter, Query, Request, Response
 
-from ..storage import SharedStore
+from ..shared_store import SharedStore
 
 container_router = APIRouter()
 

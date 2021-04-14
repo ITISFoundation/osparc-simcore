@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 from fastapi import FastAPI
 
 from .settings import DynamicSidecarSettings
-from .storage import SharedStore
+from .shared_store import SharedStore
 from .utils import async_command, write_to_tmp_file
 
 logger = logging.getLogger(__name__)

@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.application import assemble_application
 from simcore_service_dynamic_sidecar.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.shared_handlers import write_file_and_run_command
-from simcore_service_dynamic_sidecar.storage import SharedStore
+from simcore_service_dynamic_sidecar.shared_store import SharedStore
 
 
 @pytest.fixture(scope="module", autouse=True)

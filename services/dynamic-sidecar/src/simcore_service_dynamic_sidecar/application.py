@@ -8,7 +8,7 @@ from .models import ApplicationHealth
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
-from .storage import SharedStore
+from .shared_store import SharedStore
 
 logger = logging.getLogger(__name__)
 
