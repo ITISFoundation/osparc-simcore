@@ -7,8 +7,21 @@ IFS=$'\n\t'
 
 install() {
     bash ci/helpers/ensure_python_pip.bash;
-    pushd services/dynamic-sidecar; pip3 install -r requirements/ci.txt; popd;
+    pushd services/dynamic-sidecar; pip3 install -r requirements/ci.txt -r requirements/_tools.txt; popd;
     pip list -v
+}
+
+codestyle(){
+    pushd services/dynamic-sidecar
+    echo "isort"
+    isort --check setup.py src/simcore_service_dynamic_sidecar tests
+    echo "black"
+    black --check src/simcore_service_dynamic_sidecar tests/
+    echo "pylint"
+    pylint --rcfile=../../.pylintrc src/simcore_service_dynamic_sidecar tests/
+    echo "mypy"
+    mypy src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
+    popd
 }
 
 test() {
