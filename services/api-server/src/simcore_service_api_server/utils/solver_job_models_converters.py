@@ -2,7 +2,6 @@
     Helper functions to convert models used in
     services/api-server/src/simcore_service_api_server/api/routes/solvers_jobs.py
 """
-import sys
 import urllib.parse
 import uuid
 from datetime import datetime

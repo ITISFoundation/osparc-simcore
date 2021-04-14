@@ -307,12 +307,14 @@ async def get_job_outputs(
             if isinstance(value, BaseFileLink):
                 # TODO: value.path exists??
                 file_id: UUID = File.create_id(*value.path.split("/"))
+
+                # TODO: acquire_soft_link will halve calls
                 found = await storage_client.search_files(user_id, file_id)
                 if found:
                     assert len(found) == 1
                     results[name] = to_file_api_model(found[0])
                 else:
-                    api_file: File = await storage_client.create_hard_link(
+                    api_file: File = await storage_client.create_soft_link(
                         user_id, value.path, file_id
                     )
                     results[name] = api_file

@@ -110,7 +110,7 @@ class StorageApi(BaseServiceClientApi):
         presigned_link = PresignedLink.parse_obj(resp.json()["data"])
         return presigned_link.link
 
-    async def create_hard_link(
+    async def create_soft_link(
         self, user_id: int, target_s3_path: str, as_file_id: UUID
     ) -> File:
         assert len(target_s3_path.split("/")) == 3  # nosec
@@ -118,13 +118,16 @@ class StorageApi(BaseServiceClientApi):
         # define api-prefixed object-path for link
         file_id = as_file_id
         file_name = target_s3_path.split("/")[-1]
-        object_path = urllib.parse.quote_plus(f"api/{file_id}/{file_name}")
+        link_path = f"api/{file_id}/{file_name}"
+
+        file_id = urllib.parse.quote_plus(target_s3_path)
 
         # ln makes links between files
         # ln TARGET LINK_NAME
         resp = await self.client.post(
-            f"/locations/{self.SIMCORE_S3_ID}/files/{object_path}",
-            params={"user_id": str(user_id), "hard_link_to": target_s3_path},
+            f"/files/{file_id}:copy",
+            params={"user_id": user_id},
+            json={"link_uuid": link_path},
         )
 
         stored_file_meta = StorageFileMetaData.parse_obj(resp.json()["data"])
