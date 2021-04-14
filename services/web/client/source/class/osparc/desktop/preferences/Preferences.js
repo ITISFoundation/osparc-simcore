@@ -61,6 +61,13 @@ qx.Class.define("osparc.desktop.preferences.Preferences", {
       init: true,
       check: "Boolean",
       event: "changeConfirmDeleteNode"
+    },
+
+    confirmWindowSize: {
+      nullable: false,
+      init: true,
+      check: "Boolean",
+      event: "changeConfirmWindowSize"
     }
   }
 });

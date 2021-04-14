@@ -112,6 +112,11 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       cbConfirmDeleteNode.bind("value", preferencesSettings, "confirmDeleteNode");
       box.add(cbConfirmDeleteNode);
 
+      const cbConfirmWindowSize = new qx.ui.form.CheckBox(this.tr("Window size check"));
+      preferencesSettings.bind("confirmWindowSize", cbConfirmWindowSize, "value");
+      cbConfirmWindowSize.bind("value", preferencesSettings, "confirmWindowSize");
+      box.add(cbConfirmWindowSize);
+
       return box;
     }
   }
