@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from .settings import ServiceSidecarSettings
+from .settings import DynamicSidecarSettings
 from .utils import assemble_container_names, validate_compose_spec
 
 
@@ -16,9 +16,9 @@ class SharedStore:
         self._storage[self._K_COMPOSE_SPEC] = None
         self._storage[self._K_CONTAINER_NAMES] = []
 
-    def __init__(self, settings: ServiceSidecarSettings):
+    def __init__(self, settings: DynamicSidecarSettings):
         self._storage: Dict[str, Any] = {}
-        self._settings: ServiceSidecarSettings = settings
+        self._settings: DynamicSidecarSettings = settings
         self._is_pulling_containsers: bool = False
         self.__set_as_compose_spec_none()
 

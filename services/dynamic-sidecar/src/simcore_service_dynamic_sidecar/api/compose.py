@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import PlainTextResponse
 
-from ..settings import ServiceSidecarSettings
+from ..settings import DynamicSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..storage import SharedStore
 from ..utils import InvalidComposeSpec
@@ -42,7 +42,7 @@ async def create_docker_compose_configuration_containers_without_starting(
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     body_as_text = (await request.body()).decode("utf-8")
 
-    settings: ServiceSidecarSettings = request.app.state.settings
+    settings: DynamicSidecarSettings = request.app.state.settings
     shared_store: SharedStore = request.app.state.shared_store
 
     try:
@@ -73,7 +73,7 @@ async def start_or_update_docker_compose_configuration(
     request: Request, response: Response, command_timeout: float
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    settings: ServiceSidecarSettings = request.app.state.settings
+    settings: DynamicSidecarSettings = request.app.state.settings
     shared_store: SharedStore = request.app.state.shared_store
 
     # --no-build might be a security risk building is disabled
@@ -98,7 +98,7 @@ async def pull_docker_required_docker_images(
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     shared_store: SharedStore = request.app.state.shared_store
-    settings: ServiceSidecarSettings = request.app.state.settings
+    settings: DynamicSidecarSettings = request.app.state.settings
 
     stored_compose_content = shared_store.get_spec()
     if stored_compose_content is None:
@@ -135,7 +135,7 @@ async def stop_containers_without_removing_them(
     """Stops the previously started service
     and returns the docker-compose output"""
     shared_store: SharedStore = request.app.state.shared_store
-    settings: ServiceSidecarSettings = request.app.state.settings
+    settings: DynamicSidecarSettings = request.app.state.settings
 
     stored_compose_content = shared_store.get_spec()
     if stored_compose_content is None:

@@ -12,7 +12,7 @@ import pytest
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.application import assemble_application
-from simcore_service_dynamic_sidecar.settings import ServiceSidecarSettings
+from simcore_service_dynamic_sidecar.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.shared_handlers import write_file_and_run_command
 from simcore_service_dynamic_sidecar.storage import SharedStore
 
@@ -48,7 +48,7 @@ async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
         # if no compose-spec is stored skip this operation
         return
 
-    settings: ServiceSidecarSettings = app.state.settings
+    settings: DynamicSidecarSettings = app.state.settings
     command = (
         "docker-compose -p {project} -f {file_path} "
         "down --remove-orphans -t {stop_and_remove_timeout}"

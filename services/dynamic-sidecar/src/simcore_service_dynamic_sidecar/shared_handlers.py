@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 from fastapi import FastAPI
 
-from .settings import ServiceSidecarSettings
+from .settings import DynamicSidecarSettings
 from .storage import SharedStore
 from .utils import async_command, write_to_tmp_file
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 async def write_file_and_run_command(
-    settings: ServiceSidecarSettings,
+    settings: DynamicSidecarSettings,
     file_content: Optional[str],
     command: str,
     command_timeout: float,
@@ -30,7 +30,7 @@ async def write_file_and_run_command(
 
 
 async def remove_the_compose_spec(
-    shared_store: SharedStore, settings: ServiceSidecarSettings, command_timeout: float
+    shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
 ) -> Tuple[bool, str]:
 
     stored_compose_content = shared_store.get_spec()
@@ -54,7 +54,7 @@ async def remove_the_compose_spec(
 async def on_shutdown_handler(app: FastAPI) -> None:
     logging.info("Going to remove spawned containers")
     shared_store: SharedStore = app.state.shared_store
-    settings: ServiceSidecarSettings = app.state.settings
+    settings: DynamicSidecarSettings = app.state.settings
 
     result = await remove_the_compose_spec(
         shared_store=shared_store,

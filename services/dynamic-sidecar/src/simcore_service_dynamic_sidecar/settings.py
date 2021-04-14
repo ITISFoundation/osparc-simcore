@@ -5,9 +5,9 @@ from models_library.basic_types import BootModeEnum, PortInt
 from pydantic import BaseSettings, Field, PositiveInt, validator
 
 
-class ServiceSidecarSettings(BaseSettings):
+class DynamicSidecarSettings(BaseSettings):
     @classmethod
-    def create(cls, **settings_kwargs) -> "ServiceSidecarSettings":
+    def create(cls, **settings_kwargs) -> "DynamicSidecarSettings":
         return cls(
             **settings_kwargs,
         )

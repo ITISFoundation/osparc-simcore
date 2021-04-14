@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from .api import main_router
 from .models import ApplicationHealth
 from .remote_debug import setup as remote_debug_setup
-from .settings import ServiceSidecarSettings
+from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
 from .storage import SharedStore
 
@@ -19,7 +19,7 @@ def assemble_application() -> FastAPI:
     needed in other requests and used to share data.
     """
 
-    dynamic_sidecar_settings = ServiceSidecarSettings.create()
+    dynamic_sidecar_settings = DynamicSidecarSettings.create()
 
     logging.basicConfig(level=dynamic_sidecar_settings.loglevel)
     logging.root.setLevel(dynamic_sidecar_settings.loglevel)

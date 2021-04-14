@@ -13,7 +13,7 @@ import yaml
 from async_generator import asynccontextmanager
 from async_timeout import timeout
 
-from .settings import ServiceSidecarSettings
+from .settings import DynamicSidecarSettings
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
@@ -67,7 +67,7 @@ async def async_command(command, command_timeout: float) -> Tuple[bool, str]:
 
 
 def _assemble_container_name(
-    settings: ServiceSidecarSettings,
+    settings: DynamicSidecarSettings,
     service_key: str,
     user_given_container_name: str,
     index: int,
@@ -192,7 +192,7 @@ def _inject_backend_networking(
 
 
 def validate_compose_spec(
-    settings: ServiceSidecarSettings, compose_file_content: str
+    settings: DynamicSidecarSettings, compose_file_content: str
 ) -> str:
     """
     Checks the following:
