@@ -42,7 +42,7 @@ async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
     # run docker compose down here
 
     shared_store: SharedStore = app.state.shared_store
-    stored_compose_content = shared_store.compose_spec
+    stored_compose_content = shared_store.get_spec()
 
     if stored_compose_content is None:
         # if no compose-spec is stored skip this operation
