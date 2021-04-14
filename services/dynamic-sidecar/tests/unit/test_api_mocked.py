@@ -22,8 +22,8 @@ def assert_200_empty(response: Response) -> bool:
         # push api module
         ("/push", "POST"),
         # retrive api module
-        ("/retrive", "GET"),
-        ("/retrive", "POST"),
+        ("/retrieve", "GET"),
+        ("/retrieve", "POST"),
         # state api module
         ("/state", "GET"),
         ("/state", "POST"),
