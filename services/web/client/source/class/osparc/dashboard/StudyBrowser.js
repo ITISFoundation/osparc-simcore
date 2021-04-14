@@ -94,10 +94,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      * Function that asks the backend for the list of studies belonging to the user
      * and sets it
      */
-    reloadUserStudies: function() {
+    reloadUserStudies: function(start = 0, count = 10) {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         return new Promise((resolve, reject) => {
-          osparc.data.Resources.get("studies", null, false)
+          const params = {
+            start,
+            count
+          };
+          // will never use the cache
+          osparc.data.Resources.fetch("studies", "getSome", params)
             .then(studies => {
               this._resetStudiesList(studies);
               this.resetSelection();
