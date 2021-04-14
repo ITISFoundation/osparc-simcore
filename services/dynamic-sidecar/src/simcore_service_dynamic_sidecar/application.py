@@ -25,7 +25,7 @@ def assemble_application() -> FastAPI:
     logging.root.setLevel(dynamic_sidecar_settings.loglevel)
     logger.debug(dynamic_sidecar_settings.json(indent=2))
 
-    application = FastAPI(debug=dynamic_sidecar_settings.debug)
+    application = FastAPI(debug=dynamic_sidecar_settings.debug, docs_url="/dev/doc")
 
     # store "settings"  and "shared_store" for later usage
     application.state.settings = dynamic_sidecar_settings
