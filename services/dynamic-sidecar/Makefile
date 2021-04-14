@@ -10,13 +10,6 @@ APP_NAME := $(notdir $(CURDIR))
 _ensure-in-venv:
 	@python3 -c "import os; os.environ['VIRTUAL_ENV']" || (echo "\n>>>> You are not in a virtualenv. Activate one <<<<\n"; exit 1)
 
-.PHONY: install-dev-dependencies
-install-dev-dependencies: _ensure-in-venv ## install depenencies for development
-	@pip install -r requirements/_base.txt
-
-.PHONY: install-dev-dependencies
-install-dev-dependencies: _ensure-in-venv ## install depenencies for development
-	@pip install -r requirements/_base.txt
 
 .PHONY: dev-run
 dev-run: _ensure-in-venv ## starts the container on its own
@@ -25,18 +18,14 @@ dev-run: _ensure-in-venv ## starts the container on its own
 			-v $(CURDIR):/devel/services/dynamic-sidecar \
 			local/dynamic-sidecar:development
 
-.PHONY: ci-tox-codestyle
-ci-tox-codestyle: ## runs codestyle checks
-	@tox -r -e codestyle-ci
 
-.PHONY: ci-tox-tests
-ci-tox-tests: ## runs tests with coverage in a new enviornment
-	@tox -r -e py36,report
+.PHONY: codestyle
+codestyle: ## enforces codestyle and runs pylint and mypy
+	isort setup.py src/simcore_service_dynamic_sidecar tests
+	black src/simcore_service_dynamic_sidecar tests/
+	pylint --rcfile=../../.pylintrc src/simcore_service_dynamic_sidecar tests/
+	mypy src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
 
-.PHONY: ci-install-requirements
-ci-install-requirements: ## runs tests with coverage in a new enviornment
-	@pip install -r requirements/dev.txt
-	@pip install tox
 
 .PHONY: run-github-action-locally
 run-github-action-locally:  ## runs the defined github action from the workflow locally
