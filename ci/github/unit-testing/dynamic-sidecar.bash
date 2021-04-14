@@ -20,7 +20,7 @@ codestyle(){
     echo "pylint"
     pylint --rcfile=../../.pylintrc src/simcore_service_dynamic_sidecar tests/
     echo "mypy"
-    mypy src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
+    mypy mypy --config-file mypy.ini src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
     popd
 }
 

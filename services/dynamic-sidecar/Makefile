@@ -26,7 +26,7 @@ codestyle: ## enforces codestyle and runs pylint and mypy
 	isort setup.py src/simcore_service_dynamic_sidecar tests
 	black src/simcore_service_dynamic_sidecar tests/
 	pylint --rcfile=../../.pylintrc src/simcore_service_dynamic_sidecar tests/
-	mypy src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
+	mypy --config-file ../../mypy.ini src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
 
 
 .PHONY: run-github-action-locally
