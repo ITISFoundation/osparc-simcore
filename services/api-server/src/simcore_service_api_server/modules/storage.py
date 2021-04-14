@@ -125,9 +125,9 @@ class StorageApi(BaseServiceClientApi):
         # ln makes links between files
         # ln TARGET LINK_NAME
         resp = await self.client.post(
-            f"/files/{file_id}:copy",
+            f"/files/{file_id}:soft-copy",
             params={"user_id": user_id},
-            json={"link_uuid": link_path},
+            json={"link_id": link_path},
         )
 
         stored_file_meta = StorageFileMetaData.parse_obj(resp.json()["data"])

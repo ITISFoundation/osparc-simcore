@@ -402,8 +402,9 @@ async def search_files_starting_with(request: web.Request):
         return [{**attr.asdict(d.fmd), "parent_id": d.parent_id} for d in data]
 
 
-@routes.post(f"/{api_vtag}/files/{{file_id}}:copy", name="copy_as_soft_link")  # type: ignore
+@routes.post(f"/{api_vtag}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")  # type: ignore
 async def copy_as_soft_link(request: web.Request):
+    # TODO: error handling
     params, query, body = await extract_and_validate(request)
 
     assert params, "params %s" % params  # nosec
@@ -413,7 +414,7 @@ async def copy_as_soft_link(request: web.Request):
     with handle_storage_errors():
         target_uuid = params["file_id"]
         user_id = int(query["user_id"])
-        link_uuid = body["link_uuid"]
+        link_uuid = body["link_id"]
 
         dsm = await _prepare_storage_manager(
             {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request

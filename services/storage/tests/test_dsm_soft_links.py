@@ -82,7 +82,6 @@ async def test_create_soft_link(
         user_id, output_file.file_uuid, f"api/{api_file_id}/{file_name}"
     )
     assert isinstance(link_file, FileMetaDataEx)
-
     assert isinstance(link_file.fmd, FileMetaData)
 
     # copy:
@@ -112,6 +111,7 @@ async def test_create_soft_link(
     assert link_file.fmd.file_uuid == f"api/{api_file_id}/{file_name}"
     assert link_file.fmd.object_name == output_file.object_name
     assert link_file.fmd.entity_tag == output_file.entity_tag
+    assert link_file.fmd.is_soft_link
 
     # TODO: in principle we keep this ...
     # assert output_file.created_at < link_file.fmd.created_at
