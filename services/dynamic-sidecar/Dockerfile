@@ -116,7 +116,7 @@ HEALTHCHECK --interval=30s \
     --timeout=20s \
     --start-period=30s \
     --retries=3 \
-    CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/"]
+    CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
 
 EXPOSE 8000
 
