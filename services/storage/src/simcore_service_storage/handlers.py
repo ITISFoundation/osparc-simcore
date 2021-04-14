@@ -5,15 +5,18 @@ from typing import Dict
 
 import attr
 from aiohttp import web
+from aiohttp.web import RouteTableDef
 from servicelib.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
-from .meta import __version__
+from .meta import __version__, api_vtag
 from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 log = logging.getLogger(__name__)
+
+routes = RouteTableDef()
 
 
 async def _prepare_storage_manager(
@@ -386,3 +389,26 @@ async def search_files_starting_with(request: web.Request):
         log.debug("Found %d files starting with '%s'", len(data), startswith)
 
         return [{**attr.asdict(d.fmd), "parent_id": d.parent_id} for d in data]
+
+
+@routes.post(f"/{api_vtag}/files/{{file_id}}:copy", name="copy_as_soft_link")  # type: ignore
+async def copy_as_soft_link(request: web.Request):
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params  # nosec
+    assert query, "query %s" % query  # nosec
+    assert body, "body %s" % body  # nosec
+
+    with handle_storage_errors():
+        target_uuid = params["file_id"]
+        user_id = int(query["user_id"])
+        link_uuid = body["link_uuid"]
+
+        dsm = await _prepare_storage_manager(
+            {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request
+        )
+
+        file_link = await dsm.create_soft_link(user_id, target_uuid, link_uuid)
+
+        data = {**attr.asdict(file_link.fmd), "parent_id": file_link.parent_id}
+        return data
