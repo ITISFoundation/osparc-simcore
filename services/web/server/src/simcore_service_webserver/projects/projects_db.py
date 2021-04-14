@@ -315,28 +315,35 @@ class ProjectDBAPI:
     async def load_projects(
         self,
         user_id: PositiveInt,
-        project_type: ProjectType,
         *,
+        filter_by_project_type: Optional[ProjectType] = None,
         filter_by_services: Optional[List[Dict]] = None,
         only_published: Optional[bool] = False,
-    ) -> List[Dict[str, Any]]:
+        offset: Optional[int] = 0,
+        limit: Optional[int] = None,
+    ) -> Tuple[List[Dict[str, Any]], List[ProjectType]]:
+        project_type_where_clause = (
+            f"= '{filter_by_project_type.value}'"
+            if filter_by_project_type
+            else "IS NOT NULL"
+        )
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             query = textwrap.dedent(
                 f"""\
                 SELECT *
                 FROM projects
-                WHERE projects.type != {project_type.value}
+                WHERE projects.type {project_type_where_clause}
                 {'AND projects.published ' if only_published else ''}
                 AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
                 OR prj_owner = {user_id})
+                OFFSET {offset}
+                LIMIT {limit or 'NULL'}
                 """
             )
-            projects_list = await self.__load_projects(
+            return await self.__load_projects(
                 conn, query, user_id, user_groups, filter_by_services=filter_by_services
             )
-
-        return projects_list
 
     async def __load_user_groups(
         self, conn: SAConnection, user_id: int
@@ -358,9 +365,10 @@ class ProjectDBAPI:
         user_id: int,
         user_groups: List[RowProxy],
         filter_by_services: Optional[List[Dict]] = None,
-    ) -> List[Dict]:
+    ) -> Tuple[List[Dict[str, Any]], List[ProjectType]]:
         api_projects: List[Dict] = []  # API model-compatible projects
         db_projects: List[Dict] = []  # DB model-compatible projects
+        project_types: List[ProjectType] = []
         async for row in conn.execute(query):
             try:
                 _check_project_permissions(row, user_id, user_groups, "read")
@@ -382,6 +390,11 @@ class ProjectDBAPI:
             prj = dict(row.items())
             if filter_by_services:
                 if not await project_uses_available_services(prj, filter_by_services):
+                    log.warning(
+                        "project [%s] of user [%s] uses unshared services",
+                        row.get("id"),
+                        user_id,
+                    )
                     continue
             db_projects.append(prj)
 
@@ -393,8 +406,9 @@ class ProjectDBAPI:
             )
             user_email = await self._get_user_email(conn, db_prj["prj_owner"])
             api_projects.append(_convert_to_schema_names(db_prj, user_email))
+            project_types.append(db_prj["type"])
 
-        return api_projects
+        return (api_projects, project_types)
 
     async def _get_project(
         self,

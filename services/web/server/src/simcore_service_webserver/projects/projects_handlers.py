@@ -23,6 +23,7 @@ from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
 from . import projects_api
+from .project_models import ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
@@ -152,7 +153,7 @@ async def list_projects(request: web.Request):
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    project_type = request.query.get("type", "all")
+    project_type = ProjectTypeAPI(request.query.get("type", "all"))
     offset = int(request.query.get("offset", 0))
     limit = int(request.query.get("limit", PROJECT_LISTING_LIMIT))
 
@@ -167,10 +168,10 @@ async def list_projects(request: web.Request):
                 projects_api.add_project_states_for_user(
                     user_id=user_id,
                     project=prj,
-                    is_template=is_template,
+                    is_template=prj_type == ProjectType.TEMPLATE,
                     app=request.app,
                 )
-                for prj, is_template in zip(projects, project_types)
+                for prj, prj_type in zip(projects, project_types)
             ],
             reraise=True,
             max_concurrency=100,
@@ -182,35 +183,16 @@ async def list_projects(request: web.Request):
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    projects_list = []
-    project_types_list: List[bool] = []
-    if project_type in ("template", "all"):
-        template_projects = await db.load_projects(
-            user_id=user_id,
-            project_type=ProjectType.TEMPLATE,
-            filter_by_services=user_available_services,
-        )
+    projects, project_types = await db.load_projects(
+        user_id=user_id,
+        filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
+        filter_by_services=user_available_services,
+        offset=offset,
+        limit=limit,
+    )
 
-        projects_list += template_projects
-        project_types_list += [True for i in range(len(template_projects))]
-
-    if project_type in (
-        "user",
-        "all",
-    ):  # standard only (notice that templates will only)
-        user_projects = await db.load_projects(
-            user_id=user_id,
-            project_type=ProjectType.STANDARD,
-            filter_by_services=user_available_services,
-        )
-        projects_list += user_projects
-        project_types_list += [False for i in range(len(user_projects))]
-
-    stop = min(offset + limit, len(projects_list))
-    projects_list = projects_list[offset:stop]
-    project_types_list = project_types_list[offset:stop]
-    await set_all_project_states(projects_list, project_types_list)
-    return {"data": projects_list}
+    await set_all_project_states(projects, project_types)
+    return {"data": projects}
 
 
 @login_required
