@@ -8,6 +8,7 @@ from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
 from .storage import SharedStore
+from ._meta import api_vtag
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,11 @@ def assemble_application() -> FastAPI:
     logging.root.setLevel(dynamic_sidecar_settings.loglevel)
     logger.debug(dynamic_sidecar_settings.json(indent=2))
 
-    application = FastAPI(debug=dynamic_sidecar_settings.debug, docs_url="/dev/doc")
+    application = FastAPI(
+        debug=dynamic_sidecar_settings.debug,
+        openapi_url=f"/api/{api_vtag}/openapi.json",
+        docs_url="/dev/doc",
+    )
 
     # store "settings"  and "shared_store" for later usage
     application.state.settings = dynamic_sidecar_settings

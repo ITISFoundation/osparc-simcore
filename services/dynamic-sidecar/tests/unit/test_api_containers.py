@@ -8,6 +8,7 @@ from typing import Any, Dict, Generator, List
 import pytest
 from async_asgi_testclient import TestClient
 from simcore_service_dynamic_sidecar.storage import SharedStore
+from simcore_service_dynamic_sidecar._meta import api_vtag
 
 
 @pytest.fixture
@@ -28,13 +29,13 @@ async def started_containers(
     test_client: TestClient, compose_spec: Dict[str, Any]
 ) -> List[str]:
     # store spec first
-    response = await test_client.post("/compose:store", data=compose_spec)
+    response = await test_client.post(f"/{api_vtag}/compose:store", data=compose_spec)
     assert response.status_code == 204, response.text
     assert response.text == ""
 
     # pull images for spec
     response = await test_client.post(
-        "/compose", query_string=dict(command_timeout=10.0)
+        f"/{api_vtag}/compose", query_string=dict(command_timeout=10.0)
     )
     assert response.status_code == 200, response.text
 
@@ -47,7 +48,7 @@ async def started_containers(
 
 @pytest.mark.asyncio
 async def test_containers_get(test_client: TestClient, started_containers: List[str]):
-    response = await test_client.get("/containers")
+    response = await test_client.get(f"/{api_vtag}/containers")
     assert response.status_code == 200, response.text
     assert set(json.loads(response.text)) == set(started_containers)
 
@@ -57,7 +58,8 @@ async def test_containers_inspect(
     test_client: TestClient, started_containers: List[str]
 ):
     response = await test_client.get(
-        "/containers:inspect", query_string=dict(container_names=started_containers)
+        f"/{api_vtag}/containers:inspect",
+        query_string=dict(container_names=started_containers),
     )
     assert response.status_code == 200, response.text
     assert set(json.loads(response.text).keys()) == set(started_containers)
@@ -68,7 +70,8 @@ async def test_containers_inspect_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
 ):
     response = await test_client.get(
-        "/containers:inspect", query_string=dict(container_names=started_containers)
+        f"/{api_vtag}/containers:inspect",
+        query_string=dict(container_names=started_containers),
     )
     assert response.status_code == 400, response.text
 
@@ -85,7 +88,7 @@ async def test_containers_docker_status(
     test_client: TestClient, started_containers: List[str]
 ):
     response = await test_client.get(
-        "/containers:docker-status",
+        f"/{api_vtag}/containers:docker-status",
         query_string=dict(container_names=started_containers),
     )
     assert response.status_code == 200, response.text
@@ -112,7 +115,7 @@ async def test_containers_docker_status_pulling_containers(
         assert shared_store.is_pulling_containsers is True
 
         response = await test_client.get(
-            "/containers:docker-status",
+            f"/{api_vtag}/containers:docker-status",
             query_string=dict(container_names=started_containers),
         )
         assert response.status_code == 200, response.text
@@ -128,7 +131,7 @@ async def test_containers_docker_status_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
 ):
     response = await test_client.get(
-        "/containers:docker-status",
+        f"/{api_vtag}/containers:docker-status",
         query_string=dict(container_names=started_containers),
     )
     assert response.status_code == 400, response.text
