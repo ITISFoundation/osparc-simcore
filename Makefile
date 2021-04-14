@@ -393,7 +393,6 @@ pylint: ## Runs python linter framework's wide
 											-not -path "*.venv*" \
 											-not -path "*/client/*" \
 											-not -path "*egg*" \
-											-not -path "*service-sidecar*" \
 											-not -path "*migration*" \
 											-not -path "*datcore.py" \
 											-not -path "*sandbox*" \
