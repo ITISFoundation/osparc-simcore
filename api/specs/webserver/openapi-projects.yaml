@@ -12,7 +12,6 @@ paths:
             type: string
             default: "all"
             enum: [template, user, all]
-          description: if true only templates otherwise only users
         - name: offset
           in: query
           schema:
