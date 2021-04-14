@@ -91,23 +91,23 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
       const box = this._createSectionBox("Confirmations preferences");
 
       const label = this._createHelpLabel(this.tr(
-        "This is a list of Confirmations asked throughout the application that can be enabled/disabled"
+        "Provide warnings for the following actions:"
       ));
       box.add(label);
 
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
 
-      const cbConfirmBackToDashboard = new qx.ui.form.CheckBox(this.tr("Back to Dashboard"));
+      const cbConfirmBackToDashboard = new qx.ui.form.CheckBox(this.tr("Go back to the Dashboard"));
       preferencesSettings.bind("confirmBackToDashboard", cbConfirmBackToDashboard, "value");
       cbConfirmBackToDashboard.bind("value", preferencesSettings, "confirmBackToDashboard");
       box.add(cbConfirmBackToDashboard);
 
-      const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete Study"));
+      const cbConfirmDeleteStudy = new qx.ui.form.CheckBox(this.tr("Delete a Study"));
       preferencesSettings.bind("confirmDeleteStudy", cbConfirmDeleteStudy, "value");
       cbConfirmDeleteStudy.bind("value", preferencesSettings, "confirmDeleteStudy");
       box.add(cbConfirmDeleteStudy);
 
-      const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete Node"));
+      const cbConfirmDeleteNode = new qx.ui.form.CheckBox(this.tr("Delete a Node"));
       preferencesSettings.bind("confirmDeleteNode", cbConfirmDeleteNode, "value");
       cbConfirmDeleteNode.bind("value", preferencesSettings, "confirmDeleteNode");
       box.add(cbConfirmDeleteNode);
