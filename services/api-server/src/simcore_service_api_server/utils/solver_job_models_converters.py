@@ -7,7 +7,7 @@ import urllib.parse
 import uuid
 from datetime import datetime
 from functools import lru_cache
-from typing import Callable, Dict, Optional, Tuple
+from typing import Callable, Dict, Optional
 
 from models_library.projects_nodes import InputID, InputTypes
 
@@ -23,6 +23,7 @@ from ..models.schemas.files import File
 from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
 from ..models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ..modules.director_v2 import ComputationTaskOut
+from .typing_extra import get_args
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
@@ -42,25 +43,6 @@ def format_datetime(snapshot: datetime) -> str:
 def now_str() -> str:
     # NOTE: backend MUST use UTC
     return format_datetime(datetime.utcnow())
-
-
-def get_args(annotation) -> Tuple:
-    assert (  # nosec
-        sys.version_info.major == 3 and sys.version_info.minor < 8  # nosec
-    ), "TODO: py3.8 replace __args__ with typings.get_args"
-
-    try:
-        annotated_types = annotation.__args__
-    except AttributeError:
-        annotated_types = (annotation,)
-
-    def _transform(annotated_type):
-        for primitive_type in (float, bool, int, str):
-            if issubclass(annotated_type, primitive_type):
-                return primitive_type
-        return annotated_type
-
-    return tuple(map(_transform, annotated_types))
 
 
 # CONVERTERS --------------
