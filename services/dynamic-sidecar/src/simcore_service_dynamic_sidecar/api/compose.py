@@ -33,6 +33,7 @@ async def store_docker_compose_spec_for_later_usage(
         return str(e)
 
     response.status_code = 204
+    return None
 
 
 @compose_router.post("/compose:preload", response_class=PlainTextResponse)

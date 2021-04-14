@@ -1,1 +1,1 @@
-api_vtag = f"v1"
+api_vtag = "v1"

@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 
 import pytest
 from async_asgi_testclient import TestClient
-from simcore_service_dynamic_sidecar.storage import SharedStore
 from simcore_service_dynamic_sidecar._meta import api_vtag
+from simcore_service_dynamic_sidecar.storage import SharedStore
 
 
 @pytest.fixture
