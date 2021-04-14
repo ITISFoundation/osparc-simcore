@@ -142,7 +142,7 @@ async def create_projects(request: web.Request):
         raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
 
 
-MAX_PROJECT_LISTING: int = 50
+PROJECT_LISTING_LIMIT: int = 50
 
 
 @login_required
@@ -152,9 +152,9 @@ async def list_projects(request: web.Request):
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    project_type = request.query.get("type", "all")  # TODO: get default for oaspecs
-    offset = int(request.query.get("start", 0))
-    limit = int(request.query.get("count", MAX_PROJECT_LISTING))
+    project_type = request.query.get("type", "all")
+    offset = int(request.query.get("offset", 0))
+    limit = int(request.query.get("limit", PROJECT_LISTING_LIMIT))
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
