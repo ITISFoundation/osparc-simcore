@@ -30,7 +30,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
 then
   # NOTE: ptvsd is programmatically enabled inside of the service
   # this way we can have reload in place as well
-  exec uvicorn sidecar.app:app --reload --host 0.0.0.0
+  exec uvicorn simcore_service_dynamic_sidecar.main:app --reload --host 0.0.0.0
 else
   exec simcore_service_dynamic_sidecar_startup
 fi
