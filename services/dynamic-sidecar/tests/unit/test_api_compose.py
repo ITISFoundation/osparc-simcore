@@ -99,6 +99,15 @@ async def test_pull_missing_spec(test_client: TestClient, compose_spec: Dict[str
         "/compose:pull", query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT)
     )
     assert response.status_code == 400, response.text
+    assert response.text == "No started spec to pull was found"
+
+
+@pytest.mark.asyncio
+async def test_stop_missing_spec(test_client: TestClient, compose_spec: Dict[str, Any]):
+    response = await test_client.put(
+        "/compose:stop", query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT)
+    )
+    assert response.status_code == 400, response.text
     assert response.text == "No started spec to stop was found"
 
 
