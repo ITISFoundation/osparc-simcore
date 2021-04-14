@@ -9,7 +9,7 @@ health_router = APIRouter()
 async def health_endpoint(request: Request, response: Response) -> ApplicationHealth:
     application_health: ApplicationHealth = request.app.state.application_health
 
-    if application_health.is_healty is False:
+    if application_health.is_healthy is False:
         response.status_code = 400
 
     return application_health
