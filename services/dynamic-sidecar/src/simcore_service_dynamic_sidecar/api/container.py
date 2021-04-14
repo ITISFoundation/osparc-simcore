@@ -33,7 +33,7 @@ async def get_container_logs(
     """ Returns the logs of a given container if found """
     shared_store: SharedStore = request.app.state.shared_store
 
-    if name_or_id not in shared_store.get_container_names():
+    if name_or_id not in shared_store.container_names:
         response.status_code = 400
         return dict(error=f"No container '{name_or_id}' was started")
 
@@ -59,7 +59,7 @@ async def container_inspect(
     """ Returns information about the container, like docker inspect command """
     shared_store: SharedStore = request.app.state.shared_store
 
-    if name_or_id not in shared_store.get_container_names():
+    if name_or_id not in shared_store.container_names:
         response.status_code = 400
         return dict(error=f"No container '{name_or_id}' was started")
 
@@ -79,7 +79,7 @@ async def container_remove(
 ) -> Union[bool, Dict[str, Any]]:
     shared_store: SharedStore = request.app.state.shared_store
 
-    if name_or_id not in shared_store.get_container_names():
+    if name_or_id not in shared_store.container_names:
         response.status_code = 400
         return dict(error=f"No container '{name_or_id}' was started")
 

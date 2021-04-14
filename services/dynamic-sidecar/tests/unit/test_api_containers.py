@@ -40,7 +40,7 @@ async def started_containers(
     assert response.status_code == 200, response.text
 
     shared_store: SharedStore = test_client.application.state.shared_store
-    container_names = shared_store.get_container_names()
+    container_names = shared_store.container_names
     assert len(container_names) == 2
 
     return container_names
@@ -104,10 +104,10 @@ async def test_containers_docker_status_pulling_containers(
     @contextmanager
     def mark_pulling(shared_store: SharedStore) -> Generator[None, None, None]:
         try:
-            shared_store.set_is_pulling_containsers()
+            shared_store.is_pulling_containsers = True
             yield
         finally:
-            shared_store.unset_is_pulling_containsers()
+            shared_store.is_pulling_containsers = False
 
     shared_store: SharedStore = test_client.application.state.shared_store
 

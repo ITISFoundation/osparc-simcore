@@ -60,7 +60,7 @@ async def create_docker_compose_configuration_containers_without_starting(
     )
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
-        file_content=shared_store.get_spec(),
+        file_content=shared_store.compose_spec,
         command=command,
         command_timeout=command_timeout,
     )
@@ -84,7 +84,7 @@ async def start_or_update_docker_compose_configuration(
     )
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
-        file_content=shared_store.get_spec(),
+        file_content=shared_store.compose_spec,
         command=command,
         command_timeout=command_timeout,
     )
@@ -101,7 +101,7 @@ async def pull_docker_required_docker_images(
     shared_store: SharedStore = request.app.state.shared_store
     settings: DynamicSidecarSettings = request.app.state.settings
 
-    stored_compose_content = shared_store.get_spec()
+    stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         response.status_code = 400
         return "No started spec to pull was found"
@@ -113,7 +113,7 @@ async def pull_docker_required_docker_images(
 
     try:
         # mark as pulling images
-        shared_store.set_is_pulling_containsers()
+        shared_store.is_pulling_containsers = True
 
         finished_without_errors, stdout = await write_file_and_run_command(
             settings=settings,
@@ -123,7 +123,7 @@ async def pull_docker_required_docker_images(
         )
     finally:
         # remove mark
-        shared_store.unset_is_pulling_containsers()
+        shared_store.is_pulling_containsers = False
 
     response.status_code = 200 if finished_without_errors else 400
     return stdout
@@ -138,7 +138,7 @@ async def stop_containers_without_removing_them(
     shared_store: SharedStore = request.app.state.shared_store
     settings: DynamicSidecarSettings = request.app.state.settings
 
-    stored_compose_content = shared_store.get_spec()
+    stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         response.status_code = 400
         return "No started spec to stop was found"

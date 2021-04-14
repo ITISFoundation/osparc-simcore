@@ -39,7 +39,7 @@ async def started_containers(
     assert response.status_code == 200, response.text
 
     shared_store: SharedStore = test_client.application.state.shared_store
-    container_names = shared_store.get_container_names()
+    container_names = shared_store.container_names
     assert len(container_names) == 2
 
     return container_names

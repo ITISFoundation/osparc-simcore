@@ -33,7 +33,7 @@ async def remove_the_compose_spec(
     shared_store: SharedStore, settings: DynamicSidecarSettings, command_timeout: float
 ) -> Tuple[bool, str]:
 
-    stored_compose_content = shared_store.get_spec()
+    stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         return True, "No started spec to remove was found"
 
