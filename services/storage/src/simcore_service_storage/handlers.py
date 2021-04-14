@@ -62,37 +62,6 @@ def handle_storage_errors():
 
 
 # HANDLERS ---------------------------------------------------
-async def check_health(request: web.Request):
-    log.debug("CHECK HEALTH INCOMING PATH %s", request.path)
-    await extract_and_validate(request)
-
-    return {
-        "name": __name__.split(".")[0],
-        "version": __version__,
-        "status": "SERVICE_RUNNING",
-    }
-
-
-async def check_action(request: web.Request):
-    params, query, body = await extract_and_validate(request)
-
-    assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
-    assert body, "body %s" % body  # nosec
-
-    if params["action"] == "fail":
-        raise ValueError("some randome failure")
-
-    # echo's input FIXME: convert to dic
-    # FIXME: output = fake_schema.dump(body)
-    return {
-        "path_value": params.get("action"),
-        "query_value": query.get("data"),
-        "body_value": {
-            "key1": 1,  # body.body_value.key1,
-            "key2": 0,  # body.body_value.key2,
-        },
-    }
 
 
 async def get_storage_locations(request: web.Request):

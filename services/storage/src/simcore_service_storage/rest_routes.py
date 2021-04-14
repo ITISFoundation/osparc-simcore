@@ -25,15 +25,6 @@ def create(specs: OpenApiSpec) -> List[web.RouteDef]:
     # TODO: routing will be done automatically using operation_id/tags, etc...
     #   routes = auto_routing(specs, handlers)
 
-    # diagnostics --
-    path, handle = "/", handlers.check_health
-    operation_id = specs.paths[path].operations["get"].operation_id
-    routes.append(web.get(BASEPATH + path, handle, name=operation_id))
-
-    path, handle = "/check/{action}", handlers.check_action
-    operation_id = specs.paths[path].operations["post"].operation_id
-    routes.append(web.post(BASEPATH + path, handle, name=operation_id))
-
     path, handle = "/locations", handlers.get_storage_locations
     operation_id = specs.paths[path].operations["get"].operation_id
     routes.append(web.get(BASEPATH + path, handle, name=operation_id))
