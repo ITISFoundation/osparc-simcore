@@ -98,7 +98,7 @@ async def pull_docker_required_docker_images(
     stored_compose_content = shared_store.get_spec()
     if stored_compose_content is None:
         response.status_code = 400
-        return "No started spec to stop was found"
+        return "No started spec to pull was found"
 
     command = "docker-compose -p {project} -f {file_path} pull --include-deps"
 
