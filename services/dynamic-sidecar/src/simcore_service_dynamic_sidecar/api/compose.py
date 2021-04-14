@@ -33,7 +33,6 @@ async def store_docker_compose_spec_for_later_usage(
         return str(e)
 
     response.status_code = 204
-    return None
 
 
 @compose_router.post("/compose:preload", response_class=PlainTextResponse)
@@ -54,7 +53,10 @@ async def create_docker_compose_configuration_containers_without_starting(
         return str(e)
 
     # --no-build might be a security risk building is disabled
-    command = "docker-compose -p {project} -f {file_path} up --no-build --no-start"
+    command = (
+        "docker-compose --project-name {project} --file {file_path} "
+        "up --no-build --no-start"
+    )
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
         file_content=shared_store.get_spec(),
@@ -75,7 +77,10 @@ async def start_or_update_docker_compose_configuration(
     shared_store: SharedStore = request.app.state.shared_store
 
     # --no-build might be a security risk building is disabled
-    command = "docker-compose -p {project} -f {file_path} up --no-build -d"
+    command = (
+        "docker-compose --project-name {project} --file {file_path} "
+        "up --no-build --detach"
+    )
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
         file_content=shared_store.get_spec(),
@@ -100,7 +105,10 @@ async def pull_docker_required_docker_images(
         response.status_code = 400
         return "No started spec to pull was found"
 
-    command = "docker-compose -p {project} -f {file_path} pull --include-deps"
+    command = (
+        "docker-compose --project-name {project} --file {file_path} "
+        "pull --include-deps"
+    )
 
     try:
         # mark as pulling images
@@ -135,7 +143,8 @@ async def stop_containers_without_removing_them(
         return "No started spec to stop was found"
 
     command = (
-        "docker-compose -p {project} -f {file_path} stop -t {stop_and_remove_timeout}"
+        "docker-compose --project-name {project} --file {file_path} "
+        "stop --timeout {stop_and_remove_timeout}"
     )
     finished_without_errors, stdout = await write_file_and_run_command(
         settings=settings,
