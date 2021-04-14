@@ -22,8 +22,8 @@ install-dev-dependencies: _ensure-in-venv ## install depenencies for development
 dev-run: _ensure-in-venv ## starts the container on its own
 	@docker run -it --rm \
 			-p 8000:8000 \
-			-v $(CURDIR):/devel/services/service-sidecar \
-			local/service-sidecar:development
+			-v $(CURDIR):/devel/services/dynamic-sidecar \
+			local/dynamic-sidecar:development
 
 .PHONY: ci-tox-codestyle
 ci-tox-codestyle: ## runs codestyle checks

@@ -18,7 +18,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
 
-  cd services/service-sidecar || exit 1
+  cd services/dynamic-sidecar || exit 1
   pip --quiet --no-cache-dir install -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
@@ -32,5 +32,5 @@ then
   # this way we can have reload in place as well
   exec uvicorn sidecar.app:app --reload --host 0.0.0.0
 else
-  exec simcore_service_service_sidecar_startup
+  exec simcore_service_dynamic_sidecar_startup
 fi

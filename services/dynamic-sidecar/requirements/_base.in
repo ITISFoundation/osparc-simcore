@@ -1,5 +1,5 @@
 #
-# Specifies third-party dependencies for 'services/service-sidecar/src'
+# Specifies third-party dependencies for 'services/dynamic-sidecar/src'
 #
 # NOTE: ALL version constraints MUST be commented
 -c ../../../requirements/constraints.txt

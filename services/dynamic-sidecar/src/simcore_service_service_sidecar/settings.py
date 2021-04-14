@@ -84,4 +84,4 @@ class ServiceSidecarSettings(BaseSettings):
 
     class Config:
         case_sensitive = False
-        env_prefix = "SERVICE_SIDECAR_"
+        env_prefix = "DYNAMIC_SIDECAR_"

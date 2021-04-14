@@ -128,7 +128,7 @@ services:
     image: local/dynamic-sidecar:${BUILD_TARGET:?build_target_required}
     build:
       context: ../
-      dockerfile: services/service-sidecar/Dockerfile
+      dockerfile: services/dynamic-sidecar/Dockerfile
       cache_from:
         - local/dynamic-sidecar:${BUILD_TARGET:?build_target_required}
         - ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:cache

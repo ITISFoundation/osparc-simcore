@@ -7,14 +7,14 @@ IFS=$'\n\t'
 
 install() {
     bash ci/helpers/ensure_python_pip.bash;
-    pushd services/service-sidecar; pip3 install -r requirements/ci.txt; popd;
+    pushd services/dynamic-sidecar; pip3 install -r requirements/ci.txt; popd;
     pip list -v
 }
 
 test() {
-    pytest --cov=simcore_service_service_sidecar --durations=10 --cov-append \
+    pytest --cov=simcore_service_dynamic_sidecar --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/service-sidecar/tests/unit
+          -v -m "not travis" services/dynamic-sidecar/tests/unit
 }
 
 # Check if the function exists (bash specific)

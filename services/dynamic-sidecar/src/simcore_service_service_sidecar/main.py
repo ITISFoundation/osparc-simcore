@@ -3,8 +3,8 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
-from simcore_service_service_sidecar.application import assemble_application
-from simcore_service_service_sidecar.settings import ServiceSidecarSettings
+from simcore_service_dynamic_sidecar.application import assemble_application
+from simcore_service_dynamic_sidecar.settings import ServiceSidecarSettings
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -16,7 +16,7 @@ def main():
     settings: ServiceSidecarSettings = app.state.settings
 
     uvicorn.run(
-        "simcore_service_service_sidecar.main:app",
+        "simcore_service_dynamic_sidecar.main:app",
         host=settings.host,
         port=settings.port,
         reload=settings.is_development_mode,

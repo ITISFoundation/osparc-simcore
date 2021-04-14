@@ -27,7 +27,7 @@ GROUPNAME=scu
 if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "development mode detected..."
   # NOTE: expects docker run ... -v $(pwd):$DEVEL_MOUNT
-  DEVEL_MOUNT=/devel/services/service-sidecar
+  DEVEL_MOUNT=/devel/services/dynamic-sidecar
 
   stat $DEVEL_MOUNT >/dev/null 2>&1 ||
     (echo "$ERROR" "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1)

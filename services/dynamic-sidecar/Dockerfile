@@ -2,9 +2,9 @@ ARG PYTHON_VERSION="3.6.10"
 FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  USAGE:
-#     cd sercices/service-sidecar
-#     docker build -f Dockerfile -t service-sidecar:prod --target production ../../
-#     docker run service-sidecar:prod
+#     cd sercices/dynamic-sidecar
+#     docker build -f Dockerfile -t dynamic-sidecar:prod --target production ../../
+#     docker run dynamic-sidecar:prod
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
@@ -67,23 +67,23 @@ WORKDIR /build
 
 # install base 3rd party dependencies
 # NOTE: copies to /build to avoid overwriting later which would invalidate this layer
-COPY --chown=scu:scu services/service-sidecar/requirements/_base.txt .
+COPY --chown=scu:scu services/dynamic-sidecar/requirements/_base.txt .
 RUN pip --no-cache-dir install -r _base.txt
 
 # --------------------------Cache stage -------------------
 # CI in master buils & pushes this target to speed-up image build
 #
 #  + /build
-#    + services/service-sidecar [scu:scu] WORKDIR
+#    + services/dynamic-sidecar [scu:scu] WORKDIR
 #
 FROM build as cache
 
 ENV SC_BUILD_TARGET cache
 
 COPY --chown=scu:scu packages /build/packages
-COPY --chown=scu:scu services/service-sidecar /build/services/service-sidecar
+COPY --chown=scu:scu services/dynamic-sidecar /build/services/dynamic-sidecar
 
-WORKDIR /build/services/service-sidecar
+WORKDIR /build/services/dynamic-sidecar
 
 RUN pip --no-cache-dir install -r requirements/prod.txt &&\
     pip --no-cache-dir list -v
@@ -94,7 +94,7 @@ RUN pip --no-cache-dir install -r requirements/prod.txt &&\
 # Runs as scu (non-root user)
 #
 #  + /home/scu     $HOME = WORKDIR
-#    + services/service-sidecar [scu:scu]
+#    + services/dynamic-sidecar [scu:scu]
 #
 FROM base as production
 
@@ -109,19 +109,19 @@ WORKDIR /home/scu
 COPY --chown=scu:scu --from=cache  ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # Copies booting scripts
-COPY --chown=scu:scu services/service-sidecar/docker services/service-sidecar/docker
-RUN chmod +x services/service-sidecar/docker/*.sh
+COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
+RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
 HEALTHCHECK --interval=30s \
     --timeout=20s \
     --start-period=30s \
     --retries=3 \
-    CMD ["python3", "services/service-sidecar/docker/healthcheck.py", "http://localhost:8000/"]
+    CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/"]
 
 EXPOSE 8000
 
-ENTRYPOINT [ "/bin/sh", "services/service-sidecar/docker/entrypoint.sh" ]
-CMD ["/bin/sh", "services/service-sidecar/docker/boot.sh"]
+ENTRYPOINT [ "/bin/sh", "services/dynamic-sidecar/docker/entrypoint.sh" ]
+CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]
 
 
 # --------------------------Development stage -------------------
@@ -143,5 +143,5 @@ RUN chown -R scu:scu ${VIRTUAL_ENV}
 EXPOSE 8000
 EXPOSE 3000
 
-ENTRYPOINT ["/bin/sh", "services/service-sidecar/docker/entrypoint.sh"]
-CMD ["/bin/sh", "services/service-sidecar/docker/boot.sh"]
+ENTRYPOINT ["/bin/sh", "services/dynamic-sidecar/docker/entrypoint.sh"]
+CMD ["/bin/sh", "services/dynamic-sidecar/docker/boot.sh"]

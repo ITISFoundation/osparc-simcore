@@ -7,7 +7,7 @@ from typing import Any, Dict, Generator, List
 
 import pytest
 from async_asgi_testclient import TestClient
-from simcore_service_service_sidecar.storage import SharedStore
+from simcore_service_dynamic_sidecar.storage import SharedStore
 
 
 @pytest.fixture

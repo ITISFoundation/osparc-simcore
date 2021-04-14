@@ -1,6 +1,6 @@
 import pytest
 from async_asgi_testclient import TestClient
-from simcore_service_service_sidecar.models import ApplicationHealth
+from simcore_service_dynamic_sidecar.models import ApplicationHealth
 
 
 @pytest.mark.asyncio

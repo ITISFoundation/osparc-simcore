@@ -19,23 +19,23 @@ def assemble_application() -> FastAPI:
     needed in other requests and used to share data.
     """
 
-    service_sidecar_settings = ServiceSidecarSettings.create()
+    dynamic_sidecar_settings = ServiceSidecarSettings.create()
 
-    logging.basicConfig(level=service_sidecar_settings.loglevel)
-    logging.root.setLevel(service_sidecar_settings.loglevel)
-    logger.debug(service_sidecar_settings.json(indent=2))
+    logging.basicConfig(level=dynamic_sidecar_settings.loglevel)
+    logging.root.setLevel(dynamic_sidecar_settings.loglevel)
+    logger.debug(dynamic_sidecar_settings.json(indent=2))
 
-    application = FastAPI(debug=service_sidecar_settings.debug)
+    application = FastAPI(debug=dynamic_sidecar_settings.debug)
 
     # store "settings"  and "shared_store" for later usage
-    application.state.settings = service_sidecar_settings
-    application.state.shared_store = SharedStore(settings=service_sidecar_settings)
+    application.state.settings = dynamic_sidecar_settings
+    application.state.shared_store = SharedStore(settings=dynamic_sidecar_settings)
     # used to keep track of the health of the application
     # also will be used in the /health endpoint
     application.state.application_health = ApplicationHealth()
 
     # enable debug if required
-    if service_sidecar_settings.is_development_mode:
+    if dynamic_sidecar_settings.is_development_mode:
         remote_debug_setup(application)
 
     # add routing paths

@@ -337,7 +337,7 @@ jobs:
         name: getting cached data
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-dynamic-sidecar-${{ hashFiles('services/service-sidecar/requirements/ci.txt') }}
+          key: ${{ runner.os }}-pip-dynamic-sidecar-${{ hashFiles('services/dynamic-sidecar/requirements/ci.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-dynamic-sidecar-
             ${{ runner.os }}-pip-
