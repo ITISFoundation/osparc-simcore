@@ -56,23 +56,17 @@ async def test_container_inspect_logs_remove(
 ):
     for container in started_containers:
         # get container logs
-        response = await test_client.get(
-            f"/{api_vtag}/container/logs", query_string=dict(container=container)
-        )
+        response = await test_client.get(f"/{api_vtag}/container/{container}/logs")
         assert response.status_code == 200, response.text
 
         # inspect container
-        response = await test_client.get(
-            f"/{api_vtag}/container/inspect", query_string=dict(container=container)
-        )
+        response = await test_client.get(f"/{api_vtag}/container/{container}/inspect")
         assert response.status_code == 200, response.text
         parsed_response = response.json()
         assert parsed_response["Name"] == f"/{container}"
 
         # delete container
-        response = await test_client.delete(
-            f"/{api_vtag}/container/remove", query_string=dict(container=container)
-        )
+        response = await test_client.delete(f"/{api_vtag}/container/{container}/remove")
         assert response.status_code == 200, response.text
 
 
@@ -83,8 +77,8 @@ async def test_container_logs_with_timestamps(
     for container in started_containers:
         # get container logs
         response = await test_client.get(
-            f"/{api_vtag}/container/logs",
-            query_string=dict(container=container, timestamps=True),
+            f"/{api_vtag}/container/{container}/logs",
+            query_string=dict(timestamps=True),
         )
         assert response.status_code == 200, response.text
 
@@ -98,23 +92,17 @@ async def test_container_missing_container(
 
     for container in not_started_containers:
         # get container logs
-        response = await test_client.get(
-            f"/{api_vtag}/container/logs", query_string=dict(container=container)
-        )
+        response = await test_client.get(f"/{api_vtag}/container/{container}/logs")
         assert response.status_code == 400, response.text
         assert response.json() == _expected_error_string(container)
 
         # inspect container
-        response = await test_client.get(
-            f"/{api_vtag}/container/inspect", query_string=dict(container=container)
-        )
+        response = await test_client.get(f"/{api_vtag}/container/{container}/inspect")
         assert response.status_code == 400, response.text
         assert response.json() == _expected_error_string(container)
 
         # delete container
-        response = await test_client.delete(
-            f"/{api_vtag}/container/remove", query_string=dict(container=container)
-        )
+        response = await test_client.delete(f"/{api_vtag}/container/{container}/remove")
         assert response.status_code == 400, response.text
         assert response.json() == _expected_error_string(container)
 
@@ -130,22 +118,16 @@ async def test_container_docker_error(
 
     for container in started_containers:
         # get container logs
-        response = await test_client.get(
-            f"/{api_vtag}/container/logs", query_string=dict(container=container)
-        )
+        response = await test_client.get(f"/{api_vtag}/container/{container}/logs")
         assert response.status_code == 400, response.text
         assert response.json() == _expected_error_string()
 
         # inspect container
-        response = await test_client.get(
-            f"/{api_vtag}/container/inspect", query_string=dict(container=container)
-        )
+        response = await test_client.get(f"/{api_vtag}/container/{container}/inspect")
         assert response.status_code == 400, response.text
         assert response.json() == _expected_error_string()
 
         # delete container
-        response = await test_client.delete(
-            f"/{api_vtag}/container/remove", query_string=dict(container=container)
-        )
+        response = await test_client.delete(f"/{api_vtag}/container/{container}/remove")
         assert response.status_code == 400, response.text
         assert response.json() == _expected_error_string()
