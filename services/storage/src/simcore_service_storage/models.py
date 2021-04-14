@@ -129,6 +129,7 @@ class FileMetaData:
             self.last_modified = self.created_at
             self.file_size = -1
             self.entity_tag = None
+            self.is_soft_link = False
 
     def __str__(self):
         d = attr.asdict(self)

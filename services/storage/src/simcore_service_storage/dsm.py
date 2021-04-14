@@ -1003,6 +1003,7 @@ class DataStorageManager:
 
         # duplicate target and change the following columns:
         target.fmd.file_uuid = link_uuid
+        target.fmd.is_soft_link = True
         # target.fmd.file_id = link_uuid
 
         async with self.engine.acquire() as conn:

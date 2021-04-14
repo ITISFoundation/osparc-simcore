@@ -23,7 +23,19 @@ file_meta_data = sa.Table(
     sa.Column("created_at", sa.String),
     sa.Column("last_modified", sa.String),
     sa.Column("file_size", sa.BigInteger),
-    # Entity tag (or ETag), represents a specific version of the object.
-    # SEE https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html)
-    sa.Column("entity_tag", sa.String, nullable=True),
+    sa.Column(
+        "entity_tag",
+        sa.String,
+        nullable=True,
+        doc="Entity tag (or ETag), represents a specific version of the object"
+        "SEE https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html",
+    ),
+    sa.Column(
+        "is_soft_link",
+        sa.Boolean,
+        nullable=False,
+        server_default=False,
+        doc="If true, this file is a soft link."
+        "i.e. is another entry with the same object_name",
+    ),
 )
