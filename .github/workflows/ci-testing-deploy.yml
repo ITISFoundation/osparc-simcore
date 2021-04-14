@@ -313,6 +313,53 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
+  unit-test-dynamic-sidecar:
+    name: "[unit] dynamic-sidecar"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-dynamic-sidecar-${{ hashFiles('services/service-sidecar/requirements/ci.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-dynamic-sidecar-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: install
+        run: ./ci/github/unit-testing/dynamic-sidecar.bash install
+      - name: test
+        run: ./ci/github/unit-testing/dynamic-sidecar.bash test
+      - uses: codecov/codecov-action@v1
+        with:
+          flags: unittests #optional
+      - name: prepare codeclimate coverage file
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-0.7.0-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter && ./cc-test-reporter --version
+          ./cc-test-reporter format-coverage -t coverage.py -o codeclimate.${{ github.job }}_coverage.json coverage.xml
+      - name: upload codeclimate coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: codeclimate-${{ github.job }}-coverage
+          path: codeclimate.${{ github.job }}_coverage.json
+
   unit-test-frontend:
     name: "[unit] frontend"
     runs-on: ${{ matrix.os }}
