@@ -72,9 +72,6 @@ async def output_file(
 async def test_create_soft_link(
     storage: DataStorageManager, user_id: int, output_file: FileMetaData
 ):
-    import pdb
-
-    pdb.set_trace()
 
     api_file_id = create_resource_uuid(
         output_file.project_id, output_file.node_id, output_file.file_name
