@@ -66,6 +66,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __userStudies: null,
     __newStudyBtn: null,
     __loadMoreStudiesBtn: null,
+    __loadingStudiesBtn: null,
 
     /**
      * Function that resets the selected item
@@ -98,6 +99,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     reloadUserStudies: function(count = 3) {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         this.__loadMoreStudiesBtn.setFetching(true);
+        this.__loadingStudiesBtn.setFetching(true);
         return new Promise((resolve, reject) => {
           const params = {
             url: {
@@ -120,6 +122,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             })
             .finally(() => {
               this.__loadMoreStudiesBtn.setFetching(false);
+              this.__loadingStudiesBtn.setFetching(false);
               if (this.__userStudyContainer.nTotalStudies === this.__userStudyContainer.nStudies) {
                 this.__loadMoreStudiesBtn.setEnabled(false);
               }
@@ -204,6 +207,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return newStudyBtn;
     },
 
+    __createLoadingButton: function() {
+      const loadingBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      loadingBtn.setEnabled(false);
+      return loadingBtn;
+    },
+
     __createButtonsLayout: function(title, content) {
       const userStudyLayout = new osparc.component.widget.CollapsibleView(title);
       userStudyLayout.getChildControl("title").set({
@@ -216,8 +225,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createUserStudiesLayout: function() {
       const userStudyContainer = this.__userStudyContainer = this.__createStudyListLayout();
+
       const newStudyButton = this.__newStudyBtn = this.__createNewStudyButton();
       userStudyContainer.add(newStudyButton);
+
+      const loadingStudiesBtn = this.__loadingStudiesBtn = this.__createLoadingButton();
+      userStudyContainer.add(loadingStudiesBtn);
+
       osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
@@ -413,7 +427,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let reversedIdx = this.__userStudyContainer.getChildren().slice().reverse()
         .findIndex(studyBtn => studyBtn instanceof osparc.dashboard.StudyBrowserButtonItem);
       if (reversedIdx === -1) {
-        addAt = this.__userStudyContainer.getChildren().length;
+        addAt = this.__userStudyContainer.getChildren().length - 1; // -1 = Loading always goes last
       } else {
         addAt = this.__userStudyContainer.getChildren().length - reversedIdx;
       }
