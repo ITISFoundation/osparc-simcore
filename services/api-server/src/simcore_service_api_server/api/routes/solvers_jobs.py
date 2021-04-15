@@ -296,7 +296,7 @@ async def get_job_outputs(
         )
 
         results: Dict[str, ArgumentType] = {}
-        for name, value in outputs:
+        for name, value in outputs.items():
             if isinstance(value, BaseFileLink):
                 # TODO: value.path exists??
                 file_id: UUID = File.create_id(*value.path.split("/"))

@@ -153,6 +153,7 @@ class FileMetaData(BaseModel):
     entity_tag: Optional[str] = Field(
         description="Entity tag (or ETag), represents a specific version of the file",
     )
+    is_soft_link: bool = False
 
     parent_id: Optional[str]
 
