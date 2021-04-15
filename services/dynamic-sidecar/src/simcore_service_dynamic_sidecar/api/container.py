@@ -2,6 +2,7 @@ from typing import Any, Dict, Union
 
 import aiodocker
 from fastapi import APIRouter, Query, Request, Response
+from fastapi.status import HTTP_400_BAD_REQUEST
 
 from ..shared_store import SharedStore
 
@@ -34,7 +35,7 @@ async def get_container_logs(
     shared_store: SharedStore = request.app.state.shared_store
 
     if name_or_id not in shared_store.container_names:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return dict(error=f"No container '{name_or_id}' was started")
 
     docker = aiodocker.Docker()
@@ -49,7 +50,7 @@ async def get_container_logs(
         container_logs: str = await container_instance.log(**args)
         return container_logs
     except aiodocker.exceptions.DockerError as e:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return dict(error=e.message)
 
 
@@ -61,7 +62,7 @@ async def container_inspect(
     shared_store: SharedStore = request.app.state.shared_store
 
     if name_or_id not in shared_store.container_names:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return dict(error=f"No container '{name_or_id}' was started")
 
     docker = aiodocker.Docker()
@@ -71,7 +72,7 @@ async def container_inspect(
         inspect_result: Dict[str, Any] = await container_instance.show()
         return inspect_result
     except aiodocker.exceptions.DockerError as e:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return dict(error=e.message)
 
 
@@ -82,7 +83,7 @@ async def container_remove(
     shared_store: SharedStore = request.app.state.shared_store
 
     if name_or_id not in shared_store.container_names:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return dict(error=f"No container '{name_or_id}' was started")
 
     docker = aiodocker.Docker()
@@ -92,7 +93,7 @@ async def container_remove(
         await container_instance.delete()
         return True
     except aiodocker.exceptions.DockerError as e:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return dict(error=e.message)
 
 

@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 
 import aiodocker
 from fastapi import APIRouter, Request, Response
+from fastapi.status import HTTP_400_BAD_REQUEST
 
 from ..shared_store import SharedStore
 
@@ -32,7 +33,7 @@ async def containers_inspect(request: Request, response: Response) -> Dict[str, 
             container_instance = await docker.containers.get(container)
             results[container] = await container_instance.show()
         except aiodocker.exceptions.DockerError as e:
-            response.status_code = 400
+            response.status_code = HTTP_400_BAD_REQUEST
             return dict(error=e.message)
 
     return results
@@ -73,7 +74,7 @@ async def containers_docker_status(
                 "Error": container_state.get("Error", ""),
             }
         except aiodocker.exceptions.DockerError as e:
-            response.status_code = 400
+            response.status_code = HTTP_400_BAD_REQUEST
             return dict(error=e.message)
 
     return results

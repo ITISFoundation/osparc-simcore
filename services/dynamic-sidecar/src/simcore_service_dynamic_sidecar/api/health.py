@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request, Response
+from fastapi.status import HTTP_400_BAD_REQUEST
 
 from ..models import ApplicationHealth
 
@@ -10,7 +11,7 @@ async def health_endpoint(request: Request, response: Response) -> ApplicationHe
     application_health: ApplicationHealth = request.app.state.application_health
 
     if application_health.is_healthy is False:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
 
     return application_health
 

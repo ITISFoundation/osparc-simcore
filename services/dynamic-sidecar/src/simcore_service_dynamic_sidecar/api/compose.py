@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import PlainTextResponse
+from fastapi.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
 
 from ..settings import DynamicSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
@@ -29,10 +30,10 @@ async def store_docker_compose_spec_for_later_usage(
         shared_store.put_spec(body_as_text)
     except InvalidComposeSpec as e:
         logger.warning("Error detected %s", traceback.format_exc())
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return str(e)
 
-    response.status_code = 204
+    response.status_code = HTTP_204_NO_CONTENT
     return None
 
 
@@ -50,7 +51,7 @@ async def create_docker_compose_configuration_containers_without_starting(
         shared_store.put_spec(body_as_text)
     except InvalidComposeSpec as e:
         logger.warning("Error detected %s", traceback.format_exc())
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return str(e)
 
     # --no-build might be a security risk building is disabled
@@ -65,7 +66,9 @@ async def create_docker_compose_configuration_containers_without_starting(
         command_timeout=command_timeout,
     )
 
-    response.status_code = 200 if finished_without_errors else 400
+    response.status_code = (
+        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+    )
     return stdout
 
 
@@ -89,7 +92,9 @@ async def start_or_update_docker_compose_configuration(
         command_timeout=command_timeout,
     )
 
-    response.status_code = 200 if finished_without_errors else 400
+    response.status_code = (
+        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+    )
     return stdout
 
 
@@ -103,7 +108,7 @@ async def pull_docker_required_docker_images(
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return "No started spec to pull was found"
 
     command = (
@@ -125,7 +130,9 @@ async def pull_docker_required_docker_images(
         # remove mark
         shared_store.is_pulling_containsers = False
 
-    response.status_code = 200 if finished_without_errors else 400
+    response.status_code = (
+        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+    )
     return stdout
 
 
@@ -140,7 +147,7 @@ async def stop_containers_without_removing_them(
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
-        response.status_code = 400
+        response.status_code = HTTP_400_BAD_REQUEST
         return "No started spec to stop was found"
 
     command = (
@@ -154,7 +161,9 @@ async def stop_containers_without_removing_them(
         command_timeout=command_timeout,
     )
 
-    response.status_code = 200 if finished_without_errors else 400
+    response.status_code = (
+        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+    )
     return stdout
 
 
@@ -170,7 +179,9 @@ async def remove_docker_compose_configuration(
         command_timeout=command_timeout,
     )
 
-    response.status_code = 200 if finished_without_errors else 400
+    response.status_code = (
+        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+    )
     return stdout
 
 
