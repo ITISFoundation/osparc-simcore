@@ -129,7 +129,10 @@ class StorageApi(BaseServiceClientApi):
             params={"user_id": user_id},
             json={"link_id": link_path},
         )
+        # FIXME: handle errors properly
+        resp.raise_for_status()
 
+        # FIXME: was hanging when resp.join()["data"] -> None
         stored_file_meta = StorageFileMetaData.parse_obj(resp.json()["data"])
         file_meta: File = to_file_api_model(stored_file_meta)
         return file_meta
