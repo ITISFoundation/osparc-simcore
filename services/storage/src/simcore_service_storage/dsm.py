@@ -558,6 +558,11 @@ class DataStorageManager:
             )
             object_name: str = await conn.scalar(stmt)
 
+            if object_name is None:
+                raise web.HTTPNotFound(
+                    reason=f"File '{file_uuid}' does not exists in storage."
+                )
+
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return link
 

@@ -14,7 +14,12 @@ from simcore_sdk.node_ports import exceptions, filemanager
 
 pytest_simcore_core_services_selection = ["postgres", "storage"]
 
-pytest_simcore_ops_services_selection = ["minio"]
+pytest_simcore_ops_services_selection = [
+    "minio",
+    # NOTE: keep for debugging
+    # "portainer",
+    # "adminer"
+]
 
 
 async def test_valid_upload_download(
@@ -97,7 +102,7 @@ async def test_errors_upon_invalid_file_identifiers(
         )
 
     download_folder = Path(tmpdir) / "downloads"
-    with pytest.raises(exceptions.StorageInvalidCall):
+    with pytest.raises(exceptions.InvalidDownloadLinkError):
         await filemanager.download_file_from_s3(
             store_id=store, s3_object="", local_folder=download_folder
         )
