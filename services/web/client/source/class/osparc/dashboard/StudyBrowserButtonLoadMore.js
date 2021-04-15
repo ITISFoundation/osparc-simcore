@@ -49,11 +49,15 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
       if (value) {
         title.setValue(this.tr("Loading..."));
         desc.setValue("");
-        this.setIcon("@FontAwesome5Solid/crow/60");
+        this.setIcon("@FontAwesome5Solid/circle-notch/60");
+        this.getChildControl("icon").getChildControl("image").getContentElement()
+          .addClass("rotate");
       } else {
         title.setValue(this.tr("Load More"));
         desc.setValue(this.tr("Click to load more").toString());
         this.setIcon("@FontAwesome5Solid/paw/60");
+        this.getChildControl("icon").getChildControl("image").getContentElement()
+          .removeClass("rotate");
       }
     },
 
