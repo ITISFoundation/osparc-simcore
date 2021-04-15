@@ -25,21 +25,21 @@ def compose_spec() -> str:
 @pytest.mark.asyncio
 async def test_store_compose_spec(
     test_client: TestClient, compose_spec: Dict[str, Any]
-):
+) -> None:
     response = await test_client.post(f"/{api_vtag}/compose:store", data=compose_spec)
     assert response.status_code == 204, response.text
     assert response.text == ""
 
 
 @pytest.mark.asyncio
-async def test_store_compose_spec_not_provided(test_client: TestClient):
+async def test_store_compose_spec_not_provided(test_client: TestClient) -> None:
     response = await test_client.post(f"/{api_vtag}/compose:store")
     assert response.status_code == 400, response.text
     assert response.text == "\nProvided yaml is not valid!"
 
 
 @pytest.mark.asyncio
-async def test_store_compose_spec_invalid(test_client: TestClient):
+async def test_store_compose_spec_invalid(test_client: TestClient) -> None:
     invalid_compose_spec = Faker().text()
     response = await test_client.post(
         f"/{api_vtag}/compose:store", data=invalid_compose_spec
@@ -51,7 +51,7 @@ async def test_store_compose_spec_invalid(test_client: TestClient):
 
 
 @pytest.mark.asyncio
-async def test_preload(test_client: TestClient, compose_spec: Dict[str, Any]):
+async def test_preload(test_client: TestClient, compose_spec: Dict[str, Any]) -> None:
     response = await test_client.post(
         f"/{api_vtag}/compose:preload",
         query_string=dict(command_timeout=5.0),
@@ -61,7 +61,7 @@ async def test_preload(test_client: TestClient, compose_spec: Dict[str, Any]):
 
 
 @pytest.mark.asyncio
-async def test_preload_compose_spec_not_provided(test_client: TestClient):
+async def test_preload_compose_spec_not_provided(test_client: TestClient) -> None:
 
     response = await test_client.post(
         f"/{api_vtag}/compose:preload", query_string=dict(command_timeout=5.0)
@@ -71,7 +71,9 @@ async def test_preload_compose_spec_not_provided(test_client: TestClient):
 
 
 @pytest.mark.asyncio
-async def test_compuse_up(test_client: TestClient, compose_spec: Dict[str, Any]):
+async def test_compuse_up(
+    test_client: TestClient, compose_spec: Dict[str, Any]
+) -> None:
     # store spec first
     response = await test_client.post(f"/{api_vtag}/compose:store", data=compose_spec)
     assert response.status_code == 204, response.text
@@ -86,7 +88,7 @@ async def test_compuse_up(test_client: TestClient, compose_spec: Dict[str, Any])
 
 
 @pytest.mark.asyncio
-async def test_pull(test_client: TestClient, compose_spec: Dict[str, Any]):
+async def test_pull(test_client: TestClient, compose_spec: Dict[str, Any]) -> None:
     # store spec first
     response = await test_client.post(f"/{api_vtag}/compose:store", data=compose_spec)
     assert response.status_code == 204, response.text
@@ -101,7 +103,9 @@ async def test_pull(test_client: TestClient, compose_spec: Dict[str, Any]):
 
 
 @pytest.mark.asyncio
-async def test_pull_missing_spec(test_client: TestClient, compose_spec: Dict[str, Any]):
+async def test_pull_missing_spec(
+    test_client: TestClient, compose_spec: Dict[str, Any]
+) -> None:
     response = await test_client.get(
         f"/{api_vtag}/compose:pull",
         query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
@@ -111,7 +115,9 @@ async def test_pull_missing_spec(test_client: TestClient, compose_spec: Dict[str
 
 
 @pytest.mark.asyncio
-async def test_stop_missing_spec(test_client: TestClient, compose_spec: Dict[str, Any]):
+async def test_stop_missing_spec(
+    test_client: TestClient, compose_spec: Dict[str, Any]
+) -> None:
     response = await test_client.put(
         f"/{api_vtag}/compose:stop",
         query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
@@ -123,7 +129,7 @@ async def test_stop_missing_spec(test_client: TestClient, compose_spec: Dict[str
 @pytest.mark.asyncio
 async def test_compuse_stop_after_running(
     test_client: TestClient, compose_spec: Dict[str, Any]
-):
+) -> None:
     # store spec first
     response = await test_client.post(f"/{api_vtag}/compose:store", data=compose_spec)
     assert response.status_code == 204, response.text
@@ -146,7 +152,7 @@ async def test_compuse_stop_after_running(
 @pytest.mark.asyncio
 async def test_compuse_delete_after_stopping(
     test_client: TestClient, compose_spec: Dict[str, Any]
-):
+) -> None:
     # store spec first
     response = await test_client.post(f"/{api_vtag}/compose:store", data=compose_spec)
     assert response.status_code == 204, response.text

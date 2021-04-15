@@ -34,7 +34,7 @@ def assemble_application() -> FastAPI:
 
     # store "settings"  and "shared_store" for later usage
     application.state.settings = dynamic_sidecar_settings
-    application.state.shared_store = SharedStore(settings=dynamic_sidecar_settings)
+    application.state.shared_store = SharedStore(settings=dynamic_sidecar_settings)  # type: ignore
     # used to keep track of the health of the application
     # also will be used in the /health endpoint
     application.state.application_health = ApplicationHealth()

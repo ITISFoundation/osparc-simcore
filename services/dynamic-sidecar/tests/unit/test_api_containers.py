@@ -47,7 +47,9 @@ async def started_containers(
 
 
 @pytest.mark.asyncio
-async def test_containers_get(test_client: TestClient, started_containers: List[str]):
+async def test_containers_get(
+    test_client: TestClient, started_containers: List[str]
+) -> None:
     response = await test_client.get(f"/{api_vtag}/containers")
     assert response.status_code == 200, response.text
     assert set(json.loads(response.text)) == set(started_containers)
@@ -56,7 +58,7 @@ async def test_containers_get(test_client: TestClient, started_containers: List[
 @pytest.mark.asyncio
 async def test_containers_inspect(
     test_client: TestClient, started_containers: List[str]
-):
+) -> None:
     response = await test_client.get(
         f"/{api_vtag}/containers:inspect",
         query_string=dict(container_names=started_containers),
@@ -68,7 +70,7 @@ async def test_containers_inspect(
 @pytest.mark.asyncio
 async def test_containers_inspect_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
-):
+) -> None:
     response = await test_client.get(
         f"/{api_vtag}/containers:inspect",
         query_string=dict(container_names=started_containers),
@@ -86,7 +88,7 @@ def assert_keys_exist(result: Dict[str, Any]) -> bool:
 @pytest.mark.asyncio
 async def test_containers_docker_status(
     test_client: TestClient, started_containers: List[str]
-):
+) -> None:
     response = await test_client.get(
         f"/{api_vtag}/containers:docker-status",
         query_string=dict(container_names=started_containers),
@@ -100,7 +102,7 @@ async def test_containers_docker_status(
 @pytest.mark.asyncio
 async def test_containers_docker_status_pulling_containers(
     test_client: TestClient, started_containers: List[str]
-):
+) -> None:
     @contextmanager
     def mark_pulling(shared_store: SharedStore) -> Generator[None, None, None]:
         try:
@@ -129,7 +131,7 @@ async def test_containers_docker_status_pulling_containers(
 @pytest.mark.asyncio
 async def test_containers_docker_status_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
-):
+) -> None:
     response = await test_client.get(
         f"/{api_vtag}/containers:docker-status",
         query_string=dict(container_names=started_containers),

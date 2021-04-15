@@ -29,6 +29,6 @@ def assert_200_empty(response: Response) -> bool:
         ("/state", "POST"),
     ],
 )
-async def test_mocked_modules(test_client: TestClient, route: str, method: str):
+async def test_mocked_modules(test_client: TestClient, route: str, method: str) -> None:
     response = await test_client.open(route, method=method)
     assert assert_200_empty(response) is True

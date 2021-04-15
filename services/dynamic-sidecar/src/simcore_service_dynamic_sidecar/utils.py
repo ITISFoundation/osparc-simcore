@@ -6,7 +6,7 @@ import re
 import tempfile
 import traceback
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any, AsyncGenerator, Dict, Generator, List, Tuple
 
 import aiofiles
 import yaml
@@ -25,10 +25,10 @@ class InvalidComposeSpec(Exception):
 
 
 @asynccontextmanager
-async def write_to_tmp_file(file_contents):
+async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
     """Disposes of file on exit"""
     # pylint: disable=protected-access,stop-iteration-return
-    file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
+    file_path = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"  # type: ignore
     async with aiofiles.open(file_path, mode="w") as tmp_file:
         await tmp_file.write(file_contents)
     try:
@@ -37,7 +37,7 @@ async def write_to_tmp_file(file_contents):
         await aiofiles.os.remove(file_path)
 
 
-async def async_command(command, command_timeout: float) -> Tuple[bool, str]:
+async def async_command(command: str, command_timeout: float) -> Tuple[bool, str]:
     """Returns if the command exited correctly and the stdout of the command """
     proc = await asyncio.create_subprocess_shell(
         command,

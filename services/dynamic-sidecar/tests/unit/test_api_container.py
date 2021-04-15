@@ -53,7 +53,7 @@ def not_started_containers() -> List[str]:
 @pytest.mark.asyncio
 async def test_container_inspect_logs_remove(
     test_client: TestClient, started_containers: List[str]
-):
+) -> None:
     for container in started_containers:
         # get container logs
         response = await test_client.get(f"/{api_vtag}/container/{container}/logs")
@@ -73,7 +73,7 @@ async def test_container_inspect_logs_remove(
 @pytest.mark.asyncio
 async def test_container_logs_with_timestamps(
     test_client: TestClient, started_containers: List[str]
-):
+) -> None:
     for container in started_containers:
         # get container logs
         response = await test_client.get(
@@ -86,7 +86,7 @@ async def test_container_logs_with_timestamps(
 @pytest.mark.asyncio
 async def test_container_missing_container(
     test_client: TestClient, not_started_containers: List[str]
-):
+) -> None:
     def _expected_error_string(container: str) -> Dict[str, str]:
         return dict(error=f"No container '{container}' was started")
 
@@ -112,7 +112,7 @@ async def test_container_docker_error(
     test_client: TestClient,
     started_containers: List[str],
     mock_containers_get: None,
-):
+) -> None:
     def _expected_error_string() -> Dict[str, str]:
         return dict(error="aiodocker_mocked_error")
 

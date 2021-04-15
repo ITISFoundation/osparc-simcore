@@ -3,13 +3,16 @@ from typing import Any, Dict, List
 import aiodocker
 from fastapi import APIRouter, Request, Response
 
+from ..shared_store import SharedStore
+
 containers_router = APIRouter()
 
 
 @containers_router.get("/containers")
 async def get_spawned_container_names(request: Request) -> List[str]:
     """ Returns a list of containers created using docker-compose """
-    return request.app.state.shared_store.container_names
+    shared_store: SharedStore = request.app.state.shared_store
+    return shared_store.container_names
 
 
 @containers_router.get("/containers:inspect")
@@ -17,8 +20,10 @@ async def containers_inspect(request: Request, response: Response) -> Dict[str, 
     """ Returns information about the container, like docker inspect command """
     docker = aiodocker.Docker()
 
-    container_names = request.app.state.shared_store.container_names
-    container_names = container_names if container_names else {}
+    shared_store: SharedStore = request.app.state.shared_store
+    container_names = (
+        shared_store.container_names if shared_store.container_names else {}
+    )
 
     results = {}
 
@@ -45,8 +50,9 @@ async def containers_docker_status(
     docker = aiodocker.Docker()
 
     shared_store = request.app.state.shared_store
-    container_names = shared_store.container_names
-    container_names = container_names if container_names else {}
+    container_names = (
+        shared_store.container_names if shared_store.container_names else {}
+    )
 
     # if containers are being pulled, return pulling (fake status)
     if shared_store.is_pulling_containsers:

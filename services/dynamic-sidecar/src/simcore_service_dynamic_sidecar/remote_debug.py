@@ -8,7 +8,7 @@ from fastapi import FastAPI
 logger = logging.getLogger(__name__)
 
 
-def setup(app: FastAPI):
+def setup(app: FastAPI) -> None:
     settings = app.state.settings
 
     def on_startup() -> None:

@@ -46,7 +46,8 @@ async def get_container_logs(
         if timestamps:
             args["timestamps"] = True
 
-        return await container_instance.log(**args)
+        container_logs: str = await container_instance.log(**args)
+        return container_logs
     except aiodocker.exceptions.DockerError as e:
         response.status_code = 400
         return dict(error=e.message)
@@ -67,7 +68,8 @@ async def container_inspect(
 
     try:
         container_instance = await docker.containers.get(name_or_id)
-        return await container_instance.show()
+        inspect_result: Dict[str, Any] = await container_instance.show()
+        return inspect_result
     except aiodocker.exceptions.DockerError as e:
         response.status_code = 400
         return dict(error=e.message)

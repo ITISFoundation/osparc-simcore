@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
 from pydantic import BaseSettings, Field, PositiveInt, validator
@@ -7,7 +7,7 @@ from pydantic import BaseSettings, Field, PositiveInt, validator
 
 class DynamicSidecarSettings(BaseSettings):
     @classmethod
-    def create(cls, **settings_kwargs) -> "DynamicSidecarSettings":
+    def create(cls, **settings_kwargs: Any) -> "DynamicSidecarSettings":
         return cls(
             **settings_kwargs,
         )
@@ -23,7 +23,7 @@ class DynamicSidecarSettings(BaseSettings):
 
     @validator("log_level_name")
     @classmethod
-    def match_logging_level(cls, v) -> str:
+    def match_logging_level(cls, v: str) -> str:
         try:
             getattr(logging, v.upper())
         except AttributeError as err:
@@ -74,13 +74,13 @@ class DynamicSidecarSettings(BaseSettings):
     )
 
     @property
-    def is_development_mode(self):
+    def is_development_mode(self) -> bool:
         """If in development mode this will be True"""
-        return self.boot_mode == BootModeEnum.DEVELOPMENT
+        return self.boot_mode is BootModeEnum.DEVELOPMENT
 
     @property
     def loglevel(self) -> int:
-        return getattr(logging, self.log_level_name)
+        return int(getattr(logging, self.log_level_name))
 
     class Config:
         case_sensitive = False

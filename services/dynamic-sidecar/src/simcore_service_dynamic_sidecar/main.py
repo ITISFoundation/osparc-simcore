@@ -12,7 +12,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 app: FastAPI = assemble_application()
 
 
-def main():
+def main() -> None:
     settings: DynamicSidecarSettings = app.state.settings
 
     uvicorn.run(
