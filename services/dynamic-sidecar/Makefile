@@ -23,6 +23,7 @@ openapi.json: .env ## Creates OAS document openapi.json
 
 .PHONY: codestyle
 codestyle: ## enforces codestyle and runs pylint and mypy
+	make openapi.json
 	isort setup.py src/simcore_service_dynamic_sidecar tests
 	black src/simcore_service_dynamic_sidecar tests/
 	pylint --rcfile=../../.pylintrc src/simcore_service_dynamic_sidecar tests/
