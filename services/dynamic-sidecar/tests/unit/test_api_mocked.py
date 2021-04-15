@@ -8,6 +8,8 @@ import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 
+pytestmark = pytest.mark.asyncio
+
 
 def assert_200_empty(response: Response) -> bool:
     assert response.status_code == 200, response.text
@@ -15,7 +17,6 @@ def assert_200_empty(response: Response) -> bool:
     return True
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "route,method",
     [

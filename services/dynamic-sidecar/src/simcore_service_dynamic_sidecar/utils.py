@@ -195,11 +195,11 @@ def validate_compose_spec(
     settings: DynamicSidecarSettings, compose_file_content: str
 ) -> str:
     """
-    Validates what looks like a docker compose spec and injects 
+    Validates what looks like a docker compose spec and injects
     additional data to mainly make sure:
     - no collisions occur between container names
     - containers are located on the same docker network
-    - properly target environment variables formwarded via 
+    - properly target environment variables formwarded via
         settings on the service
     """
 

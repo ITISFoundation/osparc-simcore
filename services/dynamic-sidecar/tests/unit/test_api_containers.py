@@ -10,6 +10,8 @@ from async_asgi_testclient import TestClient
 from simcore_service_dynamic_sidecar._meta import api_vtag
 from simcore_service_dynamic_sidecar.shared_store import SharedStore
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture
 def compose_spec() -> str:
@@ -46,7 +48,6 @@ async def started_containers(
     return container_names
 
 
-@pytest.mark.asyncio
 async def test_containers_get(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
@@ -55,7 +56,6 @@ async def test_containers_get(
     assert set(json.loads(response.text)) == set(started_containers)
 
 
-@pytest.mark.asyncio
 async def test_containers_inspect(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
@@ -67,7 +67,6 @@ async def test_containers_inspect(
     assert set(json.loads(response.text).keys()) == set(started_containers)
 
 
-@pytest.mark.asyncio
 async def test_containers_inspect_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
 ) -> None:
@@ -85,7 +84,6 @@ def assert_keys_exist(result: Dict[str, Any]) -> bool:
     return True
 
 
-@pytest.mark.asyncio
 async def test_containers_docker_status(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
@@ -99,7 +97,6 @@ async def test_containers_docker_status(
     assert assert_keys_exist(decoded_response) is True
 
 
-@pytest.mark.asyncio
 async def test_containers_docker_status_pulling_containers(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
@@ -128,7 +125,6 @@ async def test_containers_docker_status_pulling_containers(
             assert entry["Status"] == "pulling"
 
 
-@pytest.mark.asyncio
 async def test_containers_docker_status_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
 ) -> None:

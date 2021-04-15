@@ -9,6 +9,8 @@ from async_asgi_testclient import TestClient
 from simcore_service_dynamic_sidecar._meta import api_vtag
 from simcore_service_dynamic_sidecar.shared_store import SharedStore
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture
 def compose_spec() -> str:
@@ -50,7 +52,6 @@ def not_started_containers() -> List[str]:
     return [f"missing-container-{i}" for i in range(5)]
 
 
-@pytest.mark.asyncio
 async def test_container_inspect_logs_remove(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
@@ -70,7 +71,6 @@ async def test_container_inspect_logs_remove(
         assert response.status_code == 200, response.text
 
 
-@pytest.mark.asyncio
 async def test_container_logs_with_timestamps(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
@@ -83,7 +83,6 @@ async def test_container_logs_with_timestamps(
         assert response.status_code == 200, response.text
 
 
-@pytest.mark.asyncio
 async def test_container_missing_container(
     test_client: TestClient, not_started_containers: List[str]
 ) -> None:
@@ -107,7 +106,6 @@ async def test_container_missing_container(
         assert response.json() == _expected_error_string(container)
 
 
-@pytest.mark.asyncio
 async def test_container_docker_error(
     test_client: TestClient,
     started_containers: List[str],
