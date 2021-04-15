@@ -108,6 +108,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // will never use the cache
           osparc.data.Resources.fetch("studies", "getSome", params)
             .then(studies => {
+              this.__userStudyContainer.nTotalStudies = 19;
               this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
               const allStudies = this.__userStudies.concat(studies);
               this._resetStudiesList(allStudies);
@@ -120,6 +121,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             })
             .finally(() => {
               this.__moreStudiesBtn.setFetching(false);
+              if (this.__userStudyContainer.nTotalStudies === this.__userStudyContainer.nStudies) {
+                this.__moreStudiesBtn.setEnabled(false);
+              }
             });
         });
       }
