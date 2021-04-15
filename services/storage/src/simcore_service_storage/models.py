@@ -140,8 +140,16 @@ class FileMetaData:
         return _str
 
 
+def get_default(column):
+    # NOTE: this is temporary. it translates bool text-clauses into python
+    # The only defaults in file_meta_data are actually of these type
+    if column.server_default:
+        return {"false": False, "true": True}.get(str(column.server_default.arg))
+    return None
+
+
 attr.s(
-    these={c.name: attr.ib(default=None) for c in file_meta_data.c},
+    these={c.name: attr.ib(default=get_default(c)) for c in file_meta_data.c},
     init=True,
     kw_only=True,
 )(FileMetaData)
