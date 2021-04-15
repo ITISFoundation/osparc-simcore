@@ -381,8 +381,9 @@ class DataStorageManager:
                     result = await conn.execute(query)
                     row = await result.first()
                     return to_meta_extended(row) if row else None
-                else:
-                    logger.debug("User %s was not read file %s", user_id, file_uuid)
+                # FIXME: returns None in both cases: file does not exist or use has no access
+                return None
+                logger.debug("User %s was not read file %s", user_id, file_uuid)
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
