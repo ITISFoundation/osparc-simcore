@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import PlainTextResponse
-from fastapi.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
+from starlette.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
 
 from ..settings import DynamicSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Response
-from fastapi.status import HTTP_400_BAD_REQUEST
+from starlette.status import HTTP_400_BAD_REQUEST
 
 from ..models import ApplicationHealth
 

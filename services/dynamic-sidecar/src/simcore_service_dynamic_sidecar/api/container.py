@@ -2,7 +2,7 @@ from typing import Any, Dict, Union
 
 import aiodocker
 from fastapi import APIRouter, Query, Request, Response
-from fastapi.status import HTTP_400_BAD_REQUEST
+from starlette.status import HTTP_400_BAD_REQUEST
 
 from ..shared_store import SharedStore
 
