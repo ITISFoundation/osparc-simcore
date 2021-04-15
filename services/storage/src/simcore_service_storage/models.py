@@ -16,7 +16,8 @@ from simcore_postgres_database.storage_models import (
     user_to_groups,
     users,
 )
-from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+
+from .settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 # FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 # from sqlalchemy.dialects.postgresql import UUID

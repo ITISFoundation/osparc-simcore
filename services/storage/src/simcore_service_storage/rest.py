@@ -6,6 +6,7 @@ import logging
 import openapi_core
 import yaml
 from aiohttp import web
+from aiohttp.web import RouteDef, RouteTableDef
 from aiohttp_swagger import setup_swagger
 from servicelib.openapi import get_base_path
 from servicelib.rest_middlewares import append_rest_middlewares
@@ -15,6 +16,12 @@ from .resources import resources
 from .settings import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__name__)
+
+
+def set_default_names(routes: RouteTableDef):
+    for r in routes:
+        if isinstance(r, RouteDef):
+            r.kwargs.setdefault("name", r.handler.__name__)
 
 
 def setup_rest(app: web.Application):
@@ -39,6 +46,7 @@ def setup_rest(app: web.Application):
     app[APP_OPENAPI_SPECS_KEY] = api_specs
 
     # Connects handlers
+    set_default_names(handlers.routes)
     app.router.add_routes(handlers.routes)
     app.router.add_routes(app_handlers.routes)
 
