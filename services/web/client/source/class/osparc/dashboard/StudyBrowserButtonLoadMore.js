@@ -34,12 +34,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
   },
 
   properties: {
-    nStudies: {
-      check: "Number",
-      init: 0,
-      nullable: false
-    },
-
     fetching: {
       check: "Boolean",
       init: false,
@@ -53,7 +47,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
       const title = this.getChildControl("title");
       const desc = this.getChildControl("subtitle-text");
       if (value) {
-        title.setValue(this.tr("Loading"));
+        title.setValue(this.tr("Loading..."));
         desc.setValue("");
         this.setIcon("@FontAwesome5Solid/crow/60");
       } else {

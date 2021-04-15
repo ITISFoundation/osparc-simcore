@@ -105,15 +105,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         return new Promise((resolve, reject) => {
           const params = {
             url: {
-              start: this.__moreStudiesBtn.getNStudies(),
+              start: this.__userStudyContainer.nStudies || 0,
               count
             }
           };
           // will never use the cache
           osparc.data.Resources.fetch("studies", "getSome", params)
             .then(studies => {
+              this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
               this.__userStudyContainer.remove(this.__moreStudiesBtn);
-              this.__moreStudiesBtn.setNStudies(this.__moreStudiesBtn.getNStudies() + studies.length);
               const allStudies = this.__userStudies.concat(studies);
               this._resetStudiesList(allStudies);
               this.resetSelection();
@@ -209,8 +209,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createMoreStudiesButton: function() {
       const loadMoreBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
-      loadMoreBtn.subscribeToFilterGroup("sideSearchFilter");
-      this.__userStudyContainer.add(loadMoreBtn);
       loadMoreBtn.addListener("execute", () => {
         loadMoreBtn.setValue(false);
         this.reloadUserStudies();
