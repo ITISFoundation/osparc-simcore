@@ -22,9 +22,9 @@ from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
-from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
-from utils_assert import assert_status
-from utils_project import clone_project_data
+from tests.helpers.utils_assert import assert_status
+from tests.helpers.utils_project import clone_project_data
+from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
