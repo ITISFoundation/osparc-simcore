@@ -3,7 +3,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Callable, Deque, Dict, List, Union
+from typing import Callable, Deque, Dict, List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -13,14 +13,7 @@ from pydantic.types import PositiveInt
 from ...models.api_resources import compose_resource_name
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
-from ...models.schemas.jobs import (
-    ArgumentType,
-    Job,
-    JobInputs,
-    JobOutputs,
-    JobStatus,
-    KeywordArguments,
-)
+from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import ComputationTaskOut, DirectorV2Api
