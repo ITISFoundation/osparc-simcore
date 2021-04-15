@@ -131,6 +131,11 @@ code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
 	@-rm $(CURDIR)/.codeclimate.yml
 
 
+.PHONY: codestyle
+codestyle: ## enforces codestyle and runs pylint and mypy
+	@../../scripts/codestyle.bash development $(shell basename "${SRC_DIR}")
+
+
 .PHONY: version-patch version-minor version-major
 version-patch: ## commits version with bug fixes not affecting the cookiecuter config
 	$(_bumpversion)

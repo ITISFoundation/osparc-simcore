@@ -21,14 +21,6 @@ openapi.json: .env ## Creates OAS document openapi.json
 	$(SCRIPTS_DIR)/openapi-generator-cli.bash validate --input-spec /local/$@
 
 
-.PHONY: codestyle
-codestyle: ## enforces codestyle and runs pylint and mypy
-	make openapi.json
-	isort setup.py src/simcore_service_dynamic_sidecar tests
-	black src/simcore_service_dynamic_sidecar tests/
-	pylint --rcfile=../../.pylintrc src/simcore_service_dynamic_sidecar tests/
-	mypy --config-file ../../mypy.ini src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
-
 
 .PHONY: run-github-action-locally
 run-github-action-locally:  ## runs "unit-test-dynamic-sidecar" defined int github workflow locally

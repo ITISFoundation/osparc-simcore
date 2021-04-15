@@ -12,16 +12,7 @@ install() {
 }
 
 codestyle(){
-    pushd services/dynamic-sidecar
-    echo "isort"
-    isort --check setup.py src/simcore_service_dynamic_sidecar tests
-    echo "black"
-    black --check src/simcore_service_dynamic_sidecar tests/
-    echo "pylint"
-    pylint --rcfile=../../.pylintrc src/simcore_service_dynamic_sidecar tests/
-    echo "mypy"
-    mypy mypy --config-file mypy.ini src/simcore_service_dynamic_sidecar tests/ --ignore-missing-imports
-    popd
+    scripts/codestyle.bash ci simcore_service_dynamic_sidecar services/dynamic-sidecar 
 }
 
 test() {
