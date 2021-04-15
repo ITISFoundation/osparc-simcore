@@ -97,10 +97,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function(count = 3) {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        if (this.__moreStudiesBtn === null) {
-          this.__moreStudiesBtn = this.__createMoreStudiesButton();
-        }
-        this.__userStudyContainer.add(this.__moreStudiesBtn);
         this.__moreStudiesBtn.setFetching(true);
         return new Promise((resolve, reject) => {
           const params = {
@@ -113,7 +109,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.data.Resources.fetch("studies", "getSome", params)
             .then(studies => {
               this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
-              this.__userStudyContainer.remove(this.__moreStudiesBtn);
               const allStudies = this.__userStudies.concat(studies);
               this._resetStudiesList(allStudies);
               this.resetSelection();
@@ -125,7 +120,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             })
             .finally(() => {
               this.__moreStudiesBtn.setFetching(false);
-              this.__userStudyContainer.add(this.__moreStudiesBtn);
             });
         });
       }
@@ -207,15 +201,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return newStudyBtn;
     },
 
-    __createMoreStudiesButton: function() {
-      const loadMoreBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
-      loadMoreBtn.addListener("execute", () => {
-        loadMoreBtn.setValue(false);
-        this.reloadUserStudies();
-      }, this);
-      return loadMoreBtn;
-    },
-
     __createButtonsLayout: function(title, content) {
       const userStudyLayout = new osparc.component.widget.CollapsibleView(title);
       userStudyLayout.getChildControl("title").set({
@@ -234,6 +219,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
+
+      const loadMoreBtn = this.__moreStudiesBtn = new osparc.ui.form.FetchButton(this.tr("Load more"));
+      loadMoreBtn.addListener("execute", () => {
+        this.reloadUserStudies();
+      }, this);
+      studiesTitleContainer.add(new qx.ui.core.Spacer(10, null));
+      studiesTitleContainer.add(loadMoreBtn);
 
       const importStudyButton = this.__createImportButton();
       studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
