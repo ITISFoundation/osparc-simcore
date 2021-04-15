@@ -195,10 +195,12 @@ def validate_compose_spec(
     settings: DynamicSidecarSettings, compose_file_content: str
 ) -> str:
     """
-    Checks the following:
-    - proper yaml format
-    - no "container_name" service property allowed, because it can
-        spawn 2 cotainers with the same name
+    Validates what looks like a docker compose spec and injects 
+    additional data to mainly make sure:
+    - no collisions occur between container names
+    - containers are located on the same docker network
+    - properly target environment variables formwarded via 
+        settings on the service
     """
 
     try:
@@ -259,7 +261,6 @@ def validate_compose_spec(
             ]
 
         spec_services[container_name_service_key] = service_data
-        # TODO: replace names in depends_on keys
 
     # transform back to string and return
     validated_compose_file_content = yaml.safe_dump(parsed_compose_spec)
