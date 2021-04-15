@@ -1,0 +1,578 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Endpoint",
+        "operationId": "health_endpoint_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationHealth"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/compose:store": {
+      "post": {
+        "summary": "Store Docker Compose Spec For Later Usage",
+        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
+        "operationId": "store_docker_compose_spec_for_later_usage_v1_compose_store_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/v1/compose:preload": {
+      "post": {
+        "summary": "Create Docker Compose Configuration Containers Without Starting",
+        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
+        "operationId": "create_docker_compose_configuration_containers_without_starting_v1_compose_preload_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number"
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/compose": {
+      "post": {
+        "summary": "Start Or Update Docker Compose Configuration",
+        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
+        "operationId": "start_or_update_docker_compose_configuration_v1_compose_post",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number"
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove Docker Compose Configuration",
+        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "operationId": "remove_docker_compose_configuration_v1_compose_delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number"
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/compose:pull": {
+      "get": {
+        "summary": "Pull Docker Required Docker Images",
+        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
+        "operationId": "pull_docker_required_docker_images_v1_compose_pull_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number"
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/compose:stop": {
+      "put": {
+        "summary": "Stop Containers Without Removing Them",
+        "description": "Stops the previously started service\nand returns the docker-compose output",
+        "operationId": "stop_containers_without_removing_them_v1_compose_stop_put",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number"
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers": {
+      "get": {
+        "summary": "Get Spawned Container Names",
+        "description": "Returns a list of containers created using docker-compose ",
+        "operationId": "get_spawned_container_names_v1_containers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:inspect": {
+      "get": {
+        "summary": "Containers Inspect",
+        "description": "Returns information about the container, like docker inspect command ",
+        "operationId": "containers_inspect_v1_containers_inspect_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:docker-status": {
+      "get": {
+        "summary": "Containers Docker Status",
+        "description": "Returns the status of the containers ",
+        "operationId": "containers_docker_status_v1_containers_docker_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/container/{name_or_id}/logs": {
+      "get": {
+        "summary": "Get Container Logs",
+        "description": "Returns the logs of a given container if found ",
+        "operationId": "get_container_logs_v1_container__name_or_id__logs_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Name Or Id",
+              "type": "string"
+            },
+            "name": "name_or_id",
+            "in": "path"
+          },
+          {
+            "description": "Only return logs since this time, as a UNIX timestamp",
+            "required": false,
+            "schema": {
+              "title": "Timstamp",
+              "type": "integer",
+              "description": "Only return logs since this time, as a UNIX timestamp",
+              "default": 0
+            },
+            "name": "since",
+            "in": "query"
+          },
+          {
+            "description": "Only return logs before this time, as a UNIX timestamp",
+            "required": false,
+            "schema": {
+              "title": "Timstamp",
+              "type": "integer",
+              "description": "Only return logs before this time, as a UNIX timestamp",
+              "default": 0
+            },
+            "name": "until",
+            "in": "query"
+          },
+          {
+            "description": "Enabling this parameter will include timestamps in logs",
+            "required": false,
+            "schema": {
+              "title": "Display timestamps",
+              "type": "boolean",
+              "description": "Enabling this parameter will include timestamps in logs",
+              "default": false
+            },
+            "name": "timestamps",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/container/{name_or_id}/inspect": {
+      "get": {
+        "summary": "Container Inspect",
+        "description": "Returns information about the container, like docker inspect command ",
+        "operationId": "container_inspect_v1_container__name_or_id__inspect_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Name Or Id",
+              "type": "string"
+            },
+            "name": "name_or_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/container/{name_or_id}/remove": {
+      "delete": {
+        "summary": "Container Remove",
+        "operationId": "container_remove_v1_container__name_or_id__remove_delete",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Name Or Id",
+              "type": "string"
+            },
+            "name": "name_or_id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/push": {
+      "post": {
+        "summary": "Post Push",
+        "operationId": "post_push_push_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retrieve": {
+      "get": {
+        "summary": "Get Retrive",
+        "operationId": "get_retrive_retrieve_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post Retrive",
+        "operationId": "post_retrive_retrieve_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/state": {
+      "get": {
+        "summary": "Get State",
+        "operationId": "get_state_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Post State",
+        "operationId": "post_state_state_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationHealth": {
+        "title": "ApplicationHealth",
+        "type": "object",
+        "properties": {
+          "is_healthy": {
+            "title": "Is Healthy",
+            "type": "boolean",
+            "description": "returns True if the service sis running correctly",
+            "default": true
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
