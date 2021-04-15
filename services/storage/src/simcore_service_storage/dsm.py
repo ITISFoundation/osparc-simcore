@@ -91,7 +91,7 @@ def setup_dsm(app: web.Application):
     app.cleanup_ctx.append(_cleanup_context)
 
 
-def to_meta_extended(row: RowProxy) -> FileMetaDataEx:
+def to_meta_data_extended(row: RowProxy) -> FileMetaDataEx:
     assert row
     meta = FileMetaData(**dict(row))  # type: ignore
     meta_extended = FileMetaDataEx(
@@ -380,7 +380,7 @@ class DataStorageManager:
                     )
                     result = await conn.execute(query)
                     row = await result.first()
-                    return to_meta_extended(row) if row else None
+                    return to_meta_data_extended(row) if row else None
                 # FIXME: returns None in both cases: file does not exist or use has no access
                 logger.debug("User %s cannot read file %s", user_id, file_uuid)
                 return None
@@ -979,7 +979,7 @@ class DataStorageManager:
             )
 
             async for row in conn.execute(stmt):
-                meta_extended = to_meta_extended(row)
+                meta_extended = to_meta_data_extended(row)
                 files_meta.append(meta_extended)
 
         return list(files_meta)
@@ -1010,7 +1010,6 @@ class DataStorageManager:
         target.fmd.file_uuid = link_uuid
         target.fmd.file_id = link_uuid  # NOTE: api-server relies on this id
         target.fmd.is_soft_link = True
-        # target.fmd.file_id = link_uuid
 
         async with self.engine.acquire() as conn:
             stmt = (
@@ -1020,5 +1019,5 @@ class DataStorageManager:
             )
 
             result = await conn.execute(stmt)
-            link = to_meta_extended(await result.first())
+            link = to_meta_data_extended(await result.first())
             return link
