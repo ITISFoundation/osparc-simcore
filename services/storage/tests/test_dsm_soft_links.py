@@ -109,6 +109,7 @@ async def test_create_soft_link(
     # 6686197 lrwxrwxrwx  1 crespo crespo    7 Apr 14 14:48 VERSION-link -> VERSION
 
     assert link_file.fmd.file_uuid == f"api/{api_file_id}/{file_name}"
+    assert link_file.fmd.file_id == link_file.fmd.file_uuid
     assert link_file.fmd.object_name == output_file.object_name
     assert link_file.fmd.entity_tag == output_file.entity_tag
     assert link_file.fmd.is_soft_link

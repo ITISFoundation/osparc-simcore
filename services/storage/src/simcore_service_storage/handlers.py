@@ -414,7 +414,7 @@ async def copy_as_soft_link(request: web.Request):
     with handle_storage_errors():
         target_uuid = params["file_id"]
         user_id = int(query["user_id"])
-        link_uuid = body["link_id"]
+        link_uuid = body.link_id
 
         dsm = await _prepare_storage_manager(
             {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request

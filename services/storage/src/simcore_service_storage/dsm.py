@@ -551,9 +551,13 @@ class DataStorageManager:
                     reason=f"User does not have enough rights to download {file_uuid}"
                 )
 
-        link = None
         bucket_name = self.simcore_bucket_name
-        object_name = file_uuid
+        async with self.engine.acquire() as conn:
+            stmt = sa.select([file_meta_data.c.object_name]).where(
+                file_meta_data.c.file_uuid == file_uuid
+            )
+            object_name: str = await conn.scalar(stmt)
+
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return link
 
@@ -1004,6 +1008,7 @@ class DataStorageManager:
 
         # duplicate target and change the following columns:
         target.fmd.file_uuid = link_uuid
+        target.fmd.file_id = link_uuid  # NOTE: api-server relies on this id
         target.fmd.is_soft_link = True
         # target.fmd.file_id = link_uuid
 
