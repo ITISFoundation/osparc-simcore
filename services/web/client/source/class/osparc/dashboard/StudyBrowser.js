@@ -65,7 +65,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __userStudyContainer: null,
     __userStudies: null,
     __newStudyBtn: null,
-    __moreStudiesBtn: null,
+    __loadMoreStudiesBtn: null,
 
     /**
      * Function that resets the selected item
@@ -97,7 +97,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function(count = 3) {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this.__moreStudiesBtn.setFetching(true);
+        this.__loadMoreStudiesBtn.setFetching(true);
         return new Promise((resolve, reject) => {
           const params = {
             url: {
@@ -108,21 +108,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           // will never use the cache
           osparc.data.Resources.fetch("studies", "getSome", params)
             .then(studies => {
-              this.__userStudyContainer.nTotalStudies = 19;
+              this.__userStudyContainer.nTotalStudies = 30;
               this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
-              const allStudies = this.__userStudies.concat(studies);
-              this._resetStudiesList(allStudies);
+              this.__addStudiesToList(studies);
               this.resetSelection();
-              resolve(allStudies);
+              resolve(this.__userStudies);
             })
             .catch(err => {
               console.error(err);
               reject(err);
             })
             .finally(() => {
-              this.__moreStudiesBtn.setFetching(false);
+              this.__loadMoreStudiesBtn.setFetching(false);
               if (this.__userStudyContainer.nTotalStudies === this.__userStudyContainer.nStudies) {
-                this.__moreStudiesBtn.setEnabled(false);
+                this.__loadMoreStudiesBtn.setEnabled(false);
               }
             });
         });
@@ -224,12 +223,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
 
-      const loadMoreBtn = this.__moreStudiesBtn = new osparc.ui.form.FetchButton(this.tr("Load more"));
-      loadMoreBtn.addListener("execute", () => {
+      const loadMoreStudiesBtn = this.__loadMoreStudiesBtn = new osparc.ui.form.FetchButton(this.tr("Load more"));
+      loadMoreStudiesBtn.addListener("execute", () => {
         this.reloadUserStudies();
       }, this);
       studiesTitleContainer.add(new qx.ui.core.Spacer(10, null));
-      studiesTitleContainer.add(loadMoreBtn);
+      studiesTitleContainer.add(loadMoreStudiesBtn);
 
       const importStudyButton = this.__createImportButton();
       studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
@@ -399,7 +398,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _resetStudiesList: function(userStudiesList) {
-      this.__userStudies = userStudiesList;
       const userStudyItems = this.__userStudyContainer.getChildren();
       for (let i=userStudyItems.length-1; i>=0; i--) {
         const userStudyItem = userStudyItems[i];
@@ -407,6 +405,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__userStudyContainer.remove(userStudyItem);
         }
       }
+      this.__addStudiesToList(userStudiesList);
+    },
+
+    __addStudiesToList: function(userStudiesList) {
+      let addAt = -1;
+      let reversedIdx = this.__userStudyContainer.getChildren().slice().reverse()
+        .findIndex(studyBtn => studyBtn instanceof osparc.dashboard.StudyBrowserButtonItem);
+      if (reversedIdx === -1) {
+        addAt = this.__userStudyContainer.getChildren().length;
+      } else {
+        addAt = this.__userStudyContainer.getChildren().length - reversedIdx;
+      }
+
+      this.__userStudies.push(...userStudiesList);
       this.self().sortStudyList(userStudiesList);
       userStudiesList.forEach(userStudy => {
         userStudy["resourceType"] = "study";
@@ -420,7 +432,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           updatedStudyData["resourceType"] = "study";
           this._resetStudyItem(updatedStudyData);
         }, this);
-        this.__userStudyContainer.add(studyItem);
+        this.__userStudyContainer.addAt(studyItem, addAt);
+        addAt++;
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
