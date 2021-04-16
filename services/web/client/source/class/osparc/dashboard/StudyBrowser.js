@@ -128,14 +128,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               this.__loadMoreStudiesBtn.setEnabled(!this.__userStudyContainer.noMoreStudies);
               if (this.__userStudyContainer.noMoreStudies) {
                 this.__loadingStudiesBtn.setFetching(false);
-              } else if (this.__loadingStudiesBtn.checkIsOnScreen()) {
-                this.reloadUserStudies();
+              } else {
+                this.__moreStudiesRequired();
               }
             });
         });
       }
       this._resetStudiesList([]);
       return null;
+    },
+
+    __moreStudiesRequired: function() {
+      if (!this.__userStudyContainer.noMoreStudies && this.__loadingStudiesBtn.checkIsOnScreen()) {
+        this.reloadUserStudies();
+      }
     },
 
     // overriden
@@ -202,6 +208,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._add(scrollStudies, {
         flex: 1
       });
+
+      scrollStudies.getChildControl("pane").addListener("scrollY", () => {
+        this.__moreStudiesRequired();
+      }, this);
     },
 
     __createNewStudyButton: function() {
