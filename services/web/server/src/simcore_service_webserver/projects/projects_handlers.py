@@ -190,7 +190,11 @@ async def list_projects(request: web.Request):
     await set_all_project_states(projects, project_types)
 
     return await paginate_limit_offset(
-        request, data=projects, limit=limit, offset=offset, total=total_number_projects
+        request.url,
+        data=projects,
+        limit=limit,
+        offset=offset,
+        total=total_number_projects,
     )
 
 

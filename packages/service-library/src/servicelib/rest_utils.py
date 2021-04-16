@@ -11,6 +11,7 @@ from typing import Any, Dict, List
 import attr
 from aiohttp import web
 from openapi_core.extensions.models.factories import Model as BodyModel
+from yarl import URL
 
 from .openapi_validation import (
     COOKIE_KEY,
@@ -81,7 +82,7 @@ async def extract_and_validate(request: web.Request):
 
 
 async def paginate_limit_offset(
-    request: web.Request, *, data: List[Any], limit, offset, total
+    request_url: URL, *, data: List[Any], limit, offset, total
 ) -> Dict[str, Any]:
     last_page = ceil(total / limit) - 1
     count = len(data)
@@ -93,19 +94,19 @@ async def paginate_limit_offset(
             "count": count,
         },
         "_links": {
-            "self": {"href": str(request.url)},
-            "first": {"href": str(request.url.update_query({"offset": 0}))},
+            "self": {"href": str(request_url)},
+            "first": {"href": str(request_url.update_query({"offset": 0}))},
             "prev": {
-                "href": str(request.url.update_query({"offset": offset - 1}))
+                "href": str(request_url.update_query({"offset": offset - 1}))
                 if offset > 0
                 else None
             },
             "next": {
-                "href": str(request.url.update_query({"offset": offset + 1}))
+                "href": str(request_url.update_query({"offset": offset + 1}))
                 if offset < last_page
                 else None
             },
-            "last": {"href": str(request.url.update_query({"offset": last_page}))},
+            "last": {"href": str(request_url.update_query({"offset": last_page}))},
         },
     }
 
