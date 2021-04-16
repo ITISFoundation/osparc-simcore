@@ -102,6 +102,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         this.__loadMoreStudiesBtn.setFetching(true);
+        if (this.__loadingStudiesBtn.isFetching()) {
+          return new Promise(resolve => {
+            resolve(this.__userStudies);
+          });
+        }
         this.__loadingStudiesBtn.setFetching(true);
         return new Promise((resolve, reject) => {
           const params = {
@@ -126,11 +131,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             .finally(() => {
               this.__loadMoreStudiesBtn.setFetching(false);
               this.__loadMoreStudiesBtn.setEnabled(!this.__userStudyContainer.noMoreStudies);
-              if (this.__userStudyContainer.noMoreStudies) {
-                this.__loadingStudiesBtn.setFetching(false);
-              } else {
-                this.__moreStudiesRequired();
-              }
+              this.__loadingStudiesBtn.setFetching(false);
+              this.__moreStudiesRequired();
             });
         });
       }
