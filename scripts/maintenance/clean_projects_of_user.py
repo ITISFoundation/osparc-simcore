@@ -2,14 +2,10 @@
 
 import asyncio
 import logging
-import pdb
-import sys
 from typing import Any, Dict, List
 
 import typer
-from httpx import URL, AsyncClient
-
-logger = logging.getLogger(__name__)
+from httpx import URL, AsyncClient, codes
 
 
 async def login_user(client: AsyncClient, email: str, password: str):
@@ -25,33 +21,47 @@ async def get_all_projects_for_user(client: AsyncClient) -> List[Dict[str, Any]]
     return []
 
 
-async def delete_project(client: AsyncClient, project_id: str):
+async def delete_project(client: AsyncClient, project_id: str, progressbar):
     path = f"/projects/{project_id}"
-    logger.info("deleting project %s", project_id)
     r = await client.delete(path)
-    if r.status_code != httpx.codes.OK:
-        logger.error(
-            "deleting project %s failed with status %s", project_id, r.status_code
+    progressbar.update(1)
+    if r.status_code != codes.NO_CONTENT:
+        typer.secho(
+            f"deleting project {project_id} failed with status {r.status_code}",
+            fg=typer.colors.RED,
         )
 
 
-async def main(endpoint: str, username: str, password: str) -> int:
+async def clean(endpoint: URL, username: str, password: str) -> int:
     try:
         async with AsyncClient(base_url=endpoint.join("v0")) as client:
             await login_user(client, username, password)
             all_projects = await get_all_projects_for_user(client)
             if not all_projects:
-                logger.error("no projects found!")
+                typer.secho("no projects found!", fg=typer.colors.RED, err=True)
                 return 1
-            logger.info("%s projects will be deleted...", len(all_projects))
-            await asyncio.gather(
-                *[delete_project(client, prj["uuid"]) for prj in all_projects]
-            )
-            logger.info("completed project deletion.")
-    except Exception as e:
-        logger.exception("Unexpected issue", exc_info=True)
+            total = len(all_projects)
+            typer.secho(f"{total} projects will be deleted...", fg=typer.colors.YELLOW)
+            with typer.progressbar(
+                length=total, label="deleting projects"
+            ) as progressbar:
+                await asyncio.gather(
+                    *[
+                        delete_project(client, prj["uuid"], progressbar)
+                        for prj in all_projects
+                    ]
+                )
+            typer.secho(f"completed projects deletion", fg=typer.colors.YELLOW)
+    except Exception as exc:
+        typer.secho(f"Unexpected issue: {exc}", fg=typer.colors.RED, err=True)
         return 1
     return 0
+
+
+def main(endpoint: str, username: str, password: str) -> int:
+    return asyncio.get_event_loop().run_until_complete(
+        clean(URL(endpoint), username, password)
+    )
 
 
 if __name__ == "__main__":

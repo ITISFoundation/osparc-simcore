@@ -8,6 +8,6 @@ install:
 	# activating python virtual environment
 	@source .venv/bin/activate
 	# installing python dependencies
-	@pip install -r requirements.txt
+	@.venv/bin/pip install -r requirements.txt
 	# now you can call the maintenance scripts
 	# e.g. ./clean_projects_of_user https://osparc-master.speag.com USEREMAIL USERPASSWORD

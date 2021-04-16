@@ -1,2 +1,2 @@
 httpx
-typer
+typer[colorama]
