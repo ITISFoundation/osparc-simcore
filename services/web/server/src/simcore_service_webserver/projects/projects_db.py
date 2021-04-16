@@ -326,6 +326,7 @@ class ProjectDBAPI:
                 WHERE projects.type != 'TEMPLATE'
                 AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
                 OR prj_owner = {user_id})
+                ORDER BY last_change_date DESC
                 """
             )
             projects_list = await self.__load_projects(
