@@ -5,7 +5,6 @@
 
 import json
 import logging
-from math import ceil
 from typing import Any, Coroutine, Dict, List, Optional, Set
 
 import aioredlock
@@ -13,8 +12,8 @@ from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects import ProjectType
 from models_library.projects_state import ProjectState
+from servicelib.rest_utils import paginate_limit_offset
 from servicelib.utils import fire_and_forget_task, logged_gather
-from yarl import URL
 
 from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
@@ -145,9 +144,6 @@ async def create_projects(request: web.Request):
         raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
 
 
-PROJECT_LISTING_LIMIT: int = 50
-
-
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
@@ -156,12 +152,11 @@ async def list_projects(request: web.Request):
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
     project_type = ProjectTypeAPI(request.query.get("type", "all"))
-    offset = int(request.query.get("offset", 0))
-    limit = int(request.query.get("limit", PROJECT_LISTING_LIMIT))
+    offset = int(request.query["offset"])
+    limit = int(request.query["limit"])
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
-    # TODO: improve dbapi to list project
     async def set_all_project_states(
         projects: List[Dict[str, Any]], project_types: List[bool]
     ):
@@ -194,53 +189,9 @@ async def list_projects(request: web.Request):
     )
     await set_all_project_states(projects, project_types)
 
-    def _compute_links(
-        request_url: URL,
-        records_count: int,
-        current_offset: int,
-        current_limit: int,
-        total_records: int,
-    ) -> Dict[str, Any]:
-        last_page = ceil(total_number_projects / current_limit) - 1
-        return {
-            "_meta": {
-                "total": total_records,
-                "limit": current_limit,
-                "count": records_count,
-            },
-            "_links": {
-                "self": {"href": str(request_url)},
-                "first": {"href": str(request_url.update_query({"offset": 0}))},
-                "prev": {
-                    "href": str(
-                        request_url.update_query({"offset": current_offset - 1})
-                    )
-                    if current_offset > 0
-                    else None
-                },
-                "next": {
-                    "href": str(
-                        request_url.update_query({"offset": current_offset + 1})
-                    )
-                    if current_offset < last_page
-                    else None
-                },
-                "last": {
-                    "href": str(
-                        request_url.update_query(
-                            {"offset": ceil(total_number_projects / current_limit) - 1}
-                        )
-                    )
-                },
-            },
-        }
-
-    return {
-        "data": projects,
-        **_compute_links(
-            request.url, len(projects), offset, limit, total_number_projects
-        ),
-    }
+    return await paginate_limit_offset(
+        request, data=projects, limit=limit, offset=offset, total=total_number_projects
+    )
 
 
 @login_required
