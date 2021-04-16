@@ -12,7 +12,7 @@ from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects import ProjectType
 from models_library.projects_state import ProjectState
-from servicelib.rest_utils import paginate_limit_offset
+from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from .. import catalog, director_v2
@@ -191,14 +191,12 @@ async def list_projects(request: web.Request):
         limit=limit,
     )
     await set_all_project_states(projects, project_types)
-
-    return paginate_limit_offset(
-        request.url,
+    return PageResponseLimitOffset(
         data=projects,
-        limit=limit,
-        offset=offset,
+        request_url=request.url,
         total=total_number_projects,
-    )
+        offset=offset,
+    ).dict(by_alias=True)
 
 
 @login_required
