@@ -6,13 +6,14 @@ from typing import Optional
 import pkg_resources
 import yaml
 from aiohttp import web, web_exceptions
-
 from simcore_service_director import exceptions, producer, registry_proxy, resources
 
 log = logging.getLogger(__name__)
 
 
-async def root_get(request: web.Request,) -> web.Response:
+async def root_get(
+    request: web.Request,
+) -> web.Response:
     log.debug("Client does root_get request %s", request)
     distb = pkg_resources.get_distribution("simcore-service-director")
     with resources.stream(resources.RESOURCE_OPEN_API) as file_ptr:
@@ -20,7 +21,6 @@ async def root_get(request: web.Request,) -> web.Response:
 
     service_health = dict(
         name=distb.project_name,
-        status="SERVICE_RUNNING",
         api_version=api_dict["info"]["version"],
         version=distb.version,
     )

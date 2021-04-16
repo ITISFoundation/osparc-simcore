@@ -5,7 +5,6 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.rest_responses import wrap_as_envelope
 from servicelib.rest_utils import body_to_dict, extract_and_validate
@@ -26,7 +25,6 @@ async def check_running(_request: web.Request):
     data = {
         "name": __name__.split(".")[0],
         "version": str(__version__),
-        "status": "SERVICE_RUNNING",
         "api_version": str(__version__),
     }
     return data
