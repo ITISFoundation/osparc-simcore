@@ -139,7 +139,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __moreStudiesRequired: function() {
-      if (!this.__userStudyContainer.noMoreStudies && this.__loadingStudiesBtn.checkIsOnScreen()) {
+      if (!this.__userStudyContainer.noMoreStudies &&
+        (this.__userStudyContainer.getVisibles().length < this.self().MIN_FILTERED_STUDIES ||
+        this.__loadingStudiesBtn.checkIsOnScreen())
+      ) {
         this.reloadUserStudies();
       }
     },
@@ -267,6 +270,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studiesDeleteButton = this.__createDeleteButton(false);
       studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
       studiesTitleContainer.add(studiesDeleteButton);
+
       userStudyContainer.addListener("changeSelection", e => {
         const nSelected = e.getData().length;
         this.__newStudyBtn.setEnabled(!nSelected);
@@ -276,6 +280,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         });
         this.__updateDeleteStudiesButton(studiesDeleteButton);
+      }, this);
+
+      userStudyContainer.addListener("changeVisibility", e => {
+        this.__moreStudiesRequired();
       }, this);
 
       return userStudyLayout;
