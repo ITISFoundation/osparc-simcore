@@ -21,7 +21,6 @@ async def root_get(
 
     service_health = dict(
         name=distb.project_name,
-        status="SERVICE_RUNNING",
         api_version=api_dict["info"]["version"],
         version=distb.version,
     )

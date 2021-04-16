@@ -42,7 +42,6 @@ async def test_root_get(loop, client, api_version_prefix):
 
     healthcheck = healthcheck_enveloped["data"]
     assert healthcheck["name"] == "simcore-service-director"
-    assert healthcheck["status"] == "SERVICE_RUNNING"
     assert healthcheck["version"] == "0.1.0"
     assert healthcheck["api_version"] == "0.1.0"
 

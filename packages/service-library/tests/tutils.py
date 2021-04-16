@@ -20,7 +20,6 @@ class Handlers:
         out = {
             "name": __name__.split(".")[0],
             "version": "1.0",
-            "status": "SERVICE_RUNNING",
             "invalid_entry": 125,
         }
         return out
@@ -29,7 +28,6 @@ class Handlers:
         out = {
             "name": __name__.split(".")[0],
             "version": "1.0",
-            "status": "SERVICE_RUNNING",
             "api_version": "1.0",
         }
         return out
