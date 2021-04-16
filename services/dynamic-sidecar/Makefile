@@ -24,7 +24,4 @@ openapi.json: .env ## Creates OAS document openapi.json
 
 .PHONY: run-github-action-locally
 run-github-action-locally:  ## runs "unit-test-dynamic-sidecar" defined int github workflow locally
-	# Note: ⚡ act is required https://github.com/nektos/act to emulate the github actons locally
-	#TODO: run as docker in docker https://www.quickdevnotes.com/run-github-actions-locally-docker-nektos-act/
-	# change the script to simply start the commmand from the docker image
-	@act -C ../../. -P ubuntu-20.04=catthehacker/ubuntu:act-20.04 -j unit-test-dynamic-sidecar
+	@make github-workflow-job job=unit-test-dynamic-sidecar
