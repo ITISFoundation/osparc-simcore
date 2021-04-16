@@ -60,7 +60,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studyList.sort(sortByProperty("lastChangeDate"));
     },
 
-    MIN_FILTERED_STUDIES: 5
+    PAGINATED_STUDIES: 5,
+    MIN_FILTERED_STUDIES: 15
   },
 
   members: {
@@ -106,7 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           const params = {
             url: {
               start: this.__userStudyContainer.nStudies || 0,
-              count: this.self().MIN_FILTERED_STUDIES
+              count: this.self().PAGINATED_STUDIES
             }
           };
           // will never use the cache
@@ -124,9 +125,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             })
             .finally(() => {
               this.__loadMoreStudiesBtn.setFetching(false);
-              this.__loadingStudiesBtn.setFetching(false);
               this.__loadMoreStudiesBtn.setEnabled(!this.__userStudyContainer.noMoreStudies);
-              if (!this.__userStudyContainer.noMoreStudies && this.__loadingStudiesBtn.checkIsOnScreen()) {
+              if (this.__userStudyContainer.noMoreStudies) {
+                this.__loadingStudiesBtn.setFetching(false);
+              } else if (this.__loadingStudiesBtn.checkIsOnScreen()) {
                 this.reloadUserStudies();
               }
             });
