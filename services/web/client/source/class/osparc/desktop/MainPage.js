@@ -278,7 +278,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
-      return osparc.data.Resources.fetch("studies", "close", params);
+      osparc.data.Resources.fetch("studies", "close", params);
     },
 
     __syncStudyEditor: function(pageContext) {
