@@ -5,7 +5,8 @@ UNDER DEVELOPMENT
 TODO: deprecate. Too general
 """
 import json
-from typing import Dict
+from math import ceil
+from typing import Any, Dict, List
 
 import attr
 from aiohttp import web
@@ -34,9 +35,9 @@ def body_to_dict(body: BodyModel) -> Dict:
 
 class EnvelopeFactory:
     """
-        Creates a { 'data': , 'error': } envelop for response payload
+    Creates a { 'data': , 'error': } envelop for response payload
 
-        as suggested in https://medium.com/studioarmix/learn-restful-api-design-ideals-c5ec915a430f
+    as suggested in https://medium.com/studioarmix/learn-restful-api-design-ideals-c5ec915a430f
     """
 
     def __init__(self, data=None, error=None):
@@ -77,6 +78,36 @@ async def extract_and_validate(request: web.Request):
         )
 
     return params[PATH_KEY], params[QUERY_KEY], body
+
+
+async def paginate_limit_offset(
+    request: web.Request, *, data: List[Any], limit, offset, total
+) -> Dict[str, Any]:
+    last_page = ceil(total / limit) - 1
+    count = len(data)
+    return {
+        "data": data,
+        "_meta": {
+            "total": total,
+            "limit": limit,
+            "count": count,
+        },
+        "_links": {
+            "self": {"href": str(request.url)},
+            "first": {"href": str(request.url.update_query({"offset": 0}))},
+            "prev": {
+                "href": str(request.url.update_query({"offset": offset - 1}))
+                if offset > 0
+                else None
+            },
+            "next": {
+                "href": str(request.url.update_query({"offset": offset + 1}))
+                if offset < last_page
+                else None
+            },
+            "last": {"href": str(request.url.update_query({"offset": last_page}))},
+        },
+    }
 
 
 __all__ = ("COOKIE_KEY", "HEADER_KEY", "PATH_KEY", "QUERY_KEY")
