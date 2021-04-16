@@ -1,0 +1,2 @@
+httpx
+typer[colorama]
