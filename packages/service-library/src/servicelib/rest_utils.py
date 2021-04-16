@@ -11,6 +11,7 @@ from typing import Any, Dict, List
 import attr
 from aiohttp import web
 from openapi_core.extensions.models.factories import Model as BodyModel
+from pydantic.types import PositiveInt
 from yarl import URL
 
 from .openapi_validation import (
@@ -81,17 +82,18 @@ async def extract_and_validate(request: web.Request):
     return params[PATH_KEY], params[QUERY_KEY], body
 
 
-async def paginate_limit_offset(
-    request_url: URL, *, data: List[Any], limit, offset, total
+def paginate_limit_offset(
+    request_url: URL, *, data: List[Any], limit: PositiveInt, offset: int, total: int
 ) -> Dict[str, Any]:
+    assert limit > 0  # nosec
+    assert len(data) <= limit  # nosec
     last_page = ceil(total / limit) - 1
-    count = len(data)
     return {
         "data": data,
         "_meta": {
             "total": total,
             "limit": limit,
-            "count": count,
+            "count": len(data),
         },
         "_links": {
             "self": {"href": str(request_url)},

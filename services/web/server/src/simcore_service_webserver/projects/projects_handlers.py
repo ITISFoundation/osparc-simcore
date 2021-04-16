@@ -149,11 +149,14 @@ async def create_projects(request: web.Request):
 async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
+    from servicelib.rest_utils import extract_and_validate
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    project_type = ProjectTypeAPI(request.query.get("type", "all"))
-    offset = int(request.query["offset"])
-    limit = int(request.query["limit"])
+    _, query, _ = await extract_and_validate(request)
+
+    project_type = ProjectTypeAPI(query["type"])
+    offset = query["offset"]
+    limit = query["limit"]
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
@@ -189,7 +192,7 @@ async def list_projects(request: web.Request):
     )
     await set_all_project_states(projects, project_types)
 
-    return await paginate_limit_offset(
+    return paginate_limit_offset(
         request.url,
         data=projects,
         limit=limit,
