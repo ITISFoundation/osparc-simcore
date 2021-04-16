@@ -6,18 +6,25 @@ import logging
 import openapi_core
 import yaml
 from aiohttp import web
+from aiohttp.web import RouteDef, RouteTableDef
 from aiohttp_swagger import setup_swagger
 from servicelib.openapi import get_base_path
 from servicelib.rest_middlewares import append_rest_middlewares
 
-from . import app_handlers, rest_routes
+from . import app_handlers, handlers
 from .resources import resources
 from .settings import APP_OPENAPI_SPECS_KEY
 
 log = logging.getLogger(__name__)
 
 
-def setup(app: web.Application):
+def set_default_names(routes: RouteTableDef):
+    for r in routes:
+        if isinstance(r, RouteDef):
+            r.kwargs.setdefault("name", r.handler.__name__)
+
+
+def setup_rest(app: web.Application):
     """Setup the rest API module in the application in aiohttp fashion.
 
     - loads and validate openapi specs from a remote (e.g. apihub) or local location
@@ -39,11 +46,17 @@ def setup(app: web.Application):
     app[APP_OPENAPI_SPECS_KEY] = api_specs
 
     # Connects handlers
-    routes = rest_routes.create(api_specs)
-    app.router.add_routes(routes)
+    set_default_names(handlers.routes)
+    app.router.add_routes(handlers.routes)
     app.router.add_routes(app_handlers.routes)
 
-    log.debug("routes:\n\t%s", "\n\t".join(map(str, routes)))
+    log.debug(
+        "routes:\n %s",
+        "\n".join(
+            f"\t{name}:{resource}"
+            for name, resource in app.router.named_resources().items()
+        ),
+    )
 
     # Enable error, validation and envelop middleware on API routes
     base_path = get_base_path(api_specs)
@@ -56,9 +69,3 @@ def setup(app: web.Application):
         swagger_from_file=str(spec_path),
         ui_version=3,
     )
-
-
-# alias
-setup_rest = setup
-
-__all__ = "setup_rest"

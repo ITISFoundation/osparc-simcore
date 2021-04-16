@@ -16,7 +16,8 @@ from simcore_postgres_database.storage_models import (
     user_to_groups,
     users,
 )
-from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+
+from .settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 # FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 # from sqlalchemy.dialects.postgresql import UUID
@@ -129,6 +130,7 @@ class FileMetaData:
             self.last_modified = self.created_at
             self.file_size = -1
             self.entity_tag = None
+            self.is_soft_link = False
 
     def __str__(self):
         d = attr.asdict(self)
@@ -138,8 +140,16 @@ class FileMetaData:
         return _str
 
 
+def get_default(column):
+    # NOTE: this is temporary. it translates bool text-clauses into python
+    # The only defaults in file_meta_data are actually of these type
+    if column.server_default:
+        return {"false": False, "true": True}.get(str(column.server_default.arg))
+    return None
+
+
 attr.s(
-    these={c.name: attr.ib(default=None) for c in file_meta_data.c},
+    these={c.name: attr.ib(default=get_default(c)) for c in file_meta_data.c},
     init=True,
     kw_only=True,
 )(FileMetaData)

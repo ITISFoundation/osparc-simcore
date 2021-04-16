@@ -7,9 +7,8 @@ from typing import Dict
 import aiohttp
 import pytest
 import tenacity
-from yarl import URL
-
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
+from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
 
@@ -36,8 +35,7 @@ async def webserver_service(webserver_endpoint: URL, docker_stack: Dict) -> URL:
 async def wait_till_webserver_responsive(webserver_endpoint: URL):
     async with aiohttp.ClientSession() as session:
         async with session.get(webserver_endpoint.with_path("/v0/")) as resp:
+            # NOTE: Health-check endpoint require only a
+            # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
+            # regardless of the payload content
             assert resp.status == 200
-            data = await resp.json()
-            assert "data" in data
-            assert "status" in data["data"]
-            assert data["data"]["status"] == "SERVICE_RUNNING"

@@ -7,8 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
-
-import utils
+import tests.utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 
 
@@ -43,7 +42,7 @@ async def test_datcore_unavailable(loop, mocked_blackfynn_unavailable):
 
 
 async def test_datcore_ping(loop):
-    if not utils.has_datcore_tokens():
+    if not tests.utils.has_datcore_tokens():
         return
 
     api_token = os.environ.get("BF_API_KEY", "none")
@@ -55,7 +54,7 @@ async def test_datcore_ping(loop):
 
 
 async def test_datcore_list_files_recursively(loop):
-    if not utils.has_datcore_tokens():
+    if not tests.utils.has_datcore_tokens():
         return
 
     api_token = os.environ.get("BF_API_KEY", "none")
@@ -67,7 +66,7 @@ async def test_datcore_list_files_recursively(loop):
 
 
 async def test_datcore_list_files_raw(loop):
-    if not utils.has_datcore_tokens():
+    if not tests.utils.has_datcore_tokens():
         return
 
     api_token = os.environ.get("BF_API_KEY", "none")
@@ -79,7 +78,7 @@ async def test_datcore_list_files_raw(loop):
 
 
 async def test_datcore_nested_download_link(loop):
-    if not utils.has_datcore_tokens():
+    if not tests.utils.has_datcore_tokens():
         return
 
     api_token = os.environ.get("BF_API_KEY", "none")

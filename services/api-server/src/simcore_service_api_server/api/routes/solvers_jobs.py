@@ -3,24 +3,21 @@
 
 import logging
 from collections import deque
-from typing import Callable, Deque, List
+from typing import Callable, Deque, Dict, List, Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
+from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
 from ...models.api_resources import compose_resource_name
 from ...models.domain.projects import NewProjectIn, Project
-from ...models.schemas.jobs import (
-    Job,
-    JobInputs,
-    JobOutputs,
-    JobStatus,
-    KeywordArguments,
-)
+from ...models.schemas.files import File
+from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
 from ...models.schemas.solvers import SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import ComputationTaskOut, DirectorV2Api
+from ...modules.storage import StorageApi, to_file_api_model
 from ...utils.solver_job_models_converters import (
     create_job_from_project,
     create_jobstatus_from_task,
@@ -274,6 +271,7 @@ async def get_job_outputs(
     user_id: PositiveInt = Depends(get_current_user_id),
     db_engine: Engine = Depends(get_db_engine),
     webserver_api: AuthSession = Depends(get_webserver_session),
+    storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
     async def _fake_impl():
         from ._jobs_faker import get_job_outputs_impl
@@ -288,12 +286,35 @@ async def get_job_outputs(
         node_ids = list(project.workbench.keys())
         assert len(node_ids) == 1  # nosec
 
-        results: KeywordArguments = await get_solver_output_results(
+        outputs: Dict[
+            str, Union[float, int, bool, BaseFileLink, str, None]
+        ] = await get_solver_output_results(
             user_id=user_id,
             project_uuid=job_id,
             node_uuid=UUID(node_ids[0]),
             db_engine=db_engine,
         )
+
+        results: Dict[str, ArgumentType] = {}
+        for name, value in outputs.items():
+            if isinstance(value, BaseFileLink):
+                # TODO: value.path exists??
+                file_id: UUID = File.create_id(*value.path.split("/"))
+
+                # TODO: acquire_soft_link will halve calls
+                found = await storage_client.search_files(user_id, file_id)
+                if found:
+                    assert len(found) == 1
+                    results[name] = to_file_api_model(found[0])
+                else:
+                    api_file: File = await storage_client.create_soft_link(
+                        user_id, value.path, file_id
+                    )
+                    results[name] = api_file
+            else:
+                # TODO: cast against catalog's output port specs
+                results[name] = value
+
         job_outputs = JobOutputs(job_id=job_id, results=results)
         return job_outputs
 
