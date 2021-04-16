@@ -6094,13 +6094,18 @@ paths:
           in: query
           schema:
             type: integer
+            minimum: 0
             default: 0
+          required: false
           description: index to the first item to return
         - name: limit
           in: query
           schema:
             type: integer
-            default: 50
+            default: 20
+            minimum: 1
+            maximum: 50
+          required: false
           description: maximum number of items to return
       responses:
         '200':
