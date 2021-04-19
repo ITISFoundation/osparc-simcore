@@ -137,7 +137,9 @@ async def get_redirection_to_viewer(request: web.Request):
         )
 
         # Retrieve user or create a temporary guest
-        user: UserInfo = await acquire_user(request)
+        user: UserInfo = await acquire_user(
+            request, is_guest_allowed=viewer.is_guest_allowed
+        )
 
         # Generate one project per user + download_link + viewer
         project_id, viewer_id = await acquire_project_with_viewer(
@@ -164,7 +166,7 @@ async def get_redirection_to_viewer(request: web.Request):
             status_code=web.HTTPUnprocessableEntity.status_code,  # 422
         ) from err
 
-    except web.HTTPClientError as err:
+    except (web.HTTPClientError, web.HTTPUnauthorized) as err:
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
         ) from err

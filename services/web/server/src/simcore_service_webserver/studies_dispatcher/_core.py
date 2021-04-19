@@ -42,6 +42,7 @@ class ViewerInfo(BaseModel):
     input_port_key: str = Field(
         description="Name of the connection port, since it is service-dependent",
     )
+    is_guest_allowed: bool = True
 
     @property
     def footprint(self) -> str:
@@ -54,13 +55,13 @@ class ViewerInfo(BaseModel):
 
     @classmethod
     def create_from_db(cls, row: RowProxy) -> "ViewerInfo":
-        display_name = row["service_display_name"] or row["service_key"].split("/")[-1]
         return cls(
             key=row["service_key"],
             version=row["service_version"],
             filetype=row["filetype"],
-            label=display_name,
+            label=row["service_display_name"] or row["service_key"].split("/")[-1],
             input_port_key=row["service_input_port"],
+            is_guest_allowed=row["is_guest_allowed"],
         )
 
 
