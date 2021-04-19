@@ -5,7 +5,7 @@
 #
 # NOTE: linter error 'missing image' happens with the file is called 'docker-compose.build.yml'
 #
-version: "3.7"
+version: "3.9"
 services:
   api-server:
     image: local/api-server:${BUILD_TARGET:?build_target_required}

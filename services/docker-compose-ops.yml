@@ -17,7 +17,7 @@
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/web/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
-version: "3.7"
+version: "3.9"
 
 services:
   adminer:
