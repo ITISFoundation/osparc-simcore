@@ -471,14 +471,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __removeFromStudyList: function(studyId) {
-      const studyContainer = this.__userStudyContainer;
-      const items = studyContainer.getChildren();
-      for (let i=0; i<items.length; i++) {
-        const item = items[i];
-        if (item.getUuid && studyId === item.getUuid()) {
-          studyContainer.remove(item);
-          return;
-        }
+      const idx = this.__userStudies.findIndex(study => study["uuid"] === studyId);
+      if (idx > -1) {
+        this.__userStudies.splice(idx, 1);
+      }
+      const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
+      if (studyItem) {
+        this.__userStudyContainer.remove(studyItem);
       }
     },
 
