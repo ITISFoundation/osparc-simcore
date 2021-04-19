@@ -693,8 +693,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getStudyData: function(id) {
-      const matchesId = study => study.uuid === id;
-      return this.__userStudies.find(matchesId);
+      return this.__userStudies.find(study => study.uuid === id);
     },
 
     __itemClicked: function(item, isShiftPressed) {
