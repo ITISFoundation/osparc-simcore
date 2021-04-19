@@ -8,7 +8,7 @@ certifi==2020.12.5
     # via requests
 chardet==4.0.0
     # via requests
-docker==4.4.4
+docker==5.0.0
     # via -r requirements.in
 idna==2.10
     # via requests

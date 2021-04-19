@@ -28,7 +28,7 @@ respx<0.13.0
 
 
 # Keeps all docker compose to the same version. TODO: remove when all synced
-docker-compose==1.29.0
+docker-compose==1.29.1
 
 
 # vulnerability https://github.com/advisories/GHSA-rhm9-p9w5-fwm7  Feb.2021

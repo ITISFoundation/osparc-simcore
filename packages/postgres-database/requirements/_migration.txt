@@ -9,12 +9,10 @@ alembic==1.5.5
 certifi==2020.12.5
     # via requests
 chardet==3.0.4
-    # via
-    #   -r requirements/_migration.in
-    #   requests
+    # via requests
 click==7.1.2
     # via -r requirements/_migration.in
-docker==4.4.4
+docker==5.0.0
     # via -r requirements/_migration.in
 idna==2.10
     # via
@@ -36,7 +34,6 @@ requests==2.25.1
     # via docker
 six==1.15.0
     # via
-    #   docker
     #   python-dateutil
     #   tenacity
     #   websocket-client
