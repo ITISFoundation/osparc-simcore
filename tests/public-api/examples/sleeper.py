@@ -62,9 +62,9 @@ with osparc.ApiClient(cfg) as api_client:
         solver.version,
         JobInputs(
             {
-                "input_3": 0,
-                "input_2": 3.0,
-                "input_1": input_file,
+                "input_3": False,  # If true, service will fail after sleep
+                "input_2": 3.0,  # Amount of time-sleep
+                "input_1": input_file,  # File containing only one integer
             }
         ),
     )
