@@ -167,10 +167,11 @@ async def get_redirection_to_viewer(request: web.Request):
         ) from err
 
     except (web.HTTPUnauthorized) as err:
-        frontend_url = request.app.router[INDEX_RESOURCE_NAME].url_for()
-        msg = f"{err.reason}. Please login or register at {frontend_url}"
         raise create_redirect_response(
-            request.app, page="error", message=msg, status_code=err.status_code
+            request.app,
+            page="error",
+            message=f"{err.reason}. Please reload this page to login/register.",
+            status_code=err.status_code,
         ) from err
 
     except (web.HTTPClientError) as err:
