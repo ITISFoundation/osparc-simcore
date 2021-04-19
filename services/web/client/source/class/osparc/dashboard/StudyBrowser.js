@@ -354,11 +354,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __studyStateReceived: function(studyId, state) {
+      osparc.store.Store.getInstance().setStudyState(studyId, state);
       const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
       if (studyItem) {
         studyItem.setState(state);
       }
-      osparc.store.Store.getInstance().setStudyState(studyId, state);
     },
 
     __attachEventHandlers: function() {
