@@ -349,6 +349,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __studyStateReceived: function(studyId, state) {
       osparc.store.Store.getInstance().setStudyState(studyId, state);
+      const idx = this.__userStudies.findIndex(study => study["uuid"] === studyId);
+      if (idx > -1) {
+        this.__userStudies[idx]["state"] = state;
+      }
       const studyItem = this.__userStudyContainer.getChildren().find(card => (card instanceof osparc.dashboard.StudyBrowserButtonItem) && (card.getUuid() === studyId));
       if (studyItem) {
         studyItem.setState(state);
@@ -421,14 +425,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _resetStudyItem: function(studyData) {
-      const userStudiesList = this.__userStudies;
-      const index = userStudiesList.findIndex(userStudy => userStudy["uuid"] === studyData["uuid"]);
+      const userStudies = this.__userStudies;
+      const index = userStudies.findIndex(userStudy => userStudy["uuid"] === studyData["uuid"]);
       if (index === -1) {
-        userStudiesList.push(studyData);
+        userStudies.push(studyData);
       } else {
-        userStudiesList[index] = studyData;
+        userStudies[index] = studyData;
       }
-      this._resetStudiesList(userStudiesList);
+      this._resetStudiesList(userStudies);
     },
 
     _resetStudiesList: function(userStudiesList) {
