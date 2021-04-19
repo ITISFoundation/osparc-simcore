@@ -5,6 +5,7 @@ from functools import lru_cache
 from typing import List, Optional
 
 from aiohttp import web
+from aiopg.sa.result import RowProxy
 from models_library.services import KEY_RE, VERSION_RE
 from pydantic import BaseModel, Field, ValidationError, constr
 from simcore_postgres_database.models.services_consume_filetypes import (
@@ -19,7 +20,7 @@ log = logging.getLogger(__name__)
 
 
 # VIEWERS  -----------------------------------------------------------------------------
-class MatchNotFoundError(Exception):
+class StudyDispatcherError(Exception):
     def __init__(self, reason):
         super().__init__()
         self.reason = reason
@@ -33,8 +34,8 @@ class ViewerInfo(BaseModel):
     to visualize a file of that type
     """
 
-    key: constr(regex=KEY_RE)
-    version: constr(regex=VERSION_RE)
+    key: constr(regex=KEY_RE)  # type: ignore
+    version: constr(regex=VERSION_RE)  # type: ignore
     filetype: str = Field(..., description="Filetype associated to this viewer")
 
     label: str = Field(..., description="Display name")
@@ -50,6 +51,17 @@ class ViewerInfo(BaseModel):
     def title(self) -> str:
         """ human readable title """
         return f"{self.label.capitalize()} v{self.version}"
+
+    @classmethod
+    def create_from_db(cls, row: RowProxy) -> "ViewerInfo":
+        display_name = row["service_display_name"] or row["service_key"].split("/")[-1]
+        return cls(
+            key=row["service_key"],
+            version=row["service_version"],
+            filetype=row["filetype"],
+            label=display_name,
+            input_port_key=row["service_input_port"],
+        )
 
 
 async def list_viewers_info(
@@ -83,18 +95,7 @@ async def list_viewers_info(
                     if row["filetype"] in listed_filetype:
                         continue
                 listed_filetype.add(row["filetype"])
-
-                display_name = (
-                    row["service_display_name"] or row["service_key"].split("/")[-1]
-                )
-
-                consumer = ViewerInfo(
-                    key=row["service_key"],
-                    version=row["service_version"],
-                    filetype=row["filetype"],
-                    label=display_name,
-                    input_port_key=row["service_input_port"],
-                )
+                consumer = ViewerInfo.create_from_db(row)
                 consumers.append(consumer)
 
             except ValidationError as err:
@@ -103,7 +104,7 @@ async def list_viewers_info(
     return list(consumers)
 
 
-async def find_compatible_viewer(
+async def get_default_viewer(
     app: web.Application,
     file_type: str,
     file_size: Optional[int] = None,
@@ -112,15 +113,45 @@ async def find_compatible_viewer(
         viewers = await list_viewers_info(app, file_type, only_default=True)
         viewer = viewers[0]
     except IndexError as err:
-        raise MatchNotFoundError(
-            f"No viewer available for file type '{file_type}''"
+        raise StudyDispatcherError(
+            f"No viewer available for file type '{file_type}'"
         ) from err
 
     # TODO: This is a temporary limitation just for demo purposes.
     if file_size is not None and file_size > 50 * MEGABYTES:
-        raise MatchNotFoundError(f"File size {file_size*1E-6} MB is over allowed limit")
+        raise StudyDispatcherError(
+            f"File size {file_size*1E-6} MB is over allowed limit"
+        )
 
     return viewer
+
+
+async def validate_requested_viewer(
+    app: web.Application,
+    file_type: str,
+    file_size: Optional[int] = None,
+    service_key: Optional[str] = None,
+    service_version: Optional[str] = None,
+) -> ViewerInfo:
+
+    if not service_key and not service_version:
+        return await get_default_viewer(app, file_type, file_size)
+
+    if service_key and service_version:
+        async with app[APP_DB_ENGINE_KEY].acquire() as conn:
+            stmt = services_consume_filetypes.select().where(
+                (services_consume_filetypes.c.filetype == file_type)
+                & (services_consume_filetypes.c.service_key == service_key)
+                & (services_consume_filetypes.c.service_version == service_version)
+            )
+            result = await conn.execute(stmt)
+            row = await result.first()
+            if row:
+                return ViewerInfo.create_from_db(row)
+
+    raise StudyDispatcherError(
+        f"None of the registered viewers can open file type '{file_type}'"
+    )
 
 
 # UTILITIES ---------------------------------------------------------------

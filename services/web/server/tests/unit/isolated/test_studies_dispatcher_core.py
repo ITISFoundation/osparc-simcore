@@ -89,12 +89,6 @@ def test_redirection_urls():
         r"http://localhost:9081/view?file_type=CSV&download_link=https%253A%252F%252Fraw.githubusercontent.com%252Frawgraphs%252Fraw%252Fmaster%252Fdata%252Forchestra.csv&file_name=orchestra.json&file_size=4&viewer_key=simcore/services/comp/foo&viewer_version=1.0.0"
     )
 
-    # TODO: why this fails?
-    # assert (
-    #    url_in.query["download_link"]
-    #    == "https%253A%252F%252Fraw.githubusercontent.com%252Frawgraphs%252Fraw%252Fmaster%252Fdata%252Forchestra.csv"
-    # )
-
     assert hasattr(url_in, "query")
     params = RedirectionQueryParams.from_request(url_in)
 

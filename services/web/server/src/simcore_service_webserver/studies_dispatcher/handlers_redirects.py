@@ -14,7 +14,7 @@ from pydantic.types import PositiveInt
 from yarl import URL
 
 from ..statics import INDEX_RESOURCE_NAME
-from ._core import MatchNotFoundError, ViewerInfo, find_compatible_viewer
+from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
 
@@ -51,8 +51,8 @@ def create_redirect_response(
 # HANDLERS --------------------------------
 class ViewerQueryParams(BaseModel):
     file_type: str
-    viewer_key: constr(regex=KEY_RE)
-    viewer_version: constr(regex=VERSION_RE)
+    viewer_key: constr(regex=KEY_RE)  # type: ignore
+    viewer_version: constr(regex=VERSION_RE)  # type: ignore
 
     @staticmethod
     def from_viewer(viewer: ViewerInfo) -> "ViewerQueryParams":
@@ -89,7 +89,7 @@ class RedirectionQueryParams(ViewerQueryParams):
             return obj
 
     async def check_download_link(self):
-        """Explicit validation of download link that performs a light fetch of url's hea"""
+        """Explicit validation of download link that performs a light fetch of url's head"""
         #
         # WARNING: Do not use this check with Amazon download links
         #          since HEAD operation is forbidden!
@@ -122,14 +122,18 @@ def compose_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> s
 async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
-        params = RedirectionQueryParams.from_request(request)
+        params: RedirectionQueryParams = RedirectionQueryParams.from_request(request)
         # TODO: Cannot check file_size from HEAD
         # removed await params.check_download_link()
         # Perhaps can check the header for GET while downloading and retreive file_size??
 
         # pylint: disable=no-member
-        viewer: ViewerInfo = await find_compatible_viewer(
-            request.app, file_type=params.file_type, file_size=params.file_size
+        viewer: ViewerInfo = await validate_requested_viewer(
+            request.app,
+            file_type=params.file_type,
+            file_size=params.file_size,
+            service_key=params.viewer_key,
+            service_version=params.viewer_version,
         )
 
         # Retrieve user or create a temporary guest
@@ -152,7 +156,7 @@ async def get_redirection_to_viewer(request: web.Request):
         )
         await ensure_authentication(user, request, response)
 
-    except MatchNotFoundError as err:
+    except StudyDispatcherError as err:
         raise create_redirect_response(
             request.app,
             page="error",
@@ -170,7 +174,7 @@ async def get_redirection_to_viewer(request: web.Request):
         raise create_redirect_response(
             request.app,
             page="error",
-            message="Ups something went wrong while processing your request.",
+            message="Something went wrong while processing your request.",
             status_code=web.HTTPInternalServerError.status_code,
         ) from err
 

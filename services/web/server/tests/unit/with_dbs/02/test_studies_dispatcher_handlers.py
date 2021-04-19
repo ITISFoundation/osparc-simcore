@@ -269,21 +269,6 @@ def mocks_on_projects_api(mocker):
     )
 
 
-async def _get_user_projects(client):
-    from servicelib.rest_responses import unwrap_envelope
-
-    url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(type="user"))
-
-    payload = await resp.json()
-    assert resp.status == 200, payload
-
-    projects, error = unwrap_envelope(payload)
-    assert not error, pprint(error)
-
-    return projects
-
-
 async def assert_redirected_to_study(
     resp: ClientResponse, session: ClientSession
 ) -> str:
@@ -362,7 +347,21 @@ async def test_dispatch_viewer_anonymously(
     assert data["role"].upper() == UserRole.GUEST.name
 
     # guest user only a copy of the template project
-    projects = await _get_user_projects(client)
+    async def _get_user_projects():
+        from servicelib.rest_responses import unwrap_envelope
+
+        url = client.app.router["list_projects"].url_for()
+        resp = await client.get(url.with_query(type="user"))
+
+        payload = await resp.json()
+        assert resp.status == 200, payload
+
+        projects, error = unwrap_envelope(payload)
+        assert not error, pprint(error)
+
+        return projects
+
+    projects = await _get_user_projects()
     assert len(projects) == 1
     guest_project = projects[0]
 
