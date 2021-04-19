@@ -103,41 +103,34 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         this.__loadMoreStudiesBtn.setFetching(true);
         if (this.__loadingStudiesBtn.isFetching()) {
-          return new Promise(resolve => {
-            resolve(this.__userStudies);
-          });
+          return;
         }
         this.__loadingStudiesBtn.setFetching(true);
-        return new Promise((resolve, reject) => {
-          const params = {
-            url: {
-              start: this.__userStudyContainer.nStudies || 0,
-              count: this.self().PAGINATED_STUDIES
-            }
-          };
-          // will never use the cache
-          osparc.data.Resources.fetch("studies", "getSome", params)
-            .then(studies => {
-              this.__userStudyContainer.noMoreStudies = studies.length === 0;
-              this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
-              this.__addStudiesToList(studies);
-              this.resetSelection();
-              resolve(this.__userStudies);
-            })
-            .catch(err => {
-              console.error(err);
-              reject(err);
-            })
-            .finally(() => {
-              this.__loadMoreStudiesBtn.setFetching(false);
-              this.__loadMoreStudiesBtn.setEnabled(!this.__userStudyContainer.noMoreStudies);
-              this.__loadingStudiesBtn.setFetching(false);
-              this.__moreStudiesRequired();
-            });
-        });
+        const params = {
+          url: {
+            start: this.__userStudyContainer.nStudies || 0,
+            count: this.self().PAGINATED_STUDIES
+          }
+        };
+        // will never use the cache
+        osparc.data.Resources.fetch("studies", "getSome", params)
+          .then(studies => {
+            this.__userStudyContainer.noMoreStudies = studies.length === 0;
+            this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
+            this.__addStudiesToList(studies);
+            this.resetSelection();
+          })
+          .catch(err => {
+            console.error(err);
+          })
+          .finally(() => {
+            this.__loadMoreStudiesBtn.setFetching(false);
+            this.__loadMoreStudiesBtn.setEnabled(!this.__userStudyContainer.noMoreStudies);
+            this.__loadingStudiesBtn.setFetching(false);
+            this.__moreStudiesRequired();
+          });
       }
       this._resetStudiesList([]);
-      return null;
     },
 
     __moreStudiesRequired: function() {
