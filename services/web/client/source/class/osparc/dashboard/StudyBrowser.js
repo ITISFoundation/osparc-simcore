@@ -129,8 +129,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__loadingStudiesBtn.setFetching(false);
             this.__moreStudiesRequired();
           });
+      } else {
+        this._resetStudiesList([]);
       }
-      this._resetStudiesList([]);
     },
 
     __moreStudiesRequired: function() {
