@@ -458,15 +458,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (osparc.data.model.Study.isStudySecondary(userStudy)) {
           return;
         }
-        const idx = studyList.findIndex(elem => elem.getUuid && elem.getUuid() === userStudy["uuid"]);
+        const idx = studyList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonItem && card.getUuid() === userStudy["uuid"]);
         if (idx !== -1) {
           return;
         }
         const studyItem = this.__createStudyItem(userStudy);
         this.__userStudyContainer.add(studyItem);
       });
-      this.self().sortStudyList(studyList.filter(elem => elem instanceof osparc.dashboard.StudyBrowserButtonItem));
-      const idx = studyList.findIndex(elem => elem instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
+      this.self().sortStudyList(studyList.filter(card => card instanceof osparc.dashboard.StudyBrowserButtonItem));
+      const idx = studyList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
       if (idx !== -1) {
         studyList.push(studyList.splice(idx, 1)[0]);
       }
