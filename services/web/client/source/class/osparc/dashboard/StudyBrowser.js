@@ -120,7 +120,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             .then(studies => {
               this.__userStudyContainer.noMoreStudies = studies.length === 0;
               this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
-              this.__appendStudiesToList(studies);
+              this.__addStudiesToList(studies);
               this.resetSelection();
               resolve(this.__userStudies);
             })
@@ -444,10 +444,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__userStudyContainer.remove(userStudyItem);
         }
       }
-      this.__appendStudiesToList(userStudiesList);
+      this.__addStudiesToList(userStudiesList);
     },
 
-    __appendStudiesToList: function(userStudiesList) {
       let addAt = -1;
       let reversedIdx = this.__userStudyContainer.getChildren().slice().reverse()
         .findIndex(studyBtn => studyBtn instanceof osparc.dashboard.StudyBrowserButtonItem);
@@ -457,6 +456,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         addAt = this.__userStudyContainer.getChildren().length - reversedIdx;
       }
 
+    __addStudiesToList: function(userStudiesList) {
       this.__userStudies.push(...userStudiesList);
       this.self().sortStudyList(userStudiesList);
       userStudiesList.forEach(userStudy => {
