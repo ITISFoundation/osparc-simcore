@@ -41,7 +41,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
   statics: {
     sortStudyList: function(studyList) {
-      let sortByProperty = function(prop) {
+      const sortByProperty = function(prop) {
         return function(a, b) {
           if (prop === "lastChangeDate") {
             return new Date(b[prop]) - new Date(a[prop]);
@@ -447,15 +447,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this.__addStudiesToList(userStudiesList);
     },
 
-      let addAt = -1;
-      let reversedIdx = this.__userStudyContainer.getChildren().slice().reverse()
-        .findIndex(studyBtn => studyBtn instanceof osparc.dashboard.StudyBrowserButtonItem);
-      if (reversedIdx === -1) {
-        addAt = this.__userStudyContainer.getChildren().length - 1; // -1 = Loading always goes last
-      } else {
-        addAt = this.__userStudyContainer.getChildren().length - reversedIdx;
-      }
-
     __addStudiesToList: function(userStudiesList) {
       this.__userStudies.push(...userStudiesList);
       this.self().sortStudyList(userStudiesList);
@@ -471,9 +462,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           updatedStudyData["resourceType"] = "study";
           this._resetStudyItem(updatedStudyData);
         }, this);
-        this.__userStudyContainer.addAt(studyItem, addAt);
-        addAt++;
+        this.__userStudyContainer.add(studyItem);
       });
+      const studyList = this.__userStudyContainer.getChildren();
+      this.self().sortStudyList(studyList.filter(elem => elem instanceof osparc.dashboard.StudyBrowserButtonItem));
+      const idx = studyList.findIndex(elem => elem instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
+      if (idx !== -1) {
+        studyList.push(studyList.splice(idx, 1)[0]);
+      }
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
