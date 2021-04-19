@@ -6,7 +6,6 @@
     - one filetype could be handled by one or more services
 """
 import sqlalchemy as sa
-from sqlalchemy.sql.expression import null
 
 from .base import metadata
 
