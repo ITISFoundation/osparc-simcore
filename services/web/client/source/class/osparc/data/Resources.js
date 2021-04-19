@@ -604,12 +604,10 @@ qx.Class.define("osparc.data.Resources", {
               osparc.component.metadata.Quality.attachQualityToObject(data);
             }
           }
-          if (useCache) {
-            if (endpoint.includes("delete")) {
-              this.__removeCached(resource, deleteId);
-            } else {
-              this.__setCached(resource, data);
-            }
+          if (endpoint.includes("delete")) {
+            this.__removeCached(resource, deleteId);
+          } else if (useCache) {
+            this.__setCached(resource, data);
           }
           res.dispose();
           resolve(data);
