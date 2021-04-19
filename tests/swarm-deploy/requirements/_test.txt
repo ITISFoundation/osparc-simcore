@@ -8,115 +8,97 @@ aio-pika==6.8.0
     # via -r requirements/_test.in
 aiodebug==1.1.2
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==0.6.0
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-aiohttp==3.7.4
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+aiohttp==3.7.4.post0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiozipkin
     #   pytest-aiohttp
-aiopg[sa]==1.1.0
+aiopg[sa]==1.2.1
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiormq==3.3.1
     # via aio-pika
 aiozipkin==0.7.1
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-alembic==1.5.5
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+alembic==1.5.8
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
     #   -r requirements/_test.in
 async-timeout==3.0.1
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   aiohttp
+    #   aiopg
 attrs==20.3.0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiohttp
     #   jsonschema
     #   openapi-core
     #   pytest
 certifi==2020.12.5
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   minio
     #   requests
 chardet==3.0.4
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
     #   aiohttp
     #   requests
 click==7.1.2
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
     #   -r requirements/_test.in
 configparser==5.0.2
-    # via
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   minio
+    # via minio
 coverage==5.5
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 dataclasses==0.8
-    # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   pydantic
+    # via pydantic
 decorator==4.4.2
-    # via
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   networkx
+    # via networkx
 dnspython==2.1.0
+    # via email-validator
+docker==5.0.0
     # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   email-validator
-docker==4.4.4
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
     #   -r requirements/_test.in
 email-validator==1.1.2
-    # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   pydantic
+    # via pydantic
 idna-ssl==1.1.0
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   aiohttp
+    # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/models-library/requirements/_base.txt
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   email-validator
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.7.0
+importlib-metadata==4.0.0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   jsonschema
     #   pluggy
     #   pytest
@@ -124,89 +106,86 @@ iniconfig==1.1.1
     # via pytest
 isodate==0.6.0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   openapi-core
     #   openapi-schema-validator
 jsonschema==3.2.0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-schema-validator
     #   openapi-spec-validator
 lazy-object-proxy==1.4.3
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-core
 mako==1.1.4
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   alembic
+    # via alembic
 markupsafe==1.1.1
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   mako
+    # via mako
 minio==6.0.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/s3wrapper/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/_base.in
 multidict==5.1.0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   aiohttp
     #   yarl
-networkx==2.5
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+networkx==2.5.1
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 openapi-core==0.12.0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-openapi-schema-validator==0.1.4
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   openapi-spec-validator
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+openapi-schema-validator==0.1.5
+    # via openapi-spec-validator
 openapi-spec-validator==0.3.0
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   openapi-core
+    # via openapi-core
 packaging==20.9
     # via
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   pytest
     #   pytest-sugar
 pamqp==2.3.0
     # via aiormq
 pluggy==0.13.1
     # via pytest
-prometheus-client==0.9.0
+prometheus-client==0.10.1
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 psycopg2-binary==2.8.6
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiopg
     #   sqlalchemy
 py==1.10.0
     # via pytest
 pydantic[email]==1.8.1
     # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 pyparsing==2.4.7
     # via packaging
 pyrsistent==0.17.3
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   jsonschema
+    # via jsonschema
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
 pytest-cov==2.11.1
@@ -219,7 +198,7 @@ pytest-runner==5.3.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -229,41 +208,35 @@ pytest==6.2.2
     #   pytest-sugar
 python-dateutil==2.8.1
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
     #   alembic
     #   minio
-python-dotenv==0.15.0
+python-dotenv==0.17.0
     # via -r requirements/_test.in
 python-editor==1.0.4
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   alembic
+    # via alembic
 pytz==2021.1
-    # via
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   minio
+    # via minio
 pyyaml==5.4.1
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_test.in
     #   openapi-spec-validator
     #   trafaret-config
 requests==2.25.1
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   docker
+    # via docker
 six==1.15.0
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   docker
     #   isodate
     #   jsonschema
     #   openapi-core
@@ -274,77 +247,87 @@ six==1.15.0
     #   websocket-client
 sqlalchemy[postgresql_psycopg2binary]==1.3.23
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   aiopg
     #   alembic
 strict-rfc3339==0.7
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   openapi-core
+    # via openapi-core
 tenacity==7.0.0
     # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_test.in
 termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
     # via pytest
-tqdm==4.58.0
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+tqdm==4.60.0
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 trafaret-config==2.0.2
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 trafaret==2.1.0
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   trafaret-config
 typing-extensions==3.7.4.3
     # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.txt
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   aiohttp
     #   importlib-metadata
     #   pydantic
     #   yarl
 ujson==4.0.2
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-urllib3==1.26.3
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+urllib3==1.26.4
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
+    #   -r requirements/../../../packages/s3wrapper/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/s3wrapper/requirements/_base.in
     #   minio
     #   requests
 websocket-client==0.58.0
-    # via
-    #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   docker
+    # via docker
 werkzeug==1.0.1
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 yarl==1.6.3
     # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aio-pika
     #   aiohttp
     #   aiormq
-zipp==3.4.0
-    # via
-    #   -r requirements/../../../packages/service-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   importlib-metadata
+zipp==3.4.1
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
