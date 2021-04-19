@@ -80,13 +80,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    _reloadStudy: function(studyId) {
+    reloadStudy: function(studyId) {
       const params = {
         url: {
           "projectId": studyId
         }
       };
-      osparc.data.Resources.getOne("studies", params)
+      return osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
           this._resetStudyItem(studyData);
         })
@@ -386,6 +386,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createStudyBtnClkd: function() {
+      this.__newStudyBtn.setValue(false);
       const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
       let title = minStudyData.name;
       const existingTitles = this.__userStudies.map(study => study.name);
@@ -450,21 +451,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __addStudiesToList: function(userStudiesList) {
       this.__userStudies.push(...userStudiesList);
       this.self().sortStudyList(userStudiesList);
+      const studyList = this.__userStudyContainer.getChildren();
       userStudiesList.forEach(userStudy => {
         userStudy["resourceType"] = "study";
         // do not add secondary studies to the list
         if (osparc.data.model.Study.isStudySecondary(userStudy)) {
           return;
         }
+        const idx = studyList.findIndex(elem => elem.getUuid && elem.getUuid() === userStudy["uuid"]);
+        if (idx !== -1) {
+          return;
+        }
         const studyItem = this.__createStudyItem(userStudy);
-        studyItem.addListener("updateQualityStudy", e => {
-          const updatedStudyData = e.getData();
-          updatedStudyData["resourceType"] = "study";
-          this._resetStudyItem(updatedStudyData);
-        }, this);
         this.__userStudyContainer.add(studyItem);
       });
-      const studyList = this.__userStudyContainer.getChildren();
       this.self().sortStudyList(studyList.filter(elem => elem instanceof osparc.dashboard.StudyBrowserButtonItem));
       const idx = studyList.findIndex(elem => elem instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
       if (idx !== -1) {
@@ -504,6 +504,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (!item.isLocked()) {
           this.__itemClicked(item, e.getNativeEvent().shiftKey);
         }
+      }, this);
+      item.addListener("updateQualityStudy", e => {
+        const updatedStudyData = e.getData();
+        updatedStudyData["resourceType"] = "study";
+        this._resetStudyItem(updatedStudyData);
       }, this);
 
       return item;
@@ -743,7 +748,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       };
       osparc.data.Resources.fetch("studies", "duplicate", params)
         .then(duplicatedStudyData => {
-          this._reloadStudy(duplicatedStudyData["uuid"]);
+          this.reloadStudy(duplicatedStudyData["uuid"]);
         })
         .catch(e => {
           const msg = osparc.data.Resources.getErrorMsg(JSON.parse(e.response)) || this.tr("Something went wrong Duplicating the study");
