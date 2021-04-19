@@ -607,7 +607,11 @@ qx.Class.define("osparc.data.Resources", {
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
           } else if (useCache) {
-            this.__setCached(resource, data);
+            if (endpoint.includes("getSome")) {
+              this.__addCached(resource, data);
+            } else {
+              this.__setCached(resource, data);
+            }
           }
           res.dispose();
           resolve(data);
@@ -704,6 +708,15 @@ qx.Class.define("osparc.data.Resources", {
      */
     __setCached: function(resource, data) {
       osparc.store.Store.getInstance().update(resource, data, this.self().resources[resource].idField || "uuid");
+    },
+
+    /**
+     * Stores the cached version of a resource, or a collection of them.
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {*} data Resource or collection of resources to be addded to the cache.
+     */
+    __addCached: function(resource, data) {
+      osparc.store.Store.getInstance().append(resource, data, this.self().resources[resource].idField || "uuid");
     },
 
     /**
