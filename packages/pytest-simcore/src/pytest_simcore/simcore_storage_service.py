@@ -50,5 +50,4 @@ async def wait_till_storage_responsive(storage_endpoint: URL):
             assert resp.status == 200
             data = await resp.json()
             assert "data" in data
-            assert "status" in data["data"]
-            assert data["data"]["status"] == "SERVICE_RUNNING"
+            assert data["data"] is not None

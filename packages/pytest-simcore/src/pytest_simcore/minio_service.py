@@ -74,6 +74,7 @@ def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
 def bucket(minio_config: Dict[str, str], minio_service: S3Client) -> str:
     bucket_name = minio_config["bucket_name"]
     minio_service.create_bucket(bucket_name, delete_contents_if_exists=True)
+
     yield bucket_name
 
     minio_service.remove_bucket(bucket_name, delete_contents=True)

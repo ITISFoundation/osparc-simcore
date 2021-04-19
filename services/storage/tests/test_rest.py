@@ -11,18 +11,20 @@ from typing import Any, Dict
 from urllib.parse import quote
 
 import pytest
+import simcore_service_storage.meta
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from simcore_service_storage.access_layer import AccessRights
+from simcore_service_storage.app_handlers import HealthCheck
 from simcore_service_storage.db import setup_db
 from simcore_service_storage.dsm import APP_DSM_KEY, DataStorageManager, setup_dsm
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
-from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
-from utils_assert import assert_status
-from utils_project import clone_project_data
+from tests.helpers.utils_assert import assert_status
+from tests.helpers.utils_project import clone_project_data
+from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -98,8 +100,9 @@ async def test_health_check(client):
     assert data
     assert not error
 
-    assert data["name"] == "simcore_service_storage"
-    assert data["status"] == "SERVICE_RUNNING"
+    app_health = HealthCheck.parse_obj(data)
+    assert app_health.name == simcore_service_storage.meta.app_name
+    assert app_health.version == simcore_service_storage.meta.api_version
 
 
 async def test_locations(client):

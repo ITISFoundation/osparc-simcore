@@ -100,4 +100,4 @@ with osparc.ApiClient(cfg) as api_client:
         # Download our simulation results file (?).
 
         download_path: str = files_api.download_file(results.id)
-        print(Path(download_path).read_text())
+        print("Results:", Path(download_path).read_text())
