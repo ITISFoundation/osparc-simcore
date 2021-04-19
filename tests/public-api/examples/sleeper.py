@@ -93,8 +93,7 @@ with osparc.ApiClient(cfg) as api_client:
     # 'id': '9fb4f70e-3589-3e9e-991e-3059086c3aae'}
     # output_2 = 4.0
 
-    # FIXME:
-    # download_path: str = files_api.download_file(file_id=outputs.results["output_1"].id)
-    # print(Path(download_path).read_text())
+    download_path: str = files_api.download_file(file_id=outputs.results["output_1"].id)
+    print(Path(download_path).read_text())
     #
-    # 3
+    # 7

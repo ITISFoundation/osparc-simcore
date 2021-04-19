@@ -5,15 +5,18 @@ from typing import Dict
 
 import attr
 from aiohttp import web
+from aiohttp.web import RouteTableDef
 from servicelib.rest_utils import extract_and_validate
 
 from .access_layer import InvalidFileIdentifier
 from .db_tokens import get_api_token_and_secret
 from .dsm import DataStorageManager, DatCoreApiToken
-from .meta import __version__
+from .meta import __version__, api_vtag
 from .settings import APP_DSM_KEY, DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 log = logging.getLogger(__name__)
+
+routes = RouteTableDef()
 
 
 async def _prepare_storage_manager(
@@ -62,39 +65,9 @@ def handle_storage_errors():
 
 
 # HANDLERS ---------------------------------------------------
-async def check_health(request: web.Request):
-    log.debug("CHECK HEALTH INCOMING PATH %s", request.path)
-    await extract_and_validate(request)
-
-    return {
-        "name": __name__.split(".")[0],
-        "version": __version__,
-        "status": "SERVICE_RUNNING",
-    }
 
 
-async def check_action(request: web.Request):
-    params, query, body = await extract_and_validate(request)
-
-    assert params, "params %s" % params  # nosec
-    assert query, "query %s" % query  # nosec
-    assert body, "body %s" % body  # nosec
-
-    if params["action"] == "fail":
-        raise ValueError("some randome failure")
-
-    # echo's input FIXME: convert to dic
-    # FIXME: output = fake_schema.dump(body)
-    return {
-        "path_value": params.get("action"),
-        "query_value": query.get("data"),
-        "body_value": {
-            "key1": 1,  # body.body_value.key1,
-            "key2": 0,  # body.body_value.key2,
-        },
-    }
-
-
+@routes.get(f"/{api_vtag}/locations", name="get_storage_locations")  # type: ignore
 async def get_storage_locations(request: web.Request):
     log.debug("CHECK LOCATION PATH %s %s", request.path, request.url)
 
@@ -115,6 +88,7 @@ async def get_storage_locations(request: web.Request):
         return {"error": None, "data": locs}
 
 
+@routes.get(f"/{api_vtag}/locations/{{location_id}}/datasets")  # type: ignore
 async def get_datasets_metadata(request: web.Request):
     log.debug("GET METADATA DATASETS %s %s", request.path, request.url)
 
@@ -141,6 +115,7 @@ async def get_datasets_metadata(request: web.Request):
         return {"error": None, "data": data}
 
 
+@routes.get(f"/{api_vtag}/locations/{{location_id}}/files/metadata")  # type: ignore
 async def get_files_metadata(request: web.Request):
     log.debug("GET FILES METADATA %s %s", request.path, request.url)
 
@@ -175,6 +150,7 @@ async def get_files_metadata(request: web.Request):
         return {"error": None, "data": data_as_dict}
 
 
+@routes.get(f"/{api_vtag}/locations/{{location_id}}/datasets/{{dataset_id}}/metadata")  # type: ignore
 async def get_files_metadata_dataset(request: web.Request):
     log.debug("GET FILES METADATA DATASET %s %s", request.path, request.url)
 
@@ -211,6 +187,7 @@ async def get_files_metadata_dataset(request: web.Request):
         return {"error": None, "data": data_as_dict}
 
 
+@routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata")  # type: ignore
 async def get_file_metadata(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -243,6 +220,7 @@ async def get_file_metadata(request: web.Request):
         }
 
 
+# DISABLED: @routes.patch(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}/metadata") # type: ignore
 async def update_file_meta_data(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -263,6 +241,7 @@ async def update_file_meta_data(request: web.Request):
         _location = dsm.location_from_id(location_id)
 
 
+@routes.get(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
 async def download_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -289,6 +268,7 @@ async def download_file(request: web.Request):
         return {"error": None, "data": {"link": link}}
 
 
+@routes.put(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
 async def upload_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -321,6 +301,7 @@ async def upload_file(request: web.Request):
     return {"error": None, "data": {"link": link}}
 
 
+@routes.delete(f"/{api_vtag}/locations/{{location_id}}/files/{{fileId}}")  # type: ignore
 async def delete_file(request: web.Request):
     params, query, body = await extract_and_validate(request)
 
@@ -347,11 +328,11 @@ async def delete_file(request: web.Request):
 # Exclusive for simcore-s3 storage -----------------------
 
 
-# POST /simcore-s3/folders: copy_folders_from_project
+@routes.post(f"/{api_vtag}/simcore-s3/folders", name="copy_folders_from_project")  # type: ignore
 async def create_folders_from_project(request: web.Request):
     # FIXME: Update openapi-core. Fails with additionalProperties https://github.com/p1c2u/openapi-core/issues/124. Fails with project
     # params, query, body = await extract_and_validate(request)
-    user_id = request.query.get("user_id")
+    user_id = request.query["user_id"]
 
     body = await request.json()
     source_project = body.get("source", {})
@@ -379,9 +360,10 @@ async def create_folders_from_project(request: web.Request):
     )
 
 
+@routes.delete(f"/{api_vtag}/simcore-s3/folders/{{folder_id}}")  # type: ignore
 async def delete_folders_of_project(request: web.Request):
     folder_id = request.match_info["folder_id"]
-    user_id = request.query.get("user_id")
+    user_id = request.query["user_id"]
     node_id = request.query.get("node_id", None)
 
     with handle_storage_errors():
@@ -395,6 +377,7 @@ async def delete_folders_of_project(request: web.Request):
     raise web.HTTPNoContent(content_type="application/json")
 
 
+@routes.post(f"/{api_vtag}/simcore-s3/files/metadata:search")  # type: ignore
 async def search_files_starting_with(request: web.Request):
     params, query, body = await extract_and_validate(request)
     assert not params, "params %s" % params  # nosec
@@ -417,3 +400,27 @@ async def search_files_starting_with(request: web.Request):
         log.debug("Found %d files starting with '%s'", len(data), startswith)
 
         return [{**attr.asdict(d.fmd), "parent_id": d.parent_id} for d in data]
+
+
+@routes.post(f"/{api_vtag}/files/{{file_id}}:soft-copy", name="copy_as_soft_link")  # type: ignore
+async def copy_as_soft_link(request: web.Request):
+    # TODO: error handling
+    params, query, body = await extract_and_validate(request)
+
+    assert params, "params %s" % params  # nosec
+    assert query, "query %s" % query  # nosec
+    assert body, "body %s" % body  # nosec
+
+    with handle_storage_errors():
+        target_uuid = params["file_id"]
+        user_id = int(query["user_id"])
+        link_uuid = body.link_id
+
+        dsm = await _prepare_storage_manager(
+            {"location_id": SIMCORE_S3_ID}, {"user_id": user_id}, request
+        )
+
+        file_link = await dsm.create_soft_link(user_id, target_uuid, link_uuid)
+
+        data = {**attr.asdict(file_link.fmd), "parent_id": file_link.parent_id}
+        return data

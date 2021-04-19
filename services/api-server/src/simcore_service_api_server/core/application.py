@@ -78,7 +78,11 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.add_exception_handler(
         Exception,
         make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            Exception,
+            override_detail_message="Internal error"
+            if settings.boot_mode == BootModeEnum.DEBUG
+            else None,
         ),
     )
 

@@ -1,12 +1,11 @@
 import os
 import tempfile
-import typing
 from pathlib import Path
 
-from blackfynn import Blackfynn
-from blackfynn.models import Collection
+import tests.utils
 
-import utils
+# from blackfynn import Blackfynn
+from blackfynn.models import Collection
 from simcore_service_storage.datcore import DatcoreClient
 from simcore_service_storage.models import FileMetaData
 
@@ -15,7 +14,7 @@ api_token = os.environ.get("BF_API_KEY")
 api_secret = os.environ.get("BF_API_SECRET")
 
 
-if utils.has_datcore_tokens():
+if tests.utils.has_datcore_tokens():
     client = DatcoreClient(api_token=api_token, api_secret=api_secret)
     api_secret = os.environ.get("BF_API_SECRET", "none")
     destination = str(Path("MaG/level1/level2"))
