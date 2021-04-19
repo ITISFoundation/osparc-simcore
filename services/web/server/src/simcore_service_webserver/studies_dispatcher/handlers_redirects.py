@@ -13,7 +13,7 @@ from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
-from ..statics import INDEX_RESOURCE_NAME
+from ..constants import INDEX_RESOURCE_NAME
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication
@@ -166,7 +166,14 @@ async def get_redirection_to_viewer(request: web.Request):
             status_code=web.HTTPUnprocessableEntity.status_code,  # 422
         ) from err
 
-    except (web.HTTPClientError, web.HTTPUnauthorized) as err:
+    except (web.HTTPUnauthorized) as err:
+        frontend_url = request.app.router[INDEX_RESOURCE_NAME].url_for()
+        msg = f"{err.reason}. Please login or register at {frontend_url}"
+        raise create_redirect_response(
+            request.app, page="error", message=msg, status_code=err.status_code
+        ) from err
+
+    except (web.HTTPClientError) as err:
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
         ) from err
