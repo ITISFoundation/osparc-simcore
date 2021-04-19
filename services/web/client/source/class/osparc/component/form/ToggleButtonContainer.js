@@ -38,21 +38,6 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
       }
     },
 
-    // overridden
-    addAt: function(child, index, options) {
-      if (child instanceof qx.ui.form.ToggleButton) {
-        this.base(arguments, child, index, options);
-        child.addListener("changeValue", e => {
-          this.fireDataEvent("changeSelection", this.getSelection());
-        }, this);
-        child.addListener("changeVisibility", e => {
-          this.fireDataEvent("changeVisibility", this.getVisibles());
-        }, this);
-      } else {
-        console.error("ToggleButtonContainer only allows ToggleButton as its children.");
-      }
-    },
-
     /**
      * Resets the selection so no toggle button is checked.
      */
