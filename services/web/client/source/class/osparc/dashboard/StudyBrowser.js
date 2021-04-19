@@ -442,10 +442,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addStudiesToList: function(userStudiesList) {
-      this.__userStudies.push(...userStudiesList);
       this.self().sortStudyList(userStudiesList);
       const studyList = this.__userStudyContainer.getChildren();
       userStudiesList.forEach(userStudy => {
+        if (this.__userStudies.indexOf(userStudy) === -1) {
+          this.__userStudies.push(userStudy);
+        }
+
         userStudy["resourceType"] = "study";
         // do not add secondary studies to the list
         if (osparc.data.model.Study.isStudySecondary(userStudy)) {
