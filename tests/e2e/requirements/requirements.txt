@@ -24,7 +24,7 @@ six==1.15.0
     #   websocket-client
 tenacity==7.0.0
     # via -r requirements.in
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c ../../../requirements/constraints.txt
     #   requests
