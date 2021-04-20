@@ -29,8 +29,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
     const grid = new qx.ui.layout.Grid(20);
     grid.setColumnFlex(this.self().gridPos.name, 1);
-    grid.setColumnAlign(this.self().gridPos.currentVersion, "center");
-    grid.setColumnAlign(this.self().gridPos.latestVersion, "center");
+    grid.setColumnAlign(this.self().gridPos.currentVersion, "center", "middle");
+    grid.setColumnAlign(this.self().gridPos.latestVersion, "center", "middle");
     this._setLayout(grid);
 
     this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
