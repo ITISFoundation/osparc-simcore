@@ -2,6 +2,8 @@
 # pylint: disable=redefined-outer-name
 
 import os
+import sys
+from pathlib import Path
 from typing import Any, AsyncGenerator
 from unittest import mock
 
@@ -68,3 +70,8 @@ def mock_containers_get(mocker: MockerFixture) -> None:
         )
 
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
+
+
+@pytest.fixture
+def tests_dir() -> Path:
+    return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
