@@ -117,15 +117,12 @@ async def start_service_sidecar_stack(
 ) -> Dict[str, Any]:
     director2_settings: Directorv2Settings = _get_settings(app)
 
-    url = URL(
-        f"{director2_settings.endpoint}/service-sidecar/start-service-sidecar-stack"
-    )
+    url = URL(f"{director2_settings.endpoint}/dynamic_services/{node_uuid}:start")
     data = dict(
         user_id=user_id,
         project_id=project_id,
         service_key=service_key,
         service_tag=service_tag,
-        node_uuid=node_uuid,
         settings=settings,
         paths_mapping=paths_mapping,
         compose_spec=compose_spec,
@@ -148,13 +145,10 @@ async def start_service_sidecar_stack(
 async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
     director2_settings: Directorv2Settings = _get_settings(app)
 
-    url = URL(
-        f"{director2_settings.endpoint}/service-sidecar/stop-service-sidecar-stack"
-    )
-    data = dict(node_uuid=node_uuid)
+    url = URL(f"{director2_settings.endpoint}/dynamic_services/{node_uuid}:stop")
 
     try:
-        result, status = await _request_director_v2(app, "POST", url, data=data)
+        result, status = await _request_director_v2(app, "POST", url)
         if status != 204:
             message = f"Received unexpected result result (while stopping; node_uuid={node_uuid}) {result}"
             log.warning(message)
@@ -169,13 +163,10 @@ async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
 async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str):
     director2_settings: Directorv2Settings = _get_settings(app)
 
-    url = URL(
-        f"{director2_settings.endpoint}/service-sidecar/service-sidecar-stack-status"
-    )
-    data = dict(node_uuid=node_uuid)
+    url = URL(f"{director2_settings.endpoint}/dynamic_services/{node_uuid}:status")
 
     try:
-        result, status = await _request_director_v2(app, "POST", url, data=data)
+        result, status = await _request_director_v2(app, "POST", url)
         if status != 200:
             message = f"Received unexpected result result (while getting state; node_uuid={node_uuid}) {result}"
             log.warning(message)

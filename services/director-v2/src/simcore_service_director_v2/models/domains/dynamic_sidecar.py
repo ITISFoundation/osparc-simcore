@@ -28,7 +28,6 @@ class StartServiceSidecarModel(BaseModel):
     project_id: str
     service_key: str
     service_tag: str
-    node_uuid: str
 
     # these come from the webserver via the director
     request_scheme: str = Field(
@@ -80,7 +79,3 @@ class StartServiceSidecarModel(BaseModel):
                 f"The following compose spec was defined: {values['compose_spec']}"
             )
         return v
-
-
-class NodeUUIDModel(BaseModel):
-    node_uuid: str
