@@ -1,6 +1,9 @@
 import logging
+import uuid
+from functools import lru_cache
 from pathlib import Path
 from typing import Union
+from uuid import UUID
 
 import aiofiles
 import tenacity
@@ -92,3 +95,17 @@ async def download_to_file_or_raise(
                 total_size += len(chunk)
 
     return total_size
+
+
+def create_reverse_dns(*resource_name_parts) -> str:
+    """
+    Returns a name for the resource following the reverse domain name notation
+    """
+    # See https://en.wikipedia.org/wiki/Reverse_domain_name_notation
+    return "io.simcore.storage" + ".".join(map(str, resource_name_parts))
+
+
+@lru_cache()
+def create_resource_uuid(*resource_name_parts) -> UUID:
+    revers_dns = create_reverse_dns(*resource_name_parts)
+    return uuid.uuid5(uuid.NAMESPACE_DNS, revers_dns)
