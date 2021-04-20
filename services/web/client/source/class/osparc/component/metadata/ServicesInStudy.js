@@ -29,6 +29,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
     const grid = new qx.ui.layout.Grid(20);
     grid.setColumnFlex(this.self().gridPos.name, 1);
+    grid.setColumnAlign(this.self().gridPos.currentVersion, "center");
+    grid.setColumnAlign(this.self().gridPos.latestVersion, "center");
     this._setLayout(grid);
 
     this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -78,6 +80,17 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     },
 
     __populateLayout: function() {
+      const nodes = Object.values(this.__studyData.workbench);
+      if (nodes.length) {
+        this._add(new qx.ui.basic.Label(this.tr("The study is empty")).set({
+          font: "text-14"
+        }), {
+          row: 0,
+          column: this.self().gridPos.name
+        });
+        return;
+      }
+
       let i=0;
 
       this._add(new qx.ui.basic.Label(this.tr("Name")).set({
@@ -106,7 +119,6 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       });
       i++;
 
-      const nodes = Object.values(this.__studyData.workbench);
       nodes.forEach(node => {
         const latestMetadata = osparc.utils.Services.getLatest(this.__services, node["key"]);
 
@@ -131,14 +143,12 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
-          font: "text-14",
-          textAlign: "center",
+          font: "title-14",
           backgroundColor: qx.theme.manager.Color.getInstance().resolve(node["version"] === latestMetadata["version"] ? "ready-green" : "warning-yellow")
         });
 
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
-          font: "text-14",
-          textAlign: "center"
+          font: "text-14"
         });
 
         const updateButton = new qx.ui.form.Button(this.tr("Update"), "@MaterialIcons/update/14");
