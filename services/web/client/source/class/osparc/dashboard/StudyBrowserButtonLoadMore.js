@@ -15,12 +15,8 @@
 
 ************************************************************************ */
 
-/* eslint "qx-rules/no-refs-in-members": "warn" */
-
 /**
- * Widget used mainly by StudyBrowser for displaying Studies
- *
- * It consists of a thumbnail and creator and last change as caption
+ * Study card to show that more studies are being fetched
  */
 
 qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
