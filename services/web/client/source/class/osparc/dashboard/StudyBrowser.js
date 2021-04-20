@@ -113,7 +113,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
         };
         // will never use the cache
-        osparc.data.Resources.fetch("studies", "getSome", params)
+        osparc.data.Resources.fetch("studies", "getPage", params)
           .then(studies => {
             this.__userStudyContainer.noMoreStudies = studies.length === 0;
             this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
