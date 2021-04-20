@@ -255,13 +255,17 @@ async function isStudyDone(page, studyId) {
   console.log("-- Is study done", endPoint);
   const resp = await makeRequest(page, endPoint);
 
-  const pipelineStatus = resp["state"]["value"];
-  console.log("Pipeline Status:", studyId, pipelineStatus);
-  const stopListening = [
-    "SUCCESS",
-    "FAILED"
-  ];
-  return stopListening.includes(pipelineStatus);
+  if ("state" in resp && "value" in resp["state"]) {
+    const pipelineStatus = resp["state"]["value"];
+    console.log("Pipeline Status:", studyId, pipelineStatus);
+    const stopListening = [
+      "SUCCESS",
+      "FAILED"
+    ];
+    return stopListening.includes(pipelineStatus);
+  }
+  console.log("Unable to parse Pipeline Status:", JSON.stringify(resp));
+  return false;
 }
 
 async function isStudyUnlocked(page, studyId) {
