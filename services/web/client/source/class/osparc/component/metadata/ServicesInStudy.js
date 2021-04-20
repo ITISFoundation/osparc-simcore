@@ -109,13 +109,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "text-14",
-          textAlign: "center"
+          textAlign: "center",
+          backgroundColor: qx.theme.manager.Color.getInstance().resolve(node["version"] === latestMetadata["version"] ? "ready-green" : "warning-yellow")
         });
-        if (node["version"] !== latestMetadata["version"]) {
-          currentVersionLabel.set({
-            backgroundColor: "yellow"
-          });
-        }
 
         const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
           font: "text-14",
