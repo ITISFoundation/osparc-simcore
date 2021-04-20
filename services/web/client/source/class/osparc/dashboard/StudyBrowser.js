@@ -143,6 +143,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    invalidateStudies: function() {
+      osparc.store.Store.getInstance().invalidate("studies");
+      this._resetStudiesList([]);
+      this.__userStudyContainer.nStudies = 0;
+    },
+
     // overriden
     _initResources: function() {
       this._showLoadingPage(this.tr("Loading Studies"));
@@ -379,9 +385,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.resetSelection();
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
-        osparc.store.Store.getInstance().invalidate("studies");
-        this._resetStudiesList([]);
-        this.__userStudyContainer.nStudies = 0;
+        this.invalidateStudies();
         this.reloadUserStudies();
       }, this);
     },

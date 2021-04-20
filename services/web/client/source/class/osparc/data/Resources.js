@@ -76,7 +76,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
-          getSome: {
+          getPage: {
             method: "GET",
             url: statics.API + "/projects?type=user&start={start}&count={count}"
           },
@@ -607,7 +607,7 @@ qx.Class.define("osparc.data.Resources", {
           if (endpoint.includes("delete")) {
             this.__removeCached(resource, deleteId);
           } else if (useCache) {
-            if (endpoint.includes("getSome")) {
+            if (endpoint.includes("getPage")) {
               this.__addCached(resource, data);
             } else {
               this.__setCached(resource, data);
