@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   construct: function(studyData) {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(20);
+    const grid = new qx.ui.layout.Grid(20, 5);
     grid.setColumnFlex(this.self().gridPos.name, 1);
     grid.setColumnAlign(this.self().gridPos.currentVersion, "center", "middle");
     grid.setColumnAlign(this.self().gridPos.latestVersion, "center", "middle");
@@ -168,11 +168,14 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           font: "text-14"
         });
 
-        const updateButton = new osparc.ui.form.FetchButton(this.tr("Update"), "@MaterialIcons/update/14");
+        const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
+        updateButton.set({
+          label: node["version"] === latestMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),
+          enabled: node["version"] !== latestMetadata["version"]
+        });
         updateButton.addListener("execute", () => {
           this.__updateService(nodeId, latestMetadata["version"], updateButton);
         }, this);
-        updateButton.setEnabled(node["version"] !== latestMetadata["version"]);
 
         this._add(infoButton, {
           row: i,
