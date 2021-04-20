@@ -132,7 +132,7 @@ code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
 
 
 .PHONY: codestyle
-codestyle: ## enforces codestyle and runs pylint and mypy
+codestyle: ## enforces codestyle (isort & black) finally runs pylint & mypy
 	@$(SCRIPTS_DIR)/codestyle.bash development $(shell basename "${SRC_DIR}")
 
 .PHONY: github-workflow-job
