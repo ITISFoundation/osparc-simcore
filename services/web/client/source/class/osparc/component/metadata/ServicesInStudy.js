@@ -31,7 +31,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     grid.setColumnFlex(this.self().gridPos.name, 1);
     this._setLayout(grid);
 
-    this.__studyData = studyData;
+    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     const store = osparc.store.Store.getInstance();
     store.getServicesDAGs()
@@ -41,18 +41,41 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       });
   },
 
+  events: {
+    "updateServices": "qx.event.type.Data"
+  },
+
   statics: {
     gridPos: {
       infoButton: 0,
       name: 1,
       key: 2,
       currentVersion: 3,
-      latestVersion: 4
+      latestVersion: 4,
+      updateButton: 5
     }
   },
 
   members: {
+    __studyData: null,
     __services: null,
+
+    __upgradeService: function() {
+      const params = {
+        url: {
+          "projectId": this.__studyData["uuid"]
+        },
+        data: this.__studyData
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(updatedData => {
+          this.fireDataEvent("updateServices", updatedData);
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
+          console.error(err);
+        });
+    },
 
     __populateLayout: function() {
       let i=0;
@@ -118,6 +141,12 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           textAlign: "center"
         });
 
+        const updateButton = new qx.ui.form.Button(this.tr("Update"), "@MaterialIcons/update/14");
+        updateButton.addListener("execute", () => {
+          console.log(node);
+        }, this);
+        updateButton.setEnabled(node["version"] !== latestMetadata["version"]);
+
         this._add(infoButton, {
           row: i,
           column: this.self().gridPos.infoButton
@@ -137,6 +166,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         this._add(latestVersionLabel, {
           row: i,
           column: this.self().gridPos.latestVersion
+        });
+        this._add(updateButton, {
+          row: i,
+          column: this.self().gridPos.updateButton
         });
         i++;
       });
