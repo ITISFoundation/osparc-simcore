@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       const workbench = this.__studyData["workbench"];
       for (const id in workbench) {
         if (id === nodeId) {
-          workbench["nodeId"]["version"] = newVersion;
+          workbench[nodeId]["version"] = newVersion;
         }
       }
 
@@ -80,6 +80,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.fireDataEvent("updateServices", updatedData);
+          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
+          this.__populateLayout();
         })
         .catch(err => {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
@@ -91,6 +93,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     },
 
     __populateLayout: function() {
+      this._removeAll();
+
       const workbench = this.__studyData["workbench"];
       if (Object.values(workbench).length === 0) {
         this._add(new qx.ui.basic.Label(this.tr("The Study is empty")).set({
@@ -166,7 +170,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
         const updateButton = new osparc.ui.form.FetchButton(this.tr("Update"), "@MaterialIcons/update/14");
         updateButton.addListener("execute", () => {
-          this.__updateService(node, latestMetadata["version"], updateButton);
+          this.__updateService(nodeId, latestMetadata["version"], updateButton);
         }, this);
         updateButton.setEnabled(node["version"] !== latestMetadata["version"]);
 
