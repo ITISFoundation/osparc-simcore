@@ -31,9 +31,6 @@ class PageResponseLimitOffset(BaseModel):
     links: PageLinks = Field(alias="_links")
     data: List[Any]
 
-    class Config:
-        extra = Extra.forbid
-
     @validator("data", always=True, pre=True)
     @classmethod
     def convert_none_to_empty_list(cls, v):
@@ -77,3 +74,35 @@ class PageResponseLimitOffset(BaseModel):
             ),
             data=data,
         )
+
+    class Config:
+        extra = Extra.forbid
+
+        schema_extra = {
+            "examples": [
+                # first page
+                {
+                    "_meta": {"total": 7, "count": 4, "limit": 4, "offset": 0},
+                    "_links": {
+                        "self": "http://osparc.io/v2/listing?offset=0&limit=4",
+                        "first": "http://osparc.io/v2/listing?offset=0&limit=4",
+                        "prev": None,
+                        "next": "http://osparc.io/v2/listing?offset=1&limit=4",
+                        "last": "http://osparc.io/v2/listing?offset=1&limit=4",
+                    },
+                    "data": ["data 1", "data 2", "data 3", "data 4"],
+                },
+                # second and last page
+                {
+                    "_meta": {"total": 7, "count": 3, "limit": 4, "offset": 1},
+                    "_links": {
+                        "self": "http://osparc.io/v2/listing?offset=1&limit=4",
+                        "first": "http://osparc.io/v2/listing?offset=0&limit=4",
+                        "prev": "http://osparc.io/v2/listing?offset=0&limit=4",
+                        "next": None,
+                        "last": "http://osparc.io/v2/listing?offset=1&limit=4",
+                    },
+                    "data": ["data 5", "data 6", "data 7"],
+                },
+            ]
+        }
