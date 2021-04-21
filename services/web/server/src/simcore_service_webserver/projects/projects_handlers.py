@@ -197,7 +197,7 @@ async def list_projects(request: web.Request):
         total=total_number_projects,
         limit=limit,
         offset=offset,
-    ).dict(by_alias=True)
+    ).dict(by_alias=True, exclude_unset=True)
 
 
 @login_required

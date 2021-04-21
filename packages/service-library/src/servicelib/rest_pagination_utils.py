@@ -64,13 +64,13 @@ class PageResponseLimitOffset(BaseModel):
             _links=PageLinks(
                 self=f"{request_url.update_query({'offset': offset, 'limit': limit})}",
                 first=f"{request_url.update_query({'offset': 0, 'limit': limit})}",
-                prev=f"{request_url.update_query({'offset': offset - 1, 'limit': limit})}"
-                if offset
+                prev=f"{request_url.update_query({'offset': min(offset - limit, 0), 'limit': limit})}"
+                if offset > 0
                 else None,
-                next=f"{request_url.update_query({'offset': offset + 1, 'limit': limit})}"
-                if offset < last_page
+                next=f"{request_url.update_query({'offset': min(offset + limit, last_page * limit), 'limit': limit})}"
+                if offset < (last_page * limit)
                 else None,
-                last=f"{request_url.update_query({'offset': last_page, 'limit': limit})}",
+                last=f"{request_url.update_query({'offset': last_page * limit, 'limit': limit})}",
             ),
             data=data,
         )
