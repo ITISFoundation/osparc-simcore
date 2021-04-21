@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Any, Dict, List, Optional
 
-from pydantic import AnyHttpUrl, BaseModel, Field, PositiveInt, conint, validator
+from pydantic import AnyHttpUrl, BaseModel, Extra, Field, PositiveInt, conint, validator
 from yarl import URL
 
 
@@ -11,6 +11,9 @@ class PageMetaInfoLimitOffset(BaseModel):
     offset: conint(ge=0) = 0
     limit: PositiveInt
 
+    class Config:
+        extra = Extra.forbid
+
 
 class PageLinks(BaseModel):
     self: AnyHttpUrl
@@ -19,21 +22,36 @@ class PageLinks(BaseModel):
     next: Optional[AnyHttpUrl]
     last: AnyHttpUrl
 
+    class Config:
+        extra = Extra.forbid
+
 
 class PageResponseLimitOffset(BaseModel):
     meta: PageMetaInfoLimitOffset = Field(alias="_meta")
     links: PageLinks = Field(alias="_links")
     data: List[Any]
 
-    @validator("data")
+    class Config:
+        extra = Extra.forbid
+
+    @validator("data", always=True, pre=True)
+    @classmethod
+    def convert_none_to_empty_list(cls, v):
+        if v is None:
+            v = list()
+        return v
+
+    @validator("data", always=True, pre=True)
     @classmethod
     def check_data_size_smaller_than_limit(cls, v, values):
-        limit = values["meta"]["limit"]
+        limit = values["meta"].limit
         if len(v) > limit:
             raise ValueError(f"container size must be smaller than limit [{limit}]")
+        return v
 
     @classmethod
     def paginate_data(
+        cls,
         data: List[Any],
         request_url: URL,
         total: int,
@@ -43,19 +61,19 @@ class PageResponseLimitOffset(BaseModel):
         last_page = ceil(total / limit) - 1
 
         return PageResponseLimitOffset(
-            data=data,
-            meta=PageMetaInfoLimitOffset(
+            _meta=PageMetaInfoLimitOffset(
                 total=total, count=len(data), limit=limit, offset=offset
             ),
-            links=PageLinks(
-                self=request_url,
-                first=request_url.update_query({"offset": 0}),
-                prev=request_url.update_query({"offset": offset - 1})
+            _links=PageLinks(
+                self=f"{request_url}",
+                first=f"{request_url.update_query({'offset': 0})}",
+                prev=f"{request_url.update_query({'offset': offset - 1})}"
                 if offset
                 else None,
-                next=request_url.update_query({"offset": offset + 1})
+                next=f"{request_url.update_query({'offset': offset + 1})}"
                 if offset < last_page
                 else None,
-                last=request_url.update_query({"offset": last_page}),
+                last=f"{request_url.update_query({'offset': last_page})}",
             ),
-        ).dict(by_alias=True)
+            data=data,
+        )
