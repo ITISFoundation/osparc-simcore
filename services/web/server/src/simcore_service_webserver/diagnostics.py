@@ -103,10 +103,10 @@ def setup_diagnostics(
     # -----
 
     # TODO: redesign ... too convoluted!!
-    registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
-    app[kINCIDENTS_REGISTRY] = registry
+    incidents_registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
+    app[kINCIDENTS_REGISTRY] = incidents_registry
 
-    monitor_slow_callbacks.enable(max_task_delay, registry)
+    monitor_slow_callbacks.enable(slow_duration_secs, incidents_registry)
 
     # adds middleware and /metrics
     setup_monitoring(app)
