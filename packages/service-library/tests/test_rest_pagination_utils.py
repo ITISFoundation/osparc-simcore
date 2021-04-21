@@ -57,8 +57,8 @@ def test_paginating_data():
         self=f"http://some/random/url.com?some=1&random=4&query=true&offset={offset}&limit={limit}",
         first=f"http://some/random/url.com?some=1&random=4&query=true&offset=0&limit={limit}",
         prev=None,
-        next=f"http://some/random/url.com?some=1&random=4&query=true&offset=1&limit={limit}",
-        last=f"http://some/random/url.com?some=1&random=4&query=true&offset=3&limit={limit}",
+        next=f"http://some/random/url.com?some=1&random=4&query=true&offset=9&limit={limit}",
+        last=f"http://some/random/url.com?some=1&random=4&query=true&offset=27&limit={limit}",
     )
 
     # next "call"s
@@ -68,7 +68,7 @@ def test_paginating_data():
             URL(model_instance.links.next),
             total_number_of_data,
             limit,
-            offset + i,
+            offset + i * limit,
         )
 
         assert model_instance
@@ -76,14 +76,14 @@ def test_paginating_data():
             total=total_number_of_data,
             count=len(partial_data),
             limit=limit,
-            offset=offset + i,
+            offset=offset + i * limit,
         )
         assert model_instance.links == PageLinks(
-            self=f"http://some/random/url.com?some=1&random=4&query=true&offset={offset+i}&limit={limit}",
+            self=f"http://some/random/url.com?some=1&random=4&query=true&offset={offset + i*limit}&limit={limit}",
             first=f"http://some/random/url.com?some=1&random=4&query=true&offset=0&limit={limit}",
-            prev=f"http://some/random/url.com?some=1&random=4&query=true&offset={i-1}&limit={limit}",
-            next=f"http://some/random/url.com?some=1&random=4&query=true&offset={i+1}&limit={limit}",
-            last=f"http://some/random/url.com?some=1&random=4&query=true&offset=3&limit={limit}",
+            prev=f"http://some/random/url.com?some=1&random=4&query=true&offset={offset + i*limit-limit}&limit={limit}",
+            next=f"http://some/random/url.com?some=1&random=4&query=true&offset={offset + i*limit+limit}&limit={limit}",
+            last=f"http://some/random/url.com?some=1&random=4&query=true&offset=27&limit={limit}",
         )
 
     # last "call"
@@ -92,7 +92,7 @@ def test_paginating_data():
         URL(model_instance.links.next),
         total_number_of_data,
         limit,
-        offset + 3,
+        offset + 3 * limit,
     )
 
     assert model_instance
@@ -100,12 +100,12 @@ def test_paginating_data():
         total=total_number_of_data,
         count=len(partial_data),
         limit=limit,
-        offset=offset + 3,
+        offset=offset + 3 * limit,
     )
     assert model_instance.links == PageLinks(
-        self=f"http://some/random/url.com?some=1&random=4&query=true&offset={offset+3}&limit={limit}",
+        self=f"http://some/random/url.com?some=1&random=4&query=true&offset={offset+3*limit}&limit={limit}",
         first=f"http://some/random/url.com?some=1&random=4&query=true&offset=0&limit={limit}",
-        prev=f"http://some/random/url.com?some=1&random=4&query=true&offset=2&limit={limit}",
+        prev=f"http://some/random/url.com?some=1&random=4&query=true&offset=18&limit={limit}",
         next=None,
-        last=f"http://some/random/url.com?some=1&random=4&query=true&offset=3&limit={limit}",
+        last=f"http://some/random/url.com?some=1&random=4&query=true&offset=27&limit={limit}",
     )
