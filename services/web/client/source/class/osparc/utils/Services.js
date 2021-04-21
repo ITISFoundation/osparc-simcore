@@ -180,6 +180,12 @@ qx.Class.define("osparc.utils.Services", {
     getLatestCompatible: function(services, srcKey, srcVersion) {
       const srcNode = this.getFromObject(services, srcKey, srcVersion);
       let versions = this.getVersions(services, srcKey);
+      // only allow patch versions
+      versions = versions.filter(version => {
+        const v1 = version.split(".");
+        const v2 = srcVersion.split(".");
+        return (v1[0] === v2[0] && v1[1] === v2[1]);
+      });
       versions.reverse();
       const idx = versions.indexOf(srcVersion);
       if (idx > -1) {
