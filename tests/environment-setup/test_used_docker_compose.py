@@ -118,10 +118,14 @@ def test_validate_compose_file(
 def test_installed_docker_compose(docker_compose_in_ci_script):
     setup_ci_path, ci_version = docker_compose_in_ci_script
 
+    which = subprocess.run(
+        "which docker-compose", shell=True, stdout=subprocess.PIPE, encoding="utf8"
+    ).stdout.strip()
+
     p = subprocess.run(
         ["docker-compose", "--version"], stdout=subprocess.PIPE, encoding="utf8"
     )
     installed_version = re.search(r"\d+\.\d+\.\d+", p.stdout).group()
     assert (
         ci_version == installed_version
-    ), f"Use {setup_ci_path} to install version {ci_version} of docker-compose in your system"
+    ), f"Use {setup_ci_path} to install version {ci_version} of docker-compose in your system {which}"
