@@ -73,6 +73,9 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       this._add(collaboratorsList, {
         flex: 1
       });
+
+      const studyLinkSection = this.__createStudyLinkSection();
+      this._add(studyLinkSection);
     },
 
     __createAddCollaboratorSection: function() {
@@ -167,6 +170,36 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       vBox.add(collaboratorsUIList, {
         flex: 1
       });
+
+      return vBox;
+    },
+
+    __createStudyLinkSection: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const label = new qx.ui.basic.Label(this.tr("Those that have access to the study can use the following permanent link"));
+      vBox.add(label);
+
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
+      vBox.add(hBox, {
+        flex: 1
+      });
+
+      const link = window.location.href + "#/study/" + this.__serializedData["uuid"];
+      const linkField = new qx.ui.form.TextField(link);
+      hBox.add(linkField, {
+        flex: 1
+      });
+
+      const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy link"));
+      copyLinkBtn.addListener("execute", () => {
+        if (osparc.utils.Utils.copyTextToClipboard(link)) {
+          copyLinkBtn.setIcon("@FontAwesome5Solid/check/12");
+        }
+      }, this);
+      hBox.add(copyLinkBtn);
 
       return vBox;
     },
