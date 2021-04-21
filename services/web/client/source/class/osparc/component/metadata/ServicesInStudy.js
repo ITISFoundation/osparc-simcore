@@ -28,7 +28,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 5);
-    grid.setColumnFlex(this.self().gridPos.name, 1);
+    grid.setColumnFlex(this.self().gridPos.label, 1);
+    grid.setColumnAlign(this.self().gridPos.label, "left", "middle");
+    grid.setColumnAlign(this.self().gridPos.name, "left", "middle");
     grid.setColumnAlign(this.self().gridPos.currentVersion, "center", "middle");
     grid.setColumnAlign(this.self().gridPos.latestVersion, "center", "middle");
     this._setLayout(grid);
@@ -50,8 +52,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   statics: {
     gridPos: {
       infoButton: 0,
-      name: 1,
-      key: 2,
+      label: 1,
+      name: 2,
       currentVersion: 3,
       latestVersion: 4,
       updateButton: 5
@@ -101,24 +103,24 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           font: "text-14"
         }), {
           row: 0,
-          column: this.self().gridPos.name
+          column: this.self().gridPos.label
         });
         return;
       }
 
       let i=0;
 
+      this._add(new qx.ui.basic.Label(this.tr("Label")).set({
+        font: "title-14"
+      }), {
+        row: i,
+        column: this.self().gridPos.label
+      });
       this._add(new qx.ui.basic.Label(this.tr("Name")).set({
         font: "title-14"
       }), {
         row: i,
         column: this.self().gridPos.name
-      });
-      this._add(new qx.ui.basic.Label(this.tr("Key")).set({
-        font: "title-14"
-      }), {
-        row: i,
-        column: this.self().gridPos.key
       });
       this._add(new qx.ui.basic.Label(this.tr("Current")).set({
         font: "title-14"
@@ -138,6 +140,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
 
+        const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
 
         const infoButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
@@ -150,12 +153,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
         }, this);
 
-        const nameLabel = new qx.ui.basic.Label(node["label"]).set({
+        const labelLabel = new qx.ui.basic.Label(node["label"]).set({
           font: "text-14"
         });
 
-        const parts = node["key"].split("/");
-        const keyLabel = new qx.ui.basic.Label(parts[parts.length-1]).set({
+        const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
           font: "text-14",
           toolTipText: node["key"]
         });
@@ -182,13 +184,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           row: i,
           column: this.self().gridPos.infoButton
         });
+        this._add(labelLabel, {
+          row: i,
+          column: this.self().gridPos.label
+        });
         this._add(nameLabel, {
           row: i,
           column: this.self().gridPos.name
-        });
-        this._add(keyLabel, {
-          row: i,
-          column: this.self().gridPos.key
         });
         this._add(currentVersionLabel, {
           row: i,
