@@ -74,6 +74,7 @@ def run_docker_compose_config(
     - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
     - Saves resolved output config to 'destination_path' (if given)
     """
+    # FIXME: use instead packages/pytest-simcore/src/pytest_simcore/helpers/utils_docker.py
 
     if not isinstance(docker_compose_paths, List):
         docker_compose_paths = [

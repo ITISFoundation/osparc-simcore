@@ -89,6 +89,7 @@ def run_docker_compose_config(
     docker_compose_paths: Union[List[Path], Path],
     workdir: Path,
     destination_path: Optional[Path] = None,
+    env_file_path: Optional[Path] = None,
 ) -> Dict:
     """Runs docker-compose config to validate and resolve a compose file configuration
 
@@ -108,10 +109,14 @@ def run_docker_compose_config(
         destination_path = temp_dir / "docker-compose.yml"
 
     config_paths = [
-        f"-f {os.path.relpath(docker_compose_path, workdir)}"
+        f"--file {os.path.relpath(docker_compose_path, workdir)}"
         for docker_compose_path in docker_compose_paths
     ]
     configs_prefix = " ".join(config_paths)
+
+    if env_file_path:
+        # SEE https://docs.docker.com/compose/env-file/
+        configs_prefix += f" --env-file {env_file_path}"
 
     subprocess.run(
         f"docker-compose {configs_prefix} config > {destination_path}",
