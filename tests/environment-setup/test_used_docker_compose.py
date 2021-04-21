@@ -115,7 +115,7 @@ def test_validate_compose_file(
     )
 
     # About versioning https://docs.docker.com/compose/compose-file/compose-file-v3/
-    assert compose["version"] == "3.9"
+    assert compose["version"] == "3.8"
 
 
 def test_installed_docker_compose(docker_compose_in_ci_script):
