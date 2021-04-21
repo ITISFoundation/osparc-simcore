@@ -66,6 +66,17 @@ def test_all_docker_compose_have_same_version(
     ), f"CI installs {docker_compose_in_ci_script[1]}=!{previous[1]} (see {docker_compose_in_ci_script[0]}"
 
 
+@pytest.fixture
+def ensure_env_file(env_devel_file: Path) -> Path:
+    env_path = env_devel_file.parent / ".env"
+    if not env_path.exists():
+        shutil.copy(env_devel_file, env_path)
+        yield env_path
+        env_path.unlink()
+    else:
+        return env_path
+
+
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.resolve()
 repo_dir = current_dir.parent.parent
 compose_paths = chain(
@@ -78,15 +89,6 @@ compose_paths = chain(
         )
     ]
 )
-
-
-@pytest.fixture
-def ensure_env_file(env_devel_file: Path) -> Path:
-    env_path = env_devel_file.parent / ".env"
-    if not env_path.exists():
-        shutil.copy(env_devel_file, env_path)
-        yield
-        env_path.unlink()
 
 
 @pytest.mark.parametrize(
@@ -111,3 +113,15 @@ def test_validate_compose_file(
 
     # About versioning https://docs.docker.com/compose/compose-file/compose-file-v3/
     assert compose["version"] == "3.9"
+
+
+def test_installed_docker_compose(docker_compose_in_ci_script):
+    setup_ci_path, ci_version = docker_compose_in_ci_script
+
+    p = subprocess.run(
+        ["docker-compose", "--version"], stdout=subprocess.PIPE, encoding="utf8"
+    )
+    installed_version = re.search(r"\d+\.\d+\.\d+", p.stdout).group()
+    assert (
+        ci_version == installed_version
+    ), f"Use {setup_ci_path} to install version {ci_version} of docker-compose in your system"
