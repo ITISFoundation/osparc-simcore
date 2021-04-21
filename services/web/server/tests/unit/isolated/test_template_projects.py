@@ -7,10 +7,8 @@ from pathlib import Path
 from typing import Any, Dict, Iterator
 
 import pytest
-from jsonschema import SchemaError, ValidationError
+from jsonschema import SchemaError
 from servicelib.jsonschema_specs import create_jsonschema_specs
-from servicelib.jsonschema_validation import validate_instance
-from simcore_service_webserver.projects.projects_fakes import Fake
 from simcore_service_webserver.projects.projects_utils import (
     substitute_parameterized_inputs,
     variable_pattern,
@@ -30,14 +28,6 @@ async def project_specs(loop, project_schema_file: Path) -> Iterator[Dict[str, A
 
 
 @pytest.fixture
-def fake_db():
-    Fake.reset()
-    Fake.load_template_projects()
-    yield Fake
-    Fake.reset()
-
-
-@pytest.fixture
 def mock_parametrized_project(fake_data_dir):
     path = fake_data_dir / "parametrized_project.json"
     with path.open() as fh:
@@ -48,14 +38,6 @@ def mock_parametrized_project(fake_data_dir):
     assert variable_pattern.match(inputs["Na"])
     assert variable_pattern.match(inputs["BCL"])
     return prj
-
-
-async def test_validate_templates(loop, project_specs: Dict, fake_db):
-    for pid, project in fake_db.projects.items():
-        try:
-            validate_instance(project.data, project_specs)
-        except ValidationError:
-            pytest.fail("validation of project {} failed".format(pid))
 
 
 def test_substitutions(mock_parametrized_project):
