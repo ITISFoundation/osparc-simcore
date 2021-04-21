@@ -40,7 +40,6 @@ from .projects_exceptions import (
     ProjectNotFoundError,
     ProjectsException,
 )
-from .projects_fakes import Fake
 from .projects_utils import project_uses_available_services
 
 log = logging.getLogger(__name__)
@@ -511,11 +510,6 @@ class ProjectDBAPI:
         :return: schema-compliant project
         :rtype: Dict
         """
-        # TODO: eliminate this and use mock to replace get_user_project instead
-        prj = Fake.projects.get(project_uuid)
-        if prj and not prj.template:
-            return Fake.projects[project_uuid].data
-
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
             # pylint: disable=no-value-for-parameter
@@ -525,11 +519,6 @@ class ProjectDBAPI:
     async def get_template_project(
         self, project_uuid: str, *, only_published=False
     ) -> Dict:
-        # TODO: eliminate this and use mock to replace get_user_project instead
-        prj = Fake.projects.get(project_uuid)
-        if prj and prj.template:
-            return prj.data
-
         template_prj = {}
         async with self.engine.acquire() as conn:
             if only_published:
