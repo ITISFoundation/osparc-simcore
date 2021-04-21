@@ -27,7 +27,6 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.projects.projects_fakes import Fake
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
