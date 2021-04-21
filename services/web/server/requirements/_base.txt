@@ -108,10 +108,6 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../../requirements/constraints.txt
     #   email-validator
     #   idna-ssl
     #   yarl

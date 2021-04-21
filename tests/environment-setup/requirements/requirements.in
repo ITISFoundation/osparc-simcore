@@ -5,3 +5,4 @@ pytest-aiohttp
 pytest-instafail
 pytest-runner
 pytest-sugar
+pyyaml
