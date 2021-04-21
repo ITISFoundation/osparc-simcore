@@ -121,6 +121,7 @@ def simcore_docker_compose(
         docker_compose_paths,
         workdir=env_file.parent,
         destination_path=temp_folder / "simcore_docker_compose.yml",
+        env_file_path=env_file,
     )
     print("simcore docker-compose:\n%s", pformat(config))
     return config
@@ -148,6 +149,7 @@ def ops_docker_compose(
         docker_compose_path,
         workdir=env_file.parent,
         destination_path=temp_folder / "ops_docker_compose.yml",
+        env_file_path=env_file,
     )
     print("ops docker-compose:\n%s", pformat(config))
     return config
