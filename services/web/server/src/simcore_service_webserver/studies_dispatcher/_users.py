@@ -124,11 +124,11 @@ async def acquire_user(request: web.Request, *, is_guest_allowed: bool) -> UserI
         user = await _get_authorized_user(request)
 
     if not user and is_guest_allowed:
-        log.debug("Creating temporary user ...")
+        log.debug("Creating temporary GUEST user ...")
         user = await _create_temporary_user(request)
         is_anonymous_user = True
 
-    if not is_guest_allowed and user.get("role") == GUEST:
+    if not is_guest_allowed and (not user or user.get("role") == GUEST):
         raise web.HTTPUnauthorized(reason="Only available for registered users")
 
     return UserInfo(
