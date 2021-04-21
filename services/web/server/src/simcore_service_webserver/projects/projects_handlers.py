@@ -191,10 +191,11 @@ async def list_projects(request: web.Request):
         limit=limit,
     )
     await set_all_project_states(projects, project_types)
-    return PageResponseLimitOffset(
+    return PageResponseLimitOffset.paginate_data(
         data=projects,
         request_url=request.url,
         total=total_number_projects,
+        limit=limit,
         offset=offset,
     ).dict(by_alias=True)
 
