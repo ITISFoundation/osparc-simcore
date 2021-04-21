@@ -291,7 +291,7 @@ async def _list_projects(
         else:
             assert links["prev"] == str(
                 URL(complete_url).update_query(
-                    {"offset": min(exp_offset - exp_limit, 0), "limit": exp_limit}
+                    {"offset": max(exp_offset - exp_limit, 0), "limit": exp_limit}
                 )
             )
         if exp_offset >= (exp_last_page * exp_limit):
