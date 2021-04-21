@@ -18,7 +18,6 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   idna-ssl
     #   yarl
 importlib-metadata==3.7.0
@@ -55,6 +54,10 @@ pytest==6.2.2
     #   pytest-aiohttp
     #   pytest-instafail
     #   pytest-sugar
+pyyaml==5.4.1
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/requirements.in
 termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
