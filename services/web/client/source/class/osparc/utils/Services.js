@@ -120,6 +120,14 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
+    getLatestCompatible: function(services, key, version) {
+      if (key in services) {
+        const versions = this.getVersions(services, key);
+        return services[key][versions[versions.length - 1]];
+      }
+      return null;
+    },
+
     getMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
