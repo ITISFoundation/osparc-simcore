@@ -69,12 +69,15 @@ def test_all_docker_compose_have_same_version(
 @pytest.fixture
 def ensure_env_file(env_devel_file: Path) -> Path:
     env_path = env_devel_file.parent / ".env"
+    delete = False
     if not env_path.exists():
         shutil.copy(env_devel_file, env_path)
-        yield env_path
+        delete = True
+
+    yield env_path
+
+    if delete:
         env_path.unlink()
-    else:
-        return env_path
 
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).parent.resolve()
@@ -119,11 +122,18 @@ def test_installed_docker_compose(docker_compose_in_ci_script):
     setup_ci_path, ci_version = docker_compose_in_ci_script
 
     which = subprocess.run(
-        "which docker-compose", shell=True, stdout=subprocess.PIPE, encoding="utf8"
+        "which docker-compose",
+        shell=True,
+        stdout=subprocess.PIPE,
+        encoding="utf8",
+        check=True,
     ).stdout.strip()
 
     p = subprocess.run(
-        ["docker-compose", "--version"], stdout=subprocess.PIPE, encoding="utf8"
+        ["docker-compose", "--version"],
+        stdout=subprocess.PIPE,
+        encoding="utf8",
+        check=True,
     )
     installed_version = re.search(r"\d+\.\d+\.\d+", p.stdout).group()
     assert (
