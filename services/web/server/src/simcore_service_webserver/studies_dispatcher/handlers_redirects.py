@@ -77,9 +77,8 @@ class RedirectionQueryParams(ViewerQueryParams):
     @classmethod
     def from_request(cls, request: web.Request) -> "RedirectionQueryParams":
         try:
-            obj = cls(**dict(request.query))
+            obj = cls.parse_obj(dict(request.query_string))
         except ValidationError as err:
-
             raise web.HTTPBadRequest(
                 content_type="application/json",
                 body=err.json(),
