@@ -236,6 +236,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
           this._startStudy(studyData["uuid"]);
+        })
+        .catch(() => {
+          const msg = this.tr("Study unavailable or inaccessible");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     },
 
