@@ -10,6 +10,7 @@ from .rest_codecs import json, jsonify
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
 ENVELOPE_KEYS = ("data", "error")
+OFFSET_PAGINATION_KEYS = ("_meta", "_links")
 JSON_CONTENT_TYPE = "application/json"
 
 JsonLikeModel = Union[Dict[str, Any], List[Dict[str, Any]]]

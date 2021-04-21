@@ -7,13 +7,14 @@ import time
 import unittest.mock as mock
 import uuid as uuidlib
 from copy import deepcopy
+from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from unittest.mock import call
 
 import aiohttp
 import pytest
 import socketio
-from _helpers import standard_role_response
+from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aioresponses import aioresponses
 from models_library.projects_access import Owner
@@ -47,6 +48,7 @@ from simcore_service_webserver.socketio import setup_socketio
 from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
+from yarl import URL
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
@@ -250,7 +252,9 @@ async def _list_projects(
     client,
     expected: web.Response,
     query_parameters: Optional[Dict] = None,
-) -> List[Dict]:
+) -> Tuple[List[Dict], Dict[str, Any], Dict[str, Any]]:
+    if not query_parameters:
+        query_parameters = {}
     # GET /v0/projects
     url = client.app.router["list_projects"].url_for()
     assert str(url) == API_PREFIX + "/projects"
@@ -258,8 +262,55 @@ async def _list_projects(
         url = url.with_query(**query_parameters)
 
     resp = await client.get(url)
-    data, errors = await assert_status(resp, expected)
-    return data
+    data, errors, meta, links = await assert_status(
+        resp, expected, include_meta=True, include_links=True
+    )
+    if data:
+        assert meta is not None
+        # see [api/specs/webserver/openapi-projects.yaml] for defaults
+        exp_offset = max(int(query_parameters.get("offset", 0)), 0)
+        exp_limit = max(1, min(int(query_parameters.get("limit", 20)), 50))
+        assert meta["offset"] == exp_offset
+        assert meta["limit"] == exp_limit
+        exp_last_page = ceil(meta["total"] / meta["limit"] - 1)
+        assert links is not None
+        complete_url = client.make_url(url)
+        assert links["self"] == str(
+            URL(complete_url).update_query({"offset": exp_offset, "limit": exp_limit})
+        )
+        assert links["first"] == str(
+            URL(complete_url).update_query({"offset": 0, "limit": exp_limit})
+        )
+        assert links["last"] == str(
+            URL(complete_url).update_query(
+                {"offset": exp_last_page * exp_limit, "limit": exp_limit}
+            )
+        )
+        if exp_offset <= 0:
+            assert links["prev"] == None
+        else:
+            assert links["prev"] == str(
+                URL(complete_url).update_query(
+                    {"offset": min(exp_offset - exp_limit, 0), "limit": exp_limit}
+                )
+            )
+        if exp_offset >= (exp_last_page * exp_limit):
+            assert links["next"] == None
+        else:
+            assert links["next"] == str(
+                URL(complete_url).update_query(
+                    {
+                        "offset": min(
+                            exp_offset + exp_limit, exp_last_page * exp_limit
+                        ),
+                        "limit": exp_limit,
+                    }
+                )
+            )
+    else:
+        assert meta is None
+        assert links is None
+    return data, meta, links
 
 
 async def _assert_get_same_project(
@@ -519,7 +570,7 @@ async def test_list_projects(
     director_v2_service_mock: aioresponses,
 ):
     catalog_subsystem_mock([user_project, template_project])
-    data = await _list_projects(client, expected)
+    data, *_ = await _list_projects(client, expected)
 
     if data:
         assert len(data) == 2
@@ -535,7 +586,7 @@ async def test_list_projects(
         assert ProjectState(**project_state)
 
     # GET /v0/projects?type=user
-    data = await _list_projects(client, expected, {"type": "user"})
+    data, *_ = await _list_projects(client, expected, {"type": "user"})
     if data:
         assert len(data) == 1
         project_state = data[0].pop("state")
@@ -546,7 +597,7 @@ async def test_list_projects(
 
     # GET /v0/projects?type=template
     # instead /v0/projects/templates ??
-    data = await _list_projects(client, expected, {"type": "template"})
+    data, *_ = await _list_projects(client, expected, {"type": "template"})
     if data:
         assert len(data) == 1
         project_state = data[0].pop("state")
@@ -714,7 +765,7 @@ async def test_new_template_from_project(
         template_project = data
         catalog_subsystem_mock([template_project])
 
-        templates = await _list_projects(client, web.HTTPOk, {"type": "template"})
+        templates, *_ = await _list_projects(client, web.HTTPOk, {"type": "template"})
 
         assert len(templates) == 1
         assert templates[0] == template_project
@@ -960,3 +1011,60 @@ async def test_delete_multiple_opened_project_forbidden(
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
     await _delete_project(client, user_project, expected_forbidden)
+
+
+# PAGINATION
+def standard_user_role() -> Tuple[str, Tuple[UserRole, ExpectedResponse]]:
+    all_roles = standard_role_response()
+
+    return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
+
+
+@pytest.mark.parametrize("limit", [7, 20, 43])
+@pytest.mark.parametrize(*standard_user_role())
+async def test_list_projects_with_pagination(
+    client,
+    logged_user,
+    primary_group,
+    expected,
+    storage_subsystem_mock,
+    catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
+    director_v2_service_mock: aioresponses,
+    project_db_cleaner,
+    limit: int,
+):
+
+    NUM_PROJECTS = 90
+    # let's create a few projects here
+    created_projects = await asyncio.gather(
+        *[
+            _new_project(client, expected.created, logged_user, primary_group)
+            for i in range(NUM_PROJECTS)
+        ]
+    )
+    if expected.created == web.HTTPCreated:
+        catalog_subsystem_mock(created_projects)
+
+        assert len(created_projects) == NUM_PROJECTS
+        NUMBER_OF_CALLS = ceil(NUM_PROJECTS / limit)
+        next_link = None
+        default_query_parameter = {"limit": limit}
+        projects = []
+        for i in range(NUMBER_OF_CALLS):
+            data, meta, links = await _list_projects(
+                client,
+                expected.ok,
+                query_parameters=next_link.query
+                if next_link
+                else default_query_parameter,
+            )
+            assert len(data) == meta["count"]
+            assert meta["count"] == min(limit, NUM_PROJECTS - len(projects))
+            assert meta["limit"] == limit
+            projects.extend(data)
+            next_link = URL(links["next"]) if links["next"] is not None else None
+
+        assert len(projects) == len(created_projects)
+        assert {prj["uuid"] for prj in projects} == {
+            prj["uuid"] for prj in created_projects
+        }

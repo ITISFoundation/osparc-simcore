@@ -2,7 +2,7 @@
 
 """
 from pprint import pformat
-from typing import Type
+from typing import Tuple, Type
 
 from aiohttp import ClientResponse
 from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
@@ -13,11 +13,14 @@ async def assert_status(
     response: ClientResponse,
     expected_cls: Type[HTTPException],
     expected_msg: str = None,
-):
+    include_meta: bool = False,
+    include_links: bool = False,
+) -> Tuple:
     """
     Asserts for enveloped responses
     """
-    data, error = unwrap_envelope(await response.json())
+    json_response = await response.json()
+    data, error = unwrap_envelope(json_response)
     assert (
         response.status == expected_cls.status_code
     ), f"received: ({data},{error}), \nexpected ({expected_cls.status_code}, {expected_msg})"
@@ -37,7 +40,15 @@ async def assert_status(
         if expected_msg:
             assert expected_msg in data["message"]
 
-    return data, error
+    return_value = (
+        data,
+        error,
+    )
+    if include_meta and not error:
+        return_value += (json_response.get("_meta"),)
+    if include_links and not error:
+        return_value += (json_response.get("_links"),)
+    return return_value
 
 
 async def assert_error(
