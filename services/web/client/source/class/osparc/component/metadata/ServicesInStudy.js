@@ -130,7 +130,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       });
       this._add(new qx.ui.basic.Label(this.tr("Latest")).set({
         font: "title-14",
-        toolTipText: this.tr("Latest patch")
+        toolTipText: this.tr("Latest compatible")
       }), {
         row: i,
         column: this.self().gridPos.latestVersion
