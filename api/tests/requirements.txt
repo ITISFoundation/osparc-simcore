@@ -26,7 +26,6 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c ../../requirements/constraints.txt
     #   idna-ssl
     #   yarl
 importlib-metadata==3.7.0
