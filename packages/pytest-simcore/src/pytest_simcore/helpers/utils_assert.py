@@ -44,9 +44,9 @@ async def assert_status(
         data,
         error,
     )
-    if include_meta and not error:
+    if include_meta:
         return_value += (json_response.get("_meta"),)
-    if include_links and not error:
+    if include_links:
         return_value += (json_response.get("_links"),)
     return return_value
 
