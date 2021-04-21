@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
 
-        const latestMetadata = osparc.utils.Services.getLatest(this.__services, node["key"]);
+        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
 
         const infoButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
         infoButton.addListener("execute", () => {
@@ -162,20 +162,20 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "title-14",
-          backgroundColor: qx.theme.manager.Color.getInstance().resolve(node["version"] === latestMetadata["version"] ? "ready-green" : "warning-yellow")
+          backgroundColor: qx.theme.manager.Color.getInstance().resolve(node["version"] === latestCompatibleMetadata["version"] ? "ready-green" : "warning-yellow")
         });
 
-        const latestVersionLabel = new qx.ui.basic.Label(latestMetadata["version"]).set({
+        const latestVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
           font: "text-14"
         });
 
         const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
         updateButton.set({
-          label: node["version"] === latestMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),
-          enabled: node["version"] !== latestMetadata["version"]
+          label: node["version"] === latestCompatibleMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),
+          enabled: node["version"] !== latestCompatibleMetadata["version"]
         });
         updateButton.addListener("execute", () => {
-          this.__updateService(nodeId, latestMetadata["version"], updateButton);
+          this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton);
         }, this);
 
         this._add(infoButton, {
