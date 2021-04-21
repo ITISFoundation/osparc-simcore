@@ -5,7 +5,7 @@ UNDER DEVELOPMENT
 TODO: deprecate. Too general
 """
 import json
-from typing import Any, Dict, List
+from typing import Dict
 
 import attr
 from aiohttp import web
