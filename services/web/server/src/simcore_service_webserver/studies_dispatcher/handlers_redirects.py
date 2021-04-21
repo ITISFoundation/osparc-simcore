@@ -175,6 +175,7 @@ async def get_redirection_to_viewer(request: web.Request):
         ) from err
 
     except (web.HTTPClientError) as err:
+        log.exception("Client error with status code %d", err.status_code)
         raise create_redirect_response(
             request.app, page="error", message=err.reason, status_code=err.status_code
         ) from err
