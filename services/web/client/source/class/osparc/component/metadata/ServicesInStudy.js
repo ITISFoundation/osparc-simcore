@@ -65,6 +65,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     __services: null,
 
     __updateService: function(nodeId, newVersion, button) {
+      this.setEnabled(false);
       const workbench = this.__studyData["workbench"];
       for (const id in workbench) {
         if (id === nodeId) {
@@ -91,6 +92,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         })
         .finally(() => {
           button.setFetching(false);
+          this.setEnabled(true);
         });
     },
 
@@ -152,58 +154,60 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           const height = 700;
           osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
         }, this);
+        this._add(infoButton, {
+          row: i,
+          column: this.self().gridPos.infoButton
+        });
 
         const labelLabel = new qx.ui.basic.Label(node["label"]).set({
           font: "text-14"
+        });
+        this._add(labelLabel, {
+          row: i,
+          column: this.self().gridPos.label
         });
 
         const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
           font: "text-14",
           toolTipText: node["key"]
         });
+        this._add(nameLabel, {
+          row: i,
+          column: this.self().gridPos.name
+        });
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "title-14",
           backgroundColor: qx.theme.manager.Color.getInstance().resolve(node["version"] === latestCompatibleMetadata["version"] ? "ready-green" : "warning-yellow")
         });
-
-        const latestVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
-          font: "text-14"
-        });
-
-        const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
-        updateButton.set({
-          label: node["version"] === latestCompatibleMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),
-          enabled: node["version"] !== latestCompatibleMetadata["version"]
-        });
-        updateButton.addListener("execute", () => {
-          this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton);
-        }, this);
-
-        this._add(infoButton, {
-          row: i,
-          column: this.self().gridPos.infoButton
-        });
-        this._add(labelLabel, {
-          row: i,
-          column: this.self().gridPos.label
-        });
-        this._add(nameLabel, {
-          row: i,
-          column: this.self().gridPos.name
-        });
         this._add(currentVersionLabel, {
           row: i,
           column: this.self().gridPos.currentVersion
+        });
+
+        const latestVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
+          font: "text-14"
         });
         this._add(latestVersionLabel, {
           row: i,
           column: this.self().gridPos.latestVersion
         });
-        this._add(updateButton, {
-          row: i,
-          column: this.self().gridPos.updateButton
-        });
+
+        if (osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
+          const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
+          updateButton.set({
+            label: node["version"] === latestCompatibleMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),
+            enabled: node["version"] !== latestCompatibleMetadata["version"]
+          });
+          updateButton.addListener("execute", () => {
+            this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton);
+          }, this);
+          this._add(updateButton, {
+            row: i,
+            column: this.self().gridPos.updateButton
+          });
+        }
+
         i++;
       }
     }
