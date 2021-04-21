@@ -16,7 +16,7 @@ JsonLikeModel = Union[Dict[str, Any], List[Dict[str, Any]]]
 
 
 def is_enveloped_from_map(payload: Mapping) -> bool:
-    return all(k in ENVELOPE_KEYS for k in payload.keys())
+    return all(k in ENVELOPE_KEYS for k in payload.keys() if not str(k).startswith("_"))
 
 
 def is_enveloped_from_text(text: str) -> bool:
