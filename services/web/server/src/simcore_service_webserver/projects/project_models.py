@@ -11,10 +11,8 @@ class ProjectTypeAPI(str, Enum):
 
     @classmethod
     def to_project_type_db(cls, api_type: "ProjectTypeAPI") -> Optional[ProjectType]:
-        if api_type == ProjectTypeAPI.all:
-            return None
-        return (
-            ProjectType.TEMPLATE
-            if api_type == ProjectTypeAPI.template
-            else ProjectType.STANDARD
-        )
+        return {
+            ProjectTypeAPI.all: None,
+            ProjectTypeAPI.template: ProjectType.TEMPLATE,
+            ProjectTypeAPI.user: ProjectType.STANDARD,
+        }[api_type]
