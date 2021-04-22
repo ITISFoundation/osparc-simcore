@@ -11,6 +11,7 @@ from urllib.parse import parse_qs
 
 import pytest
 from models_library.projects import Project
+from pydantic import ConfigError, ValidationError, validator
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
@@ -118,30 +119,52 @@ def test_validation_of_redirection_urls(url_in, expected_download_link):
     print(redirected_url.fragment)
 
 
-def test_url_validation():
-    class Foo(BaseModel):
+def test_url_quoting_and_validation():
+    # The URL quoting functions focus on taking program data and making it safe for use
+    # as URL components by quoting special characters and appropriately encoding non-ASCII text.
+    # They also support reversing these operations to recreate the original data from the contents
+    # of a URL component if that task isn’t already covered by the URL parsing functions above
+
+    class M(BaseModel):
         url: HttpUrl
 
-    url_str = "http://127.0.0.1:9081/view?file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9&file_size=1&download_link=https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%2520samples/sample.ipynb"
-    url = URL(url_str)
+        @validator("url", pre=True)
+        @classmethod
+        def decode_url(cls, v):
+            return urllib.parse.unquote(v)
 
-    Foo.parse_obj({"url": url_str})
-    Foo.parse_obj({"url": url.query["download_link"]})
-
-    Foo.parse_obj(
+    M.parse_obj(
         {
+            # encoding %20 as %2520
             "url": "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%2520samples/sample.ipynb"
         }
     )
-    Foo.parse_obj(
+
+    obj2 = M.parse_obj(
         {
+            # encoding space as %20
             "url": "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
         }
     )
 
-    RedirectionQueryParams.parse_obj(url.query)
+    url_with_url_in_query = "http://127.0.0.1:9081/view?file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9&file_size=1&download_link=https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%2520samples/sample.ipynb"
+    obj4 = M.parse_obj({"url": URL(url_with_url_in_query).query["download_link"]})
 
-    RedirectionQueryParams.parse_obj(
+    assert obj2.url.path == obj4.url.path
+
+    quoted_url = urllib.parse.quote(
+        "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
+    )
+    M(url=quoted_url)
+    M.parse_obj({"url": url_with_url_in_query})
+
+    assert (
+        URL(url_with_url_in_query).query["download_link"]
+        == "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb"
+    )
+
+    # NOTE: BEFORE we had a decode_download_link-----
+    obj5 = RedirectionQueryParams.parse_obj(
         {
             "file_type": "IPYNB",
             "viewer_key": "simcore/services/dynamic/jupyter-octave-python-math",
@@ -150,3 +173,12 @@ def test_url_validation():
             "download_link": "https://raw.githubusercontent.com/pcrespov/osparc-sample-studies/master/files%20samples/sample.ipynb",
         }
     )
+
+    params = dict(URL(url_with_url_in_query).query)
+
+    RedirectionQueryParams.parse_obj(params)
+
+    with pytest.raises((ConfigError, ValidationError)):
+        RedirectionQueryParams.from_orm(URL(url_with_url_in_query).query)
+
+    assert params == {k: str(v) for k, v in obj5.dict(exclude_unset=True).items()}

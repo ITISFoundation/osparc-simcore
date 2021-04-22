@@ -64,6 +64,9 @@ class ViewerQueryParams(BaseModel):
         )
 
 
+SPACE = " "
+
+
 class RedirectionQueryParams(ViewerQueryParams):
     file_name: Optional[str] = "unknown"
     file_size: PositiveInt
@@ -71,8 +74,13 @@ class RedirectionQueryParams(ViewerQueryParams):
 
     @validator("download_link", pre=True)
     @classmethod
-    def decode_downloadlink(cls, v):
-        return urllib.parse.unquote(v)
+    def unquote_url(cls, v):
+        # NOTE: see test_url_quoting_and_validation
+        # before any change here
+        w = urllib.parse.unquote(v)
+        if SPACE in w:
+            w = w.replace(SPACE, "%20")
+        return w
 
     @classmethod
     def from_request(cls, request: web.Request) -> "RedirectionQueryParams":
