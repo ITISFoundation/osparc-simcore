@@ -33,8 +33,9 @@ def _assemble_container_name(
 
     container_name = "-".join([x for x in strings_to_use if len(x) > 0])[
         : settings.max_combined_container_name_length
-    ]
-    return container_name.replace("_", "-")
+    ].replace("_", "-")
+
+    return container_name
 
 
 def _get_forwarded_env_vars(container_key: str) -> List[str]:
@@ -153,6 +154,8 @@ async def validate_compose_spec(
     - containers are located on the same docker network
     - properly target environment variables formwarded via
         settings on the service
+
+    Finally runs docker-compose config to properly validate the result
     """
 
     try:
@@ -233,6 +236,10 @@ async def validate_compose_spec(
         command_timeout=command_timeout,
     )
     if not finished_without_errors:
-        raise InvalidComposeSpec(f"docker-compose config validation failed\n{stdout}")
+        message = (
+            f"'docker-compose config' failed for:\n{compose_spec}\nSTDOUT\n{stdout}"
+        )
+        logger.warning(message)
+        raise InvalidComposeSpec(f"filed to run {command}")
 
     return compose_spec
