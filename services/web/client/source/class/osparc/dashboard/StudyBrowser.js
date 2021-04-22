@@ -127,6 +127,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             this.__loadMoreStudiesBtn.setFetching(false);
             this.__loadMoreStudiesBtn.setEnabled(!this.__userStudyContainer.noMoreStudies);
             this.__loadingStudiesBtn.setFetching(false);
+            this.__loadingStudiesBtn.setVisibility(this.__userStudyContainer.noMoreStudies ? "excluded" : "visible");
             this.__moreStudiesRequired();
           });
       } else {
