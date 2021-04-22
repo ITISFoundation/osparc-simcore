@@ -14,6 +14,7 @@ from models_library.projects import ProjectType
 from models_library.projects_state import ProjectState
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
@@ -169,7 +170,7 @@ async def list_projects(request: web.Request):
                 projects_api.add_project_states_for_user(
                     user_id=user_id,
                     project=prj,
-                    is_template=prj_type == ProjectType.TEMPLATE,
+                    is_template=prj_type == ProjectTypeDB.TEMPLATE,
                     app=request.app,
                 )
                 for prj, prj_type in zip(projects, project_types)
@@ -183,6 +184,10 @@ async def list_projects(request: web.Request):
     ] = await catalog.get_services_for_user_in_product(
         request.app, user_id, product_name, only_key_versions=True
     )
+<<<<<<< HEAD
+=======
+
+>>>>>>> 618e5bb9f72a6b85f2652712a401ccdd24e5c7e8
     projects, project_types, total_number_projects = await db.load_projects(
         user_id=user_id,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
