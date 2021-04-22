@@ -1,14 +1,22 @@
 from math import ceil
 from typing import Any, List, Optional
 
-from pydantic import AnyHttpUrl, BaseModel, Extra, Field, PositiveInt, conint, validator
+from pydantic import (
+    AnyHttpUrl,
+    BaseModel,
+    Extra,
+    Field,
+    NonNegativeInt,
+    PositiveInt,
+    validator,
+)
 from yarl import URL
 
 
 class PageMetaInfoLimitOffset(BaseModel):
-    total: conint(ge=0)
-    count: conint(ge=0)
-    offset: conint(ge=0) = 0
+    total: NonNegativeInt
+    count: NonNegativeInt
+    offset: NonNegativeInt = 0
     limit: PositiveInt
 
     class Config:
