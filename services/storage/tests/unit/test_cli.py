@@ -30,7 +30,7 @@ def test_cli_help():
     assert "Usage: simcore-service-storage [OPTIONS]" in completed_process.stdout
 
 
-def test_cli_check_config_dumps_json(project_env_devel_environment):
+def test_cli_check_config_dumps_json(patch_env_devel_environment):
     completed_process = subprocess.run(
         "simcore-service-storage --check-config".split(), **COMMON_KWARGS
     )
@@ -41,7 +41,7 @@ def test_cli_check_config_dumps_json(project_env_devel_environment):
 
 
 @pytest.mark.parametrize("config_name", resources.listdir("data"))
-def test_cli_config_with_environs(config_name, project_env_devel_environment):
+def test_cli_config_with_environs(config_name, patch_env_devel_environment):
 
     config_path = Path(resources.get_path("data")) / config_name
 

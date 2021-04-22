@@ -24,9 +24,7 @@ from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
 from tests.helpers.utils_assert import assert_status
 from tests.helpers.utils_project import clone_project_data
-from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
-
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+from tests.utils import BUCKET_NAME, USER_ID, get_project_with_data, has_datcore_tokens
 
 
 def parse_db(dsm_mockup_db):
@@ -50,7 +48,7 @@ def client(
     aiohttp_client: TestClient,
     postgres_service,
     minio_service,
-    osparc_api_specs_dir,
+    osparc_simcore_api_specs_dir,
 ):
     app = web.Application()
 
@@ -65,7 +63,7 @@ def client(
         "test_datcore": {"api_token": api_token, "api_secret": api_secret},
     }
     rest_cfg = {
-        "oas_repo": str(osparc_api_specs_dir),
+        "oas_repo": str(osparc_simcore_api_specs_dir),
     }
     postgres_cfg = postgres_service
     s3_cfg = minio_service
@@ -288,15 +286,6 @@ async def test_action_check(client):
 
     assert data["path_value"] == ACTION
     assert data["query_value"] == QUERY
-
-
-def get_project_with_data() -> Dict[str, Any]:
-    projects = []
-    with open(current_dir / "data/projects_with_data.json") as fp:
-        projects = json.load(fp)
-
-    # TODO: add schema validation
-    return projects
 
 
 @pytest.fixture

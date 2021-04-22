@@ -13,9 +13,7 @@ from .dsm import DataStorageManager
 def create_storage_manager(
     request: Request,
 ):
-
     # TODO: minimum to request
-
     DataStorageManager()
 
 

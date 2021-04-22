@@ -8,8 +8,6 @@
 
 import datetime
 import os
-import sys
-import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
@@ -40,40 +38,8 @@ from tests.utils import (
 
 pytest_plugins = [
     "tests.fixtures.data_models",
+    "pytest_simcore.repository_paths",
 ]
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-# TODO: replace by pytest_simcore
-sys.path.append(str(CURRENT_DIR / "helpers"))
-
-
-@pytest.fixture(scope="session")
-def here() -> Path:
-    return CURRENT_DIR
-
-
-@pytest.fixture(scope="session")
-def package_dir(here) -> Path:
-    dirpath = Path(simcore_service_storage.__file__).parent
-    assert dirpath.exists()
-    return dirpath
-
-
-@pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.parent
-    assert root_dir.exists() and any(
-        root_dir.glob("services")
-    ), "Is this service within osparc-simcore repo?"
-    return root_dir
-
-
-@pytest.fixture(scope="session")
-def osparc_api_specs_dir(osparc_simcore_root_dir) -> Path:
-    dirpath = osparc_simcore_root_dir / "api" / "specs"
-    assert dirpath.exists()
-    return dirpath
 
 
 @pytest.fixture(scope="session")
@@ -86,6 +52,16 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 
 
 @pytest.fixture(scope="session")
+def package_dir() -> Path:
+    """Notice that this might be under src (if installed as edit mode)
+    or in the installation folder
+    """
+    dirpath = Path(simcore_service_storage.__file__).resolve().parent
+    assert dirpath.exists()
+    return dirpath
+
+
+@pytest.fixture(scope="session")
 def project_env_devel_dict(project_slug_dir: Path) -> Dict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
@@ -94,13 +70,13 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 
 
 @pytest.fixture(scope="function")
-def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
+def patch_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(here) -> Iterator[str]:
+def docker_compose_file(project_tests_dir: Path) -> Iterator[str]:
     """Overrides pytest-docker fixture"""
     old = os.environ.copy()
 
@@ -112,7 +88,7 @@ def docker_compose_file(here) -> Iterator[str]:
     os.environ["MINIO_ACCESS_KEY"] = ACCESS_KEY
     os.environ["MINIO_SECRET_KEY"] = SECRET_KEY
 
-    dc_path = here / "docker-compose.yml"
+    dc_path = project_tests_dir / "docker-compose.yml"
 
     assert dc_path.exists()
     yield str(dc_path)
@@ -268,13 +244,13 @@ def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]
     f = DATA_DIR / "notebooks.zip"
     object_name = "{project_id}/{node_id}/{filename}".format(**file_2)
     s3_client.upload_file(bucket_name, object_name, f)
-    yield (file_1, file_2)
+    return (file_1, file_2)
 
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(
     postgres_service_url, s3_client, mock_files_factory
-) -> Dict[str, FileMetaData]:
+) -> Iterator[Dict[str, FileMetaData]]:
 
     # s3 client
     bucket_name = BUCKET_NAME
@@ -409,7 +385,7 @@ def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
     api_secret = os.environ.get("BF_API_SECRET", "none")
     dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
 
-    yield dsm_fixture
+    return dsm_fixture
 
 
 @pytest.fixture(scope="function")
