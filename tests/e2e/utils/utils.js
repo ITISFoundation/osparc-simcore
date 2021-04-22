@@ -174,6 +174,9 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
     }
     catch(error) {
       console.log("-- No JSON in response --");
+      console.log("Request:", url);
+      console.log("Response headers:", resp.headers);
+      console.log("Response:", await resp.text());
     }
     return resp;
   }, host, endpoint, apiVersion);
