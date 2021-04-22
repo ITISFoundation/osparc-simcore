@@ -117,7 +117,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const studies = resp["data"];
             const tStudies = resp["_meta"]["total"];
             this.__userStudyContainer.nStudies = (this.__userStudyContainer.nStudies || 0) + studies.length;
-            this.__userStudyContainer.noMoreStudies = this.__userStudyContainer.nStudies === tStudies;
+            this.__userStudyContainer.noMoreStudies = this.__userStudyContainer.nStudies >= tStudies;
             this.__addStudiesToList(studies);
             this.resetSelection();
           })
