@@ -108,8 +108,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__loadingStudiesBtn.setFetching(true);
         const params = {
           url: {
-            start: this.__userStudyContainer.nStudies || 0,
-            count: this.self().PAGINATED_STUDIES
+            offset: this.__userStudyContainer.nStudies || 0,
+            limit: this.self().PAGINATED_STUDIES
           }
         };
         // will never use the cache
