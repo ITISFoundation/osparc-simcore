@@ -124,14 +124,18 @@ def test_url_quoting_and_validation():
     # as URL components by quoting special characters and appropriately encoding non-ASCII text.
     # They also support reversing these operations to recreate the original data from the contents
     # of a URL component if that task isn’t already covered by the URL parsing functions above
+    SPACE = " "
 
     class M(BaseModel):
         url: HttpUrl
 
         @validator("url", pre=True)
         @classmethod
-        def decode_url(cls, v):
-            return urllib.parse.unquote(v)
+        def unquote_url(cls, v):
+            w = urllib.parse.unquote(v)
+            if SPACE in w:
+                w = w.replace(SPACE, "%20")
+            return w
 
     M.parse_obj(
         {
