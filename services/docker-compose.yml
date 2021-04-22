@@ -276,7 +276,6 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
-    shm_size: '256mb'
     healthcheck:
       test:
         [
