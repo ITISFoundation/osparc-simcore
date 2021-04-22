@@ -184,10 +184,6 @@ async def list_projects(request: web.Request):
     ] = await catalog.get_services_for_user_in_product(
         request.app, user_id, product_name, only_key_versions=True
     )
-<<<<<<< HEAD
-=======
-
->>>>>>> 618e5bb9f72a6b85f2652712a401ccdd24e5c7e8
     projects, project_types, total_number_projects = await db.load_projects(
         user_id=user_id,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
