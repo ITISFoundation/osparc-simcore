@@ -1091,6 +1091,10 @@ async def test_list_projects_with_pagination(
         default_query_parameter = {"limit": limit}
         projects = []
         for i in range(NUMBER_OF_CALLS):
+            print(
+                "calling in with query",
+                next_link.query if next_link else default_query_parameter,
+            )
             data, meta, links = await _list_projects(
                 client,
                 expected.ok,
@@ -1098,6 +1102,7 @@ async def test_list_projects_with_pagination(
                 if next_link
                 else default_query_parameter,
             )
+            print("...received [", meta, "]")
             assert len(data) == meta["count"]
             assert meta["count"] == min(limit, NUM_PROJECTS - len(projects))
             assert meta["limit"] == limit
