@@ -27,6 +27,8 @@ async def validates_docker_compose_spec_and_stores_it(
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Optional[str]:
+    # FIXME: why is this not an argument into CREATE /containers ?
+
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     body_as_text = (await request.body()).decode("utf-8")
 
@@ -61,6 +63,7 @@ async def runs_docker_compose_up(
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
+    # FIXME: why is this not in /containers:up ?
 
     # --no-build might be a security risk building is disabled
     command = (
@@ -88,7 +91,7 @@ async def runs_docker_compose_pull(
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-
+    # FIXME: why is this not in /containers:pull ?
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         response.status_code = HTTP_400_BAD_REQUEST
@@ -101,7 +104,7 @@ async def runs_docker_compose_pull(
 
     try:
         # mark as pulling images
-        shared_store.is_pulling_containsers = True
+        shared_store.is_pulling_containers = True
 
         finished_without_errors, stdout = await write_file_and_run_command(
             settings=settings,
@@ -111,7 +114,7 @@ async def runs_docker_compose_pull(
         )
     finally:
         # remove mark
-        shared_store.is_pulling_containsers = False
+        shared_store.is_pulling_containers = False
 
     response.status_code = (
         HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
@@ -126,6 +129,8 @@ async def runs_docker_compose_down(
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
+    # FIXME: why is this not in /containers:down ?
+
     """Removes the previously started service
     and returns the docker-compose output"""
     finished_without_errors, stdout = await remove_the_compose_spec(

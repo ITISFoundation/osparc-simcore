@@ -10,6 +10,6 @@ class SharedStore(BaseModel):
     container_names: List[str] = Field(
         [], description="stores the container names from the compose_spec"
     )
-    is_pulling_containsers: bool = Field(
+    is_pulling_containers: bool = Field(
         False, description="set to True while the containers are being pulled"
     )

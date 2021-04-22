@@ -108,15 +108,15 @@ async def test_containers_docker_status_pulling_containers(
     @contextmanager
     def mark_pulling(shared_store: SharedStore) -> Generator[None, None, None]:
         try:
-            shared_store.is_pulling_containsers = True
+            shared_store.is_pulling_containers = True
             yield
         finally:
-            shared_store.is_pulling_containsers = False
+            shared_store.is_pulling_containers = False
 
     shared_store: SharedStore = test_client.application.state.shared_store
 
     with mark_pulling(shared_store):
-        assert shared_store.is_pulling_containsers is True
+        assert shared_store.is_pulling_containers is True
 
         response = await test_client.get(
             f"/{api_vtag}/containers:docker-status",

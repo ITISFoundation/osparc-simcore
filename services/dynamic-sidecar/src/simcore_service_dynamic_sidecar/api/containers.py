@@ -2,8 +2,7 @@
 from typing import Any, Dict, List, Union
 
 import aiodocker
-from fastapi import APIRouter, Depends, Query, Request, Response
-from starlette.status import HTTP_400_BAD_REQUEST
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ..dependencies import get_shared_store
 from ..shared_store import SharedStore
@@ -12,55 +11,57 @@ containers_router = APIRouter(tags=["containers"])
 
 
 @containers_router.get("/containers")
-async def get_spawned_container_names(request: Request) -> List[str]:
+async def get_spawned_container_names(
+    shared_store: SharedStore = Depends(get_shared_store),
+) -> List[str]:
     """ Returns a list of containers created using docker-compose """
-    shared_store: SharedStore = request.app.state.shared_store
     return shared_store.container_names
 
 
-@containers_router.get("/containers:inspect")
+@containers_router.get(
+    "/containers:inspect",
+    responses={status.HTTP_400_BAD_REQUEST: {"description": "Erros in container"}},
+)
 async def containers_inspect(
-    response: Response, shared_store: SharedStore = Depends(get_shared_store)
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
     docker = aiodocker.Docker()
 
-    container_names = (
-        shared_store.container_names if shared_store.container_names else {}
-    )
-
     results = {}
 
-    for container in container_names:
+    for container in shared_store.container_names:
         try:
             container_instance = await docker.containers.get(container)
             results[container] = await container_instance.show()
-        except aiodocker.exceptions.DockerError as e:
-            response.status_code = HTTP_400_BAD_REQUEST
-            return dict(error=e.message)
+        except aiodocker.exceptions.DockerError as err:
+            # FIXME: This is NOT a client error https://httpstatuses.com/400. More or a server problem? 5XX??
+
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail=err.message,
+            ) from err
 
     return results
 
 
-@containers_router.get("/containers:docker-status")
+@containers_router.get(
+    "/containers/status",
+    responses={status.HTTP_400_BAD_REQUEST: {"description": "Errors in container"}},
+)
 async def containers_docker_status(
-    response: Response, shared_store: SharedStore = Depends(get_shared_store)
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> Dict[str, Any]:
     """ Returns the status of the containers """
 
-    def assemble_entry(status: str, error: str = "") -> Dict[str, str]:
-        return {"Status": status, "Error": error}
-
     docker = aiodocker.Docker()
 
-    container_names = (
-        shared_store.container_names if shared_store.container_names else {}
-    )
+    container_names = shared_store.container_names
 
     # if containers are being pulled, return pulling (fake status)
-    if shared_store.is_pulling_containsers:
+    if shared_store.is_pulling_containers:
         # pulling is a fake state use to share more information with the frontend
-        return {x: assemble_entry(status="pulling") for x in container_names}
+        return {x: {"Status": "pulling", "Error": ""} for x in container_names}
 
     results = {}
 
@@ -75,26 +76,32 @@ async def containers_docker_status(
                 "Status": container_state.get("Status", "pending"),
                 "Error": container_state.get("Error", ""),
             }
-        except aiodocker.exceptions.DockerError as e:
-            response.status_code = HTTP_400_BAD_REQUEST
-            return dict(error=e.message)
+        except aiodocker.exceptions.DockerError as err:
+            # FIXME: This is NOT a client error https://httpstatuses.com/400. More or a server problem? 5XX??
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail=err.message,
+            ) from err
 
     return results
 
 
-@containers_router.get("/containers/{id}/logs")
+@containers_router.get(
+    "/containers/{id}/logs",
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"description": "Container does not exists"}
+    },
+)
 async def get_container_logs(
-    # pylint: disable=unused-argument
-    response: Response,
     id: str,
     since: int = Query(
         0,
-        title="Timstamp",
+        title="Timestamp",
         description="Only return logs since this time, as a UNIX timestamp",
     ),
     until: int = Query(
         0,
-        title="Timstamp",
+        title="Timestamp",
         description="Only return logs before this time, as a UNIX timestamp",
     ),
     timestamps: bool = Query(
@@ -107,13 +114,13 @@ async def get_container_logs(
     """ Returns the logs of a given container if found """
     # TODO: remove from here and dump directly into the logs of this service
     # do this in PR#1887
-
     if id not in shared_store.container_names:
-        response.status_code = HTTP_400_BAD_REQUEST
-        return dict(error=f"No container '{id}' was started")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"No container '{id}' was started",
+        )
 
     docker = aiodocker.Docker()
-
     try:
         container_instance = await docker.containers.get(id)
 
@@ -121,22 +128,39 @@ async def get_container_logs(
         if timestamps:
             args["timestamps"] = True
 
+        if since or until:
+            raise HTTPException(
+                status.HTTP_501_NOT_IMPLEMENTED,
+                detail="since and until options are still not implemented",
+            )
+
         container_logs: str = await container_instance.log(**args)
         return container_logs
-    except aiodocker.exceptions.DockerError as e:
-        response.status_code = HTTP_400_BAD_REQUEST
-        return dict(error=e.message)
+    except aiodocker.exceptions.DockerError as err:
+        # FIXME: This is NOT a client error https://httpstatuses.com/400. More or a server problem? 5XX??
+
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=err.message,
+        ) from err
 
 
-@containers_router.get("/containers/{id}/inspect")
+@containers_router.get(
+    "/containers/{id}:inspect",
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"description": "Container does not exist"}
+    },
+)
 async def inspect_container(
-    response: Response, id: str, shared_store: SharedStore = Depends(get_shared_store)
+    id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
 
     if id not in shared_store.container_names:
-        response.status_code = HTTP_400_BAD_REQUEST
-        return dict(error=f"No container '{id}' was started")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"No container '{id}' was started",
+        )
 
     docker = aiodocker.Docker()
 
@@ -144,29 +168,43 @@ async def inspect_container(
         container_instance = await docker.containers.get(id)
         inspect_result: Dict[str, Any] = await container_instance.show()
         return inspect_result
-    except aiodocker.exceptions.DockerError as e:
-        response.status_code = HTTP_400_BAD_REQUEST
-        return dict(error=e.message)
+    except aiodocker.exceptions.DockerError as err:
+        # FIXME: This is NOT a client error https://httpstatuses.com/400. More or a server problem? 5XX??
+
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=f"No container '{id}' was started",
+        ) from err
 
 
-@containers_router.delete("/containers/{id}/remove")
+@containers_router.delete(
+    "/containers/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"description": "Container does not exist"}
+    },
+)
 async def remove_container(
-    response: Response, id: str, shared_store: SharedStore = Depends(get_shared_store)
-) -> Union[bool, Dict[str, Any]]:
-
+    id: str, shared_store: SharedStore = Depends(get_shared_store)
+):
     if id not in shared_store.container_names:
-        response.status_code = HTTP_400_BAD_REQUEST
-        return dict(error=f"No container '{id}' was started")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail=f"No container '{id}' was started"
+        )
 
     docker = aiodocker.Docker()
 
     try:
         container_instance = await docker.containers.get(id)
         await container_instance.delete()
-        return True
-    except aiodocker.exceptions.DockerError as e:
-        response.status_code = HTTP_400_BAD_REQUEST
-        return dict(error=e.message)
+
+    except aiodocker.exceptions.DockerError as err:
+        # FIXME: This is NOT a client error https://httpstatuses.com/400. More or a server problem? 5XX??
+
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=err.message,
+        ) from err
 
 
 __all__ = ["containers_router"]
