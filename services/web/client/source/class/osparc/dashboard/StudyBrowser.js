@@ -68,7 +68,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __userStudyContainer: null,
     __userStudies: null,
     __newStudyBtn: null,
-    __loadMoreStudiesBtn: null,
     __loadingStudiesBtn: null,
 
     /**
@@ -101,7 +100,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadUserStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this.__loadMoreStudiesBtn.setFetching(true);
         if (this.__loadingStudiesBtn.isFetching()) {
           return;
         }
@@ -127,8 +125,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             console.error(err);
           })
           .finally(() => {
-            this.__loadMoreStudiesBtn.setFetching(false);
-            this.__loadMoreStudiesBtn.setEnabled(!this.__userStudyContainer.noMoreStudies);
             this.__loadingStudiesBtn.setFetching(false);
             this.__loadingStudiesBtn.setVisibility(this.__userStudyContainer.noMoreStudies ? "excluded" : "visible");
             this.__moreStudiesRequired();
@@ -260,13 +256,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const userStudyLayout = this.__createButtonsLayout(this.tr("Recent studies"), userStudyContainer);
 
       const studiesTitleContainer = userStudyLayout.getTitleBar();
-
-      const loadMoreStudiesBtn = this.__loadMoreStudiesBtn = new osparc.ui.form.FetchButton(this.tr("Load more"));
-      loadMoreStudiesBtn.addListener("execute", () => {
-        this.reloadUserStudies();
-      }, this);
-      studiesTitleContainer.add(new qx.ui.core.Spacer(10, null));
-      studiesTitleContainer.add(loadMoreStudiesBtn);
 
       const importStudyButton = this.__createImportButton();
       studiesTitleContainer.add(new qx.ui.core.Spacer(20, null));
