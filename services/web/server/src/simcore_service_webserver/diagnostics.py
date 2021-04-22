@@ -46,7 +46,7 @@ def setup_diagnostics(
     # Aims to identify possible blocking calls
     #
     if slow_duration_secs is None:
-        slow_duration_secs = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.3))
+        slow_duration_secs = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 1.0))
     else:
         settings_kwargs["slow_duration_secs"] = slow_duration_secs
 
@@ -103,10 +103,10 @@ def setup_diagnostics(
     # -----
 
     # TODO: redesign ... too convoluted!!
-    registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
-    app[kINCIDENTS_REGISTRY] = registry
+    incidents_registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
+    app[kINCIDENTS_REGISTRY] = incidents_registry
 
-    monitor_slow_callbacks.enable(max_task_delay, registry)
+    monitor_slow_callbacks.enable(slow_duration_secs, incidents_registry)
 
     # adds middleware and /metrics
     setup_monitoring(app)
