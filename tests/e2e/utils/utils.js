@@ -167,8 +167,15 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
     const url = host + apiVersion + endpoint;
     console.log("makeRequest", url);
     const resp = await fetch(url);
-    const jsonResp = await resp.json();
-    return jsonResp["data"];
+
+    try {
+      const jsonResp = await resp.json();
+      return jsonResp["data"];
+    }
+    catch(error) {
+      console.log("-- No JSON in response --");
+    }
+    return resp;
   }, host, endpoint, apiVersion);
   return resp;
 }
