@@ -36,9 +36,9 @@ def test_invalid_offset():
         pytest.param(5, 1, id="count + offset bigger than total"),
     ],
 )
-def test_invalid_count(count: int):
+def test_invalid_count(count: int, offset: int):
     with pytest.raises(ValueError):
-        PageMetaInfoLimitOffset(limit=6, total=5, offset=0, count=count)
+        PageMetaInfoLimitOffset(limit=6, total=5, offset=offset, count=count)
 
 
 def test_data_size_does_not_fit_count():
