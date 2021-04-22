@@ -2,10 +2,11 @@ import logging
 import traceback
 from typing import Optional
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import PlainTextResponse
 from starlette.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
 
+from ..dependencies import get_settings, get_shared_store
 from ..settings import DynamicSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..shared_store import SharedStore
@@ -20,13 +21,14 @@ compose_router = APIRouter(tags=["docker-compose"])
     "/compose:store", response_class=PlainTextResponse, responses={204: {"model": None}}
 )
 async def validates_docker_compose_spec_and_stores_it(
-    request: Request, response: Response, command_timeout: float = 5.0
+    request: Request,
+    response: Response,
+    command_timeout: float = 5.0,
+    settings: DynamicSidecarSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> Optional[str]:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     body_as_text = (await request.body()).decode("utf-8")
-
-    settings: DynamicSidecarSettings = request.app.state.settings
-    shared_store: SharedStore = request.app.state.shared_store
 
     if body_as_text is None:
         shared_store.compose_spec = None
@@ -53,11 +55,12 @@ async def validates_docker_compose_spec_and_stores_it(
 
 @compose_router.post("/compose", response_class=PlainTextResponse)
 async def runs_docker_compose_up(
-    request: Request, response: Response, command_timeout: float
+    response: Response,
+    command_timeout: float,
+    settings: DynamicSidecarSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    settings: DynamicSidecarSettings = request.app.state.settings
-    shared_store: SharedStore = request.app.state.shared_store
 
     # --no-build might be a security risk building is disabled
     command = (
@@ -79,11 +82,12 @@ async def runs_docker_compose_up(
 
 @compose_router.get("/compose:pull", response_class=PlainTextResponse)
 async def runs_docker_compose_pull(
-    request: Request, response: Response, command_timeout: float
+    response: Response,
+    command_timeout: float,
+    settings: DynamicSidecarSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    shared_store: SharedStore = request.app.state.shared_store
-    settings: DynamicSidecarSettings = request.app.state.settings
 
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
@@ -117,13 +121,16 @@ async def runs_docker_compose_pull(
 
 @compose_router.delete("/compose", response_class=PlainTextResponse)
 async def runs_docker_compose_down(
-    request: Request, response: Response, command_timeout: float
+    response: Response,
+    command_timeout: float,
+    settings: DynamicSidecarSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
     """Removes the previously started service
     and returns the docker-compose output"""
     finished_without_errors, stdout = await remove_the_compose_spec(
-        shared_store=request.app.state.shared_store,
-        settings=request.app.state.settings,
+        shared_store=shared_store,
+        settings=settings,
         command_timeout=command_timeout,
     )
 

@@ -2,9 +2,10 @@
 from typing import Any, Dict, List, Union
 
 import aiodocker
-from fastapi import APIRouter, Query, Request, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from starlette.status import HTTP_400_BAD_REQUEST
 
+from ..dependencies import get_shared_store
 from ..shared_store import SharedStore
 
 containers_router = APIRouter(tags=["containers"])
@@ -18,11 +19,12 @@ async def get_spawned_container_names(request: Request) -> List[str]:
 
 
 @containers_router.get("/containers:inspect")
-async def containers_inspect(request: Request, response: Response) -> Dict[str, Any]:
+async def containers_inspect(
+    response: Response, shared_store: SharedStore = Depends(get_shared_store)
+) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
     docker = aiodocker.Docker()
 
-    shared_store: SharedStore = request.app.state.shared_store
     container_names = (
         shared_store.container_names if shared_store.container_names else {}
     )
@@ -42,7 +44,7 @@ async def containers_inspect(request: Request, response: Response) -> Dict[str, 
 
 @containers_router.get("/containers:docker-status")
 async def containers_docker_status(
-    request: Request, response: Response
+    response: Response, shared_store: SharedStore = Depends(get_shared_store)
 ) -> Dict[str, Any]:
     """ Returns the status of the containers """
 
@@ -51,7 +53,6 @@ async def containers_docker_status(
 
     docker = aiodocker.Docker()
 
-    shared_store = request.app.state.shared_store
     container_names = (
         shared_store.container_names if shared_store.container_names else {}
     )
@@ -84,7 +85,6 @@ async def containers_docker_status(
 @containers_router.get("/containers/{id}/logs")
 async def get_container_logs(
     # pylint: disable=unused-argument
-    request: Request,
     response: Response,
     id: str,
     since: int = Query(
@@ -102,11 +102,11 @@ async def get_container_logs(
         title="Display timestamps",
         description="Enabling this parameter will include timestamps in logs",
     ),
+    shared_store: SharedStore = Depends(get_shared_store),
 ) -> Union[str, Dict[str, Any]]:
     """ Returns the logs of a given container if found """
     # TODO: remove from here and dump directly into the logs of this service
     # do this in PR#1887
-    shared_store: SharedStore = request.app.state.shared_store
 
     if id not in shared_store.container_names:
         response.status_code = HTTP_400_BAD_REQUEST
@@ -130,10 +130,9 @@ async def get_container_logs(
 
 @containers_router.get("/containers/{id}/inspect")
 async def inspect_container(
-    request: Request, response: Response, id: str
+    response: Response, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
-    shared_store: SharedStore = request.app.state.shared_store
 
     if id not in shared_store.container_names:
         response.status_code = HTTP_400_BAD_REQUEST
@@ -152,9 +151,8 @@ async def inspect_container(
 
 @containers_router.delete("/containers/{id}/remove")
 async def remove_container(
-    request: Request, response: Response, id: str
+    response: Response, id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> Union[bool, Dict[str, Any]]:
-    shared_store: SharedStore = request.app.state.shared_store
 
     if id not in shared_store.container_names:
         response.status_code = HTTP_400_BAD_REQUEST
