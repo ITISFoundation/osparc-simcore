@@ -130,6 +130,8 @@ async def get_redirection_to_viewer(request: web.Request):
     try:
         # query parameters in request parsed and validated
         params: RedirectionQueryParams = RedirectionQueryParams.from_request(request)
+        log.debug("Requesting viewer %s", params)
+
         # TODO: Cannot check file_size from HEAD
         # removed await params.check_download_link()
         # Perhaps can check the header for GET while downloading and retreive file_size??
@@ -142,16 +144,19 @@ async def get_redirection_to_viewer(request: web.Request):
             service_key=params.viewer_key,
             service_version=params.viewer_version,
         )
+        log.debug("Validated viewer %s", viewer)
 
         # Retrieve user or create a temporary guest
         user: UserInfo = await acquire_user(
             request, is_guest_allowed=viewer.is_guest_allowed
         )
+        log.debug("User acquired %s", user)
 
         # Generate one project per user + download_link + viewer
         project_id, viewer_id = await acquire_project_with_viewer(
             request.app, user, viewer, params.download_link
         )
+        log.debug("Project acquired '%s'", project_id)
 
         # Redirection and creation of cookies (for guests)
         # Produces  /#/view?project_id= & viewer_node_id
@@ -164,6 +169,11 @@ async def get_redirection_to_viewer(request: web.Request):
             file_size=params.file_size,
         )
         await ensure_authentication(user, request, response)
+        log.debug(
+            "Response with redirect '%s' w/ auth cookie in headers %s)",
+            response,
+            response.headers,
+        )
 
     except StudyDispatcherError as err:
         raise create_redirect_response(
