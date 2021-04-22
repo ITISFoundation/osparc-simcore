@@ -14,10 +14,36 @@ from yarl import URL
 
 
 class PageMetaInfoLimitOffset(BaseModel):
-    total: NonNegativeInt
-    count: NonNegativeInt
-    offset: NonNegativeInt = 0
     limit: PositiveInt
+    total: NonNegativeInt
+    offset: NonNegativeInt = 0
+    count: NonNegativeInt
+
+    @validator("offset", always=True)
+    @classmethod
+    def check_offset(cls, v, values):
+        if v >= values["total"]:
+            raise ValueError(
+                f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
+            )
+        return v
+
+    @validator("count", always=True)
+    @classmethod
+    def check_count(cls, v, values):
+        if v > values["limit"]:
+            raise ValueError(
+                f"count {v} bigger than limit {values['limit']}, please check"
+            )
+        if v > values["total"]:
+            raise ValueError(
+                f"count {v} bigger than expected total {values['total']}, please check"
+            )
+        if (values["offset"] + v) > values["total"]:
+            raise ValueError(
+                f"offset {values['offset']} + count {v} is bigger than allowed total {values['total']}, please check"
+            )
+        return v
 
     class Config:
         extra = Extra.forbid
@@ -48,10 +74,11 @@ class PageResponseLimitOffset(BaseModel):
 
     @validator("data", always=True, pre=True)
     @classmethod
-    def check_data_size_smaller_than_limit(cls, v, values):
-        limit = values["meta"].limit
-        if len(v) > limit:
-            raise ValueError(f"container size must be smaller than limit [{limit}]")
+    def check_data_compatible_with_meta(cls, v, values):
+        if len(v) != values["meta"].count:
+            raise ValueError(
+                f"container size must be equal to count [{values['meta'].count}]"
+            )
         return v
 
     @classmethod
