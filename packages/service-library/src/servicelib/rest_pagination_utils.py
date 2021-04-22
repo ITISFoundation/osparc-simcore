@@ -22,7 +22,7 @@ class PageMetaInfoLimitOffset(BaseModel):
     @validator("offset")
     @classmethod
     def check_offset(cls, v, values):
-        if v >= values["total"]:
+        if v > 0 and v >= values["total"]:
             raise ValueError(
                 f"offset {v} cannot be equal or bigger than total {values['total']}, please check"
             )
