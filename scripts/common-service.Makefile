@@ -32,6 +32,11 @@ export APP_VERSION
 # COMMON TASKS
 #
 
+.env: .env-devel ## creates .env file from defaults in .env-devel
+	$(if $(wildcard $@), \
+	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
+	@echo "INFO $@ does not exist, cloning $< as $@"; cp $< $@)
+
 
 .PHONY: install-dev install-prod install-ci
 

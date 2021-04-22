@@ -72,9 +72,9 @@ def assert_all_hits_found(filled_search_dict: Dict[str, int], file_path: str) ->
         assert value > 0, message
 
 
-def test_are_settings_present(search_dict, here):
+def test_are_settings_present(search_dict, project_slug_dir):
     # scanning all the files in the
-    client_sdk_dir = here / ".." / "client-sdk" / "python"
+    client_sdk_dir = project_slug_dir / "client-sdk" / "python"
     all_python_files = client_sdk_dir.rglob("*.py")
     for python_file in all_python_files:
         print(f"seaching in file {python_file}")

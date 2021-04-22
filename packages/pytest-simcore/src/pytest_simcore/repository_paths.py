@@ -35,6 +35,13 @@ def osparc_simcore_root_dir(request) -> Path:
 
 
 @pytest.fixture(scope="session")
+def osparc_simcore_api_specs_dir(osparc_simcore_root_dir) -> Path:
+    dirpath = osparc_simcore_root_dir / "api" / "specs"
+    assert dirpath.exists()
+    return dirpath
+
+
+@pytest.fixture(scope="session")
 def osparc_simcore_services_dir(osparc_simcore_root_dir) -> Path:
     """ Path to osparc-simcore/services folder """
     services_dir = osparc_simcore_root_dir / "services"

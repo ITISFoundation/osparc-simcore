@@ -17,8 +17,6 @@ tests: ## runs unit tests
 
 
 # DEVELOPMENT ########
-.env:
-	cp .env-devel $@
 
 run-devel: .env
 	# start app (within $<) in prod mode
