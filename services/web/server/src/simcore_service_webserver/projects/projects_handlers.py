@@ -19,6 +19,7 @@ from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
+from ..rest_utils import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
@@ -32,7 +33,6 @@ from .projects_utils import (
     get_project_unavilable_services,
     project_uses_available_services,
 )
-from .rest_utils import RESPONSE_MODEL_POLICY
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
