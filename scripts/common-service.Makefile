@@ -50,7 +50,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 ## pip 21.3 will remove support for this functionality. You can find discussion regarding this at https://github.com/pypa/pip/issues/7555.
 
 
-.PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev
+.PHONY: test-dev-unit test-ci-unit test-dev-integration test-ci-integration test-dev test-ci
 
 test-dev-unit test-ci-unit: _check_venv_active
 	# Targets tests/unit folder
@@ -63,7 +63,9 @@ test-dev-integration test-ci-integration:
 	make --no-print-directory _run-$(subst -integration,,$@) target=$(CURDIR)/tests/integration
 
 
-test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (e.g. w/ pdb)
+test-dev: test-dev-unit test-dev-integration ## runs unit and integration tests for development (w/ pdb, fail-first)
+
+test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI (w/ coverage, timing)
 
 test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for CI
 

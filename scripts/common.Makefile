@@ -150,6 +150,9 @@ version-minor: ## commits version with backwards-compatible API addition or chan
 version-major: ## commits version with backwards-INcompatible addition or changes
 	$(_bumpversion)
 
+.PHONY: reqs requirements
+reqs requirements: ## compiles pip requirements (.in -> .txt). Usage 'make reqs upgrade=$package'
+	@$(MAKE_C) requirements reqs
 
 #
 # SUBTASKS
