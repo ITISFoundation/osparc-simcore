@@ -19,7 +19,7 @@ class PageMetaInfoLimitOffset(BaseModel):
     offset: NonNegativeInt = 0
     count: NonNegativeInt
 
-    @validator("offset", always=True)
+    @validator("offset")
     @classmethod
     def check_offset(cls, v, values):
         if v >= values["total"]:
@@ -28,7 +28,7 @@ class PageMetaInfoLimitOffset(BaseModel):
             )
         return v
 
-    @validator("count", always=True)
+    @validator("count")
     @classmethod
     def check_count(cls, v, values):
         if v > values["limit"]:
@@ -39,7 +39,7 @@ class PageMetaInfoLimitOffset(BaseModel):
             raise ValueError(
                 f"count {v} bigger than expected total {values['total']}, please check"
             )
-        if (values["offset"] + v) > values["total"]:
+        if "offset" in values and (values["offset"] + v) > values["total"]:
             raise ValueError(
                 f"offset {values['offset']} + count {v} is bigger than allowed total {values['total']}, please check"
             )
@@ -47,6 +47,12 @@ class PageMetaInfoLimitOffset(BaseModel):
 
     class Config:
         extra = Extra.forbid
+
+        schema_extra = {
+            "examples": [
+                {"total": 7, "count": 4, "limit": 4, "offset": 0},
+            ]
+        }
 
 
 class PageLinks(BaseModel):
@@ -65,19 +71,22 @@ class PageResponseLimitOffset(BaseModel):
     links: PageLinks = Field(alias="_links")
     data: List[Any]
 
-    @validator("data", always=True, pre=True)
+    @validator("data", pre=True)
     @classmethod
     def convert_none_to_empty_list(cls, v):
         if v is None:
             v = list()
         return v
 
-    @validator("data", always=True, pre=True)
+    @validator("data")
     @classmethod
     def check_data_compatible_with_meta(cls, v, values):
+        if "meta" not in values:
+            # if the validation failed in meta this happens
+            raise ValueError("meta not in values")
         if len(v) != values["meta"].count:
             raise ValueError(
-                f"container size must be equal to count [{values['meta'].count}]"
+                f"container size [{len(v)}] must be equal to count [{values['meta'].count}]"
             )
         return v
 
