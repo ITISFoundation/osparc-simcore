@@ -170,7 +170,7 @@ psycopg2-binary==2.8.5
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic[email]==1.7.2
+pydantic[email]==1.8.1
     # via
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
@@ -226,9 +226,10 @@ tqdm==4.54.1
     # via parfive
 trafaret==2.0.2
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
-typing-extensions==3.7.4.2
+typing-extensions==3.7.4.3
     # via
     #   aiohttp
+    #   pydantic
     #   yarl
 ujson==3.1.0
     # via
