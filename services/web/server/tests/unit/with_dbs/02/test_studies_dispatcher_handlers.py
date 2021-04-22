@@ -252,7 +252,7 @@ async def test_api_list_supported_filetypes(client):
         {
             "title": "Jupyterlab math v1.6.9",
             "file_type": "PY",
-            "view_url": "http://172.16.8.68:9081/view?file_type=PY&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
+            "view_url": f"{base_url}/view?file_type=PY&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
         },
         {
             "title": "Rawgraphs v2.11.1",
