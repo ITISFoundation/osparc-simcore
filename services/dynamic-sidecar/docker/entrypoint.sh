@@ -21,9 +21,12 @@ echo "$INFO" "User : $(id scu)"
 echo "$INFO" "python : $(command -v python)"
 echo "$INFO" "pip : $(command -v pip)"
 
-USERNAME=scu
-GROUPNAME=scu
-
+#
+# DEVELOPMENT MODE
+# - expects docker run ... -v $(pwd):$SC_DEVEL_MOUNT
+# - mounts source folders
+# - deduces host's uid/gip and assigns to user within docker
+#
 if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "development mode detected..."
   # NOTE: expects docker run ... -v $(pwd):$DEVEL_MOUNT
@@ -71,22 +74,19 @@ fi
 
 # Appends docker group if socket is mounted
 DOCKER_MOUNT=/var/run/docker.sock
-if stat $DOCKER_MOUNT > /dev/null 2>&1
-then
-    echo "$INFO detected docker socket is mounted, adding user to group..."
-    GROUPID=$(stat --format=%g $DOCKER_MOUNT)
-    GROUPNAME=scdocker
+if stat $DOCKER_MOUNT >/dev/null 2>&1; then
+  echo "$INFO detected docker socket is mounted, adding user to group..."
+  GROUPID=$(stat --format=%g $DOCKER_MOUNT)
+  GROUPNAME=scdocker
 
-    if ! addgroup --gid "$GROUPID" $GROUPNAME > /dev/null 2>&1
-    then
-        echo "$WARNING docker group with $GROUPID already exists, getting group name..."
-        # if group already exists in container, then reuse name
-        GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
-        echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
-    fi
-    adduser "$SC_USER_NAME" "$GROUPNAME"
+  if ! addgroup --gid "$GROUPID" $GROUPNAME >/dev/null 2>&1; then
+    echo "$WARNING docker group with $GROUPID already exists, getting group name..."
+    # if group already exists in container, then reuse name
+    GROUPNAME=$(getent group "${GROUPID}" | cut --delimiter=: --fields=1)
+    echo "$WARNING docker group with $GROUPID has name $GROUPNAME"
+  fi
+  adduser "$SC_USER_NAME" "$GROUPNAME"
 fi
-
 
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"

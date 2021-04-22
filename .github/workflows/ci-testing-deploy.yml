@@ -344,7 +344,7 @@ jobs:
             ${{ runner.os }}-
       - name: install
         run: ./ci/github/unit-testing/dynamic-sidecar.bash install
-      - name: codestyle-ci
+      - name: codestyle
         run: ./ci/github/unit-testing/dynamic-sidecar.bash codestyle
       - name: test
         run: ./ci/github/unit-testing/dynamic-sidecar.bash test
