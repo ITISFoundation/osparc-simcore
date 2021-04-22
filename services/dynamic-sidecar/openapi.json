@@ -31,6 +31,18 @@
         "summary": "Validates Docker Compose Spec And Stores It",
         "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
         "operationId": "validates_docker_compose_spec_and_stores_it_v1_compose_store_post",
+        "parameters": [
+          {
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number",
+              "default": 5.0
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -44,6 +56,16 @@
           },
           "204": {
             "description": "No Content"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }

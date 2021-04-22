@@ -9,7 +9,8 @@ from starlette.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQU
 from ..settings import DynamicSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..shared_store import SharedStore
-from ..utils import InvalidComposeSpec
+from ..utils import assemble_container_names
+from ..validation import InvalidComposeSpec, validate_compose_spec
 
 logger = logging.getLogger(__name__)
 compose_router = APIRouter(tags=["docker-compose"])
@@ -19,15 +20,28 @@ compose_router = APIRouter(tags=["docker-compose"])
     "/compose:store", response_class=PlainTextResponse, responses={204: {"model": None}}
 )
 async def validates_docker_compose_spec_and_stores_it(
-    request: Request, response: Response
+    request: Request, response: Response, command_timeout: float = 5.0
 ) -> Optional[str]:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
     body_as_text = (await request.body()).decode("utf-8")
 
+    settings: DynamicSidecarSettings = request.app.state.settings
     shared_store: SharedStore = request.app.state.shared_store
 
+    if body_as_text is None:
+        shared_store.compose_spec = None
+        shared_store.container_names = []
+        return None
+
     try:
-        shared_store.put_spec(body_as_text)
+        shared_store.compose_spec = await validate_compose_spec(
+            settings=settings,
+            compose_file_content=body_as_text,
+            command_timeout=command_timeout,
+        )
+        shared_store.container_names = assemble_container_names(
+            shared_store.compose_spec
+        )
     except InvalidComposeSpec as e:
         logger.warning("Error detected %s", traceback.format_exc())
         response.status_code = HTTP_400_BAD_REQUEST

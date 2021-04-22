@@ -47,7 +47,10 @@ async def remove_the_compose_spec(
         command=command,
         command_timeout=command_timeout,
     )
-    shared_store.put_spec(None)  # removing compose-file spec
+    # removing compose-file spec
+    shared_store.compose_spec = None
+    shared_store.container_names = []
+
     return result
 
 
