@@ -575,8 +575,9 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
+     * @param {Boolean} resolveWResponse If true, the promise will be resolved with the whole response instead of response.data.
      */
-    fetch: function(resource, endpoint, params = {}, deleteId) {
+    fetch: function(resource, endpoint, params = {}, deleteId, resolveWResponse = false) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -614,7 +615,7 @@ qx.Class.define("osparc.data.Resources", {
             }
           }
           res.dispose();
-          resolve(data);
+          resolveWResponse ? resolve(response) : resolve(data);
         }, this);
 
         res.addListenerOnce(endpoint + "Error", e => {
@@ -731,8 +732,8 @@ qx.Class.define("osparc.data.Resources", {
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, deleteId) {
-      return this.getInstance().fetch(resource, endpoint, params, deleteId);
+    fetch: function(resource, endpoint, params, deleteId, resolveWResponse) {
+      return this.getInstance().fetch(resource, endpoint, params, deleteId, resolveWResponse);
     },
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);
