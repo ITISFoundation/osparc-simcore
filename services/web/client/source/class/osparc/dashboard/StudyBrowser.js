@@ -227,12 +227,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return newStudyBtn;
     },
 
-    __createLoadingButton: function() {
-      const loadingBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
-      loadingBtn.setEnabled(false);
-      return loadingBtn;
-    },
-
     __createButtonsLayout: function(title, content) {
       const userStudyLayout = new osparc.component.widget.CollapsibleView(title);
       userStudyLayout.getChildControl("title").set({
@@ -249,7 +243,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const newStudyButton = this.__newStudyBtn = this.__createNewStudyButton();
       userStudyContainer.add(newStudyButton);
 
-      const loadingStudiesBtn = this.__loadingStudiesBtn = this.__createLoadingButton();
+      const loadingStudiesBtn = this.__loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
       userStudyContainer.add(loadingStudiesBtn);
 
       osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");

@@ -70,6 +70,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
         this.getChildControl("icon").getChildControl("image").getContentElement()
           .removeClass("rotate");
       }
+      this.setEnabled(!value);
     },
 
     _onToggleChange: function(e) {
