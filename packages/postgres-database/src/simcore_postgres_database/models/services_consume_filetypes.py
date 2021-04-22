@@ -60,6 +60,14 @@ services_consume_filetypes = sa.Table(
         doc="Index used as discriminator to sort services handling the same filetype."
         "The default service to consume this filetime is the one with lowest preference_order value",
     ),
+    sa.Column(
+        "is_guest_allowed",
+        sa.Boolean(),
+        nullable=False,
+        server_default=sa.text("true"),
+        doc="If set to True, then the viewer is also available for guest users."
+        "Otherwise only registered users can dispatch it.",
+    ),
     # If service-key/version gets deleted from service_metadata, it should be deleted from here
     sa.ForeignKeyConstraint(
         ["service_key", "service_version"],
