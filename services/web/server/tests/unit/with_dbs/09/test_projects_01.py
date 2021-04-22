@@ -17,6 +17,7 @@ import pytest
 import socketio
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_access import Owner
 from models_library.projects_state import (
@@ -253,6 +254,8 @@ async def _list_projects(
     client,
     expected: web.Response,
     query_parameters: Optional[Dict] = None,
+    expected_error_msg: Optional[str] = None,
+    expected_error_code: Optional[str] = None,
 ) -> Tuple[List[Dict], Dict[str, Any], Dict[str, Any]]:
     if not query_parameters:
         query_parameters = {}
@@ -264,7 +267,12 @@ async def _list_projects(
 
     resp = await client.get(url)
     data, errors, meta, links = await assert_status(
-        resp, expected, include_meta=True, include_links=True
+        resp,
+        expected,
+        expected_msg=expected_error_msg,
+        expected_error_code=expected_error_code,
+        include_meta=True,
+        include_links=True,
     )
     if data:
         assert meta is not None
@@ -1021,13 +1029,44 @@ def standard_user_role() -> Tuple[str, Tuple[UserRole, ExpectedResponse]]:
     return (all_roles[0], [pytest.param(*all_roles[1][2], id="standard user role")])
 
 
+@pytest.mark.parametrize(
+    "limit, offset, expected_error_msg",
+    [
+        (-7, 0, "Invalid parameter value for `limit`"),
+        (0, 0, "Invalid parameter value for `limit`"),
+        (43, -2, "Invalid parameter value for `offset`"),
+    ],
+)
+@pytest.mark.parametrize(*standard_user_role())
+async def test_list_projects_with_invalid_pagination_parameters(
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, str],
+    expected: ExpectedResponse,
+    storage_subsystem_mock,
+    catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
+    director_v2_service_mock: aioresponses,
+    project_db_cleaner,
+    limit: int,
+    offset: int,
+    expected_error_msg: str,
+):
+    await _list_projects(
+        client,
+        web.HTTPBadRequest,
+        query_parameters={"limit": limit, "offset": offset},
+        expected_error_msg=expected_error_msg,
+        expected_error_code="InvalidParameterValue",
+    )
+
+
 @pytest.mark.parametrize("limit", [7, 20, 43])
 @pytest.mark.parametrize(*standard_user_role())
 async def test_list_projects_with_pagination(
-    client,
-    logged_user,
-    primary_group,
-    expected,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, str],
+    expected: ExpectedResponse,
     storage_subsystem_mock,
     catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
     director_v2_service_mock: aioresponses,
