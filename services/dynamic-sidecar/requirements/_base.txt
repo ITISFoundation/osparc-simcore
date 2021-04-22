@@ -49,13 +49,13 @@ distro==1.5.0
     # via docker-compose
 dnspython==2.1.0
     # via email-validator
-docker-compose==1.27.4
+docker-compose==1.29.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-docker[ssh]==4.4.4
+docker[ssh]==5.0.0
     # via docker-compose
 dockerpty==0.4.1
     # via docker-compose
@@ -73,14 +73,11 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   email-validator
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.10.1
+importlib-metadata==4.0.1
     # via
     #   jsonschema
     #   sqlalchemy
@@ -121,12 +118,11 @@ requests==2.25.1
 six==1.15.0
     # via
     #   bcrypt
-    #   docker
     #   dockerpty
     #   jsonschema
     #   pynacl
     #   websocket-client
-sqlalchemy[postgresql_psycopg2binary]==1.4.7
+sqlalchemy[postgresql_psycopg2binary]==1.4.11
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

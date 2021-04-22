@@ -17,10 +17,8 @@ coverage==5.5
 faker==8.1.0
     # via -r requirements/_test.in
 idna==2.10
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   requests
-importlib-metadata==3.10.1
+    # via requests
+importlib-metadata==4.0.1
     # via
     #   pluggy
     #   pytest
@@ -36,7 +34,7 @@ py==1.10.0
     # via pytest
 pyparsing==2.4.7
     # via packaging
-pytest-asyncio==0.14.0
+pytest-asyncio==0.15.1
     # via -r requirements/_test.in
 pytest-cov==2.11.1
     # via -r requirements/_test.in
