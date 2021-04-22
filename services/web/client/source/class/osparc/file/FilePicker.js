@@ -131,6 +131,10 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
+          control.getChildControl("splitter").set({
+            width: 2,
+            backgroundColor: "scrollbar-passive"
+          });
           this._addAt(control, this.self().POS.FILES_TREE, {
             flex: 1
           });

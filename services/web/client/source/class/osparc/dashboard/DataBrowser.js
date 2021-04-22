@@ -50,15 +50,16 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
           });
           this._add(control);
           break;
-        case "tree-folder-layout": {
+        case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
-          const splitter = control.getChildControl("splitter");
-          splitter.setWidth(1);
+          control.getChildControl("splitter").set({
+            width: 2,
+            backgroundColor: "scrollbar-passive"
+          });
           this._add(control, {
             flex: 1
           });
           break;
-        }
         case "files-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
           control = new osparc.file.FilesTree().set({
