@@ -32,6 +32,7 @@ from .projects_utils import (
     get_project_unavilable_services,
     project_uses_available_services,
 )
+from .rest_utils import RESPONSE_MODEL_POLICY
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -182,7 +183,6 @@ async def list_projects(request: web.Request):
     ] = await catalog.get_services_for_user_in_product(
         request.app, user_id, product_name, only_key_versions=True
     )
-
     projects, project_types, total_number_projects = await db.load_projects(
         user_id=user_id,
         filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
@@ -197,7 +197,7 @@ async def list_projects(request: web.Request):
         total=total_number_projects,
         limit=limit,
         offset=offset,
-    ).dict(by_alias=True, exclude_unset=True)
+    ).dict(**RESPONSE_MODEL_POLICY)
 
 
 @login_required
