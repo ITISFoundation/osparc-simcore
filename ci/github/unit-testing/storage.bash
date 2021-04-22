@@ -14,7 +14,7 @@ install() {
 test() {
     pytest --cov=simcore_service_storage --durations=10 --cov-append \
           --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
-          -v -m "not travis" services/storage/tests
+          -v -m "not travis" services/storage/tests/unit
 }
 
 # Check if the function exists (bash specific)
