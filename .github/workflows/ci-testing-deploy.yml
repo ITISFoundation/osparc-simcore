@@ -1767,6 +1767,10 @@ jobs:
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
       - name: setup python environment
         uses: actions/setup-python@v2
         with:

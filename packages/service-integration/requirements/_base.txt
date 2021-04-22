@@ -18,14 +18,12 @@ dataclasses==0.8
     # via pydantic
 dnspython==2.1.0
     # via email-validator
-docker==4.4.4
+docker==5.0.0
     # via -r requirements/_base.in
 email-validator==1.1.2
     # via pydantic
 idna==2.10
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   email-validator
     #   requests
 importlib-metadata==3.7.0
@@ -60,7 +58,6 @@ requests==2.25.1
     # via docker
 six==1.15.0
     # via
-    #   docker
     #   jsonschema
     #   websocket-client
 toml==0.10.2
