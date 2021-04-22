@@ -20,7 +20,6 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
 from blackfynn.base import UnauthorizedException
-from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
@@ -44,6 +43,7 @@ from .models import (
     projects,
 )
 from .s3 import get_config_s3
+from .s3wrapper.s3_client import S3Client
 from .settings import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,

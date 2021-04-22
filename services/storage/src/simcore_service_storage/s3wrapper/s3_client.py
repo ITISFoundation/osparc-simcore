@@ -7,9 +7,9 @@ from minio.error import ResponseError
 
 log = logging.getLogger(__name__)
 
+
 class S3Client:
-    """ Wrapper around minio
-    """
+    """Wrapper around minio"""
 
     def __init__(
         self,
@@ -81,16 +81,16 @@ class S3Client:
         return []
 
     def upload_file(self, bucket_name, object_name, filepath, metadata=None):
-        """ Note
+        """Note
 
-            metadata are special, you need to use the
-            'X-Amz-Meta' standard, i.e:
-                - key and value must be strings
-                - and the keys are case insensitive:
+        metadata are special, you need to use the
+        'X-Amz-Meta' standard, i.e:
+            - key and value must be strings
+            - and the keys are case insensitive:
 
-                    key1 -- > Key1
-                    key_one --> Key_one
-                    key-one --> Key-One
+                key1 -- > Key1
+                key_one --> Key_one
+                key-one --> Key-One
 
         """
         try:
@@ -158,8 +158,7 @@ class S3Client:
         return True
 
     def exists_object(self, bucket_name, object_name, recursive=False):
-        """ This seems to be pretty heavy, should be used with care
-        """
+        """This seems to be pretty heavy, should be used with care"""
         try:
             objects = self.list_objects(bucket_name, recursive=recursive)
             for obj in objects:

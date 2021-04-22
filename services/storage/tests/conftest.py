@@ -25,6 +25,7 @@ from servicelib.application import create_safe_application
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.s3wrapper.s3_client import S3Client
 from simcore_service_storage.settings import SIMCORE_S3_STR
 from tests.utils import (
     ACCESS_KEY,
@@ -213,7 +214,6 @@ def minio_service(docker_services, docker_ip):
 
 @pytest.fixture(scope="module")
 def s3_client(minio_service):
-    from s3wrapper.s3_client import S3Client
 
     s3_client = S3Client(
         endpoint=minio_service["endpoint"],
