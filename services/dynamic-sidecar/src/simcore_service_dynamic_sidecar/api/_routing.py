@@ -4,7 +4,6 @@ from fastapi import APIRouter
 
 from .._meta import api_vtag
 from .compose import compose_router
-from .container import container_router
 from .containers import containers_router
 from .health import health_router
 from .mocked import mocked_router
@@ -14,7 +13,6 @@ main_router = APIRouter()
 main_router.include_router(health_router)
 main_router.include_router(compose_router, prefix=f"/{api_vtag}")
 main_router.include_router(containers_router, prefix=f"/{api_vtag}")
-main_router.include_router(container_router, prefix=f"/{api_vtag}")
 main_router.include_router(mocked_router)
 
 __all__ = ["main_router"]

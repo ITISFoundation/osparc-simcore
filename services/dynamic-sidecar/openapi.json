@@ -25,9 +25,12 @@
     },
     "/v1/compose:store": {
       "post": {
-        "summary": "Store Docker Compose Spec For Later Usage",
+        "tags": [
+          "docker-compose"
+        ],
+        "summary": "Validates Docker Compose Spec And Stores It",
         "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
-        "operationId": "store_docker_compose_spec_for_later_usage_v1_compose_store_post",
+        "operationId": "validates_docker_compose_spec_and_stores_it_v1_compose_store_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -45,51 +48,14 @@
         }
       }
     },
-    "/v1/compose:preload": {
-      "post": {
-        "summary": "Create Docker Compose Configuration Containers Without Starting",
-        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
-        "operationId": "create_docker_compose_configuration_containers_without_starting_v1_compose_preload_post",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "number"
-            },
-            "name": "command_timeout",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/v1/compose": {
       "post": {
-        "summary": "Start Or Update Docker Compose Configuration",
+        "tags": [
+          "docker-compose"
+        ],
+        "summary": "Runs Docker Compose Up",
         "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
-        "operationId": "start_or_update_docker_compose_configuration_v1_compose_post",
+        "operationId": "runs_docker_compose_up_v1_compose_post",
         "parameters": [
           {
             "required": true,
@@ -125,9 +91,12 @@
         }
       },
       "delete": {
-        "summary": "Remove Docker Compose Configuration",
+        "tags": [
+          "docker-compose"
+        ],
+        "summary": "Runs Docker Compose Down",
         "description": "Removes the previously started service\nand returns the docker-compose output",
-        "operationId": "remove_docker_compose_configuration_v1_compose_delete",
+        "operationId": "runs_docker_compose_down_v1_compose_delete",
         "parameters": [
           {
             "required": true,
@@ -165,49 +134,12 @@
     },
     "/v1/compose:pull": {
       "get": {
-        "summary": "Pull Docker Required Docker Images",
-        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
-        "operationId": "pull_docker_required_docker_images_v1_compose_pull_get",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "number"
-            },
-            "name": "command_timeout",
-            "in": "query"
-          }
+        "tags": [
+          "docker-compose"
         ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/compose:stop": {
-      "put": {
-        "summary": "Stop Containers Without Removing Them",
-        "description": "Stops the previously started service\nand returns the docker-compose output",
-        "operationId": "stop_containers_without_removing_them_v1_compose_stop_put",
+        "summary": "Runs Docker Compose Pull",
+        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
+        "operationId": "runs_docker_compose_pull_v1_compose_pull_get",
         "parameters": [
           {
             "required": true,
@@ -245,6 +177,9 @@
     },
     "/v1/containers": {
       "get": {
+        "tags": [
+          "containers"
+        ],
         "summary": "Get Spawned Container Names",
         "description": "Returns a list of containers created using docker-compose ",
         "operationId": "get_spawned_container_names_v1_containers_get",
@@ -262,6 +197,9 @@
     },
     "/v1/containers:inspect": {
       "get": {
+        "tags": [
+          "containers"
+        ],
         "summary": "Containers Inspect",
         "description": "Returns information about the container, like docker inspect command ",
         "operationId": "containers_inspect_v1_containers_inspect_get",
@@ -279,6 +217,9 @@
     },
     "/v1/containers:docker-status": {
       "get": {
+        "tags": [
+          "containers"
+        ],
         "summary": "Containers Docker Status",
         "description": "Returns the status of the containers ",
         "operationId": "containers_docker_status_v1_containers_docker_status_get",
@@ -294,19 +235,22 @@
         }
       }
     },
-    "/v1/container/{name_or_id}/logs": {
+    "/v1/containers/{id}/logs": {
       "get": {
+        "tags": [
+          "containers"
+        ],
         "summary": "Get Container Logs",
         "description": "Returns the logs of a given container if found ",
-        "operationId": "get_container_logs_v1_container__name_or_id__logs_get",
+        "operationId": "get_container_logs_v1_containers__id__logs_get",
         "parameters": [
           {
             "required": true,
             "schema": {
-              "title": "Name Or Id",
+              "title": "Id",
               "type": "string"
             },
-            "name": "name_or_id",
+            "name": "id",
             "in": "path"
           },
           {
@@ -368,19 +312,22 @@
         }
       }
     },
-    "/v1/container/{name_or_id}/inspect": {
+    "/v1/containers/{id}/inspect": {
       "get": {
-        "summary": "Container Inspect",
+        "tags": [
+          "containers"
+        ],
+        "summary": "Inspect Container",
         "description": "Returns information about the container, like docker inspect command ",
-        "operationId": "container_inspect_v1_container__name_or_id__inspect_get",
+        "operationId": "inspect_container_v1_containers__id__inspect_get",
         "parameters": [
           {
             "required": true,
             "schema": {
-              "title": "Name Or Id",
+              "title": "Id",
               "type": "string"
             },
-            "name": "name_or_id",
+            "name": "id",
             "in": "path"
           }
         ],
@@ -406,18 +353,21 @@
         }
       }
     },
-    "/v1/container/{name_or_id}/remove": {
+    "/v1/containers/{id}/remove": {
       "delete": {
-        "summary": "Container Remove",
-        "operationId": "container_remove_v1_container__name_or_id__remove_delete",
+        "tags": [
+          "containers"
+        ],
+        "summary": "Remove Container",
+        "operationId": "remove_container_v1_containers__id__remove_delete",
         "parameters": [
           {
             "required": true,
             "schema": {
-              "title": "Name Or Id",
+              "title": "Id",
               "type": "string"
             },
-            "name": "name_or_id",
+            "name": "id",
             "in": "path"
           }
         ],
@@ -445,8 +395,11 @@
     },
     "/push": {
       "post": {
-        "summary": "Post Push",
-        "operationId": "post_push_push_post",
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Push Post",
+        "operationId": "ignored_push_post_push_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -461,8 +414,11 @@
     },
     "/retrieve": {
       "get": {
-        "summary": "Get Retrive",
-        "operationId": "get_retrive_retrieve_get",
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Port Data Load",
+        "operationId": "ignored_port_data_load_retrieve_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -475,8 +431,11 @@
         }
       },
       "post": {
-        "summary": "Post Retrive",
-        "operationId": "post_retrive_retrieve_post",
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Port Data Save",
+        "operationId": "ignored_port_data_save_retrieve_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -491,8 +450,11 @@
     },
     "/state": {
       "get": {
-        "summary": "Get State",
-        "operationId": "get_state_state_get",
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Load Service State State",
+        "operationId": "ignored_load_service_state_state_state_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -505,8 +467,11 @@
         }
       },
       "post": {
-        "summary": "Post State",
-        "operationId": "post_state_state_post",
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Save Service State State",
+        "operationId": "ignored_save_service_state_state_state_post",
         "responses": {
           "200": {
             "description": "Successful Response",

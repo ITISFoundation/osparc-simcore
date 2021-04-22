@@ -1,12 +1,13 @@
-from typing import Any, Dict, List
+# pylint: disable=redefined-builtin
+from typing import Any, Dict, List, Union
 
 import aiodocker
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Query, Request, Response
 from starlette.status import HTTP_400_BAD_REQUEST
 
 from ..shared_store import SharedStore
 
-containers_router = APIRouter()
+containers_router = APIRouter(tags=["containers"])
 
 
 @containers_router.get("/containers")
@@ -78,6 +79,96 @@ async def containers_docker_status(
             return dict(error=e.message)
 
     return results
+
+
+@containers_router.get("/containers/{id}/logs")
+async def get_container_logs(
+    # pylint: disable=unused-argument
+    request: Request,
+    response: Response,
+    id: str,
+    since: int = Query(
+        0,
+        title="Timstamp",
+        description="Only return logs since this time, as a UNIX timestamp",
+    ),
+    until: int = Query(
+        0,
+        title="Timstamp",
+        description="Only return logs before this time, as a UNIX timestamp",
+    ),
+    timestamps: bool = Query(
+        False,
+        title="Display timestamps",
+        description="Enabling this parameter will include timestamps in logs",
+    ),
+) -> Union[str, Dict[str, Any]]:
+    """ Returns the logs of a given container if found """
+    # TODO: remove from here and dump directly into the logs of this service
+    # do this in PR#1887
+    shared_store: SharedStore = request.app.state.shared_store
+
+    if id not in shared_store.container_names:
+        response.status_code = HTTP_400_BAD_REQUEST
+        return dict(error=f"No container '{id}' was started")
+
+    docker = aiodocker.Docker()
+
+    try:
+        container_instance = await docker.containers.get(id)
+
+        args = dict(stdout=True, stderr=True)
+        if timestamps:
+            args["timestamps"] = True
+
+        container_logs: str = await container_instance.log(**args)
+        return container_logs
+    except aiodocker.exceptions.DockerError as e:
+        response.status_code = HTTP_400_BAD_REQUEST
+        return dict(error=e.message)
+
+
+@containers_router.get("/containers/{id}/inspect")
+async def inspect_container(
+    request: Request, response: Response, id: str
+) -> Dict[str, Any]:
+    """ Returns information about the container, like docker inspect command """
+    shared_store: SharedStore = request.app.state.shared_store
+
+    if id not in shared_store.container_names:
+        response.status_code = HTTP_400_BAD_REQUEST
+        return dict(error=f"No container '{id}' was started")
+
+    docker = aiodocker.Docker()
+
+    try:
+        container_instance = await docker.containers.get(id)
+        inspect_result: Dict[str, Any] = await container_instance.show()
+        return inspect_result
+    except aiodocker.exceptions.DockerError as e:
+        response.status_code = HTTP_400_BAD_REQUEST
+        return dict(error=e.message)
+
+
+@containers_router.delete("/containers/{id}/remove")
+async def remove_container(
+    request: Request, response: Response, id: str
+) -> Union[bool, Dict[str, Any]]:
+    shared_store: SharedStore = request.app.state.shared_store
+
+    if id not in shared_store.container_names:
+        response.status_code = HTTP_400_BAD_REQUEST
+        return dict(error=f"No container '{id}' was started")
+
+    docker = aiodocker.Docker()
+
+    try:
+        container_instance = await docker.containers.get(id)
+        await container_instance.delete()
+        return True
+    except aiodocker.exceptions.DockerError as e:
+        response.status_code = HTTP_400_BAD_REQUEST
+        return dict(error=e.message)
 
 
 __all__ = ["containers_router"]

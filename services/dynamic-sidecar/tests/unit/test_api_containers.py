@@ -48,6 +48,11 @@ async def started_containers(
     return container_names
 
 
+@pytest.fixture
+def not_started_containers() -> List[str]:
+    return [f"missing-container-{i}" for i in range(5)]
+
+
 async def test_containers_get(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
@@ -133,3 +138,88 @@ async def test_containers_docker_status_docker_error(
         query_string=dict(container_names=started_containers),
     )
     assert response.status_code == 400, response.text
+
+
+async def test_container_inspect_logs_remove(
+    test_client: TestClient, started_containers: List[str]
+) -> None:
+    for container in started_containers:
+        # get container logs
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
+        assert response.status_code == 200, response.text
+
+        # inspect container
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/inspect")
+        assert response.status_code == 200, response.text
+        parsed_response = response.json()
+        assert parsed_response["Name"] == f"/{container}"
+
+        # delete container
+        response = await test_client.delete(
+            f"/{api_vtag}/containers/{container}/remove"
+        )
+        assert response.status_code == 200, response.text
+
+
+async def test_container_logs_with_timestamps(
+    test_client: TestClient, started_containers: List[str]
+) -> None:
+    for container in started_containers:
+        # get container logs
+        response = await test_client.get(
+            f"/{api_vtag}/containers/{container}/logs",
+            query_string=dict(timestamps=True),
+        )
+        assert response.status_code == 200, response.text
+
+
+async def test_container_missing_container(
+    test_client: TestClient, not_started_containers: List[str]
+) -> None:
+    def _expected_error_string(container: str) -> Dict[str, str]:
+        return dict(error=f"No container '{container}' was started")
+
+    for container in not_started_containers:
+        # get container logs
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
+        assert response.status_code == 400, response.text
+        assert response.json() == _expected_error_string(container)
+
+        # inspect container
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/inspect")
+        assert response.status_code == 400, response.text
+        assert response.json() == _expected_error_string(container)
+
+        # delete container
+        response = await test_client.delete(
+            f"/{api_vtag}/containers/{container}/remove"
+        )
+        assert response.status_code == 400, response.text
+        assert response.json() == _expected_error_string(container)
+
+
+async def test_container_docker_error(
+    test_client: TestClient,
+    started_containers: List[str],
+    mock_containers_get: None,
+) -> None:
+    def _expected_error_string() -> Dict[str, str]:
+        return dict(error="aiodocker_mocked_error")
+
+    for container in started_containers:
+        # get container logs
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
+        assert response.status_code == 400, response.text
+        assert response.json() == _expected_error_string()
+
+        # inspect container
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/inspect")
+        assert response.status_code == 400, response.text
+        assert response.json() == _expected_error_string()
+
+        # delete container
+        response = await test_client.delete(
+            f"/{api_vtag}/containers/{container}/remove"
+        )
+        assert response.status_code == 400, response.text
+        assert response.json() == _expected_error_string()
