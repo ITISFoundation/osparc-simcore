@@ -2,7 +2,7 @@
 
 """
 from pprint import pformat
-from typing import Type
+from typing import Optional, Tuple, Type
 
 from aiohttp import ClientResponse
 from aiohttp.web import HTTPError, HTTPException, HTTPInternalServerError, HTTPNoContent
@@ -12,18 +12,22 @@ from servicelib.rest_responses import unwrap_envelope
 async def assert_status(
     response: ClientResponse,
     expected_cls: Type[HTTPException],
-    expected_msg: str = None,
-):
+    expected_msg: Optional[str] = None,
+    expected_error_code: Optional[str] = None,
+    include_meta: Optional[bool] = False,
+    include_links: Optional[bool] = False,
+) -> Tuple:
     """
     Asserts for enveloped responses
     """
-    data, error = unwrap_envelope(await response.json())
+    json_response = await response.json()
+    data, error = unwrap_envelope(json_response)
     assert (
         response.status == expected_cls.status_code
     ), f"received: ({data},{error}), \nexpected ({expected_cls.status_code}, {expected_msg})"
 
     if issubclass(expected_cls, HTTPError):
-        do_assert_error(data, error, expected_cls, expected_msg)
+        do_assert_error(data, error, expected_cls, expected_msg, expected_error_code)
 
     elif issubclass(expected_cls, HTTPNoContent):
         assert not data, pformat(data)
@@ -37,7 +41,15 @@ async def assert_status(
         if expected_msg:
             assert expected_msg in data["message"]
 
-    return data, error
+    return_value = (
+        data,
+        error,
+    )
+    if include_meta:
+        return_value += (json_response.get("_meta"),)
+    if include_links:
+        return_value += (json_response.get("_links"),)
+    return return_value
 
 
 async def assert_error(
@@ -50,7 +62,11 @@ async def assert_error(
 
 
 def do_assert_error(
-    data, error, expected_cls: Type[HTTPException], expected_msg: str = None
+    data,
+    error,
+    expected_cls: Type[HTTPException],
+    expected_msg: str = None,
+    expected_error_code: Optional[str] = None,
 ):
     assert not data, pformat(data)
     assert error, pformat(error)
@@ -61,7 +77,9 @@ def do_assert_error(
     if expected_msg:
         assert expected_msg in err["message"]
 
-    if expected_cls != HTTPInternalServerError:
+    if expected_error_code:
+        assert expected_error_code == err["code"]
+    elif expected_cls != HTTPInternalServerError:
         # otherwise, code is exactly the name of the Exception class
         assert expected_cls.__name__ == err["code"]
 

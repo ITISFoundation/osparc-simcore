@@ -27,7 +27,6 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.projects.projects_fakes import Fake
 from simcore_service_webserver.resource_manager import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -85,37 +84,6 @@ def client(
             },
         )
     )
-
-
-@pytest.fixture(scope="session")
-def fake_template_projects(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
-
-
-@pytest.fixture(scope="session")
-def fake_template_projects_isan(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.isan.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
-
-
-@pytest.fixture(scope="session")
-def fake_template_projects_osparc(package_dir: Path) -> Dict:
-    projects_file = package_dir / "data" / "fake-template-projects.osparc.json"
-    assert projects_file.exists()
-    with projects_file.open() as fp:
-        return json.load(fp)
-
-
-@pytest.fixture
-def fake_db():
-    Fake.reset()
-    yield Fake
-    Fake.reset()
 
 
 @pytest.fixture
@@ -352,36 +320,3 @@ async def test_delete_invalid_project(
     resp = await client.delete(url)
 
     await assert_status(resp, web.HTTPNotFound)
-
-
-@pytest.mark.parametrize("user_role", [UserRole.USER])
-async def test_list_template_projects(
-    client,
-    postgres_db: sa.engine.Engine,
-    docker_registry: str,
-    simcore_services,
-    logged_user,
-    fake_db,
-    fake_template_projects,
-    fake_template_projects_isan,
-    fake_template_projects_osparc,
-    catalog_subsystem_mock,
-    director_v2_service_mock,
-):
-    catalog_subsystem_mock(
-        fake_template_projects
-        + fake_template_projects_isan
-        + fake_template_projects_osparc
-    )
-    fake_db.load_template_projects()
-    url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(type="template"))
-
-    projects, _ = await assert_status(resp, web.HTTPOk)
-
-    # fake-template-projects.json + fake-template-projects.isan.json + fake-template-projects.osparc.json
-    assert len(projects) == (
-        len(fake_template_projects)
-        + len(fake_template_projects_isan)
-        + len(fake_template_projects_osparc)
-    )

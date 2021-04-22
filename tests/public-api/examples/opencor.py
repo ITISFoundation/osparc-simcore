@@ -13,13 +13,20 @@ from typing import Optional
 
 import osparc
 from dotenv import load_dotenv
-from osparc.models import File
+from osparc.models import File, JobStatus
 
 assert osparc.__version__ == "0.4.3"
 
 # creates a fake config
 config_path = Path("config.json")
-config_path.write_text(json.dumps({"value": 1}))
+config_path.write_text(
+    json.dumps(
+        {
+            "simulation": {"Ending point": 3, "Point interval": 0.001},
+            "output": ["Membrane/V"],
+        }
+    )
+)
 
 
 load_dotenv()
@@ -28,6 +35,8 @@ cfg = osparc.Configuration(
     username=os.environ["OSPARC_API_KEY"],
     password=os.environ["OSPARC_API_SECRET"],
 )
+print("Entrypoint", cfg.host)
+
 
 with osparc.ApiClient(cfg) as api_client:
     # Upload our configuration file.
@@ -47,11 +56,12 @@ with osparc.ApiClient(cfg) as api_client:
         solver.version,
         osparc.JobInputs(
             {
-                "input_1": "https://models.physiomeproject.org/e/611/HumanSAN_Fabbri_Fantini_Wilders_Severi_2017.cellml",
-                "input_2": config_file,
+                "model_url": "https://models.physiomeproject.org/e/611/HumanSAN_Fabbri_Fantini_Wilders_Severi_2017.cellml",
+                "config_file": config_file,
             }
         ),
     )
+    print("Job created", job)
 
     # Start our simulation.
 
@@ -72,6 +82,8 @@ with osparc.ApiClient(cfg) as api_client:
     # Retrieve our simulation outputs.
 
     print("---------------------------------------")
+    last_status: JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
+    print(">>> What is the status?", last_status)
 
     outputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
 
@@ -85,7 +97,13 @@ with osparc.ApiClient(cfg) as api_client:
     results: Optional[File] = outputs.results["output_1"]
 
     if results is None:
-        print("Can't retrieve our simulation results...?!")
+        print(
+            "Can't retrieve our simulation results...?!",
+            "Failed ?",
+            last_status.state,
+            "Finished ?",
+            last_status.progress == 100 or not last_status.stopped_at,
+        )
     else:
         # List all the files that are available.
 
@@ -100,4 +118,5 @@ with osparc.ApiClient(cfg) as api_client:
         # Download our simulation results file (?).
 
         download_path: str = files_api.download_file(results.id)
-        print("Results:", Path(download_path).read_text())
+        print("Downloaded to", download_path)
+        print("Results:", Path(download_path).read_text()[:100])

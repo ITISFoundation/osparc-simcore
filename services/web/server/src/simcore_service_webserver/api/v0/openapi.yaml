@@ -6090,26 +6090,22 @@ paths:
               - template
               - user
               - all
-          description: if true only templates otherwise only users
-        - name: state
-          in: query
-          schema:
-            type: string
-            default: active
-            enum:
-              - active
-          description: if set only active projects are returned. if type=template this parameter is ignored.
-        - name: start
+        - name: offset
           in: query
           schema:
             type: integer
-            minItems: 0
+            minimum: 0
+            default: 0
+          required: false
           description: index to the first item to return
-        - name: count
+        - name: limit
           in: query
           schema:
             type: integer
-            minItems: 1
+            default: 20
+            minimum: 1
+            maximum: 50
+          required: false
           description: maximum number of items to return
       responses:
         '200':
