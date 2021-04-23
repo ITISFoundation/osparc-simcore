@@ -42,7 +42,7 @@
               "title": "Only Status",
               "type": "boolean",
               "description": "if True only show the status of the container",
-              "default": true
+              "default": false
             },
             "name": "only_status",
             "in": "query"
