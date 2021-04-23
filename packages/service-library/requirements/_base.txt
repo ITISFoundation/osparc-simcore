@@ -10,14 +10,16 @@ aiohttp==3.7.4
     # via
     #   -r requirements/_base.in
     #   aiozipkin
-aiopg[sa]==1.1.0
+aiopg[sa]==1.2.1
     # via -r requirements/_base.in
 aiozipkin==0.7.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
 async-timeout==3.0.1
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   aiopg
 attrs==20.3.0
     # via
     #   -r requirements/_base.in
@@ -32,7 +34,6 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   idna-ssl
     #   yarl
 importlib-metadata==3.7.0

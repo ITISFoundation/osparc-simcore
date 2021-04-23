@@ -9,7 +9,7 @@ aiohttp==3.7.3
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   pytest-aiohttp
-aiopg==1.0.0
+aiopg==1.2.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
@@ -23,6 +23,7 @@ async-timeout==3.0.1
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
+    #   aiopg
 attrs==20.2.0
     # via
     #   -c requirements/_base.txt
@@ -46,7 +47,7 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.0.1
     # via -r requirements/_test.in
-docker==4.4.4
+docker==5.0.0
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
@@ -61,7 +62,6 @@ idna-ssl==1.1.0
     #   aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   idna-ssl
@@ -159,7 +159,6 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
-    #   docker
     #   packaging
     #   python-dateutil
     #   websocket-client

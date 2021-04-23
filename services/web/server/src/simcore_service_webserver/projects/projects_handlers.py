@@ -1,6 +1,8 @@
 """ Handlers for CRUD operations on /projects/
 
 """
+# pylint: disable=too-many-branches
+
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
@@ -9,20 +11,28 @@ import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects_state import ProjectState
+from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
+from ..rest_utils import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
 from . import projects_api
-from .projects_db import APP_PROJECT_DBAPI
+from .project_models import ProjectTypeAPI
+from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
-from .projects_utils import clone_project_document, project_uses_available_services
+from .projects_utils import (
+    clone_project_document,
+    get_project_unavilable_services,
+    project_uses_available_services,
+)
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -40,7 +50,6 @@ log = logging.getLogger(__name__)
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
 async def create_projects(request: web.Request):
-    # pylint: disable=too-many-branches
     # TODO: keep here since is async and parser thinks it is a handler
 
     user_id = request[RQT_USERID_KEY]
@@ -141,24 +150,32 @@ async def create_projects(request: web.Request):
 async def list_projects(request: web.Request):
     # TODO: implement all query parameters as
     # in https://www.ibm.com/support/knowledgecenter/en/SSCRJU_3.2.0/com.ibm.swg.im.infosphere.streams.rest.api.doc/doc/restapis-queryparms-list.html
+    from servicelib.rest_utils import extract_and_validate
 
     user_id, product_name = request[RQT_USERID_KEY], request[RQ_PRODUCT_KEY]
-    ptype = request.query.get("type", "all")  # TODO: get default for oaspecs
-    db = request.config_dict[APP_PROJECT_DBAPI]
+    _, query, _ = await extract_and_validate(request)
 
-    # TODO: improve dbapi to list project
-    async def set_all_project_states(projects: List[Dict[str, Any]], is_template: bool):
+    project_type = ProjectTypeAPI(query["type"])
+    offset = query["offset"]
+    limit = query["limit"]
+
+    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
+
+    async def set_all_project_states(
+        projects: List[Dict[str, Any]], project_types: List[bool]
+    ):
         await logged_gather(
             *[
                 projects_api.add_project_states_for_user(
                     user_id=user_id,
                     project=prj,
-                    is_template=is_template,
+                    is_template=prj_type == ProjectTypeDB.TEMPLATE,
                     app=request.app,
                 )
-                for prj in projects
+                for prj, prj_type in zip(projects, project_types)
             ],
             reraise=True,
+            max_concurrency=100,
         )
 
     user_available_services: List[
@@ -167,27 +184,21 @@ async def list_projects(request: web.Request):
         request.app, user_id, product_name, only_key_versions=True
     )
 
-    projects_list = []
-    if ptype in ("template", "all"):
-        template_projects = await db.load_template_projects(
-            user_id=user_id, filter_by_services=user_available_services
-        )
-        await set_all_project_states(template_projects, is_template=True)
-        projects_list += template_projects
-
-    if ptype in ("user", "all"):  # standard only (notice that templates will only)
-        user_projects = await db.load_user_projects(
-            user_id=user_id, filter_by_services=user_available_services
-        )
-        await set_all_project_states(user_projects, is_template=False)
-        projects_list += user_projects
-
-    start = int(request.query.get("start", 0))
-    count = int(request.query.get("count", len(projects_list)))
-
-    stop = min(start + count, len(projects_list))
-    projects_list = projects_list[start:stop]
-    return {"data": projects_list}
+    projects, project_types, total_number_projects = await db.load_projects(
+        user_id=user_id,
+        filter_by_project_type=ProjectTypeAPI.to_project_type_db(project_type),
+        filter_by_services=user_available_services,
+        offset=offset,
+        limit=limit,
+    )
+    await set_all_project_states(projects, project_types)
+    return PageResponseLimitOffset.paginate_data(
+        data=projects,
+        request_url=request.url,
+        total=total_number_projects,
+        limit=limit,
+        offset=offset,
+    ).dict(**RESPONSE_MODEL_POLICY)
 
 
 @login_required
@@ -211,8 +222,17 @@ async def get_project(request: web.Request):
             include_state=True,
         )
         if not await project_uses_available_services(project, user_available_services):
+            unavilable_services = get_project_unavilable_services(
+                project, user_available_services
+            )
+            formatted_services = ", ".join(
+                f"{service}:{version}" for service, version in unavilable_services
+            )
             raise web.HTTPNotFound(
-                reason=f"Project '{project_uuid}' uses unavailable services. Please ask your administrator."
+                reason=(
+                    f"Project '{project_uuid}' uses unavailable services. Please ask "
+                    f"for permission for the following services {formatted_services}"
+                )
             )
         return {"data": project}
 

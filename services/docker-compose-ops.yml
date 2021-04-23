@@ -17,11 +17,11 @@
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/web/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
-version: "3.7"
+version: "3.8"
 
 services:
   adminer:
-    image: adminer:4.7.6
+    image: adminer:4.8.0
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres

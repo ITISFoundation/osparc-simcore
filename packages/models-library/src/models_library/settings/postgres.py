@@ -26,8 +26,8 @@ class PostgresSettings(BaseSettings):
     db: str
 
     # pool connection limits
-    minsize: conint(ge=1) = 10
-    maxsize: conint(ge=1) = 10
+    minsize: conint(ge=1) = 1
+    maxsize: conint(ge=1) = 50
 
     dsn: Optional[PostgresDsn] = Field(None, description="Database Source Name")
 
@@ -38,10 +38,12 @@ class PostgresSettings(BaseSettings):
             raise ValueError(f"assert minsize={values['minsize']} <= maxsize={v}")
         return v
 
-    @validator("dsn", pre=True)
+    @validator("dsn", pre=True, always=True)
     @classmethod
     def autofill_dsn(cls, v, values):
-        if not v and all(key in values for key in cls.__fields__ if key != "dsn"):
+        if not v and all(
+            key in values for key in ["user", "password", "host", "port", "db"]
+        ):
             return PostgresDsn.build(
                 scheme="postgresql",
                 user=values["user"],

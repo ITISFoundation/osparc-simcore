@@ -57,7 +57,7 @@ describe('tags testing', () => {
         '[qxclass="osparc.navigation.NavigationBar"] [qxclass="osparc.ui.form.EditLabel"] [qxclass="qx.ui.basic.Label"]'
       ).innerText === studyName;
     }, {}, STUDY_NAME);
-    await waitAndClick(page, '[osparc-test-id="dashboardBtn"]');
+    await auto.toDashboard(page);
   }, ourTimeout * 2);
 
   afterAll(async () => {

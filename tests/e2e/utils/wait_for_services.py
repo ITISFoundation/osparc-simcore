@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 WAIT_BEFORE_RETRY = 10
-MAX_RETRY_COUNT = 10
+MAX_RETRY_COUNT = 20
 MAX_WAIT_TIME = 240
 
 # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/

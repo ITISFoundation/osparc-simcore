@@ -18,11 +18,13 @@ import attr
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
+from aiopg.sa.result import RowProxy
 from blackfynn.base import UnauthorizedException
 from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
+from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
 from yarl import URL
 
@@ -78,7 +80,7 @@ def setup_dsm(app: web.Application):
         testing = main_cfg["testing"]
         dsm = DataStorageManager(
             s3_client, engine, loop, pool, bucket_name, not testing, app
-        )
+        )  # type: ignore
 
         app[APP_DSM_KEY] = dsm
 
@@ -87,6 +89,16 @@ def setup_dsm(app: web.Application):
         # NOTE: write here clean up
 
     app.cleanup_ctx.append(_cleanup_context)
+
+
+def to_meta_data_extended(row: RowProxy) -> FileMetaDataEx:
+    assert row
+    meta = FileMetaData(**dict(row))  # type: ignore
+    meta_extended = FileMetaDataEx(
+        fmd=meta,
+        parent_id=str(Path(meta.object_name).parent),
+    )  # type: ignore
+    return meta_extended
 
 
 @attr.s(auto_attribs=True)
@@ -200,8 +212,7 @@ class DataStorageManager:
         data = deque()
         if location == SIMCORE_S3_STR:
             accesible_projects_ids = []
-            async with self.engine.acquire() as conn:
-
+            async with self.engine.acquire() as conn, conn.begin():
                 accesible_projects_ids = await get_readable_project_ids(
                     conn, int(user_id)
                 )
@@ -222,7 +233,7 @@ class DataStorageManager:
                 uuid_name_dict = {}
                 # now parse the project to search for node/project names
                 try:
-                    async with self.engine.acquire() as conn:
+                    async with self.engine.acquire() as conn, conn.begin():
                         query = sa.select([projects]).where(
                             projects.c.uuid.in_(accesible_projects_ids)
                         )
@@ -327,7 +338,7 @@ class DataStorageManager:
         if location == SIMCORE_S3_STR:
             if self.has_project_db:
                 try:
-                    async with self.engine.acquire() as conn:
+                    async with self.engine.acquire() as conn, conn.begin():
                         readable_projects_ids = await get_readable_project_ids(
                             conn, int(user_id)
                         )
@@ -359,7 +370,7 @@ class DataStorageManager:
 
         if location == SIMCORE_S3_STR:
 
-            async with self.engine.acquire() as conn:
+            async with self.engine.acquire() as conn, conn.begin():
                 can: Optional[AccessRights] = await get_file_access_rights(
                     conn, int(user_id), file_uuid
                 )
@@ -367,12 +378,12 @@ class DataStorageManager:
                     query = sa.select([file_meta_data]).where(
                         file_meta_data.c.file_uuid == file_uuid
                     )
-                    async for row in conn.execute(query):
-                        d = FileMetaData(**dict(row))
-                        dx = FileMetaDataEx(fmd=d, parent_id="")
-                        return dx
-                else:
-                    logger.debug("User %s was not read file %s", user_id, file_uuid)
+                    result = await conn.execute(query)
+                    row = await result.first()
+                    return to_meta_data_extended(row) if row else None
+                # FIXME: returns None in both cases: file does not exist or use has no access
+                logger.debug("User %s cannot read file %s", user_id, file_uuid)
+                return None
 
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
@@ -540,9 +551,18 @@ class DataStorageManager:
                     reason=f"User does not have enough rights to download {file_uuid}"
                 )
 
-        link = None
         bucket_name = self.simcore_bucket_name
-        object_name = file_uuid
+        async with self.engine.acquire() as conn:
+            stmt = sa.select([file_meta_data.c.object_name]).where(
+                file_meta_data.c.file_uuid == file_uuid
+            )
+            object_name: str = await conn.scalar(stmt)
+
+            if object_name is None:
+                raise web.HTTPNotFound(
+                    reason=f"File '{file_uuid}' does not exists in storage."
+                )
+
         link = self.s3_client.create_presigned_get_url(bucket_name, object_name)
         return link
 
@@ -690,27 +710,32 @@ class DataStorageManager:
         dest_folder = destination_project["uuid"]
 
         # access layer
-        async with self.engine.acquire() as conn:
-            can = await get_project_access_rights(
+        async with self.engine.acquire() as conn, conn.begin():
+            source_access_rights = await get_project_access_rights(
                 conn, int(user_id), project_id=source_folder
             )
-            if not can.read:
-                logger.debug(
-                    "User %s was not allowed to copy project %s", user_id, source_folder
-                )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to copy project '{source_folder}'"
-                )
-            can = await get_project_access_rights(
+            dest_access_rights = await get_project_access_rights(
                 conn, int(user_id), project_id=dest_folder
             )
-            if not can.write:
-                logger.debug(
-                    "User %s was not allowed to copy project %s", user_id, dest_folder
-                )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have enough access rights to copy project '{dest_folder}'"
-                )
+        if not source_access_rights.read:
+            logger.debug(
+                "User %s was not allowed to read from project %s",
+                user_id,
+                source_folder,
+            )
+            raise web.HTTPForbidden(
+                reason=f"User does not have enough access rights to read from project '{source_folder}'"
+            )
+
+        if not dest_access_rights.write:
+            logger.debug(
+                "User %s was not allowed to write to project %s",
+                user_id,
+                dest_folder,
+            )
+            raise web.HTTPForbidden(
+                reason=f"User does not have enough access rights to write to project '{dest_folder}'"
+            )
 
         # build up naming map based on labels
         uuid_name_dict = {}
@@ -811,8 +836,7 @@ class DataStorageManager:
                     fmds.append(fmd)
 
         # step 4 sync db
-        async with self.engine.acquire() as conn:
-
+        async with self.engine.acquire() as conn, conn.begin():
             # TODO: upsert in one statment of ALL
             for fmd in fmds:
                 query = sa.select([file_meta_data]).where(
@@ -846,13 +870,15 @@ class DataStorageManager:
             # FIXME: operation MUST be atomic, transaction??
 
             to_delete = []
-            async with self.engine.acquire() as conn:
+            async with self.engine.acquire() as conn, conn.begin():
                 can: Optional[AccessRights] = await get_file_access_rights(
                     conn, int(user_id), file_uuid
                 )
                 if not can.delete:
                     logger.debug(
-                        "User %s was not allowed to delete file %s", user_id, file_uuid
+                        "User %s was not allowed to delete file %s",
+                        user_id,
+                        file_uuid,
                     )
                     raise web.HTTPForbidden(
                         reason=f"User '{user_id}' does not have enough access rights to delete file {file_uuid}"
@@ -892,14 +918,16 @@ class DataStorageManager:
 
         # FIXME: operation MUST be atomic. Mark for deletion and remove from db when deletion fully confirmed
 
-        async with self.engine.acquire() as conn:
+        async with self.engine.acquire() as conn, conn.begin():
             # access layer
             can: Optional[AccessRights] = await get_project_access_rights(
                 conn, int(user_id), project_id
             )
             if not can.delete:
                 logger.debug(
-                    "User %s was not allowed to delete project %s", user_id, project_id
+                    "User %s was not allowed to delete project %s",
+                    user_id,
+                    project_id,
                 )
                 raise web.HTTPForbidden(
                     reason=f"User does not have delete access for {project_id}"
@@ -944,7 +972,7 @@ class DataStorageManager:
         # Storage should know NOTHING about those concepts
         files_meta = deque()
 
-        async with self.engine.acquire() as conn:
+        async with self.engine.acquire() as conn, conn.begin():
             # access layer
             can_read_projects_ids = await get_readable_project_ids(conn, int(user_id))
             has_read_access = (
@@ -956,10 +984,45 @@ class DataStorageManager:
             )
 
             async for row in conn.execute(stmt):
-                meta = FileMetaData(**dict(row))
-                meta_extended = FileMetaDataEx(
-                    fmd=meta,
-                    parent_id=str(Path(meta.object_name).parent),
-                )
+                meta_extended = to_meta_data_extended(row)
                 files_meta.append(meta_extended)
+
         return list(files_meta)
+
+    async def create_soft_link(
+        self, user_id: int, target_uuid: str, link_uuid: str
+    ) -> FileMetaDataEx:
+
+        # validate link_uuid
+        async with self.engine.acquire() as conn:
+            # TODO: select exists(select 1 from file_metadat where file_uuid=12)
+            found = await conn.scalar(
+                sa.select([file_meta_data.c.file_uuid]).where(
+                    file_meta_data.c.file_uuid == link_uuid
+                )
+            )
+            if found:
+                raise ValueError(f"Invalid link {link_uuid}. Link already exists")
+
+        # validate target_uuid
+        target = await self.list_file(str(user_id), SIMCORE_S3_STR, target_uuid)
+        if not target:
+            raise ValueError(
+                f"Invalid target '{target_uuid}'. File does not exists for this user"
+            )
+
+        # duplicate target and change the following columns:
+        target.fmd.file_uuid = link_uuid
+        target.fmd.file_id = link_uuid  # NOTE: api-server relies on this id
+        target.fmd.is_soft_link = True
+
+        async with self.engine.acquire() as conn:
+            stmt = (
+                file_meta_data.insert()
+                .values(**attr.asdict(target.fmd))
+                .returning(literal_column("*"))
+            )
+
+            result = await conn.execute(stmt)
+            link = to_meta_data_extended(await result.first())
+            return link

@@ -5,16 +5,9 @@ from typing import Optional
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.settings.celery import CeleryConfig
-from models_library.settings.postgres import PostgresSettings
 from models_library.settings.http_clients import ClientRequestSettings
-from pydantic import (
-    BaseSettings,
-    Field,
-    SecretStr,
-    constr,
-    root_validator,
-    validator,
-)
+from models_library.settings.postgres import PostgresSettings
+from pydantic import BaseSettings, Field, SecretStr, constr, root_validator, validator
 
 from ..meta import api_vtag
 
@@ -76,7 +69,7 @@ class DynamicServicesSettings(BaseSettings):
 class PGSettings(PostgresSettings):
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
-    class Config(CommonConfig):
+    class Config(CommonConfig, PostgresSettings.Config):
         env_prefix = "POSTGRES_"
 
 
@@ -123,7 +116,7 @@ class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls, **settings_kwargs) -> "AppSettings":
         return cls(
-            postgres=PostgresSettings(),
+            postgres=PGSettings(),
             director_v0=DirectorV0Settings(),
             registry=RegistrySettings(),
             celery=CelerySettings.create_from_env(),

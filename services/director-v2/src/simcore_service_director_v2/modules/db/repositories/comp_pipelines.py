@@ -19,12 +19,13 @@ logger = logging.getLogger(__name__)
 class CompPipelinesRepository(BaseRepository):
     @log_decorator(logger=logger)
     async def get_pipeline(self, project_id: ProjectID) -> CompPipelineAtDB:
-        result = await self.connection.execute(
-            sa.select([comp_pipeline]).where(
-                comp_pipeline.c.project_id == str(project_id)
+        async with self.db_engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select([comp_pipeline]).where(
+                    comp_pipeline.c.project_id == str(project_id)
+                )
             )
-        )
-        row: RowProxy = await result.fetchone()
+            row: RowProxy = await result.fetchone()
         if not row:
             raise PipelineNotFoundError(str(project_id))
         return CompPipelineAtDB.from_orm(row)
@@ -44,12 +45,14 @@ class CompPipelinesRepository(BaseRepository):
             index_elements=[comp_pipeline.c.project_id],
             set_=pipeline_at_db.dict(by_alias=True, exclude_unset=True),
         )
-        await self.connection.execute(on_update_stmt)
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(on_update_stmt)
 
     @log_decorator(logger=logger)
     async def delete_pipeline(self, project_id: ProjectID) -> None:
-        await self.connection.execute(
-            sa.delete(comp_pipeline).where(
-                comp_pipeline.c.project_id == str(project_id)
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(
+                sa.delete(comp_pipeline).where(
+                    comp_pipeline.c.project_id == str(project_id)
+                )
             )
-        )

@@ -97,12 +97,12 @@ def create_viewer_project_model(
     file_picker_output_id = "outFile"
     file_picker = Node(
         key="simcore/services/frontend/file-picker",
-        version="1.0.0",  # TODO: check with odeimaiz about version here
+        version="1.0.0",
         label="File Picker",
         inputs={},
         inputNodes=[],
         outputs={
-            # TODO: check with odeimaiz what is the meaning and relevance of label
+            # NOTE: Empty label checked with @odeimaiz
             file_picker_output_id: DownloadLink(
                 downloadLink=str(download_link), label=""
             )

@@ -4,42 +4,17 @@ from dataclasses import dataclass
 from operator import attrgetter
 from typing import Callable, List, Optional, Tuple
 
-import httpx
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData, ServiceType
 from pydantic import EmailStr, Extra, ValidationError
 
 from ..core.settings import CatalogSettings
 from ..models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
-from ..utils.client_base import BaseServiceClientApi
+from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+## from ..utils.client_decorators import JSON, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
-
-# Module's setup logic ---------------------------------------------
-
-
-def setup(app: FastAPI, settings: CatalogSettings) -> None:
-    if not settings:
-        settings = CatalogSettings()
-
-    def on_startup() -> None:
-        logger.debug("Setup %s at %s...", __name__, settings.base_url)
-        CatalogApi.create(
-            app,
-            client=httpx.AsyncClient(base_url=settings.base_url),
-            service_name="catalog",
-        )
-
-    async def on_shutdown() -> None:
-        client = CatalogApi.get_instance(app)
-        if client:
-            await client.aclose()
-        logger.debug("%s client closed successfully", __name__)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
 
 
 SolverNameVersionPair = Tuple[SolverKeyId, str]
@@ -89,7 +64,7 @@ class TruncatedCatalogServiceOut(ServiceDockerData):
 # TODO: handlers should not capture outputs
 # @handle_errors("catalog", logger, return_json=True)
 # @handle_retry(logger)
-# async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+# async def get(self, path: str, *args, **kwargs) -> JSON:
 #     return await self.client.get(path, *args, **kwargs)
 
 
@@ -150,9 +125,9 @@ class CatalogApi(BaseServiceClientApi):
         resp.raise_for_status()
 
         service = TruncatedCatalogServiceOut.parse_obj(resp.json())
-        assert (
+        assert (  # nosec
             service.service_type == ServiceType.COMPUTATIONAL
-        ), "Expected by SolverName regex"  # nosec
+        ), "Expected by SolverName regex"
 
         return service.to_solver()
 
@@ -182,3 +157,15 @@ class CatalogApi(BaseServiceClientApi):
         # raises IndexError if None
         latest = sorted(releases, key=attrgetter("pep404_version"))[-1]
         return latest
+
+
+# MODULES APP SETUP -------------------------------------------------------------
+
+
+def setup(app: FastAPI, settings: CatalogSettings) -> None:
+    if not settings:
+        settings = CatalogSettings()
+
+    setup_client_instance(
+        app, CatalogApi, api_baseurl=settings.base_url, service_name="catalog"
+    )

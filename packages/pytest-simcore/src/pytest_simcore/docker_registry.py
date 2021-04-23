@@ -6,7 +6,8 @@ import logging
 import os
 import time
 from copy import deepcopy
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional
 
 import docker
 import jsonschema
@@ -61,21 +62,22 @@ def docker_registry(keep_docker_up: bool) -> str:
     docker_client.images.remove(image=private_image.id)
 
     # provide os.environs
+    # TODO: use monkey-patch
     old = deepcopy(os.environ)
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
-    os.environ[
-        "REGISTRY_URL"
-    ] = f"{get_ip()}:5000"  # the registry URL is how to access from the container (e.g. for accessing the API)
-    os.environ[
-        "REGISTRY_PATH"
-    ] = "127.0.0.1:5000"  # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
+    # the registry URL is how to access from the container (e.g. for accessing the API)
+    os.environ["REGISTRY_URL"] = f"{get_ip()}:5000"
+    # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
+    os.environ["REGISTRY_PATH"] = "127.0.0.1:5000"
     os.environ["REGISTRY_USER"] = "simcore"
     os.environ["REGISTRY_PW"] = ""
 
     yield url
+
     # restore environs
     os.environ = old
+
     # remove registry
     if not keep_docker_up:
         container.stop()
@@ -101,14 +103,49 @@ def wait_till_registry_is_responsive(url: str) -> bool:
 
 
 def _pull_push_service(
-    pull_key: str, tag: str, new_registry: str, node_meta_schema: Dict
+    pull_key: str,
+    tag: str,
+    new_registry: str,
+    node_meta_schema: Dict,
+    owner_email: Optional[str] = None,
 ) -> Dict[str, Any]:
     client = docker.from_env()
     # pull image from original location
+    print(f"Pulling {pull_key}:{tag} ...")
     image = client.images.pull(pull_key, tag=tag)
-    assert image, f"image {pull_key}:{tag} not pulled!"
+    assert image, f"image {pull_key}:{tag} could NOT be pulled!"
+
     # get io.simcore.* labels
-    image_labels = image.labels
+    image_labels: Dict = dict(image.labels)
+
+    if owner_email:
+        print("Overriding labels to take ownership as %s ...", owner_email)
+        # By overriding these labels, user owner_email gets ownership of the service
+        # and the catalog service automatically gives full access rights for testing it
+        # otherwise it does not even get read rights
+
+        image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
+        image_labels.update(
+            {
+                "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
+            }
+        )
+        image_labels.update({"maintainer": f"{owner_email}"})
+
+        df_path = Path("Dockerfile").resolve()
+        df_path.write_text(f"FROM {pull_key}:{tag}")
+
+        try:
+            # Rebuild to override image labels AND re-tag
+            image2, _ = client.images.build(
+                path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned"
+            )
+            print(json.dumps(image2.labels, indent=2))
+            image = image2
+
+        finally:
+            df_path.unlink()
+
     assert image_labels
     io_simcore_labels = {
         key[len("io.simcore.") :]: json.loads(value)[key[len("io.simcore.") :]]
@@ -125,11 +162,13 @@ def _pull_push_service(
         f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
     )
     assert image.tag(new_image_tag) == True
+
     # push the image to the new location
+    print(f"Pushing {pull_key}:{tag}  -> {new_image_tag}...")
     client.images.push(new_image_tag)
 
     # return image io.simcore.* labels
-    image_labels = image.labels
+    image_labels = dict(image.labels)
     return {
         "schema": io_simcore_labels,
         "image": {
@@ -137,6 +176,24 @@ def _pull_push_service(
             "tag": io_simcore_labels["version"],
         },
     }
+
+
+@pytest.fixture(scope="session")
+def docker_registry_image_injector(
+    docker_registry: str, node_meta_schema: Dict
+) -> Callable:
+    def inject_image(
+        source_image_repo: str, source_image_tag: str, owner_email: Optional[str] = None
+    ):
+        return _pull_push_service(
+            source_image_repo,
+            source_image_tag,
+            docker_registry,
+            node_meta_schema,
+            owner_email,
+        )
+
+    return inject_image
 
 
 @pytest.fixture(scope="function")

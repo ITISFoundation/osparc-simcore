@@ -5,45 +5,40 @@ from mimetypes import guess_type
 from typing import List
 from uuid import UUID
 
-import httpx
 from fastapi import FastAPI
 from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
 from models_library.api_schemas_storage import FileMetaDataArray, PresignedLink
 
 from ..core.settings import StorageSettings
 from ..models.schemas.files import File
-from ..utils.client_base import BaseServiceClientApi
+from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
-## from ..utils.client_decorators import JsonDataType, handle_errors, handle_retry
+## from ..utils.client_decorators import JSON, handle_errors, handle_retry
 
 logger = logging.getLogger(__name__)
 
-# Module's setup logic ---------------------------------------------
+
+FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
 
 
-def setup(app: FastAPI, settings: StorageSettings) -> None:
-    if not settings:
-        settings = StorageSettings()
+def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
+    # extracts fields from api/{file_id}/{filename}
+    match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
+    if not match:
+        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
 
-    def on_startup() -> None:
-        logger.debug("Setup %s at %s...", __name__, settings.base_url)
-        StorageApi.create(
-            app,
-            client=httpx.AsyncClient(base_url=settings.base_url),
-            service_name="storage",
-        )
+    file_id, filename = match.groups()
 
-    async def on_shutdown() -> None:
-        client = StorageApi.get_instance(app)
-        if client:
-            await client.aclose()
-        logger.debug("%s client closed successfully", __name__)
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
-
-
-# API CLASS ---------------------------------------------
+    meta = File(
+        id=file_id,
+        filename=filename,
+        # FIXME: UploadFile gets content from the request header while here is
+        # mimetypes.guess_type used. Sometimes it does not match.
+        # Add column in meta_data table of storage and stop guessing :-)
+        content_type=guess_type(filename)[0] or "application/octet-stream",
+        checksum=stored_file_meta.entity_tag,
+    )
+    return meta
 
 
 class StorageApi(BaseServiceClientApi):
@@ -55,7 +50,7 @@ class StorageApi(BaseServiceClientApi):
     # FIXME: error handling and retrying policies?
     # @handle_errors("storage", logger, return_json=True)
     # @handle_retry(logger)
-    # async def get(self, path: str, *args, **kwargs) -> JsonDataType:
+    # async def get(self, path: str, *args, **kwargs) -> JSON:
     #     return await self.client.get(path, *args, **kwargs)
 
     async def list_files(self, user_id: int) -> List[StorageFileMetaData]:
@@ -115,25 +110,41 @@ class StorageApi(BaseServiceClientApi):
         presigned_link = PresignedLink.parse_obj(resp.json()["data"])
         return presigned_link.link
 
+    async def create_soft_link(
+        self, user_id: int, target_s3_path: str, as_file_id: UUID
+    ) -> File:
+        assert len(target_s3_path.split("/")) == 3  # nosec
 
-FILE_ID_PATTERN = re.compile(r"^api\/(?P<file_id>[\w-]+)\/(?P<filename>.+)$")
+        # define api-prefixed object-path for link
+        file_id = as_file_id
+        file_name = target_s3_path.split("/")[-1]
+        link_path = f"api/{file_id}/{file_name}"
+
+        file_id = urllib.parse.quote_plus(target_s3_path)
+
+        # ln makes links between files
+        # ln TARGET LINK_NAME
+        resp = await self.client.post(
+            f"/files/{file_id}:soft-copy",
+            params={"user_id": user_id},
+            json={"link_id": link_path},
+        )
+        # FIXME: handle errors properly
+        resp.raise_for_status()
+
+        # FIXME: was hanging when resp.join()["data"] -> None
+        stored_file_meta = StorageFileMetaData.parse_obj(resp.json()["data"])
+        file_meta: File = to_file_api_model(stored_file_meta)
+        return file_meta
 
 
-def to_file_api_model(stored_file_meta: StorageFileMetaData) -> File:
-    # extracts fields from api/{file_id}/{filename}
-    match = FILE_ID_PATTERN.match(stored_file_meta.file_id or "")
-    if not match:
-        raise ValueError(f"Invalid file_id {stored_file_meta.file_id} in file metadata")
+# MODULES APP SETUP -------------------------------------------------------------
 
-    file_id, filename = match.groups()
 
-    meta = File(
-        id=file_id,
-        filename=filename,
-        # FIXME: UploadFile gets content from the request header while here is
-        # mimetypes.guess_type used. Sometimes it does not match.
-        # Add column in meta_data table of storage and stop guessing :-)
-        content_type=guess_type(filename)[0] or "application/octet-stream",
-        checksum=stored_file_meta.entity_tag,
+def setup(app: FastAPI, settings: StorageSettings) -> None:
+    if not settings:
+        settings = StorageSettings()
+
+    setup_client_instance(
+        app, StorageApi, api_baseurl=settings.base_url, service_name="storage"
     )
-    return meta

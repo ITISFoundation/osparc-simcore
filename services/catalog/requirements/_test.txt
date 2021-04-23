@@ -11,7 +11,9 @@ alembic==1.5.5
 astroid==2.5.1
     # via pylint
 async-timeout==3.0.1
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==20.3.0
     # via
     #   aiohttp
@@ -61,11 +63,11 @@ cryptography==3.4.6
     #   paramiko
 distro==1.5.0
     # via docker-compose
-docker-compose==1.27.4
+docker-compose==1.29.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-docker
-docker[ssh]==4.4.4
+docker[ssh]==5.0.0
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -94,7 +96,6 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   idna-ssl
     #   requests
@@ -207,7 +208,6 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
-    #   docker
     #   dockerpty
     #   jsonschema
     #   pynacl

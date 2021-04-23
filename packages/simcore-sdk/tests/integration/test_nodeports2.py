@@ -342,9 +342,7 @@ async def test_get_file_from_previous_node(
     item_pytype: Type,
 ):
     config_dict, _, _ = special_2nodes_configuration(
-        prev_node_outputs=[
-            ("output_int", item_type, store_link(item_value, project_id, node_uuid))
-        ],
+        prev_node_outputs=[("output_int", item_type, await store_link(item_value))],
         inputs=[("in_15", item_type, node_link("output_int"))],
         project_id=project_id,
         previous_node_id=node_uuid,
@@ -384,9 +382,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     item_pytype: Type,
 ):
     config_dict, _, this_node_uuid = special_2nodes_configuration(
-        prev_node_outputs=[
-            ("in_15", item_type, store_link(item_value, project_id, node_uuid))
-        ],
+        prev_node_outputs=[("in_15", item_type, await store_link(item_value))],
         inputs=[("in_15", item_type, node_link("in_15"))],
         project_id=project_id,
         previous_node_id=node_uuid,
@@ -431,7 +427,7 @@ async def test_file_mapping(
     item_pytype: Type,
 ):
     config_dict, project_id, node_uuid = special_configuration(
-        inputs=[("in_1", item_type, store_link(item_value, project_id, node_uuid))],
+        inputs=[("in_1", item_type, await store_link(item_value))],
         outputs=[("out_1", item_type, None)],
         project_id=project_id,
         node_id=node_uuid,

@@ -1,16 +1,21 @@
 import base64
 import json
 import logging
+from collections import deque
 from contextlib import suppress
-from typing import Dict, Optional
+from typing import Deque, Dict, List, Optional
+from uuid import UUID
 
 import attr
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response, codes
+from pydantic import ValidationError
 from starlette import status
 
 from ..core.settings import WebServerSettings
+from ..models.domain.projects import NewProjectIn, Project
+from ..models.raw_data import JSON, ListAnyDict
 
 logger = logging.getLogger(__name__)
 
@@ -85,12 +90,12 @@ class AuthSession:
         )
 
     @classmethod
-    def _process(cls, resp: Response) -> Optional[Dict]:
+    def _process(cls, resp: Response) -> Optional[JSON]:
         # enveloped answer
         data, error = None, None
         try:
             body = resp.json()
-            data, error = body["data"], body["error"]
+            data, error = body.get("data"), body.get("error")
         except (json.JSONDecodeError, KeyError):
             logger.warning("Failed to unenvelop webserver response", exc_info=True)
 
@@ -114,17 +119,18 @@ class AuthSession:
     # TODO: policy to retry if NetworkError/timeout?
     # TODO: add ping to healthcheck
 
-    async def get(self, path: str) -> Optional[Dict]:
+    async def get(self, path: str) -> Optional[JSON]:
         url = path.lstrip("/")
         try:
             resp = await self.client.get(url, cookies=self.session_cookies)
         except Exception as err:
+            # FIXME: error handling
             logger.exception("Failed to get %s", url)
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
 
-    async def put(self, path: str, body: Dict) -> Optional[Dict]:
+    async def put(self, path: str, body: Dict) -> Optional[JSON]:
         url = path.lstrip("/")
         try:
             resp = await self.client.put(url, json=body, cookies=self.session_cookies)
@@ -133,3 +139,57 @@ class AuthSession:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE) from err
 
         return self._process(resp)
+
+    # PROJECTS resource ---
+    # TODO: error handling!
+
+    async def create_project(self, project: NewProjectIn):
+        resp = await self.client.post(
+            "/projects",
+            data=project.json(
+                by_alias=True, exclude={"state"}
+            ),  ## FIXME: REEAAAALY HACKY!
+            cookies=self.session_cookies,
+        )
+
+        data: Optional[JSON] = self._process(resp)
+        return Project.parse_obj(data)
+
+    async def get_project(self, project_id: UUID) -> Project:
+        resp = await self.client.get(
+            f"/projects/{project_id}", cookies=self.session_cookies
+        )
+
+        data: Optional[JSON] = self._process(resp)
+        return Project.parse_obj(data)
+
+    async def list_projects(self, solver_name: str) -> List[Project]:
+        resp = await self.client.get(
+            "/projects", params={"type": "user"}, cookies=self.session_cookies
+        )
+
+        data: ListAnyDict = self._process(resp) or []
+
+        # FIXME: move filter to webserver API (next PR)
+        projects: Deque[Project] = deque()
+        for prj in data:
+            if prj.get("name", "") == solver_name:
+                try:
+                    projects.append(Project.parse_obj(prj))
+                except ValidationError as err:
+                    logger.warning(
+                        "Invalid prj %s [%s]: %s", prj.get("uuid"), solver_name, err
+                    )
+
+        return list(projects)
+
+
+# TODO: init client and then build sessions from client using depenencies
+#
+# from ..utils.client_base import BaseServiceClientApi
+# class WebserverApi(BaseServiceClientApi):
+#     """ One instance per app """
+
+#     def create_auth_session(self, session_cookies) -> AuthSession:
+#         """ Needed per request, so it can perform """
+#         return AuthSession(client=self.client, vtag="v0", session_cookies=session_cookies)

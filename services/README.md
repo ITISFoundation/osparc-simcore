@@ -36,10 +36,10 @@ To deploy the application in a single-node swarm
 ## Localhost deploy (dev)
 
 - web: http://127.0.0.1:9081/
-  - front-end config [/v0/config](http://172.16.8.68:9081/v0/config)
-  - health-check [/heath](http://172.16.8.68:9081/health)
-  - diagnostics [/v0/diagnostics?top_tracemalloc=10](http://172.16.8.68:9081/v0/diagnostics?top_tracemalloc=10)
-  - run-check [/](http://172.16.8.68:9081/)
+  - front-end config [/v0/config](http://172.0.0.1:9081/v0/config)
+  - health-check [/heath](http://172.0.0.1:9081/health)
+  - diagnostics [/v0/diagnostics?top_tracemalloc=10](http://172.0.0.1:9081/v0/diagnostics?top_tracemalloc=10)
+  - run-check [/](http://172.0.0.1:9081/)
   - API doc [/dev/doc](http://127.0.0.1:9081/dev/doc)
   - API base entrypoint [/v0](http://127.0.0.1:9081/v0/)
 

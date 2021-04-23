@@ -32,7 +32,6 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     Loads and extends .env-devel returning
     all environment variables key=value
     """
-
     env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
     # get from environ if applicable
     env_devel = {
@@ -122,6 +121,7 @@ def simcore_docker_compose(
         docker_compose_paths,
         workdir=env_file.parent,
         destination_path=temp_folder / "simcore_docker_compose.yml",
+        env_file_path=env_file,
     )
     print("simcore docker-compose:\n%s", pformat(config))
     return config
@@ -149,6 +149,7 @@ def ops_docker_compose(
         docker_compose_path,
         workdir=env_file.parent,
         destination_path=temp_folder / "ops_docker_compose.yml",
+        env_file_path=env_file,
     )
     print("ops docker-compose:\n%s", pformat(config))
     return config
@@ -158,6 +159,7 @@ def ops_docker_compose(
 def core_services_selection(request) -> List[str]:
     """ Selection of services from the simcore stack """
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
+
     assert (
         core_services
     ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"

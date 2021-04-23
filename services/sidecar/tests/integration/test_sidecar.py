@@ -7,7 +7,7 @@ import inspect
 import json
 from collections import deque
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Iterable
+from typing import Any, Dict, Iterable, List, Tuple
 
 import aio_pika
 import pytest
@@ -27,7 +27,7 @@ SIMCORE_S3_ID = 0
 #
 # SEE packages/pytest-simcore/src/pytest_simcore/docker_compose.py
 #
-pytest_simcore_core_services_selection = ["storage", "postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "storage"]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 

@@ -102,47 +102,53 @@ qx.Class.define("osparc.Application", {
     },
 
     __checkScreenSize: function() {
-      const title = this.tr("Oops, the window is a bit too small!");
-      const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", title).set({
-        height: 100,
-        width: 400,
-        layout: new qx.ui.layout.VBox(),
-        appearance: "service-window",
-        showMinimize: false,
-        showMaximize: false,
-        showClose: false,
-        resizable: false,
-        modal: true,
-        contentPadding: 10
-      });
-      const w = document.documentElement.clientWidth;
-      const h = document.documentElement.clientHeight;
-      if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
-        const msg = this.tr(`
-          oSPARC is designed for slightly bigger window size.<br>\
-          A mininum window size of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
-          Touch devices are not fully supported.
-        `);
-        const label = new qx.ui.basic.Label().set({
-          value: msg,
-          rich: true
+      osparc.utils.LibVersions.getPlatformName()
+        .then(platformName => {
+          const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+          if (platformName !== "master" && preferencesSettings.getConfirmScreenSize()) {
+            const title = this.tr("Oops, the window is a bit too small!");
+            const tooSmallWindow = new osparc.ui.window.SingletonWindow("tooSmallScreen", title).set({
+              height: 100,
+              width: 400,
+              layout: new qx.ui.layout.VBox(),
+              appearance: "service-window",
+              showMinimize: false,
+              showMaximize: false,
+              showClose: false,
+              resizable: false,
+              modal: true,
+              contentPadding: 10
+            });
+            const w = document.documentElement.clientWidth;
+            const h = document.documentElement.clientHeight;
+            if (this.self().MIN_WIDTH > w || this.self().MIN_HEIGHT > h) {
+              const msg = this.tr(`
+                oSPARC is designed for slightly bigger window size.<br>\
+                A mininum window size of ${this.self().MIN_WIDTH}x${this.self().MIN_HEIGHT} is recommended<br>\
+                Touch devices are not fully supported.
+              `);
+              const label = new qx.ui.basic.Label().set({
+                value: msg,
+                rich: true
+              });
+              tooSmallWindow.add(label, {
+                flex: 1
+              });
+              const okBtn = new qx.ui.form.Button(this.tr("Got it")).set({
+                allowGrowX: false,
+                allowGrowY: false,
+                alignX: "right"
+              });
+              okBtn.addListener("execute", () => tooSmallWindow.close());
+              tooSmallWindow.add(okBtn);
+              setTimeout(() => tooSmallWindow.center(), 100);
+              tooSmallWindow.center();
+              tooSmallWindow.open();
+            } else {
+              tooSmallWindow.close();
+            }
+          }
         });
-        tooSmallWindow.add(label, {
-          flex: 1
-        });
-        const okBtn = new qx.ui.form.Button(this.tr("Got it")).set({
-          allowGrowX: false,
-          allowGrowY: false,
-          alignX: "right"
-        });
-        okBtn.addListener("execute", () => tooSmallWindow.close());
-        tooSmallWindow.add(okBtn);
-        setTimeout(() => tooSmallWindow.center(), 100);
-        tooSmallWindow.center();
-        tooSmallWindow.open();
-      } else {
-        tooSmallWindow.close();
-      }
     },
 
     __initRouting: function() {

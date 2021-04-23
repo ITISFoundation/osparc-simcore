@@ -19,10 +19,10 @@ from shutil import copyfile
 
 import attr
 import pytest
-import utils
+import tests.utils
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
-from utils import BUCKET_NAME, USER_ID, has_datcore_tokens
+from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 
 def test_mockup(dsm_mockup_db):
@@ -497,7 +497,7 @@ async def test_deep_copy_project_simcore_s3(
         return
     dsm = dsm_fixture
 
-    utils.fill_tables_from_csv_files(url=postgres_service_url)
+    tests.utils.fill_tables_from_csv_files(url=postgres_service_url)
 
     path_in_datcore = datcore_structured_testbucket["file_id3"]
     file_name_in_datcore = Path(datcore_structured_testbucket["filename3"]).name
@@ -565,7 +565,7 @@ async def test_deep_copy_project_simcore_s3(
         object_name = str(
             Path(source_project_id) / Path(node_id) / Path(node_id + ".dat")
         )
-        f = utils.data_dir() / Path("notebooks.zip")
+        f = tests.utils.data_dir() / Path("notebooks.zip")
         s3_client.upload_file(bucket_name, object_name, f)
         key = node_id.replace("template", "deep-copy")
         destination_project["workbench"][key] = node

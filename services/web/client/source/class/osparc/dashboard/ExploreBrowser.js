@@ -500,7 +500,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       studyServicesButton.addListener("execute", () => {
         const servicesInStudy = new osparc.component.metadata.ServicesInStudy(studyData);
         const title = this.tr("Services in Study");
-        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 400, 100);
+        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 650, 300);
       }, this);
       return studyServicesButton;
     },
