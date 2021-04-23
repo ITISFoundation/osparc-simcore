@@ -7,8 +7,6 @@ import re
 import pytest
 import respx
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture(autouse=True)
 def minimal_director_config(project_env_devel_environment, monkeypatch):
