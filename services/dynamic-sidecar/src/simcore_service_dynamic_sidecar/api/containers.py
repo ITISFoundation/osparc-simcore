@@ -96,7 +96,6 @@ async def runs_docker_compose_up(
 
 @containers_router.post("/containers:down", response_class=PlainTextResponse)
 async def runs_docker_compose_down(
-    response: Response,
     command_timeout: float,
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
@@ -117,11 +116,9 @@ async def runs_docker_compose_down(
         command_timeout=command_timeout,
     )
 
-    response.status_code = (
-        status.HTTP_200_OK
-        if finished_without_errors
-        else status.HTTP_500_INTERNAL_SERVER_ERROR
-    )
+    if not finished_without_errors:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=stdout)
+
     return stdout
 
 
