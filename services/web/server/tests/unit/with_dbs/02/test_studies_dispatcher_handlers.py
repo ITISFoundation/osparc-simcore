@@ -30,16 +30,19 @@ def inject_tables(postgres_db: sa.engine.Engine):
     stmt_create_services = text(
         'INSERT INTO "services_meta_data" ("key", "version", "owner", "name", "description", "thumbnail", "classifiers", "created", "modified", "quality") VALUES'
         "('simcore/services/dynamic/raw-graphs',	'2.11.1',	NULL,	'2D plot',	'2D plots powered by RAW Graphs',	NULL,	'{}',	'2021-03-02 16:08:28.655207',	'2021-03-02 16:08:28.655207',	'{}'),"
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	NULL,	'bio-formats',	'Bio-Formats image viewer',	'https://www.openmicroscopy.org/img/logos/bio-formats.svg',	'{}',	'2021-03-02 16:08:28.420722',	'2021-03-02 16:08:28.420722',	'{}');"
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	NULL,	'bio-formats',	'Bio-Formats image viewer',	'https://www.openmicroscopy.org/img/logos/bio-formats.svg',	'{}',	'2021-03-02 16:08:28.420722',	'2021-03-02 16:08:28.420722',	'{}'),"
+        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	NULL,	'JupyterLab Math',	'JupyterLab Math with octave and python',	NULL,	'{}',	'2021-03-02 16:08:28.420722',	'2021-03-02 16:08:28.420722',	'{}');"
     )
     stmt_create_services_consume_filetypes = text(
-        'INSERT INTO "services_consume_filetypes" ("service_key", "service_version", "service_display_name", "service_input_port", "filetype", "preference_order") VALUES'
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'PNG',	0),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'CSV',	0),"
-        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'JPEG',	0),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'TSV',	0),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'XLSX',	0),"
-        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'JSON',	0);"
+        'INSERT INTO "services_consume_filetypes" ("service_key", "service_version", "service_display_name", "service_input_port", "filetype", "preference_order", "is_guest_allowed") VALUES'
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'PNG',	0, '1'),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'CSV',	0, '1'),"
+        "('simcore/services/dynamic/bio-formats-web',	'1.0.1',	'bio-formats',	'input_1',	'JPEG',	0, '1'),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'TSV',	0, '1'),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'XLSX',	0, '1'),"
+        "('simcore/services/dynamic/raw-graphs',	'2.11.1',	'RAWGraphs',	'input_1',	'JSON',	0, '1'),"
+        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'PY',	0, '0'),"
+        "('simcore/services/dynamic/jupyter-octave-python-math',	'1.6.9',	'JupyterLab Math',	'input_1',	'IPYNB',0, '0');"
     )
     with postgres_db.connect() as conn:
         conn.execute(stmt_create_services)
@@ -87,6 +90,20 @@ FAKE_VIEWS_LIST = [
         version="2.11.1",
         filetype="XLSX",
         label="RAWGraphs",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/jupyter-octave-python-math",
+        version="1.6.9",
+        filetype="PY",
+        label="JupyterLab Math",
+        input_port_key="input_1",
+    ),
+    ViewerInfo(
+        key="simcore/services/dynamic/jupyter-octave-python-math",
+        version="1.6.9",
+        filetype="INBPY",
+        label="JupyterLab Math",
         input_port_key="input_1",
     ),
 ]
@@ -213,6 +230,11 @@ async def test_api_list_supported_filetypes(client):
             "view_url": f"{base_url}/view?file_type=CSV&viewer_key=simcore/services/dynamic/raw-graphs&viewer_version=2.11.1",
         },
         {
+            "title": "Jupyterlab math v1.6.9",
+            "file_type": "IPYNB",
+            "view_url": f"{base_url}/view?file_type=IPYNB&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
+        },
+        {
             "title": "Bio-formats v1.0.1",
             "file_type": "JPEG",
             "view_url": f"{base_url}/view?file_type=JPEG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
@@ -226,6 +248,11 @@ async def test_api_list_supported_filetypes(client):
             "title": "Bio-formats v1.0.1",
             "file_type": "PNG",
             "view_url": f"{base_url}/view?file_type=PNG&viewer_key=simcore/services/dynamic/bio-formats-web&viewer_version=1.0.1",
+        },
+        {
+            "title": "Jupyterlab math v1.6.9",
+            "file_type": "PY",
+            "view_url": f"{base_url}/view?file_type=PY&viewer_key=simcore/services/dynamic/jupyter-octave-python-math&viewer_version=1.6.9",
         },
         {
             "title": "Rawgraphs v2.11.1",
@@ -267,21 +294,6 @@ def mocks_on_projects_api(mocker):
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
         return_value=future_with_result(ProjectLocked(value=False)),
     )
-
-
-async def _get_user_projects(client):
-    from servicelib.rest_responses import unwrap_envelope
-
-    url = client.app.router["list_projects"].url_for()
-    resp = await client.get(url.with_query(type="user"))
-
-    payload = await resp.json()
-    assert resp.status == 200, payload
-
-    projects, error = unwrap_envelope(payload)
-    assert not error, pprint(error)
-
-    return projects
 
 
 async def assert_redirected_to_study(
@@ -362,7 +374,21 @@ async def test_dispatch_viewer_anonymously(
     assert data["role"].upper() == UserRole.GUEST.name
 
     # guest user only a copy of the template project
-    projects = await _get_user_projects(client)
+    async def _get_user_projects():
+        from servicelib.rest_responses import unwrap_envelope
+
+        url = client.app.router["list_projects"].url_for()
+        resp = await client.get(url.with_query(type="user"))
+
+        payload = await resp.json()
+        assert resp.status == 200, payload
+
+        projects, error = unwrap_envelope(payload)
+        assert not error, pprint(error)
+
+        return projects
+
+    projects = await _get_user_projects()
     assert len(projects) == 1
     guest_project = projects[0]
 

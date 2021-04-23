@@ -8,9 +8,9 @@ from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
+from ..constants import INDEX_RESOURCE_NAME
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
 from ..rest_config import APP_OPENAPI_SPECS_KEY
-from ..statics import INDEX_RESOURCE_NAME
 from .cfg import APP_LOGIN_CONFIG, cfg
 from .config import assert_valid_config, create_login_internal_config
 from .routes import create_routes
@@ -88,6 +88,3 @@ def setup_login(app: web.Application):
     # signals
     app.cleanup_ctx.append(_setup_config_and_pgpool)
     return True
-
-
-__all__ = "setup_login"
