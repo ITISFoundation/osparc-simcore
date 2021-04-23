@@ -186,7 +186,7 @@ async def inspect_container(
 )
 async def remove_container(
     id: str, shared_store: SharedStore = Depends(get_shared_store)
-):
+) -> None:
     if id not in shared_store.container_names:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=f"No container '{id}' was started"

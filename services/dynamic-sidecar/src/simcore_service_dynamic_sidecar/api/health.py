@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from ..dependencies import State, get_app_state
+from ..dependencies import get_application_health
 from ..models import ApplicationHealth
 
 health_router = APIRouter()
@@ -14,10 +14,8 @@ health_router = APIRouter()
     },
 )
 async def health_endpoint(
-    app_state: State = Depends(get_app_state),
-):
-    application_health: ApplicationHealth = app_state.application_health
-
+    application_health: ApplicationHealth = Depends(get_application_health),
+) -> ApplicationHealth:
     if not application_health.is_healthy:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, detail="Marked as unhealthy"
