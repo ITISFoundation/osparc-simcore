@@ -146,15 +146,22 @@ async def test_containers_down_missing_spec(
     }
 
 
+def assert_keys_exist(result: Dict[str, Any]) -> bool:
+    for entry in result.values():
+        assert "Status" in entry
+        assert "Error" in entry
+    return True
+
+
 async def test_containers_get(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
     response = await test_client.get(f"/{api_vtag}/containers")
     assert response.status_code == status.HTTP_200_OK, response.text
 
-    response_dict = json.loads(response.text)
-    assert set(response_dict) == set(started_containers)
-    for entry in response_dict.values():
+    decoded_response = json.loads(response.text)
+    assert set(decoded_response) == set(started_containers)
+    for entry in decoded_response.values():
         assert "Status" not in entry
         assert "Error" not in entry
 
@@ -167,41 +174,16 @@ async def test_containers_get_status(
     )
     assert response.status_code == status.HTTP_200_OK, response.text
 
-    response_dict = json.loads(response.text)
-    assert set(response_dict) == set(started_containers)
-    for entry in response_dict.values():
-        assert "Status" in entry
-        assert "Error" in entry
+    decoded_response = json.loads(response.text)
+    assert set(decoded_response) == set(started_containers)
+    assert assert_keys_exist(decoded_response) is True
 
 
 async def test_containers_inspect_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
 ) -> None:
-    response = await test_client.get(
-        f"/{api_vtag}/containers",
-        query_string=dict(container_names=started_containers),
-    )
+    response = await test_client.get(f"/{api_vtag}/containers")
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
-
-
-def assert_keys_exist(result: Dict[str, Any]) -> bool:
-    for entry in result.values():
-        assert "Status" in entry
-        assert "Error" in entry
-    return True
-
-
-async def test_containers_docker_status(
-    test_client: TestClient, started_containers: List[str]
-) -> None:
-    response = await test_client.get(
-        f"/{api_vtag}/containers",
-        query_string=dict(container_names=started_containers),
-    )
-    assert response.status_code == status.HTTP_200_OK, response.text
-    decoded_response = json.loads(response.text)
-    assert set(decoded_response) == set(started_containers)
-    assert assert_keys_exist(decoded_response) is True
 
 
 async def test_containers_docker_status_pulling_containers(
@@ -220,10 +202,7 @@ async def test_containers_docker_status_pulling_containers(
     with mark_pulling(shared_store):
         assert shared_store.is_pulling_containers is True
 
-        response = await test_client.get(
-            f"/{api_vtag}/containers",
-            query_string=dict(container_names=started_containers),
-        )
+        response = await test_client.get(f"/{api_vtag}/containers")
         assert response.status_code == status.HTTP_200_OK, response.text
         decoded_response = json.loads(response.text)
         assert assert_keys_exist(decoded_response) is True
