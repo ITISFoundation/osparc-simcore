@@ -59,12 +59,12 @@ async def started_containers(test_client: TestClient, compose_spec: str) -> List
 
     # start containers
     response = await test_client.post(f"/{api_vtag}/containers", data=compose_spec)
-    assert response.status_code == status.HTTP_201_CREATED, response.text
-    assert json.loads(response.text) is None
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
 
     shared_store: SharedStore = test_client.application.state.shared_store
     container_names = shared_store.container_names
     assert len(container_names) == 2
+    assert json.loads(response.text) == container_names
 
     return container_names
 
@@ -79,8 +79,10 @@ async def test_compose_up(
 ) -> None:
 
     response = await test_client.post(f"/{api_vtag}/containers", data=compose_spec)
-    assert response.status_code == status.HTTP_201_CREATED, response.text
-    assert json.loads(response.text) is None
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    shared_store: SharedStore = test_client.application.state.shared_store
+    container_names = shared_store.container_names
+    assert json.loads(response.text) == container_names
 
 
 async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
@@ -105,8 +107,10 @@ async def test_containers_down_after_starting(
 ) -> None:
     # store spec first
     response = await test_client.post(f"/{api_vtag}/containers", data=compose_spec)
-    assert response.status_code == status.HTTP_201_CREATED, response.text
-    assert json.loads(response.text) is None
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    shared_store: SharedStore = test_client.application.state.shared_store
+    container_names = shared_store.container_names
+    assert json.loads(response.text) == container_names
 
     response = await test_client.post(
         f"/{api_vtag}/containers:down",
@@ -123,7 +127,7 @@ async def test_containers_down_missing_spec(
         f"/{api_vtag}/containers:down",
         query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
     )
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     assert json.loads(response.text) == {
         "detail": "No spec for docker-compose down was found"
     }
@@ -169,38 +173,10 @@ async def test_containers_inspect_docker_error(
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
 
 
-async def test_containers_docker_status_pulling_containers(
-    test_client: TestClient, started_containers: List[str]
-) -> None:
-    @contextmanager
-    def mark_pulling(shared_store: SharedStore) -> Generator[None, None, None]:
-        try:
-            shared_store.is_pulling_containers = True
-            yield
-        finally:
-            shared_store.is_pulling_containers = False
-
-    shared_store: SharedStore = test_client.application.state.shared_store
-
-    with mark_pulling(shared_store):
-        assert shared_store.is_pulling_containers is True
-
-        response = await test_client.get(f"/{api_vtag}/containers")
-        assert response.status_code == status.HTTP_200_OK, response.text
-        decoded_response = json.loads(response.text)
-        assert assert_keys_exist(decoded_response) is True
-
-        for entry in decoded_response.values():
-            assert entry["Status"] == "pulling"
-
-
 async def test_containers_docker_status_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
 ) -> None:
-    response = await test_client.get(
-        f"/{api_vtag}/containers",
-        query_string=dict(container_names=started_containers),
-    )
+    response = await test_client.get(f"/{api_vtag}/containers")
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
 
 

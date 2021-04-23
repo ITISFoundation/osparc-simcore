@@ -80,7 +80,7 @@
         "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
         "operationId": "runs_docker_compose_up_v1_containers_post",
         "responses": {
-          "201": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
