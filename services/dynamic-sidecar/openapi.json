@@ -50,7 +50,7 @@
       },
       "post": {
         "tags": [
-          "docker-compose"
+          "containers"
         ],
         "summary": "Runs Docker Compose Up",
         "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
@@ -93,7 +93,7 @@
     "/v1/containers:down": {
       "post": {
         "tags": [
-          "docker-compose"
+          "containers"
         ],
         "summary": "Runs Docker Compose Down",
         "description": "Removes the previously started service\nand returns the docker-compose output",
