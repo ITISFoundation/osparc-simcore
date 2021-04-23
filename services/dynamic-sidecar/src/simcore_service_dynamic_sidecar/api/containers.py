@@ -2,7 +2,7 @@ import logging
 import traceback
 
 # pylint: disable=redefined-builtin
-from typing import Any, Dict, Optional, Union, List
+from typing import Any, Dict, List, Optional, Union
 
 import aiodocker
 from fastapi import (
@@ -250,6 +250,7 @@ async def get_container_logs(
             return container_logs
         except aiodocker.exceptions.DockerError as err:
             _raise_from_docker_error(err)
+            return None
 
 
 @containers_router.get(
@@ -273,6 +274,7 @@ async def inspect_container(
             return inspect_result
         except aiodocker.exceptions.DockerError as err:
             _raise_from_docker_error(err)
+            return None
 
 
 @containers_router.delete(
@@ -296,6 +298,7 @@ async def remove_container(
             return None
         except aiodocker.exceptions.DockerError as err:
             _raise_from_docker_error(err)
+            return None
 
 
 __all__ = ["containers_router"]
