@@ -119,14 +119,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
       this.__templates = [];
       this.__services = [];
-      const servicesTags = this.__getTags();
+      const resourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      const servicesPromise = store.getServicesDAGs(true);
+      resourcePromises.push(store.getServicesDAGs(true));
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        resourcePromises.push(osparc.data.Resources.get("tags"));
+      }
 
-      Promise.all([
-        servicesTags,
-        servicesPromise
-      ])
+      Promise.all(resourcePromises)
         .then(() => {
           this._hideLoadingPage();
           this.__createResourcesLayout();
@@ -143,18 +143,6 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     _showMainLayout: function(show) {
       this._getChildren().forEach(children => {
         children.setVisibility(show ? "visible" : "excluded");
-      });
-    },
-
-    __getTags: function() {
-      return new Promise((resolve, reject) => {
-        if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-          osparc.data.Resources.get("tags")
-            .catch(console.error)
-            .finally(() => resolve());
-        } else {
-          resolve();
-        }
       });
     },
 
