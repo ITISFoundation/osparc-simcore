@@ -11,7 +11,7 @@
 
 # testing
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-asyncio # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
 pytest-mock
 pytest-runner

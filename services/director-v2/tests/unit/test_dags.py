@@ -16,6 +16,8 @@ from simcore_service_director_v2.utils.dags import (
     topological_sort_grouping,
 )
 
+pytestmark = pytest.mark.asyncio
+
 
 def test_create_complete_dag_graph(
     fake_workbench: Workbench,

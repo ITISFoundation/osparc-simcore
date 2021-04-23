@@ -22,6 +22,8 @@ from simcore_service_director_v2.models.schemas.services import (
 )
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 
+pytestmark = pytest.mark.asyncio
+
 
 @pytest.fixture(autouse=True)
 def minimal_director_config(project_env_devel_environment, monkeypatch):
