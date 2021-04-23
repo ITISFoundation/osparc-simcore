@@ -1,10 +1,9 @@
 import logging
 import traceback
-from typing import Optional
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import PlainTextResponse
-from starlette.status import HTTP_200_OK, HTTP_204_NO_CONTENT, HTTP_400_BAD_REQUEST
+from starlette.status import HTTP_200_OK, HTTP_500_INTERNAL_SERVER_ERROR
 
 from ..dependencies import get_settings, get_shared_store
 from ..settings import DynamicSidecarSettings
@@ -17,25 +16,18 @@ logger = logging.getLogger(__name__)
 compose_router = APIRouter(tags=["docker-compose"])
 
 
-@compose_router.post(
-    "/compose:store", response_class=PlainTextResponse, responses={204: {"model": None}}
-)
-async def validates_docker_compose_spec_and_stores_it(
+@compose_router.post("/containers:up", response_class=PlainTextResponse)
+async def runs_docker_compose_up(
     request: Request,
     response: Response,
-    command_timeout: float = 5.0,
+    command_timeout: float,
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Optional[str]:
-    # FIXME: why is this not an argument into CREATE /containers ?
-
+) -> str:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    body_as_text = (await request.body()).decode("utf-8")
 
-    if body_as_text is None:
-        shared_store.compose_spec = None
-        shared_store.container_names = []
-        return None
+    # stores the compose spec after validation
+    body_as_text = (await request.body()).decode("utf-8")
 
     try:
         shared_store.compose_spec = await validate_compose_spec(
@@ -48,23 +40,9 @@ async def validates_docker_compose_spec_and_stores_it(
         )
     except InvalidComposeSpec as e:
         logger.warning("Error detected %s", traceback.format_exc())
-        response.status_code = HTTP_400_BAD_REQUEST
-        return str(e)
+        raise HTTPException(HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
-    response.status_code = HTTP_204_NO_CONTENT
-    return None
-
-
-@compose_router.post("/compose", response_class=PlainTextResponse)
-async def runs_docker_compose_up(
-    response: Response,
-    command_timeout: float,
-    settings: DynamicSidecarSettings = Depends(get_settings),
-    shared_store: SharedStore = Depends(get_shared_store),
-) -> str:
-    """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    # FIXME: why is this not in /containers:up ?
-
+    # create the compose spec
     # --no-build might be a security risk building is disabled
     command = (
         "docker-compose --project-name {project} --file {file_path} "
@@ -78,24 +56,25 @@ async def runs_docker_compose_up(
     )
 
     response.status_code = (
-        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+        HTTP_200_OK if finished_without_errors else HTTP_500_INTERNAL_SERVER_ERROR
     )
     return stdout
 
 
-@compose_router.get("/compose:pull", response_class=PlainTextResponse)
+@compose_router.get("/containers:pull", response_class=PlainTextResponse)
 async def runs_docker_compose_pull(
     response: Response,
     command_timeout: float,
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
-    """ Expects the docker-compose spec as raw-body utf-8 encoded text """
-    # FIXME: why is this not in /containers:pull ?
+
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
-        response.status_code = HTTP_400_BAD_REQUEST
-        return "No started spec to pull was found"
+        raise HTTPException(
+            HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No spec for docker-compose pull was found",
+        )
 
     command = (
         "docker-compose --project-name {project} --file {file_path} "
@@ -117,22 +96,28 @@ async def runs_docker_compose_pull(
         shared_store.is_pulling_containers = False
 
     response.status_code = (
-        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+        HTTP_200_OK if finished_without_errors else HTTP_500_INTERNAL_SERVER_ERROR
     )
     return stdout
 
 
-@compose_router.delete("/compose", response_class=PlainTextResponse)
+@compose_router.post("/containers:down", response_class=PlainTextResponse)
 async def runs_docker_compose_down(
     response: Response,
     command_timeout: float,
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> str:
-    # FIXME: why is this not in /containers:down ?
-
     """Removes the previously started service
     and returns the docker-compose output"""
+
+    stored_compose_content = shared_store.compose_spec
+    if stored_compose_content is None:
+        raise HTTPException(
+            HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No spec for docker-compose down was found",
+        )
+
     finished_without_errors, stdout = await remove_the_compose_spec(
         shared_store=shared_store,
         settings=settings,
@@ -140,7 +125,7 @@ async def runs_docker_compose_down(
     )
 
     response.status_code = (
-        HTTP_200_OK if finished_without_errors else HTTP_400_BAD_REQUEST
+        HTTP_200_OK if finished_without_errors else HTTP_500_INTERNAL_SERVER_ERROR
     )
     return stdout
 
