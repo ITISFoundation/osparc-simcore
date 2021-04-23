@@ -115,7 +115,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     // overriden
     _initResources: function() {
-      this._showLoadingPage(this.tr("Discovering Templates and Apps"));
+      this._showLoadingPage(this.tr("Starting..."));
 
       this.__templates = [];
       this.__services = [];

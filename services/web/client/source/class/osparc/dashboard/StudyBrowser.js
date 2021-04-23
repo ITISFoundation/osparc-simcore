@@ -125,7 +125,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     // overriden
     _initResources: function() {
-      this._showLoadingPage(this.tr("Loading Studies"));
+      this._showLoadingPage(this.tr("Starting..."));
 
       this.__userStudies = [];
       const resourcePromises = [];
