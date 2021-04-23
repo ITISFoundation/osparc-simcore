@@ -276,23 +276,17 @@ async def test_container_missing_container(
     for container in not_started_containers:
         # get container logs
         response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
-        assert (
-            response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        ), response.text
+        assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == _expected_error_string(container)
 
         # inspect container
         response = await test_client.get(f"/{api_vtag}/containers/{container}:inspect")
-        assert (
-            response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        ), response.text
+        assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == _expected_error_string(container)
 
         # delete container
         response = await test_client.delete(f"/{api_vtag}/containers/{container}")
-        assert (
-            response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        ), response.text
+        assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == _expected_error_string(container)
 
 

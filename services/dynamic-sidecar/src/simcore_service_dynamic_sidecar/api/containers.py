@@ -2,7 +2,7 @@ import logging
 import traceback
 
 # pylint: disable=redefined-builtin
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, List
 
 import aiodocker
 from fastapi import (
@@ -12,7 +12,6 @@ from fastapi import (
     HTTPException,
     Query,
     Request,
-    Response,
     status,
 )
 from fastapi.responses import PlainTextResponse
@@ -53,6 +52,24 @@ async def task_docker_compose_up(
         logger.error(message)
 
     return None
+
+
+def _raise_if_container_is_missing(id: str, container_names: List[str]) -> None:
+    if id not in container_names:
+        message = (
+            f"No container '{id}' was started. Started containers '{container_names}'"
+        )
+        logger.warning(message)
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
+
+
+def _raise_from_docker_error(error: aiodocker.exceptions.DockerError) -> None:
+    logger.warning(
+        "An unexpected Docker error occurred:\n%s", str(traceback.format_exc())
+    )
+    raise HTTPException(
+        status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error.message
+    ) from error
 
 
 @containers_router.post("/containers", status_code=status.HTTP_201_CREATED)
@@ -140,13 +157,7 @@ async def containers_inspect(
                 container_instance = await docker.containers.get(container)
                 results[container] = await container_instance.show()
             except aiodocker.exceptions.DockerError as err:
-                logger.warning(
-                    "An unexpected Docker error occurred:\n%s",
-                    str(traceback.format_exc()),
-                )
-                raise HTTPException(
-                    status.HTTP_500_INTERNAL_SERVER_ERROR, detail=err.message
-                ) from err
+                _raise_from_docker_error(err)
 
         return results
 
@@ -184,13 +195,7 @@ async def containers_docker_status(
                     "Error": container_state.get("Error", ""),
                 }
             except aiodocker.exceptions.DockerError as err:
-                logger.warning(
-                    "An unexpected Docker error occurred:\n%s",
-                    str(traceback.format_exc()),
-                )
-                raise HTTPException(
-                    status.HTTP_500_INTERNAL_SERVER_ERROR, detail=err.message
-                ) from err
+                _raise_from_docker_error(err)
 
         return results
 
@@ -225,10 +230,7 @@ async def get_container_logs(
     """ Returns the logs of a given container if found """
     # TODO: remove from here and dump directly into the logs of this service
     # do this in PR#1887
-    if id not in shared_store.container_names:
-        message = f"No container '{id}' was started. Started containers '{shared_store.container_names}'"
-        logger.warning(message)
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+    _raise_if_container_is_missing(id, shared_store.container_names)
 
     with docker_client() as docker:
         try:
@@ -247,12 +249,7 @@ async def get_container_logs(
             container_logs: str = await container_instance.log(**args)
             return container_logs
         except aiodocker.exceptions.DockerError as err:
-            logger.warning(
-                "An unexpected Docker error occurred:\n%s", str(traceback.format_exc())
-            )
-            raise HTTPException(
-                status.HTTP_500_INTERNAL_SERVER_ERROR, detail=err.message
-            ) from err
+            _raise_from_docker_error(err)
 
 
 @containers_router.get(
@@ -267,11 +264,7 @@ async def inspect_container(
     id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> Dict[str, Any]:
     """ Returns information about the container, like docker inspect command """
-
-    if id not in shared_store.container_names:
-        message = f"No container '{id}' was started. Started containers '{shared_store.container_names}'"
-        logger.warning(message)
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+    _raise_if_container_is_missing(id, shared_store.container_names)
 
     with docker_client() as docker:
         try:
@@ -279,12 +272,7 @@ async def inspect_container(
             inspect_result: Dict[str, Any] = await container_instance.show()
             return inspect_result
         except aiodocker.exceptions.DockerError as err:
-            logger.warning(
-                "An unexpected Docker error occurred:\n%s", str(traceback.format_exc())
-            )
-            raise HTTPException(
-                status.HTTP_500_INTERNAL_SERVER_ERROR, detail=err.message
-            ) from err
+            _raise_from_docker_error(err)
 
 
 @containers_router.delete(
@@ -299,10 +287,7 @@ async def inspect_container(
 async def remove_container(
     id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> Optional[Dict[str, Any]]:
-    if id not in shared_store.container_names:
-        message = f"No container '{id}' was started. Started containers '{shared_store.container_names}'"
-        logger.warning(message)
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=message)
+    _raise_if_container_is_missing(id, shared_store.container_names)
 
     with docker_client() as docker:
         try:
@@ -310,12 +295,7 @@ async def remove_container(
             await container_instance.delete()
             return None
         except aiodocker.exceptions.DockerError as err:
-            logger.warning(
-                "An unexpected Docker error occurred:\n%s", str(traceback.format_exc())
-            )
-            raise HTTPException(
-                status.HTTP_500_INTERNAL_SERVER_ERROR, detail=err.message
-            ) from err
+            _raise_from_docker_error(err)
 
 
 __all__ = ["containers_router"]
