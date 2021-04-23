@@ -3,7 +3,7 @@
 
 
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import pytest
 from async_asgi_testclient import TestClient
