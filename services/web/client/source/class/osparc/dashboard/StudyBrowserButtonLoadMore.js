@@ -55,8 +55,6 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonLoadMore", {
 
       const domElem = this.getContentElement().getDomElement();
       const checkIsOnScreen = isInViewport(domElem);
-      console.log(domElem);
-      console.log(checkIsOnScreen);
       return checkIsOnScreen;
     },
 
