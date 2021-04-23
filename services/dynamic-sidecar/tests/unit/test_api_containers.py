@@ -3,7 +3,7 @@
 
 
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import pytest
 from async_asgi_testclient import TestClient
@@ -71,6 +71,16 @@ async def started_containers(test_client: TestClient, compose_spec: str) -> List
 @pytest.fixture
 def not_started_containers() -> List[str]:
     return [f"missing-container-{i}" for i in range(5)]
+
+
+async def test_start_same_space_twice(
+    test_client: TestClient, compose_spec: str
+) -> None:
+    settings: DynamicSidecarSettings = test_client.application.state.settings
+    await assert_compose_spec_pulled(compose_spec, settings)
+
+    settings.compose_namespace = "test_name_space"
+    await assert_compose_spec_pulled(compose_spec, settings)
 
 
 async def test_compose_up(
