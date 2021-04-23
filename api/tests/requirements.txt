@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-aiohttp==3.7.4
+aiohttp==3.7.4.post0
     # via
     #   -r requirements.in
     #   pytest-aiohttp
@@ -16,7 +16,7 @@ attrs==20.3.0
     #   jsonschema
     #   openapi-core
     #   pytest
-chardet==3.0.4
+chardet==4.0.0
     # via aiohttp
 coverage==5.5
     # via
@@ -24,11 +24,11 @@ coverage==5.5
     #   pytest-cov
 idna-ssl==1.1.0
     # via aiohttp
-idna==2.10
+idna==3.1
     # via
     #   idna-ssl
     #   yarl
-importlib-metadata==3.7.0
+importlib-metadata==4.0.1
     # via
     #   jsonschema
     #   pluggy
@@ -43,7 +43,7 @@ jsonschema==3.2.0
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
-lazy-object-proxy==1.5.2
+lazy-object-proxy==1.6.0
     # via openapi-core
 more-itertools==8.7.0
     # via openapi-core
@@ -53,7 +53,7 @@ multidict==5.1.0
     #   yarl
 openapi-core==0.13.7
     # via -r requirements.in
-openapi-schema-validator==0.1.4
+openapi-schema-validator==0.1.5
     # via
     #   openapi-core
     #   openapi-spec-validator
@@ -112,7 +112,7 @@ werkzeug==1.0.1
     # via openapi-core
 yarl==1.6.3
     # via aiohttp
-zipp==3.4.0
+zipp==3.4.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
