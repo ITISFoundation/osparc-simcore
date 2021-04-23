@@ -223,6 +223,14 @@ qx.Class.define("osparc.data.model.Study", {
       return osparc.component.permissions.Study.canGroupExecute(aceessRights, myGid);
     },
 
+    canIWrite: function(accessRights) {
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      if (myGid) {
+        return osparc.component.permissions.Study.canGroupWrite(accessRights, myGid);
+      }
+      return false;
+    },
+
     hasSlideshow: function(studyData) {
       if ("ui" in studyData && "slideshow" in studyData["ui"] && Object.keys(studyData["ui"]["slideshow"]).length) {
         return true;

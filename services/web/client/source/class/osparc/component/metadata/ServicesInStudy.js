@@ -27,43 +27,123 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   construct: function(studyData) {
     this.base(arguments);
 
-    const grid = new qx.ui.layout.Grid(10);
-    grid.setColumnFlex(this.self().gridPos.name, 1);
+    const grid = new qx.ui.layout.Grid(20, 5);
+    grid.setColumnFlex(this.self().gridPos.label, 1);
+    grid.setColumnAlign(this.self().gridPos.label, "left", "middle");
+    grid.setColumnAlign(this.self().gridPos.name, "left", "middle");
+    grid.setColumnAlign(this.self().gridPos.currentVersion, "center", "middle");
+    grid.setColumnAlign(this.self().gridPos.latestVersion, "center", "middle");
     this._setLayout(grid);
 
-    this.__studyData = studyData;
+    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    this.__populateLayout();
+    const store = osparc.store.Store.getInstance();
+    store.getServicesDAGs()
+      .then(services => {
+        this.__services = services;
+        this.__populateLayout();
+      });
+  },
+
+  events: {
+    "updateServices": "qx.event.type.Data"
   },
 
   statics: {
     gridPos: {
-      name: 0,
-      key: 1,
-      version: 2,
-      infoButton: 3
+      infoButton: 0,
+      label: 1,
+      name: 2,
+      currentVersion: 3,
+      latestVersion: 4,
+      updateButton: 5
     }
   },
 
   members: {
+    __studyData: null,
+    __services: null,
+
+    __updateService: function(nodeId, newVersion, button) {
+      this.setEnabled(false);
+      const workbench = this.__studyData["workbench"];
+      for (const id in workbench) {
+        if (id === nodeId) {
+          workbench[nodeId]["version"] = newVersion;
+        }
+      }
+
+      const params = {
+        url: {
+          "projectId": this.__studyData["uuid"]
+        },
+        data: this.__studyData
+      };
+      button.setFetching(true);
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(updatedData => {
+          this.fireDataEvent("updateServices", updatedData);
+          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
+          this.__populateLayout();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
+          console.error(err);
+        })
+        .finally(() => {
+          button.setFetching(false);
+          this.setEnabled(true);
+        });
+    },
+
     __populateLayout: function() {
-      const nodes = Object.values(this.__studyData.workbench);
-      for (let i=0; i<nodes.length; i++) {
-        const node = nodes[i];
+      this._removeAll();
 
-        const nameLabel = new qx.ui.basic.Label(node["label"]).set({
+      const workbench = this.__studyData["workbench"];
+      if (Object.values(workbench).length === 0) {
+        this._add(new qx.ui.basic.Label(this.tr("The Study is empty")).set({
           font: "text-14"
+        }), {
+          row: 0,
+          column: this.self().gridPos.label
         });
+        return;
+      }
 
-        const parts = node["key"].split("/");
-        const keyLabel = new qx.ui.basic.Label(parts[parts.length-1]).set({
-          font: "text-14",
-          toolTipText: node["key"]
-        });
+      let i=0;
 
-        const versionLabel = new qx.ui.basic.Label(node["version"]).set({
-          font: "text-14"
-        });
+      this._add(new qx.ui.basic.Label(this.tr("Label")).set({
+        font: "title-14"
+      }), {
+        row: i,
+        column: this.self().gridPos.label
+      });
+      this._add(new qx.ui.basic.Label(this.tr("Name")).set({
+        font: "title-14"
+      }), {
+        row: i,
+        column: this.self().gridPos.name
+      });
+      this._add(new qx.ui.basic.Label(this.tr("Current")).set({
+        font: "title-14"
+      }), {
+        row: i,
+        column: this.self().gridPos.currentVersion
+      });
+      this._add(new qx.ui.basic.Label(this.tr("Latest")).set({
+        font: "title-14",
+        toolTipText: this.tr("Latest compatible patch")
+      }), {
+        row: i,
+        column: this.self().gridPos.latestVersion
+      });
+      i++;
+
+      for (const nodeId in workbench) {
+        const node = workbench[nodeId];
+
+        const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
+        const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
 
         const infoButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
         infoButton.addListener("execute", () => {
@@ -74,23 +154,61 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           const height = 700;
           osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
         }, this);
-
-        this._add(nameLabel, {
-          row: i,
-          column: this.self().gridPos.name
-        });
-        this._add(keyLabel, {
-          row: i,
-          column: this.self().gridPos.key
-        });
-        this._add(versionLabel, {
-          row: i,
-          column: this.self().gridPos.version
-        });
         this._add(infoButton, {
           row: i,
           column: this.self().gridPos.infoButton
         });
+
+        const labelLabel = new qx.ui.basic.Label(node["label"]).set({
+          font: "text-14"
+        });
+        this._add(labelLabel, {
+          row: i,
+          column: this.self().gridPos.label
+        });
+
+        const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
+          font: "text-14",
+          toolTipText: node["key"]
+        });
+        this._add(nameLabel, {
+          row: i,
+          column: this.self().gridPos.name
+        });
+
+        const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
+          font: "title-14",
+          backgroundColor: qx.theme.manager.Color.getInstance().resolve(node["version"] === latestCompatibleMetadata["version"] ? "ready-green" : "warning-yellow")
+        });
+        this._add(currentVersionLabel, {
+          row: i,
+          column: this.self().gridPos.currentVersion
+        });
+
+        const latestVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
+          font: "text-14"
+        });
+        this._add(latestVersionLabel, {
+          row: i,
+          column: this.self().gridPos.latestVersion
+        });
+
+        if (osparc.data.Permissions.getInstance().canDo("study.service.update") && osparc.data.model.Study.canIWrite(this.__studyData["accessRights"])) {
+          const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
+          updateButton.set({
+            label: node["version"] === latestCompatibleMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),
+            enabled: node["version"] !== latestCompatibleMetadata["version"]
+          });
+          updateButton.addListener("execute", () => {
+            this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton);
+          }, this);
+          this._add(updateButton, {
+            row: i,
+            column: this.self().gridPos.updateButton
+          });
+        }
+
+        i++;
       }
     }
   }
