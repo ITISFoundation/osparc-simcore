@@ -203,7 +203,7 @@ def services_registry(
         devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"]
     )
     print(
-        "Catalog should take %s to detect new services ...", wait_for_catalog_to_detect
+        f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
     time.sleep(wait_for_catalog_to_detect)
 
