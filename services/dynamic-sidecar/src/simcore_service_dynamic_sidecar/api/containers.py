@@ -209,15 +209,9 @@ async def get_container_logs(
         try:
             container_instance = await docker.containers.get(id)
 
-            args = dict(stdout=True, stderr=True)
+            args = dict(stdout=True, stderr=True, since=since, until=until)
             if timestamps:
                 args["timestamps"] = True
-
-            if since or until:
-                raise HTTPException(
-                    status.HTTP_501_NOT_IMPLEMENTED,
-                    detail="since and until options are still not implemented",
-                )
 
             container_logs: str = await container_instance.log(**args)
             return container_logs
