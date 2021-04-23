@@ -71,13 +71,13 @@ def _raise_from_docker_error(error: aiodocker.exceptions.DockerError) -> None:
     ) from error
 
 
-@containers_router.post("/containers", status_code=status.HTTP_201_CREATED)
+@containers_router.post("/containers", status_code=status.HTTP_202_ACCEPTED)
 async def runs_docker_compose_up(
     request: Request,
     background_tasks: BackgroundTasks,
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
-) -> Optional[Dict[str, Any]]:
+) -> Union[List[str], Dict[str, Any]]:
     """ Expects the docker-compose spec as raw-body utf-8 encoded text """
 
     # stores the compose spec after validation
@@ -96,7 +96,8 @@ async def runs_docker_compose_up(
 
     # run docker-compose in a background queue and return early
     background_tasks.add_task(task_docker_compose_up, settings, shared_store)
-    return None
+
+    return shared_store.container_names
 
 
 @containers_router.post("/containers:down", response_class=PlainTextResponse)
@@ -111,7 +112,7 @@ async def runs_docker_compose_down(
     stored_compose_content = shared_store.compose_spec
     if stored_compose_content is None:
         raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="No spec for docker-compose down was found",
         )
 
