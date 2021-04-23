@@ -15,9 +15,7 @@ async-generator==1.10 ; python_version < "3.7"
     #   -c requirements/_base.txt
     #   httpx
 async-timeout==3.0.1
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
+    # via aiohttp
 attrs==20.3.0
     # via
     #   aiohttp
@@ -26,8 +24,6 @@ attrs==20.3.0
     #   pytest-docker
 bcrypt==3.2.0
     # via paramiko
-cached-property==1.5.2
-    # via docker-compose
 certifi==2020.12.5
     # via
     #   -c requirements/_base.txt

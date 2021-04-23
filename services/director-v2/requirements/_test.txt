@@ -52,8 +52,6 @@ billiard==3.6.3.0
     # via
     #   -c requirements/_base.txt
     #   celery
-cached-property==1.5.2
-    # via docker-compose
 celery[redis]==5.0.2
     # via
     #   -c requirements/_base.txt

@@ -81,10 +81,7 @@ docker==5.0.0
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
 email-validator==1.1.2
-    # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   pydantic
+    # via pydantic
 idna==2.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -139,7 +136,7 @@ openapi-spec-validator==0.3.1
     # via openapi-core
 packaging==20.9
     # via
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   pytest
     #   pytest-sugar
 pamqp==2.3.0
@@ -181,9 +178,7 @@ pyinstrument==3.4.2
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 pyparsing==2.4.7
-    # via
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.txt
-    #   packaging
+    # via packaging
 pyrsistent==0.17.3
     # via jsonschema
 pytest-aiohttp==0.3.0
