@@ -18,7 +18,7 @@ async def health_endpoint(
 ) -> ApplicationHealth:
     if not application_health.is_healthy:
         raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail="Marked as unhealthy"
+            status.HTTP_503_SERVICE_UNAVAILABLE, detail=application_health.dict()
         )
 
     return application_health
