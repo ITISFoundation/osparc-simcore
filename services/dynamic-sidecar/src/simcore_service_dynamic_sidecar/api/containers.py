@@ -2,7 +2,7 @@ import logging
 import traceback
 
 # pylint: disable=redefined-builtin
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import aiodocker
 from fastapi import (
@@ -159,11 +159,6 @@ async def containers_docker_inspect(
 
     with docker_client() as docker:
         container_names = shared_store.container_names
-
-        # if containers are being pulled, return pulling (fake status)
-        if shared_store.is_pulling_containers:
-            # pulling is a fake state use to share more information with the frontend
-            return {x: {"Status": "pulling", "Error": ""} for x in container_names}
 
         results = {}
 
