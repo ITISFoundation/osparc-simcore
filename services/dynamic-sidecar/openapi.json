@@ -31,9 +31,23 @@
         "tags": [
           "containers"
         ],
-        "summary": "Containers Docker Status",
-        "description": "Returns the status of the containers ",
-        "operationId": "containers_docker_status_v1_containers_get",
+        "summary": "Containers Docker Inspect",
+        "description": "Returns entire docker inspect data, if only_state is True,\nthe status of the containers is returned",
+        "operationId": "containers_docker_inspect_v1_containers_get",
+        "parameters": [
+          {
+            "description": "if True only show the status of the container",
+            "required": false,
+            "schema": {
+              "title": "Only Status",
+              "type": "boolean",
+              "description": "if True only show the status of the container",
+              "default": true
+            },
+            "name": "only_status",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -45,6 +59,16 @@
           },
           "500": {
             "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       },
@@ -133,29 +157,6 @@
         }
       }
     },
-    "/v1/containers:inspect": {
-      "get": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Containers Inspect",
-        "description": "Returns information about the container, like docker inspect command ",
-        "operationId": "containers_inspect_v1_containers_inspect_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "500": {
-            "description": "Erros in container"
-          }
-        }
-      }
-    },
     "/v1/containers/{id}/logs": {
       "get": {
         "tags": [
@@ -220,7 +221,7 @@
               }
             }
           },
-          "500": {
+          "404": {
             "description": "Container does not exists"
           },
           "422": {
@@ -236,14 +237,14 @@
         }
       }
     },
-    "/v1/containers/{id}:inspect": {
+    "/v1/containers/{id}": {
       "get": {
         "tags": [
           "containers"
         ],
         "summary": "Inspect Container",
         "description": "Returns information about the container, like docker inspect command ",
-        "operationId": "inspect_container_v1_containers__id__inspect_get",
+        "operationId": "inspect_container_v1_containers__id__get",
         "parameters": [
           {
             "required": true,
@@ -278,9 +279,7 @@
             }
           }
         }
-      }
-    },
-    "/v1/containers/{id}": {
+      },
       "delete": {
         "tags": [
           "containers"

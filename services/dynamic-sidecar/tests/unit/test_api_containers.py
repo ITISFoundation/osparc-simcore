@@ -151,25 +151,34 @@ async def test_containers_get(
 ) -> None:
     response = await test_client.get(f"/{api_vtag}/containers")
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert set(json.loads(response.text)) == set(started_containers)
+
+    response_dict = json.loads(response.text)
+    assert set(response_dict) == set(started_containers)
+    for entry in response_dict.values():
+        assert "Status" not in entry
+        assert "Error" not in entry
 
 
-async def test_containers_inspect(
+async def test_containers_get_status(
     test_client: TestClient, started_containers: List[str]
 ) -> None:
     response = await test_client.get(
-        f"/{api_vtag}/containers:inspect",
-        query_string=dict(container_names=started_containers),
+        f"/{api_vtag}/containers", query_string=dict(only_status=True)
     )
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert set(json.loads(response.text).keys()) == set(started_containers)
+
+    response_dict = json.loads(response.text)
+    assert set(response_dict) == set(started_containers)
+    for entry in response_dict.values():
+        assert "Status" in entry
+        assert "Error" in entry
 
 
 async def test_containers_inspect_docker_error(
     test_client: TestClient, started_containers: List[str], mock_containers_get: None
 ) -> None:
     response = await test_client.get(
-        f"/{api_vtag}/containers:inspect",
+        f"/{api_vtag}/containers",
         query_string=dict(container_names=started_containers),
     )
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
@@ -242,7 +251,7 @@ async def test_container_inspect_logs_remove(
         assert response.status_code == status.HTTP_200_OK, response.text
 
         # inspect container
-        response = await test_client.get(f"/{api_vtag}/containers/{container}:inspect")
+        response = await test_client.get(f"/{api_vtag}/containers/{container}")
         assert response.status_code == status.HTTP_200_OK, response.text
         parsed_response = response.json()
         assert parsed_response["Name"] == f"/{container}"
@@ -280,7 +289,7 @@ async def test_container_missing_container(
         assert response.json() == _expected_error_string(container)
 
         # inspect container
-        response = await test_client.get(f"/{api_vtag}/containers/{container}:inspect")
+        response = await test_client.get(f"/{api_vtag}/containers/{container}")
         assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == _expected_error_string(container)
 
@@ -307,7 +316,7 @@ async def test_container_docker_error(
         assert response.json() == _expected_error_string()
 
         # inspect container
-        response = await test_client.get(f"/{api_vtag}/containers/{container}:inspect")
+        response = await test_client.get(f"/{api_vtag}/containers/{container}")
         assert (
             response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         ), response.text

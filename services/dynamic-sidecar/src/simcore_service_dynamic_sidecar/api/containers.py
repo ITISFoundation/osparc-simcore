@@ -140,38 +140,33 @@ async def runs_docker_compose_down(
 
 
 @containers_router.get(
-    "/containers:inspect",
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Erros in container"}
-    },
-)
-async def containers_inspect(
-    shared_store: SharedStore = Depends(get_shared_store),
-) -> Dict[str, Any]:
-    """ Returns information about the container, like docker inspect command """
-    with docker_client() as docker:
-        results = {}
-
-        for container in shared_store.container_names:
-            try:
-                container_instance = await docker.containers.get(container)
-                results[container] = await container_instance.show()
-            except aiodocker.exceptions.DockerError as err:
-                _raise_from_docker_error(err)
-
-        return results
-
-
-@containers_router.get(
     "/containers",
     responses={
         status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
     },
 )
-async def containers_docker_status(
+async def containers_docker_inspect(
+    only_status: bool = Query(
+        True, description="if True only show the status of the container"
+    ),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Dict[str, Any]:
-    """ Returns the status of the containers """
+    """
+    Returns entire docker inspect data, if only_state is True,
+    the status of the containers is returned
+    """
+
+    def _format_result(container_inspect: Dict[str, Any]) -> Dict[str, Any]:
+        if only_status:
+            container_state = container_inspect.get("State", {})
+
+            # pending is another fake state use to share more information with the frontend
+            return {
+                "Status": container_state.get("Status", "pending"),
+                "Error": container_state.get("Error", ""),
+            }
+
+        return container_inspect
 
     with docker_client() as docker:
         container_names = shared_store.container_names
@@ -187,13 +182,7 @@ async def containers_docker_status(
             try:
                 container_instance = await docker.containers.get(container)
                 container_inspect = await container_instance.show()
-                container_state = container_inspect.get("State", {})
-
-                # pending is another fake state use to share more information with the frontend
-                results[container] = {
-                    "Status": container_state.get("Status", "pending"),
-                    "Error": container_state.get("Error", ""),
-                }
+                results[container] = _format_result(container_inspect)
             except aiodocker.exceptions.DockerError as err:
                 _raise_from_docker_error(err)
 
@@ -202,11 +191,7 @@ async def containers_docker_status(
 
 @containers_router.get(
     "/containers/{id}/logs",
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Container does not exists"
-        }
-    },
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Container does not exists"}},
 )
 async def get_container_logs(
     id: str,
@@ -254,7 +239,7 @@ async def get_container_logs(
 
 
 @containers_router.get(
-    "/containers/{id}:inspect",
+    "/containers/{id}",
     responses={
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "description": "Container does not exist"
