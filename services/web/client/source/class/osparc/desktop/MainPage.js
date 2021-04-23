@@ -113,8 +113,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__studyEditor.updateStudyDocument()
         .then(() => {
           this.__studyEditor.closeEditor();
-          const reloadUserStudiesPromise = this.__showDashboard();
-          reloadUserStudiesPromise
+          this.__showDashboard();
+          this.__dashboard.getStudyBrowser().reloadStudy(studyId)
             .then(() => {
               this.__closeStudy(studyId);
             });
@@ -187,17 +187,15 @@ qx.Class.define("osparc.desktop.MainPage", {
       if (osparc.data.Permissions.getInstance().getRole() === "guest") {
         // If guest fails to load study, log him out
         osparc.auth.Manager.getInstance().logout();
-        return null;
+        return;
       }
 
       this.__mainStack.setSelection([this.__dashboardLayout]);
-      const studiesPromise = this.__dashboard.getStudyBrowser().reloadUserStudies();
       this.__navBar.setStudy(null);
       this.__navBar.setPageContext("dashboard");
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
-      return studiesPromise;
     },
 
     __showLoadingPage: function(msg) {
@@ -278,7 +276,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         },
         data: osparc.utils.Utils.getClientSessionID()
       };
-      return osparc.data.Resources.fetch("studies", "close", params);
+      osparc.data.Resources.fetch("studies", "close", params);
     },
 
     __syncStudyEditor: function(pageContext) {
