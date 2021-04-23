@@ -34,14 +34,94 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this._initResources();
+
+    this.addListener("appear", () => {
+      this._moreStudiesRequired();
+    });
   },
 
   events: {
     "startStudy": "qx.event.type.Data"
   },
 
+  statics: {
+    sortStudyList: function(studyList) {
+      const sortByProperty = function(prop) {
+        return function(a, b) {
+          if (prop === "lastChangeDate") {
+            return new Date(b[prop]) - new Date(a[prop]);
+          }
+          if (typeof a[prop] == "number") {
+            return a[prop] - b[prop];
+          }
+          if (a[prop] < b[prop]) {
+            return -1;
+          } else if (a[prop] > b[prop]) {
+            return 1;
+          }
+          return 0;
+        };
+      };
+      studyList.sort(sortByProperty("lastChangeDate"));
+    },
+
+    PAGINATED_STUDIES: 10,
+    MIN_FILTERED_STUDIES: 15
+  },
+
   members: {
+    _studiesContainer: null,
+    _loadingStudiesBtn: null,
+
     _initResources: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _requestStudies: function(templates = false) {
+      if (this._loadingStudiesBtn.isFetching()) {
+        return;
+      }
+      this._loadingStudiesBtn.setFetching(true);
+      const params = {
+        url: {
+          offset: this._studiesContainer.nStudies || 0,
+          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
+        }
+      };
+      const resolveWResponse = true;
+      osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse)
+        .then(resp => {
+          const studies = resp["data"];
+          const tStudies = resp["_meta"]["total"];
+          this._studiesContainer.nStudies = (this._studiesContainer.nStudies || 0) + studies.length;
+          this._studiesContainer.noMoreStudies = this._studiesContainer.nStudies >= tStudies;
+          this._addStudiesToList(studies);
+        })
+        .catch(err => {
+          console.error(err);
+        })
+        .finally(() => {
+          this._loadingStudiesBtn.setFetching(false);
+          this._loadingStudiesBtn.setVisibility(this._studiesContainer.noMoreStudies ? "excluded" : "visible");
+          this._moreStudiesRequired();
+        });
+    },
+
+    _addStudiesToList: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _moreStudiesRequired: function() {
+      if (this._studiesContainer &&
+        !this._studiesContainer.noMoreStudies &&
+        (this._studiesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        this._loadingStudiesBtn.checkIsOnScreen())
+      ) {
+        this.reloadStudies();
+      }
+    },
+
+    reloadStudies: function() {
       throw new Error("Abstract method called!");
     },
 
