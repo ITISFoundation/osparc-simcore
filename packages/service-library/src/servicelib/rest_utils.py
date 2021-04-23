@@ -34,9 +34,9 @@ def body_to_dict(body: BodyModel) -> Dict:
 
 class EnvelopeFactory:
     """
-        Creates a { 'data': , 'error': } envelop for response payload
+    Creates a { 'data': , 'error': } envelop for response payload
 
-        as suggested in https://medium.com/studioarmix/learn-restful-api-design-ideals-c5ec915a430f
+    as suggested in https://medium.com/studioarmix/learn-restful-api-design-ideals-c5ec915a430f
     """
 
     def __init__(self, data=None, error=None):
