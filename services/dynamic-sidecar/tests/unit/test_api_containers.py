@@ -3,8 +3,7 @@
 
 
 import json
-from contextlib import contextmanager
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, List
 
 import pytest
 from async_asgi_testclient import TestClient
