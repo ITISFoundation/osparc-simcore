@@ -77,6 +77,40 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _requestStudies: function(templates = false) {
+      if (this._loadingStudiesBtn.isFetching()) {
+        return;
+      }
+      this._loadingStudiesBtn.setFetching(true);
+      const params = {
+        url: {
+          offset: this._studiesContainer.nStudies || 0,
+          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
+        }
+      };
+      const resolveWResponse = true;
+      osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse)
+        .then(resp => {
+          const studies = resp["data"];
+          const tStudies = resp["_meta"]["total"];
+          this._studiesContainer.nStudies = (this._studiesContainer.nStudies || 0) + studies.length;
+          this._studiesContainer.noMoreStudies = this._studiesContainer.nStudies >= tStudies;
+          this._addStudiesToList(studies);
+        })
+        .catch(err => {
+          console.error(err);
+        })
+        .finally(() => {
+          this._loadingStudiesBtn.setFetching(false);
+          this._loadingStudiesBtn.setVisibility(this._studiesContainer.noMoreStudies ? "excluded" : "visible");
+          this._moreStudiesRequired();
+        });
+    },
+
+    _addStudiesToList: function() {
+      throw new Error("Abstract method called!");
+    },
+
     _moreStudiesRequired: function() {
       if (this._studiesContainer &&
         !this._studiesContainer.noMoreStudies &&

@@ -81,33 +81,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
      */
     reloadStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        if (this._loadingStudiesBtn.isFetching()) {
-          return;
-        }
-        this._loadingStudiesBtn.setFetching(true);
-        const params = {
-          url: {
-            offset: this._studiesContainer.nTemplates || 0,
-            limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
-          }
-        };
-        const resolveWResponse = true;
-        osparc.data.Resources.fetch("templates", "getPage", params, undefined, resolveWResponse)
-          .then(resp => {
-            const templates = resp["data"];
-            const tTemplates = resp["_meta"]["total"];
-            this._studiesContainer.nTemplates = (this._studiesContainer.nTemplates || 0) + templates.length;
-            this._studiesContainer.noMoreStudies = this._studiesContainer.nTemplates >= tTemplates;
-            this.__addTemplatesToList(templates);
-          })
-          .catch(err => {
-            console.error(err);
-          })
-          .finally(() => {
-            this._loadingStudiesBtn.setFetching(false);
-            this._loadingStudiesBtn.setVisibility(this._studiesContainer.noMoreStudies ? "excluded" : "visible");
-            this._moreStudiesRequired();
-          });
+        this._requestStudies(true);
       } else {
         this._resetTemplatesList([]);
       }
@@ -349,7 +323,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
-    __addTemplatesToList: function(newTemplatesList) {
+    _addStudiesToList: function(newTemplatesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(newTemplatesList);
       const templatesList = this._studiesContainer.getChildren();
       newTemplatesList.forEach(template => {

@@ -73,34 +73,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
      */
     reloadStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        if (this._loadingStudiesBtn.isFetching()) {
-          return;
-        }
-        this._loadingStudiesBtn.setFetching(true);
-        const params = {
-          url: {
-            offset: this._studiesContainer.nStudies || 0,
-            limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
-          }
-        };
-        const resolveWResponse = true;
-        osparc.data.Resources.fetch("studies", "getPage", params, undefined, resolveWResponse)
-          .then(resp => {
-            const studies = resp["data"];
-            const tStudies = resp["_meta"]["total"];
-            this._studiesContainer.nStudies = (this._studiesContainer.nStudies || 0) + studies.length;
-            this._studiesContainer.noMoreStudies = this._studiesContainer.nStudies >= tStudies;
-            this.__addStudiesToList(studies);
-            this.resetSelection();
-          })
-          .catch(err => {
-            console.error(err);
-          })
-          .finally(() => {
-            this._loadingStudiesBtn.setFetching(false);
-            this._loadingStudiesBtn.setVisibility(this._studiesContainer.noMoreStudies ? "excluded" : "visible");
-            this._moreStudiesRequired();
-          });
+        this._requestStudies(false);
       } else {
         this._resetStudiesList([]);
       }
@@ -404,10 +377,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._studiesContainer.remove(userStudyItem);
         }
       }
-      this.__addStudiesToList(userStudiesList);
+      this._addStudiesToList(userStudiesList);
     },
 
-    __addStudiesToList: function(userStudiesList) {
+    _addStudiesToList: function(userStudiesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(userStudiesList);
       const studyList = this._studiesContainer.getChildren();
       userStudiesList.forEach(userStudy => {
