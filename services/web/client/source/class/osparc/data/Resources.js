@@ -76,6 +76,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=user"
           },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/projects?type=user&offset={offset}&limit={limit}"
+          },
           getOne: {
             useCache: false,
             method: "GET",
@@ -571,8 +575,9 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
+     * @param {Boolean} resolveWResponse If true, the promise will be resolved with the whole response instead of response.data.
      */
-    fetch: function(resource, endpoint, params = {}, deleteId) {
+    fetch: function(resource, endpoint, params = {}, deleteId, resolveWResponse = false) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -600,15 +605,17 @@ qx.Class.define("osparc.data.Resources", {
               osparc.component.metadata.Quality.attachQualityToObject(data);
             }
           }
-          if (useCache) {
-            if (endpoint.includes("delete")) {
-              this.__removeCached(resource, deleteId);
+          if (endpoint.includes("delete")) {
+            this.__removeCached(resource, deleteId);
+          } else if (useCache) {
+            if (endpoint.includes("getPage")) {
+              this.__addCached(resource, data);
             } else {
               this.__setCached(resource, data);
             }
           }
           res.dispose();
-          resolve(data);
+          resolveWResponse ? resolve(response) : resolve(data);
         }, this);
 
         res.addListenerOnce(endpoint + "Error", e => {
@@ -705,6 +712,15 @@ qx.Class.define("osparc.data.Resources", {
     },
 
     /**
+     * Stores the cached version of a resource, or a collection of them.
+     * @param {String} resource Name of the resource as defined in the static property 'resources'.
+     * @param {*} data Resource or collection of resources to be addded to the cache.
+     */
+    __addCached: function(resource, data) {
+      osparc.store.Store.getInstance().append(resource, data, this.self().resources[resource].idField || "uuid");
+    },
+
+    /**
      * Removes an element from the cache.
      * @param {String} resource Name of the resource as defined in the static property 'resources'.
      * @param {String} deleteId Id of the item to remove from cache.
@@ -716,8 +732,8 @@ qx.Class.define("osparc.data.Resources", {
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, deleteId) {
-      return this.getInstance().fetch(resource, endpoint, params, deleteId);
+    fetch: function(resource, endpoint, params, deleteId, resolveWResponse) {
+      return this.getInstance().fetch(resource, endpoint, params, deleteId, resolveWResponse);
     },
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);

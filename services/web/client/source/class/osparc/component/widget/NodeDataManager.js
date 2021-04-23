@@ -100,6 +100,10 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
           break;
         case "node-tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
+          control.getChildControl("splitter").set({
+            width: 2,
+            backgroundColor: "scrollbar-passive"
+          });
           break;
         case "node-files-tree":
         case "user-files-tree":
