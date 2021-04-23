@@ -34,6 +34,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this._initResources();
+
+    this.addListener("appear", () => {
+      this._moreStudiesRequired();
+    });
   },
 
   events: {
@@ -131,6 +135,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._resetServiceItem(updatedResourceData);
         }
       });
+    },
+
+    _moreStudiesRequired: function() {
+      throw new Error("Abstract method called!");
     },
 
     _startStudy: function(studyId) {
