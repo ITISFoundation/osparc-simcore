@@ -26,18 +26,16 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   members: {
-    __templatesContainer: null,
     __servicesContainer: null,
     __templates: null,
     __services: null,
-    __loadingStudiesBtn: null,
 
     /**
      * Function that resets the selected item
      */
     resetSelection: function() {
-      if (this.__studiesContainer) {
-        this.__studiesContainer.resetSelection();
+      if (this._studiesContainer) {
+        this._studiesContainer.resetSelection();
       }
       if (this.__servicesContainer) {
         this.__servicesContainer.resetSelection();
@@ -81,15 +79,15 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     /**
      *  Function that asks the backend for the list of template studies and sets it
      */
-    reloadTemplates: function() {
+    reloadStudies: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
-        if (this.__loadingStudiesBtn.isFetching()) {
+        if (this._loadingStudiesBtn.isFetching()) {
           return;
         }
-        this.__loadingStudiesBtn.setFetching(true);
+        this._loadingStudiesBtn.setFetching(true);
         const params = {
           url: {
-            offset: this.__studiesContainer.nTemplates || 0,
+            offset: this._studiesContainer.nTemplates || 0,
             limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
           }
         };
@@ -98,30 +96,20 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           .then(resp => {
             const templates = resp["data"];
             const tTemplates = resp["_meta"]["total"];
-            this.__studiesContainer.nTemplates = (this.__studiesContainer.nTemplates || 0) + templates.length;
-            this.__studiesContainer.noMoreTemplates = this.__studiesContainer.nTemplates >= tTemplates;
+            this._studiesContainer.nTemplates = (this._studiesContainer.nTemplates || 0) + templates.length;
+            this._studiesContainer.noMoreStudies = this._studiesContainer.nTemplates >= tTemplates;
             this.__addTemplatesToList(templates);
           })
           .catch(err => {
             console.error(err);
           })
           .finally(() => {
-            this.__loadingStudiesBtn.setFetching(false);
-            this.__loadingStudiesBtn.setVisibility(this.__studiesContainer.noMoreTemplates ? "excluded" : "visible");
+            this._loadingStudiesBtn.setFetching(false);
+            this._loadingStudiesBtn.setVisibility(this._studiesContainer.noMoreStudies ? "excluded" : "visible");
             this._moreStudiesRequired();
           });
       } else {
         this._resetTemplatesList([]);
-      }
-    },
-
-    _moreStudiesRequired: function() {
-      if (this.__studiesContainer &&
-        !this.__studiesContainer.noMoreTemplates &&
-        (this.__studiesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        this.__loadingStudiesBtn.checkIsOnScreen())
-      ) {
-        this.reloadTemplates();
       }
     },
 
@@ -166,7 +154,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __reloadResources: function() {
-      this.reloadTemplates();
+      this.reloadStudies();
       this.__reloadServices();
     },
 
@@ -204,11 +192,11 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __createTemplatesLayout: function() {
-      const templateStudyContainer = this.__studiesContainer = this.__createResourceListLayout();
+      const templateStudyContainer = this._studiesContainer = this.__createResourceListLayout();
       osparc.utils.Utils.setIdToWidget(templateStudyContainer, "templateStudiesList");
       const tempStudyLayout = this.__createButtonsLayout(this.tr("Templates"), templateStudyContainer);
 
-      const loadingTemplatesBtn = this.__loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
       templateStudyContainer.add(loadingTemplatesBtn);
 
       return tempStudyLayout;
@@ -346,7 +334,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     _resetTemplatesList: function(tempStudyList) {
       this.__templates = tempStudyList;
-      this.__studiesContainer.removeAll();
+      this._studiesContainer.removeAll();
       osparc.dashboard.ResourceBrowserBase.sortStudyList(tempStudyList);
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
@@ -356,14 +344,14 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           updatedTemplateData["resourceType"] = "template";
           this._resetTemplateItem(updatedTemplateData);
         }, this);
-        this.__studiesContainer.add(templateItem);
+        this._studiesContainer.add(templateItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
     __addTemplatesToList: function(newTemplatesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(newTemplatesList);
-      const templatesList = this.__studiesContainer.getChildren();
+      const templatesList = this._studiesContainer.getChildren();
       newTemplatesList.forEach(template => {
         if (this.__templates.indexOf(template) === -1) {
           this.__templates.push(template);
@@ -375,7 +363,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
           return;
         }
         const templateItem = this.__createStudyItem(template);
-        this.__studiesContainer.add(templateItem);
+        this._studiesContainer.add(templateItem);
       });
       osparc.dashboard.ResourceBrowserBase.sortStudyList(templatesList.filter(card => card instanceof osparc.dashboard.StudyBrowserButtonItem));
       const idx = templatesList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
@@ -413,7 +401,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
     },
 
     __removeFromStudyList: function(studyId) {
-      const studyContainer = this.__studiesContainer;
+      const studyContainer = this._studiesContainer;
       const items = studyContainer.getChildren();
       for (let i=0; i<items.length; i++) {
         const item = items[i];

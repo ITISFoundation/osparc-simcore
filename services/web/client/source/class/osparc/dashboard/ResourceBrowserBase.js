@@ -70,7 +70,24 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
+    _studiesContainer: null,
+    _loadingStudiesBtn: null,
+
     _initResources: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _moreStudiesRequired: function() {
+      if (this._studiesContainer &&
+        !this._studiesContainer.noMoreStudies &&
+        (this._studiesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        this._loadingStudiesBtn.checkIsOnScreen())
+      ) {
+        this.reloadStudies();
+      }
+    },
+
+    reloadStudies: function() {
       throw new Error("Abstract method called!");
     },
 
@@ -135,10 +152,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._resetServiceItem(updatedResourceData);
         }
       });
-    },
-
-    _moreStudiesRequired: function() {
-      throw new Error("Abstract method called!");
     },
 
     _startStudy: function(studyId) {
