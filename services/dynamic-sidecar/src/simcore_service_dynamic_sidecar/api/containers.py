@@ -147,7 +147,7 @@ async def runs_docker_compose_down(
 )
 async def containers_docker_inspect(
     only_status: bool = Query(
-        True, description="if True only show the status of the container"
+        False, description="if True only show the status of the container"
     ),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Dict[str, Any]:
