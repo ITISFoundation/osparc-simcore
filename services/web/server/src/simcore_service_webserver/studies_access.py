@@ -20,13 +20,13 @@ from aioredlock import Aioredlock
 from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
+from .constants import INDEX_RESOURCE_NAME
 from .login.decorators import login_required
 from .resource_manager.config import (
     APP_CLIENT_REDIS_LOCK_KEY,
     GUEST_USER_RC_LOCK_FORMAT,
 )
 from .security_api import is_anonymous, remember
-from .statics import INDEX_RESOURCE_NAME
 from .storage_api import copy_data_folders_from_project
 from .utils import compose_error_msg
 
@@ -276,7 +276,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
 
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
-def setup(app: web.Application):
+def setup_studies_access(app: web.Application):
 
     cfg = app[APP_CONFIG_KEY]["main"]
     # TODO: temporarily used to toggle to logged users
@@ -296,9 +296,3 @@ def setup(app: web.Application):
     )
 
     return True
-
-
-# alias
-setup_studies_access = setup
-
-__all__ = "setup_studies_access"
