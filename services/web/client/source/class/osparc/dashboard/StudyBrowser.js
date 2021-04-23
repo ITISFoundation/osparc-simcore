@@ -39,31 +39,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     "updateTemplates": "qx.event.type.Event"
   },
 
-  statics: {
-    sortStudyList: function(studyList) {
-      const sortByProperty = function(prop) {
-        return function(a, b) {
-          if (prop === "lastChangeDate") {
-            return new Date(b[prop]) - new Date(a[prop]);
-          }
-          if (typeof a[prop] == "number") {
-            return a[prop] - b[prop];
-          }
-          if (a[prop] < b[prop]) {
-            return -1;
-          } else if (a[prop] > b[prop]) {
-            return 1;
-          }
-          return 0;
-        };
-      };
-      studyList.sort(sortByProperty("lastChangeDate"));
-    },
-
-    PAGINATED_STUDIES: 10,
-    MIN_FILTERED_STUDIES: 15
-  },
-
   members: {
     __userStudyContainer: null,
     __userStudies: null,
@@ -107,10 +82,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const params = {
           url: {
             offset: this.__userStudyContainer.nStudies || 0,
-            limit: this.self().PAGINATED_STUDIES
+            limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
           }
         };
-        // will never use the cache
         const resolveWResponse = true;
         osparc.data.Resources.fetch("studies", "getPage", params, undefined, resolveWResponse)
           .then(resp => {
@@ -136,7 +110,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __moreStudiesRequired: function() {
       if (!this.__userStudyContainer.noMoreStudies &&
-        (this.__userStudyContainer.getVisibles().length < this.self().MIN_FILTERED_STUDIES ||
+        (this.__userStudyContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
         this.__loadingStudiesBtn.checkIsOnScreen())
       ) {
         this.reloadUserStudies();
@@ -445,7 +419,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __addStudiesToList: function(userStudiesList) {
-      this.self().sortStudyList(userStudiesList);
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(userStudiesList);
       const studyList = this.__userStudyContainer.getChildren();
       userStudiesList.forEach(userStudy => {
         if (this.__userStudies.indexOf(userStudy) === -1) {
@@ -464,7 +438,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const studyItem = this.__createStudyItem(userStudy);
         this.__userStudyContainer.add(studyItem);
       });
-      this.self().sortStudyList(studyList.filter(card => card instanceof osparc.dashboard.StudyBrowserButtonItem));
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => card instanceof osparc.dashboard.StudyBrowserButtonItem));
       const idx = studyList.findIndex(card => card instanceof osparc.dashboard.StudyBrowserButtonLoadMore);
       if (idx !== -1) {
         studyList.push(studyList.splice(idx, 1)[0]);
