@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-astroid==2.5.1
+astroid==2.5.3
     # via pylint
 attrs==20.3.0
     # via
@@ -31,7 +31,7 @@ idna==2.10
     # via
     #   -c requirements/_base.txt
     #   requests
-importlib-metadata==3.7.0
+importlib-metadata==4.0.1
     # via
     #   -c requirements/_base.txt
     #   pluggy
@@ -40,9 +40,9 @@ iniconfig==1.1.1
     # via
     #   -c requirements/_base.txt
     #   pytest
-isort==5.7.0
+isort==5.8.0
     # via pylint
-lazy-object-proxy==1.5.2
+lazy-object-proxy==1.6.0
     # via astroid
 mccabe==0.6.1
     # via pylint
@@ -59,7 +59,7 @@ py==1.10.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pylint==2.7.2
+pylint==2.7.4
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via
@@ -91,20 +91,20 @@ toml==0.10.2
     #   -c requirements/_base.txt
     #   pylint
     #   pytest
-typed-ast==1.4.2
+typed-ast==1.4.3
     # via astroid
 typing-extensions==3.7.4.3
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
 wrapt==1.12.1
     # via astroid
-zipp==3.4.0
+zipp==3.4.1
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata

@@ -24,9 +24,10 @@ email-validator==1.1.2
     # via pydantic
 idna==2.10
     # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   email-validator
     #   requests
-importlib-metadata==3.7.0
+importlib-metadata==4.0.1
     # via
     #   jsonschema
     #   pluggy
@@ -66,14 +67,14 @@ typing-extensions==3.7.4.3
     # via
     #   importlib-metadata
     #   pydantic
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 websocket-client==0.58.0
     # via docker
-zipp==3.4.0
+zipp==3.4.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
