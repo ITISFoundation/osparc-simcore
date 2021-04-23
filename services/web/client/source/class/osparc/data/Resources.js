@@ -157,6 +157,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/projects?type=template"
           },
+          getPage: {
+            method: "GET",
+            url: statics.API + "/projects?type=template&offset={offset}&limit={limit}"
+          },
           postToTemplate: {
             method: "POST",
             url: statics.API + "/projects?as_template={study_id}"
