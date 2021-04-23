@@ -29,10 +29,7 @@ attrs==20.3.0
 chardet==4.0.0
     # via aiohttp
 idna==2.10
-    # via
-    #   -r requirements/_base.in
-    #   idna-ssl
-    #   yarl
+    # via yarl
 isodate==0.6.0
     # via
     #   openapi-core
