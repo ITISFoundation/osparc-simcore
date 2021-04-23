@@ -65,8 +65,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       studyList.sort(sortByProperty("lastChangeDate"));
     },
 
-    PAGINATED_STUDIES: 5,
-    MIN_FILTERED_STUDIES: 10
+    PAGINATED_STUDIES: 10,
+    MIN_FILTERED_STUDIES: 15
   },
 
   members: {
