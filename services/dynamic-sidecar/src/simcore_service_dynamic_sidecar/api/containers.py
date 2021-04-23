@@ -29,7 +29,6 @@ containers_router = APIRouter(tags=["containers"])
 
 
 async def task_docker_compose_up(
-    command_timeout: float,
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
 ) -> None:
@@ -42,7 +41,7 @@ async def task_docker_compose_up(
         settings=settings,
         file_content=shared_store.compose_spec,
         command=command,
-        command_timeout=command_timeout,
+        command_timeout=None,
     )
     message = f"Finished {command} with output\n{stdout}"
 
@@ -76,13 +75,6 @@ def _raise_from_docker_error(error: aiodocker.exceptions.DockerError) -> None:
 async def runs_docker_compose_up(
     request: Request,
     background_tasks: BackgroundTasks,
-    command_timeout: float = Query(
-        ...,
-        description=(
-            "docker-compose up also pulls images, this value "
-            "needs to be big enough to account for that"
-        ),
-    ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Optional[Dict[str, Any]]:
@@ -93,9 +85,7 @@ async def runs_docker_compose_up(
 
     try:
         shared_store.compose_spec = await validate_compose_spec(
-            settings=settings,
-            compose_file_content=body_as_text,
-            command_timeout=command_timeout,
+            settings=settings, compose_file_content=body_as_text
         )
         shared_store.container_names = assemble_container_names(
             shared_store.compose_spec
@@ -105,9 +95,7 @@ async def runs_docker_compose_up(
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
 
     # run docker-compose in a background queue and return early
-    background_tasks.add_task(
-        task_docker_compose_up, command_timeout, settings, shared_store
-    )
+    background_tasks.add_task(task_docker_compose_up, settings, shared_store)
     return None
 
 

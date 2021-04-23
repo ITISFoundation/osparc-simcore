@@ -79,35 +79,12 @@
         "summary": "Runs Docker Compose Up",
         "description": "Expects the docker-compose spec as raw-body utf-8 encoded text ",
         "operationId": "runs_docker_compose_up_v1_containers_post",
-        "parameters": [
-          {
-            "description": "docker-compose up also pulls images, this value needs to be big enough to account for that",
-            "required": true,
-            "schema": {
-              "title": "Command Timeout",
-              "type": "number",
-              "description": "docker-compose up also pulls images, this value needs to be big enough to account for that"
-            },
-            "name": "command_timeout",
-            "in": "query"
-          }
-        ],
         "responses": {
           "201": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
               }
             }
           }

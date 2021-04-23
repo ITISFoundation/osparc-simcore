@@ -145,7 +145,7 @@ def _inject_backend_networking(
 
 
 async def validate_compose_spec(
-    settings: DynamicSidecarSettings, compose_file_content: str, command_timeout: float
+    settings: DynamicSidecarSettings, compose_file_content: str
 ) -> str:
     """
     Validates what looks like a docker compose spec and injects
@@ -233,7 +233,7 @@ async def validate_compose_spec(
         settings=settings,
         file_content=compose_spec,
         command=command,
-        command_timeout=command_timeout,
+        command_timeout=None,
     )
     if not finished_without_errors:
         message = (

@@ -58,11 +58,7 @@ async def started_containers(test_client: TestClient, compose_spec: str) -> List
     await assert_compose_spec_pulled(compose_spec, settings)
 
     # start containers
-    response = await test_client.post(
-        f"/{api_vtag}/containers",
-        query_string=dict(command_timeout=10.0),
-        data=compose_spec,
-    )
+    response = await test_client.post(f"/{api_vtag}/containers", data=compose_spec)
     assert response.status_code == status.HTTP_201_CREATED, response.text
     assert json.loads(response.text) is None
 
@@ -82,20 +78,13 @@ async def test_compose_up(
     test_client: TestClient, compose_spec: Dict[str, Any]
 ) -> None:
 
-    response = await test_client.post(
-        f"/{api_vtag}/containers",
-        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
-        data=compose_spec,
-    )
+    response = await test_client.post(f"/{api_vtag}/containers", data=compose_spec)
     assert response.status_code == status.HTTP_201_CREATED, response.text
     assert json.loads(response.text) is None
 
 
 async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
-    response = await test_client.post(
-        f"/{api_vtag}/containers",
-        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
-    )
+    response = await test_client.post(f"/{api_vtag}/containers")
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
     assert json.loads(response.text) == {"detail": "\nProvided yaml is not valid!"}
 
@@ -103,9 +92,7 @@ async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
 async def test_compose_up_spec_invalid(test_client: TestClient) -> None:
     invalid_compose_spec = Faker().text()
     response = await test_client.post(
-        f"/{api_vtag}/containers",
-        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
-        data=invalid_compose_spec,
+        f"/{api_vtag}/containers", data=invalid_compose_spec
     )
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
     assert "Provided yaml is not valid!" in response.text
@@ -117,11 +104,7 @@ async def test_containers_down_after_starting(
     test_client: TestClient, compose_spec: Dict[str, Any]
 ) -> None:
     # store spec first
-    response = await test_client.post(
-        f"/{api_vtag}/containers",
-        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
-        data=compose_spec,
-    )
+    response = await test_client.post(f"/{api_vtag}/containers", data=compose_spec)
     assert response.status_code == status.HTTP_201_CREATED, response.text
     assert json.loads(response.text) is None
 
