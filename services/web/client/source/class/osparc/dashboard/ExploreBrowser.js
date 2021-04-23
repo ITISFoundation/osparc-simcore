@@ -153,6 +153,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this._add(scrollStudies, {
         flex: 1
       });
+
+      scrollStudies.getChildControl("pane").addListener("scrollY", () => {
+        this._moreStudiesRequired();
+      }, this);
     },
 
     __createButtonsLayout: function(title, content) {
@@ -172,6 +176,10 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
       const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
       templateStudyContainer.add(loadingTemplatesBtn);
+
+      templateStudyContainer.addListener("changeVisibility", e => {
+        this._moreStudiesRequired();
+      }, this);
 
       return tempStudyLayout;
     },
