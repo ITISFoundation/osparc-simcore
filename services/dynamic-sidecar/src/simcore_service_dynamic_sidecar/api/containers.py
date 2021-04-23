@@ -199,7 +199,7 @@ async def containers_docker_status(
 
 
 @containers_router.get(
-    "/containers/{id}:logs",
+    "/containers/{id}/logs",
     responses={
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "description": "Container does not exists"

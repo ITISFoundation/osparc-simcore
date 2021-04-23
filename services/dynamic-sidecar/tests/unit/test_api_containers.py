@@ -238,7 +238,7 @@ async def test_container_inspect_logs_remove(
 ) -> None:
     for container in started_containers:
         # get container logs
-        response = await test_client.get(f"/{api_vtag}/containers/{container}:logs")
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
         assert response.status_code == status.HTTP_200_OK, response.text
 
         # inspect container
@@ -259,7 +259,7 @@ async def test_container_logs_with_timestamps(
     for container in started_containers:
         # get container logs
         response = await test_client.get(
-            f"/{api_vtag}/containers/{container}:logs",
+            f"/{api_vtag}/containers/{container}/logs",
             query_string=dict(timestamps=True),
         )
         assert response.status_code == status.HTTP_200_OK, response.text
@@ -275,7 +275,7 @@ async def test_container_missing_container(
 
     for container in not_started_containers:
         # get container logs
-        response = await test_client.get(f"/{api_vtag}/containers/{container}:logs")
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
         assert (
             response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         ), response.text
@@ -306,7 +306,7 @@ async def test_container_docker_error(
 
     for container in started_containers:
         # get container logs
-        response = await test_client.get(f"/{api_vtag}/containers/{container}:logs")
+        response = await test_client.get(f"/{api_vtag}/containers/{container}/logs")
         assert (
             response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         ), response.text
