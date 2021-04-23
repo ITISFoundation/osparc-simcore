@@ -235,11 +235,6 @@ async def test_container_inspect_logs_remove(
         parsed_response = response.json()
         assert parsed_response["Name"] == f"/{container}"
 
-        # delete container
-        response = await test_client.delete(f"/{api_vtag}/containers/{container}")
-        assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-        assert json.loads(response.text) is None
-
 
 async def test_container_logs_with_timestamps(
     test_client: TestClient, started_containers: List[str]
@@ -272,11 +267,6 @@ async def test_container_missing_container(
         assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
         assert response.json() == _expected_error_string(container)
 
-        # delete container
-        response = await test_client.delete(f"/{api_vtag}/containers/{container}")
-        assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
-        assert response.json() == _expected_error_string(container)
-
 
 async def test_container_docker_error(
     test_client: TestClient,
@@ -296,13 +286,6 @@ async def test_container_docker_error(
 
         # inspect container
         response = await test_client.get(f"/{api_vtag}/containers/{container}")
-        assert (
-            response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        ), response.text
-        assert response.json() == _expected_error_string()
-
-        # delete container
-        response = await test_client.delete(f"/{api_vtag}/containers/{container}")
         assert (
             response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         ), response.text

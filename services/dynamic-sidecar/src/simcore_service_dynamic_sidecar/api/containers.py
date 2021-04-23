@@ -240,11 +240,7 @@ async def get_container_logs(
 
 @containers_router.get(
     "/containers/{id}",
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Container does not exist"
-        }
-    },
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"}},
 )
 async def inspect_container(
     id: str, shared_store: SharedStore = Depends(get_shared_store)
@@ -257,30 +253,6 @@ async def inspect_container(
             container_instance = await docker.containers.get(id)
             inspect_result: Dict[str, Any] = await container_instance.show()
             return inspect_result
-        except aiodocker.exceptions.DockerError as err:
-            _raise_from_docker_error(err)
-            return None
-
-
-@containers_router.delete(
-    "/containers/{id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "Container does not exist"
-        }
-    },
-)
-async def remove_container(
-    id: str, shared_store: SharedStore = Depends(get_shared_store)
-) -> Optional[Dict[str, Any]]:
-    _raise_if_container_is_missing(id, shared_store.container_names)
-
-    with docker_client() as docker:
-        try:
-            container_instance = await docker.containers.get(id)
-            await container_instance.delete()
-            return None
         except aiodocker.exceptions.DockerError as err:
             _raise_from_docker_error(err)
             return None

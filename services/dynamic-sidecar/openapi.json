@@ -265,43 +265,7 @@
               }
             }
           },
-          "500": {
-            "description": "Container does not exist"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Remove Container",
-        "operationId": "remove_container_v1_containers__id__delete",
-        "parameters": [
-          {
-            "required": true,
-            "schema": {
-              "title": "Id",
-              "type": "string"
-            },
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "500": {
+          "404": {
             "description": "Container does not exist"
           },
           "422": {
