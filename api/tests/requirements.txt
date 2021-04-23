@@ -81,7 +81,7 @@ pytest-instafail==0.4.2
     # via -r requirements.in
 pytest-sugar==0.9.4
     # via -r requirements.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements.in
     #   pytest-aiohttp

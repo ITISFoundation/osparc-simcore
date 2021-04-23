@@ -231,7 +231,7 @@ pytest-runner==5.3.0
     # via -r requirements/_test.in
 pytest-xdist==2.2.1
     # via -r requirements/_test.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp

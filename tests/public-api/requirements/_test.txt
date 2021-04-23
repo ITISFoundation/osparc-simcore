@@ -59,7 +59,7 @@ pytest-asyncio==0.14.0
     # via -r requirements/_test.in
 pytest-cov==2.11.1
     # via -r requirements/_test.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
