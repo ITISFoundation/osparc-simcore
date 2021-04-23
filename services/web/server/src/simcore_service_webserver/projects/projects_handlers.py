@@ -10,7 +10,6 @@ from typing import Any, Coroutine, Dict, List, Optional, Set
 import aioredlock
 from aiohttp import web
 from jsonschema import ValidationError
-from models_library.projects import ProjectType
 from models_library.projects_state import ProjectState
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import fire_and_forget_task, logged_gather
