@@ -33,7 +33,7 @@ async def task_docker_compose_up(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
 ) -> None:
-    # --no-build might be a security risk building is disabled
+    # building is a security risk hence is disabled via "--no-build" parameter
     command = (
         "docker-compose --project-name {project} --file {file_path} "
         "up --no-build --detach"
