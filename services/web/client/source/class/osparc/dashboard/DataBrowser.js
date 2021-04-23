@@ -52,6 +52,10 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
           break;
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
+          control.getChildControl("splitter").set({
+            width: 2,
+            backgroundColor: "scrollbar-passive"
+          });
           this._add(control, {
             flex: 1
           });

@@ -1,14 +1,15 @@
 import logging
 import os
+import time
 from operator import attrgetter
 from typing import Optional
 
 from aiohttp import web
-import time
-
 from servicelib import monitor_slow_callbacks
 from servicelib.application_setup import ModuleCategory, app_module_setup
 
+from . import diagnostics_handlers
+from .diagnostics_config import DiagnosticsSettings
 from .diagnostics_core import (
     IncidentsRegistry,
     kINCIDENTS_REGISTRY,
@@ -17,11 +18,7 @@ from .diagnostics_core import (
     kPLUGIN_START_TIME,
     kSTART_SENSING_DELAY_SECS,
 )
-from .diagnostics_entrypoints import create_rest_routes
 from .diagnostics_monitoring import setup_monitoring
-from .rest import APP_OPENAPI_SPECS_KEY
-from .diagnostics_config import DiagnosticsSettings
-
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +46,7 @@ def setup_diagnostics(
     # Aims to identify possible blocking calls
     #
     if slow_duration_secs is None:
-        slow_duration_secs = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0.3))
+        slow_duration_secs = float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 1.0))
     else:
         settings_kwargs["slow_duration_secs"] = slow_duration_secs
 
@@ -90,32 +87,31 @@ def setup_diagnostics(
     #
     app[kSTART_SENSING_DELAY_SECS] = start_sensing_delay
     log.info("start_sensing_delay = %3.2f secs ", start_sensing_delay)
-    if start_sensing_delay != 60: # default
+    if start_sensing_delay != 60:  # default
         settings_kwargs["start_sensing_delay"] = start_sensing_delay
 
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
     cfg = DiagnosticsSettings(**settings_kwargs)
-    assert cfg.slow_duration_secs == slow_duration_secs # nosec
-    assert cfg.max_task_delay == max_task_delay # nosec
-    assert cfg.max_avg_response_latency == max_avg_response_latency # nosec
-    assert cfg.start_sensing_delay == start_sensing_delay # nosec
+    assert cfg.slow_duration_secs == slow_duration_secs  # nosec
+    assert cfg.max_task_delay == max_task_delay  # nosec
+    assert cfg.max_avg_response_latency == max_avg_response_latency  # nosec
+    assert cfg.start_sensing_delay == start_sensing_delay  # nosec
     # ---------------------------------------------
 
     # -----
 
     # TODO: redesign ... too convoluted!!
-    registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
-    app[kINCIDENTS_REGISTRY] = registry
+    incidents_registry = IncidentsRegistry(order_by=attrgetter("delay_secs"))
+    app[kINCIDENTS_REGISTRY] = incidents_registry
 
-    monitor_slow_callbacks.enable(max_task_delay, registry)
+    monitor_slow_callbacks.enable(slow_duration_secs, incidents_registry)
 
     # adds middleware and /metrics
     setup_monitoring(app)
 
     # adds other diagnostic routes: healthcheck, etc
-    routes = create_rest_routes(specs=app[APP_OPENAPI_SPECS_KEY])
-    app.router.add_routes(routes)
+    app.router.add_routes(diagnostics_handlers.routes)
 
     app[kPLUGIN_START_TIME] = time.time()

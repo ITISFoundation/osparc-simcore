@@ -25,6 +25,7 @@ aioresponses
 requests
 docker
 python-dotenv
+faker
 
 # tools for CI
 pylint

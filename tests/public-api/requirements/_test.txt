@@ -11,7 +11,6 @@ attrs==20.3.0
 certifi==2020.12.5
     # via
     #   httpx
-    #   osparc
     #   requests
 chardet==3.0.4
     # via
@@ -19,9 +18,9 @@ chardet==3.0.4
     #   requests
 contextvars==2.4
     # via sniffio
-coverage==5.4
+coverage==5.5
     # via pytest-cov
-docker==4.4.1
+docker==5.0.0
     # via -r requirements/_test.in
 h11==0.9.0
     # via httpcore
@@ -33,12 +32,11 @@ httpx==0.14.3
     #   -r requirements/_test.in
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   requests
     #   rfc3986
 immutables==0.15
     # via contextvars
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   jsonschema
     #   pluggy
@@ -66,8 +64,6 @@ pytest==6.2.2
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
-python-dateutil==2.8.1
-    # via osparc
 python-dotenv==0.15.0
     # via -r requirements/_test.in
 pyyaml==5.4.1
@@ -80,17 +76,14 @@ rfc3986[idna2008]==1.4.0
     # via httpx
 six==1.15.0
     # via
-    #   docker
     #   jsonschema
-    #   osparc
-    #   python-dateutil
     #   tenacity
     #   websocket-client
 sniffio==1.2.0
     # via
     #   httpcore
     #   httpx
-tenacity==6.3.1
+tenacity==7.0.0
     # via -r requirements/_test.in
 toml==0.10.2
     # via pytest
@@ -99,9 +92,8 @@ typing-extensions==3.7.4.3
 urllib3==1.26.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   osparc
     #   requests
-websocket-client==0.57.0
+websocket-client==0.58.0
     # via docker
 zipp==3.4.0
     # via importlib-metadata

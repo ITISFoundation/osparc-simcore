@@ -62,6 +62,7 @@ def list_fake_file_consumers() -> List[Dict[str, Any]]:
                 "display_name": f"{service['display_name']}:{service['version']} - {filetype}",
                 "filetype": filetype,
                 "input_port_key": port,
+                "is_guest_allowed": True,
             }
             consumers.append(consumer)
     return consumers

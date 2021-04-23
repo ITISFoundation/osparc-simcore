@@ -3,9 +3,8 @@ from typing import Dict
 
 import faker
 import passlib.hash
-from aiopg.sa.result import RowProxy
-
 import simcore_service_api_server.db.tables as orm
+from aiopg.sa.result import RowProxy
 from simcore_service_api_server.db.repositories import BaseRepository
 from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
@@ -40,7 +39,8 @@ class RWUsersRepository(UsersRepository):
 
     async def create(self, **user) -> int:
         values = random_user(**user)
-        user_id = await self.connection.scalar(orm.users.insert().values(**values))
+        async with self.db_engine.acquire() as conn:
+            user_id = await conn.scalar(orm.users.insert().values(**values))
 
         print("Created user ", pformat(values), f"with user_id={user_id}")
         return user_id
@@ -51,15 +51,19 @@ class RWApiKeysRepository(BaseRepository):
 
     async def create(self, name: str, *, api_key: str, api_secret: str, user_id: int):
         values = dict(
-            display_name=name, user_id=user_id, api_key=api_key, api_secret=api_secret,
+            display_name=name,
+            user_id=user_id,
+            api_key=api_key,
+            api_secret=api_secret,
         )
-        _id = await self.connection.scalar(orm.api_keys.insert().values(**values))
+        async with self.db_engine.acquire() as conn:
+            _id = await conn.scalar(orm.api_keys.insert().values(**values))
 
-        # check inserted
-        row: RowProxy = await (
-            await self.connection.execute(
-                orm.api_keys.select().where(orm.api_keys.c.id == _id)
-            )
-        ).first()
+            # check inserted
+            row: RowProxy = await (
+                await conn.execute(
+                    orm.api_keys.select().where(orm.api_keys.c.id == _id)
+                )
+            ).first()
 
         return ApiKeyInDB.from_orm(row)

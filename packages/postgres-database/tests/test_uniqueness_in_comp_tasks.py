@@ -8,10 +8,11 @@ import json
 import pytest
 import sqlalchemy as sa
 from psycopg2.errors import UniqueViolation  # pylint: disable=no-name-in-module
-
-from fake_creators import fake_pipeline, fake_task
+from pytest_simcore.helpers.rawdata_fakers import fake_pipeline, fake_task_factory
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import comp_pipeline, comp_tasks
+
+fake_task = fake_task_factory(first_internal_id=1)
 
 
 @pytest.fixture
@@ -34,7 +35,6 @@ async def engine(loop, make_engine):
 
     engine.close()
     await engine.wait_closed()
-
 
 
 async def test_unique_project_node_pairs(engine):
@@ -62,7 +62,10 @@ async def test_unique_project_node_pairs(engine):
 
         task_inputs = await conn.scalar(
             sa.select([comp_tasks.c.inputs]).where(
-                sa.and_(comp_tasks.c.project_id == "PB", comp_tasks.c.node_id == "N2",)
+                sa.and_(
+                    comp_tasks.c.project_id == "PB",
+                    comp_tasks.c.node_id == "N2",
+                )
             )
         )
         assert json.loads(task_inputs) == {}

@@ -4,14 +4,16 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.3
+aiohttp==3.7.4
     # via pytest-aiohttp
-alembic==1.5.4
+alembic==1.5.5
     # via -r requirements/_test.in
-astroid==2.5
+astroid==2.5.1
     # via pylint
 async-timeout==3.0.1
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==20.3.0
     # via
     #   aiohttp
@@ -48,24 +50,24 @@ contextvars==2.4
     # via
     #   -c requirements/_base.txt
     #   sniffio
-coverage==5.4
+coverage==5.5
     # via
     #   codecov
     #   coveralls
     #   pytest-cov
-coveralls==3.0.0
+coveralls==3.0.1
     # via -r requirements/_test.in
-cryptography==3.4.5
+cryptography==3.4.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
 distro==1.5.0
     # via docker-compose
-docker-compose==1.27.4
+docker-compose==1.29.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-docker
-docker[ssh]==4.4.2
+docker[ssh]==5.0.0
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -75,7 +77,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==6.1.1
+faker==6.5.0
     # via -r requirements/_test.in
 h11==0.9.0
     # via
@@ -94,7 +96,6 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   idna-ssl
     #   requests
@@ -104,7 +105,7 @@ immutables==0.15
     # via
     #   -c requirements/_base.txt
     #   contextvars
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   jsonschema
     #   pluggy
@@ -148,7 +149,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.6.0
+pylint==2.7.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -207,7 +208,6 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
-    #   docker
     #   dockerpty
     #   jsonschema
     #   pynacl
@@ -244,7 +244,7 @@ urllib3==1.26.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-websocket-client==0.57.0
+websocket-client==0.58.0
     # via
     #   docker
     #   docker-compose

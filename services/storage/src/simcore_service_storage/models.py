@@ -3,7 +3,7 @@
 """
 import datetime
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Union
 from uuid import UUID
 
 import attr
@@ -16,7 +16,8 @@ from simcore_postgres_database.storage_models import (
     user_to_groups,
     users,
 )
-from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
+
+from .settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 
 # FIXME: W0611:Unused UUID imported from sqlalchemy.dialects.postgresql
 # from sqlalchemy.dialects.postgresql import UUID
@@ -25,42 +26,26 @@ from simcore_service_storage.settings import DATCORE_STR, SIMCORE_S3_ID, SIMCORE
 # pylint: disable=R0902
 
 
+_LOCATION_ID_TO_TAG_MAP = {0: SIMCORE_S3_STR, 1: DATCORE_STR}
+UNDEFINED_LOCATION_TAG: str = "undefined"
+
+
 def _parse_datcore(file_uuid: str) -> Tuple[str, str]:
     # we should have 12/123123123/111.txt and return (12/123123123, 111.txt)
 
     file_path = Path(file_uuid)
-    destination = file_path.parent
-    file_name = file_path.name
+    destination = str(file_path.parent)
+    file_name = str(file_path.name)
 
     return destination, file_name
 
 
-def _locations():
-    # TODO: so far this is hardcoded
-    simcore_s3 = {"name": SIMCORE_S3_STR, "id": 0}
-    datcore = {"name": DATCORE_STR, "id": 1}
-    return [simcore_s3, datcore]
-
-
-def _location_from_id(location_id: str) -> str:
-    # TODO create a map to sync _location_from_id and _location_from_str
-    loc_str = "undefined"
-    if location_id == "0":
-        loc_str = SIMCORE_S3_STR
-    elif location_id == "1":
-        loc_str = DATCORE_STR
-
-    return loc_str
-
-
-def _location_from_str(location: str) -> str:
-    intstr = "undefined"
-    if location == SIMCORE_S3_STR:
-        intstr = "0"
-    elif location == DATCORE_STR:
-        intstr = "1"
-
-    return intstr
+def get_location_from_id(location_id: Union[str, int]) -> str:
+    try:
+        loc_id = int(location_id)
+        return _LOCATION_ID_TO_TAG_MAP[loc_id]
+    except (ValueError, KeyError):
+        return UNDEFINED_LOCATION_TAG
 
 
 @attr.s(auto_attribs=True)
@@ -145,6 +130,7 @@ class FileMetaData:
             self.last_modified = self.created_at
             self.file_size = -1
             self.entity_tag = None
+            self.is_soft_link = False
 
     def __str__(self):
         d = attr.asdict(self)
@@ -154,8 +140,16 @@ class FileMetaData:
         return _str
 
 
+def get_default(column):
+    # NOTE: this is temporary. it translates bool text-clauses into python
+    # The only defaults in file_meta_data are actually of these type
+    if column.server_default:
+        return {"false": False, "true": True}.get(str(column.server_default.arg))
+    return None
+
+
 attr.s(
-    these={c.name: attr.ib(default=None) for c in file_meta_data.c},
+    these={c.name: attr.ib(default=get_default(c)) for c in file_meta_data.c},
     init=True,
     kw_only=True,
 )(FileMetaData)

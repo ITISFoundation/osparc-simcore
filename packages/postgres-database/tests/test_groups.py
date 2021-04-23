@@ -7,8 +7,8 @@ from typing import Optional
 import aiopg.sa.exc
 import pytest
 from aiopg.sa.result import ResultProxy, RowProxy
-from fake_creators import random_group, random_user
 from psycopg2.errors import ForeignKeyViolation, RaiseException, UniqueViolation
+from pytest_simcore.helpers.rawdata_fakers import random_group, random_user
 from simcore_postgres_database.models.base import metadata
 from simcore_postgres_database.webserver_models import (
     GroupType,

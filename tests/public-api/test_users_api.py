@@ -9,7 +9,7 @@ from osparc import UsersApi
 from osparc.models import Profile, ProfileUpdate, UserRoleEnum
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def users_api(api_client):
     return UsersApi(api_client)
 

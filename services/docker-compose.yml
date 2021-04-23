@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.8"
 services:
   api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
@@ -99,7 +99,6 @@ services:
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-      - POSTGRES_MAXSIZE=30
     env_file:
       - ../.env
     volumes:
@@ -144,10 +143,14 @@ services:
         - traefik.http.middlewares.${SWARM_STACK_NAME_NO_HYPHEN}_sslheader.headers.customrequestheaders.X-Forwarded-Proto=http
         - traefik.enable=true
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.server.port=8080
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
     networks:
       - default
       - interactive_services_subnet
@@ -304,6 +307,10 @@ services:
         "tcp_keepalives_interval=600",
         "-c",
         "tcp_keepalives_count=5",
+        "-c",
+        "max_connections=413",
+        "-c",
+        "shared_buffers=256MB"
       ]
 
   redis:
@@ -324,6 +331,9 @@ services:
     command:
       - "--api=true"
       - "--api.dashboard=true"
+      - "--ping=true"
+      - "--entryPoints.ping.address=:9082"
+      - "--ping.entryPoint=ping"
       - "--log.level=WARNING"
       - "--accesslog=false"
       - "--metrics.prometheus=true"
@@ -340,6 +350,8 @@ services:
       - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.network=${SWARM_STACK_NAME}_default"
       - "--providers.docker.swarmMode=true"
+      # https://github.com/traefik/traefik/issues/7886
+      - "--providers.docker.swarmModeRefreshSeconds=1"
       - "--providers.docker.exposedByDefault=false"
       - "--providers.docker.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
       - "--tracing=true"
@@ -365,6 +377,12 @@ services:
     networks:
       - default
       - interactive_services_subnet
+    #healthcheck:
+    #  test: wget --quiet --tries=1 --spider http://localhost:9082/ping || exit 1
+    #  interval: 3s
+    #  timeout: 1s
+    #  retries: 3
+    #  start_period: 20s
 
 volumes:
   input: {}

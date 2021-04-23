@@ -35,7 +35,7 @@ from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 
-core_services = [
+pytest_simcore_core_services_selection = [
     "director",
     "redis",
     "rabbit",
@@ -43,7 +43,7 @@ core_services = [
     "storage",
     "postgres",
 ]
-ops_services = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 COMPUTATION_URL: str = "v2/computations"
 
@@ -359,7 +359,7 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PUBLISHED,
+                        "currentStatus": RunningState.PENDING,
                     },
                     2: {
                         "modified": True,
@@ -404,22 +404,22 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PUBLISHED,
+                        "currentStatus": RunningState.PENDING,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
-                        "currentStatus": RunningState.PUBLISHED,
+                        "currentStatus": RunningState.PENDING,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PUBLISHED,
+                        "currentStatus": RunningState.PENDING,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
-                        "currentStatus": RunningState.PUBLISHED,
+                        "currentStatus": RunningState.PENDING,
                     },
                 },
                 exp_node_states_after_run={

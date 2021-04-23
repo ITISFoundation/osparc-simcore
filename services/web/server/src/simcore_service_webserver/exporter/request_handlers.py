@@ -6,10 +6,12 @@ from aiohttp.web_request import FileField
 
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
+from ..constants import RQ_PRODUCT_KEY
 from .config import get_settings
 from .exceptions import ExporterException
 from .export_import import study_export, study_import, study_duplicate
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
+from .formatters import FormatterV1
 
 ONE_GB: int = 1024 * 1024 * 1024
 
@@ -41,6 +43,7 @@ async def export_project(request: web.Request):
             tmp_dir=temp_dir,
             project_id=project_uuid,
             user_id=user_id,
+            product_name=request[RQ_PRODUCT_KEY],
             archive=True,
         )
         log.info("File to download '%s'", file_to_download)
@@ -101,7 +104,9 @@ async def duplicate_project(request: web.Request):
             tmp_dir=temp_dir,
             project_id=project_uuid,
             user_id=user_id,
+            product_name=request[RQ_PRODUCT_KEY],
             archive=False,
+            formatter_class=FormatterV1,
         )
         log.info("Study to duplicate '%s'", exported_project_path)
 

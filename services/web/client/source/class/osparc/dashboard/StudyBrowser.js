@@ -236,6 +236,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.data.Resources.getOne("studies", params)
         .then(studyData => {
           this._startStudy(studyData["uuid"]);
+        })
+        .catch(() => {
+          const msg = this.tr("Study unavailable or inaccessible");
+          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
         });
     },
 
@@ -272,14 +276,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this.__userStudyContainer.getSelection();
-        const win = this.__createConfirmWindow(selection.length > 1);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
-          }
-        }, this);
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (preferencesSettings.getConfirmDeleteStudy()) {
+          const win = this.__createConfirmWindow(selection.length > 1);
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+            }
+          }, this);
+        } else {
+          this.__deleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+        }
       }, this);
       return deleteButton;
     },
@@ -547,7 +556,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studyServicesButton.addListener("execute", () => {
         const servicesInStudy = new osparc.component.metadata.ServicesInStudy(studyData);
         const title = this.tr("Services in Study");
-        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 400, 100);
+        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 650, 300);
       }, this);
       return studyServicesButton;
     },
@@ -598,14 +607,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
-        const win = this.__createConfirmWindow(false);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteStudy(studyData);
-          }
-        }, this);
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (preferencesSettings.getConfirmDeleteStudy()) {
+          const win = this.__createConfirmWindow(false);
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__deleteStudy(studyData);
+            }
+          }, this);
+        } else {
+          this.__deleteStudy(studyData);
+        }
       }, this);
       return deleteButton;
     },
@@ -724,7 +738,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const processinglabel = this.tr("Processing study");
             importingStudyCard.getChildControl("state-label").setValue(processinglabel);
             importTask.setSubtitle(processinglabel);
-            importingStudyCard.getProgressBar().exclude();
+            importingStudyCard.getChildControl("progress-bar").exclude();
           }
         } else {
           console.log("Unable to compute progress information since the total size is unknown");

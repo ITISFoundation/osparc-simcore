@@ -21,10 +21,10 @@ SERVICE_HEALTHCHECK_ENTRYPOINT = {"director-v2": "/"}
 
 @pytest.fixture(scope="module")
 def services_endpoint(
-    core_services: List[str], docker_stack: Dict, devel_environ: Dict
+    core_services_selection: List[str], docker_stack: Dict, devel_environ: Dict
 ) -> Dict[str, URL]:
     services_endpoint = {}
-    for service in core_services:
+    for service in core_services_selection:
         assert f"simcore_{service}" in docker_stack["services"]
         if not service in SERVICES_TO_SKIP:
             endpoint = URL(
@@ -63,10 +63,7 @@ async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> No
 async def wait_till_service_responsive(endpoint: URL):
     async with aiohttp.ClientSession() as session:
         async with session.get(endpoint) as resp:
+            # NOTE: Health-check endpoint require only a
+            # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
+            # regardless of the payload content
             assert resp.status == 200
-            data = await resp.json()
-            # aiohttp based services are like this:
-            assert "data" in data or ":-)" in data or ":-)" in data.get("msg")
-            if "data" in data:
-                assert "status" in data["data"]
-                assert data["data"]["status"] == "SERVICE_RUNNING"

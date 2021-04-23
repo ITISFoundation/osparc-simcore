@@ -26,14 +26,14 @@ distlib==0.3.1
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
-identify==1.5.13
+identify==2.1.0
     # via pre-commit
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   -c requirements/_test.txt
     #   pre-commit
     #   virtualenv
-importlib-resources==5.1.0
+importlib-resources==5.1.1
     # via
     #   -c requirements/_test.txt
     #   pre-commit
@@ -60,9 +60,7 @@ pyyaml==5.4.1
 regex==2020.11.13
     # via black
 six==1.15.0
-    # via
-    #   -c requirements/_test.txt
-    #   virtualenv
+    # via virtualenv
 toml==0.10.2
     # via
     #   -c requirements/_test.txt
@@ -74,6 +72,7 @@ typed-ast==1.4.2
     #   black
 typing-extensions==3.7.4.3
     # via
+    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
     #   importlib-metadata

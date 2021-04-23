@@ -57,6 +57,15 @@ paths:
   /health:
     $ref: "./openapi-diagnostics.yaml#/paths/~1health"
 
+  /status:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1status"
+
+  /status/diagnostics:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1status~1diagnostics"
+
+  /status/{service_name}:
+    $ref: "./openapi-diagnostics.yaml#/paths/~1status~1{service_name}"
+
   /check/{action}:
     $ref: "./openapi-diagnostics.yaml#/paths/~1check~1{action}"
 
@@ -168,7 +177,7 @@ paths:
   /projects/{project_id}/state:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1state"
 
-  /projects/{project_id}:xport:
+  /projects/{project_id}:xport: # do not change there "export" will not work
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1xport"
 
   /projects/{project_id}:duplicate:
@@ -235,7 +244,6 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_output_key"
   /catalog/services/{service_key}/{service_version}/outputs:match:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
-
 
   # VIEWER -------------------------------------------------------------------------
   /viewers:

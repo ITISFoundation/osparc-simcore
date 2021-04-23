@@ -4,7 +4,8 @@
     - Shall be used as entry point for all the queries to the database regarding projects
 
 """
-
+import asyncio
+import concurrent.futures
 import logging
 import textwrap
 import uuid as uuidlib
@@ -20,11 +21,14 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import ResultProxy, RowProxy
+from aiopg.sa.result import RowProxy
 from change_case import ChangeCase
+from models_library.projects import ProjectAtDB
+from pydantic import ValidationError
+from pydantic.types import PositiveInt
 from servicelib.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.webserver_models import ProjectType, projects
-from sqlalchemy import literal_column
+from sqlalchemy import desc, literal_column
 from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
@@ -36,7 +40,7 @@ from .projects_exceptions import (
     ProjectNotFoundError,
     ProjectsException,
 )
-from .projects_fakes import Fake
+from .projects_utils import project_uses_available_services
 
 log = logging.getLogger(__name__)
 
@@ -307,52 +311,57 @@ class ProjectDBAPI:
                 prj["tags"] = []
             return prj
 
-    async def load_user_projects(self, user_id: int) -> List[Dict]:
-        log.info("Loading projects for user %s", user_id)
-        async with self.engine.acquire() as conn:
-            user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
-            query = textwrap.dedent(
-                f"""\
-                SELECT *
-                FROM projects
-                WHERE projects.type != 'TEMPLATE'
-                AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-                OR prj_owner = {user_id})
-                """
-            )
-            projects_list = await self.__load_projects(
-                conn, query, user_id, user_groups
-            )
-
-        return projects_list
-
-    async def load_template_projects(
-        self, user_id: int, *, only_published=False
-    ) -> List[Dict]:
-        log.info("Loading public template projects")
-
-        # TODO: eliminate this and use mock to replace get_user_project instead
-        projects_list = [prj.data for prj in Fake.projects.values() if prj.template]
+    async def load_projects(
+        self,
+        user_id: PositiveInt,
+        *,
+        filter_by_project_type: Optional[ProjectType] = None,
+        filter_by_services: Optional[List[Dict]] = None,
+        only_published: Optional[bool] = False,
+        offset: Optional[int] = 0,
+        limit: Optional[int] = None,
+    ) -> Tuple[List[Dict[str, Any]], List[ProjectType], int]:
 
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
-
-            # NOTE: in order to use specific postgresql function jsonb_exists_any we use raw call here
-            query = textwrap.dedent(
-                f"""\
-                SELECT *
-                FROM projects
-                WHERE projects.type = 'TEMPLATE'
-                {'AND projects.published ' if only_published else ''}
-                AND (jsonb_exists_any(projects.access_rights, array[{', '.join(f"'{group.gid}'" for group in user_groups)}])
-                OR prj_owner = {user_id})
-                """
+            groups_array = ", ".join(f"'{group.gid}'" for group in user_groups)
+            query = (
+                select([projects])
+                .where(
+                    (
+                        (projects.c.type == filter_by_project_type.value)
+                        if filter_by_project_type
+                        else (projects.c.type != None)
+                    )
+                    & (
+                        (projects.c.published == True)
+                        if only_published
+                        else sa.text("")
+                    )
+                    & (
+                        sa.text(
+                            f"jsonb_exists_any(projects.access_rights, array[{groups_array}])"
+                        )
+                        | (projects.c.prj_owner == user_id)
+                    )
+                )
+                .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
-            db_projects = await self.__load_projects(conn, query, user_id, user_groups)
+            total_number_of_projects = await conn.scalar(query.alias().count())
 
-            projects_list.extend(db_projects)
+            prjs, prj_types = await self.__load_projects(
+                conn,
+                query.offset(offset).limit(limit),
+                user_id,
+                user_groups,
+                filter_by_services=filter_by_services,
+            )
 
-        return projects_list
+            return (
+                prjs,
+                prj_types,
+                total_number_of_projects,
+            )
 
     async def __load_user_groups(
         self, conn: SAConnection, user_id: int
@@ -368,17 +377,43 @@ class ProjectDBAPI:
         return user_groups
 
     async def __load_projects(
-        self, conn: SAConnection, query: str, user_id: int, user_groups: List[RowProxy]
-    ) -> List[Dict]:
+        self,
+        conn: SAConnection,
+        query: str,
+        user_id: int,
+        user_groups: List[RowProxy],
+        filter_by_services: Optional[List[Dict]] = None,
+    ) -> Tuple[List[Dict[str, Any]], List[ProjectType]]:
         api_projects: List[Dict] = []  # API model-compatible projects
         db_projects: List[Dict] = []  # DB model-compatible projects
+        project_types: List[ProjectType] = []
         async for row in conn.execute(query):
             try:
                 _check_project_permissions(row, user_id, user_groups, "read")
             except ProjectInvalidRightsError:
                 continue
+            try:
+
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    await asyncio.get_event_loop().run_in_executor(
+                        pool, ProjectAtDB.from_orm, row
+                    )
+            except ValidationError as exc:
+                log.warning(
+                    "project in db with uuid [%s] failed validation, please check. error: %s",
+                    row.get("id"),
+                    exc,
+                )
+                continue
             prj = dict(row.items())
-            log.debug("found project: %s", pformat(prj))
+            if filter_by_services:
+                if not await project_uses_available_services(prj, filter_by_services):
+                    log.warning(
+                        "project [%s] of user [%s] uses unshared services",
+                        row.get("id"),
+                        user_id,
+                    )
+                    continue
             db_projects.append(prj)
 
         # NOTE: DO NOT nest _get_tags_by_project in async loop above !!!
@@ -389,8 +424,9 @@ class ProjectDBAPI:
             )
             user_email = await self._get_user_email(conn, db_prj["prj_owner"])
             api_projects.append(_convert_to_schema_names(db_prj, user_email))
+            project_types.append(db_prj["type"])
 
-        return api_projects
+        return (api_projects, project_types)
 
     async def _get_project(
         self,
@@ -439,7 +475,9 @@ class ProjectDBAPI:
 
     async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
+            project = await self._get_project(
+                conn, user_id, project_uuid, include_templates=True
+            )
             # pylint: disable=no-value-for-parameter
             query = study_tags.insert().values(study_id=project["id"], tag_id=tag_id)
             user_email = await self._get_user_email(conn, user_id)
@@ -451,7 +489,9 @@ class ProjectDBAPI:
 
     async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
         async with self.engine.acquire() as conn:
-            project = await self._get_project(conn, user_id, project_uuid)
+            project = await self._get_project(
+                conn, user_id, project_uuid, include_templates=True
+            )
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
             query = study_tags.delete().where(
@@ -476,11 +516,6 @@ class ProjectDBAPI:
         :return: schema-compliant project
         :rtype: Dict
         """
-        # TODO: eliminate this and use mock to replace get_user_project instead
-        prj = Fake.projects.get(project_uuid)
-        if prj and not prj.template:
-            return Fake.projects[project_uuid].data
-
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, user_id, project_uuid)
             # pylint: disable=no-value-for-parameter
@@ -490,11 +525,6 @@ class ProjectDBAPI:
     async def get_template_project(
         self, project_uuid: str, *, only_published=False
     ) -> Dict:
-        # TODO: eliminate this and use mock to replace get_user_project instead
-        prj = Fake.projects.get(project_uuid)
-        if prj and prj.template:
-            return prj.data
-
         template_prj = {}
         async with self.engine.acquire() as conn:
             if only_published:
@@ -725,7 +755,7 @@ class ProjectDBAPI:
     async def _get_user_email(self, conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
-        email: ResultProxy = await conn.scalar(
+        email: Optional[str] = await conn.scalar(
             sa.select([users.c.email]).where(users.c.id == user_id)
         )
         return email or "Unknown"

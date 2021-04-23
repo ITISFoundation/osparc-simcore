@@ -1,0 +1,4 @@
+# pytest_simcore.docker_compose fixture module config variables
+
+FIXTURE_CONFIG_CORE_SERVICES_SELECTION = "pytest_simcore_core_services_selection"
+FIXTURE_CONFIG_OPS_SERVICES_SELECTION = "pytest_simcore_ops_services_selection"

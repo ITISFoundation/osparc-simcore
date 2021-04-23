@@ -5,9 +5,7 @@
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
 idna==2.10
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   yarl
+    # via yarl
 multidict==5.1.0
     # via yarl
 psycopg2-binary==2.8.6

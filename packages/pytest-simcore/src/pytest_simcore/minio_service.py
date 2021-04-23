@@ -12,7 +12,7 @@ import pytest
 import tenacity
 from s3wrapper.s3_client import S3Client
 
-from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_docker import get_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
@@ -21,11 +21,9 @@ log = logging.getLogger(__name__)
 def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     assert "ops_minio" in docker_stack["services"]
 
-    # NOTE: 172.17.0.1 is the docker0 interface, which redirect from inside a
-    # container onto the host network interface.
     config = {
         "client": {
-            "endpoint": f"172.17.0.1:{get_service_published_port('minio')}",
+            "endpoint": f"{get_ip()}:{get_service_published_port('minio')}",
             "access_key": devel_environ["S3_ACCESS_KEY"],
             "secret_key": devel_environ["S3_SECRET_KEY"],
             "secure": strtobool(devel_environ["S3_SECURE"]) != 0,
@@ -76,6 +74,7 @@ def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
 def bucket(minio_config: Dict[str, str], minio_service: S3Client) -> str:
     bucket_name = minio_config["bucket_name"]
     minio_service.create_bucket(bucket_name, delete_contents_if_exists=True)
+
     yield bucket_name
 
     minio_service.remove_bucket(bucket_name, delete_contents=True)

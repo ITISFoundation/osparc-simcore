@@ -8,7 +8,6 @@ import logging
 from pprint import pformat
 
 from aiohttp import web
-
 from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.rest_routing import (
@@ -16,13 +15,13 @@ from servicelib.rest_routing import (
     iter_path_operations,
     map_handlers_with_operations,
 )
-from . import projects_handlers
+
 from ..resources import resources
 from ..rest_config import APP_OPENAPI_SPECS_KEY
+from . import projects_handlers
 from .config import CONFIG_SECTION_NAME, assert_valid_config
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
-from .projects_fakes import Fake
 
 logger = logging.getLogger(__name__)
 
@@ -57,16 +56,7 @@ def _create_routes(tag, handlers_module, specs, *, disable_login=False):
     depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
     logger=logger,
 )
-def setup_projects(app: web.Application, *, enable_fake_data=False) -> bool:
-    """
-
-    :param app: main web application
-    :type app: web.Application
-    :param enable_fake_data: if True it injects template projects under /data, defaults to False (USE ONLY FOR TESTING)
-    :param enable_fake_data: bool, optional
-    :return: False if setup skips (e.g. explicitly disabled in config), otherwise True
-    :rtype: bool
-    """
+def setup_projects(app: web.Application) -> bool:
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
@@ -98,8 +88,5 @@ def setup_projects(app: web.Application, *, enable_fake_data=False) -> bool:
         app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = project_schema
     else:
         app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: project_schema}
-
-    if enable_fake_data:
-        Fake.load_template_projects()
 
     return True

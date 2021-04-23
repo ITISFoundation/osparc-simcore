@@ -7,15 +7,15 @@ import inspect
 import json
 from collections import deque
 from pathlib import Path
-from pprint import pformat
-from typing import Any, Dict, List, Tuple
-from uuid import uuid4
+from typing import Any, Dict, Iterable, List, Tuple
 
 import aio_pika
 import pytest
 import sqlalchemy as sa
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
+from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from simcore_postgres_database.storage_models import projects, users
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_service_sidecar import config, utils
 from yarl import URL
@@ -27,21 +27,53 @@ SIMCORE_S3_ID = 0
 #
 # SEE packages/pytest-simcore/src/pytest_simcore/docker_compose.py
 #
-core_services = ["storage", "postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "storage"]
 
-ops_services = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 # --------------------------------------------------------------------------------------
 
 
 @pytest.fixture
-def project_id() -> str:
-    return str(uuid4())
+def user_id(postgres_engine: sa.engine.Engine) -> Iterable[int]:
+    # inject user in db
+
+    # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
+    # in time, the webserver service would bring more dependencies to other services
+    # which would turn this test too complex.
+
+    # pylint: disable=no-value-for-parameter
+    stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
+    print(str(stmt))
+    with postgres_engine.connect() as conn:
+        result = conn.execute(stmt)
+        [usr_id] = result.fetchone()
+
+    yield usr_id
+
+    with postgres_engine.connect() as conn:
+        conn.execute(users.delete().where(users.c.id == usr_id))
 
 
 @pytest.fixture
-def user_id() -> int:
-    return 1
+def project_id(user_id: int, postgres_engine: sa.engine.Engine) -> Iterable[str]:
+    # inject project for user in db. This will give user_id, the full project's ownership
+
+    # pylint: disable=no-value-for-parameter
+    stmt = (
+        projects.insert()
+        .values(**random_project(prj_owner=user_id))
+        .returning(projects.c.uuid)
+    )
+    print(str(stmt))
+    with postgres_engine.connect() as conn:
+        result = conn.execute(stmt)
+        [prj_uuid] = result.fetchone()
+
+    yield prj_uuid
+
+    with postgres_engine.connect() as conn:
+        conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
 
 
 @pytest.fixture
@@ -124,7 +156,7 @@ async def _assert_incoming_data_logs(
             # instrumentation message
             instrumentation_messages[message["service_uuid"]].append(message)
         else:
-            assert all([field in message for field in fields])
+            assert all(field in message for field in fields)
             assert message["Channel"] == "Log" or message["Channel"] == "Progress"
             assert message["user_id"] == user_id
             assert message["project_id"] == project_id
@@ -228,6 +260,7 @@ async def pipeline(
                 schema=service["schema"],
                 image=service["image"],
                 inputs=node_inputs,
+                state="PENDING",
                 outputs={},
             )
             postgres_session.add(comp_task)
@@ -405,6 +438,7 @@ async def test_run_services(
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
         async with message.process():
             data = json.loads(message.body)
+            print("incoming message", data)
             await incoming_data.append(data)
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True)
@@ -413,25 +447,11 @@ async def test_run_services(
 
     from simcore_service_sidecar import cli
 
-    # runs None first
-    next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
-    await asyncio.sleep(5)
-    assert await incoming_data.is_empty(), pformat(await incoming_data.as_list())
-    assert next_task_nodes
-    assert len(next_task_nodes) == 1
-    assert next_task_nodes[0] == next(iter(pipeline_cfg))
-
-    for node_id in next_task_nodes:
+    # run nodes
+    for node_id in pipeline_cfg:
         job_id += 1
-        next_tasks = await cli.run_sidecar(
-            job_id, user_id, pipeline.project_id, node_id
-        )
-        if next_tasks:
-            next_task_nodes.extend(next_tasks)
-    dag = [next_task_nodes[0]]
-    for key in pipeline_cfg:
-        dag.extend(pipeline_cfg[key]["next"])
-    assert next_task_nodes == dag
+        await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
+
     await asyncio.sleep(15)  # wait a little bit for logs to come in
     await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),

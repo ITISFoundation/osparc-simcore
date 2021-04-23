@@ -10,11 +10,9 @@ from typing import Callable, Dict
 from simcore_sdk.node_ports import config
 from simcore_sdk.node_ports.dbmanager import DBManager
 
-core_services = [
-    "postgres",
-]
+pytest_simcore_core_services_selection = ["postgres"]
 
-ops_services = ["minio"]
+pytest_simcore_ops_services_selection = ["minio"]
 
 
 async def test_db_manager_read_config(

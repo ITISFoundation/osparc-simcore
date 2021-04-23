@@ -17,9 +17,9 @@ from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 
-core_services = ["postgres", "storage"]
+pytest_simcore_core_services_selection = ["postgres", "storage"]
 
-ops_services = ["minio"]
+pytest_simcore_ops_services_selection = ["minio"]
 
 
 async def _check_port_valid(
@@ -174,12 +174,21 @@ async def test_port_file_accessors(
     item_value: str,
     item_pytype: Type,
     config_value: Dict[str, str],
+    project_id,
+    node_uuid,
     e_tag: str,
 ):  # pylint: disable=W0613, W0621
-    config_dict, project_id, node_uuid = special_configuration(
+
+    config_value["path"] = f"{project_id}/{node_uuid}/{Path(config_value['path']).name}"
+
+    config_dict, _project_id, _node_uuid = special_configuration(
         inputs=[("in_1", item_type, config_value)],
         outputs=[("out_34", item_type, None)],
     )
+
+    assert _project_id == project_id
+    assert _node_uuid == node_uuid
+
     PORTS = await node_ports_v2.ports()
     await check_config_valid(PORTS, config_dict)
     assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness
@@ -333,9 +342,7 @@ async def test_get_file_from_previous_node(
     item_pytype: Type,
 ):
     config_dict, _, _ = special_2nodes_configuration(
-        prev_node_outputs=[
-            ("output_int", item_type, store_link(item_value, project_id, node_uuid))
-        ],
+        prev_node_outputs=[("output_int", item_type, await store_link(item_value))],
         inputs=[("in_15", item_type, node_link("output_int"))],
         project_id=project_id,
         previous_node_id=node_uuid,
@@ -375,9 +382,7 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     item_pytype: Type,
 ):
     config_dict, _, this_node_uuid = special_2nodes_configuration(
-        prev_node_outputs=[
-            ("in_15", item_type, store_link(item_value, project_id, node_uuid))
-        ],
+        prev_node_outputs=[("in_15", item_type, await store_link(item_value))],
         inputs=[("in_15", item_type, node_link("in_15"))],
         project_id=project_id,
         previous_node_id=node_uuid,
@@ -422,7 +427,7 @@ async def test_file_mapping(
     item_pytype: Type,
 ):
     config_dict, project_id, node_uuid = special_configuration(
-        inputs=[("in_1", item_type, store_link(item_value, project_id, node_uuid))],
+        inputs=[("in_1", item_type, await store_link(item_value))],
         outputs=[("out_1", item_type, None)],
         project_id=project_id,
         node_id=node_uuid,

@@ -10,7 +10,7 @@
 #   - debug mode can be activated if SC_BOOT_MODE=debug-ptvsd (this is the default in devel).
 #   - use vscode debugger "Python: Remote Attach *" config in  ''.vscode-template/launch.json'
 #
-version: "3.7"
+version: "3.8"
 services:
   api-server:
     ports:
@@ -79,7 +79,11 @@ services:
         "-c",
         "log_line_prefix=%m [%p] %q%u@%d/%a ",
         "-c",
-        "listen_addresses=\"*\"",
+        'listen_addresses="*"',
+        "-c",
+        "max_connections=413",
+        "-c",
+        "shared_buffers=256MB"
       ]
 
   rabbit:

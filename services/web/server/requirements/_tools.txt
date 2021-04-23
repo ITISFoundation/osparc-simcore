@@ -30,7 +30,7 @@ distlib==0.3.1
     # via virtualenv
 filelock==3.0.12
     # via virtualenv
-identify==1.5.13
+identify==2.1.0
     # via pre-commit
 importlib-metadata==3.1.1
     # via
@@ -38,7 +38,7 @@ importlib-metadata==3.1.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   virtualenv
-importlib-resources==5.1.0
+importlib-resources==5.1.1
     # via
     #   pre-commit
     #   virtualenv
@@ -79,14 +79,14 @@ typed-ast==1.4.2
     # via
     #   -c requirements/_test.txt
     #   black
-typing-extensions==3.7.4.2
+typing-extensions==3.7.4.3
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
 virtualenv==20.4.2
     # via pre-commit
-watchdog[watchmedo]==2.0.0
+watchdog[watchmedo]==2.0.2
     # via -r requirements/_tools.in
 zipp==3.1.0
     # via

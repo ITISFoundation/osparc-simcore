@@ -102,7 +102,7 @@ async def _generate_tasks_list_from_project(
 
         task_state = node.state.current_status
         if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
-            task_state = RunningState.PUBLISHED
+            task_state = RunningState.PENDING
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
@@ -132,11 +132,14 @@ class CompTasksRepository(BaseRepository):
         project_id: ProjectID,
     ) -> List[CompTaskAtDB]:
         tasks: List[CompTaskAtDB] = []
-        async for row in self.connection.execute(
-            sa.select([comp_tasks]).where((comp_tasks.c.project_id == str(project_id)))
-        ):
-            task_db = CompTaskAtDB.from_orm(row)
-            tasks.append(task_db)
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([comp_tasks]).where(
+                    (comp_tasks.c.project_id == str(project_id))
+                )
+            ):
+                task_db = CompTaskAtDB.from_orm(row)
+                tasks.append(task_db)
 
         return tasks
 
@@ -146,14 +149,15 @@ class CompTasksRepository(BaseRepository):
         project_id: ProjectID,
     ) -> List[CompTaskAtDB]:
         tasks: List[CompTaskAtDB] = []
-        async for row in self.connection.execute(
-            sa.select([comp_tasks]).where(
-                (comp_tasks.c.project_id == str(project_id))
-                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-            )
-        ):
-            task_db = CompTaskAtDB.from_orm(row)
-            tasks.append(task_db)
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([comp_tasks]).where(
+                    (comp_tasks.c.project_id == str(project_id))
+                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                )
+            ):
+                task_db = CompTaskAtDB.from_orm(row)
+                tasks.append(task_db)
 
         return tasks
 
@@ -173,47 +177,50 @@ class CompTasksRepository(BaseRepository):
         ] = await _generate_tasks_list_from_project(
             project, director_client, published_nodes
         )
-        # get current tasks
-        result: RowProxy = await self.connection.execute(
-            sa.select([comp_tasks.c.node_id]).where(
-                comp_tasks.c.project_id == str(project.uuid)
-            )
-        )
-        # remove the tasks that were removed from project workbench
-        node_ids_to_delete = [
-            t.node_id
-            for t in await result.fetchall()
-            if t.node_id not in project.workbench
-        ]
-        for node_id in node_ids_to_delete:
-            await self.connection.execute(
-                sa.delete(comp_tasks).where(
-                    (comp_tasks.c.project_id == str(project.uuid))
-                    & (comp_tasks.c.node_id == node_id)
+        async with self.db_engine.acquire() as conn:
+            # get current tasks
+            result: RowProxy = await conn.execute(
+                sa.select([comp_tasks.c.node_id]).where(
+                    comp_tasks.c.project_id == str(project.uuid)
                 )
             )
+            # remove the tasks that were removed from project workbench
+            node_ids_to_delete = [
+                t.node_id
+                for t in await result.fetchall()
+                if t.node_id not in project.workbench
+            ]
+            for node_id in node_ids_to_delete:
+                await conn.execute(
+                    sa.delete(comp_tasks).where(
+                        (comp_tasks.c.project_id == str(project.uuid))
+                        & (comp_tasks.c.node_id == node_id)
+                    )
+                )
 
-        # insert or update the remaining tasks
-        # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
-        # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
-        inserted_comp_tasks_db: List[CompTaskAtDB] = []
-        for comp_task_db in list_of_comp_tasks_in_project:
+            # insert or update the remaining tasks
+            # NOTE: comp_tasks DB only trigger a notification to the webserver if an UPDATE on comp_tasks.outputs or comp_tasks.state is done
+            # NOTE: an exception to this is when a frontend service changes its output since there is no node_ports, the UPDATE must be done here.
+            inserted_comp_tasks_db: List[CompTaskAtDB] = []
+            for comp_task_db in list_of_comp_tasks_in_project:
 
-            insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
+                insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model())
 
-            exclusion_rule = (
-                {"state"} if str(comp_task_db.node_id) not in published_nodes else set()
-            )
-            if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
-                exclusion_rule.add("outputs")
-            on_update_stmt = insert_stmt.on_conflict_do_update(
-                index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                set_=comp_task_db.to_db_model(exclude=exclusion_rule),
-            ).returning(literal_column("*"))
-            result = await self.connection.execute(on_update_stmt)
-            row: RowProxy = await result.fetchone()
-            inserted_comp_tasks_db.append(CompTaskAtDB.from_orm(row))
-        return inserted_comp_tasks_db
+                exclusion_rule = (
+                    {"state"}
+                    if str(comp_task_db.node_id) not in published_nodes
+                    else set()
+                )
+                if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
+                    exclusion_rule.add("outputs")
+                on_update_stmt = insert_stmt.on_conflict_do_update(
+                    index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
+                    set_=comp_task_db.to_db_model(exclude=exclusion_rule),
+                ).returning(literal_column("*"))
+                result = await conn.execute(on_update_stmt)
+                row: RowProxy = await result.fetchone()
+                inserted_comp_tasks_db.append(CompTaskAtDB.from_orm(row))
+            return inserted_comp_tasks_db
 
     @log_decorator(logger=logger)
     async def upsert_tasks_from_project(
@@ -242,21 +249,25 @@ class CompTasksRepository(BaseRepository):
     @log_decorator(logger=logger)
     async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:
         # block all pending tasks, so the sidecars stop taking them
-        await self.connection.execute(
-            sa.update(comp_tasks)
-            .where(
-                (comp_tasks.c.project_id == str(project.uuid))
-                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-                & (
-                    (comp_tasks.c.state == StateType.PUBLISHED)
-                    | (comp_tasks.c.state == StateType.PENDING)
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(comp_tasks)
+                .where(
+                    (comp_tasks.c.project_id == str(project.uuid))
+                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                    & (
+                        (comp_tasks.c.state == StateType.PUBLISHED)
+                        | (comp_tasks.c.state == StateType.PENDING)
+                    )
                 )
+                .values(state=StateType.ABORTED)
             )
-            .values(state=StateType.ABORTED)
-        )
 
     @log_decorator(logger=logger)
     async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:
-        await self.connection.execute(
-            sa.delete(comp_tasks).where(comp_tasks.c.project_id == str(project.uuid))
-        )
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(
+                sa.delete(comp_tasks).where(
+                    comp_tasks.c.project_id == str(project.uuid)
+                )
+            )

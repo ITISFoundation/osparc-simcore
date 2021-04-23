@@ -5,30 +5,62 @@
 
 import asyncio
 import json
-import sys
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 import np_helpers
 import pytest
+import requests
+import simcore_service_storage_sdk
 import sqlalchemy as sa
+from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
+from simcore_postgres_database.storage_models import projects, users
 from simcore_sdk.models.pipeline_models import ComputationalPipeline, ComputationalTask
 from simcore_sdk.node_ports import node_config
 from yarl import URL
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+@pytest.fixture
+def user_id(postgres_engine: sa.engine.Engine) -> Iterable[int]:
+    # inject user in db
+
+    # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
+    # in time, the webserver service would bring more dependencies to other services
+    # which would turn this test too complex.
+
+    # pylint: disable=no-value-for-parameter
+    stmt = users.insert().values(**random_user(name="test")).returning(users.c.id)
+    print(str(stmt))
+    with postgres_engine.connect() as conn:
+        result = conn.execute(stmt)
+        [usr_id] = result.fetchone()
+
+    yield usr_id
+
+    with postgres_engine.connect() as conn:
+        conn.execute(users.delete().where(users.c.id == usr_id))
 
 
 @pytest.fixture
-def user_id() -> int:
-    # see fixtures/postgres.py
-    yield 1258
+def project_id(user_id: int, postgres_engine: sa.engine.Engine) -> Iterable[str]:
+    # inject project for user in db. This will give user_id, the full project's ownership
 
+    # pylint: disable=no-value-for-parameter
+    stmt = (
+        projects.insert()
+        .values(**random_project(prj_owner=user_id))
+        .returning(projects.c.uuid)
+    )
+    print(str(stmt))
+    with postgres_engine.connect() as conn:
+        result = conn.execute(stmt)
+        [prj_uuid] = result.fetchone()
 
-@pytest.fixture
-def project_id() -> str:
-    return str(uuid.uuid4())
+    yield prj_uuid
+
+    with postgres_engine.connect() as conn:
+        conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
 
 
 @pytest.fixture
@@ -57,15 +89,11 @@ async def filemanager_cfg(
 
 
 @pytest.fixture
-def file_uuid(project_id: str, node_uuid: str) -> Callable:
-    def create(file_path: Path, project: str = None, node: str = None):
-        if project is None:
-            project = project_id
-        if node is None:
-            node = node_uuid
-        return np_helpers.file_uuid(file_path, project, node)
+def create_valid_file_uuid(project_id: str, node_uuid: str) -> Callable:
+    def create(file_path: Path):
+        return np_helpers.file_uuid(file_path, project_id, node_uuid)
 
-    yield create
+    return create
 
 
 @pytest.fixture()
@@ -100,17 +128,40 @@ def node_link() -> Callable:
 
 
 @pytest.fixture()
-def store_link(minio_service, bucket, file_uuid, s3_simcore_location) -> Callable:
-    def create_store_link(
-        file_path: Path, project_id: str = None, node_id: str = None
-    ) -> Dict[str, str]:
-        # upload the file to S3
-        assert Path(file_path).exists()
-        file_id = file_uuid(file_path, project_id, node_id)
-        # using the s3 client the path must be adapted
-        # TODO: use the storage sdk instead
-        s3_object = Path(project_id, node_id, Path(file_path).name).as_posix()
-        minio_service.upload_file(bucket, s3_object, str(file_path))
+def store_link(
+    bucket: str,  # packages/pytest-simcore/src/pytest_simcore/minio_service.py
+    create_valid_file_uuid: Callable,
+    s3_simcore_location: str,
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    storage_service: URL,  # packages/pytest-simcore/src/pytest_simcore/simcore_storage_service.py
+) -> Callable:
+    async def create_store_link(file_path: Path) -> Dict[str, str]:
+        file_path = Path(file_path)
+        assert file_path.exists()
+
+        file_id = create_valid_file_uuid(file_path)
+
+        # Get upload presigned link via storage-sdk API (both pg and s3 get updated)
+        user_api = simcore_service_storage_sdk.UsersApi()
+        user_api.api_client.configuration.host = str(storage_service.with_path("/v0"))
+
+        r: simcore_service_storage_sdk.PresignedLinkEnveloped = (
+            await user_api.upload_file(file_id, s3_simcore_location, user_id)
+        )
+
+        # Upload using the link
+        extra_hdr = {
+            "Content-Length": f"{file_path.stat().st_size}",
+            "Content-Type": "application/binary",
+        }
+        upload = requests.put(
+            r.data.link, data=file_path.read_bytes(), headers=extra_hdr
+        )
+        assert upload.status_code == 200, upload.text
+
+        # FIXME: that at this point, S3 and pg have some data that is NOT cleaned up
         return {"store": s3_simcore_location, "path": file_id}
 
     yield create_store_link
@@ -157,7 +208,7 @@ def special_2nodes_configuration(
     empty_configuration_file: Path,
     project_id: str,
     node_uuid: str,
-):
+) -> Callable:
     def create_config(
         prev_node_inputs: List[Tuple[str, str, Any]] = None,
         prev_node_outputs: List[Tuple[str, str, Any]] = None,
@@ -196,6 +247,7 @@ def special_2nodes_configuration(
         return config_dict, project_id, node_uuid
 
     yield create_config
+
     # teardown
     postgres_session.query(ComputationalTask).delete()
     postgres_session.query(ComputationalPipeline).delete()

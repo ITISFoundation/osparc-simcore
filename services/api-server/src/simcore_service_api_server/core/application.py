@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -77,7 +78,11 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.add_exception_handler(
         Exception,
         make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            Exception,
+            override_detail_message="Internal error"
+            if settings.boot_mode == BootModeEnum.DEBUG
+            else None,
         ),
     )
 
@@ -95,5 +100,5 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.include_router(api_router, prefix=f"/{api_vtag}")
 
     use_route_names_as_operation_ids(app)
-
+    config_all_loggers()
     return app

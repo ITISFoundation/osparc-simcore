@@ -80,8 +80,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         });
     },
 
-    __reloadService: function(serviceKey, serviceVersion, reload) {
-      osparc.store.Store.getInstance().getService(serviceKey, serviceVersion, reload)
+    __reloadService: function(key, version, reload) {
+      osparc.store.Store.getInstance().getService(key, version, reload)
         .then(serviceData => {
           this._resetServiceItem(serviceData);
         })
@@ -124,8 +124,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       store.getServicesDAGs()
         .then(services => {
           const servicesList = [];
-          for (const serviceKey in services) {
-            const latestService = osparc.utils.Services.getLatest(services, serviceKey);
+          for (const key in services) {
+            const latestService = osparc.utils.Services.getLatest(services, key);
             servicesList.push(latestService);
           }
           this.__resetServicesList(servicesList);
@@ -224,7 +224,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       return servicesLayout;
     },
 
-    __createStudyFromService: function(serviceKey, serviceVersion) {
+    __createStudyFromService: function(key, version) {
       if (!this.__checkLoggedIn()) {
         return;
       }
@@ -233,8 +233,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs()
         .then(services => {
-          if (serviceKey in services) {
-            const service = serviceVersion ? osparc.utils.Services.getFromObject(services, serviceKey, serviceVersion) : osparc.utils.Services.getLatest(services, serviceKey);
+          if (key in services) {
+            const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);
             const newUuid = osparc.utils.Utils.uuidv4();
             const minStudyData = osparc.data.model.Study.createMyNewStudyObject();
             minStudyData["name"] = service["name"];
@@ -500,7 +500,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       studyServicesButton.addListener("execute", () => {
         const servicesInStudy = new osparc.component.metadata.ServicesInStudy(studyData);
         const title = this.tr("Services in Study");
-        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 400, 100);
+        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 650, 300);
       }, this);
       return studyServicesButton;
     },
@@ -537,8 +537,8 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
 
     __itemClicked: function(item) {
       if (item.isResourceType("service")) {
-        const serviceKey = item.getUuid();
-        this.__createStudyFromService(serviceKey, null);
+        const key = item.getUuid();
+        this.__createStudyFromService(key, null);
       } else {
         const matchesId = study => study.uuid === item.getUuid();
         const templateData = this.__templates.find(matchesId);
@@ -547,22 +547,73 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       this.resetSelection();
     },
 
-    _openServiceDetailsEditor: function(serviceData) {
-      const serviceDetailsEditor = new osparc.component.metadata.ServiceDetailsEditor(serviceData);
-      const title = this.tr("Service information") + " · " + serviceData.name;
-      const win = osparc.ui.window.Window.popUpInWindow(serviceDetailsEditor, title, 700, 800);
-      serviceDetailsEditor.addListener("startService", e => {
-        const {
-          serviceKey,
-          serviceVersion
-        } = e.getData();
-        this.__createStudyFromService(serviceKey, serviceVersion);
-        win.close();
+    _openServiceDetails: function(serviceData) {
+      const view = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const serviceVersionsList = new qx.ui.form.SelectBox().set({
+        allowGrowX: false,
+        font: "text-14"
       });
-      serviceDetailsEditor.addListener("updateService", e => {
-        const newServiceData = e.getData();
-        this._resetServiceItem(newServiceData);
+      const store = osparc.store.Store.getInstance();
+      store.getServicesDAGs()
+        .then(services => {
+          const versions = osparc.utils.Services.getVersions(services, serviceData["key"]);
+          if (versions) {
+            let selectedItem = null;
+            versions.reverse().forEach(version => {
+              const listItem = new qx.ui.form.ListItem(version).set({
+                font: "text-14"
+              });
+              serviceVersionsList.add(listItem);
+              if (serviceData["version"] === version) {
+                selectedItem = listItem;
+              }
+            });
+            if (selectedItem) {
+              serviceVersionsList.setSelection([selectedItem]);
+            }
+          }
+        });
+      view.add(serviceVersionsList);
+
+      const serviceDetails = new osparc.servicecard.Large(serviceData);
+      view.add(serviceDetails, {
+        flex: 1
+      });
+
+      const openButton = new qx.ui.form.Button(this.tr("Open")).set({
+        allowGrowX: false,
+        alignX: "right"
+      });
+      osparc.utils.Utils.setIdToWidget(openButton, "startServiceBtn");
+      view.add(openButton);
+
+      const title = this.tr("Service information");
+      const width = 600;
+      const height = 700;
+      const win = osparc.ui.window.Window.popUpInWindow(view, title, width, height);
+
+      serviceVersionsList.addListener("changeSelection", () => {
+        const selection = serviceVersionsList.getSelection();
+        if (selection && selection.length) {
+          const serviceVersion = selection[0].getLabel();
+          store.getServicesDAGs()
+            .then(services => {
+              const selectedService = osparc.utils.Services.getFromObject(services, serviceData["key"], serviceVersion);
+              serviceDetails.setService(selectedService);
+            });
+        }
+      }, this);
+
+      serviceDetails.addListener("updateService", e => {
+        const updatedServiceData = e.getData();
+        this._resetServiceItem(updatedServiceData);
+      });
+
+      openButton.addListener("execute", () => {
         win.close();
+        const currentService = serviceDetails.getService();
+        this.__createStudyFromService(currentService["key"], currentService["version"]);
       });
     },
 

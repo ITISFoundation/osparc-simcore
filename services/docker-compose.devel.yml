@@ -4,7 +4,7 @@
 # NOTES:
 # - port 3000 used for ptsv
 #
-version: "3.7"
+version: "3.8"
 services:
   api-server:
     environment:
@@ -13,6 +13,7 @@ services:
       - DEBUG=true
     volumes:
       - ./api-server:/devel/services/api-server
+      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   catalog:

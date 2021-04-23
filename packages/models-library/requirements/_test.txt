@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.3
+aiohttp==3.7.4
     # via pytest-aiohttp
-astroid==2.4.2
+astroid==2.5.1
     # via pylint
 async-timeout==3.0.1
     # via aiohttp
@@ -20,12 +20,12 @@ chardet==3.0.4
     # via
     #   aiohttp
     #   requests
-coverage==5.4
+coverage==5.5
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.0.0
+coveralls==3.0.1
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
@@ -35,23 +35,22 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.4.0
+importlib-metadata==3.7.0
     # via
     #   pint
     #   pluggy
     #   pytest
-importlib-resources==5.1.0
+importlib-resources==5.1.1
     # via pint
 iniconfig==1.1.1
     # via pytest
 isort==5.7.0
     # via pylint
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.5.2
     # via astroid
 mccabe==0.6.1
     # via pylint
@@ -72,7 +71,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 py==1.10.0
     # via pytest
-pylint==2.6.0
+pylint==2.7.2
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging
@@ -105,8 +104,6 @@ pyyaml==5.4.1
     #   -r requirements/_test.in
 requests==2.25.1
     # via coveralls
-six==1.15.0
-    # via astroid
 termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
@@ -117,6 +114,7 @@ typed-ast==1.4.2
     # via astroid
 typing-extensions==3.7.4.3
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   importlib-metadata
     #   yarl

@@ -89,9 +89,9 @@ async def _update_project_outputs(
     )
 
 
-async def listen(app: web.Application):
+async def listen(app: web.Application, db_engine: Engine):
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-    db_engine: Engine = app[APP_DB_ENGINE_KEY]
+
     async with db_engine.acquire() as conn:
         await conn.execute(listen_query)
 
@@ -169,8 +169,10 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
     log.info("starting comp_task db listening task...")
     while True:
         try:
+            # create a special connection here
+            db_engine = app[APP_DB_ENGINE_KEY]
             log.info("listening to comp_task events...")
-            await listen(app)
+            await listen(app, db_engine)
         except asyncio.CancelledError:
             # we are closing the app..
             return
