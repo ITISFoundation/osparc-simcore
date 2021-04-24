@@ -134,6 +134,57 @@ help – Display all callable targets
 $ make
 ```
 
+### Updating testing & tooling requirements (t&t reqs)
+
+For packages, is easily automated since ALL requirements in packages
+are frozen to define a repeatable testing. Notice that the requirements
+in the setup they are fed from .in requirements files and not the .txt
+requirements. For that reason, a full upgrade of requirements in every
+package will ONLY affect testing and tooling of the package. In short,
+to upgrade t&t reqs in packages, we must:
+- touch ``*.in``
+- ``make reqs``
+and should change ``_base.txt, _test.txt, _tool.txt``
+
+
+In the case of services is a bit more involved since
+we must compile ``_test.*`` and ``_tool.*`` without changing ``_base.*``
+- touch ``_test.*, _tool.*``
+- ``make reqs``
+BUT the problem is that ``_base.in`` includes dependencies to packages
+``*.in`` files which MIGHT have added NEW CONSTRAINTS. For that reason,
+we need to update carefully ``_base.*`` as well such that it produces
+a new ``_base.txt`` that accounts for ONLY the CONSTRAINTS. A trick
+is to call ``make reqs upgrade=<some-fixed-version-dependency-already-in-base-txt>``. The latter
+will upgrade only packages that do not suit the constraints.
+
+So, this is a typical workflow:
+
+```console
+$ cd requirements/tools
+$ make build-nc
+$ make shell
+(container)~$ cd requirements/tools
+(container)~$ cd make reqs
+```
+
+```console
+$ cd requirements/tools
+$ make build-nc
+$ make shell
+crespo@8ac9edf78469:~$ cd services/api-server/requirements
+```
+#### upgrades _base.in ONLY on constraints (e.g. fix upgrade to a given version)
+```console
+crespo@8ac9edf78469:~/services/api-server/requirements$ touch _base.in
+crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs upgrade=fastapi==x.x
+```
+#### full upgrade of tests
+```console
+crespo@8ac9edf78469:~/services/api-server/requirements$ touch _tests.in
+crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs
+```
+
 
 ## References
 

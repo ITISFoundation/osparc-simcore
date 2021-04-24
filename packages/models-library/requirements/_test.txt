@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.4
+aiohttp==3.7.4.post0
     # via pytest-aiohttp
-astroid==2.5.1
+astroid==2.5.3
     # via pylint
 async-timeout==3.0.1
     # via aiohttp
@@ -16,7 +16,7 @@ attrs==20.3.0
     #   pytest
 certifi==2020.12.5
     # via requests
-chardet==3.0.4
+chardet==4.0.0
     # via
     #   aiohttp
     #   requests
@@ -39,18 +39,18 @@ idna==2.10
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.7.0
+importlib-metadata==4.0.1
     # via
     #   pint
     #   pluggy
     #   pytest
-importlib-resources==5.1.1
+importlib-resources==5.1.2
     # via pint
 iniconfig==1.1.1
     # via pytest
-isort==5.7.0
+isort==5.8.0
     # via pylint
-lazy-object-proxy==1.5.2
+lazy-object-proxy==1.6.0
     # via astroid
 mccabe==0.6.1
     # via pylint
@@ -63,7 +63,7 @@ packaging==20.9
     #   pint
     #   pytest
     #   pytest-sugar
-pint==0.16.1
+pint==0.17
     # via -r requirements/_test.in
 pluggy==0.13.1
     # via pytest
@@ -71,7 +71,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 py==1.10.0
     # via pytest
-pylint==2.7.2
+pylint==2.7.4
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging
@@ -89,7 +89,7 @@ pytest-runner==5.3.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -110,7 +110,7 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-typed-ast==1.4.2
+typed-ast==1.4.3
     # via astroid
 typing-extensions==3.7.4.3
     # via
@@ -118,7 +118,7 @@ typing-extensions==3.7.4.3
     #   aiohttp
     #   importlib-metadata
     #   yarl
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -126,7 +126,7 @@ wrapt==1.12.1
     # via astroid
 yarl==1.6.3
     # via aiohttp
-zipp==3.4.0
+zipp==3.4.1
     # via
     #   importlib-metadata
     #   importlib-resources

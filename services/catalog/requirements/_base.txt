@@ -68,6 +68,8 @@ httpx==0.14.3
     #   -r requirements/_base.in
 idna==2.10
     # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   email-validator
     #   requests
     #   rfc3986
@@ -122,6 +124,7 @@ six==1.15.0
     #   graphene
     #   graphql-core
     #   graphql-relay
+    #   promise
     #   python-multipart
     #   tenacity
 sniffio==1.2.0
