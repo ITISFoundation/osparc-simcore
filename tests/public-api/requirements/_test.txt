@@ -36,7 +36,7 @@ idna==2.10
     #   rfc3986
 immutables==0.15
     # via contextvars
-importlib-metadata==3.7.0
+importlib-metadata==4.0.1
     # via
     #   jsonschema
     #   pluggy
@@ -55,16 +55,16 @@ pyparsing==2.4.7
     # via packaging
 pyrsistent==0.17.3
     # via jsonschema
-pytest-asyncio==0.14.0
+pytest-asyncio==0.15.1
     # via -r requirements/_test.in
 pytest-cov==2.11.1
     # via -r requirements/_test.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
-python-dotenv==0.15.0
+python-dotenv==0.17.0
     # via -r requirements/_test.in
 pyyaml==5.4.1
     # via
@@ -89,13 +89,13 @@ toml==0.10.2
     # via pytest
 typing-extensions==3.7.4.3
     # via importlib-metadata
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 websocket-client==0.58.0
     # via docker
-zipp==3.4.0
+zipp==3.4.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

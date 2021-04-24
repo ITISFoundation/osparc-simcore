@@ -11,7 +11,9 @@ dnspython==2.1.0
 email-validator==1.1.2
     # via pydantic
 idna==2.10
-    # via email-validator
+    # via
+    #   -r requirements/_base.in
+    #   email-validator
 pydantic[email]==1.8.1
     # via -r requirements/_base.in
 typing-extensions==3.7.4.3

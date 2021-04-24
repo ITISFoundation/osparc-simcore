@@ -62,11 +62,9 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/models-library/requirements/_base.in
+    #   -c requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   email-validator
     #   idna-ssl
     #   yarl
