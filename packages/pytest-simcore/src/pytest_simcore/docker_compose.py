@@ -32,7 +32,6 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     Loads and extends .env-devel returning
     all environment variables key=value
     """
-
     env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
     # get from environ if applicable
     env_devel = {
@@ -122,6 +121,7 @@ def simcore_docker_compose(
         docker_compose_paths,
         workdir=env_file.parent,
         destination_path=temp_folder / "simcore_docker_compose.yml",
+        env_file_path=env_file,
     )
     print("simcore docker-compose:\n%s", pformat(config))
     return config
@@ -149,6 +149,7 @@ def ops_docker_compose(
         docker_compose_path,
         workdir=env_file.parent,
         destination_path=temp_folder / "ops_docker_compose.yml",
+        env_file_path=env_file,
     )
     print("ops docker-compose:\n%s", pformat(config))
     return config
@@ -158,6 +159,7 @@ def ops_docker_compose(
 def core_services_selection(request) -> List[str]:
     """ Selection of services from the simcore stack """
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
+
     assert (
         core_services
     ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
@@ -205,11 +207,9 @@ def ops_docker_compose_file(
 
 # HELPERS ---------------------------------------------
 def _minio_fix(service_environs: Dict) -> Dict:
-    """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work.
-    172.17.0.1 is the docker0 interface, which redirect from inside a container onto the host network interface.
-    """
+    """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
-        service_environs["S3_ENDPOINT"] = "172.17.0.1:9001"
+        service_environs["S3_ENDPOINT"] = f"{_get_ip()}:9001"
     return service_environs
 
 

@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from pydantic.types import PositiveInt
 
 from ...db.repositories.api_keys import ApiKeysRepository
 from ...db.repositories.users import UsersRepository
@@ -25,7 +26,7 @@ def _create_exception():
 async def get_current_user_id(
     credentials: HTTPBasicCredentials = Security(basic_scheme),
     apikeys_repo: ApiKeysRepository = Depends(get_repository(ApiKeysRepository)),
-) -> int:
+) -> PositiveInt:
     user_id = await apikeys_repo.get_user_id(
         api_key=credentials.username, api_secret=credentials.password
     )
@@ -35,7 +36,7 @@ async def get_current_user_id(
 
 
 async def get_active_user_email(
-    user_id: int = Depends(get_current_user_id),
+    user_id: PositiveInt = Depends(get_current_user_id),
     users_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> str:
     email = await users_repo.get_email_from_user_id(user_id)

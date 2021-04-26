@@ -23,7 +23,7 @@ db:
     port: 5432
     maxsize: 5
     minsize: 1
-    endpoint: postgres:5432
+    endpoint: 127.0.0.1:5432
 resource_manager:
   enabled: True
   redis:

@@ -14,12 +14,14 @@ from osparc.models import Solver
 from packaging.version import parse as parse_version
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sleeper_key_and_version(services_registry: Dict[str, Any]) -> Tuple[str, str]:
     # image in registry
     repository_name = services_registry["sleeper_service"]["name"]
     tag = services_registry["sleeper_service"]["version"]
 
+    assert repository_name == "simcore/services/comp/itis/sleeper"
+    assert tag == "2.1.1"
     # this is how image info map into solvers identifiers
     #
     #  repository_name -> solver_key
@@ -37,6 +39,7 @@ def test_get_latest_solver(solvers_api: SolversApi):
 
         solver_names.append(latest.id)
 
+    assert solver_names
     assert sorted(solver_names) == sorted(set(solver_names))
 
 
@@ -45,6 +48,8 @@ def test_get_all_releases(solvers_api: SolversApi):
     all_releases: List[
         Solver
     ] = solvers_api.list_solvers_releases()  # all release of all solvers
+
+    assert all_releases
 
     one_solver = random.choice(all_releases)
     all_releases_of_given_solver: List[Solver] = solvers_api.list_solver_releases(

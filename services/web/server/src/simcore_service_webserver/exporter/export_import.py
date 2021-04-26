@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Type
 
 import aiofiles
 from aiohttp import web
@@ -8,7 +9,7 @@ from aiohttp.web_request import FileField
 from .archiving import unzip_folder, validate_osparc_import_name, zip_folder
 from .async_hashing import checksum
 from .exceptions import ExporterException
-from .formatters import BaseFormatter, FormatterV1, validate_manifest
+from .formatters import BaseFormatter, FormatterV2, validate_manifest
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +19,9 @@ async def study_export(
     tmp_dir: str,
     project_id: str,
     user_id: int,
+    product_name: str,
     archive: bool = False,
+    formatter_class: Type[BaseFormatter] = FormatterV2,
 ) -> Path:
     """
     Generates a folder with all the data necessary for exporting a project.
@@ -32,9 +35,9 @@ async def study_export(
     destination.mkdir(parents=True, exist_ok=True)
 
     # The formatter will always be chosen to be the highest availabel version
-    formatter = FormatterV1(root_folder=destination)
+    formatter = formatter_class(root_folder=destination)
     await formatter.format_export_directory(
-        app=app, project_id=project_id, user_id=user_id
+        app=app, project_id=project_id, user_id=user_id, product_name=product_name
     )
 
     if archive is False:

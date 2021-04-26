@@ -49,6 +49,16 @@ qx.Class.define("osparc.utils.Services", {
 
     servicesCached: {},
 
+    addServiceToCache: function(service) {
+      this.servicesCached = Object.assign(this.servicesCached, service);
+    },
+
+    servicesToCache: function(services) {
+      this.servicesCached = {};
+      this.__addExtraInfo(services);
+      this.servicesCached = Object.assign(this.servicesCached, services);
+    },
+
     getTypes: function() {
       return Object.keys(this.TYPES);
     },
@@ -120,6 +130,77 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
+    /**
+     * Compatibility check:
+     * - compIOFields of src inputs need to be in dest inputs
+     * - compIOFields of src outputs need to be in dest outputs
+     */
+    __areNodesCompatible: function(srcNode, destNode) {
+      const compIOFields = ["keyId", "type", "unit"]; // fileToKeyMap?, defaultValue?
+
+      // inputs
+      const inputKeys = Object.keys(srcNode["inputs"]);
+      for (let i=0; i<inputKeys.length; i++) {
+        const inputKey = inputKeys[i];
+        if (!(inputKey in destNode["inputs"])) {
+          return false;
+        }
+        const inputFields = Object.keys(srcNode["inputs"][inputKey]);
+        for (let j=0; j<inputFields.length; j++) {
+          const inputField = inputFields[j];
+          if (compIOFields.includes(inputField)) {
+            if (!(inputField in destNode["inputs"][inputKey]) || srcNode["inputs"][inputKey][inputField] !== destNode["inputs"][inputKey][inputField]) {
+              return false;
+            }
+          }
+        }
+      }
+
+      // outputs
+      const outputKeys = Object.keys(srcNode["outputs"]);
+      for (let i=0; i<outputKeys.length; i++) {
+        const outputKey = outputKeys[i];
+        if (!(outputKey in destNode["outputs"])) {
+          return false;
+        }
+        const outputFields = Object.keys(srcNode["outputs"][outputKey]);
+        for (let j=0; j<outputFields.length; j++) {
+          const outputField = outputFields[j];
+          if (compIOFields.includes(outputField)) {
+            if (!(outputField in destNode["outputs"][outputKey]) || srcNode["outputs"][outputKey][outputField] !== destNode["outputs"][outputKey][outputField]) {
+              return false;
+            }
+          }
+        }
+      }
+
+      return true;
+    },
+
+    getLatestCompatible: function(services, srcKey, srcVersion) {
+      const srcNode = this.getFromObject(services, srcKey, srcVersion);
+      let versions = this.getVersions(services, srcKey);
+      // only allow patch versions
+      versions = versions.filter(version => {
+        const v1 = version.split(".");
+        const v2 = srcVersion.split(".");
+        return (v1[0] === v2[0] && v1[1] === v2[1]);
+      });
+      versions.reverse();
+      const idx = versions.indexOf(srcVersion);
+      if (idx > -1) {
+        versions.length = idx+1;
+        for (let i=0; i<versions.length; i++) {
+          const destVersion = versions[i];
+          const destNode = this.getFromObject(services, srcKey, destVersion);
+          if (this.__areNodesCompatible(srcNode, destNode)) {
+            return destNode;
+          }
+        }
+      }
+      return srcNode;
+    },
+
     getMetaData: function(key, version) {
       let metaData = null;
       if (key && version) {
@@ -139,16 +220,6 @@ qx.Class.define("osparc.utils.Services", {
 
     getNodesGroup: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
-    },
-
-    addServiceToCache: function(service) {
-      this.servicesCached = Object.assign(this.servicesCached, service);
-    },
-
-    servicesToCache: function(services) {
-      this.servicesCached = {};
-      this.__addExtraInfo(services);
-      this.servicesCached = Object.assign(this.servicesCached, services);
     },
 
     __addExtraInfo: function(services) {

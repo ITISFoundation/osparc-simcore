@@ -16,7 +16,6 @@ from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import quote_plus
 
 from aiopg.sa import Engine
-from aiopg.sa.connection import SAConnection
 from fastapi import FastAPI
 from models_library.services import (
     ServiceAccessRightsAtDB,
@@ -67,9 +66,9 @@ async def _list_registry_services(
 
 
 async def _list_db_services(
-    connection: SAConnection,
+    db_engine: Engine,
 ) -> Set[Tuple[ServiceKey, ServiceVersion]]:
-    services_repo = ServicesRepository(connection)
+    services_repo = ServicesRepository(db_engine=db_engine)
     return {
         (service.key, service.version)
         for service in await services_repo.list_services()
@@ -77,7 +76,7 @@ async def _list_db_services(
 
 
 async def _create_service_default_access_rights(
-    app: FastAPI, service: ServiceDockerData, connection: SAConnection
+    app: FastAPI, service: ServiceDockerData, db_engine: Engine
 ) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
     """Rationale as of 19.08.2020: all services that were put in oSparc before today
     will be visible to everyone.
@@ -98,7 +97,7 @@ async def _create_service_default_access_rights(
         service_build_data = datetime.strptime(data["build_date"], "%Y-%m-%dT%H:%M:%SZ")
         return service_build_data < OLD_SERVICES_DATE
 
-    groups_repo = GroupsRepository(connection)
+    groups_repo = GroupsRepository(db_engine)
     everyone_gid = (await groups_repo.get_everyone_group()).gid
     owner_gid = None
     reader_gids: List[PositiveInt] = []
@@ -144,17 +143,17 @@ async def _create_service_default_access_rights(
 
 async def _create_services_in_db(
     app: FastAPI,
-    connection: SAConnection,
+    db_engine: Engine,
     service_keys: Set[Tuple[ServiceKey, ServiceVersion]],
     services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
 ) -> None:
 
-    services_repo = ServicesRepository(connection)
+    services_repo = ServicesRepository(db_engine)
     for service_key, service_version in service_keys:
         service: ServiceDockerData = services[(service_key, service_version)]
         # find the service owner
         owner_gid, service_access_rights = await _create_service_default_access_rights(
-            app, service, connection
+            app, service, db_engine
         )
         # set the service in the DB
         await services_repo.create_service(
@@ -163,14 +162,12 @@ async def _create_services_in_db(
         )
 
 
-async def _ensure_registry_insync_with_db(
-    app: FastAPI, connection: SAConnection
-) -> None:
+async def _ensure_registry_insync_with_db(app: FastAPI, db_engine: Engine) -> None:
     services_in_registry: Dict[
         Tuple[ServiceKey, ServiceVersion], ServiceDockerData
     ] = await _list_registry_services(app)
     services_in_db: Set[Tuple[ServiceKey, ServiceVersion]] = await _list_db_services(
-        connection
+        db_engine
     )
 
     # check that the db has all the services at least once
@@ -182,25 +179,25 @@ async def _ensure_registry_insync_with_db(
         )
         # update db (rationale: missing services are shared with everyone for now)
         await _create_services_in_db(
-            app, connection, missing_services_in_db, services_in_registry
+            app, db_engine, missing_services_in_db, services_in_registry
         )
 
 
 async def _ensure_published_templates_accessible(
-    connection: SAConnection, default_product_name: str
+    db_engine: Engine, default_product_name: str
 ) -> None:
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
-    projects_repo = ProjectsRepository(connection)
+    projects_repo = ProjectsRepository(db_engine)
     published_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await projects_repo.list_services_from_published_templates()
     }
 
-    groups_repo = GroupsRepository(connection)
+    groups_repo = GroupsRepository(db_engine)
     everyone_gid = (await groups_repo.get_everyone_group()).gid
 
-    services_repo = ServicesRepository(connection)
+    services_repo = ServicesRepository(db_engine)
     available_services: Set[Tuple[str, str]] = {
         (service.key, service.version)
         for service in await services_repo.list_services(
@@ -231,17 +228,17 @@ async def sync_registry_task(app: FastAPI) -> None:
     # get list of services from director
     default_product: str = app.state.settings.access_rights_default_product_name
     engine: Engine = app.state.engine
+
     while True:
         try:
-            async with engine.acquire() as conn:
-                logger.debug("syncing services between registry and database...")
+            logger.debug("syncing services between registry and database...")
 
-                # check that the list of services is in sync with the registry
-                await _ensure_registry_insync_with_db(app, conn)
+            # check that the list of services is in sync with the registry
+            await _ensure_registry_insync_with_db(app, engine)
 
-                # check that the published services are available to everyone
-                # (templates are published to GUESTs, so their services must be also accessible)
-                await _ensure_published_templates_accessible(conn, default_product)
+            # check that the published services are available to everyone
+            # (templates are published to GUESTs, so their services must be also accessible)
+            await _ensure_published_templates_accessible(engine, default_product)
 
             await asyncio.sleep(app.state.settings.background_task_rest_time)
 

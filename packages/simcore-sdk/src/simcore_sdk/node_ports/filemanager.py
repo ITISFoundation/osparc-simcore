@@ -100,35 +100,40 @@ async def _get_location_id_from_location_name(store: str, api: UsersApi):
 
 async def _get_link(store_id: int, file_id: str, apifct) -> URL:
     log.debug("Getting link from store id %s for %s", store_id, file_id)
-    try:
-        # When uploading and downloading files from the storage service
-        # it is important to use a longer timeout, previously was 5 minutes
-        # changing to 1 hour. this will allow for larger payloads to be stored/download
-        resp = await apifct(
-            location_id=store_id,
-            user_id=config.USER_ID,
-            file_id=file_id,
-            _request_timeout=ServicesCommonSettings().storage_service_upload_download_timeout,
-        )
+    # When uploading and downloading files from the storage service
+    # it is important to use a longer timeout, previously was 5 minutes
+    # changing to 1 hour. this will allow for larger payloads to be stored/download
+    resp = await apifct(
+        location_id=store_id,
+        user_id=config.USER_ID,
+        file_id=file_id,
+        _request_timeout=ServicesCommonSettings().storage_service_upload_download_timeout,
+    )
 
-        if resp.error:
-            raise exceptions.S3TransferError(
-                "Error getting link: {}".format(resp.error.to_str())
-            )
-        if not resp.data.link:
-            raise exceptions.S3InvalidPathError(file_id)
-        log.debug("Got link %s", resp.data.link)
-        return URL(resp.data.link)
-    except ApiException as err:
-        _handle_api_exception(store_id, err)
+    if resp.error:
+        raise exceptions.S3TransferError(
+            "Error getting link: {}".format(resp.error.to_str())
+        )
+    if not resp.data.link:
+        raise exceptions.S3InvalidPathError(file_id)
+    log.debug("Got link %s", resp.data.link)
+    return URL(resp.data.link)
 
 
 async def _get_download_link(store_id: int, file_id: str, api: UsersApi) -> URL:
-    return await _get_link(store_id, file_id, api.download_file)
+    try:
+        return await _get_link(store_id, file_id, api.download_file)
+    except ApiException as err:
+        if err.status == 404:
+            raise exceptions.InvalidDownloadLinkError(None) from err
+        _handle_api_exception(store_id, err)
 
 
 async def _get_upload_link(store_id: int, file_id: str, api: UsersApi) -> URL:
-    return await _get_link(store_id, file_id, api.upload_file)
+    try:
+        return await _get_link(store_id, file_id, api.upload_file)
+    except ApiException as err:
+        _handle_api_exception(store_id, err)
 
 
 async def _download_link_to_file(session: ClientSession, url: URL, file_path: Path):
@@ -139,7 +144,8 @@ async def _download_link_to_file(session: ClientSession, url: URL, file_path: Pa
         if response.status > 299:
             raise exceptions.TransferError(url)
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        file_size = int(response.headers.get("content-length", 0)) or None
+        # SEE https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Length
+        file_size = int(response.headers.get("Content-Length", 0)) or None
         try:
             with tqdm(
                 desc=f"downloading {file_path} [{file_size} bytes]",

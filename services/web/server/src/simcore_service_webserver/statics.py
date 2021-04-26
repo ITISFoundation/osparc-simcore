@@ -18,7 +18,12 @@ from servicelib.application_keys import APP_CONFIG_KEY
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from tenacity import after_log, retry, stop_after_attempt, wait_random
 
-from .constants import APP_SETTINGS_KEY, RQ_PRODUCT_FRONTEND_KEY, RQ_PRODUCT_KEY
+from .constants import (
+    APP_SETTINGS_KEY,
+    INDEX_RESOURCE_NAME,
+    RQ_PRODUCT_FRONTEND_KEY,
+    RQ_PRODUCT_KEY,
+)
 from .statics_settings import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
@@ -26,7 +31,6 @@ from .statics_settings import (
 )
 
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
-INDEX_RESOURCE_NAME = "statics.index"
 
 APP_FRONTEND_BASEDIR_KEY = f"{__name__}.frontend_basedir"
 APP_STATICS_OUTDIR_KEY = f"{__file__}.outdir"
@@ -129,10 +133,8 @@ def setup_statics(app: web.Application):
         routes.static(f"/{folder.name}", folder, show_index=is_dev)
     app.add_routes(routes)
 
-
     # Create dynamic route to serve front-end client
     app.router.add_get("/", get_frontend_ria, name=INDEX_RESOURCE_NAME)
-
 
     # Delayed creation of statics.json (mostly for dev mode)
     app.on_startup.append(_start_statics)

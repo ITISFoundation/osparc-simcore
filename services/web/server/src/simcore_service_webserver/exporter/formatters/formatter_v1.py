@@ -1,11 +1,12 @@
 import asyncio
+import datetime
 import json
 import logging
 import traceback
 from collections import deque
 from itertools import chain
 from pathlib import Path
-from typing import Deque, Dict, List, Tuple
+from typing import Deque, Dict, List, Optional, Tuple
 
 import aiofiles
 from aiohttp import ClientSession, ClientTimeout, web
@@ -124,7 +125,12 @@ async def extract_download_links(
 
 
 async def generate_directory_contents(
-    app: web.Application, root_folder: Path, project_id: str, user_id: int, version: str
+    app: web.Application,
+    root_folder: Path,
+    manifest_root_folder: Optional[Path],
+    project_id: str,
+    user_id: int,
+    version: str,
 ) -> None:
     try:
         project_data = await get_project_for_user(
@@ -151,7 +157,9 @@ async def generate_directory_contents(
         version=version,
         attachments=[str(x.store_path) for x in download_links],
     )
-    await ManifestFile.model_to_file(root_dir=root_folder, **manifest_params)
+    await ManifestFile.model_to_file(
+        root_dir=manifest_root_folder or root_folder, **manifest_params
+    )
 
     # store project data on disk
     await ProjectFile.model_to_file(root_dir=root_folder, **project_data)
@@ -301,7 +309,9 @@ async def _upload_files_to_storage(
     shuffled_data: ShuffledData,
 ) -> List[Tuple[LinkAndPath2, ETag]]:
     # check all attachments are present
-    client_timeout = ClientTimeout(total=UPLOAD_HTTP_TIMEOUT, connect=5, sock_connect=5)
+    client_timeout = ClientTimeout(
+        total=UPLOAD_HTTP_TIMEOUT, connect=None, sock_connect=5
+    )
     async with ClientSession(timeout=client_timeout) as session:
         run_in_parallel = deque()
         for attachment in manifest_file.attachments:
@@ -338,7 +348,10 @@ async def _upload_files_to_storage(
 
 
 async def import_files_and_validate_project(
-    app: web.Application, user_id: int, root_folder: Path
+    app: web.Application,
+    user_id: int,
+    root_folder: Path,
+    manifest_root_folder: Optional[Path],
 ) -> str:
     project_file = await ProjectFile.model_from_file(root_dir=root_folder)
     shuffled_data: ShuffledData = project_file.get_shuffled_uuids()
@@ -349,11 +362,19 @@ async def import_files_and_validate_project(
     shuffled_project_file = project_file.new_instance_from_shuffled_data(
         shuffled_data=shuffled_data
     )
+    # creating an unique name to help the user distinguish
+    # between the original and new study
+    shuffled_project_file.name = "%s %s" % (
+        shuffled_project_file.name,
+        datetime.datetime.utcnow().strftime("%Y:%m:%d:%H:%M:%S"),
+    )
 
     log.debug("Shuffled project data: %s", shuffled_project_file)
 
     # NOTE: it is not necessary to apply data shuffling to the manifest
-    manifest_file = await ManifestFile.model_from_file(root_dir=root_folder)
+    manifest_file = await ManifestFile.model_from_file(
+        root_dir=manifest_root_folder or root_folder
+    )
 
     user: Dict = await get_user(app=app, user_id=user_id)
 
@@ -414,17 +435,19 @@ async def import_files_and_validate_project(
 
 
 class FormatterV1(BaseFormatter):
-    def __init__(self, root_folder: Path):
-        super().__init__(version="1", root_folder=root_folder)
+    def __init__(self, root_folder: Path, version: str = "1"):
+        super().__init__(version=version, root_folder=root_folder)
 
-    async def format_export_directory(self, **kwargs) -> None:
-        app: web.Application = kwargs["app"]
-        project_id: str = kwargs["project_id"]
-        user_id: int = kwargs["user_id"]
+    async def format_export_directory(
+        self, app: web.Application, project_id: str, user_id: int, **kwargs
+    ) -> None:
+        # injected by Formatter_V2
+        manifest_root_folder: Optional[Path] = kwargs.get("manifest_root_folder")
 
         await generate_directory_contents(
             app=app,
             root_folder=self.root_folder,
+            manifest_root_folder=manifest_root_folder,
             project_id=project_id,
             user_id=user_id,
             version=self.version,
@@ -433,7 +456,12 @@ class FormatterV1(BaseFormatter):
     async def validate_and_import_directory(self, **kwargs) -> str:
         app: web.Application = kwargs["app"]
         user_id: int = kwargs["user_id"]
+        # injected by Formatter_V2
+        manifest_root_folder: Optional[Path] = kwargs.get("manifest_root_folder")
 
         return await import_files_and_validate_project(
-            app=app, user_id=user_id, root_folder=self.root_folder
+            app=app,
+            user_id=user_id,
+            root_folder=self.root_folder,
+            manifest_root_folder=manifest_root_folder,
         )

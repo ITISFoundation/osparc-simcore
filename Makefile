@@ -102,7 +102,7 @@ define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production));\
 $(if $(findstring -x,$@),\
 	pushd services; docker buildx bake --file docker-compose-build.yml; popd;,\
-	docker-compose -f services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
+	docker-compose --file services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
 )
 endef
 
@@ -183,21 +183,21 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	@export DOCKER_REGISTRY=local \
 	export DOCKER_IMAGE_TAG=development; \
 	export DEV_PC_CPU_COUNT=${CPU_COUNT}; \
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml -f services/docker-compose.devel.yml --log-level=ERROR config > $@
+	docker-compose --env-file .env --file services/docker-compose.yml --file services/docker-compose.local.yml --file services/docker-compose.devel.yml --log-level=ERROR config > $@
 
 .stack-simcore-production.yml: .env $(docker-compose-configs)
 	# Creating config for stack with 'local/{service}:production' to $@
 	@export DOCKER_REGISTRY=local;       \
 	export DOCKER_IMAGE_TAG=production; \
-	docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
+	docker-compose --env-file .env --file services/docker-compose.yml --file services/docker-compose.local.yml --log-level=ERROR config > $@
 
 .stack-simcore-version.yml: .env $(docker-compose-configs)
 	# Creating config for stack with '$(DOCKER_REGISTRY)/{service}:${DOCKER_IMAGE_TAG}' to $@
-	@docker-compose -f services/docker-compose.yml -f services/docker-compose.local.yml --log-level=ERROR config > $@
+	@docker-compose --env-file .env --file services/docker-compose.yml --file services/docker-compose.local.yml --log-level=ERROR config > $@
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Creating config for ops stack to $@
-	@docker-compose -f services/docker-compose-ops.yml --log-level=ERROR config > $@
+	@docker-compose --env-file .env --file services/docker-compose-ops.yml --log-level=ERROR config > $@
 
 
 .PHONY: up-devel up-prod up-version up-latest .deploy-ops
@@ -212,9 +212,9 @@ endif
 
 define _show_endpoints
 # The following endpoints are available
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                       - oSparc platform"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9081                                                                 - oSparc platform"
 echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):18080/?pgsql=postgres&username=scu&db=simcoredb&ns=public  - Postgres DB"
-echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                       - Portainer"
+echo "http://$(if $(IS_WSL2),$(get_my_ip),127.0.0.1):9000                                                                 - Portainer"
 endef
 
 up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Deploys local development stack, qx-compile+watch and ops stack (pass 'make ops_disabled=1 up-...' to disable)
@@ -234,9 +234,9 @@ ifeq ($(target),)
 	@$(MAKE) .deploy-ops
 else
 	# deploys ONLY $(target) service
-	@docker-compose -f $< up --detach $(target)
-	@$(_show_endpoints)
+	@docker-compose --file $< up --detach $(target)
 endif
+	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	# Deploy stack $(SWARM_STACK_NAME)
@@ -312,7 +312,7 @@ pull-cache: .env
 
 pull-version: .env ## pulls images from DOCKER_REGISTRY tagged as DOCKER_IMAGE_TAG
 	# Pulling images '${DOCKER_REGISTRY}/{service}:${DOCKER_IMAGE_TAG}'
-	@docker-compose -f services/docker-compose.yml pull
+	@docker-compose --file services/docker-compose.yml pull
 
 
 .PHONY: push-cache push-version push-latest
@@ -504,11 +504,13 @@ info: ## displays setup information
 	@echo ' STORAGE_API_VERSION   : ${STORAGE_API_VERSION}'
 	@echo ' WEBSERVER_API_VERSION : ${WEBSERVER_API_VERSION}'
 	# dev tools version
-	@echo ' make   : $(shell make --version 2>&1 | head -n 1)'
-	@echo ' jq     : $(shell jq --version)'
-	@echo ' awk    : $(shell awk -W version 2>&1 | head -n 1)'
-	@echo ' python : $(shell python3 --version)'
-	@echo ' node   : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
+	@echo ' make          : $(shell make --version 2>&1 | head -n 1)'
+	@echo ' jq            : $(shell jq --version)'
+	@echo ' awk           : $(shell awk -W version 2>&1 | head -n 1)'
+	@echo ' python        : $(shell python3 --version)'
+	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
+	@echo ' docker        : $(shell docker --version)'
+	@echo ' docker-compose: $(shell docker-compose --version)'
 
 
 define show-meta
@@ -574,14 +576,14 @@ clean: .check-clean ## cleans all unversioned files in project and temp files cr
 
 clean-more: ## cleans containers and unused volumes
 	# stops and deletes running containers
-	@$(if $(_running_containers), docker rm -f $(_running_containers),)
+	@$(if $(_running_containers), docker rm --force $(_running_containers),)
 	# pruning unused volumes
 	docker volume prune --force
 
 clean-images: ## removes all created images
 	# Cleaning all service images
 	-$(foreach service,$(SERVICES_LIST)\
-		,docker image rm -f $(shell docker images */$(service):* -q);)
+		,docker image rm --force $(shell docker images */$(service):* -q);)
 	# Cleaning webclient
 	@$(MAKE_C) services/web/client clean-images
 	# Cleaning postgres maintenance

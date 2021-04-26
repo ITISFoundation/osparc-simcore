@@ -1,4 +1,4 @@
-version: "3.4"
+version: "3.8"
 services:
   postgres:
     image: postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f
@@ -29,7 +29,7 @@ services:
       - "9001:9000"
     command: server /data
   adminer:
-    image: adminer:4.7.6
+    image: adminer:4.8.0
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres

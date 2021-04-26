@@ -3,6 +3,7 @@ from typing import Optional
 
 import sqlalchemy as sa
 from psycopg2 import DatabaseError
+from pydantic.types import PositiveInt
 
 from .. import tables as tbl
 from ._base import BaseRepository
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class ApiKeysRepository(BaseRepository):
-    async def get_user_id(self, api_key: str, api_secret: str) -> Optional[int]:
+    async def get_user_id(self, api_key: str, api_secret: str) -> Optional[PositiveInt]:
         stmt = sa.select([tbl.api_keys.c.user_id,]).where(
             sa.and_(
                 tbl.api_keys.c.api_key == api_key,
@@ -24,7 +25,8 @@ class ApiKeysRepository(BaseRepository):
         )
 
         try:
-            user_id: Optional[int] = await self.connection.scalar(stmt)
+            async with self.db_engine.acquire() as conn:
+                user_id: Optional[PositiveInt] = await conn.scalar(stmt)
 
         except DatabaseError as err:
             logger.debug("Failed to get user id: %s", err)
@@ -34,7 +36,10 @@ class ApiKeysRepository(BaseRepository):
 
     async def any_user_with_id(self, user_id: int) -> bool:
         # FIXME: shall identify api_key or api_secret instead
-        stmt = sa.select([tbl.api_keys.c.user_id,]).where(
-            tbl.api_keys.c.user_id == user_id
-        )
-        return (await self.connection.scalar(stmt)) is not None
+        stmt = sa.select(
+            [
+                tbl.api_keys.c.user_id,
+            ]
+        ).where(tbl.api_keys.c.user_id == user_id)
+        async with self.db_engine.acquire() as conn:
+            return (await conn.scalar(stmt)) is not None

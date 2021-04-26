@@ -7,7 +7,6 @@ import inspect
 import json
 from collections import deque
 from pathlib import Path
-from pprint import pformat
 from typing import Any, Dict, Iterable, List, Tuple
 
 import aio_pika
@@ -28,7 +27,7 @@ SIMCORE_S3_ID = 0
 #
 # SEE packages/pytest-simcore/src/pytest_simcore/docker_compose.py
 #
-pytest_simcore_core_services_selection = ["storage", "postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "storage"]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
@@ -261,6 +260,7 @@ async def pipeline(
                 schema=service["schema"],
                 image=service["image"],
                 inputs=node_inputs,
+                state="PENDING",
                 outputs={},
             )
             postgres_session.add(comp_task)
@@ -438,6 +438,7 @@ async def test_run_services(
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
         async with message.process():
             data = json.loads(message.body)
+            print("incoming message", data)
             await incoming_data.append(data)
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True)
@@ -446,25 +447,11 @@ async def test_run_services(
 
     from simcore_service_sidecar import cli
 
-    # runs None first
-    next_task_nodes = await cli.run_sidecar(job_id, user_id, pipeline.project_id, None)
-    await asyncio.sleep(5)
-    assert await incoming_data.is_empty(), pformat(await incoming_data.as_list())
-    assert next_task_nodes
-    assert len(next_task_nodes) == 1
-    assert next_task_nodes[0] == next(iter(pipeline_cfg))
-
-    for node_id in next_task_nodes:
+    # run nodes
+    for node_id in pipeline_cfg:
         job_id += 1
-        next_tasks = await cli.run_sidecar(
-            job_id, user_id, pipeline.project_id, node_id
-        )
-        if next_tasks:
-            next_task_nodes.extend(next_tasks)
-    dag = [next_task_nodes[0]]
-    for key in pipeline_cfg:
-        dag.extend(pipeline_cfg[key]["next"])
-    assert next_task_nodes == dag
+        await cli.run_sidecar(job_id, user_id, pipeline.project_id, node_id)
+
     await asyncio.sleep(15)  # wait a little bit for logs to come in
     await _assert_incoming_data_logs(
         list(pipeline_cfg.keys()),

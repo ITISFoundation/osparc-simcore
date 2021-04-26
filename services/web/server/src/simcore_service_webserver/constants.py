@@ -19,3 +19,6 @@ RQ_PRODUCT_FRONTEND_KEY = f"{__name__}.product_frontend"
 
 # Headers keys
 X_PRODUCT_NAME_HEADER = "X-Simcore-Products-Name"
+
+# main index route name = front-end
+INDEX_RESOURCE_NAME = "statics.index"

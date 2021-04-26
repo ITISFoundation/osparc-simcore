@@ -22,6 +22,7 @@ from .catalog_api_models import (
 )
 from .constants import RQ_PRODUCT_KEY
 from .login.decorators import RQT_USERID_KEY, login_required
+from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 
 ###############
@@ -34,14 +35,6 @@ from .security_decorators import permission_required
 
 VX = f"/{api_version_prefix}"
 
-
-# SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict
-RESPONSE_MODEL_POLICY = {
-    "by_alias": True,
-    "exclude_unset": True,
-    "exclude_defaults": False,
-    "exclude_none": False,
-}
 
 routes = RouteTableDef()
 
