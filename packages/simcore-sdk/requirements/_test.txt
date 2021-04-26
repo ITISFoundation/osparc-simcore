@@ -187,14 +187,10 @@ typing-extensions==3.7.4.3
     #   importlib-metadata
     #   yarl
 urllib3==1.26.4
-<<<<<<< HEAD
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   minio
     #   requests
-=======
-    # via requests
->>>>>>> removes s3wrapper dependency from simcore-skd
 websocket-client==0.58.0
     # via docker
 wrapt==1.12.1
