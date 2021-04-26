@@ -37,33 +37,31 @@ class ResponsesQueue {
     this.__addRequestListener(url);
 
     const page = this.__page;
-    const respPendingQueue = this.__respPendingQueue;
-    respPendingQueue.push(url);
+    this.__respPendingQueue.push(url);
     const that = this;
     page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
         console.log("-- Queued response received", resp.url(), ":");
         console.log(resp.status());
         if (resp.status() === 204) {
-          that.__respReceivedQueue[url] = "ok";
-          page.removeListener("response", callback);
-          const index = respPendingQueue.indexOf(url);
-          if (index > -1) {
-            respPendingQueue.splice(index, 1);
-          }
+          that.responseReceived(url, "ok", callback);
         }
         else {
           resp.json().then(data => {
-            that.__respReceivedQueue[url] = data;
-            page.removeListener("response", callback);
-            const index = respPendingQueue.indexOf(url);
-            if (index > -1) {
-              respPendingQueue.splice(index, 1);
-            }
+            that.responseReceived(url, data, callback);
           });
         }
       }
     });
+  }
+
+  responseReceived (url, resp, callback) {
+    this.__respReceivedQueue[url] = resp;
+    page.removeListener("response", callback);
+    const index = this.__respPendingQueue.indexOf(url);
+    if (index > -1) {
+      this.__respPendingQueue.splice(index, 1);
+    }
   }
 
   async waitUntilResponse(url, timeout = 20000) {
