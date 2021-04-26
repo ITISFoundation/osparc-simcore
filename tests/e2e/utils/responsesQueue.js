@@ -36,28 +36,27 @@ class ResponsesQueue {
   addResponseListener(url) {
     this.__addRequestListener(url);
 
-    const page = this.__page;
     this.__respPendingQueue.push(url);
     const that = this;
-    page.on("response", function callback(resp) {
+    this.__page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
         console.log("-- Queued response received", resp.url(), ":");
         console.log(resp.status());
         if (resp.status() === 204) {
-          that.responseReceived(url, "ok", callback);
+          that.removeResponseListener(url, "ok", callback);
         }
         else {
           resp.json().then(data => {
-            that.responseReceived(url, data, callback);
+            that.removeResponseListener(url, data, callback);
           });
         }
       }
     });
   }
 
-  responseReceived (url, resp, callback) {
+  removeResponseListener (url, resp, callback) {
     this.__respReceivedQueue[url] = resp;
-    page.removeListener("response", callback);
+    this.__page.removeListener("response", callback);
     const index = this.__respPendingQueue.indexOf(url);
     if (index > -1) {
       this.__respPendingQueue.splice(index, 1);
