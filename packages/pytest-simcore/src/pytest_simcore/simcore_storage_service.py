@@ -8,11 +8,11 @@ from typing import Dict
 import aiohttp
 import pytest
 import tenacity
-from s3wrapper.s3_client import S3Client
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 from yarl import URL
 
 from .helpers.utils_docker import get_service_published_port
+from .s3wrapper.s3_client import S3Client
 
 
 @pytest.fixture(scope="module")
