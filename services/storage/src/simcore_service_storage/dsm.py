@@ -577,16 +577,13 @@ class DataStorageManager:
 
     async def copy_file_s3_s3(self, user_id: str, dest_uuid: str, source_uuid: str):
         # FIXME: operation MUST be atomic
+        # FIXME: This is not async!
 
         # source is s3, location is s3
-        to_bucket_name = self.simcore_bucket_name
-        to_object_name = dest_uuid
-        from_bucket = self.simcore_bucket_name
-        from_object_name = source_uuid
-        from_bucket_object_name = os.path.join(from_bucket, from_object_name)
-        # FIXME: This is not async!
         self.s3_client.copy_object(
-            to_bucket_name, to_object_name, from_bucket_object_name
+            bucket_name=self.simcore_bucket_name,
+            to_object_name=dest_uuid,
+            from_object_name=source_uuid,
         )
 
         # update db

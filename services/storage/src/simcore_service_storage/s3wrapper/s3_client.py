@@ -2,8 +2,10 @@ import logging
 import re
 from datetime import timedelta
 
-from minio import CopyConditions, Minio
-from minio.error import ResponseError
+from minio import Minio
+from minio.commonconfig import CopySource
+from minio.deleteobjects import DeleteObject
+from minio.error import MinioException
 
 log = logging.getLogger(__name__)
 
@@ -29,16 +31,16 @@ class S3Client:
             self.client = Minio(
                 endpoint, access_key=access_key, secret_key=secret_key, secure=secure
             )
-        except ResponseError as _err:
-            logging.exception("Could not create minio client")
+        except MinioException as _err:
+            log.exception("Could not create minio client")
 
     def __remove_objects_recursively(self, bucket_name):
-        objs = self.list_objects(bucket_name, recursive=True)
-        to_del = []
-        for obj in objs:
-            to_del.append(obj.object_name)
+        delete_object_list = map(
+            lambda x: DeleteObject(x.object_name),
+            self.list_objects(bucket_name, prefix=None, recursive=True),
+        )
 
-        self.remove_objects(bucket_name, to_del)
+        self.remove_objects(bucket_name, delete_object_list)
 
     def create_bucket(self, bucket_name, delete_contents_if_exists=False):
         try:
@@ -47,8 +49,8 @@ class S3Client:
             elif delete_contents_if_exists:
                 return self.__remove_objects_recursively(bucket_name)
 
-        except ResponseError as _err:
-            logging.exception("Could not create bucket")
+        except MinioException as _err:
+            log.exception("Could not create bucket")
             return False
         # it probably already exists and is
         return True
@@ -59,24 +61,24 @@ class S3Client:
                 if delete_contents:
                     self.__remove_objects_recursively(bucket_name)
                     self.client.remove_bucket(bucket_name)
-        except ResponseError as _err:
-            logging.exception("Could not remove bucket")
+        except MinioException as _err:
+            log.exception("Could not remove bucket")
             return False
         return True
 
     def exists_bucket(self, bucket_name):
         try:
             return self.client.bucket_exists(bucket_name)
-        except ResponseError as _err:
-            logging.exception("Could not check bucket for existence")
+        except MinioException as _err:
+            log.exception("Could not check bucket for existence")
 
         return False
 
     def list_buckets(self):
         try:
             return self.client.list_buckets()
-        except ResponseError as _err:
-            logging.exception("Could not list bucket")
+        except MinioException as _err:
+            log.exception("Could not list bucket")
 
         return []
 
@@ -101,16 +103,16 @@ class S3Client:
             self.client.fput_object(
                 bucket_name, object_name, filepath, metadata=_metadata
             )
-        except ResponseError as _err:
-            logging.exception("Could not upload file")
+        except MinioException as _err:
+            log.exception("Could not upload file")
             return False
         return True
 
     def download_file(self, bucket_name, object_name, filepath):
         try:
             self.client.fget_object(bucket_name, object_name, filepath)
-        except ResponseError as _err:
-            logging.exception("Could not download file")
+        except MinioException as _err:
+            log.exception("Could not download file")
             return False
         return True
 
@@ -124,8 +126,8 @@ class S3Client:
                 metadata[_key] = _metadata[key]
             return metadata
 
-        except ResponseError as _err:
-            logging.exception("Could not get metadata")
+        except MinioException as _err:
+            log.exception("Could not get metadata")
 
         return {}
 
@@ -134,16 +136,16 @@ class S3Client:
             return self.client.list_objects(
                 bucket_name, prefix=prefix, recursive=recursive
             )
-        except ResponseError as _err:
-            logging.exception("Could not list objects")
+        except MinioException as _err:
+            log.exception("Could not list objects")
 
         return []
 
     def list_objects_v2(self, bucket_name, recursive=False):
         try:
             return self.client.list_objects_v2(bucket_name, recursive=recursive)
-        except ResponseError as _err:
-            logging.exception("Could not list objects")
+        except MinioException as _err:
+            log.exception("Could not list objects")
 
         return []
 
@@ -152,8 +154,8 @@ class S3Client:
             for del_err in self.client.remove_objects(bucket_name, objects):
                 msg = "Deletion Error: {}".format(del_err)
                 log.debug(msg)
-        except ResponseError as _err:
-            logging.exception("Could remove objects")
+        except MinioException as _err:
+            log.exception("Could remove objects")
             return False
         return True
 
@@ -164,8 +166,8 @@ class S3Client:
             for obj in objects:
                 if obj.object_name == object_name:
                     return True
-        except ResponseError as _err:
-            logging.exception("Could check object for existence")
+        except MinioException as _err:
+            log.exception("Could check object for existence")
             return False
         return False
 
@@ -198,8 +200,8 @@ class S3Client:
                 bucket_name, object_name, expires=dt
             )
 
-        except ResponseError as _err:
-            logging.exception("Could create presigned put url")
+        except MinioException as _err:
+            log.exception("Could create presigned put url")
 
         return ""
 
@@ -209,22 +211,23 @@ class S3Client:
                 bucket_name, object_name, expires=dt
             )
 
-        except ResponseError as _err:
-            logging.exception("Could create presigned get url")
+        except MinioException as _err:
+            log.exception("Could create presigned get url")
 
         return ""
 
-    def copy_object(self, to_bucket_name, to_object_name, from_bucket_object_name):
-        try:
-            ret = self.client.copy_object(
-                to_bucket_name,
-                to_object_name,
-                from_bucket_object_name,
-                CopyConditions(),
-            )
-            print(ret)
-            return True
-        except ResponseError as _err:
-            logging.exception("Could not copy")
-
-        return False
+    def copy_object(self, bucket_name, to_object_name, from_object_name):
+        """ Copies from_object_name -> to_object_name within the same bucket """
+        result = self.client.copy_object(
+            bucket_name=bucket_name,
+            object_name=to_object_name,
+            source=CopySource(bucket_name, from_object_name),
+        )
+        log.debug(
+            "%s:%s -> %s:%s: %s",
+            bucket_name,
+            from_object_name,
+            bucket_name,
+            to_object_name,
+            result,
+        )
