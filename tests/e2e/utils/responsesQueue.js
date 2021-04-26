@@ -68,6 +68,7 @@ class ResponsesQueue {
     const sleepFor = 100;
     while (this.isResponseInQueue(url) && sleptFor < timeout) {
       await utils.sleep(sleepFor);
+      sleptFor += sleepFor;
     }
     console.log("-- Slept for", sleptFor/1000, "s waiting for", url);
     if (sleptFor >= timeout) {
