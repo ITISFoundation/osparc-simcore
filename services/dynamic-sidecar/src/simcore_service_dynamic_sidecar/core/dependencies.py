@@ -1,8 +1,8 @@
 from fastapi import Depends, Request
 from fastapi.datastructures import State
 
-from .models.domains.shared_store import SharedStore
-from .models.schemas.application_health import ApplicationHealth
+from ..models.domains.shared_store import SharedStore
+from ..models.schemas.application_health import ApplicationHealth
 from .settings import DynamicSidecarSettings
 
 

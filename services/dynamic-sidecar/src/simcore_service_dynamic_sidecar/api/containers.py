@@ -16,12 +16,12 @@ from fastapi import (
 )
 from fastapi.responses import PlainTextResponse
 
-from ..dependencies import get_settings, get_shared_store
+from ..core.dependencies import get_settings, get_shared_store
+from ..core.settings import DynamicSidecarSettings
+from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
+from ..core.utils import assemble_container_names, docker_client
+from ..core.validation import InvalidComposeSpec, validate_compose_spec
 from ..models.domains.shared_store import SharedStore
-from ..settings import DynamicSidecarSettings
-from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
-from ..utils import assemble_container_names, docker_client
-from ..validation import InvalidComposeSpec, validate_compose_spec
 
 logger = logging.getLogger(__name__)
 

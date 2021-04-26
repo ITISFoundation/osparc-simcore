@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 
 from fastapi import FastAPI
 
-from .models.domains.shared_store import SharedStore
+from ..models.domains.shared_store import SharedStore
 from .settings import DynamicSidecarSettings
 from .utils import async_command, write_to_tmp_file
 
