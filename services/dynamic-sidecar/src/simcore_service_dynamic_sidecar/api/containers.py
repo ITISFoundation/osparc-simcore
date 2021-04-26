@@ -102,7 +102,9 @@ async def runs_docker_compose_up(
 
 @containers_router.post("/containers:down", response_class=PlainTextResponse)
 async def runs_docker_compose_down(
-    command_timeout: float,
+    command_timeout: float = Query(
+        10.0, description="docker-compose down command timeout default"
+    ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Union[str, Dict[str, Any]]:
