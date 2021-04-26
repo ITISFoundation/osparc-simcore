@@ -9,21 +9,17 @@ from typing import Dict, Iterator
 import pytest
 import tenacity
 from minio import Minio
-from minio.deleteobjects import DeleteObject
 
 from .helpers.utils_docker import get_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
 
-def _ensure_rm_bucket(client: Minio, bucket_name: str):
+def _remove_bucket(client: Minio, bucket_name: str):
     if client.bucket_exists(bucket_name):
         # remove content
-        delete_object_list = map(
-            lambda x: DeleteObject(x.object_name),
-            client.list_objects(bucket_name, prefix=None, recursive=True),
-        )
-        errors = client.remove_objects(bucket_name, delete_object_list)
+        objs = client.list_objects(bucket_name, prefix=None, recursive=True)
+        errors = client.remove_objects(bucket_name, [o.object_name for o in objs])
         assert not list(errors)
         # remove bucket
         client.remove_bucket(bucket_name)
@@ -64,16 +60,14 @@ def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
 
     bucket_name = minio_config["bucket_name"]
 
-    # makes sure there is not an old copy, e.g. leftover from failure
-    _ensure_rm_bucket(client, bucket_name)
-
+    assert not client.bucket_exists(bucket_name)
     client.make_bucket(bucket_name)
     assert client.bucket_exists(bucket_name)
 
     yield client
 
-    # can fail because minio is down
-    _ensure_rm_bucket(client, bucket_name)
+    assert client.bucket_exists(bucket_name)
+    _remove_bucket(client, bucket_name)
 
 
 @tenacity.retry(
@@ -95,9 +89,9 @@ def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
 def bucket(minio_config: Dict[str, str], minio_service: Minio) -> str:
     bucket_name = minio_config["bucket_name"]
 
-    _ensure_rm_bucket(minio_service, bucket_name)
+    _remove_bucket(minio_service, bucket_name)
     minio_service.make_bucket(bucket_name)
 
     yield bucket_name
 
-    _ensure_rm_bucket(minio_service, bucket_name)
+    _remove_bucket(minio_service, bucket_name)
