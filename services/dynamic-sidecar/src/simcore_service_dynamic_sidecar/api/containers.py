@@ -115,7 +115,8 @@ async def runs_docker_compose_down(
     )
 
     if not finished_without_errors:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=stdout)
+        logger.warning("docker-compose command finished with errors\n%s", stdout)
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
 
     return stdout
 
@@ -164,7 +165,12 @@ async def containers_docker_inspect(
 
 @containers_router.get(
     "/containers/{id}/logs",
-    responses={status.HTTP_404_NOT_FOUND: {"description": "Container does not exists"}},
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Container does not exists",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
+    },
 )
 async def get_container_logs(
     id: str,
@@ -203,7 +209,10 @@ async def get_container_logs(
 
 @containers_router.get(
     "/containers/{id}",
-    responses={status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"}},
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"},
+    },
 )
 async def inspect_container(
     id: str, shared_store: SharedStore = Depends(get_shared_store)

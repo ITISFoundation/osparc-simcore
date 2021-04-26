@@ -204,6 +204,9 @@
           "404": {
             "description": "Container does not exists"
           },
+          "500": {
+            "description": "Errors in container"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -247,6 +250,9 @@
           },
           "404": {
             "description": "Container does not exist"
+          },
+          "500": {
+            "description": "Errors in container"
           },
           "422": {
             "description": "Validation Error",
