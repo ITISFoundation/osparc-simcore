@@ -4,11 +4,11 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.4
+aiohttp==3.7.4.post0
     # via
     #   -c requirements/_base.txt
     #   pytest-aiohttp
-astroid==2.5.1
+astroid==2.5.3
     # via pylint
 async-timeout==3.0.1
     # via
@@ -32,7 +32,7 @@ cffi==1.14.5
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==3.0.4
+chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -44,7 +44,7 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.0.1
     # via -r requirements/_test.in
-cryptography==3.4.6
+cryptography==3.4.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
@@ -72,7 +72,7 @@ idna==2.10
     #   idna-ssl
     #   requests
     #   yarl
-importlib-metadata==3.7.0
+importlib-metadata==4.0.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -80,7 +80,7 @@ importlib-metadata==3.7.0
     #   pytest
 iniconfig==1.1.1
     # via pytest
-isort==5.7.0
+isort==5.8.0
     # via pylint
 jsonschema==3.2.0
     # via
@@ -109,7 +109,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.7.2
+pylint==2.7.4
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -133,7 +133,7 @@ pytest-runner==5.3.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -142,7 +142,7 @@ pytest==6.2.2
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-python-dotenv==0.15.0
+python-dotenv==0.17.0
     # via docker-compose
 pyyaml==5.4.1
     # via
@@ -170,7 +170,7 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-typed-ast==1.4.2
+typed-ast==1.4.3
     # via astroid
 typing-extensions==3.7.4.3
     # via
@@ -178,7 +178,7 @@ typing-extensions==3.7.4.3
     #   aiohttp
     #   importlib-metadata
     #   yarl
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
@@ -192,7 +192,7 @@ yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zipp==3.4.0
+zipp==3.4.1
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata
