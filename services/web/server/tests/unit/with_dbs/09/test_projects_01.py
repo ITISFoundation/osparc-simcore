@@ -1,7 +1,8 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import asyncio
 import uuid as uuidlib
 from copy import deepcopy
@@ -24,7 +25,6 @@ from models_library.projects_state import (
     RunningState,
 )
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_mock import future_with_result
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
 from servicelib.application import create_safe_application
@@ -132,7 +132,7 @@ def mocks_on_projects_api(mocker, logged_user) -> None:
     )
     mocker.patch(
         "simcore_service_webserver.projects.projects_api._get_project_lock_state",
-        return_value=future_with_result(state),
+        return_value=state,
     )
 
 
@@ -860,9 +860,7 @@ async def test_delete_project(
     # DELETE /v0/projects/{project_id}
 
     fakes = fake_services(5)
-    mocked_director_subsystem[
-        "get_running_interactive_services"
-    ].return_value = future_with_result(fakes)
+    mocked_director_subsystem["get_running_interactive_services"].return_value = fakes
 
     await _delete_project(client, user_project, expected)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
