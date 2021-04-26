@@ -22,7 +22,7 @@ from ..models.schemas.files import File
 from ..models.schemas.jobs import ArgumentType, Job, JobInputs, JobStatus, TaskStates
 from ..models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ..modules.director_v2 import ComputationTaskOut
-from .typing_extra import get_args
+from .typing_extra import get_types
 
 # UTILS ------
 _BASE_UUID = uuid.UUID("231e13db-6bc6-4f64-ba56-2ee2c73b9f09")
@@ -58,7 +58,7 @@ def create_node_inputs_from_job_inputs(inputs: JobInputs) -> Dict[InputID, Input
     node_inputs: Dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
 
-        assert isinstance(value, get_args(ArgumentType))  # nosec
+        assert isinstance(value, get_types(ArgumentType))  # nosec
 
         if isinstance(value, File):
             # FIXME: ensure this aligns with storage policy
@@ -84,8 +84,8 @@ def create_job_inputs_from_node_inputs(inputs: Dict[InputID, InputTypes]) -> Job
     input_values: Dict[str, ArgumentType] = {}
     for name, value in inputs.items():
 
-        assert isinstance(name, get_args(InputID))  # nosec
-        assert isinstance(value, get_args(InputTypes))  # nosec
+        assert isinstance(name, get_types(InputID))  # nosec
+        assert isinstance(value, get_types(InputTypes))  # nosec
 
         if isinstance(value, SimCoreFileLink):
             # FIXME: ensure this aligns with storage policy
