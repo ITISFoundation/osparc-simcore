@@ -114,7 +114,7 @@ markupsafe==1.1.1
     # via
     #   aiohttp-swagger
     #   jinja2
-minio==6.0.0
+minio==6.0.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
