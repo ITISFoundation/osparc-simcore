@@ -32,6 +32,7 @@ SERVICES_LIST := \
 	catalog \
 	director \
 	director-v2 \
+	dynamic-sidecar \
 	migration \
 	sidecar \
 	storage \
