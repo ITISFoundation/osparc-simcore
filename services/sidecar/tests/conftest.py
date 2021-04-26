@@ -1,6 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import sys
 from pathlib import Path
 
@@ -8,11 +9,11 @@ import pytest
 import simcore_service_sidecar
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.monkeypatch_extra" "pytest_simcore.postgres_service",
     "pytest_simcore.rabbit_service",
-    "pytest_simcore.postgres_service",
+    "pytest_simcore.repository_paths",
 ]
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
