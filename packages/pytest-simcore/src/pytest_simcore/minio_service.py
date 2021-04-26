@@ -73,16 +73,16 @@ def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
 @tenacity.retry(
     wait=tenacity.wait_fixed(5),
     stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    before_sleep=tenacity.before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
 def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
-    """Check if something responds to ``url`` """
     client = Minio(**minio_config["client"])
-    if client.make_bucket("pytest"):
-        client.remove_bucket("pytest")
-        return True
-    raise Exception(f"Minio not responding to {minio_config}")
+    # TODO: improve as https://docs.min.io/docs/minio-monitoring-guide.html
+    if not client.bucket_exists("pytest"):
+        client.make_bucket("pytest")
+    client.remove_bucket("pytest")
+    return True
 
 
 @pytest.fixture(scope="module")
