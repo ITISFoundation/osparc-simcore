@@ -101,10 +101,13 @@
         "operationId": "runs_docker_compose_down_v1_containers_down_post",
         "parameters": [
           {
-            "required": true,
+            "description": "docker-compose down command timeout default",
+            "required": false,
             "schema": {
               "title": "Command Timeout",
-              "type": "number"
+              "type": "number",
+              "description": "docker-compose down command timeout default",
+              "default": 10.0
             },
             "name": "command_timeout",
             "in": "query"
