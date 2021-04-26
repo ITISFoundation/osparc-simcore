@@ -1,16 +1,16 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import logging
 import os
 from copy import deepcopy
-
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 from distutils.util import strtobool
-from typing import Dict
+from typing import Dict, Iterator
 
 import pytest
 import tenacity
-from s3wrapper.s3_client import S3Client
+from minio import Minio
 
 from .helpers.utils_docker import get_ip, get_service_published_port
 
@@ -44,15 +44,25 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
 
 
 @pytest.fixture(scope="module")
-def minio_service(minio_config: Dict[str, str]) -> S3Client:
+def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
     assert wait_till_minio_responsive(minio_config)
 
-    client = S3Client(**minio_config["client"])
-    assert client.create_bucket(minio_config["bucket_name"])
+    client = Minio(**minio_config["client"])
+
+    bucket_name = minio_config["bucket_name"]
+    assert not client.bucket_exists(bucket_name)
+
+    client.make_bucket(bucket_name)
 
     yield client
 
-    assert client.remove_bucket(minio_config["bucket_name"], delete_contents=True)
+    assert client.bucket_exists(bucket_name)
+    # remove content
+    objs = client.list_objects(bucket_name, prefix=None, recursive=True)
+    errors = client.remove_objects(bucket_name, [o.object_name for o in objs])
+    assert not list(errors)
+    # remove bucket
+    client.remove_bucket(bucket_name)
 
 
 @tenacity.retry(
@@ -63,18 +73,31 @@ def minio_service(minio_config: Dict[str, str]) -> S3Client:
 )
 def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
     """Check if something responds to ``url`` """
-    client = S3Client(**minio_config["client"])
-    if client.create_bucket("pytest"):
+    client = Minio(**minio_config["client"])
+    if client.make_bucket("pytest"):
         client.remove_bucket("pytest")
         return True
     raise Exception(f"Minio not responding to {minio_config}")
 
 
 @pytest.fixture(scope="module")
-def bucket(minio_config: Dict[str, str], minio_service: S3Client) -> str:
+def bucket(minio_config: Dict[str, str], minio_service: Minio) -> str:
     bucket_name = minio_config["bucket_name"]
-    minio_service.create_bucket(bucket_name, delete_contents_if_exists=True)
+
+    def safe_delete():
+        if minio_service.bucket_exists(bucket_name):
+            # remove content
+            objs = minio_service.list_objects(bucket_name, prefix=None, recursive=True)
+            errors = minio_service.remove_objects(
+                bucket_name, [o.object_name for o in objs]
+            )
+            assert not list(errors)
+            # remove bucket
+            minio_service.remove_bucket(bucket_name)
+
+    safe_delete()
+    minio_service.make_bucket(bucket_name)
 
     yield bucket_name
 
-    minio_service.remove_bucket(bucket_name, delete_contents=True)
+    safe_delete()
