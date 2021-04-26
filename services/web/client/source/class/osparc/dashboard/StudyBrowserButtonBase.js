@@ -99,6 +99,9 @@ qx.Class.define("osparc.dashboard.StudyBrowserButtonBase", {
             margin: [5, 0],
             font: "title-14",
             maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - osparc.dashboard.StudyBrowserButtonItem.MENU_BTN_WIDTH,
+            maxHeight: 34, // two lines
+            rich: true,
+            wrap: true,
             breakWithinWords: true
           });
           this._mainLayout.addAt(control, this.self().POS.TITLE);

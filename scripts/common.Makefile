@@ -131,6 +131,16 @@ code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
 	@-rm $(CURDIR)/.codeclimate.yml
 
 
+.PHONY: codestyle
+codestyle: ## enforces codestyle (isort & black) finally runs pylint & mypy
+	@$(SCRIPTS_DIR)/codestyle.bash development $(shell basename "${SRC_DIR}")
+
+.PHONY: github-workflow-job
+github-workflow-job: ## runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"
+	# running job "${job}"
+	$(SCRIPTS_DIR)/act.bash ../.. ${job}
+
+
 .PHONY: version-patch version-minor version-major
 version-patch: ## commits version with bug fixes not affecting the cookiecuter config
 	$(_bumpversion)
