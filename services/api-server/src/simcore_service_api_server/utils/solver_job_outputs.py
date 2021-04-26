@@ -11,7 +11,7 @@ from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports.dbmanager import DBManager
 from simcore_sdk.node_ports_v2 import Nodeports
 
-from .typing_extra import get_args
+from .typing_extra import get_types
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ async def get_solver_output_results(
         solver_output_results = {}
         for port in (await solver.outputs).values():
             log.debug("Getting %s [%s]: %s", port.key, port.property_type, port.value)
-            assert isinstance(port.value, get_args(ResultsTypes))  # nosec
+            assert isinstance(port.value, get_types(ResultsTypes))  # nosec
             solver_output_results[port.key] = port.value
 
         return solver_output_results
