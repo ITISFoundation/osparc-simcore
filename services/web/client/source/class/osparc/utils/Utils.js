@@ -420,6 +420,16 @@ qx.Class.define("osparc.utils.Utils", {
       return parsedFragment;
     },
 
+    getParamFromURL: (url, param) => {
+      const urlParams = new URLSearchParams(url);
+      return urlParams.get(param);
+    },
+
+    hasParamFromURL: (url, param) => {
+      const urlParams = new URLSearchParams(url);
+      return urlParams.has(param);
+    },
+
     getThumbnailFromUuid: uuid => {
       const lastCharacters = uuid.substr(uuid.length-10);
       const aNumber = parseInt(lastCharacters, 16);
