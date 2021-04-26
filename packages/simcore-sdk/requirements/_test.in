@@ -26,6 +26,7 @@ requests
 docker
 python-dotenv
 faker
+minio
 
 # tools for CI
 pylint
