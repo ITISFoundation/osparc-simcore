@@ -85,6 +85,9 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   email-validator
     #   idna-ssl
     #   requests
@@ -106,7 +109,7 @@ jsonschema==3.2.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-lazy-object-proxy==1.4.3
+lazy-object-proxy==1.4.4
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-core
