@@ -20,3 +20,4 @@ pytest-sugar
 python-dotenv
 pyyaml
 tenacity
+minio

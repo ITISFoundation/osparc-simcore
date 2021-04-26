@@ -57,6 +57,7 @@ attrs==20.3.0
 certifi==2020.12.5
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
+    #   minio
     #   requests
 chardet==4.0.0
     # via
@@ -67,6 +68,8 @@ click==7.1.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
+configparser==5.0.2
+    # via minio
 coverage==5.5
     # via
     #   -r requirements/_test.in
@@ -127,6 +130,16 @@ markupsafe==1.1.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   mako
+minio==6.0.2
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 multidict==5.1.0
     # via
     #   aiohttp
@@ -199,12 +212,15 @@ python-dateutil==2.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   alembic
+    #   minio
 python-dotenv==0.17.0
     # via -r requirements/_test.in
 python-editor==1.0.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   alembic
+pytz==2021.1
+    # via minio
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -291,6 +307,7 @@ urllib3==1.26.4
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
+    #   minio
     #   requests
 websocket-client==0.58.0
     # via
