@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..dependencies import get_application_health
-from ..models import ApplicationHealth
+from ..models.schemas.application_health import ApplicationHealth
 
 health_router = APIRouter()
 

@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 
-import asyncio
 import json
 from typing import Any, Dict, List
 
@@ -11,9 +10,9 @@ from async_asgi_testclient import TestClient
 from faker import Faker
 from fastapi import status
 from simcore_service_dynamic_sidecar._meta import api_vtag
+from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.shared_handlers import write_file_and_run_command
-from simcore_service_dynamic_sidecar.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.utils import async_command
 
 DEFAULT_COMMAND_TIMEOUT = 5.0

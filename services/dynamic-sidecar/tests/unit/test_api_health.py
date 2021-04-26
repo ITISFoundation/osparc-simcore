@@ -1,7 +1,9 @@
 import pytest
 from async_asgi_testclient import TestClient
 from fastapi import status
-from simcore_service_dynamic_sidecar.models import ApplicationHealth
+from simcore_service_dynamic_sidecar.models.schemas.application_health import (
+    ApplicationHealth,
+)
 
 pytestmark = pytest.mark.asyncio
 

@@ -17,9 +17,9 @@ from fastapi import (
 from fastapi.responses import PlainTextResponse
 
 from ..dependencies import get_settings, get_shared_store
+from ..models.domains.shared_store import SharedStore
 from ..settings import DynamicSidecarSettings
 from ..shared_handlers import remove_the_compose_spec, write_file_and_run_command
-from ..shared_store import SharedStore
 from ..utils import assemble_container_names, docker_client
 from ..validation import InvalidComposeSpec, validate_compose_spec
 

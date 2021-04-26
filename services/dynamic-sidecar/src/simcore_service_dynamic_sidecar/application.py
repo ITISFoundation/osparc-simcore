@@ -4,11 +4,11 @@ from fastapi import FastAPI
 
 from ._meta import api_vtag
 from .api import main_router
-from .models import ApplicationHealth
+from .models.domains.shared_store import SharedStore
+from .models.schemas.application_health import ApplicationHealth
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
-from .shared_store import SharedStore
 
 logger = logging.getLogger(__name__)
 

@@ -1,9 +1,9 @@
 from fastapi import Depends, Request
 from fastapi.datastructures import State
 
-from .models import ApplicationHealth
+from .models.domains.shared_store import SharedStore
+from .models.schemas.application_health import ApplicationHealth
 from .settings import DynamicSidecarSettings
-from .shared_store import SharedStore
 
 
 def get_app_state(request: Request) -> State:
