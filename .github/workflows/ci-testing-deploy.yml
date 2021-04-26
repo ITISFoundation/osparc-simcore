@@ -572,7 +572,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -857,7 +857,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1049,7 +1049,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1334,7 +1334,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1398,7 +1398,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1462,7 +1462,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1526,7 +1526,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1590,7 +1590,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
@@ -1757,7 +1757,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6]
+        python: [3.8]
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
