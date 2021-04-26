@@ -19,6 +19,7 @@
  * @ignore(URL)
  * @ignore(sessionStorage)
  * @ignore(fetch)
+ * @ignore(URLSearchParams)
  */
 
 /**
