@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 
+import asyncio
 import json
 from typing import Any, Dict, List
 
@@ -13,6 +14,7 @@ from simcore_service_dynamic_sidecar._meta import api_vtag
 from simcore_service_dynamic_sidecar.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.shared_handlers import write_file_and_run_command
 from simcore_service_dynamic_sidecar.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.utils import async_command
 
 DEFAULT_COMMAND_TIMEOUT = 5.0
 
@@ -32,6 +34,16 @@ def compose_spec() -> str:
     )
 
 
+async def _docker_ps_a_container_names() -> List[str]:
+    command = 'docker ps -a --format "{{.Names}}"'
+    finished_without_errors, stdout = await async_command(
+        command=command, command_timeout=None
+    )
+
+    assert finished_without_errors is True, stdout
+    return stdout.split("\n")
+
+
 async def assert_compose_spec_pulled(
     compose_spec: str, settings: DynamicSidecarSettings
 ) -> None:
@@ -49,6 +61,15 @@ async def assert_compose_spec_pulled(
     )
 
     assert finished_without_errors is True, stdout
+
+    dict_compose_spec = json.loads(compose_spec)
+    expected_services_count = len(dict_compose_spec["services"])
+
+    docker_ps_names = await _docker_ps_a_container_names()
+    started_containers = [
+        x for x in docker_ps_names if x.startswith(settings.compose_namespace)
+    ]
+    assert len(started_containers) == expected_services_count
 
 
 @pytest.fixture
@@ -77,9 +98,10 @@ async def test_start_same_space_twice(
     test_client: TestClient, compose_spec: str
 ) -> None:
     settings: DynamicSidecarSettings = test_client.application.state.settings
+    settings.compose_namespace = "test_name_space_1"
     await assert_compose_spec_pulled(compose_spec, settings)
 
-    settings.compose_namespace = "test_name_space"
+    settings.compose_namespace = "test_name_space_2"
     await assert_compose_spec_pulled(compose_spec, settings)
 
 
