@@ -4,7 +4,6 @@ import traceback
 # pylint: disable=redefined-builtin
 from typing import Any, Dict, List, Union
 
-import aiodocker
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -62,15 +61,6 @@ def _raise_if_container_is_missing(id: str, container_names: List[str]) -> None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=message)
 
 
-def _raise_from_docker_error(error: aiodocker.exceptions.DockerError) -> None:
-    logger.warning(
-        "An unexpected Docker error occurred:\n%s", str(traceback.format_exc())
-    )
-    raise HTTPException(
-        status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error.message
-    ) from error
-
-
 @containers_router.post("/containers", status_code=status.HTTP_202_ACCEPTED)
 async def runs_docker_compose_up(
     request: Request,
@@ -92,7 +82,7 @@ async def runs_docker_compose_up(
         )
     except InvalidComposeSpec as e:
         logger.warning("Error detected %s", traceback.format_exc())
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) from e
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)) from e
 
     # run docker-compose in a background queue and return early
     background_tasks.add_task(task_docker_compose_up, settings, shared_store)
@@ -165,12 +155,9 @@ async def containers_docker_inspect(
         results = {}
 
         for container in container_names:
-            try:
-                container_instance = await docker.containers.get(container)
-                container_inspect = await container_instance.show()
-                results[container] = _format_result(container_inspect)
-            except aiodocker.exceptions.DockerError as err:
-                _raise_from_docker_error(err)
+            container_instance = await docker.containers.get(container)
+            container_inspect = await container_instance.show()
+            results[container] = _format_result(container_inspect)
 
         return results
 
@@ -204,18 +191,14 @@ async def get_container_logs(
     _raise_if_container_is_missing(id, shared_store.container_names)
 
     with docker_client() as docker:
-        try:
-            container_instance = await docker.containers.get(id)
+        container_instance = await docker.containers.get(id)
 
-            args = dict(stdout=True, stderr=True, since=since, until=until)
-            if timestamps:
-                args["timestamps"] = True
+        args = dict(stdout=True, stderr=True, since=since, until=until)
+        if timestamps:
+            args["timestamps"] = True
 
-            container_logs: str = await container_instance.log(**args)
-            return container_logs
-        except aiodocker.exceptions.DockerError as err:
-            _raise_from_docker_error(err)
-            return None
+        container_logs: str = await container_instance.log(**args)
+        return container_logs
 
 
 @containers_router.get(
@@ -229,13 +212,9 @@ async def inspect_container(
     _raise_if_container_is_missing(id, shared_store.container_names)
 
     with docker_client() as docker:
-        try:
-            container_instance = await docker.containers.get(id)
-            inspect_result: Dict[str, Any] = await container_instance.show()
-            return inspect_result
-        except aiodocker.exceptions.DockerError as err:
-            _raise_from_docker_error(err)
-            return None
+        container_instance = await docker.containers.get(id)
+        inspect_result: Dict[str, Any] = await container_instance.show()
+        return inspect_result
 
 
 __all__ = ["containers_router"]

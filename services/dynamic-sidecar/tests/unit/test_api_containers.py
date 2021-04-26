@@ -119,7 +119,7 @@ async def test_compose_up(
 
 async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
     response = await test_client.post(f"/{api_vtag}/containers")
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     assert response.json() == {"detail": "\nProvided yaml is not valid!"}
 
 
@@ -128,7 +128,7 @@ async def test_compose_up_spec_invalid(test_client: TestClient) -> None:
     response = await test_client.post(
         f"/{api_vtag}/containers", data=invalid_compose_spec
     )
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
     assert "Provided yaml is not valid!" in response.text
     # 28+ characters means the compos spec is also present in the error message
     assert len(response.text) > 28
