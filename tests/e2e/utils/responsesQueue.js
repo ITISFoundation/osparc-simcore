@@ -4,7 +4,7 @@ class ResponsesQueue {
   constructor(page) {
     this.__page = page;
     this.__reqQueue = [];
-    this.__respPendingQueue = [];
+    this.__respPendingQueue = {};
     this.__respReceivedQueue = {};
   }
 
@@ -13,14 +13,18 @@ class ResponsesQueue {
   }
 
   isResponseInQueue(url) {
-    return this.__respPendingQueue.includes(url);
+    return Object.keys(this.__respPendingQueue).includes(url);
   }
 
   __addRequestListener(url) {
-    const page = this.__page;
     const reqQueue = this.__reqQueue;
     reqQueue.push(url);
+    this.__respPendingQueue[url] = {};
+    this.__respPendingQueue[url]["start"] = null;
+    this.__respPendingQueue[url]["end"] = null;
     console.log("-- Expected response added to queue", url);
+    const that = this;
+    const page = this.__page;
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
         console.log("-- Queued request sent", req.method(), req.url());
@@ -30,17 +34,16 @@ class ResponsesQueue {
           reqQueue.splice(index, 1);
         }
       }
+      that.__respPendingQueue[url]["start"] = new Date();
     });
   }
 
-  addResponseListener(url) {
-    this.__addRequestListener(url);
-
-    this.__respPendingQueue.push(url);
+  __addResponseListener(url) {
     const that = this;
     this.__page.on("response", function callback(resp) {
       if (resp.url().includes(url)) {
         console.log("-- Queued response received", resp.url(), ":");
+        that.__respPendingQueue[url]["end"] = new Date();
         console.log(resp.status());
         if (resp.status() === 204) {
           that.removeResponseListener(url, "ok", callback);
@@ -54,12 +57,18 @@ class ResponsesQueue {
     });
   }
 
-  removeResponseListener (url, resp, callback) {
+  addResponseListener(url) {
+    this.__addRequestListener(url);
+    this.__addResponseListener(url);
+  }
+
+  removeResponseListener(url, resp, callback) {
     this.__respReceivedQueue[url] = resp;
-    this.__page.removeListener("response", callback);
-    const index = this.__respPendingQueue.indexOf(url);
-    if (index > -1) {
-      this.__respPendingQueue.splice(index, 1);
+    if (this.isResponseInQueue(url)) {
+      const diff = this.__respPendingQueue[url]["end"] - this.__respPendingQueue[url]["start"];
+      console.log("-- Waited", diff/1000, "s for", url);
+      this.__page.removeListener("response", callback);
+      delete this.__respPendingQueue[url];
     }
   }
 
@@ -70,7 +79,6 @@ class ResponsesQueue {
       await utils.sleep(sleepFor);
       sleptFor += sleepFor;
     }
-    console.log("-- Slept for", sleptFor/1000, "s waiting for", url);
     if (sleptFor >= timeout) {
       throw("-- Timeout reached.");
     }
