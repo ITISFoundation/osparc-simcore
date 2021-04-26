@@ -1,6 +1,5 @@
 -c ../../../requirements/constraints.txt
 
--r ../../../packages/s3wrapper/requirements/_base.in
 -r ../../../packages/postgres-database/requirements/_migration.txt
 -r ../../../packages/simcore-sdk/requirements/_base.in
 -r ../../../packages/service-library/requirements/_base.in
