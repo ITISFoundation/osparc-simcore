@@ -64,7 +64,6 @@ attrs==20.3.0
 certifi==2021.5.30
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
-    #   minio
     #   requests
 chardet==4.0.0
     # via
