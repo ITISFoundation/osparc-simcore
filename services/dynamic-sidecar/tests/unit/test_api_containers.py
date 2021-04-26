@@ -85,7 +85,7 @@ async def started_containers(test_client: TestClient, compose_spec: str) -> List
     shared_store: SharedStore = test_client.application.state.shared_store
     container_names = shared_store.container_names
     assert len(container_names) == 2
-    assert json.loads(response.text) == container_names
+    assert response.json() == container_names
 
     return container_names
 
@@ -114,13 +114,13 @@ async def test_compose_up(
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = test_client.application.state.shared_store
     container_names = shared_store.container_names
-    assert json.loads(response.text) == container_names
+    assert response.json() == container_names
 
 
 async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
     response = await test_client.post(f"/{api_vtag}/containers")
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR, response.text
-    assert json.loads(response.text) == {"detail": "\nProvided yaml is not valid!"}
+    assert response.json() == {"detail": "\nProvided yaml is not valid!"}
 
 
 async def test_compose_up_spec_invalid(test_client: TestClient) -> None:
@@ -142,7 +142,7 @@ async def test_containers_down_after_starting(
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = test_client.application.state.shared_store
     container_names = shared_store.container_names
-    assert json.loads(response.text) == container_names
+    assert response.json() == container_names
 
     response = await test_client.post(
         f"/{api_vtag}/containers:down",
@@ -160,9 +160,7 @@ async def test_containers_down_missing_spec(
         query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
-    assert json.loads(response.text) == {
-        "detail": "No spec for docker-compose down was found"
-    }
+    assert response.json() == {"detail": "No spec for docker-compose down was found"}
 
 
 def assert_keys_exist(result: Dict[str, Any]) -> bool:
@@ -178,7 +176,7 @@ async def test_containers_get(
     response = await test_client.get(f"/{api_vtag}/containers")
     assert response.status_code == status.HTTP_200_OK, response.text
 
-    decoded_response = json.loads(response.text)
+    decoded_response = response.json()
     assert set(decoded_response) == set(started_containers)
     for entry in decoded_response.values():
         assert "Status" not in entry
@@ -193,7 +191,7 @@ async def test_containers_get_status(
     )
     assert response.status_code == status.HTTP_200_OK, response.text
 
-    decoded_response = json.loads(response.text)
+    decoded_response = response.json()
     assert set(decoded_response) == set(started_containers)
     assert assert_keys_exist(decoded_response) is True
 
