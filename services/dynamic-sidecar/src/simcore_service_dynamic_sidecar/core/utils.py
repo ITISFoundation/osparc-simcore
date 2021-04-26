@@ -11,6 +11,7 @@ import aiofiles
 import yaml
 from async_generator import asynccontextmanager
 from async_timeout import timeout
+from fastapi import HTTPException, status
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
@@ -36,10 +37,10 @@ def docker_client() -> Generator[aiodocker.Docker, None, None]:
     try:
         yield docker
     except aiodocker.exceptions.DockerError as error:
-        logger.warning(
-            "An unexpected Docker error occurred:\n%s", str(traceback.format_exc())
-        )
-        raise error
+        logger.exception("An unexpected Docker error occurred")
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error.message
+        ) from error
     finally:
         docker.close()
 
