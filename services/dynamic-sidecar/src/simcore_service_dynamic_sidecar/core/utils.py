@@ -40,7 +40,7 @@ def docker_client() -> Generator[aiodocker.Docker, None, None]:
 
 
 async def async_command(command: str, command_timeout: float) -> Tuple[bool, str]:
-    """Returns if the command exited correctly and the stdout of the command """
+    """Returns if the command exited correctly and the stdout of the command"""
     proc = await asyncio.create_subprocess_shell(
         command,
         stdin=asyncio.subprocess.PIPE,

@@ -78,7 +78,7 @@ async def runs_docker_compose_up(
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Union[List[str], Dict[str, Any]]:
-    """ Expects the docker-compose spec as raw-body utf-8 encoded text """
+    """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
     # stores the compose spec after validation
     body_as_text = (await request.body()).decode("utf-8")
@@ -198,7 +198,7 @@ async def get_container_logs(
     ),
     shared_store: SharedStore = Depends(get_shared_store),
 ) -> Union[str, Dict[str, Any]]:
-    """ Returns the logs of a given container if found """
+    """Returns the logs of a given container if found"""
     # TODO: remove from here and dump directly into the logs of this service
     # do this in PR#1887
     _raise_if_container_is_missing(id, shared_store.container_names)
@@ -225,7 +225,7 @@ async def get_container_logs(
 async def inspect_container(
     id: str, shared_store: SharedStore = Depends(get_shared_store)
 ) -> Dict[str, Any]:
-    """ Returns information about the container, like docker inspect command """
+    """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id, shared_store.container_names)
 
     with docker_client() as docker:

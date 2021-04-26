@@ -16,7 +16,7 @@ async def write_file_and_run_command(
     command: str,
     command_timeout: float,
 ) -> Tuple[bool, str]:
-    """ The command which accepts {file_path} as an argument for string formatting """
+    """The command which accepts {file_path} as an argument for string formatting"""
 
     # pylint: disable=not-async-context-manager
     async with write_to_tmp_file(file_content) as file_path:
