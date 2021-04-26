@@ -22,6 +22,7 @@ Makefile                                  @pcrespov, @sanderegg
 /scripts/template-projects/               @odeimaiz, @pcrespov
 /services/api-server/                     @pcrespov
 /services/director*/                      @sanderegg, @pcrespov
+/services/dynamic-sidecar/                @GitHK
 /services/catalog/                        @pcrespov, @sanderegg
 /services/migration/                      @pcrespov
 /services/sidecar/                        @pcrespov, @mguidon
