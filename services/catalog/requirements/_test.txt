@@ -4,14 +4,16 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.4
+aiohttp==3.7.4.post0
     # via pytest-aiohttp
-alembic==1.5.5
+alembic==1.5.8
     # via -r requirements/_test.in
-astroid==2.5.1
+astroid==2.5.3
     # via pylint
 async-timeout==3.0.1
-    # via aiohttp
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 attrs==20.3.0
     # via
     #   aiohttp
@@ -55,17 +57,17 @@ coverage==5.5
     #   pytest-cov
 coveralls==3.0.1
     # via -r requirements/_test.in
-cryptography==3.4.6
+cryptography==3.4.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
 distro==1.5.0
     # via docker-compose
-docker-compose==1.27.4
+docker-compose==1.29.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-docker
-docker[ssh]==4.4.4
+docker[ssh]==5.0.0
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -75,7 +77,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==6.5.0
+faker==8.1.0
     # via -r requirements/_test.in
 h11==0.9.0
     # via
@@ -94,7 +96,6 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   idna-ssl
     #   requests
@@ -104,20 +105,20 @@ immutables==0.15
     # via
     #   -c requirements/_base.txt
     #   contextvars
-importlib-metadata==3.7.0
+importlib-metadata==4.0.1
     # via
     #   jsonschema
     #   pluggy
     #   pytest
 iniconfig==1.1.1
     # via pytest
-isort==5.7.0
+isort==5.8.0
     # via pylint
 jsonschema==3.2.0
     # via
     #   -r requirements/_test.in
     #   docker-compose
-lazy-object-proxy==1.5.2
+lazy-object-proxy==1.6.0
     # via astroid
 mako==1.1.4
     # via alembic
@@ -148,7 +149,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.7.2
+pylint==2.7.4
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -166,7 +167,7 @@ pytest-mock==3.5.1
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
-pytest==6.2.2
+pytest==6.2.3
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -207,7 +208,6 @@ six==1.15.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
-    #   docker
     #   dockerpty
     #   jsonschema
     #   pynacl
@@ -231,7 +231,7 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-typed-ast==1.4.2
+typed-ast==1.4.3
     # via astroid
 typing-extensions==3.7.4.3
     # via
@@ -254,7 +254,7 @@ yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-zipp==3.4.0
+zipp==3.4.1
     # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:

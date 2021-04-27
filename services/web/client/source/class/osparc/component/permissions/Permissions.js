@@ -73,6 +73,9 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       this._add(collaboratorsList, {
         flex: 1
       });
+
+      const studyLinkSection = this.__createStudyLinkSection();
+      this._add(studyLinkSection);
     },
 
     __createAddCollaboratorSection: function() {
@@ -171,6 +174,39 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       return vBox;
     },
 
+    __createStudyLinkSection: function() {
+      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const label = new qx.ui.basic.Label().set({
+        value: this.tr("Those that have access to the study can use the following permanent link:"),
+        rich: true
+      });
+      vBox.add(label);
+
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
+      vBox.add(hBox, {
+        flex: 1
+      });
+
+      const link = window.location.href + "#/study/" + this.__serializedData["uuid"];
+      const linkField = new qx.ui.form.TextField(link);
+      hBox.add(linkField, {
+        flex: 1
+      });
+
+      const copyLinkBtn = new qx.ui.form.Button(this.tr("Copy link"));
+      copyLinkBtn.addListener("execute", () => {
+        if (osparc.utils.Utils.copyTextToClipboard(link)) {
+          copyLinkBtn.setIcon("@FontAwesome5Solid/check/12");
+        }
+      }, this);
+      hBox.add(copyLinkBtn);
+
+      return vBox;
+    },
+
     __getCollaborators: function() {
       const store = osparc.store.Store.getInstance();
       const promises = [];
@@ -178,8 +214,8 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       promises.push(store.getVisibleMembers());
       Promise.all(promises)
         .then(values => {
-          const orgs = values[0];
-          const orgMembers = values[1];
+          const orgs = values[0]; // array
+          const orgMembers = values[1]; // object
           orgs.forEach(org => {
             org["collabType"] = 1;
             this.__collaborators[org["gid"]] = org;
@@ -201,8 +237,18 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       const myFriends = Object.values(this.__collaborators);
 
       // sort them first
-      myFriends.sort((a, b) => (a["label"] > b["label"]) ? 1 : -1);
-      myFriends.sort((a, b) => (a["collabType"] > b["collabType"]) ? 1 : -1);
+      myFriends.sort((a, b) => {
+        if (a["collabType"] > b["collabType"]) {
+          return 1;
+        }
+        if (a["collabType"] < b["collabType"]) {
+          return -1;
+        }
+        if (a["label"] > b["label"]) {
+          return 1;
+        }
+        return -1;
+      });
 
       myFriends.forEach(myFriend => {
         const gid = myFriend["gid"];

@@ -4,7 +4,7 @@ class ResponsesQueue {
   constructor(page) {
     this.__page = page;
     this.__reqQueue = [];
-    this.__respPendingQueue = [];
+    this.__respPendingQueue = {};
     this.__respReceivedQueue = {};
   }
 
@@ -13,14 +13,18 @@ class ResponsesQueue {
   }
 
   isResponseInQueue(url) {
-    return this.__respPendingQueue.includes(url);
+    return Object.keys(this.__respPendingQueue).includes(url);
   }
 
   __addRequestListener(url) {
-    const page = this.__page;
     const reqQueue = this.__reqQueue;
     reqQueue.push(url);
+    this.__respPendingQueue[url] = {};
+    this.__respPendingQueue[url]["start"] = null;
+    this.__respPendingQueue[url]["end"] = null;
     console.log("-- Expected response added to queue", url);
+    const that = this;
+    const page = this.__page;
     page.on("request", function callback(req) {
       if (req.url().includes(url)) {
         console.log("-- Queued request sent", req.method(), req.url());
@@ -30,40 +34,42 @@ class ResponsesQueue {
           reqQueue.splice(index, 1);
         }
       }
+      that.__respPendingQueue[url]["start"] = new Date();
+    });
+  }
+
+  __addResponseListener(url) {
+    const that = this;
+    this.__page.on("response", function callback(resp) {
+      if (resp.url().includes(url)) {
+        console.log("-- Queued response received", resp.url(), ":");
+        that.__respPendingQueue[url]["end"] = new Date();
+        console.log(resp.status());
+        if (resp.status() === 204) {
+          that.removeResponseListener(url, "ok", callback);
+        }
+        else {
+          resp.json().then(data => {
+            that.removeResponseListener(url, data, callback);
+          });
+        }
+      }
     });
   }
 
   addResponseListener(url) {
     this.__addRequestListener(url);
+    this.__addResponseListener(url);
+  }
 
-    const page = this.__page;
-    const respPendingQueue = this.__respPendingQueue;
-    respPendingQueue.push(url);
-    const that = this;
-    page.on("response", function callback(resp) {
-      if (resp.url().includes(url)) {
-        console.log("-- Queued response received", resp.url(), ":");
-        console.log(resp.status());
-        if (resp.status() === 204) {
-          that.__respReceivedQueue[url] = "ok";
-          page.removeListener("response", callback);
-          const index = respPendingQueue.indexOf(url);
-          if (index > -1) {
-            respPendingQueue.splice(index, 1);
-          }
-        }
-        else {
-          resp.json().then(data => {
-            that.__respReceivedQueue[url] = data;
-            page.removeListener("response", callback);
-            const index = respPendingQueue.indexOf(url);
-            if (index > -1) {
-              respPendingQueue.splice(index, 1);
-            }
-          });
-        }
-      }
-    });
+  removeResponseListener(url, resp, callback) {
+    this.__respReceivedQueue[url] = resp;
+    if (this.isResponseInQueue(url)) {
+      const diff = this.__respPendingQueue[url]["end"] - this.__respPendingQueue[url]["start"];
+      console.log("-- Waited", diff/1000, "s for", url);
+      this.__page.removeListener("response", callback);
+      delete this.__respPendingQueue[url];
+    }
   }
 
   async waitUntilResponse(url, timeout = 20000) {
@@ -73,7 +79,6 @@ class ResponsesQueue {
       await utils.sleep(sleepFor);
       sleptFor += sleepFor;
     }
-    console.log("-- Slept for", sleptFor/1000, "s waiting for", url);
     if (sleptFor >= timeout) {
       throw("-- Timeout reached.");
     }

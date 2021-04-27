@@ -54,9 +54,6 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 
 @pytest.fixture(scope="module")
 def make_up_prod(
-    # prepare_all_services: Dict,
-    # simcore_docker_compose: Dict,
-    # ops_docker_compose: Dict,
     docker_stack: Dict,
     docker_registry,
 ) -> Dict:
@@ -206,7 +203,7 @@ def services_registry(
         devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"]
     )
     print(
-        "Catalog should take %s to detect new services ...", wait_for_catalog_to_detect
+        f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
     time.sleep(wait_for_catalog_to_detect)
 

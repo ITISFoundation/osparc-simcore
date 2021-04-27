@@ -9,7 +9,8 @@
 # pylint:disable=redefined-outer-name
 
 import time
-from datetime import timedelta
+
+# from datetime import timedelta
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote_plus
@@ -204,16 +205,22 @@ def test_run_job(
     output_file = outputs.results["output_1"]
     number = outputs.results["output_2"]
 
-    if status.state == "SUCCESS":
+    assert status.state == expected_outcome
+
+    if expected_outcome == "SUCCESS":
         assert isinstance(output_file, File)
         assert isinstance(number, float)
+
+        # output file exists
+        assert files_api.get_file(output_file.id) == output_file
+
+        # can download and open
+        download_path: str = files_api.download_file(file_id=output_file.id)
+        assert float(Path(download_path).read_text()), "contains a random number"
+
     else:
         # one of them is not finished
         assert output_file is None or number is None
-
-    # file exists in the cloud
-    # FIXME:
-    # assert files_api.get_file(output_file.id) == output_file
 
 
 def test_sugar_syntax_on_solver_setup(

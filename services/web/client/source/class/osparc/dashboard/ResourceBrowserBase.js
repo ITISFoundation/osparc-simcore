@@ -34,14 +34,104 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this._initResources();
+
+    this.addListener("appear", () => {
+      this._moreStudiesRequired();
+    });
   },
 
   events: {
     "startStudy": "qx.event.type.Data"
   },
 
+  statics: {
+    sortStudyList: function(studyList) {
+      const sortByProperty = function(prop) {
+        return function(a, b) {
+          if (prop === "lastChangeDate") {
+            return new Date(b[prop]) - new Date(a[prop]);
+          }
+          if (typeof a[prop] == "number") {
+            return a[prop] - b[prop];
+          }
+          if (a[prop] < b[prop]) {
+            return -1;
+          } else if (a[prop] > b[prop]) {
+            return 1;
+          }
+          return 0;
+        };
+      };
+      studyList.sort(sortByProperty("lastChangeDate"));
+    },
+
+    PAGINATED_STUDIES: 10,
+    MIN_FILTERED_STUDIES: 15
+  },
+
   members: {
+    _studiesContainer: null,
+    _loadingStudiesBtn: null,
+
     _initResources: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _requestStudies: function(templates = false) {
+      if (this._loadingStudiesBtn.isFetching()) {
+        return;
+      }
+      this._loadingStudiesBtn.setFetching(true);
+      const request = this.__getNextRequest(templates);
+      request
+        .then(resp => {
+          const studies = resp["data"];
+          this._studiesContainer.nextRequest = resp["_links"]["next"];
+          this._addStudiesToList(studies);
+        })
+        .catch(err => {
+          console.error(err);
+        })
+        .finally(() => {
+          this._loadingStudiesBtn.setFetching(false);
+          this._loadingStudiesBtn.setVisibility(this._studiesContainer.nextRequest === null ? "excluded" : "visible");
+          this._moreStudiesRequired();
+        });
+    },
+
+    __getNextRequest: function(templates) {
+      const params = {
+        url: {
+          offset: 0,
+          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
+        }
+      };
+      if ("nextRequest" in this._studiesContainer &&
+        this._studiesContainer.nextRequest !== null &&
+        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "offset") &&
+        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "limit")) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "limit");
+      }
+      const resolveWResponse = true;
+      return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse);
+    },
+
+    _addStudiesToList: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _moreStudiesRequired: function() {
+      if (this._studiesContainer &&
+        this._studiesContainer.nextRequest !== null &&
+        (this._studiesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        this._loadingStudiesBtn.checkIsOnScreen())
+      ) {
+        this.reloadStudies();
+      }
+    },
+
+    reloadStudies: function() {
       throw new Error("Abstract method called!");
     },
 
@@ -113,10 +203,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _createStudyFromTemplate: function(templateData) {
-      throw new Error("Abstract method called!");
-    },
-
-    _reloadStudy: function(studyId) {
       throw new Error("Abstract method called!");
     },
 

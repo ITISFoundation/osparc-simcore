@@ -162,6 +162,18 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
+    append: function(resource, data) {
+      if (data === undefined) {
+        return;
+      }
+      const stored = this.get(resource);
+      if (Array.isArray(stored) && Array.isArray(data)) {
+        this.set(resource, stored.concat(data));
+      } else {
+        this.set(resource, data);
+      }
+    },
+
     /**
      * Remove an element from an array, or erase the store for a given resource.
      * @param {String} resource Name of the resource property. If used with {osparc.data.Resources}, it has to be the same there.

@@ -21,7 +21,7 @@ aiohttp==3.7.3
     #   aiozipkin
 aioitertools==0.7.0
     # via aiobotocore
-aiopg[sa]==1.0.0
+aiopg[sa]==1.2.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -34,7 +34,9 @@ aiozipkin==0.7.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 async-timeout==3.0.1
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   aiopg
 attrs==20.2.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -84,11 +86,9 @@ idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   email-validator
     #   idna-ssl
     #   requests

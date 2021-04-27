@@ -19,6 +19,7 @@
  * @ignore(URL)
  * @ignore(sessionStorage)
  * @ignore(fetch)
+ * @ignore(URLSearchParams)
  */
 
 /**
@@ -418,6 +419,16 @@ qx.Class.define("osparc.utils.Utils", {
         }
       }
       return parsedFragment;
+    },
+
+    getParamFromURL: (url, param) => {
+      const urlParams = new URLSearchParams(url);
+      return urlParams.get(param);
+    },
+
+    hasParamFromURL: (url, param) => {
+      const urlParams = new URLSearchParams(url);
+      return urlParams.has(param);
     },
 
     getThumbnailFromUuid: uuid => {

@@ -5,7 +5,7 @@ NOTE: openapi section for these handlers was generated using
 """
 from typing import Optional
 
-from aiohttp import web
+from aiohttp.web import Request
 from pydantic import BaseModel, Field
 from pydantic.networks import HttpUrl
 
@@ -40,7 +40,7 @@ class Viewer(BaseModel):
     )
 
     @classmethod
-    def create(cls, request: web.Request, viewer: ViewerInfo):
+    def create(cls, request: Request, viewer: ViewerInfo):
         return cls(
             file_type=viewer.filetype,
             title=viewer.title,
@@ -53,7 +53,7 @@ class Viewer(BaseModel):
 
 # GET /v0/viewers
 # WARNING: this entry is NOT access protected
-async def list_viewers(request: web.Request):
+async def list_viewers(request: Request):
     """Lists all publicaly available viewers
 
     Notice that this might contain multiple services for the same filetype
@@ -72,7 +72,7 @@ async def list_viewers(request: web.Request):
 
 # GET /v0/viewers/default
 # WARNING: this entry is NOT access protected
-async def list_default_viewers(request: web.Request):
+async def list_default_viewers(request: Request):
     """Lists the default viewer for each supported filetype
 
     This was interfaced as a subcollection of viewers because it is a very common use-case

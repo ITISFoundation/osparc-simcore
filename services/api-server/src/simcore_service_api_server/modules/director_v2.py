@@ -94,7 +94,7 @@ class DirectorV2Api(BaseServiceClientApi):
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskOut:
         resp = await self.client.post(
-            "/computations",
+            "/v2/computations",
             json={
                 "user_id": user_id,
                 "project_id": str(project_id),
@@ -112,7 +112,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
         with handle_errors_context(project_id):
             resp = await self.client.post(
-                "/computations",
+                "/v2/computations",
                 json={
                     "user_id": user_id,
                     "project_id": str(project_id),
@@ -127,7 +127,7 @@ class DirectorV2Api(BaseServiceClientApi):
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskOut:
         resp = await self.client.get(
-            f"/computations/{project_id}",
+            f"/v2/computations/{project_id}",
             params={
                 "user_id": user_id,
             },
@@ -140,7 +140,7 @@ class DirectorV2Api(BaseServiceClientApi):
         self, project_id: UUID, user_id: PositiveInt
     ) -> ComputationTaskOut:
         data = await self.client.post(
-            f"/computations/{project_id}:stop",
+            f"/v2/computations/{project_id}:stop",
             json={
                 "user_id": user_id,
             },
@@ -152,7 +152,7 @@ class DirectorV2Api(BaseServiceClientApi):
     async def delete_computation(self, project_id: UUID, user_id: PositiveInt):
         await self.client.request(
             "DELETE",
-            f"/computations/{project_id}",
+            f"/v2/computations/{project_id}",
             json={
                 "user_id": user_id,
                 "force": True,
@@ -179,5 +179,9 @@ def setup(app: FastAPI, settings: DirectorV2Settings) -> None:
         settings = DirectorV2Settings()
 
     setup_client_instance(
-        app, DirectorV2Api, api_baseurl=settings.base_url, service_name="director_v2"
+        app,
+        DirectorV2Api,
+        # WARNING: it has /v0 and /v2 prefixes
+        api_baseurl=f"http://{settings.host}:{settings.port}",
+        service_name="director_v2",
     )

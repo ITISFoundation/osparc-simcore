@@ -1,0 +1,8 @@
+-c ../../../requirements/constraints.txt
+
+pytest
+pytest-cov
+pytest-asyncio
+pytest-mock
+async-asgi-testclient
+faker

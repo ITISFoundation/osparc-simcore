@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Optional, Type
 
@@ -5,6 +6,8 @@ import httpx
 from fastapi import FastAPI
 
 from .app_data import AppDataMixin
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -26,7 +29,8 @@ class BaseServiceClientApi(AppDataMixin):
             resp = await self.client.get(self.health_check_path)
             resp.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError):
+        except (httpx.HTTPStatusError, httpx.RequestError) as err:
+            log.error("%s not responsive: %s", self.service_name, err)
             return False
 
 

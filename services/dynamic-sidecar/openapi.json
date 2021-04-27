@@ -1,0 +1,417 @@
+{
+  "openapi": "3.0.2",
+  "info": {
+    "title": "FastAPI",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health Endpoint",
+        "operationId": "health_endpoint_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationHealth"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is unhealthy"
+          }
+        }
+      }
+    },
+    "/v1/containers": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Containers Docker Inspect",
+        "description": "Returns entire docker inspect data, if only_state is True,\nthe status of the containers is returned",
+        "operationId": "containers_docker_inspect_v1_containers_get",
+        "parameters": [
+          {
+            "description": "if True only show the status of the container",
+            "required": false,
+            "schema": {
+              "title": "Only Status",
+              "type": "boolean",
+              "description": "if True only show the status of the container",
+              "default": false
+            },
+            "name": "only_status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Runs Docker Compose Up",
+        "description": "Expects the docker-compose spec as raw-body utf-8 encoded text",
+        "operationId": "runs_docker_compose_up_v1_containers_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:down": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Runs Docker Compose Down",
+        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "operationId": "runs_docker_compose_down_v1_containers_down_post",
+        "parameters": [
+          {
+            "description": "docker-compose down command timeout default",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number",
+              "description": "docker-compose down command timeout default",
+              "default": 10.0
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/{id}/logs": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Get Container Logs",
+        "description": "Returns the logs of a given container if found",
+        "operationId": "get_container_logs_v1_containers__id__logs_get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "description": "Only return logs since this time, as a UNIX timestamp",
+            "required": false,
+            "schema": {
+              "title": "Timestamp",
+              "type": "integer",
+              "description": "Only return logs since this time, as a UNIX timestamp",
+              "default": 0
+            },
+            "name": "since",
+            "in": "query"
+          },
+          {
+            "description": "Only return logs before this time, as a UNIX timestamp",
+            "required": false,
+            "schema": {
+              "title": "Timestamp",
+              "type": "integer",
+              "description": "Only return logs before this time, as a UNIX timestamp",
+              "default": 0
+            },
+            "name": "until",
+            "in": "query"
+          },
+          {
+            "description": "Enabling this parameter will include timestamps in logs",
+            "required": false,
+            "schema": {
+              "title": "Display timestamps",
+              "type": "boolean",
+              "description": "Enabling this parameter will include timestamps in logs",
+              "default": false
+            },
+            "name": "timestamps",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Container does not exists"
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/{id}": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Inspect Container",
+        "description": "Returns information about the container, like docker inspect command",
+        "operationId": "inspect_container_v1_containers__id__get",
+        "parameters": [
+          {
+            "required": true,
+            "schema": {
+              "title": "Id",
+              "type": "string"
+            },
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "Container does not exist"
+          },
+          "500": {
+            "description": "Errors in container"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/push": {
+      "post": {
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Push Post",
+        "operationId": "ignored_push_post_push_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retrieve": {
+      "get": {
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Port Data Load",
+        "operationId": "ignored_port_data_load_retrieve_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Port Data Save",
+        "operationId": "ignored_port_data_save_retrieve_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/state": {
+      "get": {
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Load Service State State",
+        "operationId": "ignored_load_service_state_state_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Mocked frontend calls"
+        ],
+        "summary": "Ignored Save Service State State",
+        "operationId": "ignored_save_service_state_state_state_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationHealth": {
+        "title": "ApplicationHealth",
+        "type": "object",
+        "properties": {
+          "is_healthy": {
+            "title": "Is Healthy",
+            "type": "boolean",
+            "description": "returns True if the service sis running correctly",
+            "default": true
+          }
+        }
+      },
+      "HTTPValidationError": {
+        "title": "HTTPValidationError",
+        "type": "object",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "title": "ValidationError",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "loc": {
+            "title": "Location",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
