@@ -72,11 +72,11 @@ class ServiceSidecar(BaseModel):
 
     hostname: str = Field(..., description="docker hostname for this service")
 
-    port: PositiveInt = Field(8000, description="service-sidecar port")
+    port: PositiveInt = Field(8000, description="dynamic-sidecar port")
 
     is_available: bool = Field(
         False,
-        scription="infroms if the web API on the service-sidecar is responding",
+        scription="infroms if the web API on the dynamic-sidecar is responding",
     )
 
     compose_spec_submitted: bool = Field(
@@ -114,7 +114,7 @@ class MonitorData(BaseModel):
 
     service_sidecar: ServiceSidecar = Field(
         ...,
-        description="stores information fetched from the service-sidecar",
+        description="stores information fetched from the dynamic-sidecar",
     )
 
     service_key: str = Field(
@@ -129,7 +129,7 @@ class MonitorData(BaseModel):
         ...,
         description=(
             "the service explicitly requests where to mount all paths "
-            "which will be handeled by the service-sidecar"
+            "which will be handeled by the dynamic-sidecar"
         ),
     )
     compose_spec: ComposeSpecModel = Field(
@@ -146,7 +146,7 @@ class MonitorData(BaseModel):
 
     service_sidecar_network_name: str = Field(
         ...,
-        description="overlay network biding the proxy to the container spaned by the service-sidecar",
+        description="overlay network biding the proxy to the container spaned by the dynamic-sidecar",
     )
 
     simcore_traefik_zone: str = Field(
@@ -205,7 +205,7 @@ class LockWithMonitorData(BaseModel):
     )
 
     monitor_data: MonitorData = Field(
-        ..., description="required data used to monitor the service-sidecar"
+        ..., description="required data used to monitor the dynamic-sidecar"
     )
 
     class Config:

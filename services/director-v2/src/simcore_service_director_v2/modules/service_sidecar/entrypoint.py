@@ -130,7 +130,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
 
-    # start service-sidecar and run the proxy on the same node
+    # start dynamic-sidecar and run the proxy on the same node
 
     service_sidecar_create_service_params = await _dyn_service_sidecar_assembly(
         service_sidecar_settings=service_sidecar_settings,
@@ -150,7 +150,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         settings=settings,
     )
     log.debug(
-        "service-sidecar create_service_params %s",
+        "dynamic-sidecar create_service_params %s",
         pformat(service_sidecar_create_service_params),
     )
 
@@ -178,7 +178,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         request_dns=request_dns,
     )
     log.debug(
-        "service-sidecar-proxy create_service_params %s",
+        "dynamic-sidecar-proxy create_service_params %s",
         pformat(service_sidecar_proxy_create_service_params),
     )
 
@@ -252,7 +252,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{service_name}.rule": f"hostregexp(`{node_uuid}.services.{{host:.+}}`)",
             f"traefik.http.routers.{service_name}.middlewares": f"master-simcore_gzip@docker, {service_name}-security-headers",
             "type": "main",  # main is required to be monitored by the frontend
-            "dynamic_type": "service-sidecar",  # tagged as dynamic service
+            "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
             "study_id": project_id,
             "user_id": user_id,
             "uuid": node_uuid,  # needed for removal when project is closed
@@ -337,7 +337,7 @@ def _parse_env_settings(settings: List[str]) -> Dict:
         if "=" in s:
             parts = s.split("=")
             if len(parts) == 2:
-                # will be forwarded to service-sidecar spawned containers
+                # will be forwarded to dynamic-sidecar spawned containers
                 envs[f"FORWARD_ENV_{parts[0]}"] = parts[1]
 
         log.debug("Parsed env settings %s", s)
@@ -446,7 +446,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     project_id: str,
     settings: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """This service contains the service-sidecar which will spawn the dynamic service itself """
+    """This service contains the dynamic-sidecar which will spawn the dynamic service itself """
     mounts = [
         # docker socket needed to use the docker api
         {
@@ -462,7 +462,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
         service_sidecar_path = service_sidecar_settings.dev_simcore_service_sidecar_path
         if service_sidecar_path is None:
             log.error(
-                "Could not mount the sources for the service-sidecar, please provide env var named %s",
+                "Could not mount the sources for the dynamic-sidecar, please provide env var named %s",
                 service_sidecar_settings.dev_simcore_service_sidecar_path.__name__,
             )
         else:

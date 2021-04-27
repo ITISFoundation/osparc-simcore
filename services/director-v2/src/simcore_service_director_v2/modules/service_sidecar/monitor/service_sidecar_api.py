@@ -25,7 +25,7 @@ def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> Non
     logging.warning(
         (
             "%s -> %s generated:\n %s\nThe above logs can safely "
-            "be ignored, except when the service-sidecar is failing"
+            "be ignored, except when the dynamic-sidecar is failing"
         ),
         method,
         url,
@@ -202,12 +202,12 @@ class ServiceSidecarClient:
 
 
 async def setup_api_client(app: Application) -> None:
-    logger.debug("service-sidecar api client setup")
+    logger.debug("dynamic-sidecar api client setup")
     app.state.service_sidecar_api_client = ServiceSidecarClient(app)
 
 
 async def shutdown_api_client(app: Application) -> None:
-    logger.debug("service-sidecar api client shutdown")
+    logger.debug("dynamic-sidecar api client shutdown")
     service_sidecar_client = app.state.service_sidecar_api_client
     await service_sidecar_client.close()
 

@@ -46,7 +46,7 @@ class ServiceSidecarSettings(BaseSettings):
 
     web_service_port: int = Field(
         8000,
-        description="port on which the webserver for the service-sidecar is exposed",
+        description="port on which the webserver for the dynamic-sidecar is exposed",
     )
 
     simcore_services_network_name: str = Field(
@@ -63,7 +63,7 @@ class ServiceSidecarSettings(BaseSettings):
     service_sidecar_api_request_timeout: PositiveInt = Field(
         15,
         description=(
-            "the default timeout each request to the service-sidecar API in seconds; as per "
+            "the default timeout each request to the dynamic-sidecar API in seconds; as per "
             "design, all requests should answer quite quickly, in theory a few seconds or less"
         ),
     )
@@ -89,9 +89,9 @@ class ServiceSidecarSettings(BaseSettings):
     service_sidecar_api_request_docker_compose_down_timeout: PositiveInt = Field(
         15,
         description=(
-            "used by the service-sidecar when it's shutting down to cleanup all spawned containers; "
+            "used by the dynamic-sidecar when it's shutting down to cleanup all spawned containers; "
             "if the containers tend to remain in the system increasing this will help with removing "
-            "pending containers spawned by the service-sidecar"
+            "pending containers spawned by the dynamic-sidecar"
         ),
     )
 
@@ -106,7 +106,7 @@ class ServiceSidecarSettings(BaseSettings):
     timeout_fetch_service_sidecar_node_id: float = Field(
         60,
         description=(
-            "when starting the service-sidecar proxy, the NodeID of the service-sidecar container "
+            "when starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
             "is required; If something goes wrong timeout and do not wait forever in a loop"
         ),
     )
@@ -123,7 +123,7 @@ class ServiceSidecarSettings(BaseSettings):
 
     class Config:
         case_sensitive = False
-        env_prefix = "SERVICE_SIDECAR_"
+        env_prefix = "DYNAMIC_SIDECAR_"
 
 
 async def setup_settings(app: Application) -> None:

@@ -43,7 +43,7 @@ class StartServiceSidecarModel(BaseModel):
         ...,
         description=(
             "the service explicitly requests where to mount all paths "
-            "which will be handeled by the service-sidecar"
+            "which will be handeled by the dynamic-sidecar"
         ),
     )
     compose_spec: ComposeSpecModel = Field(

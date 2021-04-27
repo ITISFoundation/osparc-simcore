@@ -189,12 +189,12 @@ class ServiceSidecarsMonitor:
 
         def make_error_status():
             error_status = dict(
-                dynamic_type="service-sidecar",
+                dynamic_type="dynamic-sidecar",
                 service_state="error",
                 service_message=f"Could not find a service for node_uuid={node_uuid}",
             )
             logging.warning(
-                "Producting error status for service-sidecar with node_uuid=%s\n%s",
+                "Producting error status for dynamic-sidecar with node_uuid=%s\n%s",
                 node_uuid,
                 error_status,
             )
@@ -204,9 +204,9 @@ class ServiceSidecarsMonitor:
             monitor_data: MonitorData, service_state: ServiceState, service_message: str
         ):
             return dict(
-                dynamic_type="service-sidecar",  # tells the frontend this is run with a dynamic sidecar
+                dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
                 published_port=80,  # default for the proxy
-                entry_point="",  # can be removed when dynamic_type="service-sidecar"
+                entry_point="",  # can be removed when dynamic_type="dynamic-sidecar"
                 service_uuid=node_uuid,
                 service_key=monitor_data.service_key,
                 service_version=monitor_data.service_tag,
@@ -236,7 +236,7 @@ class ServiceSidecarsMonitor:
                 service_sidecar_settings=service_sidecar_settings,
             )
 
-            # while the service-sidecar state is not RUNNING report it's state
+            # while the dynamic-sidecar state is not RUNNING report it's state
             if service_state != ServiceState.RUNNING:
                 return make_service_status(
                     monitor_data=monitor_data,
@@ -328,7 +328,7 @@ class ServiceSidecarsMonitor:
 
     async def start(self):
         # run as a background task
-        logging.info("Starting service-sidecar monitor")
+        logging.info("Starting dynamic-sidecar monitor")
         self._keep_running = True
         asyncio.get_event_loop().create_task(self._run_monitor_task())
 
@@ -372,7 +372,7 @@ class ServiceSidecarsMonitor:
             )
 
     async def shutdown(self):
-        logging.info("Shutting down service-sidecar monitor")
+        logging.info("Shutting down dynamic-sidecar monitor")
         self._keep_running = False
         self._inverse_search_mapping = dict()
         self._to_monitor = dict()

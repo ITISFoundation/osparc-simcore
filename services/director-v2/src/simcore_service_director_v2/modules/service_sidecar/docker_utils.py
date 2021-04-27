@@ -125,7 +125,7 @@ async def get_service_sidecars_to_monitor(
         if len(service_name_parts) < 5:
             continue
 
-        # check to see if this is a service-sidecar
+        # check to see if this is a dynamic-sidecar
         if (
             service_name_parts[0] != SERVICE_SIDECAR_PREFIX
             or service_name_parts[3] != FIXED_SERVICE_NAME_SIDECAR

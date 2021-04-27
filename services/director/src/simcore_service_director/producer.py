@@ -971,7 +971,7 @@ async def _start_docker_service_with_dynamic_service(
 ):
     """
     Assembles and passes on all the required information for the service
-    to be ran by the service-sidecar.
+    to be ran by the dynamic-sidecar.
     """
     image_labels = await registry_proxy.get_image_labels(
         app=app, image=service["key"], tag=service["tag"]
@@ -980,7 +980,7 @@ async def _start_docker_service_with_dynamic_service(
         "image=%s, tag=%s, labels=%s", service["key"], service["tag"], image_labels
     )
 
-    # paths_mapping express how to map service-sidecar paths to the compose-spec volumes
+    # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
     paths_mapping = _get_value_from_label(image_labels, "simcore.service.paths-mapping")
     if paths_mapping is None:
@@ -1085,8 +1085,8 @@ async def _create_node(
         log.debug("Service to start info %s", service)
 
         # The platform currently supports 2 boot modes, legacy(which will be deprecated in the future)
-        # service-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
-        # "service-sidecar", the dynamic sidecar will be used in place of the current system
+        # dynamic-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
+        # "dynamic-sidecar", the dynamic sidecar will be used in place of the current system
 
         if boot_as_service_sidecar:
             service_meta_data = await _start_docker_service_with_dynamic_service(
@@ -1149,7 +1149,7 @@ async def _boot_as_service_sidecar(
         app=app, image=service_key, tag=service_tag
     )
 
-    return image_labels.get("simcore.service.boot-mode") == "service-sidecar"
+    return image_labels.get("simcore.service.boot-mode") == "dynamic-sidecar"
 
 
 async def start_service(
@@ -1215,9 +1215,9 @@ async def start_service(
 
 def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
     """this is used to format the node_details for either old
-    or service-sidecar interactive services
+    or dynamic-sidecar interactive services
 
-    Usually 10 (old interactive service) or 11 (service-sidecar) fields are provided.
+    Usually 10 (old interactive service) or 11 (dynamic-sidecar) fields are provided.
     When less the 10 fields are provided there is usually an error or something is still being formatted
     """
 
@@ -1235,7 +1235,7 @@ def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
     node_status: Dict[str, Union[str, int]] = {}
     dynamic_type: Optional[str] = kwargs.get("dynamic_type", None)
     if dynamic_type is not None:
-        # if this field is preset the service will be served via service-sidecar
+        # if this field is preset the service will be served via dynamic-sidecar
         node_status["dynamic_type"] = dynamic_type
 
     service_state: Optional[Union[str, ServiceState]] = kwargs.get(
@@ -1267,11 +1267,11 @@ def format_node_details_for_frontend(**kwargs) -> Dict[str, Union[str, int]]:
 async def _compute_dynamic_sidecar_node_details(
     app: web.Application, node_uuid: str
 ) -> Dict[str, Union[str, int]]:
-    # pull all the details from the service-sidecar via an API call and pass it forward
+    # pull all the details from the dynamic-sidecar via an API call and pass it forward
     status_result = await get_service_sidecar_stack_status(app=app, node_uuid=node_uuid)
     if status_result is None:
         raise exceptions.DirectorException(
-            f"Error while retriving status from service-sidecar for node {node_uuid}"
+            f"Error while retriving status from dynamic-sidecar for node {node_uuid}"
         )
     if (
         len(status_result) == 2
@@ -1286,7 +1286,7 @@ async def _get_node_details(
     app: web.Application, client: aiodocker.docker.Docker, service: Dict
 ) -> Dict:
     is_dynamic_sidecar = (
-        service["Spec"]["Labels"].get("dynamic_type") == "service-sidecar"
+        service["Spec"]["Labels"].get("dynamic_type") == "dynamic-sidecar"
     )
     if is_dynamic_sidecar:
         return await _compute_dynamic_sidecar_node_details(
@@ -1419,8 +1419,8 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
         # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
 
-        if service_details.get("dynamic_type") == "service-sidecar":
-            # service-sidecar is exposed on port 8000 by default
+        if service_details.get("dynamic_type") == "dynamic-sidecar":
+            # dynamic-sidecar is exposed on port 8000 by default
             service_host_name = service_details["service_host"] + ":8000"
         else:
             # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in

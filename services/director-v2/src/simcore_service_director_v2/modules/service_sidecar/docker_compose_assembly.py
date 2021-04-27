@@ -72,7 +72,7 @@ def _replace_env_vars_in_compose_spec(
 ) -> str:
     """
     There are a few special environment variables which get replaced before
-    forwarding the spec to the service-sidecar:
+    forwarding the spec to the dynamic-sidecar:
     - REGISTRY_URL
     - SERVICE_TAG
     """
@@ -97,7 +97,7 @@ async def assemble_spec(
     simcore_traefik_zone: str,
     service_port: int,
 ) -> str:
-    """returns a docker-compose spec which will be use by the service-sidecar to start the service """
+    """returns a docker-compose spec which will be use by the dynamic-sidecar to start the service """
     settings: ServiceSidecarSettings = get_settings(app)
 
     container_name = target_container

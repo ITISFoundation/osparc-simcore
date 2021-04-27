@@ -157,7 +157,7 @@ async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
         return result
 
     except _DirectorServiceError:
-        log.error("Could not stop service-sidecar stack for node_uuid=%s", node_uuid)
+        log.error("Could not stop dynamic-sidecar stack for node_uuid=%s", node_uuid)
 
 
 async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str):
@@ -176,7 +176,7 @@ async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str)
 
     except _DirectorServiceError:
         log.exception(
-            "Could not retrive status for service-sidecar stack for node_uuid=%s",
+            "Could not retrive status for dynamic-sidecar stack for node_uuid=%s",
             node_uuid,
         )
         return None

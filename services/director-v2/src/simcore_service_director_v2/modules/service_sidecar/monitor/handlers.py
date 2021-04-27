@@ -91,7 +91,7 @@ class RunDockerComposeUp(BaseEventHandler):
             service_sidecar_endpoint
         )
 
-        # singal there is a problem with the service-sidecar
+        # singal there is a problem with the dynamic-sidecar
         if not compose_spec_was_applied:
             current.service_sidecar.overall_status.update_failing_status(
                 "Could not apply docker-compose up. Ask an admin to check director logs for details."
