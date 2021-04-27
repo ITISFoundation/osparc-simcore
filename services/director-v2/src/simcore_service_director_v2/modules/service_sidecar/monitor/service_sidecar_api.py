@@ -184,6 +184,7 @@ class ServiceSidecarClient:
 
     async def remove_docker_compose_spec(self, service_sidecar_endpoint: str) -> None:
         """runs docker compose down on the started spec """
+
         url = get_url(service_sidecar_endpoint, "/compose")
         try:
             response = await self.httpx_client.delete(url)

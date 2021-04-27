@@ -115,50 +115,6 @@ jobs:
           name: unit_api_server_coverage
           path: codeclimate.unit_api_server_coverage.json
 
-  unit-test-service-sidecar:
-    name: "[unit] service-sidecar"
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.6]
-        os: [ubuntu-20.04]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker
-        run: |
-          sudo ./ci/github/helpers/setup_docker_compose.bash
-          ./ci/github/helpers/setup_docker_experimental.bash
-          ./ci/github/helpers/setup_docker_compose.bash
-          echo ::set-env name=DOCKER_BUILDX::1
-      - name: install make
-        run: sudo apt update && apt install -y build-essential
-      - name: setup python environment
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: show system version
-        run: ./ci/helpers/show_system_versions.bash
-      - uses: actions/cache@v2
-        name: getting cached data
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: setup requirements
-        run: |
-          export LC_ALL=C.UTF-8
-          make -C services/service-sidecar ci-install-requirements
-      - name: run codestyle checks
-        run: |
-          export LC_ALL=C.UTF-8
-          make -C services/service-sidecar ci-tox-codestyle
-      - name: tests via tox
-        run: |
-          export LC_ALL=C.UTF-8
-          make -C services/service-sidecar ci-tox-tests
-
   unit-test-catalog:
     name: "[unit] catalog"
     runs-on: ${{ matrix.os }}
