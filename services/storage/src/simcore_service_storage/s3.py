@@ -6,9 +6,9 @@ from pprint import pformat
 from typing import Dict
 
 from aiohttp import web
-from s3wrapper.s3_client import S3Client
 from tenacity import before_sleep_log, retry, stop_after_attempt, wait_fixed
 
+from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import APP_CONFIG_KEY, APP_S3_KEY
 from .utils import RETRY_COUNT, RETRY_WAIT_SECS
 
@@ -76,7 +76,7 @@ def setup(app: web.Application):
     s3_secret_key = s3_cfg["secret_key"]
     s3_secure = s3_cfg["secure"]
 
-    s3_client = S3Client(
+    s3_client = MinioClientWrapper(
         s3_endpoint, s3_access_key, s3_secret_key, secure=s3_secure == 1
     )
     app[APP_S3_KEY] = s3_client

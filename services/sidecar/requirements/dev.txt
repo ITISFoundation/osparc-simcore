@@ -16,7 +16,6 @@
 -e ../../packages/models-library/
 -e ../../packages/postgres-database/
 -e ../../packages/pytest-simcore/
--e ../../packages/s3wrapper/
 -e ../../packages/service-library/
 -e ../../packages/simcore-sdk/
 -e ../../services/storage/client-sdk/python/

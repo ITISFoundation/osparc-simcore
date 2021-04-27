@@ -190,7 +190,6 @@ pytest==6.2.3
     #   pytest-mock
 python-dateutil==2.8.1
     # via
-    #   -c requirements/_base.txt
     #   alembic
     #   faker
 python-dotenv==0.15.0

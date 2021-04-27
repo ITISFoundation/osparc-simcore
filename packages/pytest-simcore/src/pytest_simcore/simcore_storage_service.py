@@ -8,7 +8,7 @@ from typing import Dict
 import aiohttp
 import pytest
 import tenacity
-from s3wrapper.s3_client import S3Client
+from minio import Minio
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 from yarl import URL
 
@@ -33,7 +33,7 @@ def storage_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
 
 @pytest.fixture(scope="function")
 async def storage_service(
-    minio_service: S3Client, storage_endpoint: URL, docker_stack: Dict
+    minio_service: Minio, storage_endpoint: URL, docker_stack: Dict
 ) -> URL:
     await wait_till_storage_responsive(storage_endpoint)
 
