@@ -59,7 +59,19 @@ def test_empty_data_is_converted_to_list():
 
 
 @pytest.mark.parametrize(
-    "base_url", ["http://some/random/url.com", "http://10.0.0.1.nip.io"]
+    "base_url",
+    [
+        "http://site.com",
+        "http://site.com/",
+        "http://some/random/url.com",
+        "http://some/random/url.com/",
+        "http://s.s.s.s.subsite.site.com",
+        "http://s.s.s.s.subsite.site.com/",
+        "http://10.0.0.1.nip.io/",
+        "http://10.0.0.1.nip.io:8091/",
+        "http://10.0.0.1.nip.io",
+        "http://10.0.0.1.nip.io:8091",
+    ],
 )
 def test_paginating_data(base_url):
     # create random data
@@ -79,11 +91,27 @@ def test_paginating_data(base_url):
         total=total_number_of_data, count=len(partial_data), limit=limit, offset=offset
     )
     assert model_instance.links == PageLinks(
-        self=f"{base_url}?some=1&random=4&query=true&offset={offset}&limit={limit}",
-        first=f"{base_url}?some=1&random=4&query=true&offset=0&limit={limit}",
+        self=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset={offset}&limit={limit}"
+            )
+        ),
+        first=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset=0&limit={limit}"
+            )
+        ),
         prev=None,
-        next=f"{base_url}?some=1&random=4&query=true&offset=9&limit={limit}",
-        last=f"{base_url}?some=1&random=4&query=true&offset=27&limit={limit}",
+        next=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset=9&limit={limit}"
+            )
+        ),
+        last=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset=27&limit={limit}"
+            )
+        ),
     )
 
     # next "call"s
@@ -104,11 +132,31 @@ def test_paginating_data(base_url):
             offset=offset + i * limit,
         )
         assert model_instance.links == PageLinks(
-            self=f"{base_url}?some=1&random=4&query=true&offset={offset + i*limit}&limit={limit}",
-            first=f"{base_url}?some=1&random=4&query=true&offset=0&limit={limit}",
-            prev=f"{base_url}?some=1&random=4&query=true&offset={offset + i*limit-limit}&limit={limit}",
-            next=f"{base_url}?some=1&random=4&query=true&offset={offset + i*limit+limit}&limit={limit}",
-            last=f"{base_url}?some=1&random=4&query=true&offset=27&limit={limit}",
+            self=str(
+                URL(base_url).with_query(
+                    f"some=1&random=4&query=true&offset={offset + i*limit}&limit={limit}"
+                )
+            ),
+            first=str(
+                URL(base_url).with_query(
+                    f"some=1&random=4&query=true&offset=0&limit={limit}"
+                )
+            ),
+            prev=str(
+                URL(base_url).with_query(
+                    f"some=1&random=4&query=true&offset={offset + i*limit-limit}&limit={limit}"
+                )
+            ),
+            next=str(
+                URL(base_url).with_query(
+                    f"some=1&random=4&query=true&offset={offset + i*limit+limit}&limit={limit}"
+                )
+            ),
+            last=str(
+                URL(base_url).with_query(
+                    f"some=1&random=4&query=true&offset=27&limit={limit}"
+                )
+            ),
         )
 
     # last "call"
@@ -128,9 +176,25 @@ def test_paginating_data(base_url):
         offset=offset + 3 * limit,
     )
     assert model_instance.links == PageLinks(
-        self=f"{base_url}?some=1&random=4&query=true&offset={offset+3*limit}&limit={limit}",
-        first=f"{base_url}?some=1&random=4&query=true&offset=0&limit={limit}",
-        prev=f"{base_url}?some=1&random=4&query=true&offset=18&limit={limit}",
+        self=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset={offset+3*limit}&limit={limit}"
+            )
+        ),
+        first=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset=0&limit={limit}"
+            )
+        ),
+        prev=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset=18&limit={limit}"
+            )
+        ),
         next=None,
-        last=f"{base_url}?some=1&random=4&query=true&offset=27&limit={limit}",
+        last=str(
+            URL(base_url).with_query(
+                f"some=1&random=4&query=true&offset=27&limit={limit}"
+            )
+        ),
     )
