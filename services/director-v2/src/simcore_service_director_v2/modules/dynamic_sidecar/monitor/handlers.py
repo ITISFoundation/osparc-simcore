@@ -12,7 +12,7 @@ from .models import (
     MonitorData,
     DynamicSidecarStatus,
 )
-from .service_sidecar_api import get_api_client
+from .dynamic_sidecar_api import get_api_client
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class RunDockerComposeUp(BaseEventHandler):
         logger.debug("Getting docker compose spec for service %s", current.service_name)
 
         api_client = get_api_client(app)
-        service_sidecar_endpoint = current.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = current.dynamic_sidecar.endpoint
 
         # creates a docker compose spec given the service key and tag
         compose_spec = await assemble_spec(
@@ -67,7 +67,7 @@ class RunDockerComposeUp(BaseEventHandler):
         )
 
         was_compose_spec_stored = await api_client.store_compose_spec(
-            service_sidecar_endpoint, compose_spec
+            dynamic_sidecar_endpoint, compose_spec
         )
 
         # compose spec was submitted
@@ -79,7 +79,7 @@ class RunDockerComposeUp(BaseEventHandler):
             )
             return
 
-        were_images_pulled = await api_client.pull_images(service_sidecar_endpoint)
+        were_images_pulled = await api_client.pull_images(dynamic_sidecar_endpoint)
 
         if not were_images_pulled:
             current.dynamic_sidecar.overall_status.update_failing_status(
@@ -88,7 +88,7 @@ class RunDockerComposeUp(BaseEventHandler):
             return
 
         compose_spec_was_applied = await api_client.start_or_update_compose_spec(
-            service_sidecar_endpoint
+            dynamic_sidecar_endpoint
         )
 
         # singal there is a problem with the dynamic-sidecar
@@ -114,10 +114,10 @@ class ServicesInspect(BaseEventHandler):
         cls, app: Application, previous: MonitorData, current: MonitorData
     ) -> None:
         api_client = get_api_client(app)
-        service_sidecar_endpoint = current.dynamic_sidecar.endpoint
+        dynamic_sidecar_endpoint = current.dynamic_sidecar.endpoint
 
         containers_inspect = await api_client.containers_inspect(
-            service_sidecar_endpoint
+            dynamic_sidecar_endpoint
         )
         if containers_inspect is None:
             # this means that the service was degrated and we need to do something?

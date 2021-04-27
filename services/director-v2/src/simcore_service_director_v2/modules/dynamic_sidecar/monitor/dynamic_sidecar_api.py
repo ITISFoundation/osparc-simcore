@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 KEY_DYNAMIC_SIDECAR_API_CLIENT = f"{__name__}.DynamicSidecarClient"
 
 
-def get_url(service_sidecar_endpoint: str, postfix: str) -> str:
+def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
     """formats and returns an url for the request"""
-    url = f"{service_sidecar_endpoint}{postfix}"
+    url = f"{dynamic_sidecar_endpoint}{postfix}"
     return url
 
 
@@ -52,9 +52,9 @@ class DynamicSidecarClient:
     async def close(self):
         await self.httpx_client.aclose()
 
-    async def is_healthy(self, service_sidecar_endpoint: str) -> bool:
+    async def is_healthy(self, dynamic_sidecar_endpoint: str) -> bool:
         """retruns True if service is UP and running else False"""
-        url = get_url(service_sidecar_endpoint, "/health")
+        url = get_url(dynamic_sidecar_endpoint, "/health")
         try:
             # this request uses a very short timeout
             response = await self.httpx_client.get(
@@ -69,10 +69,10 @@ class DynamicSidecarClient:
         return True
 
     async def containers_inspect(
-        self, service_sidecar_endpoint: str
+        self, dynamic_sidecar_endpoint: str
     ) -> Optional[Dict[str, Any]]:
         """returns: None in case of error, otherwise a dict will be returned"""
-        url = get_url(service_sidecar_endpoint, "/containers:inspect")
+        url = get_url(dynamic_sidecar_endpoint, "/containers:inspect")
         try:
             response = await self.httpx_client.get(url=url)
             if response.status_code != 200:
@@ -89,10 +89,10 @@ class DynamicSidecarClient:
             return None
 
     async def containers_docker_status(
-        self, service_sidecar_endpoint: str
+        self, dynamic_sidecar_endpoint: str
     ) -> Optional[Dict[str, Dict[str, str]]]:
         """returns: None in case of error, otherwise a dict will be returned"""
-        url = get_url(service_sidecar_endpoint, "/containers:docker-status")
+        url = get_url(dynamic_sidecar_endpoint, "/containers:docker-status")
         try:
             response = await self.httpx_client.get(url=url)
             if response.status_code != 200:
@@ -109,10 +109,10 @@ class DynamicSidecarClient:
             return None
 
     async def store_compose_spec(
-        self, service_sidecar_endpoint: str, compose_spec: str
+        self, dynamic_sidecar_endpoint: str, compose_spec: str
     ) -> bool:
         """returns: True if the compose spec was stored"""
-        url = get_url(service_sidecar_endpoint, "/compose:store")
+        url = get_url(dynamic_sidecar_endpoint, "/compose:store")
         try:
             response = await self.httpx_client.post(url, data=compose_spec)
             if response.status_code != 204:
@@ -128,14 +128,14 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             return False
 
-    async def pull_images(self, service_sidecar_endpoint: str) -> bool:
+    async def pull_images(self, dynamic_sidecar_endpoint: str) -> bool:
         """returns True if succeeded to pull images"""
         dynamic_sidecar_settings = get_settings(self._app)
         command_timeout = (
             dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_pull_timeout
         )
 
-        url = get_url(service_sidecar_endpoint, "/compose:pull")
+        url = get_url(dynamic_sidecar_endpoint, "/compose:pull")
         try:
             response = await self.httpx_client.get(
                 url, params=dict(command_timeout=command_timeout)
@@ -155,14 +155,14 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             return False
 
-    async def start_or_update_compose_spec(self, service_sidecar_endpoint: str) -> bool:
+    async def start_or_update_compose_spec(self, dynamic_sidecar_endpoint: str) -> bool:
         """returns: True if the compose spec was applied """
         dynamic_sidecar_settings = get_settings(self._app)
         command_timeout = (
             dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_up_timeout
         )
 
-        url = get_url(service_sidecar_endpoint, "/compose")
+        url = get_url(dynamic_sidecar_endpoint, "/compose")
         try:
             response = await self.httpx_client.post(
                 url, params=dict(command_timeout=command_timeout)
@@ -182,10 +182,10 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             return False
 
-    async def remove_docker_compose_spec(self, service_sidecar_endpoint: str) -> None:
+    async def remove_docker_compose_spec(self, dynamic_sidecar_endpoint: str) -> None:
         """runs docker compose down on the started spec """
 
-        url = get_url(service_sidecar_endpoint, "/compose")
+        url = get_url(dynamic_sidecar_endpoint, "/compose")
         try:
             response = await self.httpx_client.delete(url)
             if response.status_code != 200:
@@ -203,17 +203,17 @@ class DynamicSidecarClient:
 
 async def setup_api_client(app: Application) -> None:
     logger.debug("dynamic-sidecar api client setup")
-    app.state.service_sidecar_api_client = DynamicSidecarClient(app)
+    app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
 
 
 async def shutdown_api_client(app: Application) -> None:
     logger.debug("dynamic-sidecar api client shutdown")
-    service_sidecar_client = app.state.service_sidecar_api_client
-    await service_sidecar_client.close()
+    dynamic_sidecar_api_client = app.state.dynamic_sidecar_api_client
+    await dynamic_sidecar_api_client.close()
 
 
 def get_api_client(app: Application) -> DynamicSidecarClient:
-    return app.state.service_sidecar_api_client
+    return app.state.dynamic_sidecar_api_client
 
 
 async def query_service(

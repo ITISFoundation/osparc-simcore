@@ -112,7 +112,7 @@ class MonitorData(BaseModel):
         ..., description="Name of the current sidecar-service being monitored"
     )
 
-    service_sidecar: DynamicSidecar = Field(
+    dynamic_sidecar: DynamicSidecar = Field(
         ...,
         description="stores information fetched from the dynamic-sidecar",
     )
@@ -183,7 +183,7 @@ class MonitorData(BaseModel):
             dynamic_sidecar_network_name=dynamic_sidecar_network_name,
             simcore_traefik_zone=simcore_traefik_zone,
             service_port=service_port,
-            service_sidecar=dict(
+            dynamic_sidecar=dict(
                 hostname=hostname,
                 port=port,
             ),

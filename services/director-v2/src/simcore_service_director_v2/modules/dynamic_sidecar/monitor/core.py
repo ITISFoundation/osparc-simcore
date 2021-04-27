@@ -27,7 +27,7 @@ from .models import (
     MonitorData,
     DynamicSidecarStatus,
 )
-from .service_sidecar_api import query_service, get_api_client, DynamicSidecarClient
+from .dynamic_sidecar_api import query_service, get_api_client, DynamicSidecarClient
 from .utils import AsyncResourceLock
 from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
@@ -174,9 +174,9 @@ class DynamicSidecarsMonitor:
             # There is no suitable solution to this issue, having netwoks trash
             # the environment seems to be the best approach :\
             current: LockWithMonitorData = self._to_monitor[service_name]
-            service_sidecar_endpoint = current.monitor_data.dynamic_sidecar.endpoint
+            dynamic_sidecar_endpoint = current.monitor_data.dynamic_sidecar.endpoint
             await services_sidecar_client.remove_docker_compose_spec(
-                service_sidecar_endpoint=service_sidecar_endpoint
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
 
             # finally remove this service
@@ -247,7 +247,7 @@ class DynamicSidecarsMonitor:
             docker_statuses: Optional[
                 Dict[str, Dict[str, str]]
             ] = await services_sidecar_client.containers_docker_status(
-                service_sidecar_endpoint=monitor_data.dynamic_sidecar.endpoint
+                dynamic_sidecar_endpoint=monitor_data.dynamic_sidecar.endpoint
             )
 
             # error fetching docker_statues, probably someone should check
@@ -379,16 +379,16 @@ class DynamicSidecarsMonitor:
 
 
 def get_monitor(app: Application) -> DynamicSidecarsMonitor:
-    return app.state.service_sidecar_monitor
+    return app.state.dynamic_sidecar_monitor
 
 
 async def setup_monitor(app: Application):
-    service_sidecars_monitor = DynamicSidecarsMonitor(app)
-    app.state.service_sidecar_monitor = service_sidecars_monitor
+    dynamic_sidecars_monitor = DynamicSidecarsMonitor(app)
+    app.state.dynamic_sidecar_monitor = dynamic_sidecars_monitor
 
-    await service_sidecars_monitor.start()
+    await dynamic_sidecars_monitor.start()
 
 
 async def shutdown_monitor(app: Application):
-    service_sidecars_monitor = app.state.service_sidecar_monitor
-    await service_sidecars_monitor.shutdown()
+    dynamic_sidecars_monitor = app.state.dynamic_sidecar_monitor
+    await dynamic_sidecars_monitor.shutdown()
