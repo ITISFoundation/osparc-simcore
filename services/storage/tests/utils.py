@@ -1,12 +1,10 @@
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
 import pandas as pd
-import pytest
 import requests
 import sqlalchemy as sa
 from simcore_service_storage.models import (
@@ -120,6 +118,6 @@ def fill_tables_from_csv_files(url):
 
 
 def get_project_with_data() -> List[Dict[str, Any]]:
-    projects = json.loads((DATA_DIR / "projects_with_data.json").read_text())
+    prj = json.loads((DATA_DIR / "projects_with_data.json").read_text())
     # TODO: add schema validation
-    return projects
+    return prj
