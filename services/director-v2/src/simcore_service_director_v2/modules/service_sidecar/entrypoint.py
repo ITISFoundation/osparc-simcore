@@ -469,7 +469,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             mounts.append(
                 {
                     "Source": str(service_sidecar_path),
-                    "Target": "/devel/services/service-sidecar",
+                    "Target": "/devel/services/dynamic-sidecar",
                     "Type": "bind",
                 }
             )

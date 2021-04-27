@@ -100,7 +100,7 @@ services:
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
-      - SERVICE_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/service-sidecar:${DOCKER_IMAGE_TAG:-latest}
+      - SERVICE_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
     env_file:
       - ../.env
     volumes:
