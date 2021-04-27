@@ -125,7 +125,7 @@ async function waitForAllTemplates(page) {
   let loadingTemplatesCardVisible = true;
   while(loadingTemplatesCardVisible) {
     const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
-    loadingTemplatesCardVisible = childrenIDs.some('[osparc-test-id="templatesLoading"]');
+    loadingTemplatesCardVisible = childrenIDs.some(childrenID => childrenID.includes("templatesLoading"));
   }
 }
 
