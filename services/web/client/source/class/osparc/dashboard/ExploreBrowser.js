@@ -175,6 +175,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
       const tempStudyLayout = this.__createButtonsLayout(this.tr("Templates"), templateStudyContainer);
 
       const loadingTemplatesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      osparc.utils.Utils.setIdToWidget(loadingTemplatesBtn, "templatesLoading");
       templateStudyContainer.add(loadingTemplatesBtn);
 
       templateStudyContainer.addListener("changeVisibility", e => {
