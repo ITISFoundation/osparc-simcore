@@ -4,7 +4,7 @@ from typing import Set, Dict
 
 import pytest
 
-from simcore_service_director_v2.modules.service_sidecar.parse_docker_status import (
+from simcore_service_director_v2.modules.dynamic_sidecar.parse_docker_status import (
     ServiceState,
     _SERVICE_STATE_COMPARISON_ORDER,
     extract_containers_minimim_statuses,

@@ -4,11 +4,9 @@
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt
 
-KEY_SERVICE_SIDECAR_SETTINGS = f"{__name__}.DynamicSidecarSettings"
-
 
 class DynamicSidecarSettings(BaseSettings):
-    # service_sidecar integration
+    # dynamic_sidecar integration
     monitor_interval_seconds: float = Field(
         5.0, description="interval at which the monitor cycle is repeated"
     )

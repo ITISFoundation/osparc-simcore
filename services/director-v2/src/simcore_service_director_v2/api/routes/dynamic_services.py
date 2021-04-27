@@ -15,7 +15,7 @@ from ..dependencies.dynamic_services import (
     get_services_client,
 )
 
-from simcore_service_director_v2.modules.service_sidecar.entrypoint import (
+from simcore_service_director_v2.modules.dynamic_sidecar.entrypoint import (
     start_dynamic_sidecar_stack_for_service,
     get_dynamic_sidecar_stack_status,
     stop_dynamic_sidecar_stack_for_service,
