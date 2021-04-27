@@ -47,6 +47,7 @@ pytest_plugins = [
 
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir) -> Path:
+    """ Path to project slug directory """
     # uses pytest_simcore.environs.osparc_simcore_root_dir
     service_folder = osparc_simcore_root_dir / "services" / "storage"
     assert service_folder.exists()
@@ -56,8 +57,10 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 
 @pytest.fixture(scope="session")
 def package_dir() -> Path:
-    """Notice that this might be under src (if installed as edit mode)
-    or in the installation folder
+    """Path to directory of current package.
+
+    Notice that this might be under src (if installed as edit mode)
+    OR in the installation folder (in CI mode)
     """
     dirpath = Path(simcore_service_storage.__file__).resolve().parent
     assert dirpath.exists()
@@ -66,6 +69,9 @@ def package_dir() -> Path:
 
 @pytest.fixture(scope="session")
 def project_env_devel_dict(project_slug_dir: Path) -> Dict:
+    """Returns a dict of environment variables in project_slug_dir/.env-devel
+    Those are default environment consumed by application settings
+    """
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
@@ -74,43 +80,44 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
 
 @pytest.fixture(scope="function")
 def patch_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
+    """ Patches environment variable with project_slug_dir/.env-devel """
     for key, value in project_env_devel_dict.items():
         monkeypatch.setenv(key, value)
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(project_tests_dir: Path) -> Iterator[str]:
+def docker_compose_file(
+    project_tests_dir: Path, patch_env_devel_environment
+) -> Iterator[str]:
     """Overrides pytest-docker fixture"""
-    old = os.environ.copy()
-
     # docker-compose reads these environs
-    os.environ["POSTGRES_DB"] = DATABASE
-    os.environ["POSTGRES_USER"] = USER
-    os.environ["POSTGRES_PASSWORD"] = PASS
-    os.environ["POSTGRES_ENDPOINT"] = "FOO"  # TODO: update config schema!!
-    os.environ["MINIO_ACCESS_KEY"] = ACCESS_KEY
-    os.environ["MINIO_SECRET_KEY"] = SECRET_KEY
+    assert os.environ["POSTGRES_DB"]
+    assert os.environ["POSTGRES_USER"]
+    assert os.environ["POSTGRES_PASSWORD"]
+    assert os.environ["MINIO_ACCESS_KEY"]
+    assert os.environ["MINIO_SECRET_KEY"]
 
     dc_path = project_tests_dir / "docker-compose.yml"
-
     assert dc_path.exists()
-    yield str(dc_path)
 
-    os.environ = old
+    yield str(dc_path)
 
 
 # POSTGRES SERVICES FIXTURES---------------------
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip):
-    url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=USER,
-        password=PASS,
-        database=DATABASE,
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-    )
+def postgres_service(docker_services, docker_ip, project_env_devel_dict):
+    """
+    Returns postgres service attributes, when up and responsive
+    """
+
+    user = project_env_devel_dict["POSTGRES_DB"]
+    password = project_env_devel_dict["POSTGRES_PASSWORD"]
+    database = project_env_devel_dict["POSTGRES_DB"]
+    host = docker_ip
+    port = docker_services.port_for("postgres", 5432)
+    url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
@@ -119,29 +126,22 @@ def postgres_service(docker_services, docker_ip):
         pause=0.1,
     )
 
-    postgres_service = {
-        "user": USER,
-        "password": PASS,
-        "db": DATABASE,
-        "database": DATABASE,
-        "host": docker_ip,
-        "port": docker_services.port_for("postgres", 5432),
+    return {
+        "user": user,
+        "password": password,
+        "db": database,
+        "database": database,
+        "host": host,
+        "port": port,
         "minsize": 1,
         "maxsize": 4,
+        "url": url,
     }
-
-    return postgres_service
 
 
 @pytest.fixture(scope="function")
 def postgres_service_url(postgres_service, docker_services, docker_ip):
-    url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=USER,
-        password=PASS,
-        database=DATABASE,
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-    )
+    url = postgres_service["url"]
 
     tests.utils.create_tables(url)
 
@@ -165,13 +165,12 @@ async def postgres_engine(loop, postgres_service_url):
 
 
 @pytest.fixture(scope="session")
-def minio_service(docker_services, docker_ip) -> Dict[str, Any]:
+def minio_service(docker_services, docker_ip, project_env_devel_dict)-> Dict[str, Any]:
 
     # Build URL to service listening on random port.
-    url = "http://%s:%d/" % (
-        docker_ip,
-        docker_services.port_for("minio", 9000),
-    )
+    host = docker_ip
+    port = docker_services.port_for("minio", 9000)
+    url = "http://{host}:{port}/"
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
@@ -181,12 +180,11 @@ def minio_service(docker_services, docker_ip) -> Dict[str, Any]:
     )
 
     return {
-        "endpoint": "{ip}:{port}".format(
-            ip=docker_ip, port=docker_services.port_for("minio", 9000)
-        ),
-        "access_key": ACCESS_KEY,
-        "secret_key": SECRET_KEY,
-        "bucket_name": BUCKET_NAME,
+        "url": url,
+        "endpoint": f"{host}:{port}",
+        "access_key": project_env_devel_dict["S3_ACCESS_KEY"],
+        "secret_key": project_env_devel_dict["S3_SECRET_KEY"],
+        "bucket_name": project_env_devel_dict["S3_BUCKET_NAME"],
         "secure": 0,
     }
 
