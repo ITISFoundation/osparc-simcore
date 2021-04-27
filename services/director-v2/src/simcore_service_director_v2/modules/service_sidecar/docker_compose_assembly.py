@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 import yaml
 from aiohttp.web import Application
 
-from .config import ServiceSidecarSettings, get_settings
+from .config import DynamicSidecarSettings, get_settings
 from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 CONTAINER_NAME = "container"
@@ -98,7 +98,7 @@ async def assemble_spec(
     service_port: int,
 ) -> str:
     """returns a docker-compose spec which will be use by the dynamic-sidecar to start the service """
-    settings: ServiceSidecarSettings = get_settings(app)
+    settings: DynamicSidecarSettings = get_settings(app)
 
     container_name = target_container
     service_spec = compose_spec

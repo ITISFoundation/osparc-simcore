@@ -40,11 +40,11 @@ class ServiceSidecarClient:
         self._app = app
         self._heatlth_request_timeout = httpx.Timeout(1.0, connect=1.0)
 
-        service_sidecar_settings = get_settings(app)
+        dynamic_sidecar_settings = get_settings(app)
 
         self.httpx_client = httpx.AsyncClient(
             timeout=httpx.Timeout(
-                service_sidecar_settings.dynamic_sidecar_api_request_timeout,
+                dynamic_sidecar_settings.dynamic_sidecar_api_request_timeout,
                 connect=1.0,
             )
         )
@@ -130,9 +130,9 @@ class ServiceSidecarClient:
 
     async def pull_images(self, service_sidecar_endpoint: str) -> bool:
         """returns True if succeeded to pull images"""
-        service_sidecar_settings = get_settings(self._app)
+        dynamic_sidecar_settings = get_settings(self._app)
         command_timeout = (
-            service_sidecar_settings.dynamic_sidecar_api_request_docker_compose_pull_timeout
+            dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_pull_timeout
         )
 
         url = get_url(service_sidecar_endpoint, "/compose:pull")
@@ -157,9 +157,9 @@ class ServiceSidecarClient:
 
     async def start_or_update_compose_spec(self, service_sidecar_endpoint: str) -> bool:
         """returns: True if the compose spec was applied """
-        service_sidecar_settings = get_settings(self._app)
+        dynamic_sidecar_settings = get_settings(self._app)
         command_timeout = (
-            service_sidecar_settings.dynamic_sidecar_api_request_docker_compose_up_timeout
+            dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_up_timeout
         )
 
         url = get_url(service_sidecar_endpoint, "/compose")

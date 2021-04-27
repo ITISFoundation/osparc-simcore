@@ -6,7 +6,7 @@ from pprint import pformat
 
 from aiohttp import web
 
-from .config import ServiceSidecarSettings, get_settings
+from .config import DynamicSidecarSettings, get_settings
 from .constants import (
     FIXED_SERVICE_NAME_PROXY,
     FIXED_SERVICE_NAME_SIDECAR,
@@ -89,7 +89,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
 
     log.debug(debug_message)
 
-    service_sidecar_settings: ServiceSidecarSettings = get_settings(app)
+    dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
 
     # Service naming schema:
     # -  srvsdcr_{uuid}_{first_two_project_id}_proxy_{name_from_service_key}
@@ -116,7 +116,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         "Name": service_sidecar_network_name,
         "Driver": "overlay",
         "Labels": {
-            "io.simcore.zone": f"{service_sidecar_settings.traefik_simcore_zone}",
+            "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
             "com.simcore.description": f"interactive for node: {node_uuid}_{first_two_project_id}",
             "uuid": node_uuid,  # needed for removal when project is closed
         },
@@ -126,14 +126,14 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     service_sidecar_network_id = await create_network(network_config)
 
     # attach the service to the swarm network dedicated to services
-    swarm_network = await get_swarm_network(service_sidecar_settings)
+    swarm_network = await get_swarm_network(dynamic_sidecar_settings)
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
 
     # start dynamic-sidecar and run the proxy on the same node
 
     service_sidecar_create_service_params = await _dyn_service_sidecar_assembly(
-        service_sidecar_settings=service_sidecar_settings,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
         io_simcore_zone=io_simcore_zone,
         service_sidecar_network_name=service_sidecar_network_name,
         service_sidecar_network_id=service_sidecar_network_id,
@@ -159,11 +159,11 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
     )
 
     service_sidecar_node_id = await get_node_id_from_task_for_service(
-        service_sidecar_id, service_sidecar_settings
+        service_sidecar_id, dynamic_sidecar_settings
     )
 
     service_sidecar_proxy_create_service_params = await _dyn_proxy_entrypoint_assembly(
-        service_sidecar_settings=service_sidecar_settings,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
         node_uuid=node_uuid,
         io_simcore_zone=io_simcore_zone,
         service_sidecar_network_name=service_sidecar_network_name,
@@ -192,7 +192,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
         service_name=service_name_service_sidecar,
         node_uuid=node_uuid,
         hostname=service_name_service_sidecar,
-        port=service_sidecar_settings.web_service_port,
+        port=dynamic_sidecar_settings.web_service_port,
         service_key=service_key,
         service_tag=service_tag,
         paths_mapping=paths_mapping,
@@ -210,7 +210,7 @@ async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-a
 
 
 async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
-    service_sidecar_settings: ServiceSidecarSettings,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
     node_uuid: str,
     io_simcore_zone: str,
     service_sidecar_network_name: str,
@@ -237,8 +237,8 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
 
     return {
         "labels": {
-            "io.simcore.zone": f"{service_sidecar_settings.traefik_simcore_zone}",
-            "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
+            "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
+            "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
             "traefik.docker.network": swarm_network_name,
             "traefik.enable": "true",
             f"traefik.http.middlewares.{service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {request_dns}",
@@ -430,7 +430,7 @@ def _inject_settings_to_create_service_params(
 
 
 async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
-    service_sidecar_settings: ServiceSidecarSettings,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
     io_simcore_zone: str,
     service_sidecar_network_name: str,
     service_sidecar_network_id: str,
@@ -458,12 +458,12 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
 
     endpint_spec = {}
 
-    if service_sidecar_settings.is_dev_mode:
-        service_sidecar_path = service_sidecar_settings.dev_simcore_dynamic_sidecar_path
+    if dynamic_sidecar_settings.is_dev_mode:
+        service_sidecar_path = dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path
         if service_sidecar_path is None:
             log.error(
                 "Could not mount the sources for the dynamic-sidecar, please provide env var named %s",
-                service_sidecar_settings.dev_simcore_dynamic_sidecar_path.__name__,
+                dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path.__name__,
             )
         else:
             mounts.append(
@@ -474,7 +474,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
             packages_pacth = (
-                Path(service_sidecar_settings.dev_simcore_dynamic_sidecar_path)
+                Path(dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path)
                 / ".."
                 / ".."
                 / "packages"
@@ -487,12 +487,12 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
         # expose this service on an empty port
-        if service_sidecar_settings.dev_expose_dynamic_sidecar:
+        if dynamic_sidecar_settings.dev_expose_dynamic_sidecar:
             endpint_spec["Ports"] = [
                 {
                     "Protocol": "tcp",
                     "PublishedPort": unused_port(),
-                    "TargetPort": service_sidecar_settings.web_service_port,
+                    "TargetPort": dynamic_sidecar_settings.web_service_port,
                 }
             ]
 
@@ -504,19 +504,19 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
         "endpoint_spec": endpint_spec,
         "labels": {
             "io.simcore.zone": io_simcore_zone,
-            "port": f"{service_sidecar_settings.web_service_port}",
+            "port": f"{dynamic_sidecar_settings.web_service_port}",
             "study_id": project_id,
             "traefik.docker.network": service_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
             f"traefik.http.routers.{service_sidecar_name}.entrypoints": "http",
             f"traefik.http.routers.{service_sidecar_name}.priority": "10",
             f"traefik.http.routers.{service_sidecar_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{service_sidecar_name}.loadbalancer.server.port": f"{service_sidecar_settings.web_service_port}",
+            f"traefik.http.services.{service_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.web_service_port}",
             "type": "dependency",
             "user_id": user_id,
             # the following are used for monitoring
             "uuid": node_uuid,  # also needed for removal when project is closed
-            "swarm_stack_name": service_sidecar_settings.swarm_stack_name,
+            "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
             "service_key": service_key,
             "service_tag": service_tag,
             "paths_mapping": paths_mapping.json(),
@@ -530,10 +530,10 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 "Env": {
                     "SIMCORE_HOST_NAME": service_sidecar_name,
                     "SERVICE_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    "SERVICE_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": service_sidecar_settings.dynamic_sidecar_api_request_docker_compose_down_timeout,
+                    "SERVICE_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_down_timeout,
                 },
                 "Hosts": [],
-                "Image": service_sidecar_settings.image,
+                "Image": dynamic_sidecar_settings.image,
                 "Init": True,
                 "Labels": {},
                 "Mounts": mounts,

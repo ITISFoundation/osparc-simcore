@@ -8,7 +8,7 @@ from typing import Any, Deque, Dict, Tuple, Set, Optional
 import aiodocker
 from asyncio_extras import async_contextmanager
 
-from .config import ServiceSidecarSettings
+from .config import DynamicSidecarSettings
 from .constants import FIXED_SERVICE_NAME_SIDECAR, SERVICE_SIDECAR_PREFIX
 from .parse_docker_status import (
     ServiceState,
@@ -40,13 +40,13 @@ async def docker_client() -> aiodocker.docker.Docker:
         await client.close()
 
 
-async def get_swarm_network(service_sidecar_settings: ServiceSidecarSettings) -> Dict:
+async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) -> Dict:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         all_networks = await client.networks.list()
 
     network_name = "_default"
-    if service_sidecar_settings.simcore_services_network_name:
-        network_name = service_sidecar_settings.simcore_services_network_name
+    if dynamic_sidecar_settings.simcore_services_network_name:
+        network_name = dynamic_sidecar_settings.simcore_services_network_name
     # try to find the network name (usually named STACKNAME_default)
     networks = [
         x for x in all_networks if "swarm" in x["Scope"] and network_name in x["Name"]
@@ -103,13 +103,13 @@ async def inspect_service(service_id: str) -> Dict[str, Any]:
 
 
 async def get_service_sidecars_to_monitor(
-    service_sidecar_settings: ServiceSidecarSettings,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> Deque[ServiceLabelsStoredData]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
         running_services = await client.services.list(
             filters={
                 "label": [
-                    f"swarm_stack_name={service_sidecar_settings.swarm_stack_name}"
+                    f"swarm_stack_name={dynamic_sidecar_settings.swarm_stack_name}"
                 ]
             }
         )
@@ -167,7 +167,7 @@ async def get_service_sidecars_to_monitor(
 
 async def _extract_task_data_from_service_for_state(
     service_id: str,
-    service_sidecar_settings: ServiceSidecarSettings,
+    dynamic_sidecar_settings: DynamicSidecarSettings,
     target_statuses: Set[str],
 ) -> Dict[str, Any]:
     """Waits until the service-sidcar task is in one of the target_statuses
@@ -176,7 +176,7 @@ async def _extract_task_data_from_service_for_state(
     async def sleep_or_error(started: float, task: Dict):
         await asyncio.sleep(1.0)
         elapsed = time.time() - started
-        if elapsed > service_sidecar_settings.timeout_fetch_dynamic_sidecar_node_id:
+        if elapsed > dynamic_sidecar_settings.timeout_fetch_dynamic_sidecar_node_id:
             raise ServiceSidecarError(
                 msg=(
                     "Timed out while serarching for an assigned NodeID for "
@@ -212,7 +212,7 @@ async def _extract_task_data_from_service_for_state(
 
 
 async def get_node_id_from_task_for_service(
-    service_id: str, service_sidecar_settings: ServiceSidecarSettings
+    service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> str:
     """Awaits until the service has a running task and returns the
     node's ID where it is running. When in a running state, the service
@@ -220,7 +220,7 @@ async def get_node_id_from_task_for_service(
 
     task = await _extract_task_data_from_service_for_state(
         service_id=service_id,
-        service_sidecar_settings=service_sidecar_settings,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
         target_statuses=TASK_STATES_RUNNING,
     )
 
@@ -236,12 +236,12 @@ async def get_node_id_from_task_for_service(
 
 
 async def get_service_sidecar_state(
-    service_id: str, service_sidecar_settings: ServiceSidecarSettings
+    service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> Tuple[ServiceState, str]:
 
     last_task = await _extract_task_data_from_service_for_state(
         service_id=service_id,
-        service_sidecar_settings=service_sidecar_settings,
+        dynamic_sidecar_settings=dynamic_sidecar_settings,
         target_statuses=TASK_STATES_ALL,
     )
 

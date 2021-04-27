@@ -9,12 +9,12 @@
 import asyncio
 import logging
 from asyncio import Lock, sleep
-from typing import Deque, Dict, Any, Optional, List, Tuple
+from typing import Deque, Dict, Any, Optional
 
 from aiohttp.web import Application
 from async_timeout import timeout
 
-from ..config import ServiceSidecarSettings, get_settings
+from ..config import DynamicSidecarSettings, get_settings
 from ..docker_utils import (
     get_service_sidecars_to_monitor,
     get_service_sidecar_state,
@@ -44,7 +44,7 @@ async def apply_monitoring(
     fetches status for service and then processes all the registered handlers
     and updates the status back
     """
-    service_sidecar_settings: ServiceSidecarSettings = get_settings(app)
+    dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
 
     output_monitor_data = input_monitor_data.copy(deep=True)
 
@@ -61,7 +61,7 @@ async def apply_monitoring(
         return output_monitor_data
 
     try:
-        with timeout(service_sidecar_settings.max_status_api_duration):
+        with timeout(dynamic_sidecar_settings.max_status_api_duration):
             output_monitor_data = await query_service(app, input_monitor_data)
     except asyncio.TimeoutError:
         output_monitor_data.service_sidecar.is_available = False
@@ -226,14 +226,14 @@ class ServiceSidecarsMonitor:
                 return make_error_status()
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
-            service_sidecar_settings = get_settings(self._app)
+            dynamic_sidecar_settings = get_settings(self._app)
             services_sidecar_client: ServiceSidecarClient = get_api_client(self._app)
 
             service_state, service_message = await get_service_sidecar_state(
                 # the service_name is unique and will not collide with other names
                 # it can be used in place of the service_id here, as the docker API accepts both
                 service_id=monitor_data.service_name,
-                service_sidecar_settings=service_sidecar_settings,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
             )
 
             # while the dynamic-sidecar state is not RUNNING report it's state
@@ -312,7 +312,7 @@ class ServiceSidecarsMonitor:
                 )
 
     async def _run_monitor_task(self) -> None:
-        service_sidecar_settings = get_settings(self._app)
+        dynamic_sidecar_settings = get_settings(self._app)
 
         while self._keep_running:
             # make sure access to the dict is locked while the monitoring cycle is running
@@ -320,7 +320,7 @@ class ServiceSidecarsMonitor:
                 async with self._lock:
                     await self._runner()
 
-                await sleep(service_sidecar_settings.monitor_interval_seconds)
+                await sleep(dynamic_sidecar_settings.monitor_interval_seconds)
             except asyncio.CancelledError:
                 break
 
@@ -333,10 +333,10 @@ class ServiceSidecarsMonitor:
         asyncio.get_event_loop().create_task(self._run_monitor_task())
 
         # discover all services which were started before and add them to the monitor
-        service_sidecar_settings: ServiceSidecarSettings = get_settings(self._app)
+        dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(self._app)
         services_to_monitor: Deque[
             ServiceLabelsStoredData
-        ] = await get_service_sidecars_to_monitor(service_sidecar_settings)
+        ] = await get_service_sidecars_to_monitor(dynamic_sidecar_settings)
 
         logging.info(
             "The following services need to be monitored: %s", services_to_monitor
@@ -360,7 +360,7 @@ class ServiceSidecarsMonitor:
                 service_name=service_name,
                 node_uuid=node_uuid,
                 hostname=service_name,
-                port=service_sidecar_settings.web_service_port,
+                port=dynamic_sidecar_settings.web_service_port,
                 service_key=service_key,
                 service_tag=service_tag,
                 paths_mapping=paths_mapping,
