@@ -22,7 +22,9 @@ from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
-from tests.utils import BUCKET_NAME, USER_ID, get_project_with_data, has_datcore_tokens
+from tests.utils import get_project_with_data
+
+ANY_DATCORE_TOKENS = os.environ.get("BF_API_KEY") or os.environ.get("BF_API_SECRET")
 
 
 def parse_db(dsm_mockup_db):
@@ -101,8 +103,7 @@ async def test_health_check(client):
     assert app_health.version == simcore_service_storage.meta.api_version
 
 
-async def test_locations(client):
-    user_id = USER_ID
+async def test_locations(client, user_id: int):
 
     resp = await client.get("/v0/locations?user_id={}".format(user_id))
 
@@ -111,7 +112,7 @@ async def test_locations(client):
 
     data, error = tuple(payload.get(k) for k in ("data", "error"))
 
-    _locs = 2 if has_datcore_tokens() else 1
+    _locs = 2 if ANY_DATCORE_TOKENS else 1
     assert len(data) == _locs
     assert not error
 
@@ -196,9 +197,11 @@ async def test_upload_link(client, dsm_mockup_db):
         assert data
 
 
-async def test_copy(client, dsm_mockup_db, datcore_structured_testbucket):
-    if not has_datcore_tokens():
-        return
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
+async def test_copy(
+    client, dsm_mockup_db, datcore_structured_testbucket, user_id: int, bucket_name: str
+):
+
     # copy N files
     N = 2
     counter = 0
@@ -226,10 +229,9 @@ async def test_copy(client, dsm_mockup_db, datcore_structured_testbucket):
             break
 
     # list files for every user
-    user_id = USER_ID
     resp = await client.get(
         "/v0/locations/1/files/metadata?user_id={}&uuid_filter={}".format(
-            user_id, BUCKET_NAME
+            user_id, bucket_name
         )
     )
     payload = await resp.json()

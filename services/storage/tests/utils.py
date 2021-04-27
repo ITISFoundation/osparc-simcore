@@ -22,9 +22,6 @@ from simcore_service_storage.models import (
 log = logging.getLogger(__name__)
 
 
-BUCKET_NAME = "simcore-testing-bucket"
-USER_ID = "0"
-
 PG_TABLES_NEEDED_FOR_STORAGE = [
     user_to_groups,
     file_meta_data,
@@ -35,17 +32,6 @@ PG_TABLES_NEEDED_FOR_STORAGE = [
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 DATA_DIR = CURRENT_DIR / "data"
-
-
-def has_datcore_tokens() -> bool:
-    # TODO: activate tests against BF services in the CI.
-    #
-    # CI shall add BF_API_KEY, BF_API_SECRET environs as secrets
-    #
-    if not os.environ.get("BF_API_KEY") or not os.environ.get("BF_API_SECRET"):
-        pytest.skip("Datcore access API tokens not available, skipping test")
-        return False
-    return True
 
 
 def is_responsive(url, code=200) -> bool:
