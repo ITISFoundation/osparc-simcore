@@ -120,6 +120,15 @@ async function toDashboard(page) {
   await utils.waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
 }
 
+async function waitForAllTemplates(page) {
+  await page.waitForSelector('[osparc-test-id="templateStudiesList"]');
+  let loadingTemplatesCardVisible = true;
+  while(loadingTemplatesCardVisible) {
+    const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
+    loadingTemplatesCardVisible = childrenIDs.some('[osparc-test-id="templatesLoading"]');
+  }
+}
+
 async function dashboardOpenFirstTemplate(page, templateName) {
   // Returns true if template is found
   console.log("Creating New Study from template");
@@ -130,7 +139,9 @@ async function dashboardOpenFirstTemplate(page, templateName) {
     await __filterTemplatesByText(page, templateName);
   }
 
-  await page.waitForSelector('[osparc-test-id="templateStudiesList"]')
+  await this.waitForAllTemplates(page);
+
+  await page.waitForSelector('[osparc-test-id="templateStudiesList"]');
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
 
   if (children.length) {
@@ -358,6 +369,7 @@ module.exports = {
   dashboardDataBrowser,
   dashboardStudyBrowser,
   dashboardNewStudy,
+  waitForAllTemplates,
   dashboardOpenFirstTemplate,
   dashboardOpenFirstService,
   showLogger,
