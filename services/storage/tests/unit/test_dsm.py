@@ -13,6 +13,7 @@ import io
 import json
 import os
 import urllib
+import urllib.request
 import uuid
 from pathlib import Path
 from shutil import copyfile
@@ -25,9 +26,56 @@ from simcore_service_storage.constants import DATCORE_STR, SIMCORE_S3_ID, SIMCOR
 from simcore_service_storage.dsm import DataStorageManager
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
-from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 ANY_DATCORE_TOKENS = os.environ.get("BF_API_KEY") or os.environ.get("BF_API_SECRET")
+
+
+@pytest.fixture()
+def file_meta_data(
+    postgres_service_url,
+    s3_client,
+    tmp_file: Path,
+    user_id: int,
+    bucket_name: str,
+) -> FileMetaData:
+    """
+    Uploads a tmp-file to s3 bucket and returns a FileMetaData object
+    """
+    # create file and upload
+    filename = os.path.basename(tmp_file)
+    project_id = "api"  # "357879cc-f65d-48b2-ad6c-074e2b9aa1c7"
+    project_name = "battlestar"
+    node_name = "galactica"
+    node_id = "b423b654-686d-4157-b74b-08fa9d90b36e"
+    file_name = filename
+    file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
+    display_name = os.path.join(str(project_name), str(node_name), str(file_name))
+    created_at = str(datetime.datetime.now())
+    file_size = 1234
+
+    d = {
+        "object_name": os.path.join(str(project_id), str(node_id), str(file_name)),
+        "bucket_name": bucket_name,
+        "file_name": filename,
+        "user_id": user_id,
+        "user_name": "starbucks",
+        "location": SIMCORE_S3_STR,
+        "location_id": SIMCORE_S3_ID,
+        "project_id": project_id,
+        "project_name": project_name,
+        "node_id": node_id,
+        "node_name": node_name,
+        "file_uuid": file_uuid,
+        "file_id": file_uuid,
+        "raw_file_path": file_uuid,
+        "display_file_path": display_name,
+        "created_at": created_at,
+        "last_modified": created_at,
+        "file_size": file_size,
+    }
+
+    fmd = FileMetaData(**d)
+    return fmd
 
 
 def test_mockup(dsm_mockup_db):
@@ -113,62 +161,12 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     assert len(dsm_mockup_db) == new_size + len(bobs_biostromy_files)
 
 
-def _create_file_meta_for_s3(
-    postgres_url, s3_client, tmp_file, user_id: int, bucket_name: str
-):
-
-    # create file and upload
-    filename = os.path.basename(tmp_file)
-    project_id = "api"  # "357879cc-f65d-48b2-ad6c-074e2b9aa1c7"
-    project_name = "battlestar"
-    node_name = "galactica"
-    node_id = "b423b654-686d-4157-b74b-08fa9d90b36e"
-    file_name = filename
-    file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
-    display_name = os.path.join(str(project_name), str(node_name), str(file_name))
-    created_at = str(datetime.datetime.now())
-    file_size = 1234
-
-    d = {
-        "object_name": os.path.join(str(project_id), str(node_id), str(file_name)),
-        "bucket_name": bucket_name,
-        "file_name": filename,
-        "user_id": user_id,
-        "user_name": "starbucks",
-        "location": SIMCORE_S3_STR,
-        "location_id": SIMCORE_S3_ID,
-        "project_id": project_id,
-        "project_name": project_name,
-        "node_id": node_id,
-        "node_name": node_name,
-        "file_uuid": file_uuid,
-        "file_id": file_uuid,
-        "raw_file_path": file_uuid,
-        "display_file_path": display_name,
-        "created_at": created_at,
-        "last_modified": created_at,
-        "file_size": file_size,
-    }
-
-    fmd = FileMetaData(**d)
-
-    return fmd
-
-
 async def test_links_s3(
-    postgres_service_url,
-    s3_client,
-    mock_files_factory,
+    file_meta_data: FileMetaData,
+    tmp_file: Path,
     dsm_fixture,
-    user_id: int,
-    bucket_name: str,
 ):
-
-    tmp_file = mock_files_factory(1)[0]
-    fmd = _create_file_meta_for_s3(
-        postgres_service_url, s3_client, tmp_file, user_id, bucket_name
-    )
-
+    fmd = file_meta_data
     dsm = dsm_fixture
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
@@ -188,20 +186,13 @@ async def test_links_s3(
 
 
 async def test_copy_s3_s3(
-    postgres_service_url,
-    s3_client,
-    mock_files_factory,
+    file_meta_data: FileMetaData,
+    tmp_file: Path,
     dsm_fixture,
-    user_id: int,
-    bucket_name: str,
 ):
-
-    tmp_file = mock_files_factory(1)[0]
-    fmd = _create_file_meta_for_s3(
-        postgres_service_url, s3_client, tmp_file, user_id, bucket_name
-    )
-
+    fmd = file_meta_data
     dsm = dsm_fixture
+
     data = await dsm.list_files(user_id=fmd.user_id, location=SIMCORE_S3_STR)
     assert len(data) == 0
 
@@ -266,22 +257,17 @@ async def test_dsm_datcore(
     assert len(data) == 2
 
 
+
 @pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="no datcore tokens")
 async def test_dsm_s3_to_datcore(
-    postgres_service_url,
-    s3_client,
-    mock_files_factory,
+    file_meta_data: FileMetaData,
+    tmp_file: Path,
     dsm_fixture,
     datcore_structured_testbucket,
     user_id: int,
     bucket_name: str,
 ):
-    tmp_file = mock_files_factory(1)[0]
-
-    fmd = _create_file_meta_for_s3(
-        postgres_service_url, s3_client, tmp_file, user_id, bucket_name
-    )
-
+    fmd = file_meta_data
     dsm = dsm_fixture
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
@@ -323,10 +309,8 @@ async def test_dsm_s3_to_datcore(
 
 @pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="no datcore tokens")
 async def test_dsm_datcore_to_local(
-    postgres_service_url,
     dsm_fixture,
-    mock_files_factory,
-    datcore_structured_testbucket,
+    tmp_path: Path.datcore_structured_testbucket,
     user_id: int,
     bucket_name: str,
 ):
@@ -350,19 +334,15 @@ async def test_dsm_datcore_to_local(
 
 @pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="no datcore tokens")
 async def test_dsm_datcore_to_S3(
-    postgres_service_url,
-    s3_client,
+    file_meta_data: FileMetaData,
+    tmp_file: Path,
     dsm_fixture,
-    mock_files_factory,
     datcore_structured_testbucket,
     user_id: int,
     bucket_name: str,
 ):
     # create temporary file
-    tmp_file = mock_files_factory(1)[0]
-    dest_fmd = _create_file_meta_for_s3(
-        postgres_service_url, s3_client, tmp_file, user_id
-    )
+    dest_fmd = file_meta_data
     user_id = dest_fmd.user_id
     dest_uuid = dest_fmd.file_uuid
 
@@ -405,10 +385,9 @@ async def test_dsm_datcore_to_S3(
 
 @pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="no datcore tokens")
 async def test_copy_datcore(
-    postgres_service_url,
-    s3_client,
+    file_meta_data: FileMetaData,
+    tmp_file: Path,
     dsm_fixture,
-    mock_files_factory,
     datcore_structured_testbucket,
     user_id: int,
     bucket_name: str,
@@ -421,10 +400,7 @@ async def test_copy_datcore(
     assert len(data) == 3
 
     # create temporary file and upload to s3
-    tmp_file = mock_files_factory(1)[0]
-    fmd = _create_file_meta_for_s3(
-        postgres_service_url, s3_client, tmp_file, user_id, bucket_name
-    )
+    fmd = file_meta_data
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
     with io.open(tmp_file, "rb") as fp:
@@ -628,6 +604,7 @@ async def test_sync_table_meta_data(
     dsm_fixture: DataStorageManager,
     dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
     s3_client: MinioClientWrapper,
+    bucket_name: str,
 ):
     dsm_fixture.has_project_db = True
 
@@ -642,7 +619,7 @@ async def test_sync_table_meta_data(
     # now remove the files
     for file_entry in dsm_mockup_complete_db:
         s3_key = f"{file_entry['project_id']}/{file_entry['node_id']}/{file_entry['filename']}"
-        s3_client.remove_objects(BUCKET_NAME, [s3_key])
+        s3_client.remove_objects(bucket_name, [s3_key])
         expected_removed_files.append(s3_key)
 
         # the list should now contain the removed entries
@@ -723,7 +700,7 @@ async def test_dsm_list_dataset_files_datcore(
 
 
 @pytest.mark.skip(reason="develop only")
-@pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="no datcore tokens")
 async def test_download_links(
     datcore_structured_testbucket, s3_client, mock_files_factory, bucket_name: str
 ):
