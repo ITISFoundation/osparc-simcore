@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.component.sweeper.Iterations", {
+qx.Class.define("osparc.component.sweeper.Snapshots", {
   extend: osparc.ui.table.Table,
 
   construct: function(primaryStudy) {
@@ -43,7 +43,7 @@ qx.Class.define("osparc.component.sweeper.Iterations", {
       },
       "name": {
         col: 1,
-        label: qx.locale.Manager.tr("Iteration")
+        label: qx.locale.Manager.tr("Snapshot")
       }
     },
 
