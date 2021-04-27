@@ -7,8 +7,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
-import tests.utils
 from simcore_service_storage.datcore_wrapper import DatcoreWrapper
+
+ANY_DATCORE_TOKENS = os.environ.get("BF_API_KEY") or os.environ.get("BF_API_SECRET")
 
 
 @pytest.fixture()
@@ -41,9 +42,8 @@ async def test_datcore_unavailable(loop, mocked_blackfynn_unavailable):
     assert res == []
 
 
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
 async def test_datcore_ping(loop):
-    if not tests.utils.has_datcore_tokens():
-        return
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
@@ -53,9 +53,8 @@ async def test_datcore_ping(loop):
     assert responsive
 
 
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
 async def test_datcore_list_files_recursively(loop):
-    if not tests.utils.has_datcore_tokens():
-        return
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
@@ -65,9 +64,8 @@ async def test_datcore_list_files_recursively(loop):
     assert len(f)
 
 
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
 async def test_datcore_list_files_raw(loop):
-    if not tests.utils.has_datcore_tokens():
-        return
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
@@ -77,9 +75,8 @@ async def test_datcore_list_files_raw(loop):
     assert len(f)
 
 
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
 async def test_datcore_nested_download_link(loop):
-    if not tests.utils.has_datcore_tokens():
-        return
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")

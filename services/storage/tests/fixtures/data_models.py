@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import Iterable
+from typing import Iterator
 from uuid import UUID
 
 import pytest
@@ -13,7 +13,7 @@ from simcore_postgres_database.storage_models import projects, users
 
 
 @pytest.fixture
-async def user_id(postgres_engine: Engine) -> Iterable[int]:
+async def user_id(postgres_engine: Engine) -> Iterator[int]:
     # inject a random user in db
 
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
@@ -35,7 +35,7 @@ async def user_id(postgres_engine: Engine) -> Iterable[int]:
 
 
 @pytest.fixture
-async def project_id(user_id: int, postgres_engine: Engine) -> Iterable[UUID]:
+async def project_id(user_id: int, postgres_engine: Engine) -> Iterator[UUID]:
     # inject a random project for user in db. This will give user_id, the full project's ownership
 
     # pylint: disable=no-value-for-parameter
@@ -53,3 +53,17 @@ async def project_id(user_id: int, postgres_engine: Engine) -> Iterable[UUID]:
 
     async with postgres_engine.acquire() as conn:
         await conn.execute(projects.delete().where(projects.c.uuid == prj_uuid))
+
+
+@pytest.fixture(scope="function")
+def bucket_name(s3_client, minio_service) -> Iterator[str]:
+    """
+    Creates/cleanup a bucket in minio-service named according
+    to environment variables
+    """
+    bucket_name = minio_service["bucket_name"]
+    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
+
+    yield bucket_name
+
+    s3_client.remove_bucket(bucket_name, delete_contents=True)
