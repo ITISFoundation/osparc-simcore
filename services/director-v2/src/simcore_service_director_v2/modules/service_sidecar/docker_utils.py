@@ -176,7 +176,7 @@ async def _extract_task_data_from_service_for_state(
     async def sleep_or_error(started: float, task: Dict):
         await asyncio.sleep(1.0)
         elapsed = time.time() - started
-        if elapsed > service_sidecar_settings.timeout_fetch_service_sidecar_node_id:
+        if elapsed > service_sidecar_settings.timeout_fetch_dynamic_sidecar_node_id:
             raise ServiceSidecarError(
                 msg=(
                     "Timed out while serarching for an assigned NodeID for "

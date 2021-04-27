@@ -33,15 +33,15 @@ class ServiceSidecarSettings(BaseSettings):
         env="SWARM_STACK_NAME",
     )
 
-    dev_simcore_service_sidecar_path: str = Field(
+    dev_simcore_dynamic_sidecar_path: str = Field(
         None,
-        description="optional, only used for development, mounts the source of the service sidecar",
-        env="DEV_SIMCORE_SERVICE_SIDECAR_PATH",
+        description="optional, only used for development, mounts the source of the dynamic-sidecar",
+        env="DEV_SIMCORE_DYNAMIC_SIDECAR_PATH",
     )
 
     image: str = Field(
         ...,
-        description="used by the director to start a specific version of the service sidecar",
+        description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
     web_service_port: int = Field(
@@ -55,12 +55,12 @@ class ServiceSidecarSettings(BaseSettings):
         env="SIMCORE_SERVICES_NETWORK_NAME",
     )
 
-    dev_expose_service_sidecar: bool = Field(
+    dev_expose_dynamic_sidecar: bool = Field(
         False,
-        description="if true exposes all the service sidecars to the host for simpler debugging",
+        description="if true exposes all the dynamic-sidecars to the host for simpler debugging",
     )
 
-    service_sidecar_api_request_timeout: PositiveInt = Field(
+    dynamic_sidecar_api_request_timeout: PositiveInt = Field(
         15,
         description=(
             "the default timeout each request to the dynamic-sidecar API in seconds; as per "
@@ -68,25 +68,25 @@ class ServiceSidecarSettings(BaseSettings):
         ),
     )
 
-    service_sidecar_api_request_docker_compose_pull_timeout: PositiveInt = Field(
+    dynamic_sidecar_api_request_docker_compose_pull_timeout: PositiveInt = Field(
         3600,
         description=(
             "when pulling images, before running docker-compose up, there is an 1 hour timeout"
         ),
     )
 
-    service_sidecar_api_request_docker_compose_up_timeout: PositiveInt = Field(
+    dynamic_sidecar_api_request_docker_compose_up_timeout: PositiveInt = Field(
         10,
         description=(
             "when running docker-compose up -d if there are errors in the compose spec it can "
             "happen that the command expects some user input, so this will wait forever. To avoid"
             "this situation we are adding a timeout. note that if a compose-spec lots of containers "
             "the current default may not be enough. Also pleasenote that this value has to be "
-            "smaller then service_sidecar_api_request_timeout or the errors may not be consistent"
+            "smaller then dynamic_sidecar_api_request_timeout or the errors may not be consistent"
         ),
     )
 
-    service_sidecar_api_request_docker_compose_down_timeout: PositiveInt = Field(
+    dynamic_sidecar_api_request_docker_compose_down_timeout: PositiveInt = Field(
         15,
         description=(
             "used by the dynamic-sidecar when it's shutting down to cleanup all spawned containers; "
@@ -103,7 +103,7 @@ class ServiceSidecarSettings(BaseSettings):
         "", description="url to the docker registry", env="REGISTRY_URL"
     )
 
-    timeout_fetch_service_sidecar_node_id: float = Field(
+    timeout_fetch_dynamic_sidecar_node_id: float = Field(
         60,
         description=(
             "when starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "

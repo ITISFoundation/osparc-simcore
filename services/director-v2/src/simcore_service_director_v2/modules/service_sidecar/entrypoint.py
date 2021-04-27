@@ -459,11 +459,11 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     endpint_spec = {}
 
     if service_sidecar_settings.is_dev_mode:
-        service_sidecar_path = service_sidecar_settings.dev_simcore_service_sidecar_path
+        service_sidecar_path = service_sidecar_settings.dev_simcore_dynamic_sidecar_path
         if service_sidecar_path is None:
             log.error(
                 "Could not mount the sources for the dynamic-sidecar, please provide env var named %s",
-                service_sidecar_settings.dev_simcore_service_sidecar_path.__name__,
+                service_sidecar_settings.dev_simcore_dynamic_sidecar_path.__name__,
             )
         else:
             mounts.append(
@@ -474,7 +474,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
             packages_pacth = (
-                Path(service_sidecar_settings.dev_simcore_service_sidecar_path)
+                Path(service_sidecar_settings.dev_simcore_dynamic_sidecar_path)
                 / ".."
                 / ".."
                 / "packages"
@@ -487,7 +487,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
         # expose this service on an empty port
-        if service_sidecar_settings.dev_expose_service_sidecar:
+        if service_sidecar_settings.dev_expose_dynamic_sidecar:
             endpint_spec["Ports"] = [
                 {
                     "Protocol": "tcp",
@@ -530,7 +530,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
                 "Env": {
                     "SIMCORE_HOST_NAME": service_sidecar_name,
                     "SERVICE_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    "SERVICE_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": service_sidecar_settings.service_sidecar_api_request_docker_compose_down_timeout,
+                    "SERVICE_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": service_sidecar_settings.dynamic_sidecar_api_request_docker_compose_down_timeout,
                 },
                 "Hosts": [],
                 "Image": service_sidecar_settings.image,
