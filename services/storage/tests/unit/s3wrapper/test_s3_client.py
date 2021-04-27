@@ -11,20 +11,9 @@ from datetime import timedelta
 
 import pytest
 import requests
-<<<<<<< HEAD:services/storage/tests/s3wrapper/test_s3_client.py
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 
 
-=======
-
-# pylint:disable=unused-import
-from pytest_docker import docker_ip, docker_services
-from simcore_service_storage.s3wrapper.s3_client import S3Client
-
-# pylint:disable=redefined-outer-name
-
-
->>>>>>> moved s3wrapper inside storage:services/storage/tests/unit/test_s3_client.py
 def is_responsive(url, code=200):
     """Check if something responds to ``url``."""
     try:
@@ -60,16 +49,10 @@ def s3_client(docker_ip, docker_services):
     endpoint = "{ip}:{port}".format(
         ip=docker_ip, port=docker_services.port_for("minio", 9000)
     )
-<<<<<<< HEAD:services/storage/tests/s3wrapper/test_s3_client.py
+
     s3_client = MinioClientWrapper(
         endpoint, access_key="12345678", secret_key="12345678", secure=False
     )
-=======
-    access_key = "12345678"
-    secret_key = "12345678"
-    secure = False
-    s3_client = S3Client(endpoint, access_key, secret_key, secure)
->>>>>>> moved s3wrapper inside storage:services/storage/tests/unit/test_s3_client.py
     return s3_client
 
 
@@ -147,16 +130,9 @@ def test_file_upload_meta_data(s3_client, bucket, text_files):
 
     metadata2 = s3_client.get_metadata(bucket, object_name)
 
-<<<<<<< HEAD:services/storage/tests/s3wrapper/test_s3_client.py
     assert metadata2["user"] == "guidon"
     assert metadata2["node_id"] == str(_id)
     assert metadata2["boom-boom"] == str(42.0)
-
-=======
-    assert metadata2["User"] == "guidon"
-    assert metadata2["Node_id"] == str(_id)
-    assert metadata2["Boom-Boom"] == str(42.0)
->>>>>>> moved s3wrapper inside storage:services/storage/tests/unit/test_s3_client.py
 
 
 @pytest.mark.enable_travis
