@@ -12,7 +12,6 @@ from typing import Callable
 
 import pytest
 import requests
-
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 
 
