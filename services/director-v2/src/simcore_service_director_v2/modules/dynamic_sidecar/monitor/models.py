@@ -8,7 +8,7 @@ from .utils import AsyncResourceLock
 from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 
-class ServiceSidecarStatus(str, Enum):
+class DynamicSidecarStatus(str, Enum):
     OK = "ok"  # running as expected
     FAILING = "failing"  # requests to the sidecar API are failing service should be cosnidered as unavailable
 
@@ -16,18 +16,18 @@ class ServiceSidecarStatus(str, Enum):
 class OverallStatus(BaseModel):
     """Generated from data from docker container inspect API"""
 
-    status: ServiceSidecarStatus = Field(..., description="status of the service")
+    status: DynamicSidecarStatus = Field(..., description="status of the service")
     info: str = Field(..., description="additional information for the user")
 
-    def _update(self, new_status: ServiceSidecarStatus, new_info: str) -> None:
+    def _update(self, new_status: DynamicSidecarStatus, new_info: str) -> None:
         self.status = new_status
         self.info = new_info
 
     def update_ok_status(self, info: str) -> None:
-        self._update(ServiceSidecarStatus.OK, info)
+        self._update(DynamicSidecarStatus.OK, info)
 
     def update_failing_status(self, info: str) -> None:
-        self._update(ServiceSidecarStatus.FAILING, info)
+        self._update(DynamicSidecarStatus.FAILING, info)
 
     def __eq__(self, other: "OverallStatus") -> bool:
         return self.status == other.status and self.info == other.info
@@ -35,7 +35,7 @@ class OverallStatus(BaseModel):
     @classmethod
     def make_initially_ok(cls) -> "OverallStatus":
         # the service is initially ok when started
-        initial_state = cls(status=ServiceSidecarStatus.OK, info="")
+        initial_state = cls(status=DynamicSidecarStatus.OK, info="")
         return initial_state
 
 
@@ -64,7 +64,7 @@ class DockerContainerInspect(BaseModel):
     )
 
 
-class ServiceSidecar(BaseModel):
+class DynamicSidecar(BaseModel):
     overall_status: OverallStatus = Field(
         OverallStatus.make_initially_ok(),
         description="status of the service sidecar also with additional information",
@@ -112,7 +112,7 @@ class MonitorData(BaseModel):
         ..., description="Name of the current sidecar-service being monitored"
     )
 
-    service_sidecar: ServiceSidecar = Field(
+    service_sidecar: DynamicSidecar = Field(
         ...,
         description="stores information fetched from the dynamic-sidecar",
     )

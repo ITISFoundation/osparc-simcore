@@ -16,7 +16,7 @@ from .parse_docker_status import (
     TASK_STATES_ALL,
     TASK_STATES_RUNNING,
 )
-from .exceptions import GenericDockerError, ServiceSidecarError
+from .exceptions import GenericDockerError, DynamicSidecarError
 from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 
 log = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
         x for x in all_networks if "swarm" in x["Scope"] and network_name in x["Name"]
     ]
     if not networks or len(networks) > 1:
-        raise ServiceSidecarError(
+        raise DynamicSidecarError(
             f"Swarm network name is not configured, found following networks: {networks}"
         )
     return networks[0]
@@ -81,7 +81,7 @@ async def create_network(network_config: Dict[str, Any]) -> str:
 
             # finally raise an error if a network cannot be spawned
             # pylint: disable=raise-missing-from
-            raise ServiceSidecarError(
+            raise DynamicSidecarError(
                 f"Could not create or recover a network ID for {network_config}"
             )
 
@@ -91,7 +91,7 @@ async def create_service_and_get_id(create_service_data: Dict[str, Any]) -> str:
         service_start_result = await client.services.create(**create_service_data)
 
     if "ID" not in service_start_result:
-        raise ServiceSidecarError(
+        raise DynamicSidecarError(
             "Error while starting service: {}".format(str(service_start_result))
         )
     return service_start_result["ID"]
@@ -177,7 +177,7 @@ async def _extract_task_data_from_service_for_state(
         await asyncio.sleep(1.0)
         elapsed = time.time() - started
         if elapsed > dynamic_sidecar_settings.timeout_fetch_dynamic_sidecar_node_id:
-            raise ServiceSidecarError(
+            raise DynamicSidecarError(
                 msg=(
                     "Timed out while serarching for an assigned NodeID for "
                     f"service_id={service_id}. Last task inspect result: {task}"
@@ -225,7 +225,7 @@ async def get_node_id_from_task_for_service(
     )
 
     if "NodeID" not in task:
-        raise ServiceSidecarError(
+        raise DynamicSidecarError(
             msg=(
                 f"Could not find an assigned NodeID for service_id={service_id}. "
                 f"Last task inspect result: {task}"

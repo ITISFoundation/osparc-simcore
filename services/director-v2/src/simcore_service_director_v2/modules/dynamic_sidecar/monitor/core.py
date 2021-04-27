@@ -20,21 +20,21 @@ from ..docker_utils import (
     get_dynamic_sidecar_state,
     ServiceLabelsStoredData,
 )
-from ..exceptions import ServiceSidecarError
+from ..exceptions import DynamicSidecarError
 from .handlers import REGISTERED_HANDLERS
 from .models import (
     LockWithMonitorData,
     MonitorData,
-    ServiceSidecarStatus,
+    DynamicSidecarStatus,
 )
-from .service_sidecar_api import query_service, get_api_client, ServiceSidecarClient
+from .service_sidecar_api import query_service, get_api_client, DynamicSidecarClient
 from .utils import AsyncResourceLock
 from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
 
 logger = logging.getLogger(__name__)
 
-MONITOR_KEY = f"{__name__}.ServiceSidecarsMonitor"
+MONITOR_KEY = f"{__name__}.DynamicSidecarsMonitor"
 
 
 async def apply_monitoring(
@@ -51,8 +51,8 @@ async def apply_monitoring(
     # if the service is not OK (for now failing) monitoring will be skipped
     # this will allow others to debug it
     if (
-        input_monitor_data.service_sidecar.overall_status.status
-        != ServiceSidecarStatus.OK
+        input_monitor_data.dynamic_sidecar.overall_status.status
+        != DynamicSidecarStatus.OK
     ):
         logger.warning(
             "Service %s is failing, skipping monitoring.",
@@ -64,7 +64,7 @@ async def apply_monitoring(
         with timeout(dynamic_sidecar_settings.max_status_api_duration):
             output_monitor_data = await query_service(app, input_monitor_data)
     except asyncio.TimeoutError:
-        output_monitor_data.service_sidecar.is_available = False
+        output_monitor_data.dynamic_sidecar.is_available = False
         # TODO: maybe push this into the health API to monitor degradation of the services
 
     for handler in REGISTERED_HANDLERS:
@@ -76,20 +76,20 @@ async def apply_monitoring(
     # check if the status of the services has changed from OK
 
     if (
-        input_monitor_data.service_sidecar.overall_status
-        != output_monitor_data.service_sidecar.overall_status
+        input_monitor_data.dynamic_sidecar.overall_status
+        != output_monitor_data.dynamic_sidecar.overall_status
     ):
         # TODO: push this to the UI to display to the user?
         logger.info(
             "Service %s overall status changed to %s",
             output_monitor_data.service_name,
-            output_monitor_data.service_sidecar.overall_status,
+            output_monitor_data.dynamic_sidecar.overall_status,
         )
 
     return output_monitor_data
 
 
-class ServiceSidecarsMonitor:
+class DynamicSidecarsMonitor:
     __slots__ = (
         "_to_monitor",
         "_lock",
@@ -131,7 +131,7 @@ class ServiceSidecarsMonitor:
             if service_name in self._to_monitor:
                 return
             if node_uuid in self._inverse_search_mapping:
-                raise ServiceSidecarError(
+                raise DynamicSidecarError(
                     "node_uuids at a global level collided. A running "
                     f"service for node {node_uuid} already exists. Please checkout "
                     "other projects which may have this issue."
@@ -166,7 +166,7 @@ class ServiceSidecarsMonitor:
                 return
 
             # invoke container cleanup at this point
-            services_sidecar_client: ServiceSidecarClient = get_api_client(self._app)
+            services_sidecar_client: DynamicSidecarClient = get_api_client(self._app)
 
             # invokes docker compose down, even if the containers are removed they still
             # seem attached to the network; the network cannot be removed (this is logged
@@ -174,7 +174,7 @@ class ServiceSidecarsMonitor:
             # There is no suitable solution to this issue, having netwoks trash
             # the environment seems to be the best approach :\
             current: LockWithMonitorData = self._to_monitor[service_name]
-            service_sidecar_endpoint = current.monitor_data.service_sidecar.endpoint
+            service_sidecar_endpoint = current.monitor_data.dynamic_sidecar.endpoint
             await services_sidecar_client.remove_docker_compose_spec(
                 service_sidecar_endpoint=service_sidecar_endpoint
             )
@@ -227,7 +227,7 @@ class ServiceSidecarsMonitor:
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
             dynamic_sidecar_settings = get_settings(self._app)
-            services_sidecar_client: ServiceSidecarClient = get_api_client(self._app)
+            services_sidecar_client: DynamicSidecarClient = get_api_client(self._app)
 
             service_state, service_message = await get_dynamic_sidecar_state(
                 # the service_name is unique and will not collide with other names
@@ -247,7 +247,7 @@ class ServiceSidecarsMonitor:
             docker_statuses: Optional[
                 Dict[str, Dict[str, str]]
             ] = await services_sidecar_client.containers_docker_status(
-                service_sidecar_endpoint=monitor_data.service_sidecar.endpoint
+                service_sidecar_endpoint=monitor_data.dynamic_sidecar.endpoint
             )
 
             # error fetching docker_statues, probably someone should check
@@ -378,12 +378,12 @@ class ServiceSidecarsMonitor:
         self._to_monitor = dict()
 
 
-def get_monitor(app: Application) -> ServiceSidecarsMonitor:
+def get_monitor(app: Application) -> DynamicSidecarsMonitor:
     return app.state.service_sidecar_monitor
 
 
 async def setup_monitor(app: Application):
-    service_sidecars_monitor = ServiceSidecarsMonitor(app)
+    service_sidecars_monitor = DynamicSidecarsMonitor(app)
     app.state.service_sidecar_monitor = service_sidecars_monitor
 
     await service_sidecars_monitor.start()

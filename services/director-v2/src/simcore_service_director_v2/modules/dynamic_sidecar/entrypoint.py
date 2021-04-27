@@ -21,7 +21,7 @@ from .docker_utils import (
 )
 from .monitor import get_monitor
 from .utils import unused_port
-from .exceptions import ServiceSidecarError
+from .exceptions import DynamicSidecarError
 from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 log = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
         "Attachable": True,
         "Internal": False,
     }
-    service_sidecar_network_id = await create_network(network_config)
+    dynamic_sidecar_network_id = await create_network(network_config)
 
     # attach the service to the swarm network dedicated to services
     swarm_network = await get_swarm_network(dynamic_sidecar_settings)
@@ -132,13 +132,13 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
 
     # start dynamic-sidecar and run the proxy on the same node
 
-    service_sidecar_create_service_params = await _dyn_service_sidecar_assembly(
+    dynamic_sidecar_create_service_params = await _dynamic_sidecar_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         io_simcore_zone=io_simcore_zone,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-        service_sidecar_network_id=service_sidecar_network_id,
+        dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         swarm_network_id=swarm_network_id,
-        service_sidecar_name=service_name_dynamic_sidecar,
+        dynamic_sidecar_name=service_name_dynamic_sidecar,
         user_id=user_id,
         node_uuid=node_uuid,
         service_key=service_key,
@@ -151,39 +151,39 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     )
     log.debug(
         "dynamic-sidecar create_service_params %s",
-        pformat(service_sidecar_create_service_params),
+        pformat(dynamic_sidecar_create_service_params),
     )
 
-    service_sidecar_id = await create_service_and_get_id(
-        service_sidecar_create_service_params
+    dynamic_sidecar_id = await create_service_and_get_id(
+        dynamic_sidecar_create_service_params
     )
 
-    service_sidecar_node_id = await get_node_id_from_task_for_service(
-        service_sidecar_id, dynamic_sidecar_settings
+    dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
+        dynamic_sidecar_id, dynamic_sidecar_settings
     )
 
-    service_sidecar_proxy_create_service_params = await _dyn_proxy_entrypoint_assembly(
+    dynamic_sidecar_proxy_create_service_params = await _dyn_proxy_entrypoint_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         node_uuid=node_uuid,
         io_simcore_zone=io_simcore_zone,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
-        service_sidecar_network_id=service_sidecar_network_id,
+        dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         service_name=service_name_proxy,
         swarm_network_id=swarm_network_id,
         swarm_network_name=swarm_network_name,
         user_id=user_id,
         project_id=project_id,
-        service_sidecar_node_id=service_sidecar_node_id,
+        dynamic_sidecar_node_id=dynamic_sidecar_node_id,
         request_scheme=request_scheme,
         request_dns=request_dns,
     )
     log.debug(
         "dynamic-sidecar-proxy create_service_params %s",
-        pformat(service_sidecar_proxy_create_service_params),
+        pformat(dynamic_sidecar_proxy_create_service_params),
     )
 
-    service_sidecar_proxy_id = await create_service_and_get_id(
-        service_sidecar_proxy_create_service_params
+    dynamic_sidecar_proxy_id = await create_service_and_get_id(
+        dynamic_sidecar_proxy_create_service_params
     )
 
     # services where successfully started and they can be monitored
@@ -201,12 +201,12 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=_extract_service_port_from_compose_start_spec(
-            service_sidecar_create_service_params
+            dynamic_sidecar_create_service_params
         ),
     )
 
     # returning data for the proxy service so the service UI metadata can be extracted from here
-    return await inspect_service(service_sidecar_proxy_id)
+    return await inspect_service(dynamic_sidecar_proxy_id)
 
 
 async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
@@ -214,13 +214,13 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     node_uuid: str,
     io_simcore_zone: str,
     dynamic_sidecar_network_name: str,
-    service_sidecar_network_id: str,
+    dynamic_sidecar_network_id: str,
     service_name: str,
     swarm_network_id: str,
     swarm_network_name: str,
     user_id: str,
     project_id: str,
-    service_sidecar_node_id: str,
+    dynamic_sidecar_node_id: str,
     request_scheme: str,
     request_dns: str,
 ) -> Dict[str, Any]:
@@ -258,7 +258,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             "uuid": node_uuid,  # needed for removal when project is closed
         },
         "name": service_name,
-        "networks": [swarm_network_id, service_sidecar_network_id],
+        "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
                 "Env": {},
@@ -284,7 +284,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             "Placement": {
                 "Constraints": [
                     "node.platform.os == linux",  # TODO: ask SAN should this be removed?
-                    f"node.id == {service_sidecar_node_id}",
+                    f"node.id == {dynamic_sidecar_node_id}",
                 ]
             },
             # TODO: ask SAN how much resoruces for the proxy
@@ -303,7 +303,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
 
 def _check_setting_correctness(setting: Dict) -> None:
     if "name" not in setting or "type" not in setting or "value" not in setting:
-        raise ServiceSidecarError("Invalid setting in %s" % setting)
+        raise DynamicSidecarError("Invalid setting in %s" % setting)
 
 
 def _parse_mount_settings(settings: List[Dict]) -> List[Dict]:
@@ -429,13 +429,13 @@ def _inject_settings_to_create_service_params(
     )
 
 
-async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
+async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     dynamic_sidecar_settings: DynamicSidecarSettings,
     io_simcore_zone: str,
     dynamic_sidecar_network_name: str,
-    service_sidecar_network_id: str,
+    dynamic_sidecar_network_id: str,
     swarm_network_id: str,
-    service_sidecar_name: str,
+    dynamic_sidecar_name: str,
     user_id: str,
     node_uuid: str,
     service_key: str,
@@ -459,8 +459,8 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     endpint_spec = {}
 
     if dynamic_sidecar_settings.is_dev_mode:
-        service_sidecar_path = dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path
-        if service_sidecar_path is None:
+        dynamic_sidecar_path = dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path
+        if dynamic_sidecar_path is None:
             log.error(
                 "Could not mount the sources for the dynamic-sidecar, please provide env var named %s",
                 dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path.__name__,
@@ -468,7 +468,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
         else:
             mounts.append(
                 {
-                    "Source": str(service_sidecar_path),
+                    "Source": str(dynamic_sidecar_path),
                     "Target": "/devel/services/dynamic-sidecar",
                     "Type": "bind",
                 }
@@ -508,10 +508,10 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "study_id": project_id,
             "traefik.docker.network": dynamic_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
-            f"traefik.http.routers.{service_sidecar_name}.entrypoints": "http",
-            f"traefik.http.routers.{service_sidecar_name}.priority": "10",
-            f"traefik.http.routers.{service_sidecar_name}.rule": "PathPrefix(`/`)",
-            f"traefik.http.services.{service_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.web_service_port}",
+            f"traefik.http.routers.{dynamic_sidecar_name}.entrypoints": "http",
+            f"traefik.http.routers.{dynamic_sidecar_name}.priority": "10",
+            f"traefik.http.routers.{dynamic_sidecar_name}.rule": "PathPrefix(`/`)",
+            f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.web_service_port}",
             "type": "dependency",
             "user_id": user_id,
             # the following are used for monitoring
@@ -523,12 +523,12 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "compose_spec": json.dumps(compose_spec),
             "target_container": json.dumps(target_container),
         },
-        "name": service_sidecar_name,
-        "networks": [swarm_network_id, service_sidecar_network_id],
+        "name": dynamic_sidecar_name,
+        "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
                 "Env": {
-                    "SIMCORE_HOST_NAME": service_sidecar_name,
+                    "SIMCORE_HOST_NAME": dynamic_sidecar_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
                     "DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_down_timeout,
                 },

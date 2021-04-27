@@ -10,7 +10,7 @@ from .models import (
     DockerContainerInspect,
     DockerStatus,
     MonitorData,
-    ServiceSidecarStatus,
+    DynamicSidecarStatus,
 )
 from .service_sidecar_api import get_api_client
 
@@ -39,9 +39,9 @@ class RunDockerComposeUp(BaseEventHandler):
     @classmethod
     async def will_trigger(cls, previous: MonitorData, current: MonitorData) -> bool:
         return (
-            current.service_sidecar.overall_status.status == ServiceSidecarStatus.OK
-            and current.service_sidecar.is_available == True
-            and current.service_sidecar.compose_spec_submitted == False
+            current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
+            and current.dynamic_sidecar.is_available == True
+            and current.dynamic_sidecar.compose_spec_submitted == False
         )
 
     @classmethod
@@ -51,7 +51,7 @@ class RunDockerComposeUp(BaseEventHandler):
         logger.debug("Getting docker compose spec for service %s", current.service_name)
 
         api_client = get_api_client(app)
-        service_sidecar_endpoint = current.service_sidecar.endpoint
+        service_sidecar_endpoint = current.dynamic_sidecar.endpoint
 
         # creates a docker compose spec given the service key and tag
         compose_spec = await assemble_spec(
@@ -71,10 +71,10 @@ class RunDockerComposeUp(BaseEventHandler):
         )
 
         # compose spec was submitted
-        current.service_sidecar.compose_spec_submitted = True
+        current.dynamic_sidecar.compose_spec_submitted = True
 
         if not was_compose_spec_stored:
-            current.service_sidecar.overall_status.update_failing_status(
+            current.dynamic_sidecar.overall_status.update_failing_status(
                 "Could not store compose spec. Ask an admin to check director logs for details."
             )
             return
@@ -82,7 +82,7 @@ class RunDockerComposeUp(BaseEventHandler):
         were_images_pulled = await api_client.pull_images(service_sidecar_endpoint)
 
         if not were_images_pulled:
-            current.service_sidecar.overall_status.update_failing_status(
+            current.dynamic_sidecar.overall_status.update_failing_status(
                 "Could not pull docker images. Ask an admin to check director logs for details."
             )
             return
@@ -93,7 +93,7 @@ class RunDockerComposeUp(BaseEventHandler):
 
         # singal there is a problem with the dynamic-sidecar
         if not compose_spec_was_applied:
-            current.service_sidecar.overall_status.update_failing_status(
+            current.dynamic_sidecar.overall_status.update_failing_status(
                 "Could not apply docker-compose up. Ask an admin to check director logs for details."
             )
 
@@ -104,9 +104,9 @@ class ServicesInspect(BaseEventHandler):
     @classmethod
     async def will_trigger(cls, previous: MonitorData, current: MonitorData) -> bool:
         return (
-            current.service_sidecar.overall_status.status == ServiceSidecarStatus.OK
-            and current.service_sidecar.is_available == True
-            and current.service_sidecar.compose_spec_submitted == True
+            current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
+            and current.dynamic_sidecar.is_available == True
+            and current.dynamic_sidecar.compose_spec_submitted == True
         )
 
     @classmethod
@@ -114,20 +114,20 @@ class ServicesInspect(BaseEventHandler):
         cls, app: Application, previous: MonitorData, current: MonitorData
     ) -> None:
         api_client = get_api_client(app)
-        service_sidecar_endpoint = current.service_sidecar.endpoint
+        service_sidecar_endpoint = current.dynamic_sidecar.endpoint
 
         containers_inspect = await api_client.containers_inspect(
             service_sidecar_endpoint
         )
         if containers_inspect is None:
             # this means that the service was degrated and we need to do something?
-            current.service_sidecar.overall_status.update_failing_status(
+            current.dynamic_sidecar.overall_status.update_failing_status(
                 f"Could not get containers_inspect for {current.service_name}. "
                 "Ask and admin to check director logs for details."
             )
 
         # parse and store data from container
-        current.service_sidecar.containers_inspect = parse_containers_inspect(
+        current.dynamic_sidecar.containers_inspect = parse_containers_inspect(
             containers_inspect
         )
 

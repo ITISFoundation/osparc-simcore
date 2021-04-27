@@ -11,7 +11,7 @@ from .models import MonitorData
 logger = logging.getLogger(__name__)
 
 
-KEY_DYNAMIC_SIDECAR_API_CLIENT = f"{__name__}.ServiceSidecarClient"
+KEY_DYNAMIC_SIDECAR_API_CLIENT = f"{__name__}.DynamicSidecarClient"
 
 
 def get_url(service_sidecar_endpoint: str, postfix: str) -> str:
@@ -33,7 +33,7 @@ def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> Non
     )
 
 
-class ServiceSidecarClient:
+class DynamicSidecarClient:
     """Will handle connections to the service sidecar"""
 
     def __init__(self, app: Application):
@@ -203,7 +203,7 @@ class ServiceSidecarClient:
 
 async def setup_api_client(app: Application) -> None:
     logger.debug("dynamic-sidecar api client setup")
-    app.state.service_sidecar_api_client = ServiceSidecarClient(app)
+    app.state.service_sidecar_api_client = DynamicSidecarClient(app)
 
 
 async def shutdown_api_client(app: Application) -> None:
@@ -212,7 +212,7 @@ async def shutdown_api_client(app: Application) -> None:
     await service_sidecar_client.close()
 
 
-def get_api_client(app: Application) -> ServiceSidecarClient:
+def get_api_client(app: Application) -> DynamicSidecarClient:
     return app.state.service_sidecar_api_client
 
 
@@ -223,10 +223,10 @@ async def query_service(
     output_monitor_data = input_monitor_data.copy(deep=True)
 
     api_client = get_api_client(app)
-    service_endpoint = input_monitor_data.service_sidecar.endpoint
+    service_endpoint = input_monitor_data.dynamic_sidecar.endpoint
 
     # update service health
     is_healthy = await api_client.is_healthy(service_endpoint)
-    output_monitor_data.service_sidecar.is_available = is_healthy
+    output_monitor_data.dynamic_sidecar.is_available = is_healthy
 
     return output_monitor_data
