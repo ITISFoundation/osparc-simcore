@@ -8,8 +8,9 @@ def __monkey_patch_pydantic_url_regex() -> None:
     # pydantic main codebase
 
     import pydantic
+    from packaging import version
 
-    if pydantic.VERSION > "1.8.1":
+    if version.parse(pydantic.VERSION) > version.parse("1.8.1"):
         raise RuntimeError(
             (
                 "Please check that PR https://github.com/samuelcolvin/pydantic/pull/2512 "
