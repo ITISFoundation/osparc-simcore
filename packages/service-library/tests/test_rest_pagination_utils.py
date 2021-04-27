@@ -1,7 +1,6 @@
 from copy import deepcopy
 
 import pytest
-from typing import List
 from pydantic.main import BaseModel
 from servicelib.rest_pagination_utils import (
     PageLinks,
