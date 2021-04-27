@@ -58,9 +58,7 @@ def test_empty_data_is_converted_to_list():
     assert model_instance.data == []
 
 
-@pytest.mark.parametrize(
-    "base_url", ["http://some/random/url.com", "http://10.0.0.1.nip.io"]
-)
+@pytest.mark.parametrize("base_url", ["http://some/random/url.com"])
 def test_paginating_data(base_url):
     # create random data
     total_number_of_data = 29
