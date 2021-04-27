@@ -397,8 +397,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __updateWorkbenchLayoutSize: function(position) {
-      const minWidth = position.x + osparc.component.workbench.NodeUI.NodeWidth;
-      const minHeight = position.y + osparc.component.workbench.NodeUI.NodeHeight;
+      const minWidth = position.x + osparc.component.workbench.NodeUI.NODE_WIDTH;
+      const minHeight = position.y + osparc.component.workbench.NodeUI.NODE_HEIGHT;
       if (this.__workbenchLayout.getMinWidth() < minWidth) {
         this.__workbenchLayout.setMinWidth(minWidth);
       }
@@ -1087,8 +1087,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const nodeBounds = this.__getNodesBounds();
       if (nodeBounds) {
         // Fit to nodes size
-        const nodesWidth = nodeBounds.maxLeft + osparc.component.workbench.NodeUI.NodeWidth; // a bit more of margin
-        const nodesHeight = nodeBounds.maxTop + osparc.component.workbench.NodeUI.NodeHeight; // a bit more of margin
+        const nodesWidth = nodeBounds.maxLeft + osparc.component.workbench.NodeUI.NODE_WIDTH; // a bit more of margin
+        const nodesHeight = nodeBounds.maxTop + osparc.component.workbench.NodeUI.NODE_HEIGHT; // a bit more of margin
         const scaledNodes = this.__unscaleCoordinates(nodesWidth, nodesHeight);
         this.__workbenchLayout.set({
           minWidth: scaledNodes.x,
@@ -1229,8 +1229,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!this.isPropertyInitialized("study") || this.getStudy().isReadOnly()) {
         return;
       }
-      const nodeWidth = osparc.component.workbench.NodeUI.NodeWidth;
-      const nodeHeight = osparc.component.workbench.NodeUI.NodeHeight;
+      const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
+      const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
       const posX = pointerEvent.offsetX - 1;
       const posY = pointerEvent.offsetY - 1;
 
