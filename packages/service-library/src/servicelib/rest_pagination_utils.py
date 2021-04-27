@@ -32,7 +32,7 @@ def __monkey_patch_pydantic_url_regex() -> None:
     import re
 
     def url_regex() -> Pattern[str]:
-        _url_regex_cache = networks._url_regex_cache
+        _url_regex_cache = networks._url_regex_cache  # pylint: disable=protected-access
         if _url_regex_cache is None:
             _url_regex_cache = re.compile(
                 r"(?:(?P<scheme>[a-z][a-z0-9+\-.]+)://)?"  # scheme https://tools.ietf.org/html/rfc3986#appendix-A
