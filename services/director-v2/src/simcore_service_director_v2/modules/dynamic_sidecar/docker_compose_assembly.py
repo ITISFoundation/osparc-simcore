@@ -17,7 +17,7 @@ BASE_SERVICE_SPEC: Dict[str, Any] = {
 def _inject_traefik_configuration(
     service_spec: Dict[str, Any],
     target_container: str,
-    service_sidecar_network_name: str,
+    dynamic_sidecar_network_name: str,
     simcore_traefik_zone: str,
     service_port: int,
 ) -> None:
@@ -25,8 +25,8 @@ def _inject_traefik_configuration(
 
     # add external network to existing networks defined in the container
     service_spec["networks"] = {
-        service_sidecar_network_name: {
-            "external": {"name": service_sidecar_network_name},
+        dynamic_sidecar_network_name: {
+            "external": {"name": dynamic_sidecar_network_name},
             "driver": "overlay",
         }
     }
@@ -36,7 +36,7 @@ def _inject_traefik_configuration(
 
     # attach overlay network to container
     container_networks = target_container_spec.get("networks", [])
-    container_networks.append(service_sidecar_network_name)
+    container_networks.append(dynamic_sidecar_network_name)
     target_container_spec["networks"] = container_networks
 
     # expose spaned container to the internet
@@ -93,7 +93,7 @@ async def assemble_spec(
     paths_mapping: PathsMappingModel,  # pylint: disable=unused-argument
     compose_spec: ComposeSpecModel,
     target_container: Optional[str],
-    service_sidecar_network_name: str,
+    dynamic_sidecar_network_name: str,
     simcore_traefik_zone: str,
     service_port: int,
 ) -> str:
@@ -120,7 +120,7 @@ async def assemble_spec(
     _inject_traefik_configuration(
         service_spec,
         target_container=container_name,
-        service_sidecar_network_name=service_sidecar_network_name,
+        dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=simcore_traefik_zone,
         service_port=service_port,
     )

@@ -9,7 +9,7 @@ from .monitor import (
 )
 
 
-def setup_service_sidecar(app: Application) -> None:
+def setup_dynamic_sidecar(app: Application) -> None:
     async def on_startup() -> None:
         await setup_settings(app)
         await setup_api_client(app)

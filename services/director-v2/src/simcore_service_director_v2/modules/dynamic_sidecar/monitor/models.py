@@ -144,7 +144,7 @@ class MonitorData(BaseModel):
         description="when the user defines a compose spec, it should pick a container inside the spec to receive traffic on a defined port",
     )
 
-    service_sidecar_network_name: str = Field(
+    dynamic_sidecar_network_name: str = Field(
         ...,
         description="overlay network biding the proxy to the container spaned by the dynamic-sidecar",
     )
@@ -169,7 +169,7 @@ class MonitorData(BaseModel):
         paths_mapping: PathsMappingModel,
         compose_spec: ComposeSpecModel,
         target_container: Optional[str],
-        service_sidecar_network_name: str,
+        dynamic_sidecar_network_name: str,
         simcore_traefik_zone: str,
         service_port: int,
     ) -> "MonitorData":
@@ -180,7 +180,7 @@ class MonitorData(BaseModel):
             paths_mapping=paths_mapping,
             compose_spec=compose_spec,
             target_container=target_container,
-            service_sidecar_network_name=service_sidecar_network_name,
+            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
             simcore_traefik_zone=simcore_traefik_zone,
             service_port=service_port,
             service_sidecar=dict(

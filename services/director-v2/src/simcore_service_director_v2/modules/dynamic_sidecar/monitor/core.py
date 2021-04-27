@@ -16,8 +16,8 @@ from async_timeout import timeout
 
 from ..config import DynamicSidecarSettings, get_settings
 from ..docker_utils import (
-    get_service_sidecars_to_monitor,
-    get_service_sidecar_state,
+    get_dynamic_sidecars_to_monitor,
+    get_dynamic_sidecar_state,
     ServiceLabelsStoredData,
 )
 from ..exceptions import ServiceSidecarError
@@ -118,7 +118,7 @@ class ServiceSidecarsMonitor:
         paths_mapping: PathsMappingModel,
         compose_spec: ComposeSpecModel,
         target_container: Optional[str],
-        service_sidecar_network_name: str,
+        dynamic_sidecar_network_name: str,
         simcore_traefik_zone: str,
         service_port: int,
     ) -> None:
@@ -148,7 +148,7 @@ class ServiceSidecarsMonitor:
                     paths_mapping=paths_mapping,
                     compose_spec=compose_spec,
                     target_container=target_container,
-                    service_sidecar_network_name=service_sidecar_network_name,
+                    dynamic_sidecar_network_name=dynamic_sidecar_network_name,
                     simcore_traefik_zone=simcore_traefik_zone,
                     service_port=service_port,
                 ),
@@ -229,7 +229,7 @@ class ServiceSidecarsMonitor:
             dynamic_sidecar_settings = get_settings(self._app)
             services_sidecar_client: ServiceSidecarClient = get_api_client(self._app)
 
-            service_state, service_message = await get_service_sidecar_state(
+            service_state, service_message = await get_dynamic_sidecar_state(
                 # the service_name is unique and will not collide with other names
                 # it can be used in place of the service_id here, as the docker API accepts both
                 service_id=monitor_data.service_name,
@@ -336,7 +336,7 @@ class ServiceSidecarsMonitor:
         dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(self._app)
         services_to_monitor: Deque[
             ServiceLabelsStoredData
-        ] = await get_service_sidecars_to_monitor(dynamic_sidecar_settings)
+        ] = await get_dynamic_sidecars_to_monitor(dynamic_sidecar_settings)
 
         logging.info(
             "The following services need to be monitored: %s", services_to_monitor
@@ -351,7 +351,7 @@ class ServiceSidecarsMonitor:
                 paths_mapping,
                 compose_spec,
                 target_container,
-                service_sidecar_network_name,
+                dynamic_sidecar_network_name,
                 simcore_traefik_zone,
                 service_port,
             ) = service_to_monitor
@@ -366,7 +366,7 @@ class ServiceSidecarsMonitor:
                 paths_mapping=paths_mapping,
                 compose_spec=compose_spec,
                 target_container=target_container,
-                service_sidecar_network_name=service_sidecar_network_name,
+                dynamic_sidecar_network_name=dynamic_sidecar_network_name,
                 simcore_traefik_zone=simcore_traefik_zone,
                 service_port=service_port,
             )

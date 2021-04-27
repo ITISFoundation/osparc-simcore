@@ -61,7 +61,7 @@ class RunDockerComposeUp(BaseEventHandler):
             paths_mapping=current.paths_mapping,
             compose_spec=current.compose_spec,
             target_container=current.target_container,
-            service_sidecar_network_name=current.service_sidecar_network_name,
+            dynamic_sidecar_network_name=current.dynamic_sidecar_network_name,
             simcore_traefik_zone=current.simcore_traefik_zone,
             service_port=current.service_port,
         )

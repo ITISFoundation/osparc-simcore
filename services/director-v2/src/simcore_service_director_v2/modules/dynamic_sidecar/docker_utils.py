@@ -9,7 +9,7 @@ import aiodocker
 from asyncio_extras import async_contextmanager
 
 from .config import DynamicSidecarSettings
-from .constants import FIXED_SERVICE_NAME_SIDECAR, SERVICE_SIDECAR_PREFIX
+from .constants import FIXED_SERVICE_NAME_SIDECAR, DYNAMIC_SIDECAR_PREFIX
 from .parse_docker_status import (
     ServiceState,
     extract_task_state,
@@ -102,7 +102,7 @@ async def inspect_service(service_id: str) -> Dict[str, Any]:
         return await client.services.inspect(service_id)
 
 
-async def get_service_sidecars_to_monitor(
+async def get_dynamic_sidecars_to_monitor(
     dynamic_sidecar_settings: DynamicSidecarSettings,
 ) -> Deque[ServiceLabelsStoredData]:
     async with docker_client() as client:  # pylint: disable=not-async-context-manager
@@ -114,11 +114,11 @@ async def get_service_sidecars_to_monitor(
             }
         )
 
-    service_sidecar_services: Deque[Tuple[str, str]] = Deque()
+    dynamic_sidecar_services: Deque[Tuple[str, str]] = Deque()
 
     for service in running_services:
         service_name: str = service["Spec"]["Name"]
-        if not service_name.startswith(SERVICE_SIDECAR_PREFIX):
+        if not service_name.startswith(DYNAMIC_SIDECAR_PREFIX):
             continue
 
         service_name_parts = service_name.split("_")
@@ -127,7 +127,7 @@ async def get_service_sidecars_to_monitor(
 
         # check to see if this is a dynamic-sidecar
         if (
-            service_name_parts[0] != SERVICE_SIDECAR_PREFIX
+            service_name_parts[0] != DYNAMIC_SIDECAR_PREFIX
             or service_name_parts[3] != FIXED_SERVICE_NAME_SIDECAR
         ):
             continue
@@ -142,7 +142,7 @@ async def get_service_sidecars_to_monitor(
         compose_spec = json.loads(service["Spec"]["Labels"]["compose_spec"])
         target_container = json.loads(service["Spec"]["Labels"]["target_container"])
 
-        service_sidecar_network_name = service["Spec"]["Labels"][
+        dynamic_sidecar_network_name = service["Spec"]["Labels"][
             "traefik.docker.network"
         ]
         simcore_traefik_zone = service["Spec"]["Labels"]["io.simcore.zone"]
@@ -156,13 +156,13 @@ async def get_service_sidecars_to_monitor(
             paths_mapping,
             compose_spec,
             target_container,
-            service_sidecar_network_name,
+            dynamic_sidecar_network_name,
             simcore_traefik_zone,
             service_port,
         )
-        service_sidecar_services.append(entry)
+        dynamic_sidecar_services.append(entry)
 
-    return service_sidecar_services
+    return dynamic_sidecar_services
 
 
 async def _extract_task_data_from_service_for_state(
@@ -235,7 +235,7 @@ async def get_node_id_from_task_for_service(
     return task["NodeID"]
 
 
-async def get_service_sidecar_state(
+async def get_dynamic_sidecar_state(
     service_id: str, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> Tuple[ServiceState, str]:
 

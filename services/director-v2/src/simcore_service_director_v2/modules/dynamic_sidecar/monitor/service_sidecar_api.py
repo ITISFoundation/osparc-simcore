@@ -11,7 +11,7 @@ from .models import MonitorData
 logger = logging.getLogger(__name__)
 
 
-KEY_SERVICE_SIDECAR_API_CLIENT = f"{__name__}.ServiceSidecarClient"
+KEY_DYNAMIC_SIDECAR_API_CLIENT = f"{__name__}.ServiceSidecarClient"
 
 
 def get_url(service_sidecar_endpoint: str, postfix: str) -> str:

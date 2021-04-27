@@ -10,7 +10,7 @@ from .config import DynamicSidecarSettings, get_settings
 from .constants import (
     FIXED_SERVICE_NAME_PROXY,
     FIXED_SERVICE_NAME_SIDECAR,
-    SERVICE_SIDECAR_PREFIX,
+    DYNAMIC_SIDECAR_PREFIX,
 )
 from .docker_utils import (
     create_network,
@@ -38,7 +38,7 @@ def assemble_service_name(
     first_two_project_id = project_id[:2]
     name_from_service_key = service_key.split("/")[-1]
     return strip_service_name(
-        f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+        f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
         f"_{fixed_service}_{name_from_service_key}"
     )
 
@@ -79,7 +79,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     request_dns: str,
 ) -> Dict[str, str]:
     debug_message = (
-        f"SERVICE_SIDECAR: user_id={user_id}, project_id={project_id}, service_key={service_key}, "
+        f"DYNAMIC_SIDECAR: user_id={user_id}, project_id={project_id}, service_key={service_key}, "
         f"service_tag={service_tag}, node_uuid={node_uuid}"
     )
     # TODO: change the current interface , parameters will be ignored by this service
@@ -95,7 +95,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     # -  srvsdcr_{uuid}_{first_two_project_id}_proxy_{name_from_service_key}
     # -  srvsdcr_{uuid}_{first_two_project_id}_sidecar_{name_from_service_key}
 
-    service_name_service_sidecar = assemble_service_name(
+    service_name_dynamic_sidecar = assemble_service_name(
         project_id, service_key, node_uuid, FIXED_SERVICE_NAME_SIDECAR
     )
     service_name_proxy = assemble_service_name(
@@ -105,15 +105,15 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     first_two_project_id = project_id[:2]
 
     # unique name for the traefik constraints
-    io_simcore_zone = f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+    io_simcore_zone = f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
 
     # based on the node_id and project_id
-    service_sidecar_network_name = (
-        f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+    dynamic_sidecar_network_name = (
+        f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
     )
     # these configuration should guarantee 245 address network
     network_config = {
-        "Name": service_sidecar_network_name,
+        "Name": dynamic_sidecar_network_name,
         "Driver": "overlay",
         "Labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
@@ -135,10 +135,10 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     service_sidecar_create_service_params = await _dyn_service_sidecar_assembly(
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         io_simcore_zone=io_simcore_zone,
-        service_sidecar_network_name=service_sidecar_network_name,
+        dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         service_sidecar_network_id=service_sidecar_network_id,
         swarm_network_id=swarm_network_id,
-        service_sidecar_name=service_name_service_sidecar,
+        service_sidecar_name=service_name_dynamic_sidecar,
         user_id=user_id,
         node_uuid=node_uuid,
         service_key=service_key,
@@ -166,7 +166,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         node_uuid=node_uuid,
         io_simcore_zone=io_simcore_zone,
-        service_sidecar_network_name=service_sidecar_network_name,
+        dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         service_sidecar_network_id=service_sidecar_network_id,
         service_name=service_name_proxy,
         swarm_network_id=swarm_network_id,
@@ -189,16 +189,16 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     # services where successfully started and they can be monitored
     monitor = get_monitor(app)
     await monitor.add_service_to_monitor(
-        service_name=service_name_service_sidecar,
+        service_name=service_name_dynamic_sidecar,
         node_uuid=node_uuid,
-        hostname=service_name_service_sidecar,
+        hostname=service_name_dynamic_sidecar,
         port=dynamic_sidecar_settings.web_service_port,
         service_key=service_key,
         service_tag=service_tag,
         paths_mapping=paths_mapping,
         compose_spec=compose_spec,
         target_container=target_container,
-        service_sidecar_network_name=service_sidecar_network_name,
+        dynamic_sidecar_network_name=dynamic_sidecar_network_name,
         simcore_traefik_zone=io_simcore_zone,
         service_port=_extract_service_port_from_compose_start_spec(
             service_sidecar_create_service_params
@@ -213,7 +213,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     dynamic_sidecar_settings: DynamicSidecarSettings,
     node_uuid: str,
     io_simcore_zone: str,
-    service_sidecar_network_name: str,
+    dynamic_sidecar_network_name: str,
     service_sidecar_network_id: str,
     service_name: str,
     swarm_network_id: str,
@@ -273,7 +273,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
                     "--entryPoints.http.address=:80",
                     "--entryPoints.http.forwardedHeaders.insecure",
                     "--providers.docker.endpoint=unix:///var/run/docker.sock",
-                    f"--providers.docker.network={service_sidecar_network_name}",
+                    f"--providers.docker.network={dynamic_sidecar_network_name}",
                     "--providers.docker.exposedByDefault=false",
                     f"--providers.docker.constraints=Label(`io.simcore.zone`, `{io_simcore_zone}`)",
                     # inject basic auth https://doc.traefik.io/traefik/v2.0/middlewares/basicauth/
@@ -432,7 +432,7 @@ def _inject_settings_to_create_service_params(
 async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
     dynamic_sidecar_settings: DynamicSidecarSettings,
     io_simcore_zone: str,
-    service_sidecar_network_name: str,
+    dynamic_sidecar_network_name: str,
     service_sidecar_network_id: str,
     swarm_network_id: str,
     service_sidecar_name: str,
@@ -497,7 +497,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             ]
 
     # used for the container name to avoid collisions for started containers on the same node
-    compose_namespace = f"{SERVICE_SIDECAR_PREFIX}_{node_uuid}"
+    compose_namespace = f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}"
 
     create_service_params = {
         # "auth": {"password": "adminadmin", "username": "admin"},   # maybe not needed together with registry
@@ -506,7 +506,7 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "io.simcore.zone": io_simcore_zone,
             "port": f"{dynamic_sidecar_settings.web_service_port}",
             "study_id": project_id,
-            "traefik.docker.network": service_sidecar_network_name,  # also used for monitoring
+            "traefik.docker.network": dynamic_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
             f"traefik.http.routers.{service_sidecar_name}.entrypoints": "http",
             f"traefik.http.routers.{service_sidecar_name}.priority": "10",
@@ -529,8 +529,8 @@ async def _dyn_service_sidecar_assembly(  # pylint: disable=too-many-arguments
             "ContainerSpec": {
                 "Env": {
                     "SIMCORE_HOST_NAME": service_sidecar_name,
-                    "SERVICE_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    "SERVICE_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_down_timeout,
+                    "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+                    "DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_down_timeout,
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.image,

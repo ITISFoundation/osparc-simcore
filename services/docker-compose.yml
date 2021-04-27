@@ -74,7 +74,7 @@ services:
       - TRAEFIK_SIMCORE_ZONE=${TRAEFIK_SIMCORE_ZONE:-internal_simcore_stack}
       - LOGLEVEL=${LOG_LEVEL:-WARNING}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
-      - SERVICE_SIDECAR_DEV_EXPOSE_SERVICE_SIDECAR=true
+      - DYNAMIC_SIDECAR_DEV_EXPOSE_DYNAMIC_SIDECAR=true
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
     deploy:
