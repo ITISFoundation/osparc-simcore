@@ -88,7 +88,7 @@ jsonschema==3.2.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-schema-validator
     #   openapi-spec-validator
-lazy-object-proxy==1.4.4
+lazy-object-proxy==1.4.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-core

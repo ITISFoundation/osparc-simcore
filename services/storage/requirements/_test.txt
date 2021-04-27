@@ -81,7 +81,7 @@ jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
-lazy-object-proxy==1.4.4
+lazy-object-proxy==1.4.3
     # via
     #   -c requirements/_base.txt
     #   astroid
