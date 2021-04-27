@@ -29,6 +29,8 @@ async-timeout==3.0.1
     # via
     #   aiohttp
     #   aiopg
+asyncio-extras==1.3.2
+    # via -r requirements/_base.in
 attrs==20.3.0
     # via aiohttp
 billiard==3.6.3.0
