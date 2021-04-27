@@ -14,6 +14,8 @@ import pytest
 import simcore_service_storage.meta
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_project import clone_project_data
 from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.app_handlers import HealthCheck
 from simcore_service_storage.db import setup_db
@@ -22,8 +24,6 @@ from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.rest import setup_rest
 from simcore_service_storage.s3 import setup_s3
 from simcore_service_storage.settings import APP_CONFIG_KEY, SIMCORE_S3_ID
-from tests.helpers.utils_assert import assert_status
-from tests.helpers.utils_project import clone_project_data
 from tests.utils import BUCKET_NAME, USER_ID, get_project_with_data, has_datcore_tokens
 
 
