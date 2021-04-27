@@ -43,14 +43,14 @@ def assemble_service_name(
     )
 
 
-async def get_service_sidecar_stack_status(
+async def get_dynamic_sidecar_stack_status(
     app: web.Application, node_uuid: str
 ) -> Dict[str, Any]:
     monitor = get_monitor(app)
     return await monitor.get_stack_status(node_uuid)
 
 
-async def stop_service_sidecar_stack_for_service(
+async def stop_dynamic_sidecar_stack_for_service(
     app: web.Application, node_uuid: str
 ) -> None:
     """will trigger actions needed to stop the service: removal from monitoring"""
@@ -64,7 +64,7 @@ def _extract_service_port_from_compose_start_spec(
     return create_service_params["labels"]["service_port"]
 
 
-async def start_service_sidecar_stack_for_service(  # pylint: disable=too-many-arguments
+async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-arguments
     app: web.Application,
     user_id: str,
     project_id: str,

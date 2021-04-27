@@ -101,7 +101,7 @@ async def _request_director_v2(
 
 
 # pylint: disable=too-many-arguments
-async def start_service_sidecar_stack(
+async def start_dynamic_sidecar_stack(
     app: web.Application,
     user_id: str,
     project_id: str,
@@ -142,7 +142,7 @@ async def start_service_sidecar_stack(
     return result
 
 
-async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
+async def stop_dynamic_sidecar_stack(app: web.Application, node_uuid: str):
     director2_settings: Directorv2Settings = _get_settings(app)
 
     url = URL(f"{director2_settings.endpoint}/dynamic_services/{node_uuid}:stop")
@@ -160,7 +160,7 @@ async def stop_service_sidecar_stack(app: web.Application, node_uuid: str):
         log.error("Could not stop dynamic-sidecar stack for node_uuid=%s", node_uuid)
 
 
-async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str):
+async def get_dynamic_sidecar_stack_status(app: web.Application, node_uuid: str):
     director2_settings: Directorv2Settings = _get_settings(app)
 
     url = URL(f"{director2_settings.endpoint}/dynamic_services/{node_uuid}:status")
@@ -184,6 +184,6 @@ async def get_service_sidecar_stack_status(app: web.Application, node_uuid: str)
 
 __all__ = [
     "setup_director_v2",
-    "start_service_sidecar_stack",
-    "stop_service_sidecar_stack",
+    "start_dynamic_sidecar_stack",
+    "stop_dynamic_sidecar_stack",
 ]

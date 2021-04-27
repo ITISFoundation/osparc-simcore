@@ -16,12 +16,12 @@ from ..dependencies.dynamic_services import (
 )
 
 from simcore_service_director_v2.modules.service_sidecar.entrypoint import (
-    start_service_sidecar_stack_for_service,
-    get_service_sidecar_stack_status,
-    stop_service_sidecar_stack_for_service,
+    start_dynamic_sidecar_stack_for_service,
+    get_dynamic_sidecar_stack_status,
+    stop_dynamic_sidecar_stack_for_service,
 )
 from simcore_service_director_v2.models.domains.dynamic_sidecar import (
-    StartServiceSidecarModel,
+    StartDynamicSidecarModel,
 )
 
 router = APIRouter()
@@ -59,22 +59,22 @@ async def service_retrieve_data_on_ports(
 )
 async def start_dynamic_sidecar(
     node_uuid: str,
-    start_service_sidecar_model: StartServiceSidecarModel,
+    start_dynamic_sidecar_model: StartDynamicSidecarModel,
     request: Request,
 ) -> Dict[str, str]:
-    return await start_service_sidecar_stack_for_service(
+    return await start_dynamic_sidecar_stack_for_service(
         app=request.app,
-        user_id=start_service_sidecar_model.user_id,
-        project_id=start_service_sidecar_model.project_id,
-        service_key=start_service_sidecar_model.service_key,
-        service_tag=start_service_sidecar_model.service_tag,
-        paths_mapping=start_service_sidecar_model.paths_mapping,
-        compose_spec=start_service_sidecar_model.compose_spec,
-        target_container=start_service_sidecar_model.target_container,
+        user_id=start_dynamic_sidecar_model.user_id,
+        project_id=start_dynamic_sidecar_model.project_id,
+        service_key=start_dynamic_sidecar_model.service_key,
+        service_tag=start_dynamic_sidecar_model.service_tag,
+        paths_mapping=start_dynamic_sidecar_model.paths_mapping,
+        compose_spec=start_dynamic_sidecar_model.compose_spec,
+        target_container=start_dynamic_sidecar_model.target_container,
         node_uuid=node_uuid,
-        settings=start_service_sidecar_model.settings,
-        request_scheme=start_service_sidecar_model.request_scheme,
-        request_dns=start_service_sidecar_model.request_dns,
+        settings=start_dynamic_sidecar_model.settings,
+        request_scheme=start_dynamic_sidecar_model.request_scheme,
+        request_dns=start_dynamic_sidecar_model.request_dns,
     )
 
 
@@ -82,7 +82,7 @@ async def start_dynamic_sidecar(
     "/{node_uuid}:status", summary="assembles the status for the dynamic-sidecar"
 )
 async def dynamic_sidecar_status(node_uuid: str, request: Request) -> Dict[str, Any]:
-    return await get_service_sidecar_stack_status(app=request.app, node_uuid=node_uuid)
+    return await get_dynamic_sidecar_stack_status(app=request.app, node_uuid=node_uuid)
 
 
 @router.post(
@@ -91,5 +91,5 @@ async def dynamic_sidecar_status(node_uuid: str, request: Request) -> Dict[str, 
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_sidecar(node_uuid: str, request: Request) -> Dict[str, str]:
-    await stop_service_sidecar_stack_for_service(app=request.app, node_uuid=node_uuid)
+    await stop_dynamic_sidecar_stack_for_service(app=request.app, node_uuid=node_uuid)
     return Response(status_code=HTTP_204_NO_CONTENT)

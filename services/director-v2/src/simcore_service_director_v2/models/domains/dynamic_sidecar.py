@@ -23,7 +23,7 @@ class PathsMappingModel(BaseModel):
         return [] if v is None else v
 
 
-class StartServiceSidecarModel(BaseModel):
+class StartDynamicSidecarModel(BaseModel):
     user_id: str
     project_id: str
     service_key: str

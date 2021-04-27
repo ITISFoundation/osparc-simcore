@@ -23,9 +23,9 @@ from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 from .utils import get_swarm_network
 from .directorv2_proxy import (
-    start_service_sidecar_stack,
-    stop_service_sidecar_stack,
-    get_service_sidecar_stack_status,
+    start_dynamic_sidecar_stack,
+    stop_dynamic_sidecar_stack,
+    get_dynamic_sidecar_stack_status,
 )
 
 log = logging.getLogger(__name__)
@@ -1030,7 +1030,7 @@ async def _start_docker_service_with_dynamic_service(
     settings = _strip_compose_destination_container_from_settings_entries(settings)
 
     # calls into director-v2 to start
-    proxy_service_create_results = await start_service_sidecar_stack(
+    proxy_service_create_results = await start_dynamic_sidecar_stack(
         app=app,
         user_id=user_id,
         project_id=project_id,
@@ -1060,7 +1060,7 @@ async def _create_node(
     node_base_path: str,
     request_scheme: str,
     request_dns: str,
-    boot_as_service_sidecar: bool,
+    boot_as_dynamic_sidecar: bool,
 ) -> List[Dict]:  # pylint: disable=R0913, R0915
     log.debug(
         "Creating %s docker services for node %s and base path %s for user %s",
@@ -1073,7 +1073,7 @@ async def _create_node(
 
     # if the service uses several docker images, a network needs to be setup to connect them together
     inter_docker_network_id = None
-    if len(list_of_services) > 1 and not boot_as_service_sidecar:
+    if len(list_of_services) > 1 and not boot_as_dynamic_sidecar:
         service_name = registry_proxy.get_service_first_name(list_of_services[0]["key"])
         inter_docker_network_id = await _create_overlay_network_in_swarm(
             client, service_name, node_uuid
@@ -1088,7 +1088,7 @@ async def _create_node(
         # dynamic-sidecar. If inside the labels "simcore.service.boot-mode" is presend and is equal to
         # "dynamic-sidecar", the dynamic sidecar will be used in place of the current system
 
-        if boot_as_service_sidecar:
+        if boot_as_dynamic_sidecar:
             service_meta_data = await _start_docker_service_with_dynamic_service(
                 app=app,
                 client=client,
@@ -1115,7 +1115,7 @@ async def _create_node(
 
         log.debug(
             "Result of service start is_dynamic_sidecar=%s %s",
-            boot_as_service_sidecar,
+            boot_as_dynamic_sidecar,
             service_meta_data,
         )
         containers_meta_data.append(service_meta_data)
@@ -1142,7 +1142,7 @@ async def _get_service_basepath_from_docker_service(service: Dict) -> str:
     return envs_dict["SIMCORE_NODE_BASEPATH"]
 
 
-async def _boot_as_service_sidecar(
+async def _boot_as_dynamic_sidecar(
     app: web.Application, service_key: str, service_tag: str
 ) -> bool:
     image_labels = await registry_proxy.get_image_labels(
@@ -1182,10 +1182,10 @@ async def start_service(
         list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
         log.debug("Found service dependencies: %s", list_of_dependencies)
 
-        boot_as_service_sidecar = await _boot_as_service_sidecar(
+        boot_as_dynamic_sidecar = await _boot_as_dynamic_sidecar(
             app=app, service_key=service_key, service_tag=service_tag
         )
-        if list_of_dependencies and not boot_as_service_sidecar:
+        if list_of_dependencies and not boot_as_dynamic_sidecar:
             list_of_services_to_start.extend(list_of_dependencies)
 
         containers_meta_data = await _create_node(
@@ -1198,7 +1198,7 @@ async def start_service(
             node_base_path,
             request_scheme,
             request_dns,
-            boot_as_service_sidecar,
+            boot_as_dynamic_sidecar,
         )
         node_details = containers_meta_data[0]
         if config.MONITORING_ENABLED:
@@ -1268,7 +1268,7 @@ async def _compute_dynamic_sidecar_node_details(
     app: web.Application, node_uuid: str
 ) -> Dict[str, Union[str, int]]:
     # pull all the details from the dynamic-sidecar via an API call and pass it forward
-    status_result = await get_service_sidecar_stack_status(app=app, node_uuid=node_uuid)
+    status_result = await get_dynamic_sidecar_stack_status(app=app, node_uuid=node_uuid)
     if status_result is None:
         raise exceptions.DirectorException(
             f"Error while retriving status from dynamic-sidecar for node {node_uuid}"
@@ -1461,7 +1461,7 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
             log.debug("removing services...")
             for service in list_running_services_with_uuid:
                 # calls into director-v2 to stop
-                await stop_service_sidecar_stack(app=app, node_uuid=node_uuid)
+                await stop_dynamic_sidecar_stack(app=app, node_uuid=node_uuid)
                 await client.services.delete(service["Spec"]["Name"])
             log.debug("removed services, now removing network...")
         except aiodocker.exceptions.DockerError as err:
