@@ -25,8 +25,8 @@ from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 from tests.utils import DATA_DIR
+import tests.utils
 
-import tests
 
 pytest_plugins = [
     "pytest_simcore.cli_runner",
