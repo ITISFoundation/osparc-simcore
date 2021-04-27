@@ -8,7 +8,7 @@ from minio.error import ResponseError
 log = logging.getLogger(__name__)
 
 
-class S3Client:
+class MinioClientWrapper:
     """Wrapper around minio"""
 
     def __init__(

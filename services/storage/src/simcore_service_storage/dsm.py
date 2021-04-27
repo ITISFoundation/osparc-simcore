@@ -43,7 +43,7 @@ from .models import (
     projects,
 )
 from .s3 import get_config_s3
-from .s3wrapper.s3_client import S3Client
+from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
@@ -141,7 +141,7 @@ class DataStorageManager:
         https://docs.minio.io/docs/minio-bucket-notification-guide.html
     """
 
-    s3_client: S3Client
+    s3_client: MinioClientWrapper
     engine: Engine
     loop: object
     pool: ThreadPoolExecutor

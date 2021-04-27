@@ -11,7 +11,7 @@ from datetime import timedelta
 
 import pytest
 import requests
-from simcore_service_storage.s3wrapper.s3_client import S3Client
+from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 
 
 def is_responsive(url, code=200):
@@ -49,7 +49,7 @@ def s3_client(docker_ip, docker_services):
     endpoint = "{ip}:{port}".format(
         ip=docker_ip, port=docker_services.port_for("minio", 9000)
     )
-    s3_client = S3Client(
+    s3_client = MinioClientWrapper(
         endpoint, access_key="12345678", secret_key="12345678", secure=False
     )
     return s3_client
