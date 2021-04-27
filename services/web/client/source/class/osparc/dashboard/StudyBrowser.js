@@ -180,6 +180,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       userStudyContainer.add(newStudyButton);
 
       const loadingStudiesBtn = this._loadingStudiesBtn = new osparc.dashboard.StudyBrowserButtonLoadMore();
+      osparc.utils.Utils.setIdToWidget(loadingStudiesBtn, "studiesLoading");
       userStudyContainer.add(loadingStudiesBtn);
 
       osparc.utils.Utils.setIdToWidget(userStudyContainer, "userStudiesList");
