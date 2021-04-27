@@ -118,6 +118,6 @@ def fill_tables_from_csv_files(url):
 
 
 def get_project_with_data() -> List[Dict[str, Any]]:
-    projects = json.loads((DATA_DIR / "projects_with_data.json").read_text())
+    prj = json.loads((DATA_DIR / "projects_with_data.json").read_text())
     # TODO: add schema validation
-    return projects
+    return prj
