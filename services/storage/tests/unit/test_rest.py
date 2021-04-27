@@ -2,9 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import json
 import os
-import sys
 from asyncio import Future
 from pathlib import Path
 from typing import Any, Dict
@@ -15,7 +13,7 @@ import simcore_service_storage.meta
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_project import clone_project_data
+from pytest_simcore.helpers.utils_projects import clone_project_data
 from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.app_handlers import HealthCheck
 from simcore_service_storage.db import setup_db

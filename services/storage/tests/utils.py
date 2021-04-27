@@ -22,13 +22,6 @@ from simcore_service_storage.models import (
 log = logging.getLogger(__name__)
 
 
-DATABASE = "aio_login_tests"
-USER = "admin"
-PASS = "admin"
-
-ACCESS_KEY = "12345678"
-SECRET_KEY = "12345678"
-
 BUCKET_NAME = "simcore-testing-bucket"
 USER_ID = "0"
 

@@ -1,11 +1,12 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import os
 import tempfile
 from pathlib import Path
 
 import pytest
-import tests.utils
-
-# from blackfynn import Blackfynn
 from blackfynn.models import Collection
 from simcore_service_storage.datcore import DatcoreClient
 
@@ -15,8 +16,8 @@ pytestmark = pytest.mark.skip(
 
 
 def test_all(patch_env_devel_environment, tmp_path: Path):
-    api_token = os.environ.get("BF_API_KEY")
-    api_secret = os.environ.get("BF_API_SECRET")
+    api_token = os.environ["BF_API_KEY"]
+    api_secret = os.environ["BF_API_SECRET"]
 
     client = DatcoreClient(api_token=api_token, api_secret=api_secret)
     destination = str(Path("MaG/level1/level2"))

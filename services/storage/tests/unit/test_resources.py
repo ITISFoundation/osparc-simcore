@@ -7,8 +7,6 @@ import logging
 import pathlib
 
 import pytest
-
-# under test
 from simcore_service_storage.resources import resources
 from simcore_service_storage.settings import RSC_CONFIG_DIR_KEY
 
@@ -25,9 +23,6 @@ def app_resources(package_dir):
         ]
 
     return resource_names
-
-
-# ------------------------------------------------------------------------------
 
 
 def test_resource_io_utils(app_resources):

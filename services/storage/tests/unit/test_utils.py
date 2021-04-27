@@ -1,12 +1,16 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 from pathlib import Path
 
 from aiohttp import ClientSession
 from simcore_service_storage.utils import MAX_CHUNK_SIZE, download_to_file_or_raise
 
 
-async def test_download_files(tmpdir):
+async def test_download_files(tmp_path: Path):
 
-    destination = Path(tmpdir) / "data"
+    destination = tmp_path / "data"
     expected_size = MAX_CHUNK_SIZE * 3 + 1000
 
     async with ClientSession() as session:
