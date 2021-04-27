@@ -12,7 +12,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Any, Dict, Iterator, Tuple
+from typing import Callable, Dict, Iterator, Tuple
 
 import dotenv
 import pytest
@@ -195,7 +195,7 @@ def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
 
 
 @pytest.fixture(scope="function")
-def mock_files_factory(tmpdir_factory):
+def mock_files_factory(tmpdir_factory) -> Callable:
     def _create_files(count):
         filepaths = []
         for _i in range(count):
@@ -210,6 +210,14 @@ def mock_files_factory(tmpdir_factory):
         return filepaths
 
     return _create_files
+
+
+@pytest.fixture(scope="function")
+def fake_file(mock_files_factory: Callable) -> Path:
+    """ Creates fake file and returns path """
+    file_path = mock_files_factory(count=1)[0]
+    assert file_path.exits()
+    return file_path
 
 
 @pytest.fixture(scope="function")
