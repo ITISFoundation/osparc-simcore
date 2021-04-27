@@ -57,13 +57,8 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def expected_python_version_callable() -> Callable:
-    def factory(dockerfile=None):
-        if dockerfile is not None and "service-sidecar" in str(dockerfile):
-            return (3, 8)
-        return (3, 6)
-
-    return factory
+def expected_python_version() -> Tuple[int, int]:
+    return (3, 6)
 
 
 @pytest.fixture(scope="session")
@@ -103,10 +98,9 @@ def python_in_dockerfiles(osparc_simcore_root_dir: Path) -> List[Tuple[Path, str
 
 
 def test_all_image_use_same_python_version(
-    python_in_dockerfiles, expected_python_version_callable
+    python_in_dockerfiles, expected_python_version
 ):
     for dockerfile, python_version in python_in_dockerfiles:
-        expected_python_version = expected_python_version_callable(dockerfile)
         current_version, expected_version = make_versions_comparable(
             python_version, expected_python_version
         )
@@ -115,8 +109,7 @@ def test_all_image_use_same_python_version(
         ), f"Expected python {expected_python_version} in {dockerfile}, got {python_version}"
 
 
-def test_running_python_version(expected_python_version_callable):
-    expected_python_version = expected_python_version_callable()
+def test_running_python_version(expected_python_version):
     current_version, expected_version = make_versions_comparable(
         sys.version_info, expected_python_version
     )
