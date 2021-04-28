@@ -31,6 +31,7 @@ from tests.utils import DATA_DIR
 pytest_plugins = [
     "tests.fixtures.data_models",
     "pytest_simcore.repository_paths",
+    "pytest_simcore.monkeypatch_extra",
 ]
 
 
@@ -67,11 +68,11 @@ def project_env_devel_dict(project_slug_dir: Path) -> Dict:
     return environ
 
 
-@pytest.fixture(scope="function")
-def patch_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
+@pytest.fixture(scope="session")
+def patch_env_devel_environment(project_env_devel_dict, monkeypatch_session) -> None:
     """Patches environment variable with project_slug_dir/.env-devel"""
     for key, value in project_env_devel_dict.items():
-        monkeypatch.setenv(key, value)
+        monkeypatch_session.setenv(key, value)
 
 
 @pytest.fixture(scope="session")
@@ -83,8 +84,8 @@ def docker_compose_file(
     assert os.environ["POSTGRES_DB"]
     assert os.environ["POSTGRES_USER"]
     assert os.environ["POSTGRES_PASSWORD"]
-    assert os.environ["MINIO_ACCESS_KEY"]
-    assert os.environ["MINIO_SECRET_KEY"]
+    assert os.environ["S3_ACCESS_KEY"]
+    assert os.environ["S3_SECRET_KEY"]
 
     dc_path = project_tests_dir / "docker-compose.yml"
     assert dc_path.exists()
@@ -159,7 +160,7 @@ def minio_service(docker_services, docker_ip, project_env_devel_dict):
     # Build URL to service listening on random port.
     host = docker_ip
     port = docker_services.port_for("minio", 9000)
-    url = "http://{host}:{port}/"
+    url = f"http://{host}:{port}/"
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
