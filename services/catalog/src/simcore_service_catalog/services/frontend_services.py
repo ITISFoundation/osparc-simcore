@@ -60,11 +60,11 @@ def create_data_source_service() -> ServiceDockerData:
         contact="maiz@itis.swiss",
         inputs={},
         outputs={
-            "out_1": {
+            "out_01": {
                 "displayOrder": 0,
-                "label": "List",
-                "description": "List of Parameters",
-                "type": "data:*/*",
+                "label": "List of Numbers",
+                "description": "List of Numbers",
+                "type": "number",
             }
         },
     )
