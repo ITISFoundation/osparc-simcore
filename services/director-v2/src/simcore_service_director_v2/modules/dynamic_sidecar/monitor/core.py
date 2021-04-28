@@ -65,7 +65,6 @@ async def apply_monitoring(
             output_monitor_data = await query_service(app, input_monitor_data)
     except asyncio.TimeoutError:
         output_monitor_data.dynamic_sidecar.is_available = False
-        # TODO: maybe push this into the health API to monitor degradation of the services
 
     for handler in REGISTERED_HANDLERS:
         # the handler will apply changes to the output_monitor_data
@@ -175,7 +174,7 @@ class DynamicSidecarsMonitor:
             # the environment seems to be the best approach :\
             current: LockWithMonitorData = self._to_monitor[service_name]
             dynamic_sidecar_endpoint = current.monitor_data.dynamic_sidecar.endpoint
-            await services_sidecar_client.remove_docker_compose_spec(
+            await services_sidecar_client.run_docker_compose_down(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
             )
 
