@@ -49,12 +49,33 @@ def create_node_group_service() -> ServiceDockerData:
     )
 
 
+def create_data_source_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-source",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Data Source",
+        description="Data Source",
+        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
+        contact="maiz@itis.swiss",
+        inputs={},
+        outputs={
+            "out_1": {
+                "displayOrder": 0,
+                "label": "List",
+                "description": "List of Parameters",
+                "type": "data:*/*",
+            }
+        },
+    )
+
+
 def is_frontend_service(service_key) -> bool:
     return service_key.startswith(FRONTEND_SERVICE_KEY_PREFIX + "/")
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for factory in [create_file_picker_service, create_node_group_service]:
+    for factory in [create_file_picker_service, create_node_group_service, create_data_source_service]:
         model_instance = factory()
         yield model_instance
 
