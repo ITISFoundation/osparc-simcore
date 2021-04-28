@@ -47,7 +47,7 @@ RESPONSE_MODEL_POLICY = {
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
 @cancellable_request
 async def list_services(
-    request: Request,
+    request: Request,  # pylint:disable=unused-argument
     user_id: PositiveInt,
     details: Optional[bool] = True,
     director_client: DirectorApi = Depends(get_director_api),
