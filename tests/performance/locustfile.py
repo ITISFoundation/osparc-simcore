@@ -2,10 +2,19 @@
 # SEE https://docs.locust.io/en/stable/quickstart.html
 #
 
+import logging
+import os
+
 import faker
+from dotenv import load_dotenv
 from locust import HttpUser, between, task
 
+logging.basicConfig(level=logging.INFO)
+
 fake = faker.Faker()
+
+load_dotenv()  # take environment variables from .env
+logging.info("TEMPLATE_PROJECT_ID = %s", os.environ["TEMPLATE_PROJECT_ID"])
 
 
 class WebApiUser(HttpUser):
@@ -29,10 +38,10 @@ class WebApiUser(HttpUser):
 
         # WARNING: this template needs to be created and shared with everybody
         self.client.post(
-            "/v0/projects?from_template=8b6fa65c-a830-11eb-a370-02420a000012",
+            f"/v0/projects?from_template={os.environ['TEMPLATE_PROJECT_ID']}",
             json={
                 "uuid": "",
-                "name": f"TEST {self.count}",
+                "name": f"TEST #{self.count}",
                 "description": f"{__name__}-{self.email}",
                 "prjOwner": self.email,
                 "accessRights": {},
