@@ -14,6 +14,7 @@ from models_library.services import (
 )
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
+from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
@@ -23,6 +24,7 @@ from ...services.frontend_services import (
     is_frontend_service,
     list_frontend_services,
 )
+from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
 
@@ -43,7 +45,9 @@ RESPONSE_MODEL_POLICY = {
 
 
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
+@cancellable_request
 async def list_services(
+    request: Request,
     user_id: PositiveInt,
     details: Optional[bool] = True,
     director_client: DirectorApi = Depends(get_director_api),
@@ -52,7 +56,6 @@ async def list_services(
     x_simcore_products_name: str = Header(...),
 ):
     # FIXME: too many DB calls
-
     # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
