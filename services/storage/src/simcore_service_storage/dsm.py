@@ -78,7 +78,6 @@ def setup_dsm(app: web.Application):
             simcore_bucket_name=s3_cfg["bucket_name"],
             has_project_db=not main_cfg.get("testing", False),
             app=app,
-            session=aiobotocore.get_session(),
         )  # type: ignore
 
         app[APP_DSM_KEY] = dsm
@@ -146,12 +145,11 @@ class DataStorageManager:
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
-    session: AioSession
-
-    app: Optional[web.Application] = None
-
+    session: AioSession = attr.Factory(aiobotocore.get_session)
     datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
+
+    app: Optional[web.Application] = None
 
     def _create_client_context(self) -> ClientCreatorContext:
         return self.session.create_client(
