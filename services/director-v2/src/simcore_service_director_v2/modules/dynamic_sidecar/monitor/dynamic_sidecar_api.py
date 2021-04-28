@@ -162,7 +162,7 @@ def get_api_client(app: Application) -> DynamicSidecarClient:
     return app.state.dynamic_sidecar_api_client
 
 
-async def query_service(
+async def update_dynamic_sidecar_health(
     app: Application, input_monitor_data: MonitorData
 ) -> MonitorData:
     # make a copy of the original

@@ -27,7 +27,11 @@ from .models import (
     MonitorData,
     DynamicSidecarStatus,
 )
-from .dynamic_sidecar_api import query_service, get_api_client, DynamicSidecarClient
+from .dynamic_sidecar_api import (
+    update_dynamic_sidecar_health,
+    get_api_client,
+    DynamicSidecarClient,
+)
 from .utils import AsyncResourceLock
 from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
@@ -62,7 +66,9 @@ async def apply_monitoring(
 
     try:
         with timeout(dynamic_sidecar_settings.max_status_api_duration):
-            output_monitor_data = await query_service(app, input_monitor_data)
+            output_monitor_data = await update_dynamic_sidecar_health(
+                app, input_monitor_data
+            )
     except asyncio.TimeoutError:
         output_monitor_data.dynamic_sidecar.is_available = False
 
