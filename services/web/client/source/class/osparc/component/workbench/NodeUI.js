@@ -177,9 +177,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       if (node.isDataSource()) {
         this.set({
-          width: this.self().NODE_WIDTH - 60,
-          maxWidth: this.self().NODE_WIDTH - 60,
-          minWidth: this.self().NODE_WIDTH - 60
+          width: this.self().NODE_WIDTH - 50,
+          maxWidth: this.self().NODE_WIDTH - 50,
+          minWidth: this.self().NODE_WIDTH - 50
         });
       }
 
