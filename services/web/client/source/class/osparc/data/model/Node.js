@@ -49,7 +49,7 @@ qx.Class.define("osparc.data.model.Node", {
   construct: function(key, version, uuid) {
     this.base(arguments);
 
-    this.__metaData = {};
+    this._metaData = {};
     this.__innerNodes = {};
     this.__inputs = {};
     this.__inputsDefault = {};
@@ -65,7 +65,7 @@ qx.Class.define("osparc.data.model.Node", {
       status: new osparc.data.model.NodeStatus()
     });
 
-    const metaData = this.__metaData = osparc.utils.Services.getMetaData(key, version);
+    const metaData = this._metaData = osparc.utils.Services.getMetaData(key, version);
     if (metaData) {
       if (metaData.name) {
         this.setLabel(metaData.name);
@@ -214,7 +214,7 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   members: {
-    __metaData: null,
+    _metaData: null,
     __innerNodes: null,
     __inputNodes: null,
     __outputNodes: null,
@@ -262,7 +262,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getMetaData: function() {
-      return this.__metaData;
+      return this._metaData;
     },
 
     getInputValues: function() {
