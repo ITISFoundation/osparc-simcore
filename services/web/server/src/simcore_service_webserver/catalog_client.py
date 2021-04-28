@@ -1,6 +1,7 @@
 """ Requests to catalog service API
 
 """
+import asyncio
 import logging
 import urllib.parse
 from typing import Any, Dict, List, Optional
@@ -72,7 +73,9 @@ async def make_request_and_envelope_response(
 
     try:
 
-        async with session.request(method, url, headers=headers, data=data) as resp:
+        async with session.request(
+            method, url, headers=headers, data=data, timeout=ClientTimeout(total=0.01)
+        ) as resp:
             payload = await resp.json()
 
             try:
@@ -86,7 +89,7 @@ async def make_request_and_envelope_response(
 
             return web.json_response(resp_data, status=resp.status)
 
-    except (TimeoutError, ClientConnectionError, ClientResponseError) as err:
+    except (asyncio.TimeoutError, ClientConnectionError, ClientResponseError) as err:
         logger.warning(
             "Catalog service errors upon request %s %s: %s", method, url.relative(), err
         )
@@ -107,14 +110,23 @@ async def get_services_for_user_in_product(
         .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
     )
     session = get_client_session(app)
-    async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
-        if resp.status >= 400:
-            logger.warning(
-                "Error while retrieving services for user %s. Returning an empty list",
-                user_id,
-            )
-            return []
-        return await resp.json()
+    try:
+        async with session.get(
+            url,
+            headers={X_PRODUCT_NAME_HEADER: product_name},
+        ) as resp:
+            if resp.status >= 400:
+                logger.warning(
+                    "Error while retrieving services for user %s. Returning an empty list",
+                    user_id,
+                )
+                return []
+            return await resp.json()
+    except asyncio.TimeoutError as err:
+        logger.warning("Catalog service connection timeout error")
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable"
+        ) from err
 
 
 async def get_service(
@@ -137,9 +149,17 @@ async def get_service(
         )
     )
     session = get_client_session(app)
-    async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
-        resp.raise_for_status()  # FIXME: error handling for session and response exceptions
-        return await resp.json()
+    try:
+        async with session.get(
+            url, headers={X_PRODUCT_NAME_HEADER: product_name}
+        ) as resp:
+            resp.raise_for_status()  # FIXME: error handling for session and response exceptions
+            return await resp.json()
+    except asyncio.TimeoutError as err:
+        logger.warning("Catalog service connection timeout error")
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable"
+        ) from err
 
 
 async def update_service(
@@ -163,8 +183,14 @@ async def update_service(
         )
     )
     session = get_client_session(app)
-    async with session.patch(
-        url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
-    ) as resp:
-        resp.raise_for_status()  # FIXME: error handling for session and response exceptions
-        return await resp.json()
+    try:
+        async with session.patch(
+            url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
+        ) as resp:
+            resp.raise_for_status()  # FIXME: error handling for session and response exceptions
+            return await resp.json()
+    except asyncio.TimeoutError as err:
+        logger.warning("Catalog service connection timeout error")
+        raise web.HTTPServiceUnavailable(
+            reason="catalog is currently unavailable"
+        ) from err
