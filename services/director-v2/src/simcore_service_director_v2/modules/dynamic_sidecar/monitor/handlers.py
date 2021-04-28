@@ -87,7 +87,7 @@ class RunDockerComposeUp(BaseEventHandler):
             )
             return
 
-        compose_spec_was_applied = await api_client.start_or_update_compose_spec(
+        compose_spec_was_applied = await api_client.run_docker_compose_up(
             dynamic_sidecar_endpoint
         )
 
