@@ -51,17 +51,62 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
       this.base(arguments, node);
     },
 
+    __createTypeBox: function(selection) {
+      const dataTypes = [
+        "integer",
+        "number",
+        "boolean",
+        "string",
+        "data"
+      ];
+
+      const dataTypesBox = new qx.ui.form.SelectBox();
+      dataTypes.forEach(dataType => {
+        const dataTypeItem = new qx.ui.form.ListItem(qx.lang.String.firstUp(dataType));
+        dataTypeItem.dataType = dataType;
+        dataTypesBox.add(dataTypeItem);
+
+        if (selection && selection.includes(dataTypeItem.dataType)) {
+          dataTypesBox.setSelection([dataTypeItem]);
+          dataTypesBox.setEnabled(false);
+        }
+      });
+      return dataTypesBox;
+    },
+
     __buildMyLayout: function() {
       const node = this.getNode();
       if (!node) {
         return;
       }
 
-      const label = new qx.ui.basic.Label("Hey");
+      const info = new qx.ui.basic.Label("Add the item to a list that will be iterated");
+      this._mainView.add(info);
 
-      this._mainView.add(label, {
-        flex: 1
+      const currentOutputs = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this._mainView.add(currentOutputs);
+      Object.values(node.getOutputs()).forEach(output => {
+        const outputEntry = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+        const key = new qx.ui.basic.Label(output["keyId"]);
+        outputEntry.add(key);
+
+        const label = new qx.ui.basic.Label(output["label"]);
+        outputEntry.add(label);
+
+        const dataTypesBox = this.__createTypeBox(output["type"]);
+        outputEntry.add(dataTypesBox);
+
+        currentOutputs.add(outputEntry);
       });
+
+      const addNewBtn = new qx.ui.form.Button().set({
+        allowGrowX: false,
+        allowGrowY: false,
+        label: this.tr("Add new"),
+        icon: "@FontAwesome5Solid/plus/14"
+      });
+      this._mainView.add(addNewBtn);
     }
   }
 });
