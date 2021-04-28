@@ -289,48 +289,13 @@ qx.Class.define("osparc.store.Store", {
       });
     },
 
-    getDataSource: function() {
-      if (osparc.data.Permissions.getInstance().isTester()) {
-        return {
-          key: "simcore/services/frontend/data-source",
-          version: "1.0.0",
-          type: "frontend",
-          name: "Data Source",
-          description: "Data Source",
-          "access_rights": {
-            "1": {
-              "execute_access": true,
-              "write_access": false
-            }
-          },
-          authors: [{
-            "name": "Odei Maiz",
-            "email": "maiz@itis.swiss"
-          }],
-          contact: "maiz@itis.swiss",
-          inputs: {},
-          outputs: {
-            "out_1": {
-              "displayOrder": 0,
-              "label": "List",
-              "description": "List of parameters",
-              "type": "data:*/*"
-            }
-          }
-        };
-      }
-      return {};
-    },
-
     /**
      * This functions does the needed processing in order to have a working list of services and DAGs.
      * @param {Boolean} reload
      */
     getServicesDAGs: function(reload = false) {
       return new Promise((resolve, reject) => {
-        const allServices = [
-          // this.getDataSource()
-        ];
+        const allServices = [];
         const servicesPromise = osparc.data.Resources.get("services", null, !reload);
         const dagsPromise = osparc.data.Resources.get("dags", null, !reload);
         Promise.all([servicesPromise, dagsPromise])
