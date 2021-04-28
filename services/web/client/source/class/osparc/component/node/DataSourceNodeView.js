@@ -23,8 +23,6 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
   extend: osparc.component.node.BaseNodeView,
 
   members: {
-    __filePicker: null,
-
     // overridden
     isSettingsGroupShowable: function() {
       return false;
