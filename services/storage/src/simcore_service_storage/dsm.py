@@ -65,26 +65,28 @@ postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).
 def setup_dsm(app: web.Application):
     async def _cleanup_context(app: web.Application):
         main_cfg = app[APP_CONFIG_KEY]
-        max_workers = main_cfg["max_workers"]
-
-        pool = ThreadPoolExecutor(max_workers=max_workers)
         s3_cfg = get_config_s3(app)
 
-        dsm = DataStorageManager(
-            s3_client=app.get(APP_S3_KEY),
-            engine=app.get(APP_DB_ENGINE_KEY),
-            loop=asyncio.get_event_loop(),
-            pool=pool,
-            simcore_bucket_name=s3_cfg["bucket_name"],
-            has_project_db=not main_cfg.get("testing", False),
-            app=app,
-        )  # type: ignore
+        with ThreadPoolExecutor(max_workers=main_cfg["max_workers"]) as executor:
+            dsm = DataStorageManager(
+                s3_client=app.get(APP_S3_KEY),
+                engine=app.get(APP_DB_ENGINE_KEY),
+                loop=asyncio.get_event_loop(),
+                pool=executor,
+                simcore_bucket_name=s3_cfg["bucket_name"],
+                has_project_db=not main_cfg.get("testing", False),
+                app=app,
+            )  # type: ignore
 
-        app[APP_DSM_KEY] = dsm
+            app[APP_DSM_KEY] = dsm
 
-        yield
+            yield
 
-        # FIXME: stop ThreadPoolExecutor??
+            assert app[APP_DSM_KEY].pool is executor  # nosec
+
+            logger.info("Shuting down %s", dsm.pool)
+
+    # ------
 
     app.cleanup_ctx.append(_cleanup_context)
 
@@ -139,6 +141,8 @@ class DataStorageManager:
         https://docs.minio.io/docs/minio-bucket-notification-guide.html
     """
 
+    # TODO: perhaps can be used a cache? add a lifetime?
+
     s3_client: MinioClientWrapper
     engine: Engine
     loop: object
@@ -147,11 +151,11 @@ class DataStorageManager:
     has_project_db: bool
     session: AioSession = attr.Factory(aiobotocore.get_session)
     datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
-    # TODO: perhaps can be used a cache? add a lifetime?
-
     app: Optional[web.Application] = None
 
     def _create_client_context(self) -> ClientCreatorContext:
+        assert hasattr(self.session, "create_client")
+        # pylint: disable=no-member
         return self.session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -795,16 +799,16 @@ class DataStorageManager:
                 source = output["path"]
 
                 if output.get("store") == DATCORE_ID:
-                    destination = str(Path(dest_folder) / node_id)
+                    destination_folder = str(Path(dest_folder) / node_id)
+                    logger.info("Copying %s to %s", source, destination_folder)
 
-                    logger.info("Copying %s to %s", source, destination)
-                    dest = await self.copy_file_datcore_s3(
+                    destination = await self.copy_file_datcore_s3(
                         user_id=user_id,
-                        dest_uuid=destination,
+                        dest_uuid=destination_folder,
                         source_uuid=source,
                         filename_missing=True,
                     )
-                    assert destination == dest  # nosec
+                    assert destination.startswith(destination_folder)  # nosec
 
                     output["store"] = SIMCORE_S3_ID
                     output["path"] = destination
