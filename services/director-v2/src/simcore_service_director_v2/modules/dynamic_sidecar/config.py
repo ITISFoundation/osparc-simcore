@@ -66,33 +66,6 @@ class DynamicSidecarSettings(BaseSettings):
         ),
     )
 
-    dynamic_sidecar_api_request_docker_compose_pull_timeout: PositiveInt = Field(
-        3600,
-        description=(
-            "when pulling images, before running docker-compose up, there is an 1 hour timeout"
-        ),
-    )
-
-    dynamic_sidecar_api_request_docker_compose_up_timeout: PositiveInt = Field(
-        10,
-        description=(
-            "when running docker-compose up -d if there are errors in the compose spec it can "
-            "happen that the command expects some user input, so this will wait forever. To avoid"
-            "this situation we are adding a timeout. note that if a compose-spec lots of containers "
-            "the current default may not be enough. Also pleasenote that this value has to be "
-            "smaller then dynamic_sidecar_api_request_timeout or the errors may not be consistent"
-        ),
-    )
-
-    dynamic_sidecar_api_request_docker_compose_down_timeout: PositiveInt = Field(
-        15,
-        description=(
-            "used by the dynamic-sidecar when it's shutting down to cleanup all spawned containers; "
-            "if the containers tend to remain in the system increasing this will help with removing "
-            "pending containers spawned by the dynamic-sidecar"
-        ),
-    )
-
     # Trying to resolve docker registry url
     registry_path: str = Field(
         None, description="url to the docker registry", env="REGISTRY_PATH"
