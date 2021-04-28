@@ -32,7 +32,7 @@ class WebApiUser(HttpUser):
     def health_check(self):
         self.client.get("/v0/health")
 
-    @task(weight=2)
+    @task(weight=5)
     def create_project_from_template(self):
         self.count += 1
 
