@@ -85,6 +85,13 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
         this._navNodes.populateButtons(nodeIds, "slash");
+
+        const sweeperBtn = this.getChildControl("sweeper-btn");
+        study.getWorkbench().addListener("nNodesChanged", () => {
+          const allNodes = study.getWorkbench().getNodes(true);
+          const isSweepeable = Object.values(allNodes).some(node => node.isDataSource());
+          sweeperBtn.setEnabled(isSweepeable);
+        }, this);
       }
     },
 
