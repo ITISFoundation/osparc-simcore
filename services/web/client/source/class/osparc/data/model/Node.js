@@ -200,6 +200,10 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
 
+    isDataSource: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("data-source"));
+    },
+
     isDynamic: function(metaData) {
       return (metaData && metaData.type && metaData.type === "dynamic");
     },
@@ -243,6 +247,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isContainer: function() {
       return osparc.data.model.Node.isContainer(this.getMetaData());
+    },
+
+    isDataSource: function() {
+      return osparc.data.model.Node.isDataSource(this.getMetaData());
     },
 
     isDynamic: function() {

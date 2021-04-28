@@ -222,6 +222,10 @@ qx.Class.define("osparc.utils.Services", {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
     },
 
+    getDataSource: function() {
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/data-source");
+    },
+
     __addExtraInfo: function(services) {
       Object.values(services).forEach(serviceWVersion => {
         Object.values(serviceWVersion).forEach(service => {

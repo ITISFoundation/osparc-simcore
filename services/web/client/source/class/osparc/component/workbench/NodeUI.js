@@ -175,6 +175,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
+      if (node.isDataSource()) {
+        this.set({
+          width: this.self().NODE_WIDTH - 60,
+          maxWidth: this.self().NODE_WIDTH - 60,
+          minWidth: this.self().NODE_WIDTH - 60
+        });
+      }
 
       const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
       this.__chipContainer.add(nodeStatus);
