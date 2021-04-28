@@ -4,9 +4,9 @@ services:
     image: postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f
     restart: always
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-aio_login_tests}
-      POSTGRES_USER: ${POSTGRES_USER:-admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:?undefined}
+      POSTGRES_USER: ${POSTGRES_USER:?undefined}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?undefined}
     ports:
       - "5432:5432"
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
@@ -23,8 +23,8 @@ services:
   minio:
     image: minio/minio
     environment:
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-12345678}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-12345678}
+      - MINIO_ACCESS_KEY=${S3_ACCESS_KEY?undefined}
+      - MINIO_SECRET_KEY=${S3_SECRET_KEY?undefined}
     ports:
       - "9001:9000"
     command: server /data
