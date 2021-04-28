@@ -1,3 +1,3 @@
 # installs base + tests requirements
--r test.txt
--r tools.txt
+-r _test.txt
+-r _tools.txt
