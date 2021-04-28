@@ -161,6 +161,14 @@ class DataStorageManager:
             aws_secret_access_key=self.s3_client.secret_key,
         )
 
+    def create_client_context(self):
+        return self.session.create_client(
+            "s3",
+            endpoint_url=self.s3_client.endpoint_url,
+            aws_access_key_id=self.s3_client.access_key,
+            aws_secret_access_key=self.s3_client.secret_key,
+        )
+
     def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
         # pylint: disable=no-member
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
