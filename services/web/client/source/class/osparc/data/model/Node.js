@@ -137,7 +137,7 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      apply: "__repopulateOutputPortData",
+      apply: "__applyOutputs",
       event: "changeOutputs"
     },
 
@@ -460,7 +460,7 @@ qx.Class.define("osparc.data.model.Node", {
         .catch(err => console.error(err));
     },
 
-    __repopulateOutputPortData: function() {
+    __applyOutputs: function() {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
