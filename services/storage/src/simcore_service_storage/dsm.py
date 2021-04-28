@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import aiobotocore
 import attr
 import sqlalchemy as sa
-from aiobotocore.session import AioSession
+from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
@@ -153,7 +153,7 @@ class DataStorageManager:
     datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
     # TODO: perhaps can be used a cache? add a lifetime?
 
-    def create_client_context(self):
+    def _create_client_context(self) -> ClientCreatorContext:
         return self.session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -429,7 +429,7 @@ class DataStorageManager:
         """
         current_iteraction = 0
 
-        async with self.create_client_context() as client:
+        async with self._create_client_context() as client:
             current_iteraction += 1
             continue_loop = True
             sleep_generator = expo()
@@ -752,7 +752,7 @@ class DataStorageManager:
             if new_node_id is not None:
                 uuid_name_dict[new_node_id] = src_node["label"]
 
-        async with self.create_client_context() as client:
+        async with self._create_client_context() as client:
 
             # Step 1: List all objects for this project replace them with the destination object name
             # and do a copy at the same time collect some names
@@ -817,7 +817,7 @@ class DataStorageManager:
                     output["path"] = destination
 
         fmds = []
-        async with self.create_client_context() as client:
+        async with self._create_client_context() as client:
 
             # step 3: list files first to create fmds
             response = await client.list_objects_v2(
@@ -944,7 +944,7 @@ class DataStorageManager:
                 delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
-        async with self.create_client_context() as client:
+        async with self._create_client_context() as client:
             response = await client.list_objects_v2(
                 Bucket=self.simcore_bucket_name,
                 Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
