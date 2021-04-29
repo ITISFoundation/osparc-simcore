@@ -19,7 +19,7 @@
   *
   */
 
-qx.Class.define("osparc.component.node.DataSourceNodeView", {
+qx.Class.define("osparc.component.node.DataIteratorNodeView", {
   extend: osparc.component.node.BaseNodeView,
 
   members: {
@@ -47,20 +47,14 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
 
     // overridden
     _applyNode: function(node) {
-      if (!node.isDataSource()) {
+      if (!node.isDataIterator()) {
         console.error("Only file picker nodes are supported");
       }
       this.base(arguments, node);
     },
 
     __createTypeBox: function(selection) {
-      const dataTypes = [
-        "integer",
-        "number",
-        "boolean",
-        "string",
-        "data"
-      ];
+      const dataTypes = osparc.utils.Services.DATA_ITERATOR_TYPES;
 
       const dataTypesBox = new qx.ui.form.SelectBox();
       dataTypes.forEach(dataType => {

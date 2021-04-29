@@ -200,8 +200,8 @@ qx.Class.define("osparc.data.model.Node", {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
     },
 
-    isDataSource: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("data-source"));
+    isDataIterator: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("data-iterator"));
     },
 
     isDynamic: function(metaData) {
@@ -249,8 +249,8 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isContainer(this.getMetaData());
     },
 
-    isDataSource: function() {
-      return osparc.data.model.Node.isDataSource(this.getMetaData());
+    isDataIterator: function() {
+      return osparc.data.model.Node.isDataIterator(this.getMetaData());
     },
 
     isDynamic: function() {
@@ -1180,7 +1180,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
-      } else if (this.isDataSource()) {
+      } else if (this.isDataIterator()) {
         nodeEntry.outputs = this.getOutputs();
       }
 

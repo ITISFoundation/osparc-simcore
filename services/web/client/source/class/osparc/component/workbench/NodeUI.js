@@ -175,7 +175,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
-      if (node.isDataSource()) {
+      if (node.isDataIterator()) {
         this.set({
           width: this.self().NODE_WIDTH - 50,
           maxWidth: this.self().NODE_WIDTH - 50,

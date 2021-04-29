@@ -89,7 +89,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
         const sweeperBtn = this.getChildControl("sweeper-btn");
         study.getWorkbench().addListener("nNodesChanged", () => {
           const allNodes = study.getWorkbench().getNodes(true);
-          const isSweepeable = Object.values(allNodes).some(node => node.isDataSource());
+          const isSweepeable = Object.values(allNodes).some(node => node.isDataIterator());
           sweeperBtn.setEnabled(isSweepeable);
         }, this);
       }

@@ -106,7 +106,6 @@ def test_service_models_examples(model_cls, model_cls_examples):
     [
         "simcore/services/frontend/file-picker",
         "simcore/services/frontend/nodes-group",
-        "simcore/services/frontend/data-source",
         "simcore/services/comp/cardiac_myocyte_grandi",
         "simcore/services/comp/human-gb-0d-cardiac-model",
         "simcore/services/comp/human-gb-1d-cardiac-model",

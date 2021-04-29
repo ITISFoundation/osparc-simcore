@@ -49,22 +49,22 @@ def create_node_group_service() -> ServiceDockerData:
     )
 
 
-def create_data_source_service() -> ServiceDockerData:
+def create_data_iterator_integer_service() -> ServiceDockerData:
     return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-source",
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/integer",
         version="1.0.0",
         type=ServiceType.FRONTEND,
-        name="Data Source",
-        description="Data Source",
+        name="Data Iterator - Integer",
+        description="Data Iterator - Integer",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
         contact="maiz@itis.swiss",
         inputs={},
         outputs={
-            "out_01": {
+            "out_1": {
                 "displayOrder": 0,
-                "label": "List of Numbers",
-                "description": "List of Numbers",
-                "type": "number",
+                "label": "An Integer",
+                "description": "An Integer",
+                "type": "integer",
             }
         },
     )
@@ -75,7 +75,7 @@ def is_frontend_service(service_key) -> bool:
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for factory in [create_file_picker_service, create_node_group_service, create_data_source_service]:
+    for factory in [create_file_picker_service, create_node_group_service, create_data_iterator_integer_service]:
         model_instance = factory()
         yield model_instance
 

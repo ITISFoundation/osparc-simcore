@@ -10,7 +10,7 @@ from simcore_service_catalog.models.schemas.services import (
 from simcore_service_catalog.services.frontend_services import (
     create_file_picker_service,
     create_node_group_service,
-    create_data_source_service,
+    create_data_iterator_integer_service,
 )
 
 
@@ -38,7 +38,7 @@ def tests_create_node_group():
 
 
 def tests_create_data_source():
-    image_metadata = create_data_source_service()
+    image_metadata = create_data_iterator_integer_service()
     assert isinstance(image_metadata, ServiceDockerData)
 
     assert (
