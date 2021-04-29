@@ -58,10 +58,30 @@ def create_data_iterator_integer_service() -> ServiceDockerData:
         description="Data Iterator - Integer",
         authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
         contact="maiz@itis.swiss",
-        inputs={},
+        inputs={
+            "iteration_type": {
+                "displayOrder": 0,
+                "label": "Iteration type",
+                "description": "Iteration type",
+                "defaultValue": "custom",
+                "type": "string",
+                "widget": {
+                    "type": "SelectBox",
+                    "structure": [{
+                        "key": "custom",
+                        "label": "Custom"
+                    }, {
+                        "key": "linspace",
+                        "label": "Linear Space"
+                    }, {
+                        "key": "random",
+                        "label": "Random"
+                    }]
+                }
+            }
+        },
         outputs={
             "out_1": {
-                "displayOrder": 0,
                 "label": "An Integer",
                 "description": "An Integer",
                 "type": "integer",
