@@ -96,7 +96,7 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
       });
       addNewBtn.addListener("execute", () => {
         const metaData = node.getMetaData();
-        osparc.data.model.DynamicOutputs.addOutput(metaData, "out_05", "integer", "integers");
+        osparc.data.model.DynamicOutputs.addOutput(metaData, "out_05", "integer", "My Integers");
         node.setOutputs(metaData["outputs"]);
         this.__rebuildCurrentOutputs();
       }, this);

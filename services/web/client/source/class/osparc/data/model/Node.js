@@ -1180,7 +1180,10 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
+      } else if (this.isDataSource()) {
+        nodeEntry.outputs = this.getOutputs();
       }
+
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {
