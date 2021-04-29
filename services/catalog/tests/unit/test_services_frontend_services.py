@@ -38,7 +38,7 @@ def tests_create_node_group():
     service = ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
 
 
-def tests_create_data_source():
+def tests_create_data_iterator_integer():
     image_metadata = create_data_iterator_integer_service()
     assert isinstance(image_metadata, ServiceDockerData)
 
@@ -49,7 +49,7 @@ def tests_create_data_source():
     service = ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
 
 
-def tests_create_data_source():
+def tests_create_data_iterator_string():
     image_metadata = create_data_iterator_string_service()
     assert isinstance(image_metadata, ServiceDockerData)
 
