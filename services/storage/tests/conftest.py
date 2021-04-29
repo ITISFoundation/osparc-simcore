@@ -104,7 +104,7 @@ def postgres_service(docker_services, docker_ip, project_env_devel_dict):
     Returns postgres service attributes, when up and responsive
     """
 
-    user = project_env_devel_dict["POSTGRES_DB"]
+    user = project_env_devel_dict["POSTGRES_USER"]
     password = project_env_devel_dict["POSTGRES_PASSWORD"]
     database = project_env_devel_dict["POSTGRES_DB"]
     host = docker_ip
@@ -196,7 +196,7 @@ def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
 
 
 @pytest.fixture(scope="function")
-def mock_files_factory(tmpdir_factory) -> Callable:
+def fake_files_factory(tmpdir_factory) -> Callable:
     def _create_files(count):
         filepaths = []
         for _i in range(count):
@@ -214,10 +214,10 @@ def mock_files_factory(tmpdir_factory) -> Callable:
 
 
 @pytest.fixture(scope="function")
-def fake_file(mock_files_factory: Callable) -> Path:
+def fake_file(fake_files_factory: Callable) -> Path:
     """ Creates fake file and returns path """
-    file_path = mock_files_factory(count=1)[0]
-    assert file_path.exits()
+    file_path = Path(fake_files_factory(count=1)[0])
+    assert file_path.exists()
     return file_path
 
 
@@ -250,7 +250,7 @@ def dsm_mockup_complete_db(
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(
-    postgres_service_url, s3_client, mock_files_factory, bucket_name: str
+    postgres_service_url, s3_client, fake_files_factory, bucket_name: str
 ) -> Iterator[Dict[str, FileMetaData]]:
 
     # TODO: use pip install Faker
@@ -270,7 +270,7 @@ def dsm_mockup_db(
     nodes = ["alpha", "beta", "gamma", "delta"]
 
     N = 100
-    files = mock_files_factory(count=N)
+    files = fake_files_factory(count=N)
     counter = 0
     data = {}
     for _file in files:
@@ -333,7 +333,7 @@ def dsm_mockup_db(
 
 
 @pytest.fixture(scope="function")
-async def datcore_testbucket(loop, mock_files_factory, bucket_name: str):
+async def datcore_testbucket(loop, fake_files_factory: Callable, bucket_name: str):
     # TODO: what if I do not have an app to the the config from?
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
@@ -346,11 +346,11 @@ async def datcore_testbucket(loop, mock_files_factory, bucket_name: str):
         dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
         await dcw.create_test_dataset(bucket_name)
-        tmp_files = mock_files_factory(2)
-        for f in tmp_files:
+        fake_files = fake_files_factory(count=2)
+        for f in fake_files:
             await dcw.upload_file(bucket_name, os.path.normpath(f))
 
-        yield bucket_name, tmp_files[0], tmp_files[1]
+        yield bucket_name, fake_files[0], fake_files[1]
 
         await dcw.delete_test_dataset(bucket_name)
 
@@ -387,7 +387,9 @@ def dsm_fixture(
 
 
 @pytest.fixture(scope="function")
-async def datcore_structured_testbucket(loop, mock_files_factory, bucket_name: str):
+async def datcore_structured_testbucket(
+    loop, fake_files_factory: Callable, bucket_name: str
+):
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
 
@@ -401,10 +403,10 @@ async def datcore_structured_testbucket(loop, mock_files_factory, bucket_name: s
         dataset_id = await dcw.create_test_dataset(bucket_name)
         assert dataset_id, f"Could not create dataset {bucket_name}"
 
-        tmp_files = mock_files_factory(3)
+        fake_files = fake_files_factory(count=3)
 
         # first file to the root
-        filename1 = os.path.normpath(tmp_files[0])
+        filename1 = os.path.normpath(fake_files[0])
         file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
         assert file_id1, f"Could not upload {filename1} to the root of {bucket_name}"
 
@@ -412,12 +414,12 @@ async def datcore_structured_testbucket(loop, mock_files_factory, bucket_name: s
         collection_id1 = await dcw.create_collection(dataset_id, "level1")
 
         # upload second file
-        filename2 = os.path.normpath(tmp_files[1])
+        filename2 = os.path.normpath(fake_files[1])
         file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
         assert file_id2, f"Could not upload {filename2} to the {bucket_name}/level1"
 
         # create 3rd level folder
-        filename3 = os.path.normpath(tmp_files[2])
+        filename3 = os.path.normpath(fake_files[2])
         collection_id2 = await dcw.create_collection(collection_id1, "level2")
         file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
         assert file_id3, f"Could not upload {filename3} to the {bucket_name}/level1/level2"
@@ -427,11 +429,11 @@ async def datcore_structured_testbucket(loop, mock_files_factory, bucket_name: s
             "coll1_id": collection_id1,
             "coll2_id": collection_id2,
             "file_id1": file_id1,
-            "filename1": tmp_files[0],
+            "filename1": fake_files[0],
             "file_id2": file_id2,
-            "filename2": tmp_files[1],
+            "filename2": fake_files[1],
             "file_id3": file_id3,
-            "filename3": tmp_files[2],
+            "filename3": fake_files[2],
             "dcw": dcw,
         }
 

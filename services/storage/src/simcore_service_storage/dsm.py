@@ -191,7 +191,11 @@ class DataStorageManager:
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
     async def list_files(
-        self, user_id: str, location: str, uuid_filter: str = "", regex: str = ""
+        self,
+        user_id: Union[str, int],
+        location: str,
+        uuid_filter: str = "",
+        regex: str = "",
     ) -> List[FileMetaDataEx]:
         """Returns a list of file paths
 
@@ -207,7 +211,7 @@ class DataStorageManager:
                     conn, int(user_id)
                 )
                 has_read_access = (
-                    file_meta_data.c.user_id == user_id
+                    file_meta_data.c.user_id == str(user_id)
                 ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
 
                 query = sa.select([file_meta_data]).where(has_read_access)

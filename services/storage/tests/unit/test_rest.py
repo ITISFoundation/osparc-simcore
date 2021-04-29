@@ -13,7 +13,7 @@ import simcore_service_storage.meta
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_projects import clone_project_data
+from pytest_simcore.helpers.utils_projects_extra import clone_project_data
 from simcore_service_storage.access_layer import AccessRights
 from simcore_service_storage.app_handlers import HealthCheck
 from simcore_service_storage.constants import APP_CONFIG_KEY, SIMCORE_S3_ID
@@ -206,7 +206,7 @@ async def test_upload_link(client, dsm_mockup_db):
         assert data
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="no datcore tokens")
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing, no datcore tokens available")
 async def test_copy(
     client, dsm_mockup_db, datcore_structured_testbucket, user_id: int, bucket_name: str
 ):
