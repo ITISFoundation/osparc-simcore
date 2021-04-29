@@ -24,6 +24,7 @@ qx.Class.define("osparc.data.model.DynamicOutputs", {
       }
 
       outputs[key] = {
+        ...outputs[key],
         type,
         value,
         label,
@@ -42,7 +43,9 @@ qx.Class.define("osparc.data.model.DynamicOutputs", {
         }
       }
       outputs[key] = {
+        keyId: key,
         type,
+        value: null,
         label,
         description: description || (qx.locale.Manager.tr("List of ") + type)
       };

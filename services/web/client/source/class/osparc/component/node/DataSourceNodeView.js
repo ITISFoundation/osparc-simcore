@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
         });
         saveParamBtn.addListener("execute", () => {
           const metaData = node.getMetaData();
-          osparc.data.model.DynamicOutputs.setOutput(metaData, key, dataTypesBox.getValue(), listOfValues.getValue(), label.getValue());
+          osparc.data.model.DynamicOutputs.setOutput(metaData, key, dataTypesBox.getSelection()[0].dataType, listOfValues.getValue(), label.getValue());
           node.setOutputs(metaData["outputs"]);
           this.__rebuildCurrentOutputs();
         }, this);
