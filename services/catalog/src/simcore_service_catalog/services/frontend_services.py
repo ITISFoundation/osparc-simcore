@@ -131,7 +131,12 @@ def is_frontend_service(service_key) -> bool:
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for factory in [create_file_picker_service, create_node_group_service, create_data_iterator_integer_service, create_data_iterator_string_service]:
+    for factory in [
+        create_file_picker_service,
+        create_node_group_service,
+        create_data_iterator_integer_service,
+        create_data_iterator_string_service,
+    ]:
         model_instance = factory()
         yield model_instance
 
