@@ -42,7 +42,7 @@ async def test_datcore_unavailable(loop, mocked_blackfynn_unavailable):
     assert res == []
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing")
 async def test_datcore_ping(loop):
 
     api_token = os.environ.get("BF_API_KEY", "none")
@@ -53,7 +53,7 @@ async def test_datcore_ping(loop):
     assert responsive
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing")
 async def test_datcore_list_files_recursively(loop):
 
     api_token = os.environ.get("BF_API_KEY", "none")
@@ -64,7 +64,7 @@ async def test_datcore_list_files_recursively(loop):
     assert len(f)
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing")
 async def test_datcore_list_files_raw(loop):
 
     api_token = os.environ.get("BF_API_KEY", "none")
@@ -75,7 +75,7 @@ async def test_datcore_list_files_raw(loop):
     assert len(f)
 
 
-@pytest.mark.skipif(not ANY_DATCORE_TOKENS)
+@pytest.mark.skipif(not ANY_DATCORE_TOKENS, reason="Only for local testing")
 async def test_datcore_nested_download_link(loop):
 
     api_token = os.environ.get("BF_API_KEY", "none")
