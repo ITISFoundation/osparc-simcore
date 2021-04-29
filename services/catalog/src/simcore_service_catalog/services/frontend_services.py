@@ -70,16 +70,18 @@ def create_data_iterator_integer_service() -> ServiceDockerData:
                 "type": "string",
                 "widget": {
                     "type": "SelectBox",
-                    "structure": [{
-                        "key": "custom",
-                        "label": "Custom"
-                    }, {
-                        "key": "linspace",
-                        "label": "Linear Space"
-                    }, {
-                        "key": "random",
-                        "label": "Random"
-                    }],
+                    "details": {
+                        "structure": [{
+                            "key": "custom",
+                            "label": "Custom"
+                        }, {
+                            "key": "linspace",
+                            "label": "Linear Space"
+                        }, {
+                            "key": "random",
+                            "label": "Random"
+                        }]
+                    }
                 },
             }
         },
