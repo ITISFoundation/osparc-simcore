@@ -23,6 +23,8 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
   extend: osparc.component.node.BaseNodeView,
 
   members: {
+    __currentOutputs: null,
+
     // overridden
     isSettingsGroupShowable: function() {
       return false;
@@ -68,7 +70,6 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
 
         if (selection && selection.includes(dataTypeItem.dataType)) {
           dataTypesBox.setSelection([dataTypeItem]);
-          dataTypesBox.setEnabled(false);
         }
       });
       return dataTypesBox;
@@ -83,22 +84,9 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
       const info = new qx.ui.basic.Label("Add the item to a list that will be iterated");
       this._mainView.add(info);
 
-      const currentOutputs = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      const currentOutputs = this.__currentOutputs = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this._mainView.add(currentOutputs);
-      Object.values(node.getOutputs()).forEach(output => {
-        const outputEntry = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-
-        const key = new qx.ui.basic.Label(output["keyId"]);
-        outputEntry.add(key);
-
-        const label = new qx.ui.basic.Label(output["label"]);
-        outputEntry.add(label);
-
-        const dataTypesBox = this.__createTypeBox(output["type"]);
-        outputEntry.add(dataTypesBox);
-
-        currentOutputs.add(outputEntry);
-      });
+      this.__rebuildCurrentOutputs();
 
       const addNewBtn = new qx.ui.form.Button().set({
         allowGrowX: false,
@@ -107,6 +95,64 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
         icon: "@FontAwesome5Solid/plus/14"
       });
       this._mainView.add(addNewBtn);
+    },
+
+    __rebuildCurrentOutputs: function() {
+      const node = this.getNode();
+      const currentOutputs = this.__currentOutputs;
+      currentOutputs.removeAll();
+
+      Object.values(node.getOutputs()).forEach(output => {
+        const outputEntry = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+
+        const key = output["keyId"];
+
+        const label = new osparc.ui.form.EditLabel(output["label"]);
+        label.addListener("editValue", e => {
+          label.setValue(e.getData());
+        }, this);
+        outputEntry.add(label);
+
+        const dataTypesBox = this.__createTypeBox(output["type"]);
+        outputEntry.add(dataTypesBox);
+
+        const listOfValues = new qx.ui.form.TextField();
+        const value = node.getOutput(key)["value"];
+        if (value) {
+          listOfValues.setValue(value);
+        }
+        outputEntry.add(listOfValues, {
+          flex: 1
+        });
+
+        const saveParamBtn = new qx.ui.form.Button().set({
+          allowGrowX: false,
+          allowGrowY: false,
+          icon: "@FontAwesome5Solid/check/14"
+        });
+        saveParamBtn.addListener("execute", () => {
+          const metaData = node.getMetaData();
+          osparc.data.model.DataSource.setOutput(metaData, key, dataTypesBox.getValue(), label.getValue(), listOfValues.setValue());
+          node.setOutputs(metaData["outputs"]);
+          this.__rebuildCurrentOutputs();
+        }, this);
+        outputEntry.add(saveParamBtn);
+
+        const removeParamBtn = new qx.ui.form.Button().set({
+          allowGrowX: false,
+          allowGrowY: false,
+          icon: "@FontAwesome5Solid/trash/14"
+        });
+        removeParamBtn.addListener("execute", () => {
+          const metaData = node.getMetaData();
+          osparc.data.model.DataSource.removeOutput(metaData, key);
+          node.setOutputs(metaData["outputs"]);
+          this.__rebuildCurrentOutputs();
+        }, this);
+        outputEntry.add(removeParamBtn);
+
+        currentOutputs.add(outputEntry);
+      });
     }
   }
 });

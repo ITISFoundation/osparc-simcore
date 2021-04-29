@@ -15,12 +15,12 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.data.model.DataSource", {
+qx.Class.define("osparc.data.model.DynamicOutputs", {
   extend: osparc.data.model.Node,
 
-  members: {
-    setOutput: function(key, type, label, description) {
-      const outputs = this._metaData["outputs"];
+  statics: {
+    setOutput: function(metaData, key, type, label, description) {
+      const outputs = metaData["outputs"];
       if (key === undefined || !Object.keys(outputs).includes(key)) {
         return;
       }
@@ -30,12 +30,10 @@ qx.Class.define("osparc.data.model.DataSource", {
         label,
         description: description || (this.tr("List of ") + type)
       };
-
-      this.setOutputs(this._metaData["outputs"]);
     },
 
-    addOutput: function(key, type, label, description) {
-      const outputs = this._metaData["outputs"];
+    addOutput: function(metaData, key, type, label, description) {
+      const outputs = metaData["outputs"];
       if (key === undefined) {
         key = "out_01";
         const nOuts = Object.keys(outputs).length;
@@ -49,19 +47,15 @@ qx.Class.define("osparc.data.model.DataSource", {
         label,
         description: description || (this.tr("List of ") + type)
       };
-
-      this.setOutputs(this._metaData["outputs"]);
     },
 
-    removeOutput: function(key) {
-      const outputs = this._metaData["outputs"];
+    removeOutput: function(metaData, key) {
+      const outputs = metaData["outputs"];
       if (key === undefined || !Object.keys(outputs).includes(key)) {
         return;
       }
 
       delete outputs[key];
-
-      this.setOutputs(this._metaData["outputs"]);
     }
   }
 });
