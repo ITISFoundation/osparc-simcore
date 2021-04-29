@@ -152,16 +152,8 @@ class DataStorageManager:
     app: Optional[web.Application] = None
 
     def _create_client_context(self) -> ClientCreatorContext:
-        assert hasattr(self.session, "create_client")
+        assert hasattr(self.session, "create_client")  #  nosec
         # pylint: disable=no-member
-        return self.session.create_client(
-            "s3",
-            endpoint_url=self.s3_client.endpoint_url,
-            aws_access_key_id=self.s3_client.access_key,
-            aws_secret_access_key=self.s3_client.secret_key,
-        )
-
-    def create_client_context(self):
         return self.session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -171,6 +163,7 @@ class DataStorageManager:
 
     def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
         # pylint: disable=no-member
+        assert hasattr(self.datcore_tokens, "get")  # nosec
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
         return token.to_tuple()
 
