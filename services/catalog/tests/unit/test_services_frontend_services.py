@@ -11,6 +11,7 @@ from simcore_service_catalog.services.frontend_services import (
     create_file_picker_service,
     create_node_group_service,
     create_data_iterator_integer_service,
+    create_data_iterator_string_service,
 )
 
 
@@ -39,6 +40,17 @@ def tests_create_node_group():
 
 def tests_create_data_source():
     image_metadata = create_data_iterator_integer_service()
+    assert isinstance(image_metadata, ServiceDockerData)
+
+    assert (
+        not image_metadata.inputs and image_metadata.outputs
+    ), "Expected a source node"
+
+    service = ServiceOut.parse_obj(image_metadata.dict(by_alias=True))
+
+
+def tests_create_data_source():
+    image_metadata = create_data_iterator_string_service()
     assert isinstance(image_metadata, ServiceDockerData)
 
     assert (

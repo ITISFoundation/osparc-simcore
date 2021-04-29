@@ -51,12 +51,15 @@ def create_node_group_service() -> ServiceDockerData:
 
 def create_data_iterator_integer_service() -> ServiceDockerData:
     return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/integer",
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/number",
         version="1.0.0",
         type=ServiceType.FRONTEND,
-        name="Data Iterator - Integer",
-        description="Data Iterator - Integer",
-        authors=[{"name": "Odei Maiz", "email": "maiz@itis.swiss"}],
+        name="Data Iterator - Number",
+        description="Data Iterator - Number",
+        authors=[{
+            "name": "Odei Maiz",
+            "email": "maiz@itis.swiss"
+        }],
         contact="maiz@itis.swiss",
         inputs={
             "iteration_type": {
@@ -76,15 +79,48 @@ def create_data_iterator_integer_service() -> ServiceDockerData:
                     }, {
                         "key": "random",
                         "label": "Random"
-                    }]
-                }
+                    }],
+                },
             }
         },
         outputs={
             "out_1": {
-                "label": "An Integer",
-                "description": "An Integer",
-                "type": "integer",
+                "displayOrder": 0,
+                "label": "A Number",
+                "description": "A Number",
+                "type": "number",
+            }
+        },
+    )
+
+
+def create_data_iterator_string_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/string",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Data Iterator - String",
+        description="Data Iterator - String",
+        authors=[{
+            "name": "Odei Maiz",
+            "email": "maiz@itis.swiss"
+        }],
+        contact="maiz@itis.swiss",
+        inputs={
+            "strings_list": {
+                "displayOrder": 0,
+                "label": "List of strings",
+                "description": "List of strings",
+                "defaultValue": "",
+                "type": "string",
+            }
+        },
+        outputs={
+            "out_1": {
+                "displayOrder": 0,
+                "label": "A String",
+                "description": "A String",
+                "type": "string",
             }
         },
     )
@@ -95,7 +131,7 @@ def is_frontend_service(service_key) -> bool:
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for factory in [create_file_picker_service, create_node_group_service, create_data_iterator_integer_service]:
+    for factory in [create_file_picker_service, create_node_group_service, create_data_iterator_integer_service, create_data_iterator_string_service]:
         model_instance = factory()
         yield model_instance
 
