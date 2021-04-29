@@ -8,9 +8,7 @@ appdirs==1.4.4
     # via
     #   black
     #   virtualenv
-argh==0.26.2
-    # via watchdog
-black==21.4b1
+black==21.4b2
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -18,13 +16,11 @@ cfgv==3.2.0
     # via pre-commit
 click==7.1.2
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 dataclasses==0.8
-    # via
-    #   -c requirements/_base.txt
-    #   black
+    # via black
 distlib==0.3.1
     # via virtualenv
 filelock==3.0.12
@@ -33,8 +29,6 @@ identify==2.2.4
     # via pre-commit
 importlib-metadata==4.0.1
     # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   pep517
     #   pre-commit
     #   virtualenv
@@ -43,9 +37,7 @@ importlib-resources==5.1.2
     #   pre-commit
     #   virtualenv
 isort==5.8.0
-    # via
-    #   -c requirements/_test.txt
-    #   -r requirements/../../../requirements/devenv.txt
+    # via -r requirements/../../../requirements/devenv.txt
 mypy-extensions==0.4.3
     # via black
 nodeenv==1.6.0
@@ -61,41 +53,28 @@ pre-commit==2.12.1
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   pre-commit
-    #   watchdog
 regex==2021.4.4
     # via black
 six==1.15.0
     # via
-    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2
     # via
-    #   -c requirements/_test.txt
     #   black
     #   pep517
     #   pre-commit
 typed-ast==1.4.3
-    # via
-    #   -c requirements/_test.txt
-    #   black
+    # via black
 typing-extensions==3.7.4.3
     # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   black
     #   importlib-metadata
 virtualenv==20.4.4
     # via pre-commit
-watchdog[watchmedo]==2.0.3
-    # via -r requirements/_tools.in
 zipp==3.4.1
     # via
-    #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   importlib-metadata
     #   importlib-resources
     #   pep517
