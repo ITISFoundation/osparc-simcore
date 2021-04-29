@@ -19,6 +19,21 @@ qx.Class.define("osparc.data.model.DataSource", {
   extend: osparc.data.model.Node,
 
   members: {
+    setOutput: function(key, type, label, description) {
+      const outputs = this._metaData["outputs"];
+      if (key === undefined || !Object.keys(outputs).includes(key)) {
+        return;
+      }
+
+      outputs[key] = {
+        type,
+        label,
+        description: description || (this.tr("List of ") + type)
+      };
+
+      this.setOutputs(this._metaData["outputs"]);
+    },
+
     addOutput: function(key, type, label, description) {
       const outputs = this._metaData["outputs"];
       if (key === undefined) {
@@ -34,6 +49,17 @@ qx.Class.define("osparc.data.model.DataSource", {
         label,
         description: description || (this.tr("List of ") + type)
       };
+
+      this.setOutputs(this._metaData["outputs"]);
+    },
+
+    removeOutput: function(key) {
+      const outputs = this._metaData["outputs"];
+      if (key === undefined || !Object.keys(outputs).includes(key)) {
+        return;
+      }
+
+      delete outputs[key];
 
       this.setOutputs(this._metaData["outputs"]);
     }
