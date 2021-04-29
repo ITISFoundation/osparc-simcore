@@ -94,6 +94,12 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
         label: this.tr("Add new"),
         icon: "@FontAwesome5Solid/plus/14"
       });
+      addNewBtn.addListener("execute", () => {
+        const metaData = node.getMetaData();
+        osparc.data.model.DynamicOutputs.addOutput(metaData, "out_05", "integer", "integers");
+        node.setOutputs(metaData["outputs"]);
+        this.__rebuildCurrentOutputs();
+      }, this);
       this._mainView.add(addNewBtn);
     },
 
@@ -132,7 +138,7 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
         });
         saveParamBtn.addListener("execute", () => {
           const metaData = node.getMetaData();
-          osparc.data.model.DataSource.setOutput(metaData, key, dataTypesBox.getValue(), label.getValue(), listOfValues.setValue());
+          osparc.data.model.DynamicOutputs.setOutput(metaData, key, dataTypesBox.getValue(), listOfValues.getValue(), label.getValue());
           node.setOutputs(metaData["outputs"]);
           this.__rebuildCurrentOutputs();
         }, this);
@@ -145,7 +151,7 @@ qx.Class.define("osparc.component.node.DataSourceNodeView", {
         });
         removeParamBtn.addListener("execute", () => {
           const metaData = node.getMetaData();
-          osparc.data.model.DataSource.removeOutput(metaData, key);
+          osparc.data.model.DynamicOutputs.removeOutput(metaData, key);
           node.setOutputs(metaData["outputs"]);
           this.__rebuildCurrentOutputs();
         }, this);

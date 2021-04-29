@@ -16,10 +16,8 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.data.model.DynamicOutputs", {
-  extend: osparc.data.model.Node,
-
   statics: {
-    setOutput: function(metaData, key, type, label, description) {
+    setOutput: function(metaData, key, type, value, label, description) {
       const outputs = metaData["outputs"];
       if (key === undefined || !Object.keys(outputs).includes(key)) {
         return;
@@ -27,8 +25,9 @@ qx.Class.define("osparc.data.model.DynamicOutputs", {
 
       outputs[key] = {
         type,
+        value,
         label,
-        description: description || (this.tr("List of ") + type)
+        description: description || (qx.locale.Manager.tr("List of ") + type)
       };
     },
 
@@ -45,7 +44,7 @@ qx.Class.define("osparc.data.model.DynamicOutputs", {
       outputs[key] = {
         type,
         label,
-        description: description || (this.tr("List of ") + type)
+        description: description || (qx.locale.Manager.tr("List of ") + type)
       };
     },
 
