@@ -140,7 +140,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
             margin: [3, 4]
           });
-          const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
+          let nodeType = this.getNode().getMetaData().type;
+          if (this.getNode().isContainer()) {
+            nodeType = "container";
+          }
+          if (this.getNode().isDataIterator()) {
+            nodeType = "iterator";
+          }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
             control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
