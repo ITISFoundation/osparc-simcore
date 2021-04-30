@@ -54,7 +54,7 @@ def create_data_iterator_integer_service() -> ServiceDockerData:
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/number",
         version="1.0.0",
         type=ServiceType.FRONTEND,
-        name="Data Iterator - Number",
+        name="Number Iterator",
         description="Data Iterator - Number",
         authors=[{
             "name": "Odei Maiz",
@@ -150,7 +150,7 @@ def create_data_iterator_string_service() -> ServiceDockerData:
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/string",
         version="1.0.0",
         type=ServiceType.FRONTEND,
-        name="Data Iterator - String",
+        name="String Iterator",
         description="Data Iterator - String",
         authors=[{
             "name": "Odei Maiz",
