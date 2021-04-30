@@ -88,19 +88,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     });
     workbenchLayout.add(this.__startHint);
 
-    this.__svgWidgetLinks = new osparc.component.workbench.SvgWidget("SvgWidget_Links");
-    desktop.add(this.__svgWidgetLinks, {
-      left: 0,
-      top: 0,
-      right: 0,
-      bottom: 0
-    });
-
-    this.__svgWidgetDrop = new osparc.component.workbench.SvgWidget("SvgWidget_Drop");
-    this.__svgWidgetDrop.set({
-      zIndex: this.__svgWidgetLinks.getZIndex() - 1
-    });
-    this.__desktop.add(this.__svgWidgetDrop, {
+    const svgWidgetWorkbench = this.__svgWidgetWorkbench = new osparc.component.workbench.SvgWidget("SvgWidget_Workbench");
+    desktop.add(svgWidgetWorkbench, {
       left: 0,
       top: 0,
       right: 0,
@@ -174,8 +163,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __workbenchLayout: null,
     __workbenchLayoutScroll: null,
     __desktop: null,
-    __svgWidgetLinks: null,
-    __svgWidgetDrop: null,
+    __svgWidgetWorkbench: null,
     __tempEdgeNodeId: null,
     __tempEdgeRepr: null,
     __pointerPos: null,
@@ -484,7 +472,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const y1 = pointList[0] ? pointList[0][1] : 0;
         const x2 = pointList[1] ? pointList[1][0] : 0;
         const y2 = pointList[1] ? pointList[1][1] : 0;
-        const edgeRepresentation = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
+        const edgeRepresentation = this.__svgWidgetWorkbench.drawCurve(x1, y1, x2, y2, !edge.isPortConnected());
 
         edge.addListener("changePortConnected", e => {
           const portConnected = e.getData();
@@ -800,7 +788,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       if (this.__tempEdgeRepr === null) {
-        this.__tempEdgeRepr = this.__svgWidgetLinks.drawCurve(x1, y1, x2, y2, true);
+        this.__tempEdgeRepr = this.__svgWidgetWorkbench.drawCurve(x1, y1, x2, y2, true);
       } else {
         osparc.component.workbench.SvgWidget.updateCurve(this.__tempEdgeRepr, x1, y1, x2, y2);
       }
@@ -904,10 +892,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     loadModel: function(model) {
-      if (this.__svgWidgetLinks.getReady()) {
+      if (this.__svgWidgetWorkbench.getReady()) {
         this.__loadModel(model);
       } else {
-        this.__svgWidgetLinks.addListenerOnce("SvgWidgetReady", () => {
+        this.__svgWidgetWorkbench.addListenerOnce("SvgWidgetReady", () => {
           this.__loadModel(model);
         }, this);
       }
@@ -1241,7 +1229,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           visibility: "excluded"
         });
         this.__workbenchLayout.add(this.__dropHint);
-        this.__dropHint.rect = this.__svgWidgetDrop.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
+        this.__dropHint.rect = this.__svgWidgetWorkbench.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
       }
       if (dragging) {
         this.__dropHint.setVisibility("visible");
