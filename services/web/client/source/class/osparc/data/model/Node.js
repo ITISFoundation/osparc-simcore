@@ -1175,9 +1175,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (this.isContainer()) {
         nodeEntry.outputNodes = this.getOutputNodes();
-      }
-
-      if (this.isFilePicker()) {
+      } else if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       }
