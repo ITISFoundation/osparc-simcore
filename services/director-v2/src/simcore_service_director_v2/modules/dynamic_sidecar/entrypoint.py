@@ -530,7 +530,6 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                 "Env": {
                     "SIMCORE_HOST_NAME": dynamic_sidecar_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    "DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT": dynamic_sidecar_settings.dynamic_sidecar_api_request_docker_compose_down_timeout,
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.image,

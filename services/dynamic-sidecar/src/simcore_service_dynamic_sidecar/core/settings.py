@@ -70,7 +70,7 @@ class DynamicSidecarSettings(BaseSettings):
     )
 
     docker_compose_down_timeout: PositiveInt = Field(
-        ..., description="used during shutdown when containers swapend will be removed"
+        15, description="used during shutdown when containers swapend will be removed"
     )
 
     @property
