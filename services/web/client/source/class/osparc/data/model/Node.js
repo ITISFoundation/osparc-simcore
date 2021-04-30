@@ -159,12 +159,6 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
-    inputsMapper: {
-      check: "osparc.component.widget.InputsMapper",
-      init: null,
-      nullable: true
-    },
-
     loadingPage: {
       check: "osparc.ui.message.Loading",
       init: null,
@@ -194,6 +188,10 @@ qx.Class.define("osparc.data.model.Node", {
   statics: {
     isFilePicker: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("file-picker") && !metaData.key.includes("data-iterator"));
+    },
+
+    isMultiFilePicker: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("file-picker") && metaData.key.includes("data-iterator"));
     },
 
     isContainer: function(metaData) {
@@ -243,6 +241,10 @@ qx.Class.define("osparc.data.model.Node", {
 
     isFilePicker: function() {
       return osparc.data.model.Node.isFilePicker(this.getMetaData());
+    },
+
+    isMultiFilePicker: function() {
+      return osparc.data.model.Node.isMultiFilePicker(this.getMetaData());
     },
 
     isContainer: function() {
@@ -491,21 +493,6 @@ qx.Class.define("osparc.data.model.Node", {
       return filteredInputs;
     },
 
-
-    /**
-     * Add mapper widget if any
-     *
-     */
-    __addMapper: function(inputs) {
-      let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      if (filteredInputs.mapper) {
-        let inputsMapper = new osparc.component.widget.InputsMapper(this, filteredInputs["mapper"]);
-        this.setInputsMapper(inputsMapper);
-        delete filteredInputs["mapper"];
-      }
-      return filteredInputs;
-    },
-
     /**
      * Add settings widget with those inputs that can be represented in a form
      */
@@ -601,11 +588,9 @@ qx.Class.define("osparc.data.model.Node", {
         return;
       }
 
-      let filteredInputs = this.__removeNonSettingInputs(inputs);
-      filteredInputs = this.__addMapper(filteredInputs);
-      if (Object.keys(filteredInputs).length) {
-        this.__addSettings(filteredInputs);
-        this.__addSettingsEditor(filteredInputs);
+      if (Object.keys(inputs).length) {
+        this.__addSettings(inputs);
+        this.__addSettingsEditor(inputs);
       }
     },
 
