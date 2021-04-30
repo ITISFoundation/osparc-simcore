@@ -101,7 +101,7 @@ pydantic[email]==1.7.2
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 pyrsistent==0.17.3
     # via jsonschema
-pyyaml==5.3.1
+pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

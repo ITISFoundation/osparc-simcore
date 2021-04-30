@@ -255,7 +255,7 @@ pytz==2020.4
     # via
     #   -c requirements/_base.txt
     #   celery
-pyyaml==5.3.1
+pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -264,7 +264,7 @@ redis==3.5.3
     # via
     #   -c requirements/_base.txt
     #   celery
-requests==2.24.0
+requests==2.25.1
     # via
     #   -c requirements/_base.txt
     #   codecov
@@ -314,7 +314,7 @@ typing-extensions==3.7.4.3
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-urllib3==1.25.11
+urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
