@@ -59,7 +59,7 @@ pip-tools==6.1.0
     # via -r requirements/../../../requirements/devenv.txt
 pre-commit==2.12.1
     # via -r requirements/../../../requirements/devenv.txt
-pyyaml==5.3.1
+pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
