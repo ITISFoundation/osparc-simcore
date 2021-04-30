@@ -22,10 +22,11 @@ def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
 
 def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> None:
     # mainly used to debug issues with the API
-    logging.warning(
+    logging.debug(
         (
             "%s -> %s generated:\n %s\nThe above logs can safely "
-            "be ignored, except when the dynamic-sidecar is failing"
+            "be ignored, except when debugging an issue "
+            "regarding the dynamic-sidecar"
         ),
         method,
         url,
@@ -71,7 +72,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str
     ) -> Optional[Dict[str, Any]]:
         """returns: None in case of error, otherwise a dict will be returned"""
-        url = get_url(dynamic_sidecar_endpoint, "/containers")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
             response = await self.httpx_client.get(url=url)
             if response.status_code != 200:
@@ -91,7 +92,7 @@ class DynamicSidecarClient:
         self, dynamic_sidecar_endpoint: str
     ) -> Optional[Dict[str, Dict[str, str]]]:
         """returns: None in case of error, otherwise a dict will be returned"""
-        url = get_url(dynamic_sidecar_endpoint, "/containers")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
             response = await self.httpx_client.get(
                 url=url, params=dict(only_status=True)
@@ -109,11 +110,13 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "GET", traceback.format_exc())
             return None
 
-    async def run_docker_compose_up(self, dynamic_sidecar_endpoint: str) -> bool:
+    async def run_docker_compose_up(
+        self, dynamic_sidecar_endpoint: str, compose_spec: str
+    ) -> bool:
         """returns: True if the compose up was submitted correctly"""
-        url = get_url(dynamic_sidecar_endpoint, "/containers")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
-            response = await self.httpx_client.post(url)
+            response = await self.httpx_client.post(url, data=compose_spec)
             if response.status_code != 200:
                 logging.warning(
                     "error during request status=%s, body=%s",
@@ -131,7 +134,7 @@ class DynamicSidecarClient:
 
     async def run_docker_compose_down(self, dynamic_sidecar_endpoint: str) -> None:
         """runs docker compose down on the started spec """
-        url = get_url(dynamic_sidecar_endpoint, "/containers:down")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers:down")
         try:
             response = await self.httpx_client.post(url)
             if response.status_code != 200:
