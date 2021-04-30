@@ -19,11 +19,12 @@ install-dev: _check_venv_active  ## installs dependencies
 	# installing requirements
 	pip-sync requirements/dev.txt
 
+locusfile=$(if $(target),$(target),locusfile.py)
 
 .PHONY: start
 start: _check_venv_active .env  ## starts locust, a scriptable and scalable performance testing tool
 	# Open http://localhost:8089/
-	locust --locustfile locustfile.py --host http://127.0.0.1:9081  --users 3 --spawn-rate 1
+	locust --locustfile $(locusfile) --host http://127.0.0.1:9081  --users 3 --spawn-rate 1
 
 
 .PHONY: list
