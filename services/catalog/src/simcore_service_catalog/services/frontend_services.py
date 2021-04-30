@@ -192,8 +192,8 @@ def create_data_iterator_files_service() -> ServiceDockerData:
         inputs={
             "iteration_type": {
                 "displayOrder": 0,
-                "label": "Iteration type",
-                "description": "Iteration type",
+                "label": "Iterate over",
+                "description": "Iteration over",
                 "defaultValue": "multi-file",
                 "type": "string",
                 "widget": {

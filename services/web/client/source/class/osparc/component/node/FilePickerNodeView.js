@@ -20,20 +20,10 @@
   */
 
 qx.Class.define("osparc.component.node.FilePickerNodeView", {
-  extend: osparc.component.node.BaseNodeView,
+  extend: osparc.component.node.NodeView,
 
   members: {
     __filePicker: null,
-
-    // overridden
-    isSettingsGroupShowable: function() {
-      return false;
-    },
-
-    // overridden
-    _addSettings: function() {
-      return;
-    },
 
     // overridden
     _addIFrame: function() {
