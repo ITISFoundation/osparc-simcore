@@ -239,7 +239,7 @@ typing-extensions==3.7.4.3
     #   aiohttp
     #   importlib-metadata
     #   yarl
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
