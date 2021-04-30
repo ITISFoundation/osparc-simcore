@@ -203,8 +203,8 @@ def create_data_iterator_files_service() -> ServiceDockerData:
                             "key": "multi-file",
                             "label": "Multi File Selection",
                         }, {
-                            "key": "dataset",
-                            "label": "Dataset",
+                            "key": "folder",
+                            "label": "Folder",
                         }]
                     }
                 }
