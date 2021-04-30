@@ -16,13 +16,14 @@ sys.path.append(str(current_dir / "helpers"))
 
 # FIXTURES
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
-    "pytest_simcore.postgres_service",
     "pytest_simcore.minio_service",
-    "pytest_simcore.simcore_storage_service",
+    "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.services_api_mocks_for_aiohttp_clients",
+    "pytest_simcore.simcore_storage_service",
 ]
 
 

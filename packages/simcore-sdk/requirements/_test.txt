@@ -28,13 +28,15 @@ attrs==20.3.0
     #   pytest
 certifi==2020.12.5
     # via
-    #   -c requirements/_base.txt
+    #   minio
     #   requests
 chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
+configparser==5.0.2
+    # via minio
 coverage==5.5
     # via
     #   -r requirements/_test.in
@@ -81,6 +83,10 @@ markupsafe==1.1.1
     # via mako
 mccabe==0.6.1
     # via pylint
+minio==6.0.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 multidict==5.1.0
     # via
     #   -c requirements/_base.txt
@@ -140,13 +146,15 @@ pytest==6.2.3
     #   pytest-xdist
 python-dateutil==2.8.1
     # via
-    #   -c requirements/_base.txt
     #   alembic
     #   faker
+    #   minio
 python-dotenv==0.17.0
     # via -r requirements/_test.in
 python-editor==1.0.4
     # via alembic
+pytz==2021.1
+    # via minio
 requests==2.25.1
     # via
     #   -r requirements/_test.in
@@ -159,6 +167,7 @@ six==1.15.0
     #   websocket-client
 sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
 termcolor==1.1.0
@@ -179,7 +188,8 @@ typing-extensions==3.7.4.3
     #   yarl
 urllib3==1.26.4
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   minio
     #   requests
 websocket-client==0.58.0
     # via docker

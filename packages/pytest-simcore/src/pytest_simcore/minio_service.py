@@ -1,24 +1,36 @@
-import logging
-import os
-from copy import deepcopy
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+import logging
 from distutils.util import strtobool
-from typing import Dict
+from typing import Dict, Iterator
 
 import pytest
 import tenacity
-from s3wrapper.s3_client import S3Client
+from minio import Minio
+from tenacity import Retrying
 
 from .helpers.utils_docker import get_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
 
+def _ensure_remove_bucket(client: Minio, bucket_name: str):
+    if client.bucket_exists(bucket_name):
+        # remove content
+        objs = client.list_objects(bucket_name, prefix=None, recursive=True)
+        errors = client.remove_objects(bucket_name, [o.object_name for o in objs])
+        assert not list(errors)
+        # remove bucket
+        client.remove_bucket(bucket_name)
+    assert not client.bucket_exists(bucket_name)
+
+
 @pytest.fixture(scope="module")
-def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
+def minio_config(
+    docker_stack: Dict, devel_environ: Dict, monkeypatch_module
+) -> Dict[str, str]:
     assert "ops_minio" in docker_stack["services"]
 
     config = {
@@ -32,49 +44,53 @@ def minio_config(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
     }
 
     # nodeports takes its configuration from env variables
-    old_environ = deepcopy(os.environ)
     for key, value in config["client"].items():
-        os.environ[f"S3_{key.upper()}"] = str(value)
-    os.environ["S3_SECURE"] = devel_environ["S3_SECURE"]
-    os.environ["S3_BUCKET_NAME"] = config["bucket_name"]
+        monkeypatch_module.setenv(f"S3_{key.upper()}", str(value))
 
-    yield config
-    # restore environ
-    os.environ = old_environ
+    monkeypatch_module.setenv("S3_SECURE", devel_environ["S3_SECURE"])
+    monkeypatch_module.setenv("S3_BUCKET_NAME", config["bucket_name"])
+
+    return config
 
 
 @pytest.fixture(scope="module")
-def minio_service(minio_config: Dict[str, str]) -> S3Client:
-    assert wait_till_minio_responsive(minio_config)
+def minio_service(minio_config: Dict[str, str]) -> Iterator[Minio]:
 
-    client = S3Client(**minio_config["client"])
-    assert client.create_bucket(minio_config["bucket_name"])
+    client = Minio(**minio_config["client"])
+
+    for attempt in Retrying(
+        wait=tenacity.wait_fixed(5),
+        stop=tenacity.stop_after_attempt(60),
+        before_sleep=tenacity.before_sleep_log(log, logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
+            # TODO: improve as https://docs.min.io/docs/minio-monitoring-guide.html
+            if not client.bucket_exists("pytest"):
+                client.make_bucket("pytest")
+            client.remove_bucket("pytest")
+
+    bucket_name = minio_config["bucket_name"]
+
+    # cleans up in case a failing tests left this bucket
+    _ensure_remove_bucket(client, bucket_name)
+
+    client.make_bucket(bucket_name)
+    assert client.bucket_exists(bucket_name)
 
     yield client
 
-    assert client.remove_bucket(minio_config["bucket_name"], delete_contents=True)
-
-
-@tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
-    reraise=True,
-)
-def wait_till_minio_responsive(minio_config: Dict[str, str]) -> bool:
-    """Check if something responds to ``url`` """
-    client = S3Client(**minio_config["client"])
-    if client.create_bucket("pytest"):
-        client.remove_bucket("pytest")
-        return True
-    raise Exception(f"Minio not responding to {minio_config}")
+    # cleanup upon tear-down
+    _ensure_remove_bucket(client, bucket_name)
 
 
 @pytest.fixture(scope="module")
-def bucket(minio_config: Dict[str, str], minio_service: S3Client) -> str:
+def bucket(minio_config: Dict[str, str], minio_service: Minio) -> str:
     bucket_name = minio_config["bucket_name"]
-    minio_service.create_bucket(bucket_name, delete_contents_if_exists=True)
+
+    _ensure_remove_bucket(minio_service, bucket_name)
+    minio_service.make_bucket(bucket_name)
 
     yield bucket_name
 
-    minio_service.remove_bucket(bucket_name, delete_contents=True)
+    _ensure_remove_bucket(minio_service, bucket_name)

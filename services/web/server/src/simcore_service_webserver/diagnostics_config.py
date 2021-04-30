@@ -32,11 +32,12 @@ class DiagnosticsSettings(BaseSettings):
     start_sensing_delay: NonNegativeFloat = 60.0
 
     @validator("max_task_delay", pre=True)
+    @classmethod
     def validate_max_task_delay(cls, v, values):
-        slow_duration_secs = values["slow_duration_secs"]
+        slow_duration_secs = float(values["slow_duration_secs"])
         return max(
             10 * slow_duration_secs,
-            v,
+            float(v),
         )  # secs
 
 

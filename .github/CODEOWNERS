@@ -4,31 +4,34 @@
 
 
 # files and folders recursively
-Makefile                                  @pcrespov, @sanderegg
 .codeclimate.yml                          @sanderegg, @pcrespov
 .travis.yml                               @sanderegg
+Makefile                                  @pcrespov, @sanderegg
+
 
 # NOTE: '/' denotes the root of the repository
 /api/                                     @sanderegg, @pcrespov
 /ci/                                      @sanderegg, @pcrespov
 /docs/                                    @pcrespov
-/packages/pytest-simcore/                 @pcrespov, @sanderegg
 /packages/models-library/                 @sanderegg, @pcrespov
-/packages/service-library/                @pcrespov
+/packages/pytest-simcore/                 @pcrespov, @sanderegg
 /packages/service-integration/            @pcrespov, @sanderegg, @KZzizzle
+/packages/service-library/                @pcrespov
 /requirements/                            @pcrespov
 /scripts/demo/                            @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
 /scripts/template-projects/               @odeimaiz, @pcrespov
 /services/api-server/                     @pcrespov
+/services/catalog/                        @pcrespov, @sanderegg
 /services/director*/                      @sanderegg, @pcrespov
 /services/dynamic-sidecar/                @GitHK
-/services/catalog/                        @pcrespov, @sanderegg
 /services/migration/                      @pcrespov
 /services/sidecar/                        @pcrespov, @mguidon
-/services/web/client/                     @odeimaiz, @oetiker, @ignapas
+/services/storage/                        @mguidon, @pcrespov
+/services/web/client/                     @odeimaiz, @ignapas
 /services/web/server/                     @pcrespov
-/services/storage/                        @mguidon
+/tests/environment-setup/                 @pcrespov
+/tests/performance/                       @pcrespov
 /tests/public-api/                        @pcrespov
 
 requirements/*                            @pcrespov

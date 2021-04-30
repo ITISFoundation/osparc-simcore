@@ -11,7 +11,6 @@
 -r _test.txt
 
 # installs this repo's packages
-../../../packages/s3wrapper/
 ../../../packages/models-library/
 ../../../packages/postgres-database/
 ../../../packages/simcore-sdk/

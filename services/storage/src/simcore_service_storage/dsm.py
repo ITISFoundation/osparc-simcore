@@ -11,16 +11,16 @@ import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import aiobotocore
 import attr
 import sqlalchemy as sa
+from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.result import RowProxy
 from blackfynn.base import UnauthorizedException
-from s3wrapper.s3_client import S3Client
 from servicelib.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
@@ -44,6 +44,7 @@ from .models import (
     projects,
 )
 from .s3 import get_config_s3
+from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import (
     APP_CONFIG_KEY,
     APP_DB_ENGINE_KEY,
@@ -63,30 +64,29 @@ postgres_service_retry_policy_kwargs = PostgresRetryPolicyUponOperation(logger).
 
 def setup_dsm(app: web.Application):
     async def _cleanup_context(app: web.Application):
-        cfg = app[APP_CONFIG_KEY]
-
-        main_cfg = cfg
-
-        engine = app.get(APP_DB_ENGINE_KEY)
-        loop = asyncio.get_event_loop()
-        s3_client = app.get(APP_S3_KEY)
-
-        max_workers = main_cfg["max_workers"]
-        pool = ThreadPoolExecutor(max_workers=max_workers)
-
+        main_cfg = app[APP_CONFIG_KEY]
         s3_cfg = get_config_s3(app)
-        bucket_name = s3_cfg["bucket_name"]
 
-        testing = main_cfg["testing"]
-        dsm = DataStorageManager(
-            s3_client, engine, loop, pool, bucket_name, not testing, app
-        )  # type: ignore
+        with ThreadPoolExecutor(max_workers=main_cfg["max_workers"]) as executor:
+            dsm = DataStorageManager(
+                s3_client=app.get(APP_S3_KEY),
+                engine=app.get(APP_DB_ENGINE_KEY),
+                loop=asyncio.get_event_loop(),
+                pool=executor,
+                simcore_bucket_name=s3_cfg["bucket_name"],
+                has_project_db=not main_cfg.get("testing", False),
+                app=app,
+            )  # type: ignore
 
-        app[APP_DSM_KEY] = dsm
+            app[APP_DSM_KEY] = dsm
 
-        yield
+            yield
 
-        # NOTE: write here clean up
+            assert app[APP_DSM_KEY].pool is executor  # nosec
+
+            logger.info("Shuting down %s", dsm.pool)
+
+    # ------
 
     app.cleanup_ctx.append(_cleanup_context)
 
@@ -141,16 +141,27 @@ class DataStorageManager:
         https://docs.minio.io/docs/minio-bucket-notification-guide.html
     """
 
-    s3_client: S3Client
+    # TODO: perhaps can be used a cache? add a lifetime?
+
+    s3_client: MinioClientWrapper
     engine: Engine
     loop: object
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
+    session: AioSession = attr.Factory(aiobotocore.get_session)
+    datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
     app: Optional[web.Application] = None
 
-    datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
-    # TODO: perhaps can be used a cache? add a lifetime?
+    def _create_client_context(self) -> ClientCreatorContext:
+        assert hasattr(self.session, "create_client")
+        # pylint: disable=no-member
+        return self.session.create_client(
+            "s3",
+            endpoint_url=self.s3_client.endpoint_url,
+            aws_access_key_id=self.s3_client.access_key,
+            aws_secret_access_key=self.s3_client.secret_key,
+        )
 
     def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
         # pylint: disable=no-member
@@ -420,13 +431,7 @@ class DataStorageManager:
         """
         current_iteraction = 0
 
-        session = aiobotocore.get_session()
-        async with session.create_client(
-            "s3",
-            endpoint_url=self.s3_client.endpoint_url,
-            aws_access_key_id=self.s3_client.access_key,
-            aws_secret_access_key=self.s3_client.secret_key,
-        ) as client:
+        async with self._create_client_context() as client:
             current_iteraction += 1
             continue_loop = True
             sleep_generator = expo()
@@ -687,7 +692,11 @@ class DataStorageManager:
                 await self.copy_file_datcore_s3(user_id, dest_uuid, source_uuid)
 
     async def deep_copy_project_simcore_s3(
-        self, user_id: str, source_project, destination_project, node_mapping
+        self,
+        user_id: str,
+        source_project: Dict[str, Any],
+        destination_project: Dict[str, Any],
+        node_mapping: Dict[str, str],
     ):
         """Parses a given source project and copies all related files to the destination project
 
@@ -745,85 +754,82 @@ class DataStorageManager:
             if new_node_id is not None:
                 uuid_name_dict[new_node_id] = src_node["label"]
 
-        # Step 1: List all objects for this project replace them with the destination object name and do a copy at the same time collect some names
-        session = aiobotocore.get_session()
-        async with session.create_client(
-            "s3",
-            endpoint_url=self.s3_client.endpoint_url,
-            aws_access_key_id=self.s3_client.access_key,
-            aws_secret_access_key=self.s3_client.secret_key,
-        ) as client:
+        async with self._create_client_context() as client:
+
+            # Step 1: List all objects for this project replace them with the destination object name
+            # and do a copy at the same time collect some names
             response = await client.list_objects_v2(
                 Bucket=self.simcore_bucket_name, Prefix=source_folder
             )
 
-            if "Contents" in response:
-                for f in response["Contents"]:
-                    source_object_name = f["Key"]
-                    source_object_parts = Path(source_object_name).parts
+            for item in response.get("Contents", []):
+                source_object_name = item["Key"]
+                source_object_parts = Path(source_object_name).parts
 
-                    if len(source_object_parts) == 3:
-                        old_node_id = source_object_parts[1]
-                        new_node_id = node_mapping.get(old_node_id)
-                        if new_node_id is not None:
-                            old_filename = source_object_parts[2]
-                            dest_object_name = str(
-                                Path(dest_folder) / new_node_id / old_filename
-                            )
-                            copy_source = {
-                                "Bucket": self.simcore_bucket_name,
-                                "Key": source_object_name,
-                            }
-                            response = await client.copy_object(
-                                CopySource=copy_source,
-                                Bucket=self.simcore_bucket_name,
-                                Key=dest_object_name,
-                            )
-                    else:
-                        # This may happen once we have shared/home folders
-                        logger.info("len(object.parts != 3")
+                if len(source_object_parts) != 3:
+                    # This may happen once we have shared/home folders
+                    # FIXME: this might cause problems
+                    logger.info(
+                        "Skipping copy of '%s'. Expected three parts path!",
+                        source_object_name,
+                    )
+                    continue
 
-            # Step 2: List all references in outputs that point to datcore and copy over
-            for node_id, node in destination_project["workbench"].items():
-                outputs: Dict = node.get("outputs", {})
-                for _output_key, output in outputs.items():
-                    if "store" in output and output["store"] == DATCORE_ID:
-                        src = output["path"]
-                        dest = str(Path(dest_folder) / node_id)
-                        logger.info("Need to copy %s to %s", src, dest)
-                        dest = await self.copy_file_datcore_s3(
-                            user_id=user_id,
-                            dest_uuid=dest,
-                            source_uuid=src,
-                            filename_missing=True,
-                        )
-                        # and change the dest project accordingly
-                        output["store"] = SIMCORE_S3_ID
-                        output["path"] = dest
-                    elif "store" in output and output["store"] == SIMCORE_S3_ID:
-                        source = output["path"]
-                        dest = dest = str(
-                            Path(dest_folder) / node_id / Path(source).name
-                        )
-                        output["store"] = SIMCORE_S3_ID
-                        output["path"] = dest
+                old_node_id = source_object_parts[1]
+                new_node_id = node_mapping.get(old_node_id)
+                if new_node_id is not None:
+                    old_filename = source_object_parts[2]
+                    dest_object_name = str(
+                        Path(dest_folder) / new_node_id / old_filename
+                    )
 
-        # step 3: list files first to create fmds
-        session = aiobotocore.get_session()
+                    await client.copy_object(
+                        CopySource={
+                            "Bucket": self.simcore_bucket_name,
+                            "Key": source_object_name,
+                        },
+                        Bucket=self.simcore_bucket_name,
+                        Key=dest_object_name,
+                    )
+
+        # Step 2: List all references in outputs that point to datcore and copy over
+        for node_id, node in destination_project["workbench"].items():
+            outputs: Dict = node.get("outputs", {})
+            for _, output in outputs.items():
+                source = output["path"]
+
+                if output.get("store") == DATCORE_ID:
+                    destination_folder = str(Path(dest_folder) / node_id)
+                    logger.info("Copying %s to %s", source, destination_folder)
+
+                    destination = await self.copy_file_datcore_s3(
+                        user_id=user_id,
+                        dest_uuid=destination_folder,
+                        source_uuid=source,
+                        filename_missing=True,
+                    )
+                    assert destination.startswith(destination_folder)  # nosec
+
+                    output["store"] = SIMCORE_S3_ID
+                    output["path"] = destination
+
+                elif output.get("store") == SIMCORE_S3_ID:
+                    destination = str(Path(dest_folder) / node_id / Path(source).name)
+                    output["store"] = SIMCORE_S3_ID
+                    output["path"] = destination
+
         fmds = []
-        async with session.create_client(
-            "s3",
-            endpoint_url=self.s3_client.endpoint_url,
-            aws_access_key_id=self.s3_client.access_key,
-            aws_secret_access_key=self.s3_client.secret_key,
-        ) as client:
+        async with self._create_client_context() as client:
+
+            # step 3: list files first to create fmds
             response = await client.list_objects_v2(
                 Bucket=self.simcore_bucket_name, Prefix=dest_folder + "/"
             )
+
             if "Contents" in response:
-                for f in response["Contents"]:
+                for item in response["Contents"]:
                     fmd = FileMetaData()
-                    fmd.simcore_from_uuid(f["Key"], self.simcore_bucket_name)
+                    fmd.simcore_from_uuid(item["Key"], self.simcore_bucket_name)
                     fmd.project_name = uuid_name_dict.get(dest_folder, "Untitled")
                     fmd.node_name = uuid_name_dict.get(fmd.node_id, "Untitled")
                     fmd.raw_file_path = fmd.file_uuid
@@ -831,8 +837,8 @@ class DataStorageManager:
                         Path(fmd.project_name) / fmd.node_name / fmd.file_name
                     )
                     fmd.user_id = user_id
-                    fmd.file_size = f["Size"]
-                    fmd.last_modified = str(f["LastModified"])
+                    fmd.file_size = item["Size"]
+                    fmd.last_modified = str(item["LastModified"])
                     fmds.append(fmd)
 
         # step 4 sync db
@@ -940,28 +946,22 @@ class DataStorageManager:
                 delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
-        session = aiobotocore.get_session()
-        async with session.create_client(
-            "s3",
-            endpoint_url=self.s3_client.endpoint_url,
-            aws_access_key_id=self.s3_client.access_key,
-            aws_secret_access_key=self.s3_client.secret_key,
-        ) as client:
+        async with self._create_client_context() as client:
             response = await client.list_objects_v2(
                 Bucket=self.simcore_bucket_name,
                 Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
             )
-            if "Contents" in response:
-                objects_to_delete = []
-                for f in response["Contents"]:
-                    objects_to_delete.append({"Key": f["Key"]})
 
-                if objects_to_delete:
-                    response = await client.delete_objects(
-                        Bucket=self.simcore_bucket_name,
-                        Delete={"Objects": objects_to_delete},
-                    )
-                    return response
+            objects_to_delete = []
+            for f in response.get("Contents", []):
+                objects_to_delete.append({"Key": f["Key"]})
+
+            if objects_to_delete:
+                response = await client.delete_objects(
+                    Bucket=self.simcore_bucket_name,
+                    Delete={"Objects": objects_to_delete},
+                )
+                return response
 
     # SEARCH -------------------------------------
 

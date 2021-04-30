@@ -57,6 +57,7 @@ pre-commit==2.12.1
     # via -r requirements/../../../requirements/devenv.txt
 pyyaml==5.4.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pre-commit
 regex==2021.4.4

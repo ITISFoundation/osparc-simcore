@@ -16,7 +16,6 @@ def read_reqs(reqs_path: Path):
 # -----------------------------------------------------------------
 # Hard requirements on third-parties and latest for in-repo packages
 install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "s3wrapper",
     "simcore-models-library",
     "simcore-postgres-database",
     "simcore-sdk",
