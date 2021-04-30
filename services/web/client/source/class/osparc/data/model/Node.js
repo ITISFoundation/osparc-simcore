@@ -193,7 +193,7 @@ qx.Class.define("osparc.data.model.Node", {
 
   statics: {
     isFilePicker: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("file-picker"));
+      return (metaData && metaData.key && metaData.key.includes("file-picker") && !metaData.key.includes("data-iterator"));
     },
 
     isContainer: function(metaData) {
