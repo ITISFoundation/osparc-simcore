@@ -250,7 +250,6 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     isDataIterator: function() {
-      return false;
       return osparc.data.model.Node.isDataIterator(this.getMetaData());
     },
 
@@ -1181,8 +1180,6 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
-      } else if (this.isDataIterator()) {
-        nodeEntry.outputs = this.getOutputs();
       }
 
       // remove null entries from the payload
