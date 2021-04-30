@@ -65,7 +65,7 @@ class StartDynamicSidecarModel(BaseModel):
     ):  # pylint: disable=unused-argument
         if values.get("compose_spec", None) is not None and v is None:
             raise ValueError(
-                "target_container is required when compose_spec is defined. "
+                "simcore.service.target_container is required when compose_spec is defined. "
                 f"The following compose spec was defined: {values['compose_spec']}"
             )
         return v
@@ -74,8 +74,5 @@ class StartDynamicSidecarModel(BaseModel):
     @classmethod
     def validate_protocol(cls, v, values, **kwargs):  # pylint: disable=unused-argument
         if v not in {"http", "https"}:
-            raise ValueError(
-                "target_container is required when compose_spec is defined. "
-                f"The following compose spec was defined: {values['compose_spec']}"
-            )
+            raise ValueError(f"provided request_scheme={v} must be 'http' or 'https'")
         return v
