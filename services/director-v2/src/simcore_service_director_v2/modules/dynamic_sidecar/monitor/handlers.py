@@ -66,35 +66,14 @@ class RunDockerComposeUp(BaseEventHandler):
             service_port=current.service_port,
         )
 
-        was_compose_spec_stored = await api_client.store_compose_spec(
+        compose_spec_accepted = await api_client.run_docker_compose_up(
             dynamic_sidecar_endpoint, compose_spec
         )
 
-        # compose spec was submitted
-        current.dynamic_sidecar.compose_spec_submitted = True
-
-        if not was_compose_spec_stored:
-            current.dynamic_sidecar.overall_status.update_failing_status(
-                "Could not store compose spec. Ask an admin to check director logs for details."
-            )
-            return
-
-        were_images_pulled = await api_client.pull_images(dynamic_sidecar_endpoint)
-
-        if not were_images_pulled:
-            current.dynamic_sidecar.overall_status.update_failing_status(
-                "Could not pull docker images. Ask an admin to check director logs for details."
-            )
-            return
-
-        compose_spec_was_applied = await api_client.run_docker_compose_up(
-            dynamic_sidecar_endpoint
-        )
-
         # singal there is a problem with the dynamic-sidecar
-        if not compose_spec_was_applied:
+        if not compose_spec_accepted:
             current.dynamic_sidecar.overall_status.update_failing_status(
-                "Could not apply docker-compose up. Ask an admin to check director logs for details."
+                "Could not run docker-compose up. Ask an admin to check director logs for details."
             )
 
 
