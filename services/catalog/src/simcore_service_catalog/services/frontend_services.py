@@ -177,6 +177,50 @@ def create_data_iterator_string_service() -> ServiceDockerData:
     )
 
 
+def create_data_iterator_files_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/file-picker",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="File Iterator",
+        description="Data Iterator - File",
+        authors=[{
+            "name": "Odei Maiz",
+            "email": "maiz@itis.swiss"
+        }],
+        contact="maiz@itis.swiss",
+        inputs={
+            "iteration_type": {
+                "displayOrder": 0,
+                "label": "Iteration type",
+                "description": "Iteration type",
+                "defaultValue": "multi-file",
+                "type": "string",
+                "widget": {
+                    "type": "SelectBox",
+                    "details": {
+                        "structure": [{
+                            "key": "multi-file",
+                            "label": "Multi File Selection",
+                        }, {
+                            "key": "dataset",
+                            "label": "Dataset",
+                        }]
+                    }
+                }
+            }
+        },
+        outputs={
+            "outFile": {
+                "displayOrder": 0,
+                "label": "File",
+                "description": "Chosen File",
+                "type": "data:*/*",
+            }
+        },
+    )
+
+
 def is_frontend_service(service_key) -> bool:
     return service_key.startswith(FRONTEND_SERVICE_KEY_PREFIX + "/")
 
@@ -187,6 +231,7 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
         create_node_group_service,
         create_data_iterator_integer_service,
         create_data_iterator_string_service,
+        create_data_iterator_files_service,
     ]:
         model_instance = factory()
         yield model_instance
