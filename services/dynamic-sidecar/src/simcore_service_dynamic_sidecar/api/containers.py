@@ -150,7 +150,7 @@ async def containers_docker_inspect(
 
         return container_inspect
 
-    with docker_client() as docker:
+    async with docker_client() as docker:
         container_names = shared_store.container_names
 
         results = {}
@@ -196,7 +196,7 @@ async def get_container_logs(
     # do this in PR#1887
     _raise_if_container_is_missing(id, shared_store.container_names)
 
-    with docker_client() as docker:
+    async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
 
         args = dict(stdout=True, stderr=True, since=since, until=until)
@@ -220,7 +220,7 @@ async def inspect_container(
     """Returns information about the container, like docker inspect command"""
     _raise_if_container_is_missing(id, shared_store.container_names)
 
-    with docker_client() as docker:
+    async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
         inspect_result: Dict[str, Any] = await container_instance.show()
         return inspect_result

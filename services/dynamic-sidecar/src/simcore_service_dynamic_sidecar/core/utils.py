@@ -31,8 +31,8 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         await aiofiles.os.remove(file_path)
 
 
-@contextmanager
-def docker_client() -> Generator[aiodocker.Docker, None, None]:
+@asynccontextmanager
+async def docker_client() -> Generator[aiodocker.Docker, None, None]:
     docker = aiodocker.Docker()
     try:
         yield docker
@@ -42,7 +42,7 @@ def docker_client() -> Generator[aiodocker.Docker, None, None]:
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error.message
         ) from error
     finally:
-        docker.close()
+        await docker.close()
 
 
 async def async_command(command: str, command_timeout: float) -> Tuple[bool, str]:
