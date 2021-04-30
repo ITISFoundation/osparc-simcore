@@ -102,7 +102,7 @@ def create_data_iterator_integer_service() -> ServiceDockerData:
                 "displayOrder": 3,
                 "label": "Stop",
                 "description": "Linear space Stop",
-                "defaultValue": 1",
+                "defaultValue": 1,
                 "type": "number",
             },
             "linspace_step": {
