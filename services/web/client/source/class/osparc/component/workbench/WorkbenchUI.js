@@ -737,8 +737,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const shadowDiffX = -4;
         const shadowDiffY = +3;
         const pos = nodeUI.getNode().getPosition();
-        for (let i=nodeUI.shadows.length; i>0; i--) {
-          osparc.component.workbench.SvgWidget.updateNodeUI(nodeUI.shadows[i-1], pos.x + i*shadowDiffX, pos.y + i*shadowDiffY);
+        const nShadows = nodeUI.shadows.length;
+        for (let i=0; i<nShadows; i++) {
+          osparc.component.workbench.SvgWidget.updateNodeUI(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
         }
       }
     },
