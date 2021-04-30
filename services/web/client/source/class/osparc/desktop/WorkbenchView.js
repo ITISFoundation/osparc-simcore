@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__showInMainView(this.__workbenchUI, nodeId);
         this.__workbenchUI.loadModel(node);
         this.__groupNodeView.populateLayout();
-      } else if (node.isFilePicker()) {
+      } else if (node.isFilePicker() || node.isMultiFilePicker()) {
         const nodeView = new osparc.component.node.FilePickerNodeView();
         nodeView.setNode(node);
         this.__showInMainView(nodeView, nodeId);

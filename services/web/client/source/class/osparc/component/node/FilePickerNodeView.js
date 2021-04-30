@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
 
     // overridden
     _applyNode: function(node) {
-      if (!node.isFilePicker()) {
+      if (!node.isFilePicker() && !node.isMultiFilePicker()) {
         console.error("Only file picker nodes are supported");
       }
       this.base(arguments, node);
