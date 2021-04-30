@@ -93,17 +93,15 @@ class DynamicSidecar(BaseModel):
 
     @property
     def endpoint(self):
-        """endpoint where all teh services are exposed"""
+        """endpoint where all the services are exposed"""
         return f"http://{self.hostname}:{self.port}"
 
     @property
     def are_containers_ready(self) -> bool:
         """returns: True if all containers are in running state"""
         return all(
-            [
-                docker_container_inspect.status == DockerStatus.RUNNING
-                for docker_container_inspect in self.containers_inspect
-            ]
+            docker_container_inspect.status == DockerStatus.RUNNING
+            for docker_container_inspect in self.containers_inspect
         )
 
 
