@@ -178,15 +178,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       this.__chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
-        this.__progressBar = this.getChildControl("progress");
-      }
       if (node.isDataIterator()) {
         this.set({
           width: this.self().NODE_WIDTH - 50,
           maxWidth: this.self().NODE_WIDTH - 50,
           minWidth: this.self().NODE_WIDTH - 50
         });
+      } else if (node.isComputational() || node.isFilePicker()) {
+        this.__progressBar = this.getChildControl("progress");
       }
 
       const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
