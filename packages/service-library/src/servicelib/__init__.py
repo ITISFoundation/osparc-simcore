@@ -44,7 +44,4 @@ def __monkey_patch_pydantic_url_regex() -> None:
     networks.url_regex = url_regex
 
 
-__monkey_patch_pydantic_url_regex()
-
-
 __version__ = "0.1.0"
