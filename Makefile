@@ -102,7 +102,7 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production));\
 $(if $(findstring -x,$@),\
-	pushd services; docker buildx bake --file docker-compose-build.yml; popd;,\
+	pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;,\
 	docker-compose --file services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
 )
 endef
@@ -126,7 +126,7 @@ ifeq ($(findstring webserver,$(target)),webserver)
 endif
 	# Building service $(target)
 	$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
-	$(_docker_compose_build) $(target)
+	$(_docker_compose_build)
 endif
 
 
