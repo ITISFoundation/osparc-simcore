@@ -11,6 +11,9 @@ def __monkey_patch_pydantic_url_regex() -> None:
 
     pydantic = importlib.util.find_spec("pydantic")
     if pydantic is not None:
+        import logging
+
+        logging.warning("pydantic not found, skipping patch")
         return
 
     from packaging import version
