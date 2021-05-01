@@ -4,8 +4,10 @@ import json
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import sys
+import os
 from pathlib import Path
 from typing import Any, Dict
+from unittest import mock
 
 import dotenv
 import pytest
@@ -66,10 +68,16 @@ def client(loop) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     app = init_app(settings)
 
-    # NOTE: this way we ensure the events are run in the application
-    # since it starts the app on a test server
-    with TestClient(app, raise_server_exceptions=True) as client:
-        yield client
+    with mock.patch.dict(
+        os.environ,
+        {
+            "DYNAMIC_SIDECAR_IMAGE": "NOT_A_VALID_DOCKER_COMPOSE_IMAGE:NO_TAG",
+        },
+    ):
+        # NOTE: this way we ensure the events are run in the application
+        # since it starts the app on a test server
+        with TestClient(app, raise_server_exceptions=True) as client:
+            yield client
 
 
 @pytest.fixture(scope="function")
