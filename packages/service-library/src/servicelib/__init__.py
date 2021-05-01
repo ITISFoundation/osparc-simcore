@@ -7,7 +7,12 @@ def __monkey_patch_pydantic_url_regex() -> None:
     # waiting for PR https://github.com/samuelcolvin/pydantic/pull/2512 to be released into
     # pydantic main codebase
 
-    import pydantic
+    import importlib
+
+    pydantic = importlib.util.find_spec("pydantic")
+    if pydantic is not None:
+        return
+
     from packaging import version
 
     if version.parse(pydantic.VERSION) > version.parse("1.8.1"):
@@ -43,5 +48,7 @@ def __monkey_patch_pydantic_url_regex() -> None:
 
     networks.url_regex = url_regex
 
+
+__monkey_patch_pydantic_url_regex()
 
 __version__ = "0.1.0"
