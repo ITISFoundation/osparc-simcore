@@ -59,6 +59,10 @@ def create_start_app_handler(app: FastAPI) -> Callable:
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1728
             await start_registry_sync_task(app)
 
+        from concurrent.futures.process import ProcessPoolExecutor
+
+        app.state.executor = ProcessPoolExecutor()
+
     return start_app
 
 
@@ -76,5 +80,8 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
         if app.state.settings.postgres.enabled:
             with suppress(Exception):
                 await close_db_connection(app)
+
+        if app.state.executor:
+            app.state.executor.shutdown
 
     return stop_app
