@@ -5,9 +5,9 @@
 import json
 from typing import Any, Dict, List
 
+import faker
 import pytest
 from async_asgi_testclient import TestClient
-from faker import Faker
 from fastapi import status
 from simcore_service_dynamic_sidecar._meta import api_vtag
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
@@ -124,7 +124,7 @@ async def test_compose_up_spec_not_provided(test_client: TestClient) -> None:
 
 
 async def test_compose_up_spec_invalid(test_client: TestClient) -> None:
-    invalid_compose_spec = Faker().text()
+    invalid_compose_spec = faker.Faker().text()  # pylint: disable=no-member
     response = await test_client.post(
         f"/{api_vtag}/containers", data=invalid_compose_spec
     )

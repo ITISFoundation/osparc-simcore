@@ -26,7 +26,7 @@ def app() -> FastAPI:
         os.environ,
         {
             "SC_BOOT_MODE": "production",
-            "DYNAMIC_SIDECAR_compose_namespace": "test-space"
+            "DYNAMIC_SIDECAR_compose_namespace": "test-space",
         },
     ):
         return assemble_application()

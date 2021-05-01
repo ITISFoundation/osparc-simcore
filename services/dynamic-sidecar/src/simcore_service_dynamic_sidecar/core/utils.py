@@ -3,7 +3,7 @@ import logging
 import tempfile
 import traceback
 from pathlib import Path
-from typing import AsyncGenerator, Generator, List, Tuple
+from typing import AsyncGenerator, List, Tuple
 
 import aiodocker
 import aiofiles
@@ -27,11 +27,11 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
     try:
         yield file_path
     finally:
-        await aiofiles.os.remove(file_path)
+        await aiofiles.os.remove(file_path)  # type: ignore
 
 
 @asynccontextmanager
-async def docker_client() -> Generator[aiodocker.Docker, None, None]:
+async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     docker = aiodocker.Docker()
     try:
         yield docker
