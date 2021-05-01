@@ -7,13 +7,14 @@ def __monkey_patch_pydantic_url_regex() -> None:
     # waiting for PR https://github.com/samuelcolvin/pydantic/pull/2512 to be released into
     # pydantic main codebase
 
-    import importlib
-
-    pydantic = importlib.util.find_spec("pydantic")
-    if pydantic is not None:
+    try:
+        import pydantic
+    except ModuleNotFoundError:
         import logging
 
-        logging.warning("pydantic not found, skipping patch")
+        message = "pydantic not found, skipping patch"
+        print(message)
+        logging.warning(message)
         return
 
     from packaging import version
