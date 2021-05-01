@@ -1,5 +1,6 @@
 # pylint: disable=too-many-arguments
 
+import asyncio
 import logging
 import urllib.parse
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -107,34 +108,24 @@ async def list_services(
         ]
         return services_overview
 
-    # Detailed view re-directing to
+    # NOTE: for the details of the services:
+    # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
+    # 2. we filter the services using the visible ones
 
     # get the services from the registry and filter them out
     frontend_services = list_frontend_services()
     registry_services = await director_client.get("/services")
-    detailed_services_metadata = frontend_services + registry_services
-    detailed_services: List[ServiceOut] = []
-    for detailed_metadata in detailed_services_metadata:
+    detailed_services_metadata = [
+        s
+        for s in frontend_services + registry_services
+        if (s.get("key"), s.get("version")) in visible_services
+    ]
+
+    async def _prepare_service_details(service: Dict[str, Any]) -> Optional[ServiceOut]:
         try:
-            service_key, service_version = (
-                detailed_metadata.get("key"),
-                detailed_metadata.get("version"),
-            )
-            if (service_key, service_version) not in visible_services:
-                # no access to that service
-                continue
+            service = ServiceOut.parse_obj(service)
 
-            service = ServiceOut.parse_obj(detailed_metadata)
-
-            # Write Access Granted: fill in the service rights
-            access_rights: List[
-                ServiceAccessRightsAtDB
-            ] = await services_repo.get_service_access_rights(
-                service.key, service.version, product_name=x_simcore_products_name
-            )
-            service.access_rights = {rights.gid: rights for rights in access_rights}
-
-            # Write Access Granted: override some of the values with what is in the db
+            # check the service is in the DB
             service_in_db: Optional[
                 ServiceMetaDataAtDB
             ] = await services_repo.get_service(service.key, service.version)
@@ -144,8 +135,17 @@ async def list_services(
                     service.key,
                     service.version,
                 )
-                continue
+                return
 
+            # fill in the service rights
+            access_rights: List[
+                ServiceAccessRightsAtDB
+            ] = await services_repo.get_service_access_rights(
+                service.key, service.version, product_name=x_simcore_products_name
+            )
+            service.access_rights = {rights.gid: rights for rights in access_rights}
+
+            # override some of the values with what is in the db
             service = service.copy(
                 update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
             )
@@ -154,19 +154,24 @@ async def list_services(
                 service.owner = await groups_repository.get_user_email_from_gid(
                     service_in_db.owner
                 )
-
-            detailed_services.append(service)
-
-        # services = parse_obj_as(List[ServiceOut], data) this does not work since if one service has an issue it fails
+            return service
         except ValidationError as exc:
             logger.warning(
                 "skip service %s:%s that has invalid fields\n%s",
-                detailed_metadata.get("key"),
-                detailed_metadata.get("version"),
+                service.get("key"),
+                service.get("version"),
                 exc,
             )
 
-    return detailed_services
+    # services_details = [
+    #     await _prepare_service_details(s) for s in detailed_services_metadata
+    # ]
+
+    services_details = await asyncio.gather(
+        *[_prepare_service_details(s) for s in detailed_services_metadata],
+        return_exceptions=False,
+    )
+    return [s for s in services_details if s is not None]
 
 
 @router.get(
