@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 
 import os
+import random
 import sys
 from pathlib import Path
 from typing import Any, AsyncGenerator
@@ -64,13 +65,18 @@ async def cleanup_containers(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 @pytest.fixture
-def mock_containers_get(mocker: MockerFixture) -> None:
+def mock_containers_get(mocker: MockerFixture) -> int:
+    """raises a DockerError with a random HTTP status which is also returned"""
+    mock_status_code = random.randint(1, 999)
+
     async def mock_get(*args: str, **kwargs: Any) -> None:
         raise aiodocker.exceptions.DockerError(
-            status="mock", data=dict(message="aiodocker_mocked_error")
+            status=mock_status_code, data=dict(message="aiodocker_mocked_error")
         )
 
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
+
+    return mock_status_code
 
 
 @pytest.fixture
