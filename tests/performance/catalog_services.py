@@ -7,7 +7,8 @@ import os
 
 import faker
 from dotenv import load_dotenv
-from locust import HttpUser, constant, task
+from locust import task
+from locust.contrib.fasthttp import FastHttpUser
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,11 +17,7 @@ fake = faker.Faker()
 load_dotenv()  # take environment variables from .env
 
 
-class WebApiUser(HttpUser):
-    wait_time = constant(
-        1
-    )  #  simulated users wait between 1 and 2.5 seconds after each task (see below) is executed.
-
+class WebApiUser(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
