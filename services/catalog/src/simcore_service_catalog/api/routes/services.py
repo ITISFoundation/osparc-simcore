@@ -76,7 +76,7 @@ async def list_services(
         product_name=x_simcore_products_name,
     )
 
-    visible_services = {(s.key, s.version): s for s in _services}
+    services_in_db = {(s.key, s.version): s for s in _services}
 
     # Non-detailed views from the services_repo database
     if not details:
@@ -94,62 +94,58 @@ async def list_services(
                 inputs={},
                 outputs={},
             )
-            for key, version in visible_services
+            for key, version in services_in_db
         ]
         return services_overview
 
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
     # 2. we filter the services using the visible ones
-
     # get the services from the registry and filter them out
-    detailed_services_metadata = [
+    filtered_services_in_registry = [
         s
         for s in list_frontend_services() + await director_client.get("/services")
-        if (s.get("key"), s.get("version")) in visible_services
+        if (s.get("key"), s.get("version")) in services_in_db
     ]
 
     async def _prepare_service_details(
         service_in_registry: Dict[str, Any], service_in_db: ServiceMetaDataAtDB
     ) -> Optional[ServiceOut]:
-        try:
-            # compose service from registry and DB
-            service_in_registry.update(
-                service_in_db.dict(exclude_unset=True, exclude={"owner"})
+        # get the access rights
+        service_access_rights = await services_repo.get_service_access_rights(
+            service_in_db.key,
+            service_in_db.version,
+            product_name=x_simcore_products_name,
+        )
+        # the owner shall be converted from a gid to an email address
+        service_owner = None
+        if service_in_db.owner:
+            service_owner = await groups_repository.get_user_email_from_gid(
+                service_in_db.owner
             )
-            # validate the service
-            service = await run_in_threadpool(ServiceOut, **service_in_registry)
 
-            # get the service access rights
-            # access_rights: List[
-            #     ServiceAccessRightsAtDB
-            # ] = await services_repo.get_service_access_rights(
-            #     service.key, service.version, product_name=x_simcore_products_name
-            # )
-            # service.access_rights = {rights.gid: rights for rights in access_rights}
+        # compose service from registry and DB
+        service_in_registry.update(
+            service_in_db.dict(exclude_unset=True, exclude={"owner"})
+        )
 
-            # # the owner shall be converted to an email address
-            # if service_in_db.owner:
-            #     service.owner = await groups_repository.get_user_email_from_gid(
-            #         service_in_db.owner
-            #     )
-            return service
-        except ValidationError as exc:
-            logger.warning(
-                "skip service %s:%s that has invalid fields\n%s",
-                service_in_registry.get("key"),
-                service_in_registry.get("version"),
-                exc,
-            )
+        service_in_registry["access_rights"] = {
+            rights.gid: rights for rights in service_access_rights
+        }
+        if service_owner:
+            service_in_registry["owner"] = service_owner
+        # validate the service
+        service = await run_in_threadpool(ServiceOut, **service_in_registry)
+        return service
 
     services_details = await asyncio.gather(
         *[
-            _prepare_service_details(s, visible_services[s["key"], s["version"]])
-            for s in detailed_services_metadata
+            _prepare_service_details(s, services_in_db[s["key"], s["version"]])
+            for s in filtered_services_in_registry
         ],
-        return_exceptions=False,
+        return_exceptions=True,
     )
-    return [s for s in services_details if s is not None]
+    return [s for s in services_details if isinstance(s, ServiceOut)]
 
 
 @router.get(
