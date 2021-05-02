@@ -21,12 +21,22 @@ class ServicesRepository(BaseRepository):
         gids: Optional[List[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
+        combine_access_with_and: Optional[bool] = True,
         product_name: Optional[str] = None,
     ) -> List[ServiceMetaDataAtDB]:
         services_in_db = []
 
         query = sa.select([services_meta_data])
         if gids or execute_access or write_access:
+            access_query_part = and_(
+                services_access_rights.c.execute_access if execute_access else True,
+                services_access_rights.c.write_access if write_access else True,
+            )
+            if not combine_access_with_and:
+                access_query_part = or_(
+                    services_access_rights.c.execute_access if execute_access else True,
+                    services_access_rights.c.write_access if write_access else True,
+                )
             query = (
                 sa.select([services_meta_data])
                 .select_from(services_meta_data.join(services_access_rights))
@@ -35,10 +45,7 @@ class ServicesRepository(BaseRepository):
                         or_(*[services_access_rights.c.gid == gid for gid in gids])
                         if gids
                         else True,
-                        services_access_rights.c.execute_access
-                        if execute_access
-                        else True,
-                        services_access_rights.c.write_access if write_access else True,
+                        access_query_part,
                         (services_access_rights.c.product_name == product_name)
                         if product_name
                         else True,

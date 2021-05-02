@@ -15,6 +15,7 @@ from models_library.services import (
 )
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
+from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
@@ -70,23 +71,12 @@ async def list_services(
     _services: List[ServiceMetaDataAtDB] = await services_repo.list_services(
         gids=[group.gid for group in user_groups],
         execute_access=True,
-        product_name=x_simcore_products_name,
-    )
-    # TODO: get this directly in DB
-    executable_services: ServicesSelection = {
-        (service.key, service.version) for service in _services
-    }
-
-    # get the writable services
-    _services = await services_repo.list_services(
-        gids=[group.gid for group in user_groups],
         write_access=True,
+        combine_access_with_and=False,
         product_name=x_simcore_products_name,
     )
-    writable_services: ServicesSelection = {
-        (service.key, service.version) for service in _services
-    }
-    visible_services = executable_services | writable_services
+
+    visible_services = {(s.key, s.version): s for s in _services}
 
     # Non-detailed views from the services_repo database
     if not details:
@@ -113,62 +103,50 @@ async def list_services(
     # 2. we filter the services using the visible ones
 
     # get the services from the registry and filter them out
-    frontend_services = list_frontend_services()
-    registry_services = await director_client.get("/services")
     detailed_services_metadata = [
         s
-        for s in frontend_services + registry_services
+        for s in list_frontend_services() + await director_client.get("/services")
         if (s.get("key"), s.get("version")) in visible_services
     ]
 
-    async def _prepare_service_details(service: Dict[str, Any]) -> Optional[ServiceOut]:
+    async def _prepare_service_details(
+        service_in_registry: Dict[str, Any], service_in_db: ServiceMetaDataAtDB
+    ) -> Optional[ServiceOut]:
         try:
-            service = ServiceOut.parse_obj(service)
-
-            # check the service is in the DB
-            service_in_db: Optional[
-                ServiceMetaDataAtDB
-            ] = await services_repo.get_service(service.key, service.version)
-            if not service_in_db:
-                logger.error(
-                    "The service %s:%s is not in the database",
-                    service.key,
-                    service.version,
-                )
-                return
-
-            # fill in the service rights
-            access_rights: List[
-                ServiceAccessRightsAtDB
-            ] = await services_repo.get_service_access_rights(
-                service.key, service.version, product_name=x_simcore_products_name
+            # compose service from registry and DB
+            service_in_registry.update(
+                service_in_db.dict(exclude_unset=True, exclude={"owner"})
             )
-            service.access_rights = {rights.gid: rights for rights in access_rights}
+            # validate the service
+            service = await run_in_threadpool(ServiceOut, **service_in_registry)
 
-            # override some of the values with what is in the db
-            service = service.copy(
-                update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
-            )
-            # the owner shall be converted to an email address
-            if service_in_db.owner:
-                service.owner = await groups_repository.get_user_email_from_gid(
-                    service_in_db.owner
-                )
+            # get the service access rights
+            # access_rights: List[
+            #     ServiceAccessRightsAtDB
+            # ] = await services_repo.get_service_access_rights(
+            #     service.key, service.version, product_name=x_simcore_products_name
+            # )
+            # service.access_rights = {rights.gid: rights for rights in access_rights}
+
+            # # the owner shall be converted to an email address
+            # if service_in_db.owner:
+            #     service.owner = await groups_repository.get_user_email_from_gid(
+            #         service_in_db.owner
+            #     )
             return service
         except ValidationError as exc:
             logger.warning(
                 "skip service %s:%s that has invalid fields\n%s",
-                service.get("key"),
-                service.get("version"),
+                service_in_registry.get("key"),
+                service_in_registry.get("version"),
                 exc,
             )
 
-    # services_details = [
-    #     await _prepare_service_details(s) for s in detailed_services_metadata
-    # ]
-
     services_details = await asyncio.gather(
-        *[_prepare_service_details(s) for s in detailed_services_metadata],
+        *[
+            _prepare_service_details(s, visible_services[s["key"], s["version"]])
+            for s in detailed_services_metadata
+        ],
         return_exceptions=False,
     )
     return [s for s in services_details if s is not None]
