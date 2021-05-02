@@ -38,7 +38,10 @@ class ServicesRepository(BaseRepository):
                     services_access_rights.c.write_access if write_access else True,
                 )
             query = (
-                sa.select([services_meta_data])
+                sa.select(
+                    [services_meta_data],
+                    distinct=[services_meta_data.c.key, services_meta_data.c.version],
+                )
                 .select_from(services_meta_data.join(services_access_rights))
                 .where(
                     and_(
@@ -51,6 +54,7 @@ class ServicesRepository(BaseRepository):
                         else True,
                     )
                 )
+                .order_by(services_meta_data.c.key, services_meta_data.c.version)
             )
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(query):
