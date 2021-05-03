@@ -6207,7 +6207,7 @@ paths:
                                     key:
                                       type: string
                                       description: distinctive name for the node based on the docker registry path
-                                      pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                      pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                       example:
                                         - simcore/services/comp/sleeper
                                         - simcore/services/dynamic/3dviewer
@@ -6802,7 +6802,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -7277,7 +7277,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -7870,7 +7870,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -8469,7 +8469,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -9059,7 +9059,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                           example:
                             - simcore/services/comp/sleeper
                             - simcore/services/dynamic/3dviewer
@@ -9534,7 +9534,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -10149,7 +10149,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -11892,7 +11892,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
@@ -12484,7 +12484,7 @@ paths:
                                   key:
                                     type: string
                                     description: distinctive name for the node based on the docker registry path
-                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$'
+                                    pattern: '^(simcore)/(services)/(comp|dynamic|frontend)(/[^\s/]+)+$'
                                     example:
                                       - simcore/services/comp/sleeper
                                       - simcore/services/dynamic/3dviewer
