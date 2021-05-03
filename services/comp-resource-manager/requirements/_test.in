@@ -21,12 +21,8 @@ asgi_lifespan
 
 # fixtures
 faker
-passlib[bcrypt]
-respx
 
 # db migration
--r ../../../packages/postgres-database/requirements/_base.in
-alembic
 click
 docker
 tenacity
