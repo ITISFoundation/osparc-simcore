@@ -267,7 +267,7 @@ async function deleteFirstStudy(page, studyName) {
   });
   if (children.length === 0) {
     console.log("Deleting first Study: no study found");
-    return;
+    return false;
   }
 
   const studyCardId = children[0];
