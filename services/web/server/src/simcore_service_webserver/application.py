@@ -7,6 +7,9 @@ from typing import Any, Dict
 
 from aiohttp import web
 from servicelib.application import create_safe_application
+from servicelib.rest_pagination_utils import monkey_patch_pydantic_url_regex
+
+monkey_patch_pydantic_url_regex()
 
 from ._meta import WELCOME_MSG
 from .activity import setup_activity

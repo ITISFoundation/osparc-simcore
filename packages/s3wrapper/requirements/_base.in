@@ -1,7 +1,0 @@
-#
-# Specifies third-party dependencies for 's3wrapper'
-#
--c ../../../requirements/constraints.txt
-
-urllib3
-minio

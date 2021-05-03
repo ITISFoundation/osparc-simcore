@@ -21,7 +21,6 @@ aiozipkin==0.7.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -36,12 +35,8 @@ attrs==20.3.0
     #   aiohttp
     #   jsonschema
     #   openapi-core
-certifi==2020.12.5
-    # via minio
 chardet==4.0.0
     # via aiohttp
-configparser==5.0.2
-    # via minio
 dataclasses==0.8
     # via pydantic
 decorator==4.4.2
@@ -75,14 +70,6 @@ lazy-object-proxy==1.4.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-core
-minio==6.0.2
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.in
 multidict==5.1.0
     # via
     #   aiohttp
@@ -114,15 +101,10 @@ pyparsing==2.4.7
     # via packaging
 pyrsistent==0.17.3
     # via jsonschema
-python-dateutil==2.8.1
-    # via minio
-pytz==2021.1
-    # via minio
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -135,13 +117,11 @@ six==1.15.0
     #   openapi-core
     #   openapi-schema-validator
     #   openapi-spec-validator
-    #   python-dateutil
     #   tenacity
 sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -169,15 +149,6 @@ typing-extensions==3.7.4.3
     #   yarl
 ujson==4.0.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-urllib3==1.26.4
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/s3wrapper/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/s3wrapper/requirements/_base.in
-    #   minio
 werkzeug==1.0.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 yarl==1.6.3

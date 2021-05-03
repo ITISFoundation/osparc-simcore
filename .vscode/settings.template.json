@@ -33,7 +33,6 @@
     "./packages/postgres-database/src",
     "./packages/postgres-database/tests",
     "./packages/pytest-simcore/src",
-    "./packages/s3wrapper/src",
     "./packages/service-integration/src",
     "./packages/service-library/src",
     "./packages/simcore-sdk/src",

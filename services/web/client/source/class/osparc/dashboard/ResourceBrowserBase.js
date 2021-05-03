@@ -82,19 +82,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         return;
       }
       this._loadingStudiesBtn.setFetching(true);
-      const params = {
-        url: {
-          offset: this._studiesContainer.nStudies || 0,
-          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
-        }
-      };
-      const resolveWResponse = true;
-      osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse)
+      const request = this.__getNextRequest(templates);
+      request
         .then(resp => {
           const studies = resp["data"];
-          const tStudies = resp["_meta"]["total"];
-          this._studiesContainer.nStudies = (this._studiesContainer.nStudies || 0) + studies.length;
-          this._studiesContainer.noMoreStudies = this._studiesContainer.nStudies >= tStudies;
+          this._studiesContainer.nextRequest = resp["_links"]["next"];
           this._addStudiesToList(studies);
         })
         .catch(err => {
@@ -102,9 +94,27 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         })
         .finally(() => {
           this._loadingStudiesBtn.setFetching(false);
-          this._loadingStudiesBtn.setVisibility(this._studiesContainer.noMoreStudies ? "excluded" : "visible");
+          this._loadingStudiesBtn.setVisibility(this._studiesContainer.nextRequest === null ? "excluded" : "visible");
           this._moreStudiesRequired();
         });
+    },
+
+    __getNextRequest: function(templates) {
+      const params = {
+        url: {
+          offset: 0,
+          limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
+        }
+      };
+      if ("nextRequest" in this._studiesContainer &&
+        this._studiesContainer.nextRequest !== null &&
+        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "offset") &&
+        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "limit")) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "limit");
+      }
+      const resolveWResponse = true;
+      return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse);
     },
 
     _addStudiesToList: function() {
@@ -113,7 +123,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _moreStudiesRequired: function() {
       if (this._studiesContainer &&
-        !this._studiesContainer.noMoreStudies &&
+        this._studiesContainer.nextRequest !== null &&
         (this._studiesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
         this._loadingStudiesBtn.checkIsOnScreen())
       ) {
