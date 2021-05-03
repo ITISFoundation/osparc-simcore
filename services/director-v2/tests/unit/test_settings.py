@@ -32,10 +32,11 @@ def test_create_registry_settings():
     assert settings.api_url == "https://registry:5000/v2"
 
 
-def test_registry_settings_error():
+@pytest.mark.parametrize("user,password", [(None, "pwd"), ("usr", None), (None, None)])
+def test_registry_settings_error_missing_credentials(user, password):
     with pytest.raises(
         ValueError, match="Cannot authenticate without credentials user, pw"
     ):
         RegistrySettings(
-            url="http://registry:5000", auth=True, user=None, pw=None, ss=False
+            url="http://registry:5000", auth=True, user=user, pw=password, ssl=False
         )
