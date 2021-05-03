@@ -23,8 +23,8 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
         # 2nd one was acquiring a connection per request which works but blocks the director-v2 responsiveness once
         # the max amount of connections is reached
         # now the current solution is to acquire connection when needed.
-
-        if engine.freesize <= 1:
+        available_engines = engine.maxsize - (engine.size - engine.freesize)
+        if available_engines <= 1:
             logger.warning(
                 "Low pg connections available in pool: pool size=%d, acquired=%d, free=%d, reserved=[%d, %d]",
                 engine.size,
