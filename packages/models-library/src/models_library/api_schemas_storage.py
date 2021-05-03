@@ -19,7 +19,6 @@ from .basic_regex import UUID_RE
 # /
 class HealthCheck(BaseModel):
     name: Optional[str]
-    status: Optional[str]
     api_version: Optional[str]
     version: Optional[str]
 

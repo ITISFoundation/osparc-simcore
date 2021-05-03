@@ -11,7 +11,6 @@ from urllib.parse import quote
 
 import pytest
 from aiohttp import web, web_exceptions
-
 from helpers import json_schema_validator
 from servicelib.rest_responses import unwrap_envelope
 from simcore_service_director import config, main, resources, rest
@@ -42,7 +41,6 @@ async def test_root_get(loop, client, api_version_prefix):
 
     healthcheck = healthcheck_enveloped["data"]
     assert healthcheck["name"] == "simcore-service-director"
-    assert healthcheck["status"] == "SERVICE_RUNNING"
     assert healthcheck["version"] == "0.1.0"
     assert healthcheck["api_version"] == "0.1.0"
 
