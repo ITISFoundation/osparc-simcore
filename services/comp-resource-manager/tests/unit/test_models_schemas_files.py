@@ -12,8 +12,6 @@ import pytest
 from fastapi import UploadFile
 from models_library.api_schemas_storage import FileMetaData as StorageFileMetaData
 from pydantic import ValidationError
-from simcore_service_comp_resource_manager.models.schemas.files import File
-from simcore_service_comp_resource_manager.modules.storage import to_file_api_model
 
 pytestmark = pytest.mark.asyncio
 
