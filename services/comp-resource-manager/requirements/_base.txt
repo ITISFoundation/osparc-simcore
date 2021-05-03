@@ -38,8 +38,9 @@ attrs==20.3.0
     #   openapi-core
 certifi==2020.12.5
     # via requests
-chardet==4.0.0
+chardet==3.0.4
     # via
+    #   -r requirements/_base.in
     #   aiohttp
     #   requests
 click==7.1.2
@@ -62,8 +63,10 @@ graphql-core==2.3.2
     #   graphql-relay
 graphql-relay==2.0.1
     # via graphene
-h11==0.12.0
-    # via uvicorn
+h11==0.9.0
+    # via
+    #   -r requirements/_base.in
+    #   uvicorn
 httptools==0.1.2
     # via uvicorn
 idna-ssl==1.1.0

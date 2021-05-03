@@ -9,7 +9,8 @@
 -r ../../../packages/models-library/requirements/_base.in
 -r ../../../packages/service-library/requirements/_base.in
 
-
+chardet<4 # incompatible with respx 0.12.1
+h11<0.10 # incompatible with respx 0.12.1
 # fastapi and extensions
 fastapi[all]
 

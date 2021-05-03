@@ -20,6 +20,7 @@ asgi_lifespan
 
 # fixtures
 faker
+respx
 
 # db migration
 click
