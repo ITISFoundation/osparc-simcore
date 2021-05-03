@@ -213,6 +213,8 @@ properties:
                   - $ref: '#/definitions/nodeIODataTypes/basic'
                   - $ref: '#/definitions/nodeIODataTypes/filePath'
                   - $ref: '#/definitions/nodeIODataTypes/downloadLink'
+                  - $ref: '#/definitions/nodeIODataTypes/basicArray'
+                  - $ref: '#/definitions/nodeIODataTypes/filePathArray'
           outputNode:
             type: boolean
             deprecated: true
@@ -448,6 +450,10 @@ definitions:
         - string
         - number
         - 'null'
+    basicArray:
+      type: array
+      items:
+        $ref: '#/definitions/nodeIODataTypes/basic'
     filePath:
       type: object
       additionalProperties: false
@@ -467,6 +473,10 @@ definitions:
           type: string
         eTag:
           type: string
+    filePathArray:
+      type: array
+      items:
+        $ref: '#/definitions/nodeIODataTypes/filePath'
     downloadLink:
       type: object
       additionalProperties: false

@@ -292,6 +292,12 @@
                     },
                     {
                       "$ref": "#/definitions/nodeIODataTypes/downloadLink"
+                    },
+                    {
+                      "$ref": "#/definitions/nodeIODataTypes/basicArray"
+                    },
+                    {
+                      "$ref": "#/definitions/nodeIODataTypes/filePathArray"
                     }
                   ]
                 }
@@ -619,6 +625,12 @@
           "null"
         ]
       },
+      "basicArray": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/nodeIODataTypes/basic"
+        }
+      },
       "filePath": {
         "type": "object",
         "additionalProperties": false,
@@ -645,6 +657,12 @@
           "eTag": {
             "type": "string"
           }
+        }
+      },
+      "filePathArray": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/nodeIODataTypes/filePath"
         }
       },
       "downloadLink": {
