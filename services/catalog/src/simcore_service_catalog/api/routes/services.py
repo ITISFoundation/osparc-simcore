@@ -16,7 +16,6 @@ from models_library.services import (
 )
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
-from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
@@ -62,8 +61,9 @@ def _prepare_service_details(
     )
 
     # validate the service
+    validated_service = None
     try:
-        return ServiceOut(**composed_service)
+        validated_service = ServiceOut(**composed_service)
     except ValidationError as exc:
         logger.warning(
             "could not validate service [%s:%s]: %s",
@@ -71,6 +71,7 @@ def _prepare_service_details(
             composed_service.get("version"),
             exc,
         )
+    return validated_service
 
 
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
@@ -95,7 +96,7 @@ async def list_services(
         )
 
     # now get the executable services
-    services_and_access_rights = await services_repo.list_services_and_access_rights(
+    services_and_access_rights = await services_repo.list_services_and_rights_owner(
         gids=[group.gid for group in user_groups],
         execute_access=True,
         write_access=True,
