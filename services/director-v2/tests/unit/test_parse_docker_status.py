@@ -12,11 +12,11 @@ from simcore_service_director_v2.modules.dynamic_sidecar.parse_docker_status imp
 
 
 @pytest.fixture
-def mock_containers_states() -> Dict[str, Dict[str, str]]:
+def mock_containers_statuses() -> Dict[str, Dict[str, str]]:
     return {
-        "container_id_1": {"State": "pulling"},
-        "container_id_2": {"State": "removing", "Error": "something"},
-        "container_id_3": {"State": "pending"},
+        "container_id_1": {"Status": "pulling"},
+        "container_id_2": {"Status": "removing", "Error": "something"},
+        "container_id_3": {"Status": "pending"},
     }
 
 
@@ -65,10 +65,10 @@ def test_min_service_state_is_lowerst_in_expected_order():
 
 
 def test_extract_containers_minimim_statuses(
-    mock_containers_states: Dict[str, Dict[str, str]]
+    mock_containers_statuses: Dict[str, Dict[str, str]]
 ):
     service_state, service_message = extract_containers_minimim_statuses(
-        mock_containers_states
+        mock_containers_statuses
     )
     assert service_state == ServiceState.PENDING
     assert service_message == ""
