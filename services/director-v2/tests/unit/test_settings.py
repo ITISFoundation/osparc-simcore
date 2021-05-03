@@ -23,25 +23,19 @@ def test_loading_env_devel_in_settings(project_env_devel_environment):
     assert settings.postgres.dsn == "postgresql://test:test@localhost:5432/test"
 
 
-def test_create_registry_settings(project_env_devel_environment, monkeypatch):
-    monkeypatch.setenv("REGISTRY_URL", "http://registry:5000")
-    monkeypatch.setenv("REGISTRY_AUTH", "True")
-    monkeypatch.setenv("REGISTRY_USER", "admin")
-    monkeypatch.setenv("REGISTRY_PW", "adminadmin")
-    monkeypatch.setenv("REGISTRY_SSL", "1")
-
-    settings = RegistrySettings()
+def test_create_registry_settings():
+    settings = RegistrySettings(
+        url="http://registry:5000", auth=True, user="admin", pw="adminadmin", ssl=True
+    )
 
     # http -> https
     assert settings.api_url == "https://registry:5000/v2"
 
 
-def test_registry_settings_error(project_env_devel_environment, monkeypatch):
-    monkeypatch.setenv("REGISTRY_URL", "http://registry:5000")
-    monkeypatch.setenv("REGISTRY_AUTH", "True")
-    monkeypatch.setenv("REGISTRY_USER", "")
-    monkeypatch.setenv("REGISTRY_PW", "")
-    monkeypatch.setenv("REGISTRY_SSL", "False")
-
-    with pytest.raises(ValueError, match="Authentication REQUIRES a secured channel"):
-        RegistrySettings()
+def test_registry_settings_error():
+    with pytest.raises(
+        ValueError, match="Cannot authenticate without credentials user, pw"
+    ):
+        RegistrySettings(
+            url="http://registry:5000", auth=True, user=None, pw=None, ss=False
+        )
