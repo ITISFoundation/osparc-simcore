@@ -1,0 +1,37 @@
+#
+# Specifies dependencies required to run 'services/comp-resource-manager/test'
+#  both for unit and integration tests!!
+#
+-c ../../../requirements/constraints.txt
+# Adds base AS CONSTRAINT specs, not requirement.
+#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
+#
+-c _base.txt
+
+# 'services/comp-resource-manager/tests/unit' dependencies
+
+# testing
+pytest
+pytest-asyncio
+pytest-cov
+pytest-docker
+pytest-mock
+pytest-runner
+asgi_lifespan
+
+# fixtures
+faker
+passlib[bcrypt]
+respx
+
+# db migration
+-r ../../../packages/postgres-database/requirements/_base.in
+alembic
+click
+docker
+tenacity
+
+# tools
+pylint
+coveralls
+codecov
