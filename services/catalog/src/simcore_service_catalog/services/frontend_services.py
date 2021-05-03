@@ -200,7 +200,7 @@ def create_data_iterator_files_service() -> ServiceDockerData:
                     "type": "SelectBox",
                     "details": {
                         "structure": [{
-                            "key": "multi-file",
+                            "key": "multiFile",
                             "label": "Multi File Selection",
                         }, {
                             "key": "folder",
@@ -208,6 +208,18 @@ def create_data_iterator_files_service() -> ServiceDockerData:
                         }]
                     }
                 }
+            },
+            "multiFile": {
+                "displayOrder": 1,
+                "label": "Custom List",
+                "description": "Multi select files below",
+                "type": "data:*/*"
+            },
+            "folder": {
+                "displayOrder": 2,
+                "label": "Folder",
+                "description": "Select a folder to iterate through",
+                "type": "data:*/*"
             }
         },
         outputs={
