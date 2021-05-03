@@ -134,12 +134,8 @@ properties:
             patternProperties:
               ^[-_a-zA-Z0-9]+$:
                 oneOf:
-                  - type:
-                      - integer
-                      - boolean
-                      - string
-                      - number
-                      - 'null'
+                  - $ref: '#/definitions/nodeIODataTypes/basic'
+                  - $ref: '#/definitions/nodeIODataTypes/basicArray'
                   - type: object
                     additionalProperties: false
                     required:
@@ -152,36 +148,9 @@ properties:
                       output:
                         type: string
                         pattern: ^[-_a-zA-Z0-9]+$
-                  - type: object
-                    additionalProperties: false
-                    required:
-                      - store
-                      - path
-                    properties:
-                      store:
-                        type:
-                          - string
-                          - integer
-                      dataset:
-                        type: string
-                      path:
-                        type: string
-                      label:
-                        type: string
-                      eTag:
-                        type: string
-                  - type: object
-                    additionalProperties: false
-                    required:
-                      - downloadLink
-                    properties:
-                      downloadLink:
-                        minLength: 1
-                        maxLength: 65536
-                        type: string
-                        format: uri
-                      label:
-                        type: string
+                  - $ref: '#/definitions/nodeIODataTypes/filePath'
+                  - $ref: '#/definitions/nodeIODataTypes/filePathArray'
+                  - $ref: '#/definitions/nodeIODataTypes/downloadLink'
           inputAccess:
             description: map with key - access level pairs
             type: object
@@ -213,8 +182,6 @@ properties:
                   - $ref: '#/definitions/nodeIODataTypes/basic'
                   - $ref: '#/definitions/nodeIODataTypes/filePath'
                   - $ref: '#/definitions/nodeIODataTypes/downloadLink'
-                  - $ref: '#/definitions/nodeIODataTypes/basicArray'
-                  - $ref: '#/definitions/nodeIODataTypes/filePathArray'
           outputNode:
             type: boolean
             deprecated: true

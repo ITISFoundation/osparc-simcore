@@ -6256,6 +6256,14 @@ paths:
                                                 - string
                                                 - number
                                                 - 'null'
+                                            - type: array
+                                              items:
+                                                type:
+                                                  - integer
+                                                  - boolean
+                                                  - string
+                                                  - number
+                                                  - 'null'
                                             - type: object
                                               additionalProperties: false
                                               required:
@@ -6286,6 +6294,26 @@ paths:
                                                   type: string
                                                 eTag:
                                                   type: string
+                                            - type: array
+                                              items:
+                                                type: object
+                                                additionalProperties: false
+                                                required:
+                                                  - store
+                                                  - path
+                                                properties:
+                                                  store:
+                                                    type:
+                                                      - string
+                                                      - integer
+                                                  dataset:
+                                                    type: string
+                                                  path:
+                                                    type: string
+                                                  label:
+                                                    type: string
+                                                  eTag:
+                                                    type: string
                                             - type: object
                                               additionalProperties: false
                                               required:
@@ -6362,34 +6390,6 @@ paths:
                                                   format: uri
                                                 label:
                                                   type: string
-                                            - type: array
-                                              items:
-                                                type:
-                                                  - integer
-                                                  - boolean
-                                                  - string
-                                                  - number
-                                                  - 'null'
-                                            - type: array
-                                              items:
-                                                type: object
-                                                additionalProperties: false
-                                                required:
-                                                  - store
-                                                  - path
-                                                properties:
-                                                  store:
-                                                    type:
-                                                      - string
-                                                      - integer
-                                                  dataset:
-                                                    type: string
-                                                  path:
-                                                    type: string
-                                                  label:
-                                                    type: string
-                                                  eTag:
-                                                    type: string
                                     outputNode:
                                       type: boolean
                                       deprecated: true
@@ -6879,6 +6879,14 @@ paths:
                                     - string
                                     - number
                                     - 'null'
+                                - type: array
+                                  items:
+                                    type:
+                                      - integer
+                                      - boolean
+                                      - string
+                                      - number
+                                      - 'null'
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -6909,6 +6917,26 @@ paths:
                                       type: string
                                     eTag:
                                       type: string
+                                - type: array
+                                  items:
+                                    type: object
+                                    additionalProperties: false
+                                    required:
+                                      - store
+                                      - path
+                                    properties:
+                                      store:
+                                        type:
+                                          - string
+                                          - integer
+                                      dataset:
+                                        type: string
+                                      path:
+                                        type: string
+                                      label:
+                                        type: string
+                                      eTag:
+                                        type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -6985,34 +7013,6 @@ paths:
                                       format: uri
                                     label:
                                       type: string
-                                - type: array
-                                  items:
-                                    type:
-                                      - integer
-                                      - boolean
-                                      - string
-                                      - number
-                                      - 'null'
-                                - type: array
-                                  items:
-                                    type: object
-                                    additionalProperties: false
-                                    required:
-                                      - store
-                                      - path
-                                    properties:
-                                      store:
-                                        type:
-                                          - string
-                                          - integer
-                                      dataset:
-                                        type: string
-                                      path:
-                                        type: string
-                                      label:
-                                        type: string
-                                      eTag:
-                                        type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -7382,6 +7382,14 @@ paths:
                                               - string
                                               - number
                                               - 'null'
+                                          - type: array
+                                            items:
+                                              type:
+                                                - integer
+                                                - boolean
+                                                - string
+                                                - number
+                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -7412,6 +7420,26 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
+                                          - type: array
+                                            items:
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  type: string
+                                                path:
+                                                  type: string
+                                                label:
+                                                  type: string
+                                                eTag:
+                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -7488,34 +7516,6 @@ paths:
                                                 format: uri
                                               label:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -8003,6 +8003,14 @@ paths:
                                               - string
                                               - number
                                               - 'null'
+                                          - type: array
+                                            items:
+                                              type:
+                                                - integer
+                                                - boolean
+                                                - string
+                                                - number
+                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8033,6 +8041,26 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
+                                          - type: array
+                                            items:
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  type: string
+                                                path:
+                                                  type: string
+                                                label:
+                                                  type: string
+                                                eTag:
+                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8109,34 +8137,6 @@ paths:
                                                 format: uri
                                               label:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -8630,6 +8630,14 @@ paths:
                                               - string
                                               - number
                                               - 'null'
+                                          - type: array
+                                            items:
+                                              type:
+                                                - integer
+                                                - boolean
+                                                - string
+                                                - number
+                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8660,6 +8668,26 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
+                                          - type: array
+                                            items:
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  type: string
+                                                path:
+                                                  type: string
+                                                label:
+                                                  type: string
+                                                eTag:
+                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -8736,34 +8764,6 @@ paths:
                                                 format: uri
                                               label:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -9248,6 +9248,14 @@ paths:
                                     - string
                                     - number
                                     - 'null'
+                                - type: array
+                                  items:
+                                    type:
+                                      - integer
+                                      - boolean
+                                      - string
+                                      - number
+                                      - 'null'
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -9278,6 +9286,26 @@ paths:
                                       type: string
                                     eTag:
                                       type: string
+                                - type: array
+                                  items:
+                                    type: object
+                                    additionalProperties: false
+                                    required:
+                                      - store
+                                      - path
+                                    properties:
+                                      store:
+                                        type:
+                                          - string
+                                          - integer
+                                      dataset:
+                                        type: string
+                                      path:
+                                        type: string
+                                      label:
+                                        type: string
+                                      eTag:
+                                        type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -9354,34 +9382,6 @@ paths:
                                       format: uri
                                     label:
                                       type: string
-                                - type: array
-                                  items:
-                                    type:
-                                      - integer
-                                      - boolean
-                                      - string
-                                      - number
-                                      - 'null'
-                                - type: array
-                                  items:
-                                    type: object
-                                    additionalProperties: false
-                                    required:
-                                      - store
-                                      - path
-                                    properties:
-                                      store:
-                                        type:
-                                          - string
-                                          - integer
-                                      dataset:
-                                        type: string
-                                      path:
-                                        type: string
-                                      label:
-                                        type: string
-                                      eTag:
-                                        type: string
                         outputNode:
                           type: boolean
                           deprecated: true
@@ -9751,6 +9751,14 @@ paths:
                                               - string
                                               - number
                                               - 'null'
+                                          - type: array
+                                            items:
+                                              type:
+                                                - integer
+                                                - boolean
+                                                - string
+                                                - number
+                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -9781,6 +9789,26 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
+                                          - type: array
+                                            items:
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  type: string
+                                                path:
+                                                  type: string
+                                                label:
+                                                  type: string
+                                                eTag:
+                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -9857,34 +9885,6 @@ paths:
                                                 format: uri
                                               label:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -10394,6 +10394,14 @@ paths:
                                               - string
                                               - number
                                               - 'null'
+                                          - type: array
+                                            items:
+                                              type:
+                                                - integer
+                                                - boolean
+                                                - string
+                                                - number
+                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -10424,6 +10432,26 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
+                                          - type: array
+                                            items:
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  type: string
+                                                path:
+                                                  type: string
+                                                label:
+                                                  type: string
+                                                eTag:
+                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -10500,34 +10528,6 @@ paths:
                                                 format: uri
                                               label:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -12165,6 +12165,14 @@ paths:
                                               - string
                                               - number
                                               - 'null'
+                                          - type: array
+                                            items:
+                                              type:
+                                                - integer
+                                                - boolean
+                                                - string
+                                                - number
+                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12195,6 +12203,26 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
+                                          - type: array
+                                            items:
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  type: string
+                                                path:
+                                                  type: string
+                                                label:
+                                                  type: string
+                                                eTag:
+                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12271,34 +12299,6 @@ paths:
                                                 format: uri
                                               label:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
@@ -12785,6 +12785,14 @@ paths:
                                               - string
                                               - number
                                               - 'null'
+                                          - type: array
+                                            items:
+                                              type:
+                                                - integer
+                                                - boolean
+                                                - string
+                                                - number
+                                                - 'null'
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12815,6 +12823,26 @@ paths:
                                                 type: string
                                               eTag:
                                                 type: string
+                                          - type: array
+                                            items:
+                                              type: object
+                                              additionalProperties: false
+                                              required:
+                                                - store
+                                                - path
+                                              properties:
+                                                store:
+                                                  type:
+                                                    - string
+                                                    - integer
+                                                dataset:
+                                                  type: string
+                                                path:
+                                                  type: string
+                                                label:
+                                                  type: string
+                                                eTag:
+                                                  type: string
                                           - type: object
                                             additionalProperties: false
                                             required:
@@ -12891,34 +12919,6 @@ paths:
                                                 format: uri
                                               label:
                                                 type: string
-                                          - type: array
-                                            items:
-                                              type:
-                                                - integer
-                                                - boolean
-                                                - string
-                                                - number
-                                                - 'null'
-                                          - type: array
-                                            items:
-                                              type: object
-                                              additionalProperties: false
-                                              required:
-                                                - store
-                                                - path
-                                              properties:
-                                                store:
-                                                  type:
-                                                    - string
-                                                    - integer
-                                                dataset:
-                                                  type: string
-                                                path:
-                                                  type: string
-                                                label:
-                                                  type: string
-                                                eTag:
-                                                  type: string
                                   outputNode:
                                     type: boolean
                                     deprecated: true
