@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional
 
 from models_library.settings.http_clients import ClientRequestSettings
-from pydantic import BaseSettings, Field, SecretStr, validator
+from pydantic import BaseSettings, Field, validator
 
 
 class BootModeEnum(str, Enum):

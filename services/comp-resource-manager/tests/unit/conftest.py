@@ -89,7 +89,7 @@ def tests_utils_dir(project_tests_dir: Path) -> Path:
 
 
 @pytest.fixture
-def app(monkeypatch, environment, apply_migration) -> FastAPI:
+def app(monkeypatch, environment) -> FastAPI:
     # patching environs
     for key, value in environment.items():
         monkeypatch.setenv(key, value)
