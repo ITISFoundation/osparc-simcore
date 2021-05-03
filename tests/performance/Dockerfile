@@ -1,2 +1,6 @@
-FROM locustio/locust
-RUN pip install faker python-dotenv
+FROM locustio/locust:1.4.4
+
+RUN pip3 --version && \
+  pip3 install \
+  faker \
+  python-dotenv

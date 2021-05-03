@@ -13,6 +13,17 @@ requirements: ## compiles pip requirements (.in -> .txt)
 	@echo "WARNING #####  $< is newer than $@ ####"; diff -uN $@ $<; false;,\
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
+.PHONY: build
+build:
+	docker buildx build --tag local/locust:latest .
+
+.PHONY: up
+up: build
+	@export TARGET=$(target); \
+	docker-compose --file docker-compose.yml up
+
+down:
+	docker-compose --file docker-compose.yml down
 
 .PHONY: install
 install-dev: _check_venv_active  ## installs dependencies
