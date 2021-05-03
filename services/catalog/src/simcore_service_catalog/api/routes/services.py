@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
+from concurrent.futures.process import ProcessPoolExecutor
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -46,6 +47,32 @@ RESPONSE_MODEL_POLICY = {
 }
 
 
+def _prepare_service_details(
+    service_in_registry: Dict[str, Any],
+    service_in_db: ServiceMetaDataAtDB,
+    service_access_rights_in_db: List[ServiceAccessRightsAtDB],
+    service_owner: Optional[str],
+) -> Optional[ServiceOut]:
+    # compose service from registry and DB
+    composed_service = service_in_registry
+    composed_service.update(
+        service_in_db.dict(exclude_unset=True, exclude={"owner"}),
+        access_rights={rights.gid: rights for rights in service_access_rights_in_db},
+        owner=service_owner if service_owner else None,
+    )
+
+    # validate the service
+    try:
+        return ServiceOut(**composed_service)
+    except ValidationError as exc:
+        logger.warning(
+            "could not validate service [%s:%s]: %s",
+            composed_service.get("key"),
+            composed_service.get("version"),
+            exc,
+        )
+
+
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
 @cancellable_request
 async def list_services(
@@ -68,15 +95,16 @@ async def list_services(
         )
 
     # now get the executable services
-    _services: List[ServiceMetaDataAtDB] = await services_repo.list_services(
+    services_and_access_rights = await services_repo.list_services_and_access_rights(
         gids=[group.gid for group in user_groups],
         execute_access=True,
         write_access=True,
         combine_access_with_and=False,
         product_name=x_simcore_products_name,
     )
-
-    services_in_db = {(s.key, s.version): s for s in _services}
+    services_in_db = {
+        (s.key, s.version): (s, a, o) for s, a, o in services_and_access_rights
+    }
 
     # Non-detailed views from the services_repo database
     if not details:
@@ -108,44 +136,19 @@ async def list_services(
         if (s.get("key"), s.get("version")) in services_in_db
     ]
 
-    async def _prepare_service_details(
-        service_in_registry: Dict[str, Any], service_in_db: ServiceMetaDataAtDB
-    ) -> Optional[ServiceOut]:
-        # get the access rights
-        service_access_rights = await services_repo.get_service_access_rights(
-            service_in_db.key,
-            service_in_db.version,
-            product_name=x_simcore_products_name,
+    with ProcessPoolExecutor() as pool:
+        services_details = await asyncio.gather(
+            *[
+                asyncio.get_event_loop().run_in_executor(
+                    pool,
+                    _prepare_service_details,
+                    s,
+                    *services_in_db[s["key"], s["version"]],
+                )
+                for s in filtered_services_in_registry
+            ]
         )
-        # the owner shall be converted from a gid to an email address
-        service_owner = None
-        if service_in_db.owner:
-            service_owner = await groups_repository.get_user_email_from_gid(
-                service_in_db.owner
-            )
-
-        # compose service from registry and DB
-        service_in_registry.update(
-            service_in_db.dict(exclude_unset=True, exclude={"owner"})
-        )
-
-        service_in_registry["access_rights"] = {
-            rights.gid: rights for rights in service_access_rights
-        }
-        if service_owner:
-            service_in_registry["owner"] = service_owner
-        # validate the service
-        service = await run_in_threadpool(ServiceOut, **service_in_registry)
-        return service
-
-    services_details = await asyncio.gather(
-        *[
-            _prepare_service_details(s, services_in_db[s["key"], s["version"]])
-            for s in filtered_services_in_registry
-        ],
-        return_exceptions=True,
-    )
-    return [s for s in services_details if isinstance(s, ServiceOut)]
+    return [s for s in services_details if s is not None]
 
 
 @router.get(
