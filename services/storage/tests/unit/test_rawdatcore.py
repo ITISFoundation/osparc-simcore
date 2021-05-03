@@ -1,34 +1,31 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import os
 import tempfile
 from pathlib import Path
 
-import tests.utils
-
-# from blackfynn import Blackfynn
+import pytest
 from blackfynn.models import Collection
 from simcore_service_storage.datcore import DatcoreClient
-from simcore_service_storage.models import FileMetaData
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-api_token = os.environ.get("BF_API_KEY")
-api_secret = os.environ.get("BF_API_SECRET")
+pytestmark = pytest.mark.skip(
+    reason=("FIXME: mguidon! Currently disabled"),
+)
 
 
-if tests.utils.has_datcore_tokens():
+def test_all(patch_env_devel_environment, tmp_path: Path):
+    api_token = os.environ["BF_API_KEY"]
+    api_secret = os.environ["BF_API_SECRET"]
+
     client = DatcoreClient(api_token=api_token, api_secret=api_secret)
-    api_secret = os.environ.get("BF_API_SECRET", "none")
     destination = str(Path("MaG/level1/level2"))
-    fd, path = tempfile.mkstemp()
 
-    try:
-        with os.fdopen(fd, "w") as tmp:
-            # do stuff with temp file
-            tmp.write("stuff")
-
-        f = client.upload_file(destination, path)
-        f = client.delete_file(destination, Path(path).name)
-    finally:
-        os.remove(path)
+    path = tmp_path / "fd"
+    path.write_text("stuff")
+    assert client.upload_file(destination, str(path))
+    assert client.delete_file(destination, path.name)
 
     files = []
     if True:

@@ -8,12 +8,11 @@
 
 import datetime
 import os
-import sys
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Dict, Iterator, Tuple
+from typing import Callable, Dict, Iterator, Tuple
 
 import dotenv
 import pytest
@@ -27,57 +26,18 @@ from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
 from simcore_service_storage.models import FileMetaData
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 from simcore_service_storage.settings import SIMCORE_S3_STR
-from tests.utils import (
-    ACCESS_KEY,
-    BUCKET_NAME,
-    DATA_DIR,
-    DATABASE,
-    PASS,
-    SECRET_KEY,
-    USER,
-    USER_ID,
-)
+from tests.utils import DATA_DIR
 
 pytest_plugins = [
     "tests.fixtures.data_models",
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.monkeypatch_extra",
 ]
-
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-# TODO: replace by pytest_simcore
-sys.path.append(str(CURRENT_DIR / "helpers"))
-
-
-@pytest.fixture(scope="session")
-def here() -> Path:
-    return CURRENT_DIR
-
-
-@pytest.fixture(scope="session")
-def package_dir(here) -> Path:
-    dirpath = Path(simcore_service_storage.__file__).parent
-    assert dirpath.exists()
-    return dirpath
-
-
-@pytest.fixture(scope="session")
-def osparc_simcore_root_dir(here) -> Path:
-    root_dir = here.parent.parent.parent
-    assert root_dir.exists() and any(
-        root_dir.glob("services")
-    ), "Is this service within osparc-simcore repo?"
-    return root_dir
-
-
-@pytest.fixture(scope="session")
-def osparc_api_specs_dir(osparc_simcore_root_dir) -> Path:
-    dirpath = osparc_simcore_root_dir / "api" / "specs"
-    assert dirpath.exists()
-    return dirpath
 
 
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir) -> Path:
+    """Path to project slug directory"""
     # uses pytest_simcore.environs.osparc_simcore_root_dir
     service_folder = osparc_simcore_root_dir / "services" / "storage"
     assert service_folder.exists()
@@ -86,52 +46,68 @@ def project_slug_dir(osparc_simcore_root_dir) -> Path:
 
 
 @pytest.fixture(scope="session")
+def package_dir() -> Path:
+    """Path to directory of current package.
+
+    Notice that this might be under src (if installed as edit mode)
+    OR in the installation folder (in CI mode)
+    """
+    dirpath = Path(simcore_service_storage.__file__).resolve().parent
+    assert dirpath.exists()
+    return dirpath
+
+
+@pytest.fixture(scope="session")
 def project_env_devel_dict(project_slug_dir: Path) -> Dict:
+    """Returns a dict of environment variables in project_slug_dir/.env-devel
+    Those are default environment consumed by application settings
+    """
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
     environ = dotenv.dotenv_values(env_devel_file, verbose=True, interpolate=True)
     return environ
 
 
-@pytest.fixture(scope="function")
-def project_env_devel_environment(project_env_devel_dict, monkeypatch) -> None:
+@pytest.fixture(scope="session")
+def patch_env_devel_environment(project_env_devel_dict, monkeypatch_session) -> None:
+    """Patches environment variable with project_slug_dir/.env-devel"""
     for key, value in project_env_devel_dict.items():
-        monkeypatch.setenv(key, value)
+        monkeypatch_session.setenv(key, value)
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(here) -> Iterator[str]:
+def docker_compose_file(
+    project_tests_dir: Path, patch_env_devel_environment
+) -> Iterator[str]:
     """Overrides pytest-docker fixture"""
-    old = os.environ.copy()
-
     # docker-compose reads these environs
-    os.environ["POSTGRES_DB"] = DATABASE
-    os.environ["POSTGRES_USER"] = USER
-    os.environ["POSTGRES_PASSWORD"] = PASS
-    os.environ["POSTGRES_ENDPOINT"] = "FOO"  # TODO: update config schema!!
-    os.environ["MINIO_ACCESS_KEY"] = ACCESS_KEY
-    os.environ["MINIO_SECRET_KEY"] = SECRET_KEY
+    assert os.environ["POSTGRES_DB"]
+    assert os.environ["POSTGRES_USER"]
+    assert os.environ["POSTGRES_PASSWORD"]
+    assert os.environ["S3_ACCESS_KEY"]
+    assert os.environ["S3_SECRET_KEY"]
 
-    dc_path = here / "docker-compose.yml"
-
+    dc_path = project_tests_dir / "docker-compose.yml"
     assert dc_path.exists()
-    yield str(dc_path)
 
-    os.environ = old
+    yield str(dc_path)
 
 
 # POSTGRES SERVICES FIXTURES---------------------
 
 
 @pytest.fixture(scope="session")
-def postgres_service(docker_services, docker_ip):
-    url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=USER,
-        password=PASS,
-        database=DATABASE,
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-    )
+def postgres_service(docker_services, docker_ip, project_env_devel_dict):
+    """
+    Returns postgres service attributes, when up and responsive
+    """
+
+    user = project_env_devel_dict["POSTGRES_USER"]
+    password = project_env_devel_dict["POSTGRES_PASSWORD"]
+    database = project_env_devel_dict["POSTGRES_DB"]
+    host = docker_ip
+    port = docker_services.port_for("postgres", 5432)
+    url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
@@ -140,29 +116,22 @@ def postgres_service(docker_services, docker_ip):
         pause=0.1,
     )
 
-    postgres_service = {
-        "user": USER,
-        "password": PASS,
-        "db": DATABASE,
-        "database": DATABASE,
-        "host": docker_ip,
-        "port": docker_services.port_for("postgres", 5432),
+    return {
+        "user": user,
+        "password": password,
+        "db": database,
+        "database": database,
+        "host": host,
+        "port": port,
         "minsize": 1,
         "maxsize": 4,
+        "url": url,
     }
-
-    return postgres_service
 
 
 @pytest.fixture(scope="function")
 def postgres_service_url(postgres_service, docker_services, docker_ip):
-    url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        user=USER,
-        password=PASS,
-        database=DATABASE,
-        host=docker_ip,
-        port=docker_services.port_for("postgres", 5432),
-    )
+    url = postgres_service["url"]
 
     tests.utils.create_tables(url)
 
@@ -186,13 +155,12 @@ async def postgres_engine(loop, postgres_service_url):
 
 
 @pytest.fixture(scope="session")
-def minio_service(docker_services, docker_ip):
+def minio_service(docker_services, docker_ip, project_env_devel_dict):
 
     # Build URL to service listening on random port.
-    url = "http://%s:%d/" % (
-        docker_ip,
-        docker_services.port_for("minio", 9000),
-    )
+    host = docker_ip
+    port = docker_services.port_for("minio", 9000)
+    url = f"http://{host}:{port}/"
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
@@ -202,12 +170,11 @@ def minio_service(docker_services, docker_ip):
     )
 
     return {
-        "endpoint": "{ip}:{port}".format(
-            ip=docker_ip, port=docker_services.port_for("minio", 9000)
-        ),
-        "access_key": ACCESS_KEY,
-        "secret_key": SECRET_KEY,
-        "bucket_name": BUCKET_NAME,
+        "url": url,
+        "endpoint": f"{host}:{port}",
+        "access_key": project_env_devel_dict["S3_ACCESS_KEY"],
+        "secret_key": project_env_devel_dict["S3_SECRET_KEY"],
+        "bucket_name": project_env_devel_dict["S3_BUCKET_NAME"],
         "secure": 0,
     }
 
@@ -227,7 +194,7 @@ def s3_client(minio_service):
 
 
 @pytest.fixture(scope="function")
-def mock_files_factory(tmpdir_factory):
+def fake_files_factory(tmpdir_factory) -> Callable:
     def _create_files(count):
         filepaths = []
         for _i in range(count):
@@ -245,12 +212,20 @@ def mock_files_factory(tmpdir_factory):
 
 
 @pytest.fixture(scope="function")
-def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]:
+def fake_file(fake_files_factory: Callable) -> Path:
+    """ Creates fake file and returns path """
+    file_path = Path(fake_files_factory(count=1)[0])
+    assert file_path.exists()
+    return file_path
+
+
+@pytest.fixture(scope="function")
+def dsm_mockup_complete_db(
+    postgres_service_url, s3_client, bucket_name: str
+) -> Tuple[Dict, Dict]:
 
     tests.utils.fill_tables_from_csv_files(url=postgres_service_url)
 
-    bucket_name = BUCKET_NAME
-    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
     file_1 = {
         "project_id": "161b8782-b13e-5840-9ae2-e2250c231001",
         "node_id": "ad9bda7f-1dc5-5480-ab22-5fef4fc53eac",
@@ -268,17 +243,13 @@ def dsm_mockup_complete_db(postgres_service_url, s3_client) -> Tuple[Dict, Dict]
     f = DATA_DIR / "notebooks.zip"
     object_name = "{project_id}/{node_id}/{filename}".format(**file_2)
     s3_client.upload_file(bucket_name, object_name, f)
-    yield (file_1, file_2)
+    return (file_1, file_2)
 
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(
-    postgres_service_url, s3_client, mock_files_factory
-) -> Dict[str, FileMetaData]:
-
-    # s3 client
-    bucket_name = BUCKET_NAME
-    s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
+    postgres_service_url, s3_client, fake_files_factory, bucket_name: str
+) -> Iterator[Dict[str, FileMetaData]]:
 
     # TODO: use pip install Faker
     users = ["alice", "bob", "chuck", "dennis"]
@@ -297,7 +268,7 @@ def dsm_mockup_db(
     nodes = ["alpha", "beta", "gamma", "delta"]
 
     N = 100
-    files = mock_files_factory(count=N)
+    files = fake_files_factory(count=N)
     counter = 0
     data = {}
     for _file in files:
@@ -360,7 +331,7 @@ def dsm_mockup_db(
 
 
 @pytest.fixture(scope="function")
-async def datcore_testbucket(loop, mock_files_factory):
+async def datcore_testbucket(loop, fake_files_factory: Callable, bucket_name: str):
     # TODO: what if I do not have an app to the the config from?
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
@@ -372,14 +343,14 @@ async def datcore_testbucket(loop, mock_files_factory):
     pool = ThreadPoolExecutor(2)
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
-    await dcw.create_test_dataset(BUCKET_NAME)
-    tmp_files = mock_files_factory(2)
-    for f in tmp_files:
-        await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
+    await dcw.create_test_dataset(bucket_name)
+    fake_files = fake_files_factory(count=2)
+    for f in fake_files:
+        await dcw.upload_file(bucket_name, os.path.normpath(f))
 
-    yield BUCKET_NAME, tmp_files[0], tmp_files[1]
+    yield bucket_name, fake_files[0], fake_files[1]
 
-    await dcw.delete_test_dataset(BUCKET_NAME)
+    await dcw.delete_test_dataset(bucket_name)
 
 
 @pytest.fixture(scope="function")
@@ -392,7 +363,9 @@ def moduleless_app(loop, aiohttp_server) -> web.Application:
 
 
 @pytest.fixture(scope="function")
-def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
+def dsm_fixture(
+    s3_client, postgres_engine, loop, moduleless_app, bucket_name: str, user_id: int
+):
     pool = ThreadPoolExecutor(3)
 
     dsm_fixture = DataStorageManager(
@@ -400,20 +373,22 @@ def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
         engine=postgres_engine,
         loop=loop,
         pool=pool,
-        simcore_bucket_name=BUCKET_NAME,
+        simcore_bucket_name=bucket_name,
         has_project_db=False,
         app=moduleless_app,
     )
 
     api_token = os.environ.get("BF_API_KEY", "none")
     api_secret = os.environ.get("BF_API_SECRET", "none")
-    dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
+    dsm_fixture.datcore_tokens[user_id] = DatCoreApiToken(api_token, api_secret)
 
-    yield dsm_fixture
+    return dsm_fixture
 
 
 @pytest.fixture(scope="function")
-async def datcore_structured_testbucket(loop, mock_files_factory):
+async def datcore_structured_testbucket(
+    loop, fake_files_factory: Callable, bucket_name: str
+):
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
 
@@ -424,41 +399,41 @@ async def datcore_structured_testbucket(loop, mock_files_factory):
     pool = ThreadPoolExecutor(2)
     dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
-    dataset_id = await dcw.create_test_dataset(BUCKET_NAME)
-    assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
+    dataset_id = await dcw.create_test_dataset(bucket_name)
+    assert dataset_id, f"Could not create dataset {bucket_name}"
 
-    tmp_files = mock_files_factory(3)
+    fake_files = fake_files_factory(count=3)
 
     # first file to the root
-    filename1 = os.path.normpath(tmp_files[0])
+    filename1 = os.path.normpath(fake_files[0])
     file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
-    assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
+    assert file_id1, f"Could not upload {filename1} to the root of {bucket_name}"
 
     # create first level folder
     collection_id1 = await dcw.create_collection(dataset_id, "level1")
 
     # upload second file
-    filename2 = os.path.normpath(tmp_files[1])
+    filename2 = os.path.normpath(fake_files[1])
     file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
-    assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
+    assert file_id2, f"Could not upload {filename2} to the {bucket_name}/level1"
 
     # create 3rd level folder
-    filename3 = os.path.normpath(tmp_files[2])
+    filename3 = os.path.normpath(fake_files[2])
     collection_id2 = await dcw.create_collection(collection_id1, "level2")
     file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
-    assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
+    assert file_id3, f"Could not upload {filename3} to the {bucket_name}/level1/level2"
 
     yield {
         "dataset_id": dataset_id,
         "coll1_id": collection_id1,
         "coll2_id": collection_id2,
         "file_id1": file_id1,
-        "filename1": tmp_files[0],
+        "filename1": fake_files[0],
         "file_id2": file_id2,
-        "filename2": tmp_files[1],
+        "filename2": fake_files[1],
         "file_id3": file_id3,
-        "filename3": tmp_files[2],
+        "filename3": fake_files[2],
         "dcw": dcw,
     }
 
-    await dcw.delete_test_dataset(BUCKET_NAME)
+    await dcw.delete_test_dataset(bucket_name)

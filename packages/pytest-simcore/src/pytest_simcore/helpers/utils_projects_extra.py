@@ -1,9 +1,12 @@
+# FIXME: temporary solution until simcore_service_webserver dependency is removed from utils_projects2.py
+
+
 import uuid as uuidlib
 from copy import deepcopy
-from typing import Dict, Tuple
+from typing import Any, Dict, Tuple
 
 
-def clone_project_data(project: Dict) -> Tuple[Dict, Dict]:
+def clone_project_data(project: Dict[str, Any]) -> Tuple[Dict, Dict]:
     project_copy = deepcopy(project)
 
     # Update project id

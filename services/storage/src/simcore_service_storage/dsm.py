@@ -154,7 +154,7 @@ class DataStorageManager:
     app: Optional[web.Application] = None
 
     def _create_client_context(self) -> ClientCreatorContext:
-        assert hasattr(self.session, "create_client")
+        assert hasattr(self.session, "create_client")  #  nosec
         # pylint: disable=no-member
         return self.session.create_client(
             "s3",
@@ -165,6 +165,7 @@ class DataStorageManager:
 
     def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
         # pylint: disable=no-member
+        assert hasattr(self.datcore_tokens, "get")  # nosec
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
         return token.to_tuple()
 
@@ -212,7 +213,11 @@ class DataStorageManager:
     # pylint: disable=too-many-branches
     # pylint: disable=too-many-statements
     async def list_files(
-        self, user_id: str, location: str, uuid_filter: str = "", regex: str = ""
+        self,
+        user_id: Union[str, int],
+        location: str,
+        uuid_filter: str = "",
+        regex: str = "",
     ) -> List[FileMetaDataEx]:
         """Returns a list of file paths
 
@@ -228,7 +233,7 @@ class DataStorageManager:
                     conn, int(user_id)
                 )
                 has_read_access = (
-                    file_meta_data.c.user_id == user_id
+                    file_meta_data.c.user_id == str(user_id)
                 ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
 
                 query = sa.select([file_meta_data]).where(has_read_access)

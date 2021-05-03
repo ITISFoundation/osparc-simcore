@@ -6,16 +6,23 @@
 import json
 import re
 import uuid as uuidlib
+from datetime import datetime
 from typing import Dict
-from simcore_service_webserver.utils import now_str
 
 from aiohttp import web
-
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
 )
 from simcore_service_webserver.resources import resources
+
+# FIXME: remove dependencies with simcore_service_webserver
+# TODO:  and merge with utils_projects_extra.py
+
+
+def now_str() -> str:
+    return "{}Z".format(datetime.utcnow().isoformat(timespec="milliseconds"))
+
 
 fake_template_resources = [
     "data/" + name

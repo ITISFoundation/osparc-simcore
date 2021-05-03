@@ -49,6 +49,7 @@ def s3_client(docker_ip, docker_services):
     endpoint = "{ip}:{port}".format(
         ip=docker_ip, port=docker_services.port_for("minio", 9000)
     )
+
     s3_client = MinioClientWrapper(
         endpoint, access_key="12345678", secret_key="12345678", secure=False
     )
