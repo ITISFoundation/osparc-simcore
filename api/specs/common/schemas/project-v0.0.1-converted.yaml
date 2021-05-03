@@ -210,42 +210,9 @@ properties:
             patternProperties:
               ^[-_a-zA-Z0-9]+$:
                 oneOf:
-                  - type:
-                      - integer
-                      - boolean
-                      - string
-                      - number
-                      - 'null'
-                  - type: object
-                    additionalProperties: false
-                    required:
-                      - store
-                      - path
-                    properties:
-                      store:
-                        type:
-                          - string
-                          - integer
-                      dataset:
-                        type: string
-                      path:
-                        type: string
-                      label:
-                        type: string
-                      eTag:
-                        type: string
-                  - type: object
-                    additionalProperties: false
-                    required:
-                      - downloadLink
-                    properties:
-                      downloadLink:
-                        minLength: 1
-                        maxLength: 65536
-                        type: string
-                        format: uri
-                      label:
-                        type: string
+                  - $ref: '#/definitions/nodeIODataTypes/basic'
+                  - $ref: '#/definitions/nodeIODataTypes/filePath'
+                  - $ref: '#/definitions/nodeIODataTypes/downloadLink'
           outputNode:
             type: boolean
             deprecated: true
@@ -472,3 +439,44 @@ properties:
     type: object
     title: Quality
     description: Object containing Quality Assessment related data
+definitions:
+  nodeIODataTypes:
+    basic:
+      type:
+        - integer
+        - boolean
+        - string
+        - number
+        - 'null'
+    filePath:
+      type: object
+      additionalProperties: false
+      required:
+        - store
+        - path
+      properties:
+        store:
+          type:
+            - string
+            - integer
+        dataset:
+          type: string
+        path:
+          type: string
+        label:
+          type: string
+        eTag:
+          type: string
+    downloadLink:
+      type: object
+      additionalProperties: false
+      required:
+        - downloadLink
+      properties:
+        downloadLink:
+          minLength: 1
+          maxLength: 65536
+          type: string
+          format: uri
+        label:
+          type: string
