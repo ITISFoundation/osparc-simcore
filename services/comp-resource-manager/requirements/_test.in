@@ -14,7 +14,6 @@
 pytest
 pytest-asyncio
 pytest-cov
-pytest-docker
 pytest-mock
 pytest-runner
 asgi_lifespan
