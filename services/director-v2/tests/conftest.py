@@ -4,7 +4,6 @@ import json
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import sys
-import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -63,18 +62,18 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def client(loop) -> TestClient:
+def client(loop, monkeypatch) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     app = init_app(settings)
 
-    os.environ["DYNAMIC_SIDECAR_IMAGE"] = "NOT_A_VALID_DOCKER_COMPOSE_IMAGE:NO_TAG"
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", "NOT_A_VALID_DOCKER_COMPOSE_IMAGE:NO_TAG"
+    )
 
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     with TestClient(app, raise_server_exceptions=True) as client:
         yield client
-
-    del os.environ["DYNAMIC_SIDECAR_IMAGE"]
 
 
 @pytest.fixture(scope="function")
