@@ -1008,7 +1008,7 @@ async def _start_docker_service_with_dynamic_service(
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
 
     target_container = _get_value_from_label(
-        image_labels, "simcore.service.target-container"
+        image_labels, "simcore.service.container-http-entrypoint"
     )
 
     # merge the settings from the all the involved services
