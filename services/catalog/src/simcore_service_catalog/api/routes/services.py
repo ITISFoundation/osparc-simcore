@@ -85,7 +85,6 @@ async def list_services(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(...),
 ):
-    # FIXME: too many DB calls
     # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
@@ -95,16 +94,16 @@ async def list_services(
             detail="You have unsufficient rights to access the services",
         )
 
-    # now get the executable services
-    services_and_access_rights = await services_repo.list_services_and_rights_owner(
-        gids=[group.gid for group in user_groups],
-        execute_access=True,
-        write_access=True,
-        combine_access_with_and=False,
-        product_name=x_simcore_products_name,
-    )
+    # now get the executable or writable services
     services_in_db = {
-        (s.key, s.version): (s, a, o) for s, a, o in services_and_access_rights
+        (s.key, s.version): s
+        for s in await services_repo.list_services(
+            gids=[group.gid for group in user_groups],
+            execute_access=True,
+            write_access=True,
+            combine_access_with_and=False,
+            product_name=x_simcore_products_name,
+        )
     }
 
     # Non-detailed views from the services_repo database
@@ -127,6 +126,20 @@ async def list_services(
         ]
         return services_overview
 
+    # let's get all the services access rights
+    services_access_rights: Dict[
+        Tuple[str, str], List[ServiceAccessRightsAtDB]
+    ] = await services_repo.list_services_access_rights(
+        key_versions=list(services_in_db.keys()), product_name=x_simcore_products_name
+    )
+
+    # let's get the service owners
+    services_owner_emails: Dict[
+        int, str
+    ] = await groups_repository.list_user_emails_from_gids(
+        [s.owner for s in services_in_db.values()]
+    )
+
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
     # 2. we filter the services using the visible ones
@@ -137,19 +150,28 @@ async def list_services(
         if (s.get("key"), s.get("version")) in services_in_db
     ]
 
-    with ProcessPoolExecutor() as pool:
-        services_details = await asyncio.gather(
-            *[
-                asyncio.get_event_loop().run_in_executor(
-                    pool,
-                    _prepare_service_details,
-                    s,
-                    *services_in_db[s["key"], s["version"]],
-                )
-                for s in filtered_services_in_registry
-            ]
+    return [
+        _prepare_service_details(
+            s,
+            services_in_db[s["key"], s["version"]],
+            services_access_rights[s["key"], s["version"]],
+            services_owner_emails.get(services_in_db[s["key"], s["version"]].owner),
         )
-    return [s for s in services_details if s is not None]
+        for s in filtered_services_in_registry
+    ]
+    # with ProcessPoolExecutor() as pool:
+    #     services_details = await asyncio.gather(
+    #         *[
+    #             asyncio.get_event_loop().run_in_executor(
+    #                 pool,
+    #                 _prepare_service_details,
+    #                 s,
+    #                 *services_in_db[s["key"], s["version"]],
+    #             )
+    #             for s in filtered_services_in_registry
+    #         ]
+    #     )
+    # return [s for s in services_details if s is not None]
 
 
 @router.get(

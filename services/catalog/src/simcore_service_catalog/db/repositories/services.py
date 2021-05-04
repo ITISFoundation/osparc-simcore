@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
 from aiopg.sa import SAConnection
@@ -9,6 +9,7 @@ from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-mo
 from sqlalchemy import literal_column
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import and_, or_
+from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
 from ..tables import services_access_rights, services_meta_data, users
@@ -26,15 +27,12 @@ def _make_list_services_query(
 ) -> Select:
     query = sa.select([services_meta_data])
     if gids or execute_access or write_access:
-        access_query_part = and_(
-            services_access_rights.c.execute_access if execute_access else True,
-            services_access_rights.c.write_access if write_access else True,
+        logic_operator = and_ if combine_access_with_and else or_
+        default = True if combine_access_with_and else False
+        access_query_part = logic_operator(
+            services_access_rights.c.execute_access if execute_access else default,
+            services_access_rights.c.write_access if write_access else default,
         )
-        if not combine_access_with_and:
-            access_query_part = or_(
-                services_access_rights.c.execute_access if execute_access else True,
-                services_access_rights.c.write_access if write_access else True,
-            )
         query = (
             sa.select(
                 [services_meta_data],
@@ -224,6 +222,28 @@ class ServicesRepository(BaseRepository):
                 async for row in conn.execute(query):
                     services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
+
+    async def list_services_access_rights(
+        self, key_versions: List[Tuple[str, str]], product_name: str
+    ) -> Dict[Tuple[str, str], List[ServiceAccessRightsAtDB]]:
+        from collections import defaultdict
+
+        service_to_access_rights = defaultdict(list)
+        query = sa.select([services_access_rights]).where(
+            tuple_(services_access_rights.c.key, services_access_rights.c.version).in_(
+                key_versions
+            )
+            & (services_access_rights.c.product_name == product_name)
+        )
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(query):
+                service_to_access_rights[
+                    (
+                        row[services_access_rights.c.key],
+                        row[services_access_rights.c.version],
+                    )
+                ].append(ServiceAccessRightsAtDB(**row))
+        return service_to_access_rights
 
     async def upsert_service_access_rights(
         self, new_access_rights: List[ServiceAccessRightsAtDB]
