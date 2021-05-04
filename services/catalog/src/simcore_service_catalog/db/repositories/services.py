@@ -12,7 +12,7 @@ from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
 
-from ..tables import services_access_rights, services_meta_data, users
+from ..tables import services_access_rights, services_meta_data
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -77,45 +77,6 @@ class ServicesRepository(BaseRepository):
                 )
             ):
                 services_in_db.append(ServiceMetaDataAtDB(**row))
-        return services_in_db
-
-    async def list_services_and_rights_owner(
-        self,
-        gids: Optional[List[int]] = None,
-        execute_access: Optional[bool] = None,
-        write_access: Optional[bool] = None,
-        combine_access_with_and: Optional[bool] = True,
-        product_name: Optional[str] = None,
-    ) -> List[Tuple[ServiceMetaDataAtDB, List[ServiceAccessRightsAtDB], str]]:
-        services_in_db = []
-
-        async with self.db_engine.acquire() as conn:
-            async for row in conn.execute(
-                _make_list_services_query(
-                    gids,
-                    execute_access,
-                    write_access,
-                    combine_access_with_and,
-                    product_name,
-                )
-            ):
-                services_in_db.append(
-                    (
-                        ServiceMetaDataAtDB(**row),
-                        await self.get_service_access_rights(
-                            row[services_meta_data.c.key],
-                            row[services_meta_data.c.version],
-                            product_name,
-                            conn,
-                        ),
-                        await conn.scalar(
-                            sa.select([users.c.email]).where(
-                                users.c.primary_gid == row[services_meta_data.c.owner]
-                            )
-                        )
-                        or None,
-                    )
-                )
         return services_in_db
 
     async def get_service(
