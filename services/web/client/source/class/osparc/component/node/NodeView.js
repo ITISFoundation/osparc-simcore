@@ -49,7 +49,6 @@ qx.Class.define("osparc.component.node.NodeView", {
   members: {
     _addSettings: function() {
       this._settingsLayout.removeAll();
-      this._mapperLayout.removeAll();
 
       const node = this.getNode();
       const propsForm = node.getPropsForm();
@@ -60,17 +59,8 @@ qx.Class.define("osparc.component.node.NodeView", {
         this._settingsLayout.add(propsForm);
       }
       this.__checkSettingsVisibility();
-      const mapper = node.getInputsMapper();
-      if (mapper) {
-        this._mapperLayout.add(mapper, {
-          flex: 1
-        });
-      }
 
       this._addToMainView(this._settingsLayout);
-      this._addToMainView(this._mapperLayout, {
-        flex: 1
-      });
     },
 
     __checkSettingsVisibility: function() {

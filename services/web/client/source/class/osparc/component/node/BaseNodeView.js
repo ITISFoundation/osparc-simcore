@@ -65,7 +65,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __outputsView: null,
     __inputNodesLayout: null,
     _settingsLayout: null,
-    _mapperLayout: null,
     _iFrameLayout: null,
     _loggerLayout: null,
     __buttonContainer: null,
@@ -195,7 +194,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
       this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
-      this._mapperLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       this._loggerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
@@ -357,7 +355,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const isSettingsGroupShowable = this.isSettingsGroupShowable();
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
-      this._mapperLayout.setVisibility(othersStatus);
       this._loggerLayout.setVisibility(othersStatus);
       this.__header.setVisibility(othersStatus);
     },

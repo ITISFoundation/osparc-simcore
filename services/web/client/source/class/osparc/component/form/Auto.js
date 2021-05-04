@@ -20,13 +20,15 @@
  *       type: "string",
  *       widget: {
  *         type: "SelectBox",
- *         structure: [{
- *           key: "dog",
- *           label: "A Dog"
- *         }, {
- *           key: "cat",
- *           label: "A Cat"
- *         }]
+ *         details: {
+ *           structure: [{
+ *             key: "dog",
+ *             label: "A Dog"
+ *           }, {
+ *             key: "cat",
+ *             label: "A Cat"
+ *           }]
+ *         }
  *       }
  *     },
  *   }
@@ -348,13 +350,14 @@ qx.Class.define("osparc.component.form.Auto", {
           ctrl.bindProperty("label", "label", null, item, index);
         }
       });
-      let cfg = s.widget;
-      if (cfg.structure) {
-        cfg.structure.forEach(function(item) {
-          item.label = item.label ? this["tr"](item.label) : null;
+      const cfg = s.widget;
+      let structure = cfg.details.structure;
+      if (structure) {
+        structure.forEach(item => {
+          item.label = item.label || "";
         }, this);
       } else {
-        cfg.structure = [{
+        structure = [{
           label: "",
           key: null
         }];
@@ -362,7 +365,7 @@ qx.Class.define("osparc.component.form.Auto", {
       if (s.defaultValue) {
         s.set.value = [s.defaultValue];
       }
-      let sbModel = qx.data.marshal.Json.createModel(cfg.structure);
+      let sbModel = qx.data.marshal.Json.createModel(structure);
       controller.setModel(sbModel);
     },
     __setupComboBox: function(s, key, control) {

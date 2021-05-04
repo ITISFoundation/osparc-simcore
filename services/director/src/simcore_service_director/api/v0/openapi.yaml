@@ -159,7 +159,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
                           example: simcore/services/comp/itis/sleeper
                         integration-version:
                           type: string
@@ -250,7 +250,6 @@ paths:
                               description: all the input configurable for this service
                               additionalProperties: false
                               required:
-                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -371,7 +370,6 @@ paths:
                               description: all the output produced by this node
                               additionalProperties: false
                               required:
-                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -552,7 +550,7 @@ paths:
                         key:
                           type: string
                           description: distinctive name for the node based on the docker registry path
-                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
+                          pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
                           example: simcore/services/comp/itis/sleeper
                         integration-version:
                           type: string
@@ -643,7 +641,6 @@ paths:
                               description: all the input configurable for this service
                               additionalProperties: false
                               required:
-                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -764,7 +761,6 @@ paths:
                               description: all the output produced by this node
                               additionalProperties: false
                               required:
-                                - displayOrder
                                 - label
                                 - description
                                 - type
@@ -2159,7 +2155,7 @@ components:
               key:
                 type: string
                 description: distinctive name for the node based on the docker registry path
-                pattern: '^(simcore)/(services)/(comp|dynamic)(/[\w/-]+)+$'
+                pattern: '^(simcore)/(services)/(comp|dynamic)(/[^\s/]+)+$'
                 example: simcore/services/comp/itis/sleeper
               integration-version:
                 type: string
@@ -2250,7 +2246,6 @@ components:
                     description: all the input configurable for this service
                     additionalProperties: false
                     required:
-                      - displayOrder
                       - label
                       - description
                       - type
@@ -2371,7 +2366,6 @@ components:
                     description: all the output produced by this node
                     additionalProperties: false
                     required:
-                      - displayOrder
                       - label
                       - description
                       - type

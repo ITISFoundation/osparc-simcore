@@ -196,9 +196,9 @@ qx.Class.define("osparc.data.model.Sweeper", {
     },
     /* /PRIMARY STUDY */
 
-    recreateIterations: function(primaryStudyData) {
+    recreateSnapshots: function(primaryStudyData) {
       return new Promise((resolve, reject) => {
-        // delete previous iterations
+        // delete previous snapshots
         this.removeSecondaryStudies()
           .then(() => {
             const usedParams = osparc.data.StudyParametrizer.getActiveParameters(primaryStudyData, this.__parameters);
@@ -212,7 +212,7 @@ qx.Class.define("osparc.data.model.Sweeper", {
             const combinations = osparc.data.StudyParametrizer.calculateCombinations(steps);
             this.__setCombinations(combinations);
 
-            osparc.data.StudyParametrizer.recreateIterations(primaryStudyData, usedParams, combinations)
+            osparc.data.StudyParametrizer.recreateSnapshots(primaryStudyData, usedParams, combinations)
               .then(secondaryStudiesData => {
                 secondaryStudiesData.forEach(secondaryStudyData => {
                   this.__secondaryStudyIds.push(secondaryStudyData.uuid);

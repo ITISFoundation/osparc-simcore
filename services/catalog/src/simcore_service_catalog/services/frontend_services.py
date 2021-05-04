@@ -49,12 +49,202 @@ def create_node_group_service() -> ServiceDockerData:
     )
 
 
+def create_data_iterator_integer_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/number",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Number Iterator",
+        description="Data Iterator - Number",
+        authors=[{
+            "name": "Odei Maiz",
+            "email": "maiz@itis.swiss"
+        }],
+        contact="maiz@itis.swiss",
+        inputs={
+            "iteration_type": {
+                "displayOrder": 0,
+                "label": "Iteration type",
+                "description": "Iteration type",
+                "defaultValue": "custom",
+                "type": "string",
+                "widget": {
+                    "type": "SelectBox",
+                    "details": {
+                        "structure": [{
+                            "key": "custom",
+                            "label": "Custom",
+                        }, {
+                            "key": "linspace",
+                            "label": "Linear Space",
+                        }, {
+                            "key": "random",
+                            "label": "Random",
+                        }]
+                    }
+                }
+            },
+            "custom_list": {
+                "displayOrder": 1,
+                "label": "Custom List",
+                "description": "Type your list of numbers (comma separated)",
+                "defaultValue": "",
+                "type": "string",
+            },
+            "linspace_start": {
+                "displayOrder": 2,
+                "label": "Start",
+                "description": "Linear space Start",
+                "defaultValue": 0,
+                "type": "number",
+            },
+            "linspace_stop": {
+                "displayOrder": 3,
+                "label": "Stop",
+                "description": "Linear space Stop",
+                "defaultValue": 1,
+                "type": "number",
+            },
+            "linspace_step": {
+                "displayOrder": 4,
+                "label": "Step",
+                "description": "Linear space Step",
+                "defaultValue": 1,
+                "type": "number",
+            },
+            "random_start": {
+                "displayOrder": 5,
+                "label": "Start",
+                "description": "Random Start",
+                "defaultValue": 0,
+                "type": "number",
+            },
+            "random_stop": {
+                "displayOrder": 6,
+                "label": "Stop",
+                "description": "Random Stop",
+                "defaultValue": 10,
+                "type": "number",
+            },
+            "random_vals": {
+                "displayOrder": 7,
+                "label": "N values",
+                "description": "N Random values",
+                "defaultValue": 5,
+                "type": "number",
+            },
+        },
+        outputs={
+            "out_1": {
+                "displayOrder": 0,
+                "label": "A Number",
+                "description": "A Number",
+                "type": "number",
+            }
+        },
+    )
+
+
+def create_data_iterator_string_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/string",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="String Iterator",
+        description="Data Iterator - String",
+        authors=[{
+            "name": "Odei Maiz",
+            "email": "maiz@itis.swiss"
+        }],
+        contact="maiz@itis.swiss",
+        inputs={
+            "strings_list": {
+                "displayOrder": 0,
+                "label": "List of strings",
+                "description": "List of strings",
+                "defaultValue": "",
+                "type": "string",
+            }
+        },
+        outputs={
+            "out_1": {
+                "displayOrder": 0,
+                "label": "A String",
+                "description": "A String",
+                "type": "string",
+            }
+        },
+    )
+
+
+def create_data_iterator_files_service() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/file-picker",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="File Iterator",
+        description="Data Iterator - File",
+        authors=[{
+            "name": "Odei Maiz",
+            "email": "maiz@itis.swiss"
+        }],
+        contact="maiz@itis.swiss",
+        inputs={
+            "iteration_type": {
+                "displayOrder": 0,
+                "label": "Iterate over",
+                "description": "Iteration over",
+                "defaultValue": "multi-file",
+                "type": "string",
+                "widget": {
+                    "type": "SelectBox",
+                    "details": {
+                        "structure": [{
+                            "key": "multiFile",
+                            "label": "Multi File Selection",
+                        }, {
+                            "key": "folder",
+                            "label": "Folder",
+                        }]
+                    }
+                }
+            },
+            "multiFile": {
+                "displayOrder": 1,
+                "label": "Custom List",
+                "description": "Multi select files below",
+                "type": "data:*/*"
+            },
+            "folder": {
+                "displayOrder": 2,
+                "label": "Folder",
+                "description": "Select a folder to iterate through",
+                "type": "data:*/*"
+            }
+        },
+        outputs={
+            "outFile": {
+                "displayOrder": 0,
+                "label": "File",
+                "description": "Chosen File",
+                "type": "data:*/*",
+            }
+        },
+    )
+
+
 def is_frontend_service(service_key) -> bool:
     return service_key.startswith(FRONTEND_SERVICE_KEY_PREFIX + "/")
 
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
-    for factory in [create_file_picker_service, create_node_group_service]:
+    for factory in [
+        create_file_picker_service,
+        create_node_group_service,
+        create_data_iterator_integer_service,
+        create_data_iterator_string_service,
+        create_data_iterator_files_service,
+    ]:
         model_instance = factory()
         yield model_instance
 

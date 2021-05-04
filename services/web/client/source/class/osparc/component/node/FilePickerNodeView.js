@@ -20,20 +20,10 @@
   */
 
 qx.Class.define("osparc.component.node.FilePickerNodeView", {
-  extend: osparc.component.node.BaseNodeView,
+  extend: osparc.component.node.NodeView,
 
   members: {
     __filePicker: null,
-
-    // overridden
-    isSettingsGroupShowable: function() {
-      return false;
-    },
-
-    // overridden
-    _addSettings: function() {
-      return;
-    },
 
     // overridden
     _addIFrame: function() {
@@ -47,7 +37,7 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
 
     // overridden
     _applyNode: function(node) {
-      if (!node.isFilePicker()) {
+      if (!node.isFilePicker() && !node.isMultiFilePicker()) {
         console.error("Only file picker nodes are supported");
       }
       this.base(arguments, node);

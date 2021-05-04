@@ -53,9 +53,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       showStatusbar: false,
       resizable: false,
       allowMaximize: false,
-      width: this.self(arguments).NodeWidth,
-      maxWidth: this.self(arguments).NodeWidth,
-      minWidth: this.self(arguments).NodeWidth,
+      width: this.self().NODE_WIDTH,
+      maxWidth: this.self().NODE_WIDTH,
+      minWidth: this.self().NODE_WIDTH,
       contentPadding: 0
     });
 
@@ -103,9 +103,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   },
 
   statics: {
-    NodeWidth: 200,
-    NodeHeight: 80,
-    PortHeight: 16,
+    NODE_WIDTH: 200,
+    NODE_HEIGHT: 80,
+    PORT_HEIGHT: 16,
     captionHeight: function() {
       return osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().height ||
         osparc.theme.Appearance.appearances["window-small-cap/captionbar"].style().minHeight;
@@ -140,7 +140,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
             margin: [3, 4]
           });
-          const nodeType = this.getNode().isContainer() ? "container" : this.getNode().getMetaData().type;
+          let nodeType = this.getNode().getMetaData().type;
+          if (this.getNode().isContainer()) {
+            nodeType = "container";
+          }
+          if (this.getNode().isDataIterator()) {
+            nodeType = "iterator";
+          }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
             control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
@@ -172,7 +178,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
       this.__inputOutputLayout = this.getChildControl("inputOutput");
       this.__chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isDataIterator()) {
+        this.set({
+          width: this.self().NODE_WIDTH - 50,
+          maxWidth: this.self().NODE_WIDTH - 50,
+          minWidth: this.self().NODE_WIDTH - 50
+        });
+      } else if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
@@ -267,7 +279,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const labelText = isInput ? "in" : "out";
       const alignX = isInput ? "left" : "right";
       const uiPort = new qx.ui.basic.Label(labelText).set({
-        height: this.self(arguments).PortHeight,
+        height: this.self().PORT_HEIGHT,
         draggable: true,
         droppable: true,
         textAlign: alignX,
@@ -308,9 +320,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     getEdgePoint: function(port) {
       const bounds = this.getCurrentBounds();
-      const captionHeight = this.self(arguments).captionHeight();
+      const captionHeight = this.self().captionHeight();
       const x = port.isInput ? bounds.left - 6 : bounds.left + bounds.width;
-      let y = bounds.top + captionHeight + this.self(arguments).PortHeight/2 + 1;
+      let y = bounds.top + captionHeight + this.self().PORT_HEIGHT/2 + 1;
       if (this.__thumbnail) {
         y += this.__thumbnail.getBounds().height;
       }

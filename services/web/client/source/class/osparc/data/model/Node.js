@@ -137,7 +137,7 @@ qx.Class.define("osparc.data.model.Node", {
     outputs: {
       check: "Object",
       nullable: false,
-      apply: "__repopulateOutputPortData",
+      apply: "__applyOutputs",
       event: "changeOutputs"
     },
 
@@ -155,12 +155,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     propsFormEditor: {
       check: "osparc.component.form.renderer.PropFormEditor",
-      init: null,
-      nullable: true
-    },
-
-    inputsMapper: {
-      check: "osparc.component.widget.InputsMapper",
       init: null,
       nullable: true
     },
@@ -193,11 +187,19 @@ qx.Class.define("osparc.data.model.Node", {
 
   statics: {
     isFilePicker: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("file-picker"));
+      return (metaData && metaData.key && metaData.key.includes("file-picker") && !metaData.key.includes("data-iterator"));
+    },
+
+    isMultiFilePicker: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("file-picker") && metaData.key.includes("data-iterator"));
     },
 
     isContainer: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("nodes-group"));
+    },
+
+    isDataIterator: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("data-iterator"));
     },
 
     isDynamic: function(metaData) {
@@ -241,8 +243,16 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isFilePicker(this.getMetaData());
     },
 
+    isMultiFilePicker: function() {
+      return osparc.data.model.Node.isMultiFilePicker(this.getMetaData());
+    },
+
     isContainer: function() {
       return osparc.data.model.Node.isContainer(this.getMetaData());
+    },
+
+    isDataIterator: function() {
+      return osparc.data.model.Node.isDataIterator(this.getMetaData());
     },
 
     isDynamic: function() {
@@ -452,7 +462,7 @@ qx.Class.define("osparc.data.model.Node", {
         .catch(err => console.error(err));
     },
 
-    __repopulateOutputPortData: function() {
+    __applyOutputs: function() {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
@@ -479,21 +489,6 @@ qx.Class.define("osparc.data.model.Node", {
         if (input.type.includes("data:application/s4l-api/")) {
           delete filteredInputs[inputId];
         }
-      }
-      return filteredInputs;
-    },
-
-
-    /**
-     * Add mapper widget if any
-     *
-     */
-    __addMapper: function(inputs) {
-      let filteredInputs = JSON.parse(JSON.stringify(inputs));
-      if (filteredInputs.mapper) {
-        let inputsMapper = new osparc.component.widget.InputsMapper(this, filteredInputs["mapper"]);
-        this.setInputsMapper(inputsMapper);
-        delete filteredInputs["mapper"];
       }
       return filteredInputs;
     },
@@ -593,11 +588,9 @@ qx.Class.define("osparc.data.model.Node", {
         return;
       }
 
-      let filteredInputs = this.__removeNonSettingInputs(inputs);
-      filteredInputs = this.__addMapper(filteredInputs);
-      if (Object.keys(filteredInputs).length) {
-        this.__addSettings(filteredInputs);
-        this.__addSettingsEditor(filteredInputs);
+      if (Object.keys(inputs).length) {
+        this.__addSettings(inputs);
+        this.__addSettingsEditor(inputs);
       }
     },
 
@@ -1167,12 +1160,11 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (this.isContainer()) {
         nodeEntry.outputNodes = this.getOutputNodes();
-      }
-
-      if (this.isFilePicker()) {
+      } else if (this.isFilePicker()) {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       }
+
       // remove null entries from the payload
       let filteredNodeEntry = {};
       for (const key in nodeEntry) {

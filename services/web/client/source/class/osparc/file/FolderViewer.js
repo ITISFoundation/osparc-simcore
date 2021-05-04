@@ -174,7 +174,9 @@ qx.Class.define("osparc.file.FolderViewer", {
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "list" ? "visible" : "excluded"
           });
-          this._add(control, {
+          const scroll = new qx.ui.container.Scroll();
+          scroll.add(control);
+          this._add(scroll, {
             flex: 1
           });
           break;
@@ -185,7 +187,9 @@ qx.Class.define("osparc.file.FolderViewer", {
           this.bind("mode", control, "visibility", {
             converter: mode => mode === "icons" ? "visible" : "excluded"
           });
-          this._add(control, {
+          const scroll = new qx.ui.container.Scroll();
+          scroll.add(control);
+          this._add(scroll, {
             flex: 1
           });
           break;

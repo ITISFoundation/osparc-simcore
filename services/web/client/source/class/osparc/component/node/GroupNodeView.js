@@ -68,7 +68,6 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
   members: {
     _addSettings: function() {
       this._settingsLayout.removeAll();
-      this._mapperLayout.removeAll();
 
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
@@ -85,18 +84,9 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
           this._settingsLayout.add(innerSettings);
         }
         this.__checkSettingsVisibility();
-        const mapper = innerNode.getInputsMapper();
-        if (mapper) {
-          this._mapperLayout.add(mapper, {
-            flex: 1
-          });
-        }
       });
 
       this._addToMainView(this._settingsLayout);
-      this._addToMainView(this._mapperLayout, {
-        flex: 1
-      });
     },
 
     __checkSettingsVisibility: function() {

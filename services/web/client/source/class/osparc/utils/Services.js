@@ -44,7 +44,19 @@ qx.Class.define("osparc.utils.Services", {
       container: {
         label: "Group of nodes",
         icon: "@FontAwesome5Solid/box-open/"
-      }
+      },
+      iterator: {
+        label: "Iterator",
+        icon: "@FontAwesome5Solid/copy/"
+      },
+
+      DATA_ITERATOR_TYPES: [
+        "integer",
+        "number",
+        "boolean",
+        "string",
+        "data"
+      ]
     },
 
     servicesCached: {},
@@ -220,6 +232,10 @@ qx.Class.define("osparc.utils.Services", {
 
     getNodesGroup: function() {
       return this.self().getLatest(this.servicesCached, "simcore/services/frontend/nodes-group");
+    },
+
+    getDataIterator: function(dataType) {
+      return this.self().getLatest(this.servicesCached, "simcore/services/frontend/data-iterator/integer");
     },
 
     __addExtraInfo: function(services) {

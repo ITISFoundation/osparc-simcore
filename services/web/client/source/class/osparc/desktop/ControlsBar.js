@@ -56,7 +56,6 @@ qx.Class.define("osparc.desktop.ControlsBar", {
     __groupCtrls: null,
     __groupButton: null,
     __ungroupButton: null,
-    __iterationCtrls: null,
     __parametersButton: null,
 
     setWorkbenchVisibility: function(isWorkbenchContext) {

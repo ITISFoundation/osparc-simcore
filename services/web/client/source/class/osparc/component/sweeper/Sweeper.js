@@ -32,15 +32,16 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
   },
 
   events: {
-    "iterationSelected": "qx.event.type.Data"
+    "snapshotSelected": "qx.event.type.Data"
   },
 
   members: {
     __primaryStudy: null,
     __parametersTable: null,
-    __iterationsSection: null,
-    __iterationsTable: null,
-    __selectedIteration: null,
+    __snapshotsSection: null,
+    __snapshotsTable: null,
+    __selectedSnapshot: null,
+    __openSnapshotBtn: null,
 
     __buildSecondaryLayout: function(secondaryStudy) {
       const newParamBtn = new qx.ui.form.Button(this.tr("Open primary study")).set({
@@ -48,7 +49,7 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       });
       newParamBtn.addListener("execute", () => {
         const primaryStudyId = secondaryStudy.getSweeper().getPrimaryStudyId();
-        this.fireDataEvent("iterationSelected", primaryStudyId);
+        this.fireDataEvent("snapshotSelected", primaryStudyId);
       });
       this._add(newParamBtn);
     },
@@ -59,8 +60,8 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
         flex: 2
       });
 
-      const iterationsSection = this.__buildIterationsSection();
-      this._add(iterationsSection, {
+      const snapshotSection = this.__buildSnapshotsSection();
+      this._add(snapshotSection, {
         flex: 3
       });
     },
@@ -79,51 +80,51 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       return parametersSection;
     },
 
-    __buildIterationsSection: function() {
-      const iterationsSection = this.__iterationsSection = new qx.ui.groupbox.GroupBox(this.tr("Iterations")).set({
+    __buildSnapshotsSection: function() {
+      const snapshotsSection = this.__snapshotsSection = new qx.ui.groupbox.GroupBox(this.tr("Snapshots")).set({
         layout: new qx.ui.layout.VBox(5)
       });
 
-      const iterationBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-      const deleteIterationsBtn = this.__deleteIterationsBtn();
-      iterationBtns.add(deleteIterationsBtn);
-      const recreateIterationsBtn = this.__recreateIterationsBtn();
-      iterationBtns.add(recreateIterationsBtn);
-      iterationsSection.addAt(iterationBtns, 0);
+      const snapshotBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const deleteSnapshotsBtn = this.__deleteSnapshotsBtn();
+      snapshotBtns.add(deleteSnapshotsBtn);
+      const recreateSnapshotsBtn = this.__recreateSnapshotsBtn();
+      snapshotBtns.add(recreateSnapshotsBtn);
+      snapshotsSection.addAt(snapshotBtns, 0);
 
-      this.__rebuildIterationsTable();
+      this.__rebuildSnapshotsTable();
 
-      const openIterationsBtn = this.__openIterationsBtn = this.__createOpenIterationsBtn();
-      openIterationsBtn.setEnabled(false);
-      iterationsSection.addAt(openIterationsBtn, 2);
-      openIterationsBtn.addListener("execute", () => {
-        if (this.__selectedIteration) {
-          this.fireDataEvent("iterationSelected", this.__selectedIteration);
+      const openSnapshotBtn = this.__openSnapshotBtn = this.__createOpenSnapshotBtn();
+      openSnapshotBtn.setEnabled(false);
+      snapshotsSection.addAt(openSnapshotBtn, 2);
+      openSnapshotBtn.addListener("execute", () => {
+        if (this.__selectedSnapshot) {
+          this.fireDataEvent("snapshotSelected", this.__selectedSnapshot);
         }
       });
 
-      return iterationsSection;
+      return snapshotsSection;
     },
 
-    __rebuildIterationsTable: function() {
-      if (this.__iterationsTable) {
-        this.__iterationsSection.remove(this.__iterationsTable);
+    __rebuildSnapshotsTable: function() {
+      if (this.__snapshotsTable) {
+        this.__snapshotsSection.remove(this.__snapshotsTable);
       }
 
-      const iterationsTable = this.__iterationsTable = new osparc.component.sweeper.Iterations(this.__primaryStudy);
-      iterationsTable.addListener("cellTap", e => {
-        if (this.__openIterationsBtn) {
-          this.__openIterationsBtn.setEnabled(true);
+      const snapshotsTable = this.__snapshotsTable = new osparc.component.sweeper.Snapshots(this.__primaryStudy);
+      snapshotsTable.addListener("cellTap", e => {
+        if (this.__openSnapshotBtn) {
+          this.__openSnapshotBtn.setEnabled(true);
         }
         const selectedRow = e.getRow();
-        this.__selectedIteration = iterationsTable.getRowData(selectedRow)["StudyId"];
+        this.__selectedSnapshot = snapshotsTable.getRowData(selectedRow)["StudyId"];
       });
 
-      this.__iterationsSection.addAt(iterationsTable, 1, {
+      this.__snapshotsSection.addAt(snapshotsTable, 1, {
         flex: 1
       });
 
-      return iterationsTable;
+      return snapshotsTable;
     },
 
     __createNewParamBtn: function() {
@@ -152,70 +153,70 @@ qx.Class.define("osparc.component.sweeper.Sweeper", {
       return newParamBtn;
     },
 
-    __deleteIterationsBtn: function() {
-      const deleteIterationsBtn = new osparc.ui.form.FetchButton(this.tr("Delete Iterations")).set({
+    __deleteSnapshotsBtn: function() {
+      const deleteSnapshotsBtn = new osparc.ui.form.FetchButton(this.tr("Delete Snapshots")).set({
         alignX: "left",
         allowGrowX: false
       });
-      deleteIterationsBtn.addListener("execute", () => {
-        deleteIterationsBtn.setFetching(true);
-        this.__deleteIterations(deleteIterationsBtn)
+      deleteSnapshotsBtn.addListener("execute", () => {
+        deleteSnapshotsBtn.setFetching(true);
+        this.__deleteSnapshots(deleteSnapshotsBtn)
           .then(() => {
-            this.__rebuildIterationsTable();
+            this.__rebuildSnapshotsTable();
           })
           .finally(() => {
-            deleteIterationsBtn.setFetching(false);
+            deleteSnapshotsBtn.setFetching(false);
           });
       }, this);
-      return deleteIterationsBtn;
+      return deleteSnapshotsBtn;
     },
 
-    __recreateIterationsBtn: function() {
-      const recreateIterationsBtn = new osparc.ui.form.FetchButton(this.tr("Recreate Iterations")).set({
+    __recreateSnapshotsBtn: function() {
+      const recreateSnapshotsBtn = new osparc.ui.form.FetchButton(this.tr("Recreate Snapshots")).set({
         alignX: "right",
         allowGrowX: false
       });
-      recreateIterationsBtn.addListener("execute", () => {
-        recreateIterationsBtn.setFetching(true);
-        this.__recreateIterations(recreateIterationsBtn)
+      recreateSnapshotsBtn.addListener("execute", () => {
+        recreateSnapshotsBtn.setFetching(true);
+        this.__recreateSnapshots(recreateSnapshotsBtn)
           .then(() => {
-            this.__rebuildIterationsTable();
+            this.__rebuildSnapshotsTable();
           })
           .finally(() => {
-            recreateIterationsBtn.setFetching(false);
+            recreateSnapshotsBtn.setFetching(false);
           });
       }, this);
-      return recreateIterationsBtn;
+      return recreateSnapshotsBtn;
     },
 
-    __deleteIterations: function() {
+    __deleteSnapshots: function() {
       return new Promise((resolve, reject) => {
         this.__primaryStudy.getSweeper().removeSecondaryStudies()
           .then(() => {
-            const msg = this.tr("Iterations deleted");
+            const msg = this.tr("Snapshots Deleted");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg);
             resolve();
           });
       });
     },
 
-    __recreateIterations: function() {
+    __recreateSnapshots: function() {
       return new Promise((resolve, reject) => {
         const primaryStudyData = this.__primaryStudy.serialize();
-        this.__primaryStudy.getSweeper().recreateIterations(primaryStudyData)
+        this.__primaryStudy.getSweeper().recreateSnapshots(primaryStudyData)
           .then(secondaryStudyIds => {
-            const msg = secondaryStudyIds.length + this.tr(" Iterations created");
+            const msg = secondaryStudyIds.length + this.tr(" Snapshots Created");
             osparc.component.message.FlashMessenger.getInstance().logAs(msg);
             resolve();
           });
       });
     },
 
-    __createOpenIterationsBtn: function() {
-      const openIterationBtn = new qx.ui.form.Button(this.tr("Open Iteration")).set({
+    __createOpenSnapshotBtn: function() {
+      const openSnapshotBtn = new qx.ui.form.Button(this.tr("Open Snapshot")).set({
         allowGrowX: false
       });
-      return openIterationBtn;
+      return openSnapshotBtn;
     }
   }
 });
