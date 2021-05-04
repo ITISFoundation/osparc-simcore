@@ -207,7 +207,7 @@ class DynamicSidecarsMonitor:
 
         def make_service_status(
             monitor_data: MonitorData, service_state: ServiceState, service_message: str
-        ):
+        ) -> Dict[str, str]:
             return dict(
                 dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
                 published_port=80,  # default for the proxy
@@ -282,7 +282,7 @@ class DynamicSidecarsMonitor:
                 service_message=container_message,
             )
 
-    async def _runner(self):
+    async def _runner(self) -> None:
         """This code runs under a lock and can safely change the Monitor data of all entries"""
         logger.info("Doing some monitorung here")
 
@@ -331,7 +331,7 @@ class DynamicSidecarsMonitor:
 
         logger.warning("Monitor was shut down")
 
-    async def start(self):
+    async def start(self) -> None:
         # run as a background task
         logging.info("Starting dynamic-sidecar monitor")
         self._keep_running = True
