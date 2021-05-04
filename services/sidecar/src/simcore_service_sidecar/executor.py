@@ -23,7 +23,6 @@ from simcore_sdk import node_data, node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager
 
 from . import config, exceptions
-from .boot_mode import get_boot_mode
 from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
 from .utils import get_volume_mount_point
@@ -263,7 +262,6 @@ class Executor:
                 "log",
             ]
         ]
-        env_vars.append(f"SC_COMP_SERVICES_SCHEDULED_AS={get_boot_mode().value}")
 
         host_input_path = await get_volume_mount_point(
             config.SIDECAR_DOCKER_VOLUME_INPUT
