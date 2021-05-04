@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import typer
 from httpx import URL, AsyncClient, codes
@@ -13,11 +13,18 @@ async def login_user(client: AsyncClient, email: str, password: str):
     r = await client.post(path, json={"email": email, "password": password})
 
 
-async def get_all_projects_for_user(client: AsyncClient) -> List[Dict[str, Any]]:
-    path = "/projects"
+async def get_all_projects_for_user(
+    client: AsyncClient, next_link: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    path = next_link if next_link else "/projects"
     r = await client.get(path, params={"type": "user"}, timeout=30)
     if r.status_code == 200:
-        return r.json()["data"]
+        response_dict = r.json()
+        data = response_dict["data"]
+        next_link = response_dict.get("_links", {}).get("next", None)
+        if next_link:
+            data += await get_all_projects_for_user(client, next_link)
+        return data
     return []
 
 
