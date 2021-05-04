@@ -28,7 +28,11 @@ def _make_list_services_query(
     query = sa.select([services_meta_data])
     if gids or execute_access or write_access:
         logic_operator = and_ if combine_access_with_and else or_
-        default = True if combine_access_with_and else False
+        default = (
+            True  # pylint: disable=simplifiable-if-expression
+            if combine_access_with_and
+            else False
+        )
         access_query_part = logic_operator(
             services_access_rights.c.execute_access if execute_access else default,
             services_access_rights.c.write_access if write_access else default,
