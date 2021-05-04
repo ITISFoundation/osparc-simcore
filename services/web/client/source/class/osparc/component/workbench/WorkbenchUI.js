@@ -547,6 +547,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__updateTempEdge,
           this
         );
+        nodeUI.setActive(false);
       }, this);
 
       nodeUI.addListener("edgeDragOver", e => {
