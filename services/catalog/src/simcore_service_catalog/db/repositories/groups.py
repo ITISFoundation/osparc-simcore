@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -55,7 +55,7 @@ class GroupsRepository(BaseRepository):
             )
 
     async def list_user_emails_from_gids(
-        self, gids: List[PositiveInt]
+        self, gids: Set[PositiveInt]
     ) -> Dict[PositiveInt, Optional[EmailStr]]:
         service_owners = {}
         async with self.db_engine.acquire() as conn:
