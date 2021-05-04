@@ -76,7 +76,7 @@ qx.Class.define("osparc.utils.Classifiers", {
           };
         }
         return {
-          label: qx.lang.String.firstUp(key),
+          label: key,
           children: this.__virtualTree(currentNode[key])
         };
       });
