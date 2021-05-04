@@ -265,7 +265,7 @@ async function isStudyDone(page, studyId) {
   console.log("-- Is study done", endPoint);
   const resp = await makeRequest(page, endPoint);
 
-  if ("state" in resp && "value" in resp["state"]) {
+  if (resp !== null && "state" in resp && "value" in resp["state"]) {
     const pipelineStatus = resp["state"]["value"];
     console.log("Pipeline Status:", studyId, pipelineStatus);
     const stopListening = [
