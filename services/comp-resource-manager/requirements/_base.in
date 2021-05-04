@@ -1,0 +1,18 @@
+#
+# Specifies third-party dependencies for 'services/comp-resource-manager/src'
+#
+# NOTE: ALL version constraints MUST be commented
+# intra-repo constraints
+-c ../../../requirements/constraints.txt
+
+# intra-repo required dependencies
+-r ../../../packages/models-library/requirements/_base.in
+-r ../../../packages/service-library/requirements/_base.in
+
+chardet<4 # incompatible with respx 0.12.1
+h11<0.10 # incompatible with respx 0.12.1
+# fastapi and extensions
+fastapi[all]
+
+# data models
+pydantic[dotenv]
