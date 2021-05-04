@@ -23,6 +23,7 @@ async def run_services(
     docker_swarm,
     user_id,
     project_id,
+    director_v2_service_mock,
 ):
     started_services = []
 

@@ -6,6 +6,7 @@
 #
 aiodebug==1.1.2           # via -r requirements/_base.txt, simcore-service-library
 aiodocker==0.14.0         # via -r requirements/_base.txt
+aioresponses==0.7.2       # via -r requirements/_test.in
 git+https://github.com/ITISFoundation/aiohttp_apiset.git@5c8a61ceb6de7ed9e09db5b4609b458a0d3773df  # via -r requirements/_base.txt
 aiohttp==3.3.2            # via -r requirements/_base.txt, aiodocker, aiohttp-apiset, aiozipkin, pytest-aiohttp, simcore-service-library
 aiopg==1.0.0              # via -r requirements/_base.txt, simcore-service-library

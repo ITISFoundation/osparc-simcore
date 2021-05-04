@@ -355,6 +355,7 @@ async def test_running_services_post_and_delete(
     user_id,
     project_id,
     api_version_prefix,
+    director_v2_service_mock,
 ):
     await _start_get_stop_services(
         client, push_services, user_id, project_id, api_version_prefix
