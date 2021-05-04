@@ -127,51 +127,50 @@ async def list_services(
         return services_overview
 
     # let's get all the services access rights
-    services_access_rights: Dict[
-        Tuple[str, str], List[ServiceAccessRightsAtDB]
-    ] = await services_repo.list_services_access_rights(
+    get_services_access_rights_task = services_repo.list_services_access_rights(
         key_versions=list(services_in_db.keys()), product_name=x_simcore_products_name
     )
 
     # let's get the service owners
-    services_owner_emails: Dict[
-        int, str
-    ] = await groups_repository.list_user_emails_from_gids(
-        [s.owner for s in services_in_db.values()]
+    get_services_owner_emails_task = groups_repository.list_user_emails_from_gids(
+        {s.owner for s in services_in_db.values() if s.owner}
+    )
+
+    # getting services from director
+    get_registry_services_task = director_client.get("/services")
+
+    (
+        services_in_registry,
+        services_access_rights,
+        services_owner_emails,
+    ) = await asyncio.gather(
+        get_registry_services_task,
+        get_services_access_rights_task,
+        get_services_owner_emails_task,
     )
 
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
     # 2. we filter the services using the visible ones
     # get the services from the registry and filter them out
-    filtered_services_in_registry = [
-        s
-        for s in list_frontend_services() + await director_client.get("/services")
-        if (s.get("key"), s.get("version")) in services_in_db
-    ]
-
-    return [
-        _prepare_service_details(
-            s,
-            services_in_db[s["key"], s["version"]],
-            services_access_rights[s["key"], s["version"]],
-            services_owner_emails.get(services_in_db[s["key"], s["version"]].owner),
+    with ProcessPoolExecutor(max_workers=2) as pool:
+        services_details = await asyncio.gather(
+            *[
+                asyncio.get_event_loop().run_in_executor(
+                    pool,
+                    _prepare_service_details,
+                    s,
+                    services_in_db[s["key"], s["version"]],
+                    services_access_rights[s["key"], s["version"]],
+                    services_owner_emails.get(
+                        services_in_db[s["key"], s["version"]].owner
+                    ),
+                )
+                for s in list_frontend_services() + services_in_registry
+                if (s.get("key"), s.get("version")) in services_in_db
+            ]
         )
-        for s in filtered_services_in_registry
-    ]
-    # with ProcessPoolExecutor() as pool:
-    #     services_details = await asyncio.gather(
-    #         *[
-    #             asyncio.get_event_loop().run_in_executor(
-    #                 pool,
-    #                 _prepare_service_details,
-    #                 s,
-    #                 *services_in_db[s["key"], s["version"]],
-    #             )
-    #             for s in filtered_services_in_registry
-    #         ]
-    #     )
-    # return [s for s in services_details if s is not None]
+        return [s for s in services_details if s is not None]
 
 
 @router.get(
