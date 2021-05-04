@@ -604,6 +604,8 @@ async def test_open_project(
             if "/dynamic/" in service["key"]
         }
         calls = []
+        request_scheme = resp.url.scheme
+        request_dns = f"{resp.url.host}:{resp.url.port}"
         for service_uuid, service in dynamic_services.items():
             calls.append(
                 call(
@@ -613,6 +615,8 @@ async def test_open_project(
                     service_uuid=service_uuid,
                     service_version=service["version"],
                     user_id=logged_user["id"],
+                    request_scheme=request_scheme,
+                    request_dns=request_dns,
                 )
             )
         mocked_director_subsystem["start_service"].assert_has_calls(calls)
