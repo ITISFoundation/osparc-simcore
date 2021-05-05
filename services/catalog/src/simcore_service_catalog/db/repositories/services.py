@@ -2,7 +2,6 @@ import logging
 from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
-from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
