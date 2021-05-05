@@ -3,6 +3,7 @@ from typing import Optional, Dict, Tuple, Union, Any, List
 
 from aiohttp import web, ClientSession, ClientTimeout, ClientResponse
 from pydantic import AnyHttpUrl, BaseSettings, Field, validator, conint, constr
+from pydantic.types import PositiveInt
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ class Directorv2Settings(BaseSettings):
     )
 
     endpoint: Optional[AnyHttpUrl] = None
+    proxy_timeout: PositiveInt = 60
 
     @validator("endpoint", pre=True)
     @classmethod
@@ -44,8 +46,11 @@ class Directorv2Settings(BaseSettings):
 
 def setup_director_v2(app: web.Application) -> None:
     """called during setup phase"""
-    app[KEY_DIRECTOR_V2_SETTINGS] = Directorv2Settings()
-    app[KEY_CLIENT_SESSION] = ClientSession(timeout=ClientTimeout(10))
+    settings = Directorv2Settings()
+    app[KEY_DIRECTOR_V2_SETTINGS] = settings
+    app[KEY_CLIENT_SESSION] = ClientSession(
+        timeout=ClientTimeout(settings.proxy_timeout)
+    )
 
 
 def _get_settings(app: web.Application) -> Directorv2Settings:
