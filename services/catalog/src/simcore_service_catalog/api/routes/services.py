@@ -1,7 +1,9 @@
 # pylint: disable=too-many-arguments
 
+import asyncio
 import logging
 import urllib.parse
+from concurrent.futures.process import ProcessPoolExecutor
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -44,6 +46,34 @@ RESPONSE_MODEL_POLICY = {
 }
 
 
+def _prepare_service_details(
+    service_in_registry: Dict[str, Any],
+    service_in_db: ServiceMetaDataAtDB,
+    service_access_rights_in_db: List[ServiceAccessRightsAtDB],
+    service_owner: Optional[str],
+) -> Optional[ServiceOut]:
+    # compose service from registry and DB
+    composed_service = service_in_registry
+    composed_service.update(
+        service_in_db.dict(exclude_unset=True, exclude={"owner"}),
+        access_rights={rights.gid: rights for rights in service_access_rights_in_db},
+        owner=service_owner if service_owner else None,
+    )
+
+    # validate the service
+    validated_service = None
+    try:
+        validated_service = ServiceOut(**composed_service)
+    except ValidationError as exc:
+        logger.warning(
+            "could not validate service [%s:%s]: %s",
+            composed_service.get("key"),
+            composed_service.get("version"),
+            exc,
+        )
+    return validated_service
+
+
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
 @cancellable_request
 async def list_services(
@@ -55,7 +85,6 @@ async def list_services(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(...),
 ):
-    # FIXME: too many DB calls
     # Access layer
     user_groups = await groups_repository.list_user_groups(user_id)
     if not user_groups:
@@ -65,27 +94,17 @@ async def list_services(
             detail="You have unsufficient rights to access the services",
         )
 
-    # now get the executable services
-    _services: List[ServiceMetaDataAtDB] = await services_repo.list_services(
-        gids=[group.gid for group in user_groups],
-        execute_access=True,
-        product_name=x_simcore_products_name,
-    )
-    # TODO: get this directly in DB
-    executable_services: ServicesSelection = {
-        (service.key, service.version) for service in _services
+    # now get the executable or writable services
+    services_in_db = {
+        (s.key, s.version): s
+        for s in await services_repo.list_services(
+            gids=[group.gid for group in user_groups],
+            execute_access=True,
+            write_access=True,
+            combine_access_with_and=False,
+            product_name=x_simcore_products_name,
+        )
     }
-
-    # get the writable services
-    _services = await services_repo.list_services(
-        gids=[group.gid for group in user_groups],
-        write_access=True,
-        product_name=x_simcore_products_name,
-    )
-    writable_services: ServicesSelection = {
-        (service.key, service.version) for service in _services
-    }
-    visible_services = executable_services | writable_services
 
     # Non-detailed views from the services_repo database
     if not details:
@@ -103,70 +122,57 @@ async def list_services(
                 inputs={},
                 outputs={},
             )
-            for key, version in visible_services
+            for key, version in services_in_db
         ]
         return services_overview
 
-    # Detailed view re-directing to
+    # let's get all the services access rights
+    get_services_access_rights_task = services_repo.list_services_access_rights(
+        key_versions=list(services_in_db.keys()), product_name=x_simcore_products_name
+    )
 
-    # get the services from the registry and filter them out
-    frontend_services = list_frontend_services()
-    registry_services = await director_client.get("/services")
-    detailed_services_metadata = frontend_services + registry_services
-    detailed_services: List[ServiceOut] = []
-    for detailed_metadata in detailed_services_metadata:
-        try:
-            service_key, service_version = (
-                detailed_metadata.get("key"),
-                detailed_metadata.get("version"),
-            )
-            if (service_key, service_version) not in visible_services:
-                # no access to that service
-                continue
+    # let's get the service owners
+    get_services_owner_emails_task = groups_repository.list_user_emails_from_gids(
+        {s.owner for s in services_in_db.values() if s.owner}
+    )
 
-            service = ServiceOut.parse_obj(detailed_metadata)
+    # getting services from director
+    get_registry_services_task = director_client.get("/services")
 
-            # Write Access Granted: fill in the service rights
-            access_rights: List[
-                ServiceAccessRightsAtDB
-            ] = await services_repo.get_service_access_rights(
-                service.key, service.version, product_name=x_simcore_products_name
-            )
-            service.access_rights = {rights.gid: rights for rights in access_rights}
+    (
+        services_in_registry,
+        services_access_rights,
+        services_owner_emails,
+    ) = await asyncio.gather(
+        get_registry_services_task,
+        get_services_access_rights_task,
+        get_services_owner_emails_task,
+    )
 
-            # Write Access Granted: override some of the values with what is in the db
-            service_in_db: Optional[
-                ServiceMetaDataAtDB
-            ] = await services_repo.get_service(service.key, service.version)
-            if not service_in_db:
-                logger.error(
-                    "The service %s:%s is not in the database",
-                    service.key,
-                    service.version,
+    # NOTE: for the details of the services:
+    # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
+    # 2. we filter the services using the visible ones from the db
+    # 3. then we compose the final service using as a base the registry service, overriding with the same
+    #    service from the database, adding also the access rights and the owner as email address instead of gid
+    # NOTE: this final step runs in a process pool so that it runs asynchronously and does not block in any way
+    with ProcessPoolExecutor(max_workers=2) as pool:
+        services_details = await asyncio.gather(
+            *[
+                asyncio.get_event_loop().run_in_executor(
+                    pool,
+                    _prepare_service_details,
+                    s,
+                    services_in_db[s["key"], s["version"]],
+                    services_access_rights[s["key"], s["version"]],
+                    services_owner_emails.get(
+                        services_in_db[s["key"], s["version"]].owner
+                    ),
                 )
-                continue
-
-            service = service.copy(
-                update=service_in_db.dict(exclude_unset=True, exclude={"owner"})
-            )
-            # the owner shall be converted to an email address
-            if service_in_db.owner:
-                service.owner = await groups_repository.get_user_email_from_gid(
-                    service_in_db.owner
-                )
-
-            detailed_services.append(service)
-
-        # services = parse_obj_as(List[ServiceOut], data) this does not work since if one service has an issue it fails
-        except ValidationError as exc:
-            logger.warning(
-                "skip service %s:%s that has invalid fields\n%s",
-                detailed_metadata.get("key"),
-                detailed_metadata.get("version"),
-                exc,
-            )
-
-    return detailed_services
+                for s in list_frontend_services() + services_in_registry
+                if (s.get("key"), s.get("version")) in services_in_db
+            ]
+        )
+        return [s for s in services_details if s is not None]
 
 
 @router.get(
