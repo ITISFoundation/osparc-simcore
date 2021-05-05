@@ -121,7 +121,7 @@ typing-extensions==3.7.4.3
     #   aiodocker
     #   aiohttp
     #   yarl
-urllib3==1.25.11
+urllib3==1.26.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt

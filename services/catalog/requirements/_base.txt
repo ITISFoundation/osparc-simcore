@@ -79,7 +79,11 @@ immutables==0.15
 itsdangerous==1.1.0
     # via fastapi
 jinja2==2.11.3
-    # via fastapi
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   fastapi
 markupsafe==1.1.1
     # via jinja2
 multidict==5.1.0
@@ -124,7 +128,6 @@ six==1.15.0
     #   graphene
     #   graphql-core
     #   graphql-relay
-    #   promise
     #   python-multipart
     #   tenacity
 sniffio==1.2.0
@@ -148,7 +151,7 @@ typing-extensions==3.7.4.3
     #   yarl
 ujson==3.2.0
     # via fastapi
-urllib3==1.26.3
+urllib3==1.26.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
