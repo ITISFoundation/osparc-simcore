@@ -171,7 +171,6 @@ class ServicesRepository(BaseRepository):
         key: str,
         version: str,
         product_name: str,
-        connection: Optional[SAConnection],
     ) -> List[ServiceAccessRightsAtDB]:
         services_in_db = []
         query = sa.select([services_access_rights]).where(
@@ -179,13 +178,9 @@ class ServicesRepository(BaseRepository):
             & (services_access_rights.c.version == version)
             & (services_access_rights.c.product_name == product_name)
         )
-        if connection:
-            async for row in connection.execute(query):
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(query):
                 services_in_db.append(ServiceAccessRightsAtDB(**row))
-        else:
-            async with self.db_engine.acquire() as conn:
-                async for row in conn.execute(query):
-                    services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
 
     async def list_services_access_rights(
