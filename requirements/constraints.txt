@@ -27,7 +27,7 @@ respx<0.13.0
 
 # limited by aiobotocore in storage. In addition, pytest_simcore.minio_service uses minio
 # Version 7 changes API! Has Breaking changes TODO: review ASAP
- minio<7.0.0
+ minio<8.0.0
 
 
 # Keeps all docker compose to the same version. TODO: remove when all synced
