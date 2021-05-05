@@ -117,7 +117,7 @@ class DynamicSidecarClient:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers")
         try:
             response = await self.httpx_client.post(url, data=compose_spec)
-            if response.status_code != 200:
+            if response.status_code != 202:
                 logging.warning(
                     "error during request status=%s, body=%s",
                     response.status_code,
