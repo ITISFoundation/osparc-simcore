@@ -97,7 +97,7 @@ tenacity==7.0.0
     # via -r requirements/_base.in
 trafaret==2.1.0
     # via -r requirements/_base.in
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   importlib-metadata

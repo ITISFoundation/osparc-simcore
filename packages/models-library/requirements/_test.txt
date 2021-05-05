@@ -6,7 +6,7 @@
 #
 aiohttp==3.7.4.post0
     # via pytest-aiohttp
-astroid==2.5.3
+astroid==2.5.6
     # via pylint
 async-timeout==3.0.1
     # via aiohttp
@@ -71,7 +71,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 py==1.10.0
     # via pytest
-pylint==2.7.4
+pylint==2.8.2
     # via -r requirements/_test.in
 pyparsing==2.4.7
     # via packaging
@@ -83,13 +83,13 @@ pytest-icdiff==0.5
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
-pytest-mock==3.5.1
+pytest-mock==3.6.0
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
-pytest==6.2.3
+pytest==6.2.4
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -112,7 +112,7 @@ toml==0.10.2
     #   pytest
 typed-ast==1.4.3
     # via astroid
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
