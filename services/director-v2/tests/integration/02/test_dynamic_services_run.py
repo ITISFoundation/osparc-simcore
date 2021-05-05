@@ -26,6 +26,8 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = ["adminer"]
 
+HTTPX_CLIENT_TIMOUT = 120
+
 
 @pytest.fixture(autouse=True)
 def minimal_configuration(
@@ -105,7 +107,7 @@ async def director_v0_client(services_endpoint: Dict[str, URL]) -> AsyncClient:
         "X-Service-Sidecar-Request-Scheme": director_url.scheme,
     }
     async with AsyncClient(
-        base_url=str(base_url), headers=headers, timeout=60.0
+        base_url=str(base_url), headers=headers, timeout=HTTPX_CLIENT_TIMOUT
     ) as client:
         yield client
 
@@ -113,7 +115,9 @@ async def director_v0_client(services_endpoint: Dict[str, URL]) -> AsyncClient:
 @pytest.fixture
 async def director_v2_client(services_endpoint: Dict[str, URL]) -> AsyncClient:
     base_url = services_endpoint["director"] / "v2"
-    async with AsyncClient(base_url=str(base_url), timeout=60.0) as client:
+    async with AsyncClient(
+        base_url=str(base_url), timeout=HTTPX_CLIENT_TIMOUT
+    ) as client:
         yield client
 
 
