@@ -151,8 +151,10 @@ async def list_services(
 
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
-    # 2. we filter the services using the visible ones
-    # get the services from the registry and filter them out
+    # 2. we filter the services using the visible ones from the db
+    # 3. then we compose the final service using as a base the registry service, overriding with the same
+    #    service from the database, adding also the access rights and the owner as email address instead of gid
+    # NOTE: this final step runs in a process pool so that it runs asynchronously and does not block in any way
     with ProcessPoolExecutor(max_workers=2) as pool:
         services_details = await asyncio.gather(
             *[
