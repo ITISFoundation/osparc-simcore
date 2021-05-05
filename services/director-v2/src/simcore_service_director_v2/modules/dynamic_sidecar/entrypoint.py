@@ -461,9 +461,11 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     if dynamic_sidecar_settings.is_dev_mode:
         dynamic_sidecar_path = dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path
         if dynamic_sidecar_path is None:
-            log.error(
-                "Could not mount the sources for the dynamic-sidecar, please provide env var named %s",
-                dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path.__name__,
+            log.warning(
+                (
+                    "Could not mount the sources for the dynamic-sidecar, please "
+                    "provide env var named DEV_SIMCORE_DYNAMIC_SIDECAR_PATH"
+                )
             )
         else:
             mounts.append(
