@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt requirements/_migration.in
 #
-alembic==1.5.8
+alembic==1.6.0
     # via -r requirements/_migration.in
 certifi==2020.12.5
     # via requests
@@ -17,7 +17,6 @@ docker==5.0.0
 idna==2.10
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/_migration.in
     #   requests
 mako==1.1.4
     # via alembic
@@ -50,5 +49,5 @@ urllib3==1.26.4
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_migration.in
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via docker
