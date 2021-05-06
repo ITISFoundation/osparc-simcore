@@ -75,6 +75,7 @@ class RunDockerComposeUp(BaseEventHandler):
             current.dynamic_sidecar.overall_status.update_failing_status(
                 "Could not run docker-compose up. Ask an admin to check director logs for details."
             )
+        current.dynamic_sidecar.compose_spec_submitted = True
 
 
 class ServicesInspect(BaseEventHandler):
