@@ -245,7 +245,7 @@ def httpbin_dynamic_sidecar_service(
     """Adds a itisfoundation/httpbin-dynamic-sidecar in docker registry"""
     return _pull_push_service(
         "itisfoundation/httpbin-dynamic-sidecar",
-        "1.0.0",
+        "1.0.1",
         docker_registry,
         node_meta_schema,
     )
@@ -258,7 +258,7 @@ def httpbin_dynamic_sidecar_compose_service(
     """Adds a itisfoundation/httpbin-dynamic-sidecar-compose in docker registry"""
     return _pull_push_service(
         "itisfoundation/httpbin-dynamic-sidecar-compose",
-        "1.0.0",
+        "1.0.1",
         docker_registry,
         node_meta_schema,
     )
