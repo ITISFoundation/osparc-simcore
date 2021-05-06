@@ -28,7 +28,6 @@ def _inject_traefik_configuration(
         dynamic_sidecar_network_name: {
             "external": {"name": dynamic_sidecar_network_name},
             "driver": "overlay",
-            "attachable": True,
         }
     }
 
