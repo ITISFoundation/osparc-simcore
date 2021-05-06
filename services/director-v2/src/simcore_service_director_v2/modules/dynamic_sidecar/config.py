@@ -75,7 +75,7 @@ class DynamicSidecarSettings(BaseSettings):
     )
 
     timeout_fetch_dynamic_sidecar_node_id: float = Field(
-        120,
+        60,
         description=(
             "when starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "
             "is required; If something goes wrong timeout and do not wait forever in a loop"

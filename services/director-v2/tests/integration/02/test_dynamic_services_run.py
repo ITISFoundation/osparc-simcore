@@ -154,7 +154,7 @@ async def _assert_start_service(
     result = await director_v0_client.post(
         "/running_interactive_services", params=query_params
     )
-    assert result.status_code == 201
+    assert result.status_code == 201, result.text
     assert "data" in result.json()
 
 
