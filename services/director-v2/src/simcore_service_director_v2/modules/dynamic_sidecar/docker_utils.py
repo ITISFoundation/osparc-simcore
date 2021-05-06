@@ -30,6 +30,7 @@ ServiceLabelsStoredData = Tuple[
 # resulting in a name composed by 5 strings separated by `_`
 EXPECTED_SERVICE_NAME_PARTS = 5
 
+
 @async_contextmanager
 async def docker_client() -> aiodocker.docker.Docker:
     try:
@@ -139,8 +140,8 @@ async def get_dynamic_sidecars_to_monitor(
         node_uuid = service["Spec"]["Labels"]["uuid"]
         service_key = service["Spec"]["Labels"]["service_key"]
         service_tag = service["Spec"]["Labels"]["service_tag"]
-        paths_mapping = PathsMappingModel(
-            **json.loads(service["Spec"]["Labels"]["paths_mapping"])
+        paths_mapping = PathsMappingModel.parse_raw(
+            service["Spec"]["Labels"]["paths_mapping"]
         )
         compose_spec = json.loads(service["Spec"]["Labels"]["compose_spec"])
         target_container = json.loads(service["Spec"]["Labels"]["target_container"])
