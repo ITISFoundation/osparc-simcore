@@ -9,7 +9,7 @@ from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecMode
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {
-    "version": "3.7",
+    "version": "3.8",
     "services": {CONTAINER_NAME: {}},
 }
 
