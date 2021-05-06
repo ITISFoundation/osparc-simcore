@@ -78,21 +78,21 @@ async def httpbins_project(
 ) -> ProjectAtDB:
     return project(
         workbench={
-            uuid_legacy: {
-                "key": httpbin_service["image"]["name"],
-                "version": httpbin_service["image"]["tag"],
-                "label": "legacy dynamic service",
-            },
+            # uuid_legacy: {
+            #     "key": httpbin_service["image"]["name"],
+            #     "version": httpbin_service["image"]["tag"],
+            #     "label": "legacy dynamic service",
+            # },
             uuid_dynamic_sidecar: {
                 "key": httpbin_dynamic_sidecar_service["image"]["name"],
                 "version": httpbin_dynamic_sidecar_service["image"]["tag"],
                 "label": "dynamic sidecar",
             },
-            uuid_dynamic_sidecar_compose: {
-                "key": httpbin_dynamic_sidecar_compose_service["image"]["name"],
-                "version": httpbin_dynamic_sidecar_compose_service["image"]["tag"],
-                "label": "dynamic sidecar with docker compose spec",
-            },
+            # uuid_dynamic_sidecar_compose: {
+            #     "key": httpbin_dynamic_sidecar_compose_service["image"]["name"],
+            #     "version": httpbin_dynamic_sidecar_compose_service["image"]["tag"],
+            #     "label": "dynamic sidecar with docker compose spec",
+            # },
         }
     )
 
