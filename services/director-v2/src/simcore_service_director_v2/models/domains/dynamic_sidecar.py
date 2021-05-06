@@ -3,6 +3,12 @@ from typing import Dict, Any, Optional, List
 
 from pydantic import BaseModel, Field, validator
 
+from ..schemas.constants import UserID
+from models_library.projects import ProjectID
+from models_library.services import SERVICE_KEY_RE
+from models_library.basic_regex import VERSION_RE
+
+
 ComposeSpecModel = Optional[Dict[str, Any]]
 
 
@@ -25,10 +31,24 @@ class PathsMappingModel(BaseModel):
 
 
 class StartDynamicSidecarModel(BaseModel):
-    user_id: str
-    project_id: str
-    service_key: str
-    service_tag: str
+    user_id: UserID
+    project_id: ProjectID
+    service_key: str = Field(
+        ...,
+        description="name of the service",
+        regex=SERVICE_KEY_RE,
+        examples=[
+            "simcore/services/comp/itis/sleeper",
+            "simcore/services/dynamic/3dviewer",
+            "simcore/services/frontend/file-picker",
+        ],
+    )
+    service_tag: str = Field(
+        ...,
+        description="tag usually also known as version",
+        regex=VERSION_RE,
+        examples=["1.0.0", "0.0.1"],
+    )
 
     # these come from the webserver via the director
     request_scheme: str = Field(
@@ -61,9 +81,7 @@ class StartDynamicSidecarModel(BaseModel):
 
     @validator("target_container")
     @classmethod
-    def target_container_must_exist_if_compose_spec_present(
-        cls, v, values, **kwargs
-    ):  # pylint: disable=unused-argument
+    def target_container_must_exist_if_compose_spec_present(cls, v, values):
         if values.get("compose_spec", None) is not None and v is None:
             raise ValueError(
                 "simcore.service.target_container is required when compose_spec is defined. "
@@ -73,7 +91,7 @@ class StartDynamicSidecarModel(BaseModel):
 
     @validator("request_scheme")
     @classmethod
-    def validate_protocol(cls, v, values, **kwargs):  # pylint: disable=unused-argument
+    def validate_protocol(cls, v):
         if v not in {"http", "https"}:
             raise ValueError(f"provided request_scheme={v} must be 'http' or 'https'")
         return v

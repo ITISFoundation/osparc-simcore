@@ -1,17 +1,19 @@
 # this is a proxy for the global configuration and will be removed in the future
 # making it easy to refactor
 
+from pathlib import Path
 from aiohttp.web import Application
-from pydantic import BaseSettings, Field, PositiveInt
+from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
+from models_library.basic_types import PortInt
 
 
 class DynamicSidecarSettings(BaseSettings):
     # dynamic_sidecar integration
-    monitor_interval_seconds: float = Field(
+    monitor_interval_seconds: PositiveFloat = Field(
         5.0, description="interval at which the monitor cycle is repeated"
     )
 
-    max_status_api_duration: float = Field(
+    max_status_api_duration: PositiveFloat = Field(
         1.0,
         description=(
             "when requesting the status of a service this is the "
@@ -31,7 +33,7 @@ class DynamicSidecarSettings(BaseSettings):
         env="SWARM_STACK_NAME",
     )
 
-    dev_simcore_dynamic_sidecar_path: str = Field(
+    dev_simcore_dynamic_sidecar_path: Path = Field(
         None,
         description="optional, only used for development, mounts the source of the dynamic-sidecar",
         env="DEV_SIMCORE_DYNAMIC_SIDECAR_PATH",
@@ -42,7 +44,7 @@ class DynamicSidecarSettings(BaseSettings):
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
-    web_service_port: int = Field(
+    web_service_port: PortInt = Field(
         8000,
         description="port on which the webserver for the dynamic-sidecar is exposed",
     )
@@ -74,7 +76,7 @@ class DynamicSidecarSettings(BaseSettings):
         "", description="url to the docker registry", env="REGISTRY_URL"
     )
 
-    timeout_fetch_dynamic_sidecar_node_id: float = Field(
+    timeout_fetch_dynamic_sidecar_node_id: PositiveFloat = Field(
         60,
         description=(
             "when starting the dynamic-sidecar proxy, the NodeID of the dynamic-sidecar container "

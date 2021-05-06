@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional
 from pprint import pformat
 
 from aiohttp import web
+from models_library.projects import ProjectID
+from ...models.schemas.constants import UserID
 
 from .config import DynamicSidecarSettings, get_settings
 from .constants import (
@@ -33,9 +35,9 @@ def strip_service_name(service_name: str) -> str:
 
 
 def assemble_service_name(
-    project_id: str, service_key: str, node_uuid: str, fixed_service: str
+    project_id: ProjectID, service_key: str, node_uuid: str, fixed_service: str
 ) -> str:
-    first_two_project_id = project_id[:2]
+    first_two_project_id = str(project_id)[:2]
     name_from_service_key = service_key.split("/")[-1]
     return strip_service_name(
         f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
@@ -66,8 +68,8 @@ def _extract_service_port_from_compose_start_spec(
 
 async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-arguments
     app: web.Application,
-    user_id: str,
-    project_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
     service_key: str,
     service_tag: str,
     node_uuid: str,
@@ -102,7 +104,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
         project_id, service_key, node_uuid, FIXED_SERVICE_NAME_PROXY
     )
 
-    first_two_project_id = project_id[:2]
+    first_two_project_id = str(project_id)[:2]
 
     # unique name for the traefik constraints
     io_simcore_zone = f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
@@ -218,8 +220,8 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     service_name: str,
     swarm_network_id: str,
     swarm_network_name: str,
-    user_id: str,
-    project_id: str,
+    user_id: UserID,
+    project_id: ProjectID,
     dynamic_sidecar_node_id: str,
     request_scheme: str,
     request_dns: str,
@@ -253,8 +255,8 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{service_name}.middlewares": f"master-simcore_gzip@docker, {service_name}-security-headers",
             "type": "main",  # main is required to be monitored by the frontend
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
-            "study_id": project_id,
-            "user_id": user_id,
+            "study_id": f"{project_id}",
+            "user_id": f"{user_id}",
             "uuid": node_uuid,  # needed for removal when project is closed
         },
         "name": service_name,
@@ -436,14 +438,14 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     dynamic_sidecar_name: str,
-    user_id: str,
+    user_id: UserID,
     node_uuid: str,
     service_key: str,
     service_tag: str,
     paths_mapping: PathsMappingModel,
     compose_spec: ComposeSpecModel,
     target_container: Optional[str],
-    project_id: str,
+    project_id: ProjectID,
     settings: List[Dict[str, Any]],
 ) -> Dict[str, Any]:
     """This service contains the dynamic-sidecar which will spawn the dynamic service itself """
@@ -476,7 +478,7 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                 }
             )
             packages_pacth = (
-                Path(dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path)
+                dynamic_sidecar_settings.dev_simcore_dynamic_sidecar_path
                 / ".."
                 / ".."
                 / "packages"
@@ -507,7 +509,7 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
         "labels": {
             "io.simcore.zone": io_simcore_zone,
             "port": f"{dynamic_sidecar_settings.web_service_port}",
-            "study_id": project_id,
+            "study_id": f"{project_id}",
             "traefik.docker.network": dynamic_sidecar_network_name,  # also used for monitoring
             "traefik.enable": "true",
             f"traefik.http.routers.{dynamic_sidecar_name}.entrypoints": "http",
@@ -515,7 +517,7 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
             f"traefik.http.routers.{dynamic_sidecar_name}.rule": "PathPrefix(`/`)",
             f"traefik.http.services.{dynamic_sidecar_name}.loadbalancer.server.port": f"{dynamic_sidecar_settings.web_service_port}",
             "type": "dependency",
-            "user_id": user_id,
+            "user_id": f"{user_id}",
             # the following are used for monitoring
             "uuid": node_uuid,  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,

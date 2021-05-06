@@ -22,6 +22,9 @@ def parse_containers_inspect(
 ) -> List[DockerContainerInspect]:
     results = deque()
 
+    if containers_inspect is None:
+        return []
+
     for container_id in containers_inspect:
         container_inspect_data = containers_inspect[container_id]
         docker_container_inspect = DockerContainerInspect(
