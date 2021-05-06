@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field, PositiveInt
 
 from .utils import AsyncResourceLock
 from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
+from models_library.services import SERVICE_KEY_RE
+from models_library.basic_regex import VERSION_RE
 
 
 class DynamicSidecarStatus(str, Enum):
@@ -117,10 +119,12 @@ class MonitorData(BaseModel):
 
     service_key: str = Field(
         ...,
+        regex=SERVICE_KEY_RE,
         description="together with the tag used to compose the docker-compose spec for the service",
     )
     service_tag: str = Field(
         ...,
+        regex=VERSION_RE,
         description="together with the key used to compose the docker-compose spec for the service",
     )
     paths_mapping: PathsMappingModel = Field(
@@ -151,7 +155,7 @@ class MonitorData(BaseModel):
         ...,
         description="required for Traefik to correctly route requests to the spawned container",
     )
-    service_port: int = Field(
+    service_port: PositiveInt = Field(
         ..., description="port where the service is exposed defined by the service"
     )
 
