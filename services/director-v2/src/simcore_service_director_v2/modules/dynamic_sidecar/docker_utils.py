@@ -26,6 +26,9 @@ ServiceLabelsStoredData = Tuple[
     str, str, str, PathsMappingModel, ComposeSpecModel, Optional[str], str, str, int
 ]
 
+# `assemble_service_name`function will join 5 strings together
+# resulting in a name composed by 5 strings separated by `_`
+EXPECTED_SERVICE_NAME_PARTS = 5
 
 @async_contextmanager
 async def docker_client() -> aiodocker.docker.Docker:
@@ -122,7 +125,7 @@ async def get_dynamic_sidecars_to_monitor(
             continue
 
         service_name_parts = service_name.split("_")
-        if len(service_name_parts) < 5:
+        if len(service_name_parts) < EXPECTED_SERVICE_NAME_PARTS:
             continue
 
         # check to see if this is a dynamic-sidecar
