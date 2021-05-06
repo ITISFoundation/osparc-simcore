@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
-from models_library.basic_types import PortInt
+from models_library.basic_types import PortInt, BootModeEnum
 
 
 class DynamicSidecarSettings(BaseSettings):
@@ -86,15 +86,24 @@ class DynamicSidecarSettings(BaseSettings):
         ),
     )
 
+    boot_mode: Optional[BootModeEnum] = Field(
+        BootModeEnum.PRODUCTION,
+        description="Used to compute where or not should start sidecar in development mode",
+        env="SC_BOOT_MODE",
+    )
+
     @property
     def resolved_registry_url(self) -> str:
         # This is useful in case of a local registry, where the registry url (path) is relative to the host docker engine
         return self.registry_path or self.registry_url
 
     @property
-    def is_dev_mode(self):
-        # TODO: ask SAN how to check this, not sure from what env var to derive it
-        return True
+    def is_dev_mode(self) -> bool:
+        return self.boot_mode in {
+            BootModeEnum.DEVELOPMENT,
+            BootModeEnum.DEBUG,
+            BootModeEnum.LOCAL,
+        }
 
     class Config:
         case_sensitive = False
