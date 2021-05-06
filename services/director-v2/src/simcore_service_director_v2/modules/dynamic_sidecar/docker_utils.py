@@ -170,7 +170,7 @@ async def _extract_task_data_from_service_for_state(
     dynamic_sidecar_settings: DynamicSidecarSettings,
     target_statuses: Set[str],
 ) -> Dict[str, Any]:
-    """Waits until the service-sidcar task is in one of the target_statuses
+    """Waits until the dynamic-sidecar task is in one of the target_statuses
     and then returns the task"""
 
     async def sleep_or_error(started: float, task: Dict):
@@ -179,7 +179,7 @@ async def _extract_task_data_from_service_for_state(
         if elapsed > dynamic_sidecar_settings.timeout_fetch_dynamic_sidecar_node_id:
             raise DynamicSidecarError(
                 msg=(
-                    "Timed out while serarching for an assigned NodeID for "
+                    "Timed out while searching for an assigned NodeID for "
                     f"service_id={service_id}. Last task inspect result: {task}"
                 )
             )
