@@ -67,7 +67,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.registry.enabled:
         docker_registry.setup(app, settings.registry)
 
-    dynamic_sidecar.setup_dynamic_sidecar(app)
+    dynamic_sidecar.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)
