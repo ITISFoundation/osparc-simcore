@@ -41,14 +41,15 @@ def _inject_traefik_configuration(
 
     # expose spaned container to the internet
     labels = target_container_spec.get("labels", [])
-    for label in [
-        f"io.simcore.zone={simcore_traefik_zone}",
-        "traefik.enable=true",
-        f"traefik.http.services.{target_container}.loadbalancer.server.port={service_port}",
-        f"traefik.http.routers.{target_container}.entrypoints=http",
-        f"traefik.http.routers.{target_container}.rule=PathPrefix(`/`)",
-    ]:
-        labels.append(label)
+    labels.extend(
+        [
+            f"io.simcore.zone={simcore_traefik_zone}",
+            "traefik.enable=true",
+            f"traefik.http.services.{target_container}.loadbalancer.server.port={service_port}",
+            f"traefik.http.routers.{target_container}.entrypoints=http",
+            f"traefik.http.routers.{target_container}.rule=PathPrefix(`/`)",
+        ]
+    )
 
     # put back updated labels
     target_container_spec["labels"] = labels
