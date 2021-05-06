@@ -2,6 +2,7 @@
 # making it easy to refactor
 
 from pathlib import Path
+from typing import Optional
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
 from models_library.basic_types import PortInt
@@ -49,8 +50,9 @@ class DynamicSidecarSettings(BaseSettings):
         description="port on which the webserver for the dynamic-sidecar is exposed",
     )
 
-    simcore_services_network_name: str = Field(
+    simcore_services_network_name: Optional[str] = Field(
         None,
+        regex=r"^([a-zA-Z0-9_]+)$",
         description="network all simcore services are currently present",
         env="SIMCORE_SERVICES_NETWORK_NAME",
     )
@@ -69,7 +71,7 @@ class DynamicSidecarSettings(BaseSettings):
     )
 
     # Trying to resolve docker registry url
-    registry_path: str = Field(
+    registry_path: Optional[str] = Field(
         None, description="url to the docker registry", env="REGISTRY_PATH"
     )
     registry_url: str = Field(
