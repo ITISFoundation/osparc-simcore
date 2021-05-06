@@ -1,6 +1,5 @@
 import logging
 import json
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 from pprint import pformat
 
@@ -94,8 +93,8 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
 
     # Service naming schema:
-    # -  srvsdcr_{uuid}_{first_two_project_id}_proxy_{name_from_service_key}
-    # -  srvsdcr_{uuid}_{first_two_project_id}_sidecar_{name_from_service_key}
+    # -  dynsdcr_{uuid}_{first_two_project_id}_proxy_{name_from_service_key}
+    # -  dynsdcr_{uuid}_{first_two_project_id}_sidecar_{name_from_service_key}
 
     service_name_dynamic_sidecar = assemble_service_name(
         project_id, service_key, node_uuid, FIXED_SERVICE_NAME_SIDECAR
