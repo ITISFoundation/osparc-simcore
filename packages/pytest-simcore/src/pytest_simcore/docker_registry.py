@@ -232,7 +232,7 @@ def httpbin_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, s
     """Adds a itisfoundation/httpbin in docker registry"""
     return _pull_push_service(
         "itisfoundation/httpbin",
-        "1.0.0",
+        "1.0.1",
         docker_registry,
         node_meta_schema,
     )
