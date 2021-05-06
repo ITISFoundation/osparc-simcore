@@ -1,3 +1,4 @@
 # outputs from scripts
 *.json
 *.txt
+*.ipynb
