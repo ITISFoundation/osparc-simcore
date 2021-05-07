@@ -2,8 +2,9 @@ import logging
 import json
 from typing import Any, Dict, List, Optional
 from pprint import pformat
+from uuid import UUID
 
-from aiohttp import web
+from fastapi import FastAPI
 from models_library.projects import ProjectID
 from ...models.schemas.constants import UserID
 
@@ -34,7 +35,7 @@ def strip_service_name(service_name: str) -> str:
 
 
 def assemble_service_name(
-    project_id: ProjectID, service_key: str, node_uuid: str, fixed_service: str
+    project_id: ProjectID, service_key: str, node_uuid: UUID, fixed_service: str
 ) -> str:
     first_two_project_id = str(project_id)[:2]
     name_from_service_key = service_key.split("/")[-1]
@@ -44,21 +45,6 @@ def assemble_service_name(
     )
 
 
-async def get_dynamic_sidecar_stack_status(
-    app: web.Application, node_uuid: str
-) -> Dict[str, Any]:
-    monitor = get_monitor(app)
-    return await monitor.get_stack_status(node_uuid)
-
-
-async def stop_dynamic_sidecar_stack_for_service(
-    app: web.Application, node_uuid: str
-) -> None:
-    """will trigger actions needed to stop the service: removal from monitoring"""
-    monitor = get_monitor(app)
-    await monitor.remove_service_from_monitor(node_uuid)
-
-
 def _extract_service_port_from_compose_start_spec(
     create_service_params: Dict[str, Any]
 ) -> int:
@@ -66,12 +52,12 @@ def _extract_service_port_from_compose_start_spec(
 
 
 async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-arguments
-    app: web.Application,
+    app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
     service_key: str,
     service_tag: str,
-    node_uuid: str,
+    node_uuid: UUID,
     settings: List[Dict[str, Any]],
     paths_mapping: PathsMappingModel,
     compose_spec: ComposeSpecModel,
@@ -83,11 +69,6 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
         f"DYNAMIC_SIDECAR: user_id={user_id}, project_id={project_id}, service_key={service_key}, "
         f"service_tag={service_tag}, node_uuid={node_uuid}"
     )
-    # TODO: change the current interface , parameters will be ignored by this service
-    # - internal_network_id
-    # - node_base_path
-    # - main_service
-
     log.debug(debug_message)
 
     dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
@@ -119,7 +100,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
         "Labels": {
             "io.simcore.zone": f"{dynamic_sidecar_settings.traefik_simcore_zone}",
             "com.simcore.description": f"interactive for node: {node_uuid}_{first_two_project_id}",
-            "uuid": node_uuid,  # needed for removal when project is closed
+            "uuid": f"{node_uuid}",  # needed for removal when project is closed
         },
         "Attachable": True,
         "Internal": False,
@@ -191,7 +172,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     monitor = get_monitor(app)
     await monitor.add_service_to_monitor(
         service_name=service_name_dynamic_sidecar,
-        node_uuid=node_uuid,
+        node_uuid=str(node_uuid),
         hostname=service_name_dynamic_sidecar,
         port=dynamic_sidecar_settings.web_service_port,
         service_key=service_key,
@@ -212,7 +193,7 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
 
 async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
     dynamic_sidecar_settings: DynamicSidecarSettings,
-    node_uuid: str,
+    node_uuid: UUID,
     io_simcore_zone: str,
     dynamic_sidecar_network_name: str,
     dynamic_sidecar_network_id: str,
@@ -256,7 +237,7 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
             "dynamic_type": "dynamic-sidecar",  # tagged as dynamic service
             "study_id": f"{project_id}",
             "user_id": f"{user_id}",
-            "uuid": node_uuid,  # needed for removal when project is closed
+            "uuid": f"{node_uuid}",  # needed for removal when project is closed
         },
         "name": service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
@@ -438,7 +419,7 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
     swarm_network_id: str,
     dynamic_sidecar_name: str,
     user_id: UserID,
-    node_uuid: str,
+    node_uuid: UUID,
     service_key: str,
     service_tag: str,
     paths_mapping: PathsMappingModel,
@@ -518,7 +499,7 @@ async def _dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
             "type": "dependency",
             "user_id": f"{user_id}",
             # the following are used for monitoring
-            "uuid": node_uuid,  # also needed for removal when project is closed
+            "uuid": f"{node_uuid}",  # also needed for removal when project is closed
             "swarm_stack_name": dynamic_sidecar_settings.swarm_stack_name,
             "service_key": service_key,
             "service_tag": service_tag,

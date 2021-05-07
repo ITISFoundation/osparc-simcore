@@ -1,11 +1,12 @@
 import logging
+from uuid import UUID
 
 import httpx
 from typing import Dict, Any
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, FastAPI
+
 from starlette import status
 from starlette.datastructures import URL
-from starlette.status import HTTP_204_NO_CONTENT
 
 from ...models.domains.dynamic_services import RetrieveDataIn, RetrieveDataOutEnveloped
 from ...utils.logging_utils import log_decorator
@@ -14,11 +15,11 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
+from ..dependencies import get_app
+from ...modules.dynamic_sidecar.monitor import get_monitor
 
 from simcore_service_director_v2.modules.dynamic_sidecar.entrypoint import (
     start_dynamic_sidecar_stack_for_service,
-    get_dynamic_sidecar_stack_status,
-    stop_dynamic_sidecar_stack_for_service,
 )
 from simcore_service_director_v2.models.domains.dynamic_sidecar import (
     StartDynamicSidecarModel,
@@ -56,14 +57,19 @@ async def service_retrieve_data_on_ports(
 @router.post(
     "/{node_uuid}:start",
     summary="start the dynamic-sidecar for this service",
+    responses={
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Error while starting dynamic sidecar"
+        }
+    },
 )
 async def start_dynamic_sidecar(
-    node_uuid: str,
+    node_uuid: UUID,
     start_dynamic_sidecar_model: StartDynamicSidecarModel,
-    request: Request,
+    app: FastAPI = Depends(get_app),
 ) -> Dict[str, str]:
     return await start_dynamic_sidecar_stack_for_service(
-        app=request.app,
+        app=app,
         user_id=start_dynamic_sidecar_model.user_id,
         project_id=start_dynamic_sidecar_model.project_id,
         service_key=start_dynamic_sidecar_model.service_key,
@@ -81,15 +87,21 @@ async def start_dynamic_sidecar(
 @router.post(
     "/{node_uuid}:status", summary="assembles the status for the dynamic-sidecar"
 )
-async def dynamic_sidecar_status(node_uuid: str, request: Request) -> Dict[str, Any]:
-    return await get_dynamic_sidecar_stack_status(app=request.app, node_uuid=node_uuid)
+async def dynamic_sidecar_status(
+    node_uuid: UUID, app: FastAPI = Depends(get_app)
+) -> Dict[str, Any]:
+    monitor = get_monitor(app)
+    return await monitor.get_stack_status(str(node_uuid))
 
 
 @router.post(
     "/{node_uuid}:stop",
-    responses={HTTP_204_NO_CONTENT: {"model": None}},
+    responses={status.HTTP_204_NO_CONTENT: {"model": None}},
+    status_code=status.HTTP_204_NO_CONTENT,
     summary="stops previously spawned dynamic-sidecar",
 )
-async def stop_dynamic_sidecar(node_uuid: str, request: Request) -> Dict[str, str]:
-    await stop_dynamic_sidecar_stack_for_service(app=request.app, node_uuid=node_uuid)
-    return Response(status_code=HTTP_204_NO_CONTENT)
+async def stop_dynamic_sidecar(
+    node_uuid: UUID, app: FastAPI = Depends(get_app)
+) -> Dict[str, str]:
+    monitor = get_monitor(app)
+    await monitor.remove_service_from_monitor(str(node_uuid))
