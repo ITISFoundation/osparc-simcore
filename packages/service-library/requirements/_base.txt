@@ -20,7 +20,7 @@ async-timeout==3.0.1
     # via
     #   aiohttp
     #   aiopg
-attrs==21.2.0
+attrs==20.3.0
     # via
     #   -r requirements/_base.in
     #   aiohttp
