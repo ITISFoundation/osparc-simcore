@@ -127,7 +127,7 @@ pytest-docker==0.10.1
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
-pytest-mock==3.6.0
+pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
@@ -154,7 +154,7 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
