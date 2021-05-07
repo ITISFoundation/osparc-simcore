@@ -14,7 +14,7 @@ aiopg[sa]==1.2.1
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
-alembic==1.6.0
+alembic==1.6.2
     # via -r requirements/_test.in
 astroid==2.5.6
     # via pylint
@@ -130,7 +130,7 @@ pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-lazy-fixture==0.6.3
     # via -r requirements/_test.in
-pytest-mock==3.6.0
+pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
