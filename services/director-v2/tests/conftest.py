@@ -62,9 +62,13 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch):
 
 
 @pytest.fixture(scope="function")
-def client(loop) -> TestClient:
+def client(loop, monkeypatch) -> TestClient:
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     app = init_app(settings)
+
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:not-an-existing-tag"
+    )
 
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server

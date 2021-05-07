@@ -20,6 +20,7 @@ from ..modules import (
     docker_registry,
     dynamic_services,
     remote_debug,
+    dynamic_sidecar
 )
 from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup
@@ -65,6 +66,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.registry.enabled:
         docker_registry.setup(app, settings.registry)
+
+    dynamic_sidecar.setup(app)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

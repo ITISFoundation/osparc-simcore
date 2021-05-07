@@ -225,3 +225,40 @@ def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, s
         docker_registry,
         node_meta_schema,
     )
+
+
+@pytest.fixture(scope="session")
+def httpbin_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, str]:
+    """Adds a itisfoundation/httpbin in docker registry"""
+    return _pull_push_service(
+        "itisfoundation/httpbin",
+        "1.0.1",
+        docker_registry,
+        node_meta_schema,
+    )
+
+
+@pytest.fixture(scope="session")
+def httpbin_dynamic_sidecar_service(
+    docker_registry: str, node_meta_schema: Dict
+) -> Dict[str, str]:
+    """Adds a itisfoundation/httpbin-dynamic-sidecar in docker registry"""
+    return _pull_push_service(
+        "itisfoundation/httpbin-dynamic-sidecar",
+        "1.0.1",
+        docker_registry,
+        node_meta_schema,
+    )
+
+
+@pytest.fixture(scope="session")
+def httpbin_dynamic_sidecar_compose_service(
+    docker_registry: str, node_meta_schema: Dict
+) -> Dict[str, str]:
+    """Adds a itisfoundation/httpbin-dynamic-sidecar-compose in docker registry"""
+    return _pull_push_service(
+        "itisfoundation/httpbin-dynamic-sidecar-compose",
+        "1.0.1",
+        docker_registry,
+        node_meta_schema,
+    )

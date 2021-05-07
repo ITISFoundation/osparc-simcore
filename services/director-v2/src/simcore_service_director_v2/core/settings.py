@@ -100,8 +100,6 @@ class RegistrySettings(BaseSettings):
             user, pw = values.get("user"), values.get("pw")
             if user is None or pw is None:
                 raise ValueError("Cannot authenticate without credentials user, pw")
-            if not values["ssl"]:
-                raise ValueError("Authentication REQUIRES a secured channel")
         return values
 
     @property

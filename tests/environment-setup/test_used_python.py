@@ -6,7 +6,7 @@
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 
 
 import pytest
@@ -18,6 +18,7 @@ PIP_INSTALL_UPGRADE_PATTERN = re.compile(
 PYTHON_VERSION_DOCKER_PATTERN = re.compile(r"ARG PYTHON_VERSION=\"([\d\.]+)\"")
 
 # TODO: enhance version comparison with from packaging.version from setuptools
+
 
 def to_version(version: str) -> Tuple[int]:
     return tuple(int(v) for v in version.split("."))
@@ -56,7 +57,7 @@ def expected_pip_version(osparc_simcore_root_dir: Path) -> str:
 
 
 @pytest.fixture(scope="session")
-def expected_python_version() -> Tuple[int]:
+def expected_python_version() -> Tuple[int, int]:
     return (3, 6)
 
 

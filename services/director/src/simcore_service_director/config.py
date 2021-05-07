@@ -115,6 +115,7 @@ SIMCORE_SERVICES_PREFIX: str = os.environ.get(
     "SIMCORE_SERVICES_PREFIX", "simcore/services"
 )
 
+
 # monitoring
 # NOTE: keep disabled for unit-testing otherwise mocks will not hold
 MONITORING_ENABLED: bool = strtobool(os.environ.get("MONITORING_ENABLED", "False"))
@@ -124,5 +125,6 @@ TRACING_ENABLED: bool = strtobool(os.environ.get("TRACING_ENABLED", "True"))
 TRACING_ZIPKIN_ENDPOINT: str = os.environ.get(
     "TRACING_ZIPKIN_ENDPOINT", "http://jaeger:9411"
 )
+
 
 __all__ = ["APP_CLIENT_SESSION_KEY"]
