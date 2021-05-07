@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-alembic==1.6.0
+alembic==1.6.2
     # via -r requirements/_test.in
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
@@ -178,7 +178,7 @@ pytest-cov==2.11.1
     # via -r requirements/_test.in
 pytest-docker==0.10.1
     # via -r requirements/_test.in
-pytest-mock==3.6.0
+pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
