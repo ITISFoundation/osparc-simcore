@@ -9,7 +9,7 @@ import aiodocker
 from asyncio_extras import async_contextmanager
 
 from .config import DynamicSidecarSettings
-from .constants import FIXED_SERVICE_NAME_SIDECAR, DYNAMIC_SIDECAR_PREFIX
+from .constants import SERVICE_NAME_SIDECAR, DYNAMIC_SIDECAR_PREFIX
 from .parse_docker_status import (
     ServiceState,
     extract_task_state,
@@ -132,7 +132,7 @@ async def get_dynamic_sidecars_to_monitor(
         # check to see if this is a dynamic-sidecar
         if (
             service_name_parts[0] != DYNAMIC_SIDECAR_PREFIX
-            or service_name_parts[3] != FIXED_SERVICE_NAME_SIDECAR
+            or service_name_parts[3] != SERVICE_NAME_SIDECAR
         ):
             continue
 

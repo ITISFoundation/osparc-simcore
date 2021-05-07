@@ -9,11 +9,7 @@ from models_library.projects import ProjectID
 from ...models.schemas.constants import UserID
 
 from .config import DynamicSidecarSettings, get_settings
-from .constants import (
-    FIXED_SERVICE_NAME_PROXY,
-    FIXED_SERVICE_NAME_SIDECAR,
-    DYNAMIC_SIDECAR_PREFIX,
-)
+from .constants import SERVICE_NAME_PROXY, SERVICE_NAME_SIDECAR, DYNAMIC_SIDECAR_PREFIX
 from .docker_utils import (
     create_network,
     create_service_and_get_id,
@@ -35,13 +31,13 @@ def strip_service_name(service_name: str) -> str:
 
 
 def assemble_service_name(
-    project_id: ProjectID, service_key: str, node_uuid: UUID, fixed_service: str
+    project_id: ProjectID, service_key: str, node_uuid: UUID, constant_service: str
 ) -> str:
     first_two_project_id = str(project_id)[:2]
     name_from_service_key = service_key.split("/")[-1]
     return strip_service_name(
         f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
-        f"_{fixed_service}_{name_from_service_key}"
+        f"_{constant_service}_{name_from_service_key}"
     )
 
 
@@ -78,10 +74,10 @@ async def start_dynamic_sidecar_stack_for_service(  # pylint: disable=too-many-a
     # -  dynsdcr_{uuid}_{first_two_project_id}_sidecar_{name_from_service_key}
 
     service_name_dynamic_sidecar = assemble_service_name(
-        project_id, service_key, node_uuid, FIXED_SERVICE_NAME_SIDECAR
+        project_id, service_key, node_uuid, SERVICE_NAME_SIDECAR
     )
     service_name_proxy = assemble_service_name(
-        project_id, service_key, node_uuid, FIXED_SERVICE_NAME_PROXY
+        project_id, service_key, node_uuid, SERVICE_NAME_PROXY
     )
 
     first_two_project_id = str(project_id)[:2]
