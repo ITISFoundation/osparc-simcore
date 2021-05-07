@@ -28,7 +28,7 @@ gevent==21.1.2
     #   locust
 geventhttpclient==1.4.4
     # via locust
-greenlet==1.0.0
+greenlet==1.1.0
     # via gevent
 idna==2.10
     # via requests
@@ -52,7 +52,7 @@ pyzmq==22.0.3
     # via locust
 requests==2.25.1
     # via locust
-six==1.15.0
+six==1.16.0
     # via
     #   geventhttpclient
     #   python-dateutil

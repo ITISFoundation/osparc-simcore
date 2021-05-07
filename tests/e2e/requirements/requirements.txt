@@ -18,7 +18,7 @@ pyyaml==5.4.1
     #   -r requirements.in
 requests==2.25.1
     # via docker
-six==1.15.0
+six==1.16.0
     # via
     #   tenacity
     #   websocket-client

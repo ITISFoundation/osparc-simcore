@@ -4,9 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-async-generator==1.10
-    # via httpx
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   jsonschema
     #   pytest
@@ -72,7 +70,7 @@ requests==2.25.1
     # via docker
 rfc3986[idna2008]==1.4.0
     # via httpx
-six==1.15.0
+six==1.16.0
     # via
     #   jsonschema
     #   tenacity

@@ -8,7 +8,7 @@ aiohttp==3.7.4.post0
     # via pytest-aiohttp
 async-timeout==3.0.1
     # via aiohttp
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   aiohttp
     #   pytest

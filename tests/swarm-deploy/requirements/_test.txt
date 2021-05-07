@@ -37,7 +37,7 @@ aiozipkin==0.7.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-alembic==1.6.0
+alembic==1.6.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   -r requirements/_test.in
@@ -45,7 +45,7 @@ async-timeout==3.0.1
     # via
     #   aiohttp
     #   aiopg
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -184,7 +184,7 @@ pytest-cov==2.11.1
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
-pytest-mock==3.6.0
+pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
@@ -227,7 +227,7 @@ requests==2.25.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   docker
-six==1.15.0
+six==1.16.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   isodate
