@@ -173,11 +173,6 @@ class DynamicSidecarsMonitor:
             # invoke container cleanup at this point
             services_sidecar_client: DynamicSidecarClient = get_api_client(self._app)
 
-            # invokes docker compose down, even if the containers are removed they still
-            # seem attached to the network; the network cannot be removed (this is logged
-            # as a failure by the director) and the docker_network will trash the environment
-            # There is no suitable solution to this issue, having netwoks trash
-            # the environment seems to be the best approach :\
             current: LockWithMonitorData = self._to_monitor[service_name]
             dynamic_sidecar_endpoint = current.monitor_data.dynamic_sidecar.endpoint
             await services_sidecar_client.run_docker_compose_down(
