@@ -1,4 +1,5 @@
 -c ../../../requirements/constraints.txt
+-c _base.txt
 
 pytest
 pytest-cov
