@@ -4,10 +4,15 @@
 import logging
 
 import pytest
+from pydantic import ValidationError
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,
     RegistrySettings,
+)
+
+from simcore_service_director_v2.modules.dynamic_sidecar.config import (
+    DynamicSidecarSettings,
 )
 
 
@@ -40,3 +45,30 @@ def test_registry_settings_error_missing_credentials(user, password):
         RegistrySettings(
             url="http://registry:5000", auth=True, user=user, pw=password, ssl=False
         )
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        "local/dynamic-sidecar:development",
+        "itisfoundation/dynamic-sidecar:1.0.0",
+        "local/dynamic-sidecar:0.0.1",
+    ],
+)
+def test_dynamic_sidecar_settings(image: str) -> None:
+    settings = DynamicSidecarSettings(image=image)
+    assert settings.image == image
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        "soemthing random",
+        "local/dynamic-sidecar:0.c0.1",
+        "localS/dynamic-sidecar:0.0.1",
+        "local/dynamic-sidecarS:0.0.1",
+    ],
+)
+def test_dynamic_sidecar_settings_failing_image(image: str) -> None:
+    with pytest.raises(ValidationError):
+        DynamicSidecarSettings(image=image)

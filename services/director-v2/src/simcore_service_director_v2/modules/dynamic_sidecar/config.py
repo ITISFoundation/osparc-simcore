@@ -6,7 +6,8 @@ from typing import Optional
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
 from models_library.basic_types import PortInt, BootModeEnum
-from models_library.services import SERVICE_KEY_RE
+
+IMAGE_RE = r"^(local|itisfoundation)/(dynamic-sidecar):(development|(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$)"
 
 
 class DynamicSidecarSettings(BaseSettings):
@@ -43,7 +44,7 @@ class DynamicSidecarSettings(BaseSettings):
 
     image: str = Field(
         ...,
-        regex=SERVICE_KEY_RE,
+        regex=IMAGE_RE,
         description="used by the director to start a specific version of the dynamic-sidecar",
     )
 
