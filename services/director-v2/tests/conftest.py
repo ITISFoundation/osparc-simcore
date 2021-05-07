@@ -67,7 +67,7 @@ def client(loop, monkeypatch) -> TestClient:
     app = init_app(settings)
 
     monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "NOT_A_VALID_DOCKER_COMPOSE_IMAGE:NO_TAG"
+        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:not-an-existing-tag"
     )
 
     # NOTE: this way we ensure the events are run in the application
