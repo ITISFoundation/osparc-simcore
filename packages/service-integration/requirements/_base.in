@@ -9,7 +9,6 @@
 pyyaml
 click
 
-
 # pytest-plugin
 pytest
 docker

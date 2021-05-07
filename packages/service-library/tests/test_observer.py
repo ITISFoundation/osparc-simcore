@@ -2,15 +2,13 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from asyncio import Future
 
 from servicelib.observer import emit, observe
 
 
 async def test_observer(loop, mocker):
-    # register a cb function
-    cb_function = mocker.Mock(return_value=Future())
-    cb_function.return_value.set_result(None)
+    # register a couroutine as callback function
+    cb_function = mocker.AsyncMock(return_value=None)
 
     decorated_fct = observe(event="my_test_event")(cb_function)
 

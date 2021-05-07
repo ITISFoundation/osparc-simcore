@@ -5,7 +5,6 @@
 import json
 import os
 import sys
-from asyncio import Future
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote
@@ -315,9 +314,15 @@ def mock_datcore_download(mocker, client):
     assert dsm
     assert isinstance(dsm, DataStorageManager)
 
-    mock = mocker.patch.object(dsm, "download_link_datcore")
-    mock.return_value = Future()
-    mock.return_value.set_result(("https://httpbin.org/image", "foo.txt"))
+    async def mock_download_link_datcore(*args, **kwargs):
+        return ["https://httpbin.org/image", "foo.txt"]
+
+    mocker.patch.object(dsm, "download_link_datcore", mock_download_link_datcore)
+    # FIXME: mock fails in py3.8 It await dsm.download_link_datcore(...) -> returns a mock instead of the results.
+    # it is a matter of knowning how to replace the member function in the dsm object
+    # examples show that with a class object instead of an instance so probably we are
+    # using the mocker wrong here.
+    # mock.return_value.set_result(["https://httpbin.org/image", "foo.txt"])
 
 
 @pytest.fixture
@@ -327,7 +332,6 @@ def mock_get_project_access_rights(mocker) -> None:
         mock = mocker.patch(
             f"simcore_service_storage.{module}.get_project_access_rights"
         )
-        mock.return_value = Future()
         mock.return_value.set_result(AccessRights.all())
 
 

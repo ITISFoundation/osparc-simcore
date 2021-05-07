@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict, List
+from typing import Dict
 
 import pytest
 from simcore_service_catalog.meta import api_version
@@ -61,7 +61,7 @@ def test_standard_operations_on_resource(
     assert response.status_code == 200
     got = response.json()
 
-    assert isinstance(got, List)
+    assert isinstance(got, list)
     assert len(got) == 1
 
     # TODO: data_in is not the same as data_out??

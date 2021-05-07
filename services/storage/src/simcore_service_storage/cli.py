@@ -51,15 +51,15 @@ def prune_config(cfg: JsonNode):
     }
 
     """
-    if isinstance(cfg, Dict):
+    if isinstance(cfg, dict):
         for key in list(cfg.keys()):
             value = cfg[key]
             if isinstance(value, str) and value.startswith("${"):
                 del cfg[key]
-            elif isinstance(value, (List, Dict)):
+            elif isinstance(value, (list, dict)):
                 prune_config(cfg[key])
 
-    elif isinstance(cfg, List):
+    elif isinstance(cfg, list):
         for item in cfg:
             prune_config(item)
 

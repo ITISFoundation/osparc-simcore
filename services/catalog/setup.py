@@ -6,9 +6,9 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-if sys.version_info.major != 3 and sys.version_info.minor >= 6:
+if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
     raise RuntimeError(
-        "Expected ~=3.6, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
+        "Expected ~=3.8, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
         % str(sys.version_info)
     )
 
@@ -41,11 +41,11 @@ setup(
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.8",
     ],
     long_description=readme,
     license="MIT license",
-    python_requires="~=3.6",
+    python_requires="~=3.8",
     packages=find_packages(where="src"),
     package_dir={
         "": "src",

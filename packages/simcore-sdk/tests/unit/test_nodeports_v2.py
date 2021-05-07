@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from asyncio import Future
 from pathlib import Path
 from typing import Any, Callable, Dict
 
@@ -124,9 +123,8 @@ def e_tag() -> str:
 async def mock_upload_file(mocker, e_tag):
     mock = mocker.patch(
         "simcore_sdk.node_ports.filemanager.upload_file",
-        return_value=Future(),
+        return_value=("0", e_tag),
     )
-    mock.return_value.set_result(("0", e_tag))
     yield mock
 
 

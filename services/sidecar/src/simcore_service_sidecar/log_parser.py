@@ -124,5 +124,4 @@ async def _monitor_log_file(
                 await asyncio.sleep(1)
                 continue
             log_type, parsed_line = await parse_line(line)
-
             await log_cb(log_type, parsed_line)

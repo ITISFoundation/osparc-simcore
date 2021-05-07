@@ -98,7 +98,7 @@ def run_docker_compose_config(
     - Saves resolved output config to 'destination_path' (if given)
     """
 
-    if not isinstance(docker_compose_paths, List):
+    if not isinstance(docker_compose_paths, list):
         docker_compose_paths = [
             docker_compose_paths,
         ]

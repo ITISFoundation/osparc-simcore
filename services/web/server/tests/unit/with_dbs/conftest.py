@@ -13,7 +13,6 @@ import json
 import os
 import sys
 import textwrap
-from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
 from typing import Callable, Dict, Iterator, List, Optional
@@ -33,7 +32,6 @@ from aiohttp.test_utils import TestClient, TestServer
 from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
-from pytest_simcore.helpers.utils_mock import future_with_result
 from servicelib.aiopg_utils import DSN
 from servicelib.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.application import create_application
@@ -101,7 +99,7 @@ def docker_compose_file(default_app_cfg):
 
 
 @pytest.fixture(scope="function")
-def app_cfg(default_app_cfg, aiohttp_unused_port):
+def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict:
     """Can be overriden in any test module to configure
     the app accordingly
     """
@@ -161,7 +159,7 @@ def client(
 
 
 @pytest.fixture
-def qx_client_outdir(tmpdir):
+def qx_client_outdir(tmpdir) -> Path:
     """Emulates qx output at service/web/client after compiling"""
 
     basedir = tmpdir.mkdir("source-output")
@@ -193,9 +191,8 @@ def qx_client_outdir(tmpdir):
 def computational_system_mock(mocker):
     mock_fun = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        return_value=Future(),
+        return_value="",
     )
-    mock_fun.return_value.set_result("")
     return mock_fun
 
 
@@ -217,12 +214,11 @@ async def storage_subsystem_mock(loop, mocker):
     mock.side_effect = _mock_copy_data_from_project
 
     # requests storage to delete data
-    # mock1 = mocker.patch('simcore_service_webserver.projects.projects_handlers.delete_data_folders_of_project', return_value=None)
+    async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
-        return_value=Future(),
+        side_effect=async_mock,
     )
-    mock1.return_value.set_result("")
     return mock, mock1
 
 
@@ -230,48 +226,30 @@ async def storage_subsystem_mock(loop, mocker):
 def asyncpg_storage_system_mock(mocker):
     mocked_method = mocker.patch(
         "simcore_service_webserver.login.storage.AsyncpgStorage.delete_user",
-        return_value=Future(),
+        return_value="",
     )
-    mocked_method.return_value.set_result("")
     return mocked_method
 
 
 @pytest.fixture
-def mocked_director_subsystem(mocker):
-    mock_director_api = {
-        "get_running_interactive_services": mocker.patch(
-            "simcore_service_webserver.director.director_api.get_running_interactive_services",
-            return_value=future_with_result(""),
-        ),
-        "start_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.start_service",
-            return_value=future_with_result(""),
-        ),
-        "stop_service": mocker.patch(
-            "simcore_service_webserver.director.director_api.stop_service",
-            return_value=future_with_result(""),
-        ),
-    }
-    return mock_director_api
-
-
-@pytest.fixture
 async def mocked_director_api(loop, mocker):
+    # NOTE: patches are done at 'simcore_service_webserver.director.director_api'
+    #
+    #  Read carefully "where to patch" in https://docs.python.org/3/library/unittest.mock.html#id6
+    #
     mocks = {}
-    mocked_running_services = mocker.patch(
-        "simcore_service_webserver.director.director_api.get_running_interactive_services",
-        return_value=Future(),
-    )
-    mocked_running_services.return_value.set_result("")
-    mocks["get_running_interactive_services"] = mocked_running_services
-    mocked_stop_service = mocker.patch(
-        "simcore_service_webserver.director.director_api.stop_service",
-        return_value=Future(),
-    )
-    mocked_stop_service.return_value.set_result("")
-    mocks["stop_service"] = mocked_stop_service
+    for func_name, fake_return in [
+        ("get_running_interactive_services", []),
+        ("start_service", []),
+        ("stop_service", None),
+    ]:
+        mocks[func_name] = mocker.patch(
+            f"simcore_service_webserver.director.director_api.{func_name}",
+            return_value=fake_return,
+            name=f"{__name__}.mocked_director_api::director_api.{func_name}",
+        )
 
-    yield mocks
+    return mocks
 
 
 @pytest.fixture
@@ -301,10 +279,7 @@ async def mocked_dynamic_service(loop, client, mocked_director_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_api["get_running_interactive_services"].return_value = Future()
-        mocked_director_api["get_running_interactive_services"].return_value.set_result(
-            services
-        )
+        mocked_director_api["get_running_interactive_services"].return_value = services
         return running_service_dict
 
     return create
@@ -339,10 +314,12 @@ def postgres_service(docker_services, postgres_dsn):
 def postgres_db(
     postgres_dsn: Dict, postgres_service: str
 ) -> Iterator[sa.engine.Engine]:
+    # Overrides packages/pytest-simcore/src/pytest_simcore/postgres_service.py::postgres_db to reduce scope
     url = postgres_service
 
     # Configures db and initializes tables
-    pg_cli.discover.callback(**postgres_dsn)
+    kwargs = postgres_dsn.copy()
+    pg_cli.discover.callback(**kwargs)
     pg_cli.upgrade.callback("head")
     # Uses syncrounous engine for that
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
@@ -398,7 +375,7 @@ def socketio_url(client) -> Callable:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
 
-    yield create_url
+    return create_url
 
 
 @pytest.fixture()
@@ -417,7 +394,7 @@ async def security_cookie_factory(client) -> Callable:
         )
         return cookie
 
-    yield creator
+    return creator
 
 
 @pytest.fixture()

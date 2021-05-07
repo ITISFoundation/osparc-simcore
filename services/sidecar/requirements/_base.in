@@ -13,7 +13,6 @@
 -c ../../../packages/postgres-database/requirements/_base.in
 -c ../../../packages/service-library/requirements/_base.in
 
-
 aio-pika
 aiodocker
 aiofile

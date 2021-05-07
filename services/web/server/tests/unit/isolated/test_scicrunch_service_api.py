@@ -141,7 +141,7 @@ async def test_scicrunch_get_all_versions_with_invalid_rrids(
         pprint(versions)
 
         # invalid keys return success but an empty list of versions!
-        assert isinstance(versions, List)
+        assert isinstance(versions, list)
         assert len(versions) == 0
         assert not versions
 
