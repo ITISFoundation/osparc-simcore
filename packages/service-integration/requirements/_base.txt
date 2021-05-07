@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   jsonschema
     #   pytest
@@ -57,7 +57,7 @@ pyyaml==5.4.1
     #   -r requirements/_base.in
 requests==2.25.1
     # via docker
-six==1.15.0
+six==1.16.0
     # via
     #   jsonschema
     #   websocket-client
