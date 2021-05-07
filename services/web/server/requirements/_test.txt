@@ -11,7 +11,7 @@ aiohttp==3.6.3
     #   pytest-aiohttp
 aioresponses==0.7.2
     # via -r requirements/_test.in
-alembic==1.6.0
+alembic==1.6.2
     # via -r requirements/_test.in
 astroid==2.5
     # via pylint
@@ -171,7 +171,7 @@ pytest-icdiff==0.5
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
-pytest-mock==3.6.0
+pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
