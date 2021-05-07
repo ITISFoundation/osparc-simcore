@@ -20,7 +20,7 @@ async-timeout==3.0.1
     # via
     #   aiohttp
     #   aiopg
-attrs==20.3.0
+attrs==21.2.0
     # via
     #   -r requirements/_base.in
     #   aiohttp
@@ -78,7 +78,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   openapi-spec-validator
-six==1.15.0
+six==1.16.0
     # via
     #   isodate
     #   jsonschema
