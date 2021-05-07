@@ -267,10 +267,9 @@ async def _dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
                     f"node.id == {dynamic_sidecar_node_id}",
                 ]
             },
-            # TODO: ask SAN how much resoruces for the proxy
-            "Resources": {
-                "Limits": {"MemoryBytes": 1073741824, "NanoCPUs": 2000000000},
-                "Reservations": {"MemoryBytes": 524288000, "NanoCPUs": 100000000},
+            "Resources": {  # starts from 100 MB and maxes at 250 MB with 10% max CPU usage
+                "Limits": {"MemoryBytes": 262144000, "NanoCPUs": 100000000},
+                "Reservations": {"MemoryBytes": 104857600, "NanoCPUs": 100000000},
             },
             "RestartPolicy": {
                 "Condition": "on-failure",
