@@ -51,6 +51,8 @@ def test_registry_settings_error_missing_credentials(user, password):
     "image",
     [
         "local/dynamic-sidecar:development",
+        "local/dynamic-sidecar:production",
+        "itisfoundation/dynamic-sidecar:merge-github-testbuild-latest",
         "itisfoundation/dynamic-sidecar:1.0.0",
         "local/dynamic-sidecar:0.0.1",
     ],
@@ -58,17 +60,3 @@ def test_registry_settings_error_missing_credentials(user, password):
 def test_dynamic_sidecar_settings(image: str) -> None:
     settings = DynamicSidecarSettings(image=image)
     assert settings.image == image
-
-
-@pytest.mark.parametrize(
-    "image",
-    [
-        "soemthing random",
-        "local/dynamic-sidecar:0.c0.1",
-        "localS/dynamic-sidecar:0.0.1",
-        "local/dynamic-sidecarS:0.0.1",
-    ],
-)
-def test_dynamic_sidecar_settings_failing_image(image: str) -> None:
-    with pytest.raises(ValidationError):
-        DynamicSidecarSettings(image=image)
