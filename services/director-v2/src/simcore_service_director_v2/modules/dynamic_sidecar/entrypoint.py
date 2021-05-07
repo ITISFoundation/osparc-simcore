@@ -24,10 +24,12 @@ from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecMode
 
 log = logging.getLogger(__name__)
 
+MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
+
 
 def strip_service_name(service_name: str) -> str:
     """returns: the maximum allowed service name in docker swarm"""
-    return service_name[:63]
+    return service_name[:MAX_ALLOWED_SERVICE_NAME_LENGTH]
 
 
 def assemble_service_name(
