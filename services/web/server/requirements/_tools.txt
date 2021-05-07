@@ -88,7 +88,7 @@ typing-extensions==3.7.4.3
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.4.5
+virtualenv==20.4.6
     # via pre-commit
 watchdog[watchmedo]==2.1.0
     # via -r requirements/_tools.in
