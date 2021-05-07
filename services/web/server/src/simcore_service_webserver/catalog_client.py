@@ -73,9 +73,7 @@ async def make_request_and_envelope_response(
 
     try:
 
-        async with session.request(
-            method, url, headers=headers, data=data, timeout=ClientTimeout(total=0.01)
-        ) as resp:
+        async with session.request(method, url, headers=headers, data=data) as resp:
             payload = await resp.json()
 
             try:
