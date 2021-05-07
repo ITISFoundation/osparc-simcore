@@ -369,17 +369,17 @@ async def datcore_testbucket(loop, mock_files_factory):
         yield "no_bucket"
         return
 
-    pool = ThreadPoolExecutor(2)
-    dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
+    with ThreadPoolExecutor(2) as pool:
+        dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
-    await dcw.create_test_dataset(BUCKET_NAME)
-    tmp_files = mock_files_factory(2)
-    for f in tmp_files:
-        await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
+        await dcw.create_test_dataset(BUCKET_NAME)
+        tmp_files = mock_files_factory(2)
+        for f in tmp_files:
+            await dcw.upload_file(BUCKET_NAME, os.path.normpath(f))
 
-    yield BUCKET_NAME, tmp_files[0], tmp_files[1]
+        yield BUCKET_NAME, tmp_files[0], tmp_files[1]
 
-    await dcw.delete_test_dataset(BUCKET_NAME)
+        await dcw.delete_test_dataset(BUCKET_NAME)
 
 
 @pytest.fixture(scope="function")
@@ -393,23 +393,23 @@ def moduleless_app(loop, aiohttp_server) -> web.Application:
 
 @pytest.fixture(scope="function")
 def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
-    pool = ThreadPoolExecutor(3)
 
-    dsm_fixture = DataStorageManager(
-        s3_client=s3_client,
-        engine=postgres_engine,
-        loop=loop,
-        pool=pool,
-        simcore_bucket_name=BUCKET_NAME,
-        has_project_db=False,
-        app=moduleless_app,
-    )
+    with ThreadPoolExecutor(3) as pool:
+        dsm_fixture = DataStorageManager(
+            s3_client=s3_client,
+            engine=postgres_engine,
+            loop=loop,
+            pool=pool,
+            simcore_bucket_name=BUCKET_NAME,
+            has_project_db=False,
+            app=moduleless_app,
+        )
 
-    api_token = os.environ.get("BF_API_KEY", "none")
-    api_secret = os.environ.get("BF_API_SECRET", "none")
-    dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
+        api_token = os.environ.get("BF_API_KEY", "none")
+        api_secret = os.environ.get("BF_API_SECRET", "none")
+        dsm_fixture.datcore_tokens[USER_ID] = DatCoreApiToken(api_token, api_secret)
 
-    yield dsm_fixture
+        yield dsm_fixture
 
 
 @pytest.fixture(scope="function")
@@ -421,44 +421,46 @@ async def datcore_structured_testbucket(loop, mock_files_factory):
         yield "no_bucket"
         return
 
-    pool = ThreadPoolExecutor(2)
-    dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
+    with ThreadPoolExecutor(2) as pool:
+        dcw = DatcoreWrapper(api_token, api_secret, loop, pool)
 
-    dataset_id = await dcw.create_test_dataset(BUCKET_NAME)
-    assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
+        dataset_id = await dcw.create_test_dataset(BUCKET_NAME)
+        assert dataset_id, f"Could not create dataset {BUCKET_NAME}"
 
-    tmp_files = mock_files_factory(3)
+        tmp_files = mock_files_factory(3)
 
-    # first file to the root
-    filename1 = os.path.normpath(tmp_files[0])
-    file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
-    assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
+        # first file to the root
+        filename1 = os.path.normpath(tmp_files[0])
+        file_id1 = await dcw.upload_file_to_id(dataset_id, filename1)
+        assert file_id1, f"Could not upload {filename1} to the root of {BUCKET_NAME}"
 
-    # create first level folder
-    collection_id1 = await dcw.create_collection(dataset_id, "level1")
+        # create first level folder
+        collection_id1 = await dcw.create_collection(dataset_id, "level1")
 
-    # upload second file
-    filename2 = os.path.normpath(tmp_files[1])
-    file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
-    assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
+        # upload second file
+        filename2 = os.path.normpath(tmp_files[1])
+        file_id2 = await dcw.upload_file_to_id(collection_id1, filename2)
+        assert file_id2, f"Could not upload {filename2} to the {BUCKET_NAME}/level1"
 
-    # create 3rd level folder
-    filename3 = os.path.normpath(tmp_files[2])
-    collection_id2 = await dcw.create_collection(collection_id1, "level2")
-    file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
-    assert file_id3, f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
+        # create 3rd level folder
+        filename3 = os.path.normpath(tmp_files[2])
+        collection_id2 = await dcw.create_collection(collection_id1, "level2")
+        file_id3 = await dcw.upload_file_to_id(collection_id2, filename3)
+        assert (
+            file_id3
+        ), f"Could not upload {filename3} to the {BUCKET_NAME}/level1/level2"
 
-    yield {
-        "dataset_id": dataset_id,
-        "coll1_id": collection_id1,
-        "coll2_id": collection_id2,
-        "file_id1": file_id1,
-        "filename1": tmp_files[0],
-        "file_id2": file_id2,
-        "filename2": tmp_files[1],
-        "file_id3": file_id3,
-        "filename3": tmp_files[2],
-        "dcw": dcw,
-    }
+        yield {
+            "dataset_id": dataset_id,
+            "coll1_id": collection_id1,
+            "coll2_id": collection_id2,
+            "file_id1": file_id1,
+            "filename1": tmp_files[0],
+            "file_id2": file_id2,
+            "filename2": tmp_files[1],
+            "file_id3": file_id3,
+            "filename3": tmp_files[2],
+            "dcw": dcw,
+        }
 
-    await dcw.delete_test_dataset(BUCKET_NAME)
+        await dcw.delete_test_dataset(BUCKET_NAME)

@@ -110,7 +110,7 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-spec-validator
     #   trafaret-config
-six==1.15.0
+six==1.16.0
     # via
     #   isodate
     #   jsonschema
@@ -141,7 +141,7 @@ trafaret==2.1.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   trafaret-config
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   importlib-metadata

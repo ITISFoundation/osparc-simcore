@@ -78,7 +78,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   openapi-spec-validator
-six==1.15.0
+six==1.16.0
     # via
     #   isodate
     #   jsonschema
@@ -97,7 +97,7 @@ tenacity==7.0.0
     # via -r requirements/_base.in
 trafaret==2.1.0
     # via -r requirements/_base.in
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   importlib-metadata
