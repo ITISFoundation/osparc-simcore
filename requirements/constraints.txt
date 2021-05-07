@@ -20,7 +20,7 @@ aiozipkin==0.7.1
 
 # Malfunctions with routes including paths. TODO: report bug in repo!
 # httpx [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
-httpx<0.15.0
+httpx<0.19.0
 # [https://github.com/encode/httpx/releases/tag/0.15.0] due to PR#1285 [https://github.com/encode/httpx/pull/1285]
 respx<0.13.0
 
