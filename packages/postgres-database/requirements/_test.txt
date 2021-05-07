@@ -154,7 +154,7 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/_migration.txt
     #   bcrypt
