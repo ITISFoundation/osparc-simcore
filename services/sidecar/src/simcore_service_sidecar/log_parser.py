@@ -90,24 +90,28 @@ async def _monitor_docker_container(
     log_type, parsed_line = LogType.INSTRUMENTATION, "Undefined"
     log_file = out_log_file
     if not out_log_file:
-        temporary_file = tempfile.NamedTemporaryFile(delete=False, suffix=".dat")
-        temporary_file.close()
-        log_file = Path(temporary_file.name)
+        # touch a temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".dat") as file_handler:
+            log_file = Path(file_handler.name)
 
-    try:
-        async with AIOFile(str(log_file), "w+") as afp:
-            writer = Writer(afp)
-            async for line in container.log(stdout=True, stderr=True, follow=True):
-                log_type, parsed_line = await parse_line(line)
-                await log_cb(log_type, parsed_line)
-                await writer(f"{log_type.name}: {parsed_line}")
-    except DockerError as e:
-        log_type, parsed_line = await parse_line(f"Could not recover logs because: {e}")
-        await log_cb(log_type, parsed_line)
-    finally:
-        # clean up
-        if not out_log_file and log_file:
-            log_file.unlink()
+        try:
+            async with AIOFile(str(log_file), "w+") as afp:
+                writer = Writer(afp)
+                async for line in container.log(stdout=True, stderr=True, follow=True):
+                    log_type, parsed_line = await parse_line(line)
+                    await log_cb(log_type, parsed_line)
+                    await writer(f"{log_type.name}: {parsed_line}")
+
+        except DockerError as e:
+            log_type, parsed_line = await parse_line(
+                f"Could not recover logs because: {e}"
+            )
+            await log_cb(log_type, parsed_line)
+
+        finally:
+            # clean up
+            if not out_log_file and log_file:
+                log_file.unlink()
 
 
 @log_decorator(logger=log)
