@@ -70,7 +70,7 @@ async def test_upload_file(api: UsersApi):
     assert res.data.link
     upload_link = res.data.link
     # upload file using link
-    with Path(temporary_file.name).open("rb") as fp:
+    with temp_file_path.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(upload_link, data=d, method="PUT")
         with urllib.request.urlopen(req) as _f:
@@ -86,12 +86,11 @@ async def test_download_file(api: UsersApi):
     assert res.data
     assert res.data.link
     download_link = res.data.link
-    # upload file using link
-    tmp_file2 = tempfile.NamedTemporaryFile(delete=False)
-    tmp_file2.close()
-    urllib.request.urlretrieve(download_link, tmp_file2.name)
 
-    assert filecmp.cmp(tmp_file2.name, temp_file_path)
+    # upload file using link
+    with tempfile.NamedTemporaryFile() as tmp_file2:
+        urllib.request.urlretrieve(download_link, tmp_file2.name)
+        assert filecmp.cmp(tmp_file2.name, temp_file_path)
 
 
 async def test_delete_file(api: UsersApi):
