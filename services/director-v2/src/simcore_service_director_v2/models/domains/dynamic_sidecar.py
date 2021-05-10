@@ -67,15 +67,15 @@ class StartDynamicSidecarModel(BaseModel):
             "which will be handeled by the dynamic-sidecar"
         ),
     )
-    compose_spec: ComposeSpecModel = Field(
-        ...,
+    compose_spec: Optional[ComposeSpecModel] = Field(
+        None,
         description=(
             "if the user provides a compose_spec, it will be used instead "
             "of compsing one from the service_key and service_tag"
         ),
     )
     target_container: Optional[str] = Field(
-        ...,
+        None,
         description="when the user defines a compose spec, it should pick a container inside the spec to receive traffic on a defined port",
     )
 
