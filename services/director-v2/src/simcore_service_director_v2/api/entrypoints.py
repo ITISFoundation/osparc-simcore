@@ -33,7 +33,7 @@ v2_router.include_router(
 v2_router.include_router(
     dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services"
 )
-v2_router.include_router(dynamic_services.router, tags=["dynamic-sidecar"])
+v2_router.include_router(dynamic_services.router, tags=["dynamic-services"])
 
 # root
 api_router = APIRouter()
