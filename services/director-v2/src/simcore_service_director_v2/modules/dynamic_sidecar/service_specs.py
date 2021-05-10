@@ -15,7 +15,32 @@ from .utils import unused_port
 from .exceptions import DynamicSidecarError
 from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
+MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
+
+
 log = logging.getLogger(__name__)
+
+
+def _strip_service_name(service_name: str) -> str:
+    """returns: the maximum allowed service name in docker swarm"""
+    return service_name[:MAX_ALLOWED_SERVICE_NAME_LENGTH]
+
+
+def assemble_service_name(
+    project_id: ProjectID, service_key: str, node_uuid: UUID, constant_service: str
+) -> str:
+    first_two_project_id = str(project_id)[:2]
+    name_from_service_key = service_key.split("/")[-1]
+    return _strip_service_name(
+        f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}_{first_two_project_id}"
+        f"_{constant_service}_{name_from_service_key}"
+    )
+
+
+def extract_service_port_from_compose_start_spec(
+    create_service_params: Dict[str, Any]
+) -> int:
+    return create_service_params["labels"]["service_port"]
 
 
 async def dyn_proxy_entrypoint_assembly(  # pylint: disable=too-many-arguments
