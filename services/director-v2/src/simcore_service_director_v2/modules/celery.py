@@ -85,6 +85,22 @@ class CeleryClient:
     def instance(cls, app: FastAPI) -> "CeleryClient":
         return app.state.celery_client
 
+    def send_single_tasks(
+        self, user_id: UserID, project_id: ProjectID, single_tasks: Dict[str, Any]
+    ) -> Dict[str, Task]:
+        async_tasks = {}
+        for node_id, node_data in single_tasks.items():
+            celery_task_signature = _computation_task_signature(
+                self.settings,
+                user_id,
+                project_id,
+                node_id,
+                node_data["runtime_requirements"],
+            )
+            async_tasks[node_id] = celery_task = celery_task_signature.apply_async()
+            logger.info("Published celery task %s", celery_task)
+        return async_tasks
+
     def send_computation_tasks(
         self,
         user_id: UserID,

@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
@@ -6,12 +6,14 @@ from pydantic import BaseModel, validator
 from simcore_postgres_database.models.comp_pipeline import StateType
 
 from ...utils.db import DB_TO_RUNNING_STATE
+from ..schemas.constants import UserID
 
 
 class CompPipelineAtDB(BaseModel):
     project_id: ProjectID
     dag_adjacency_list: Dict[str, List[str]]  # json serialization issue if using NodeID
     state: RunningState
+    user_id: Optional[UserID]
 
     @validator("state", pre=True)
     @classmethod

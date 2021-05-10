@@ -76,3 +76,10 @@ class ServiceStartTimeoutError(DirectorException):
         super().__init__(f"Service {service_name}:{service_uuid} failed to start ")
         self.service_name = service_name
         self.service_uuid = service_uuid
+
+
+class SchedulerError(DirectorException):
+    """An error in the scheduler"""
+
+    def __init__(self, msg: Optional[str]):
+        super().__init__(msg or "Unexpected error in the scheduler")

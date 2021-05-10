@@ -102,7 +102,7 @@ async def _generate_tasks_list_from_project(
 
         task_state = node.state.current_status
         if node_id in published_nodes and node_class == NodeClass.COMPUTATIONAL:
-            task_state = RunningState.PENDING
+            task_state = RunningState.PUBLISHED
 
         task_db = CompTaskAtDB(
             project_id=project.uuid,
@@ -261,6 +261,21 @@ class CompTasksRepository(BaseRepository):
                     )
                 )
                 .values(state=StateType.ABORTED)
+            )
+
+    @log_decorator(logger=logger)
+    async def mark_project_tasks_as_pending(
+        self, project_id: ProjectID, tasks: List[NodeID]
+    ) -> None:
+        # block all pending tasks, so the sidecars stop taking them
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(comp_tasks)
+                .where(
+                    (comp_tasks.c.project_id == str(project_id))
+                    & (comp_tasks.c.node_id.in_([t for t in tasks]))
+                )
+                .values(state=StateType.PENDING)
             )
 
     @log_decorator(logger=logger)
