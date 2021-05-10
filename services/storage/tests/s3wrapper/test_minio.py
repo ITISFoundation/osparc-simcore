@@ -19,7 +19,6 @@ def is_responsive(url, code=200):
     return False
 
 
-@pytest.mark.enable_travis
 def test_minio(docker_ip, docker_services):
     """wait for minio to be up"""
 

@@ -348,7 +348,7 @@ def dsm_mockup_db(
         tests.utils.insert_metadata(postgres_service_url, data[object_name])
 
     total_count = 0
-    for _obj in s3_client.list_objects_v2(bucket_name, recursive=True):
+    for _obj in s3_client.list_objects(bucket_name, recursive=True):
         total_count = total_count + 1
 
     assert total_count == N

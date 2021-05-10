@@ -8,6 +8,7 @@ import time
 import urllib
 import uuid
 from datetime import timedelta
+from typing import Callable
 
 import pytest
 import requests
@@ -68,7 +69,7 @@ def bucket(s3_client, request):
 
 
 @pytest.fixture(scope="function")
-def text_files(tmpdir_factory):
+def text_files_factory(tmpdir_factory) -> Callable:
     def _create_files(N):
         filepaths = []
         for _i in range(N):
@@ -85,7 +86,6 @@ def text_files(tmpdir_factory):
     return _create_files
 
 
-@pytest.mark.enable_travis
 def test_create_remove_bucket(s3_client):
     bucket_name = "simcore-test"
     assert s3_client.create_bucket(bucket_name)
@@ -94,13 +94,12 @@ def test_create_remove_bucket(s3_client):
     assert not s3_client.exists_bucket(bucket_name)
 
 
-@pytest.mark.enable_travis
-def test_create_remove_bucket_with_contents(s3_client, text_files):
+def test_create_remove_bucket_with_contents(s3_client, text_files_factory):
     bucket_name = "simcore-test"
     assert s3_client.create_bucket(bucket_name)
     assert s3_client.exists_bucket(bucket_name)
     object_name = "dummy"
-    filepath = text_files(1)[0]
+    filepath = text_files_factory(1)[0]
     assert s3_client.upload_file(bucket_name, object_name, filepath)
     assert s3_client.remove_bucket(bucket_name, delete_contents=False)
     assert s3_client.exists_bucket(bucket_name)
@@ -108,9 +107,8 @@ def test_create_remove_bucket_with_contents(s3_client, text_files):
     assert not s3_client.exists_bucket(bucket_name)
 
 
-@pytest.mark.enable_travis
-def test_file_upload_download(s3_client, bucket, text_files):
-    filepath = text_files(1)[0]
+def test_file_upload_download(s3_client, bucket, text_files_factory):
+    filepath = text_files_factory(1)[0]
     object_name = "1"
     assert s3_client.upload_file(bucket, object_name, filepath)
     filepath2 = filepath + ".rec"
@@ -118,9 +116,8 @@ def test_file_upload_download(s3_client, bucket, text_files):
     assert filecmp.cmp(filepath2, filepath)
 
 
-@pytest.mark.enable_travis
-def test_file_upload_meta_data(s3_client, bucket, text_files):
-    filepath = text_files(1)[0]
+def test_file_upload_meta_data(s3_client, bucket, text_files_factory):
+    filepath = text_files_factory(1)[0]
     object_name = "1"
     _id = uuid.uuid4()
     metadata = {"user": "guidon", "node_id": str(_id), "boom-boom": str(42.0)}
@@ -134,10 +131,9 @@ def test_file_upload_meta_data(s3_client, bucket, text_files):
     assert metadata2["boom-boom"] == str(42.0)
 
 
-@pytest.mark.enable_travis
-def test_sub_folders(s3_client, bucket, text_files):
+def test_sub_folders(s3_client, bucket, text_files_factory):
     bucket_sub_folder = str(uuid.uuid4())
-    filepaths = text_files(3)
+    filepaths = text_files_factory(3)
     counter = 1
     for f in filepaths:
         object_name = bucket_sub_folder + "/" + str(counter)
@@ -145,14 +141,13 @@ def test_sub_folders(s3_client, bucket, text_files):
         counter += 1
 
 
-@pytest.mark.enable_travis
-def test_search(s3_client, bucket, text_files):
+def test_search(s3_client, bucket, text_files_factory):
     metadata = [{"User": "alpha"}, {"User": "beta"}, {"User": "gamma"}]
 
     for i in range(3):
         bucket_sub_folder = "Folder" + str(i + 1)
 
-        filepaths = text_files(3)
+        filepaths = text_files_factory(3)
         counter = 0
         for f in filepaths:
             object_name = bucket_sub_folder + "/" + "Data" + str(counter)
@@ -177,9 +172,8 @@ def test_search(s3_client, bucket, text_files):
     assert len(results) == 9
 
 
-@pytest.mark.enable_travis
-def test_presigned_put(s3_client, bucket, text_files):
-    filepath = text_files(1)[0]
+def test_presigned_put(s3_client, bucket, text_files_factory):
+    filepath = text_files_factory(1)[0]
     object_name = "my_file"
     url = s3_client.create_presigned_put_url(bucket, object_name)
     with open(filepath, "rb") as fp:
@@ -193,9 +187,8 @@ def test_presigned_put(s3_client, bucket, text_files):
     assert filecmp.cmp(filepath2, filepath)
 
 
-@pytest.mark.enable_travis
-def test_presigned_put_expired(s3_client, bucket, text_files):
-    filepath = text_files(1)[0]
+def test_presigned_put_expired(s3_client, bucket, text_files_factory):
+    filepath = text_files_factory(1)[0]
     object_name = "my_file"
     url = s3_client.create_presigned_put_url(bucket, object_name, timedelta(seconds=1))
     time.sleep(2)
@@ -210,9 +203,8 @@ def test_presigned_put_expired(s3_client, bucket, text_files):
     assert failed
 
 
-@pytest.mark.enable_travis
-def test_presigned_get(s3_client, bucket, text_files):
-    filepath = text_files(1)[0]
+def test_presigned_get(s3_client, bucket, text_files_factory):
+    filepath = text_files_factory(1)[0]
     filepath2 = filepath + "."
     object_name = "bla"
     assert s3_client.upload_file(bucket, object_name, filepath)
@@ -222,9 +214,8 @@ def test_presigned_get(s3_client, bucket, text_files):
     assert filecmp.cmp(filepath2, filepath)
 
 
-@pytest.mark.enable_travis
-def test_presigned_get_expired(s3_client, bucket, text_files):
-    filepath = text_files(1)[0]
+def test_presigned_get_expired(s3_client, bucket, text_files_factory):
+    filepath = text_files_factory(1)[0]
     filepath2 = filepath + "."
     object_name = "bla"
     assert s3_client.upload_file(bucket, object_name, filepath)
@@ -239,9 +230,8 @@ def test_presigned_get_expired(s3_client, bucket, text_files):
     assert failed
 
 
-@pytest.mark.enable_travis
-def test_object_exists(s3_client, bucket, text_files):
-    files = text_files(2)
+def test_object_exists(s3_client, bucket, text_files_factory):
+    files = text_files_factory(2)
     file1 = files[0]
     file2 = files[1]
     object_name = "level1"
@@ -253,20 +243,19 @@ def test_object_exists(s3_client, bucket, text_files):
     assert s3_client.exists_object(bucket, object_name, True)
 
 
-@pytest.mark.enable_travis
-def test_copy_object(s3_client, bucket, text_files):
-    files = text_files(1)
+def test_copy_object(s3_client, bucket, text_files_factory):
+    files = text_files_factory(1)
     file = files[0]
     object_name = "original"
     assert s3_client.upload_file(bucket, object_name, file)
     assert s3_client.exists_object(bucket, object_name, False)
     copied_object = "copy"
-    assert s3_client.copy_object(bucket, copied_object, bucket + "/" + object_name)
+    assert s3_client.copy_object(bucket, copied_object, bucket, object_name)
     assert s3_client.exists_object(bucket, copied_object, False)
 
 
-def test_list_objects(s3_client, bucket, text_files):
-    files = text_files(2)
+def test_list_objects(s3_client, bucket, text_files_factory):
+    files = text_files_factory(2)
     file1 = files[0]
     file2 = files[1]
     object_name = "level1/level2/1"
