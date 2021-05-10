@@ -1,4 +1,5 @@
 import datetime
+import logging
 from enum import Enum
 from typing import List, Optional
 
@@ -8,6 +9,9 @@ from .utils import AsyncResourceLock
 from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 from models_library.services import SERVICE_KEY_RE
 from models_library.basic_regex import VERSION_RE
+from ..parse_docker_status import ServiceState
+
+logger = logging.getLogger()
 
 
 class DynamicSidecarStatus(str, Enum):
@@ -212,3 +216,81 @@ class LockWithMonitorData(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class ServiceStateReply(BaseModel):
+    dynamic_type: str = Field(
+        "dynamic-sidecar",
+        description="tells the frontend this is run with a dynamic sidecar",
+    )
+    service_state: str = Field(..., description="refer to ")
+    service_message: str = Field(
+        ..., description="used to transmit error messages to the user"
+    )
+
+    published_port: Optional[int] = Field(..., description="the proxy's default port")
+
+    service_uuid: Optional[str] = Field(
+        ..., description="equals to the node_uuid value"
+    )
+
+    service_key: Optional[str] = Field(
+        ..., description="starte service image service_key"
+    )
+    service_version: Optional[str] = Field(
+        ..., description="starte service image service_version"
+    )
+
+    service_host: Optional[str] = Field(
+        ...,
+        description="using the dynamic-sidecar's host",
+    )
+    service_port: Optional[str] = Field(
+        ..., description="using the dynamic-sidecar's port"
+    )
+
+    service_basepath: Optional[str] = Field(
+        ..., description="not used by the dynamic-sidecar"
+    )
+    entry_point: Optional[str] = Field(
+        ..., description="can be removed when dynamic_type='dynamic-sidecar'"
+    )
+
+    @classmethod
+    def error_status(cls, node_uuid: str) -> "ServiceStateReply":
+        error_status = ServiceStateReply(
+            dynamic_type="dynamic-sidecar",
+            service_state="error",
+            service_message=f"Could not find a service for node_uuid={node_uuid}",
+        )
+        logging.warning(
+            "Producting error status for dynamic-sidecar with node_uuid=%s\n%s",
+            node_uuid,
+            error_status,
+        )
+        return error_status
+
+    @classmethod
+    def make_status(
+        cls,
+        node_uuid: str,
+        monitor_data: MonitorData,
+        service_state: ServiceState,
+        service_message: str,
+    ) -> "ServiceStateReply":
+        return cls(
+            dynamic_type="dynamic-sidecar",
+            published_port=80,
+            entry_point="",
+            service_uuid=node_uuid,
+            service_key=monitor_data.service_key,
+            service_version=monitor_data.service_tag,
+            service_host=monitor_data.service_name,
+            service_port=monitor_data.service_port,
+            service_basepath="",
+            service_state=service_state.value,
+            service_message=service_message,
+        )
+
+    class Config:
+        exclude_unset = True

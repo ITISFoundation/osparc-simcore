@@ -20,9 +20,7 @@ from ..dependencies import get_app
 from ...modules.dynamic_sidecar.monitor import get_monitor
 
 
-from ...models.domains.dynamic_sidecar import (
-    StartDynamicSidecarModel,
-)
+from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
 from ...modules.dynamic_sidecar.service_specs import (
     assemble_service_name,
     extract_service_port_from_compose_start_spec,
@@ -42,6 +40,7 @@ from ...modules.dynamic_sidecar.docker_utils import (
     get_swarm_network,
     get_node_id_from_task_for_service,
 )
+from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -212,7 +211,9 @@ async def start_dynamic_sidecar(
 
 
 @router.post(
-    "/{node_uuid}:status", summary="assembles the status for the dynamic-sidecar"
+    "/{node_uuid}:status",
+    summary="assembles the status for the dynamic-sidecar",
+    response_model=ServiceStateReply,
 )
 async def dynamic_sidecar_status(
     node_uuid: UUID, app: FastAPI = Depends(get_app)

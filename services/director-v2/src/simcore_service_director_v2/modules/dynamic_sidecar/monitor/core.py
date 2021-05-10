@@ -26,6 +26,7 @@ from .models import (
     LockWithMonitorData,
     MonitorData,
     DynamicSidecarStatus,
+    ServiceStateReply,
 )
 from .dynamic_sidecar_api import (
     update_dynamic_sidecar_health,
@@ -184,46 +185,14 @@ class DynamicSidecarsMonitor:
             del self._inverse_search_mapping[node_uuid]
             logger.debug("Removed service '%s' from monitoring", service_name)
 
-    async def get_stack_status(self, node_uuid: str) -> Dict[str, Any]:
-        """Computes the service sidecar """
-
-        def make_error_status():
-            error_status = dict(
-                dynamic_type="dynamic-sidecar",
-                service_state="error",
-                service_message=f"Could not find a service for node_uuid={node_uuid}",
-            )
-            logging.warning(
-                "Producting error status for dynamic-sidecar with node_uuid=%s\n%s",
-                node_uuid,
-                error_status,
-            )
-            return error_status
-
-        def make_service_status(
-            monitor_data: MonitorData, service_state: ServiceState, service_message: str
-        ) -> Dict[str, str]:
-            return dict(
-                dynamic_type="dynamic-sidecar",  # tells the frontend this is run with a dynamic sidecar
-                published_port=80,  # default for the proxy
-                entry_point="",  # can be removed when dynamic_type="dynamic-sidecar"
-                service_uuid=node_uuid,
-                service_key=monitor_data.service_key,
-                service_version=monitor_data.service_tag,
-                service_host=monitor_data.service_name,
-                service_port=monitor_data.service_port,
-                service_basepath="",  # not needed here
-                service_state=service_state,
-                service_message=service_message,
-            )
-
+    async def get_stack_status(self, node_uuid: str) -> ServiceStateReply:
         async with self._lock:
             if node_uuid not in self._inverse_search_mapping:
-                return make_error_status()
+                return ServiceStateReply.error_status(node_uuid)
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_monitor:
-                return make_error_status()
+                return ServiceStateReply.error_status(node_uuid)
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
             dynamic_sidecar_settings = get_settings(self._app)
@@ -238,7 +207,8 @@ class DynamicSidecarsMonitor:
 
             # while the dynamic-sidecar state is not RUNNING report it's state
             if service_state != ServiceState.RUNNING:
-                return make_service_status(
+                return ServiceStateReply.make_status(
+                    node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=service_state,
                     service_message=service_message,
@@ -252,7 +222,8 @@ class DynamicSidecarsMonitor:
 
             # error fetching docker_statues, probably someone should check
             if docker_statuses is None:
-                return make_service_status(
+                return ServiceStateReply.make_status(
+                    node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.STARTING,
                     service_message="There was an error while trying to fetch the stautes form the contianers",
@@ -261,7 +232,8 @@ class DynamicSidecarsMonitor:
             # wait for containers to start
             if len(docker_statuses) == 0:
                 # marks status as waiting for containers
-                return make_service_status(
+                return ServiceStateReply.make_status(
+                    node_uuid=node_uuid,
                     monitor_data=monitor_data,
                     service_state=ServiceState.STARTING,
                     service_message="",
@@ -271,7 +243,8 @@ class DynamicSidecarsMonitor:
             container_state, container_message = extract_containers_minimim_statuses(
                 docker_statuses
             )
-            return make_service_status(
+            return ServiceStateReply.make_status(
+                node_uuid=node_uuid,
                 monitor_data=monitor_data,
                 service_state=container_state,
                 service_message=container_message,
