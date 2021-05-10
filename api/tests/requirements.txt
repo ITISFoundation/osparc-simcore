@@ -53,7 +53,7 @@ multidict==5.1.0
     # via
     #   aiohttp
     #   yarl
-openapi-core==0.14.0
+openapi-core==0.14.1
     # via -r requirements.in
 openapi-schema-validator==0.1.5
     # via
