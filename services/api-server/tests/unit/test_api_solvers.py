@@ -7,7 +7,6 @@ import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
 from fastapi import FastAPI
-from httpx import Response
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
