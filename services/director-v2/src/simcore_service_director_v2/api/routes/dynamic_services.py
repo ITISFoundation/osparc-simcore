@@ -64,23 +64,21 @@ async def service_retrieve_data_on_ports(
     },
 )
 async def start_dynamic_sidecar(
-    node_uuid: UUID,
-    start_dynamic_sidecar_model: StartDynamicSidecarModel,
-    app: FastAPI = Depends(get_app),
+    node_uuid: UUID, model: StartDynamicSidecarModel, app: FastAPI = Depends(get_app)
 ) -> Dict[str, str]:
     return await start_dynamic_sidecar_stack_for_service(
         app=app,
-        user_id=start_dynamic_sidecar_model.user_id,
-        project_id=start_dynamic_sidecar_model.project_id,
-        service_key=start_dynamic_sidecar_model.service_key,
-        service_tag=start_dynamic_sidecar_model.service_tag,
-        paths_mapping=start_dynamic_sidecar_model.paths_mapping,
-        compose_spec=start_dynamic_sidecar_model.compose_spec,
-        target_container=start_dynamic_sidecar_model.target_container,
+        user_id=model.user_id,
+        project_id=model.project_id,
+        service_key=model.service_key,
+        service_tag=model.service_tag,
+        paths_mapping=model.paths_mapping,
+        compose_spec=model.compose_spec,
+        target_container=model.target_container,
         node_uuid=node_uuid,
-        settings=start_dynamic_sidecar_model.settings,
-        request_scheme=start_dynamic_sidecar_model.request_scheme,
-        request_dns=start_dynamic_sidecar_model.request_dns,
+        settings=model.settings,
+        request_scheme=model.request_scheme,
+        request_dns=model.request_dns,
     )
 
 
