@@ -43,22 +43,19 @@ def mocked_catalog_service_api(app: FastAPI):
 
         respx_mock.get(
             "/v0/services?user_id=1&details=false", name="list_services"
-        ).mock(
-            # WARNING: this seems to be an old version of httpx that has no json parameter!!
-            return_value=Response(
-                status_code=200,
-                json=[
-                    # one solver
-                    catalog_fakes.create_service_out(
-                        key="simcore/services/comp/Foo", name="Foo"
-                    ),
-                    # two version of the same solver
-                    catalog_fakes.create_service_out(version="0.0.1"),
-                    catalog_fakes.create_service_out(version="1.0.1"),
-                    # not a solver
-                    catalog_fakes.create_service_out(type="dynamic"),
-                ],
-            )
+        ).respond(
+            200,
+            json=[
+                # one solver
+                catalog_fakes.create_service_out(
+                    key="simcore/services/comp/Foo", name="Foo"
+                ),
+                # two version of the same solver
+                catalog_fakes.create_service_out(version="0.0.1"),
+                catalog_fakes.create_service_out(version="1.0.1"),
+                # not a solver
+                catalog_fakes.create_service_out(type="dynamic"),
+            ],
         )
 
         yield respx_mock

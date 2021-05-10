@@ -42,9 +42,8 @@ def mocked_director_v0_service_api(minimal_app, entrypoint, exp_data, resp_alias
         # lists services
         respx_mock.get(
             urllib.parse.unquote(entrypoint),
-            content=exp_data,
-            alias=resp_alias,
-        )
+            name=resp_alias,
+        ).respond(content=exp_data)
 
         yield respx_mock
 
@@ -162,22 +161,25 @@ def mocked_director_service_fcts(
     ) as respx_mock:
         respx_mock.get(
             "/v0/services/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
-            content={"data": [fake_service_details.dict(by_alias=True)]},
-            alias="get_service_version",
+            name="get_service_version",
+        ).respond(
+            json={"data": [fake_service_details.dict(by_alias=True)]},
         )
 
         respx_mock.get(
             "/v0/service_extras/simcore%2Fservices%2Fdynamic%2Fmyservice/1.3.4",
-            content={"data": fake_service_extras.dict(by_alias=True)},
-            alias="get_service_extras",
+            name="get_service_extras",
+        ).respond(
+            json={"data": fake_service_extras.dict(by_alias=True)},
         )
-        pattern = re.compile(
-            r"v0/running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
-        )
+
         respx_mock.get(
-            pattern,
-            content={"data": fake_running_service_details.dict(by_alias=True)},
-            alias="get_running_service_details",
+            re.compile(
+                r"v0/running_interactive_services/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+            ),
+            name="get_running_service_details",
+        ).respond(
+            json={"data": fake_running_service_details.dict(by_alias=True)},
         )
 
         yield respx_mock
