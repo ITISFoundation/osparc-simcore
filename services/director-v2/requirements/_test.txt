@@ -24,6 +24,8 @@ apipkg==1.5
     # via execnet
 astroid==2.5.3
     # via pylint
+async-asgi-testclient==1.4.6
+    # via -r requirements/_test.in
 async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
@@ -178,6 +180,7 @@ multidict==5.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   async-asgi-testclient
     #   yarl
 packaging==20.9
     # via pytest
@@ -267,6 +270,7 @@ redis==3.5.3
 requests==2.25.1
     # via
     #   -c requirements/_base.txt
+    #   async-asgi-testclient
     #   codecov
     #   coveralls
     #   docker

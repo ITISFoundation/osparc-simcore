@@ -19,6 +19,7 @@ pytest-docker
 pytest-celery
 pytest-xdist
 pytest-icdiff
+async-asgi-testclient
 
 # fixtures
 Faker
