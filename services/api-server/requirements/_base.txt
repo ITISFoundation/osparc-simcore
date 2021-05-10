@@ -46,6 +46,7 @@ async-generator==1.10
     # via
     #   -r requirements/_base.in
     #   fastapi
+    #   httpx
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -68,7 +69,6 @@ cffi==1.14.4
 chardet==3.0.4
     # via
     #   aiohttp
-    #   httpx
     #   requests
 click==7.1.2
     # via uvicorn
@@ -105,25 +105,16 @@ graphql-core==2.3.2
     #   graphql-relay
 graphql-relay==2.0.1
     # via graphene
-h11==0.9.0
+h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.10.2
+httpcore==0.13.3
     # via httpx
 httptools==0.1.1
     # via uvicorn
-httpx==0.14.3
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_base.in
+httpx==0.18.1
+    # via -r requirements/_base.in
 idna-ssl==1.1.0
     # via aiohttp
 idna==2.10
