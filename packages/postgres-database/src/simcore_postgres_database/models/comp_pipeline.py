@@ -34,4 +34,15 @@ comp_pipeline = sa.Table(
         nullable=False,
         server_default=StateType.NOT_STARTED.value,
     ),
+    sa.Column(
+        "user_id",
+        sa.BigInteger(),
+        sa.ForeignKey(
+            "users.id",
+            name="fk_user_to_comp_pipeline_id_users",
+            ondelete="RESTRICT",
+            onupdate="CASCADE",
+        ),
+        nullable=True,
+    ),
 )
