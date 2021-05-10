@@ -98,6 +98,7 @@ async def listen(app: web.Application, db_engine: Engine):
         while True:
             # NOTE: instead of using await get() we check first if the connection was closed
             # since aiopg does not reset the await in such a case (if DB was restarted or so)
+            # see aiopg issue: https://github.com/aio-libs/aiopg/pull/559#issuecomment-826813082
             if conn.closed:
                 raise ConnectionError("connection with database is closed!")
             if conn.connection.notifies.empty():
