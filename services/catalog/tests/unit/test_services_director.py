@@ -44,7 +44,7 @@ def mocked_director_service_api(minimal_app):
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
-        respx_mock.get("/v0/services", name="list_services").respond(
+        respx_mock.get("/services", name="list_services").respond(
             200, json={"data": ["one", "two"]}
         )
 

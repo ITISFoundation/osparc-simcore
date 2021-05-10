@@ -9,7 +9,7 @@ import urllib.parse
 from collections import namedtuple
 from pathlib import Path
 from random import randint
-from typing import Callable, List
+from typing import Callable, Dict, List
 from uuid import uuid4
 
 import pytest
@@ -33,7 +33,9 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
 
 
 @pytest.fixture
-def mocked_director_v0_service_api(minimal_app, entrypoint, exp_data, resp_alias):
+def mocked_director_v0_service_api(
+    minimal_app, entrypoint, exp_data: Dict, resp_alias: str
+):
     with respx.mock(
         base_url=minimal_app.state.settings.director_v0.base_url(include_tag=False),
         assert_all_called=False,
@@ -43,7 +45,7 @@ def mocked_director_v0_service_api(minimal_app, entrypoint, exp_data, resp_alias
         respx_mock.get(
             urllib.parse.unquote(entrypoint),
             name=resp_alias,
-        ).respond(content=exp_data)
+        ).respond(json=exp_data)
 
         yield respx_mock
 
@@ -107,7 +109,12 @@ def _get_service_version_extras_calls() -> List[ForwardToDirectorParams]:
     + _get_service_version_extras_calls(),
 )
 def test_forward_to_director(
-    client, mocked_director_v0_service_api, entrypoint, exp_status, exp_data, resp_alias
+    client,
+    mocked_director_v0_service_api,
+    entrypoint,
+    exp_status,
+    exp_data: Dict,
+    resp_alias,
 ):
     response = client.get(entrypoint)
 
