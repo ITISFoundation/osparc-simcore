@@ -8,6 +8,7 @@ from models_library.settings.celery import CeleryConfig
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, SecretStr, constr, root_validator, validator
+from simcore_service_director_v2.modules import scheduler
 
 from ..meta import api_vtag
 
@@ -112,6 +113,13 @@ class RegistrySettings(BaseSettings):
         env_prefix = "REGISTRY_"
 
 
+class SchedulerSettings(BaseSettings):
+    enabled: bool = Field(True, description="Enables/Disables the scheduler")
+
+    class Config(CommonConfig):
+        pass
+
+
 class AppSettings(BaseSettings):
     @classmethod
     def create_from_env(cls, **settings_kwargs) -> "AppSettings":
@@ -122,6 +130,7 @@ class AppSettings(BaseSettings):
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(),
             client_request=ClientRequestSettings(),
+            scheduler=SchedulerSettings(),
             **settings_kwargs,
         )
 
@@ -219,6 +228,8 @@ class AppSettings(BaseSettings):
     remote_debug_port: PortInt = 3000
 
     client_request: ClientRequestSettings
+
+    scheduler: SchedulerSettings
 
     class Config(CommonConfig):
         env_prefix = ""
