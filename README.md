@@ -55,9 +55,9 @@ This is the common workflow to build and deploy locally:
   make info-swarm
 
   # open front-end in the browser
-  #  localhost:9081 - simcore front-end site
+  #  127.0.0.1.nip.io:9081 - simcore front-end site
   #
-  xdg-open http://localhost:9081/
+  xdg-open http://127.0.0.1.nip.io:9081/
 
   # stops
   make down
