@@ -96,8 +96,14 @@ async def listen(app: web.Application, db_engine: Engine):
         await conn.execute(listen_query)
 
         while True:
-            # NOTE: this waits for a new notification so the engine is locked here
-            notification = await conn.connection.notifies.get()
+            # NOTE: instead of using await get() we check first if the connection was closed
+            # since aiopg does not reset the await in such a case (if DB was restarted or so)
+            if conn.closed:
+                raise ConnectionError("connection with database is closed!")
+            if conn.connection.notifies.empty():
+                await asyncio.sleep(1)
+                continue
+            notification = conn.connection.notifies.get_nowait()
             log.debug(
                 "received update from database: %s", pformat(notification.payload)
             )
@@ -181,6 +187,8 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
                 "caught unhandled comp_task db listening task exception, restarting...",
                 exc_info=True,
             )
+            # wait a bit and try restart the task
+            await asyncio.sleep(3)
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):
