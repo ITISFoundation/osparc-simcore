@@ -1,9 +1,9 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import asyncio
 import json
-
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 import logging
 import socket
 from typing import Any, Dict, Optional, Tuple
@@ -11,7 +11,6 @@ from typing import Any, Dict, Optional, Tuple
 import aio_pika
 import pytest
 import tenacity
-
 from models_library.settings.rabbit import RabbitConfig
 
 from .helpers.utils_docker import get_service_published_port
@@ -89,7 +88,7 @@ async def rabbit_channel(
         if exc:
             pytest.fail("rabbit channel closed!")
         else:
-            print("sender was %s", sender)
+            print("sender was '{sender}'")
 
     # create channel
     channel = await rabbit_connection.channel(publisher_confirms=False)
