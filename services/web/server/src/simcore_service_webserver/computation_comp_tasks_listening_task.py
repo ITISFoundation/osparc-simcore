@@ -91,7 +91,7 @@ async def _update_project_outputs(
 
 async def listen(app: web.Application, db_engine: Engine):
     listen_query = f"LISTEN {DB_CHANNEL_NAME};"
-
+    _LISTENING_TASK_BASE_SLEEPING_TIME_S = 1
     async with db_engine.acquire() as conn:
         await conn.execute(listen_query)
 
@@ -102,7 +102,7 @@ async def listen(app: web.Application, db_engine: Engine):
             if conn.closed:
                 raise ConnectionError("connection with database is closed!")
             if conn.connection.notifies.empty():
-                await asyncio.sleep(1)
+                await asyncio.sleep(_LISTENING_TASK_BASE_SLEEPING_TIME_S)
                 continue
             notification = conn.connection.notifies.get_nowait()
             log.debug(
