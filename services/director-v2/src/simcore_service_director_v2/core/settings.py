@@ -8,7 +8,6 @@ from models_library.settings.celery import CeleryConfig
 from models_library.settings.http_clients import ClientRequestSettings
 from models_library.settings.postgres import PostgresSettings
 from pydantic import BaseSettings, Field, SecretStr, constr, root_validator, validator
-from simcore_service_director_v2.modules import scheduler
 
 from ..meta import api_vtag
 
