@@ -172,7 +172,7 @@ semantic-version==2.8.5
     # via -r requirements/_base.in
 semver==2.13.0
     # via blackfynn
-six==1.15.0
+six==1.16.0
     # via
     #   isodate
     #   jsonschema
@@ -200,7 +200,7 @@ tenacity==7.0.0
     #   -r requirements/_base.in
 trafaret==2.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   aioitertools
@@ -217,7 +217,7 @@ urllib3==1.25.11
     #   botocore
     #   minio
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via blackfynn
 werkzeug==1.0.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
