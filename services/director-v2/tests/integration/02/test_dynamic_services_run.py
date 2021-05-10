@@ -9,6 +9,7 @@ from uuid import uuid4
 import pytest
 import aiodocker
 import sqlalchemy as sa
+from async_timeout import timeout
 from yarl import URL
 from httpx import AsyncClient
 from models_library.projects import ProjectAtDB
@@ -27,6 +28,7 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["adminer"]
 
 HTTPX_CLIENT_TIMOUT = 120
+SERVICES_ARE_READY_TIMEOUT = 120
 
 
 @pytest.fixture(autouse=True)
@@ -114,7 +116,7 @@ async def director_v0_client(services_endpoint: Dict[str, URL]) -> AsyncClient:
 
 @pytest.fixture
 async def director_v2_client(services_endpoint: Dict[str, URL]) -> AsyncClient:
-    base_url = services_endpoint["director"] / "v2"
+    base_url = services_endpoint["director-v2"] / "v2"
     async with AsyncClient(
         base_url=str(base_url), timeout=HTTPX_CLIENT_TIMOUT
     ) as client:
@@ -168,6 +170,16 @@ async def _assert_stop_service(
     assert result.text == ""
 
 
+async def _get_service_state(
+    director_v2_client: AsyncClient, service_uuid: str, expected_status: int
+) -> str:
+    result = await director_v2_client.post(f"/dynamic_services/{service_uuid}:status")
+    payload = result.json()
+    assert result.status_code == 200
+    assert payload["dynamic_type"] == "dynamic-sidecar"
+    return payload["service_state"]
+
+
 async def test_legacy_and_dynamic_sidecar_run(
     # client: TestClient,
     httpbins_project: ProjectAtDB,
@@ -199,6 +211,34 @@ async def test_legacy_and_dynamic_sidecar_run(
         )
     await asyncio.gather(*services_to_start)
 
+    # checking if the dynamic sidecar services are running
+    dynamic_services_node_uuids = []
+    for service_uuid, node in httpbins_project.workbench.items():
+        is_legacy_service = node.label == "legacy dynamic service"
+        if is_legacy_service:
+            continue
+        dynamic_services_node_uuids.append(service_uuid)
+
+    assert len(dynamic_services_node_uuids) == 2
+
+    async with timeout(SERVICES_ARE_READY_TIMEOUT):
+        not_all_services_running = True
+
+        while not_all_services_running:
+            service_states = [
+                _get_service_state(
+                    director_v2_client=director_v2_client,
+                    service_uuid=dynamic_service_uuid,
+                    expected_status=200,
+                )
+                for dynamic_service_uuid in dynamic_services_node_uuids
+            ]
+            are_services_running = [
+                x == "running" for x in await asyncio.gather(*service_states)
+            ]
+            not_all_services_running = not all(are_services_running)
+
+    # finally stop the started services
     services_to_stop = []
     for service_uuid in httpbins_project.workbench:
         services_to_stop.append(
