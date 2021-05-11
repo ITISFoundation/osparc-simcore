@@ -93,8 +93,8 @@ async def start_dynamic_sidecar(
     dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
 
     # Service naming schema:
-    # -  dynsdcr_{uuid}_{first_two_project_id}_proxy_{name_from_service_key}
-    # -  dynsdcr_{uuid}_{first_two_project_id}_sidecar_{name_from_service_key}
+    # -  dysdcr_{uuid}_{first_two_project_id}_prxy_{name_from_service_key}
+    # -  dysdcr_{uuid}_{first_two_project_id}_sdcr_{name_from_service_key}
 
     service_name_dynamic_sidecar = assemble_service_name(
         model.project_id, model.service_key, node_uuid, SERVICE_NAME_SIDECAR
