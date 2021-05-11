@@ -9,6 +9,8 @@ from typing import Dict, Iterator
 import pytest
 import tenacity
 from minio import Minio
+from minio.datatypes import Object
+from minio.deleteobjects import DeleteError, DeleteObject
 from tenacity import Retrying
 
 from .helpers.utils_docker import get_ip, get_service_published_port
@@ -19,11 +21,18 @@ log = logging.getLogger(__name__)
 def _ensure_remove_bucket(client: Minio, bucket_name: str):
     if client.bucket_exists(bucket_name):
         # remove content
-        objs = client.list_objects(bucket_name, prefix=None, recursive=True)
-        errors = client.remove_objects(bucket_name, [o.object_name for o in objs])
-        assert not list(errors)
+        objs: Iterator[Object] = client.list_objects(
+            bucket_name, prefix=None, recursive=True
+        )
+        errors: Iterator[DeleteError] = client.remove_objects(
+            bucket_name, [DeleteObject(o.object_name) for o in objs]
+        )
+
+        assert not any(errors), list(errors)
+
         # remove bucket
         client.remove_bucket(bucket_name)
+
     assert not client.bucket_exists(bucket_name)
 
 

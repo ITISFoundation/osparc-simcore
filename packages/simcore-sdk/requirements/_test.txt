@@ -35,8 +35,6 @@ chardet==4.0.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-configparser==5.0.2
-    # via minio
 coverage==5.5
     # via
     #   -r requirements/_test.in
@@ -83,10 +81,8 @@ markupsafe==1.1.1
     # via mako
 mccabe==0.6.1
     # via pylint
-minio==6.0.2
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+minio==7.0.3
+    # via -r requirements/_test.in
 multidict==5.1.0
     # via
     #   -c requirements/_base.txt
@@ -148,13 +144,10 @@ python-dateutil==2.8.1
     # via
     #   alembic
     #   faker
-    #   minio
 python-dotenv==0.17.0
     # via -r requirements/_test.in
 python-editor==1.0.4
     # via alembic
-pytz==2021.1
-    # via minio
 requests==2.25.1
     # via
     #   -r requirements/_test.in
