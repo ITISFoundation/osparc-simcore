@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.sql import or_
 
 from ....models.domains.comp_pipelines import CompPipelineAtDB
+from ....models.schemas.constants import UserID
 from ....utils.exceptions import PipelineNotFoundError
 from ....utils.logging_utils import log_decorator
 from ..tables import comp_pipeline
@@ -53,10 +54,15 @@ class CompPipelinesRepository(BaseRepository):
 
     @log_decorator(logger=logger)
     async def upsert_pipeline(
-        self, project_id: ProjectID, dag_graph: nx.DiGraph, publish: bool
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        dag_graph: nx.DiGraph,
+        publish: bool,
     ) -> None:
 
         pipeline_at_db = CompPipelineAtDB(
+            user_id=user_id,
             project_id=project_id,
             dag_adjacency_list=nx.to_dict_of_lists(dag_graph),
             state=RUNNING_STATE_TO_DB[RunningState.PUBLISHED]

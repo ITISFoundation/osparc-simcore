@@ -137,7 +137,7 @@ async def create_computation(
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            project.uuid, computational_dag, job.start_pipeline
+            job.user_id, project.uuid, computational_dag, job.start_pipeline
         )
         inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
