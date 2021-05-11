@@ -61,7 +61,8 @@ async def apply_monitoring(
     ):
         message = (
             f"Service {input_monitor_data.service_name} is failing. Skipping monitoring.\n"
-            f"State data\n{input_monitor_data}"
+            f"Input monitor data\n{input_monitor_data}\n"
+            f"Output monitor data\n{output_monitor_data}\n"
         )
         logger.warning(message)
         return output_monitor_data
