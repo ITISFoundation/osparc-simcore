@@ -64,9 +64,7 @@ chardet==4.0.0
 click==7.1.2
     # via -r requirements/_base.in
 configparser==5.0.2
-    # via
-    #   blackfynn
-    #   minio
+    # via blackfynn
 dataclasses==0.8
     # via pydantic
 deprecated==1.2.12
@@ -99,7 +97,12 @@ isodate==0.6.0
     #   openapi-core
     #   openapi-schema-validator
 jinja2==2.11.3
-    # via aiohttp-swagger
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   aiohttp-swagger
 jmespath==0.10.0
     # via
     #   boto3
@@ -117,13 +120,8 @@ markupsafe==1.1.1
     # via
     #   aiohttp-swagger
     #   jinja2
-minio==6.0.2
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_base.in
+minio==7.0.3
+    # via -r requirements/_base.in
 multidict==5.1.0
     # via
     #   aiohttp
@@ -155,11 +153,8 @@ python-dateutil==2.8.1
     # via
     #   blackfynn
     #   botocore
-    #   minio
 pytz==2021.1
-    # via
-    #   blackfynn
-    #   minio
+    # via blackfynn
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -218,10 +213,6 @@ ujson==4.0.2
     #   aiohttp-swagger
 urllib3==1.25.11
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   botocore
     #   minio

@@ -17,15 +17,8 @@ jinja2>=2.11.3                                # https://github.com/advisories/GH
 # TODO: Check again when moving to py3.8-3.9! SEE https://github.com/ITISFoundation/osparc-simcore/pull/2025
 aiozipkin==0.7.1
 
-
-# limited by aiobotocore in storage. In addition, pytest_simcore.minio_service uses minio
-# Version 7 changes API! Has Breaking changes TODO: review ASAP
- minio<7.0.0
-
-
 # Keeps all docker compose to the same version. TODO: remove when all synced
 docker-compose==1.29.1
-
 
 # vulnerability https://github.com/advisories/GHSA-rhm9-p9w5-fwm7  Feb.2021
 cryptography>=3.3.2

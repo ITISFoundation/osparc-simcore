@@ -588,10 +588,9 @@ class DataStorageManager:
         to_object_name = dest_uuid
         from_bucket = self.simcore_bucket_name
         from_object_name = source_uuid
-        from_bucket_object_name = os.path.join(from_bucket, from_object_name)
         # FIXME: This is not async!
         self.s3_client.copy_object(
-            to_bucket_name, to_object_name, from_bucket_object_name
+            to_bucket_name, to_object_name, from_bucket, from_object_name
         )
 
         # update db
