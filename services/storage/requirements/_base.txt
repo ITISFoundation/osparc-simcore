@@ -64,9 +64,7 @@ chardet==4.0.0
 click==7.1.2
     # via typer
 configparser==5.0.2
-    # via
-    #   blackfynn
-    #   minio
+    # via blackfynn
 deprecated==1.2.12
     # via blackfynn
 dnspython==2.1.0
@@ -209,6 +207,7 @@ typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   aioitertools
+    #   pydantic
 ujson==4.0.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
