@@ -9,7 +9,7 @@
 import asyncio
 import logging
 from asyncio import Lock, sleep
-from typing import Deque, Dict, Any, Optional
+from typing import Deque, Dict, Optional
 
 from aiohttp.web import Application
 from async_timeout import timeout
@@ -21,7 +21,7 @@ from ..docker_utils import (
     ServiceLabelsStoredData,
 )
 from ..exceptions import DynamicSidecarError
-from .handlers import REGISTERED_HANDLERS
+from .handlers import REGISTERED_EVENTS
 from .models import (
     LockWithMonitorData,
     MonitorData,
@@ -46,23 +46,24 @@ async def apply_monitoring(
     app: Application, input_monitor_data: MonitorData
 ) -> MonitorData:
     """
-    fetches status for service and then processes all the registered handlers
+    fetches status for service and then processes all the registered events
     and updates the status back
     """
     dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
 
-    output_monitor_data = input_monitor_data.copy(deep=True)
+    output_monitor_data: MonitorData = input_monitor_data.copy(deep=True)
 
-    # if the service is not OK (for now failing) monitoring will be skipped
-    # this will allow others to debug it
+    # if the service is not OK (for now failing) monitoring cycle will
+    # be skipped. This will allow for others to debug it
     if (
         input_monitor_data.dynamic_sidecar.overall_status.status
         != DynamicSidecarStatus.OK
     ):
-        logger.warning(
-            "Service %s is failing, skipping monitoring.",
-            input_monitor_data.service_name,
+        message = (
+            f"Service {input_monitor_data.service_name} is failing. Skipping monitoring.\n"
+            f"State data\n{input_monitor_data}"
         )
+        logger.warning(message)
         return output_monitor_data
 
     try:
@@ -73,14 +74,12 @@ async def apply_monitoring(
     except asyncio.TimeoutError:
         output_monitor_data.dynamic_sidecar.is_available = False
 
-    for handler in REGISTERED_HANDLERS:
-        # the handler will apply changes to the output_monitor_data
-        await handler.process(
-            app=app, previous=input_monitor_data, current=output_monitor_data
-        )
+    for event in REGISTERED_EVENTS:
+        if await event.will_trigger(input_monitor_data, output_monitor_data):
+            # event.action will apply changes to the output_monitor_data
+            await event.action(app, input_monitor_data, output_monitor_data)
 
     # check if the status of the services has changed from OK
-
     if (
         input_monitor_data.dynamic_sidecar.overall_status
         != output_monitor_data.dynamic_sidecar.overall_status

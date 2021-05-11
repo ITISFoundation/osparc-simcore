@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 from aiohttp.web import Application
 
 from ..docker_compose_assembly import assemble_spec
-from .handlers_base import BaseEventHandler
+from .handlers_base import MonitorEvent
 from .models import (
     DockerContainerInspect,
     DockerStatus,
@@ -36,7 +36,7 @@ def parse_containers_inspect(
     return list(results)
 
 
-class RunDockerComposeUp(BaseEventHandler):
+class RunDockerComposeUp(MonitorEvent):
     """Runs the docker-compose up command when and composes the spec if a service requires it"""
 
     @classmethod
@@ -81,7 +81,7 @@ class RunDockerComposeUp(BaseEventHandler):
         current.dynamic_sidecar.compose_spec_submitted = True
 
 
-class ServicesInspect(BaseEventHandler):
+class ServicesInspect(MonitorEvent):
     """Inspects all spawned containers for the sidecar-service"""
 
     @classmethod
@@ -117,7 +117,7 @@ class ServicesInspect(BaseEventHandler):
 
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
-REGISTERED_HANDLERS: List[BaseEventHandler] = [
+REGISTERED_EVENTS: List[MonitorEvent] = [
     RunDockerComposeUp,
     ServicesInspect,
 ]
