@@ -275,10 +275,10 @@ class DynamicSidecarsMonitor:
         # a monitoring cycle
         for service_name in self._to_monitor:
             lock_with_monitor_data = self._to_monitor[service_name]
-            resource_was_locked = (
+            resource_marked_as_locked = (
                 await lock_with_monitor_data.resource_lock.mark_as_locked_if_unlocked()
             )
-            if resource_was_locked:
+            if resource_marked_as_locked:
                 # fire and forget about the task
                 asyncio.get_event_loop().create_task(
                     monitor_single_service(service_name)
