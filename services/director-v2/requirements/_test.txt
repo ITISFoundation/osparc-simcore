@@ -26,6 +26,10 @@ astroid==2.5.3
     # via pylint
 async-asgi-testclient==1.4.6
     # via -r requirements/_test.in
+async-generator==1.10 ; python_version < "3.7"
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
@@ -64,7 +68,6 @@ chardet==3.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   httpx
     #   requests
 click-didyoumean==0.0.3
     # via
@@ -117,19 +120,18 @@ execnet==1.8.0
     # via pytest-xdist
 faker==8.1.0
     # via -r requirements/_test.in
-h11==0.9.0
+h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
 hiredis==2.0.0
     # via aioredis
-httpcore==0.10.2
+httpcore==0.13.3
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.14.3
+httpx==0.18.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 icdiff==1.9.1
@@ -275,10 +277,8 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-respx==0.12.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+respx==0.17.0
+    # via -r requirements/_test.in
 rfc3986[idna2008]==1.4.0
     # via
     #   -c requirements/_base.txt

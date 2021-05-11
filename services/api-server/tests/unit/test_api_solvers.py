@@ -7,7 +7,6 @@ import pytest
 import respx
 import simcore_service_api_server.api.routes.solvers
 from fastapi import FastAPI
-from httpx import Response
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.core.settings import AppSettings
 from simcore_service_api_server.models.schemas.solvers import Solver
@@ -43,22 +42,19 @@ def mocked_catalog_service_api(app: FastAPI):
 
         respx_mock.get(
             "/v0/services?user_id=1&details=false", name="list_services"
-        ).mock(
-            # WARNING: this seems to be an old version of httpx that has no json parameter!!
-            return_value=Response(
-                status_code=200,
-                json=[
-                    # one solver
-                    catalog_fakes.create_service_out(
-                        key="simcore/services/comp/Foo", name="Foo"
-                    ),
-                    # two version of the same solver
-                    catalog_fakes.create_service_out(version="0.0.1"),
-                    catalog_fakes.create_service_out(version="1.0.1"),
-                    # not a solver
-                    catalog_fakes.create_service_out(type="dynamic"),
-                ],
-            )
+        ).respond(
+            200,
+            json=[
+                # one solver
+                catalog_fakes.create_service_out(
+                    key="simcore/services/comp/Foo", name="Foo"
+                ),
+                # two version of the same solver
+                catalog_fakes.create_service_out(version="0.0.1"),
+                catalog_fakes.create_service_out(version="1.0.1"),
+                # not a solver
+                catalog_fakes.create_service_out(type="dynamic"),
+            ],
         )
 
         yield respx_mock

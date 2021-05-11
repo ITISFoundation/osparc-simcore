@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
+async-generator==1.10
+    # via httpx
 attrs==20.3.0
     # via
     #   jsonschema
@@ -13,23 +15,19 @@ certifi==2020.12.5
     #   httpx
     #   requests
 chardet==3.0.4
-    # via
-    #   httpx
-    #   requests
+    # via requests
 contextvars==2.4
     # via sniffio
 coverage==5.5
     # via pytest-cov
 docker==5.0.0
     # via -r requirements/_test.in
-h11==0.9.0
+h11==0.12.0
     # via httpcore
-httpcore==0.10.2
+httpcore==0.13.3
     # via httpx
-httpx==0.14.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+httpx==0.18.1
+    # via -r requirements/_test.in
 idna==2.10
     # via
     #   requests

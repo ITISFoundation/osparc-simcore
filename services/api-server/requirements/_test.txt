@@ -14,6 +14,10 @@ async-exit-stack==1.0.1
     # via
     #   -c requirements/_base.txt
     #   asgi-lifespan
+async-generator==1.10
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
@@ -40,7 +44,6 @@ cffi==1.14.4
 chardet==3.0.4
     # via
     #   -c requirements/_base.txt
-    #   httpx
     #   requests
 click==7.1.2
     # via
@@ -84,18 +87,16 @@ docopt==0.6.2
     #   docker-compose
 faker==8.1.0
     # via -r requirements/_test.in
-h11==0.9.0
+h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.10.2
+httpcore==0.13.3
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.14.3
+httpx==0.18.1
     # via
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 idna==2.10
@@ -211,11 +212,8 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-respx==0.12.1
-    # via
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+respx==0.17.0
+    # via -r requirements/_test.in
 rfc3986[idna2008]==1.4.0
     # via
     #   -c requirements/_base.txt
