@@ -82,7 +82,7 @@ class RunDockerComposeUp(MonitorEvent):
 
 
 class ServicesInspect(MonitorEvent):
-    """Inspects all spawned containers for the sidecar-service"""
+    """Inspects all spawned containers for the dynamic-sidecar"""
 
     @classmethod
     async def will_trigger(cls, previous: MonitorData, current: MonitorData) -> bool:
