@@ -36,6 +36,41 @@ def parse_containers_inspect(
     return list(results)
 
 
+class ServicesInspect(MonitorEvent):
+    """
+    Inspects the dynamic-sidecar, and store some information about the contaiers.
+    """
+
+    @classmethod
+    async def will_trigger(cls, previous: MonitorData, current: MonitorData) -> bool:
+        return (
+            current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
+            and current.dynamic_sidecar.is_available == True
+        )
+
+    @classmethod
+    async def action(
+        cls, app: Application, previous: MonitorData, current: MonitorData
+    ) -> None:
+        api_client = get_api_client(app)
+        dynamic_sidecar_endpoint = current.dynamic_sidecar.endpoint
+
+        containers_inspect = await api_client.containers_inspect(
+            dynamic_sidecar_endpoint
+        )
+        if containers_inspect is None:
+            # this means that the service was degrated and we need to do something?
+            current.dynamic_sidecar.overall_status.update_failing_status(
+                f"Could not get containers_inspect for {current.service_name}. "
+                "Ask and admin to check director logs for details."
+            )
+
+        # parse and store data from container
+        current.dynamic_sidecar.containers_inspect = parse_containers_inspect(
+            containers_inspect
+        )
+
+
 class RunDockerComposeUp(MonitorEvent):
     """Runs the docker-compose up command when and composes the spec if a service requires it"""
 
@@ -78,46 +113,12 @@ class RunDockerComposeUp(MonitorEvent):
             current.dynamic_sidecar.overall_status.update_failing_status(
                 "Could not run docker-compose up. Ask an admin to check director logs for details."
             )
-        current.dynamic_sidecar.compose_spec_submitted = True
-
-
-class ServicesInspect(MonitorEvent):
-    """Inspects all spawned containers for the dynamic-sidecar"""
-
-    @classmethod
-    async def will_trigger(cls, previous: MonitorData, current: MonitorData) -> bool:
-        return (
-            current.dynamic_sidecar.overall_status.status == DynamicSidecarStatus.OK
-            and current.dynamic_sidecar.is_available == True
-            and current.dynamic_sidecar.compose_spec_submitted == True
-        )
-
-    @classmethod
-    async def action(
-        cls, app: Application, previous: MonitorData, current: MonitorData
-    ) -> None:
-        api_client = get_api_client(app)
-        dynamic_sidecar_endpoint = current.dynamic_sidecar.endpoint
-
-        containers_inspect = await api_client.containers_inspect(
-            dynamic_sidecar_endpoint
-        )
-        if containers_inspect is None:
-            # this means that the service was degrated and we need to do something?
-            current.dynamic_sidecar.overall_status.update_failing_status(
-                f"Could not get containers_inspect for {current.service_name}. "
-                "Ask and admin to check director logs for details."
-            )
-
-        # parse and store data from container
-        current.dynamic_sidecar.containers_inspect = parse_containers_inspect(
-            containers_inspect
-        )
+        current.dynamic_sidecar.was_compose_spec_submitted = True
 
 
 # register all handlers defined in this module here
 # A list is essential to guarantee execution order
 REGISTERED_EVENTS: List[MonitorEvent] = [
-    RunDockerComposeUp,
     ServicesInspect,
+    RunDockerComposeUp,
 ]

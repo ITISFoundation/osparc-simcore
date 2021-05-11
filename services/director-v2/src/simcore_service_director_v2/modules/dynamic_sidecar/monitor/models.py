@@ -82,10 +82,22 @@ class DynamicSidecar(BaseModel):
 
     is_available: bool = Field(
         False,
-        scription="infroms if the web API on the dynamic-sidecar is responding",
+        scription=(
+            "is True while the health check on the dynamic-sidecar is responding. "
+            "Meaning that the dynamic-sidecar is reachable and can accept requests"
+        ),
     )
 
-    compose_spec_submitted: bool = Field(
+    @property
+    def compose_spec_submitted(self) -> bool:
+        """
+        If the director-v2 is rebooted was_compose_spec_submitted is False
+        If the compose-spec is submitted it can be safely assumed that the
+        containers_inspect contains some elements.
+        """
+        return self.was_compose_spec_submitted or len(self.containers_inspect)
+
+    was_compose_spec_submitted: bool = Field(
         False,
         description="if the docker-compose spec was already submitted this fields is True",
     )
