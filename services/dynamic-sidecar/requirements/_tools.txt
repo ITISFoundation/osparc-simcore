@@ -10,7 +10,7 @@ appdirs==1.4.4
     #   virtualenv
 astroid==2.5.6
     # via pylint
-black==21.5b0
+black==21.5b1
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   -r requirements/_tools.in
