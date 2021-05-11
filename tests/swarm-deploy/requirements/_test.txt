@@ -202,7 +202,6 @@ python-dateutil==2.8.1
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   alembic
-    #   minio
 python-dotenv==0.17.1
     # via -r requirements/_test.in
 python-editor==1.0.4
