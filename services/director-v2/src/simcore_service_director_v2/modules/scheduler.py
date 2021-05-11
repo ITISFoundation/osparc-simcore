@@ -59,6 +59,7 @@ class Scheduler:
         self.wake_up_event.set()
 
     async def schedule_all_pipelines(self) -> None:
+        self.wake_up_event.clear()
         await asyncio.gather(
             *[
                 self.check_pipeline_status(user_id, project_id)
@@ -69,6 +70,7 @@ class Scheduler:
     async def check_pipeline_status(
         self, user_id: UserID, project_id: ProjectID
     ) -> None:
+        logger.debug("checking pipeline %s for user %s", project_id, user_id)
         comp_pipeline_repo = CompPipelinesRepository(self.db_engine)
         comp_tasks_repo = CompTasksRepository(self.db_engine)
 
@@ -79,6 +81,7 @@ class Scheduler:
             pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
         )
         if not pipeline_dag.nodes:
+            logger.warning("pipeline %s has no node to be run", project_id)
             await comp_pipeline_repo.mark_pipeline_state(
                 project_id, state=RunningState.NOT_STARTED
             )
@@ -91,21 +94,32 @@ class Scheduler:
             if (str(t.node_id) in list(pipeline_dag.nodes()))
         }
         if not comp_tasks:
+            logger.warning("pipeline %s has no computational node", project_id)
             await comp_pipeline_repo.mark_pipeline_state(
                 project_id, state=RunningState.UNKNOWN
             )
             return
+        # filter the tasks with what were already completed
         pipeline_dag.remove_nodes_from(
             {
                 node_id
                 for node_id, t in comp_tasks.items()
-                if t.state == RunningState.SUCCESS
+                if t.state
+                in [RunningState.SUCCESS, RunningState.FAILED, RunningState.ABORTED]
             }
         )
         if not pipeline_dag.nodes:
             # was already successfully completed
+            pipeline_state_from_tasks = get_pipeline_state_from_task_states(
+                comp_tasks.values(), self.celery_client.settings.publication_timeout
+            )
+            logger.info(
+                "pipeline %s completed with result %s",
+                project_id,
+                pipeline_state_from_tasks,
+            )
             await comp_pipeline_repo.mark_pipeline_state(
-                project_id, state=RunningState.SUCCESS
+                project_id, state=RUNNING_STATE_TO_DB[pipeline_state_from_tasks]
             )
             return
 
@@ -116,7 +130,7 @@ class Scheduler:
                 return "mpi"
             return "cpu"
 
-        # get the tasks that should be run
+        # get the tasks that should be run now
         tasks_to_run: Dict[str, Dict[str, Any]] = {
             node_id: {
                 "runtime_requirements": _runtime_requirement(comp_tasks[node_id].image)
@@ -125,6 +139,7 @@ class Scheduler:
             if degree == 0 and comp_tasks[node_id].state == RunningState.PUBLISHED
         }
         if not tasks_to_run:
+            # we are currently running or there is nothing left to be done
             pipeline_state_from_tasks = get_pipeline_state_from_task_states(
                 comp_tasks.values(), self.celery_client.settings.publication_timeout
             )
