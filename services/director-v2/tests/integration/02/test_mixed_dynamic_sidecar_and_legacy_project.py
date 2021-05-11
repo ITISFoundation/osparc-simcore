@@ -105,8 +105,8 @@ async def director_v0_client(services_endpoint: Dict[str, URL]) -> AsyncClient:
     base_url = director_url / "v0"
 
     headers = {
-        "X-Service-Sidecar-Request-DNS": director_url.host,
-        "X-Service-Sidecar-Request-Scheme": director_url.scheme,
+        "X-Dynamic-Sidecar-Request-DNS": director_url.host,
+        "X-Dynamic-Sidecar-Request-Scheme": director_url.scheme,
     }
     async with AsyncClient(
         base_url=str(base_url), headers=headers, timeout=HTTPX_CLIENT_TIMOUT
@@ -181,7 +181,6 @@ async def _get_service_state(
 
 
 async def test_legacy_and_dynamic_sidecar_run(
-    # client: TestClient,
     httpbins_project: ProjectAtDB,
     user_db: Dict,
     director_v0_client: AsyncClient,
