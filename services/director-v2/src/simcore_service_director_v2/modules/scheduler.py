@@ -4,6 +4,7 @@ Based on oSparc pipelines, it monitors when to start the next celery task(s), ei
 import asyncio
 import logging
 from asyncio import CancelledError
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, Dict, Set, Tuple
 
@@ -32,6 +33,7 @@ class Scheduler:
     db_engine: Engine
     celery_client: CeleryClient
     director_client: DirectorV0Client
+    wake_up_event: asyncio.Event = asyncio.Event()
 
     @classmethod
     async def create_from_db(cls, app: FastAPI) -> "Scheduler":
@@ -54,10 +56,15 @@ class Scheduler:
 
     def schedule_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
         self.scheduled_pipelines.add((user_id, project_id))
+        self.wake_up_event.set()
 
     async def schedule_all_pipelines(self) -> None:
-        for user_id, project_id in self.scheduled_pipelines:
-            await self.check_pipeline_status(user_id, project_id)
+        await asyncio.gather(
+            *[
+                self.check_pipeline_status(user_id, project_id)
+                for user_id, project_id in self.scheduled_pipelines
+            ]
+        )
 
     async def check_pipeline_status(
         self, user_id: UserID, project_id: ProjectID
@@ -138,7 +145,8 @@ async def scheduler_task(app: FastAPI) -> None:
             while True:
                 logger.info("Scheduler checking pipelines and tasks")
                 await scheduler.schedule_all_pipelines()
-                await asyncio.sleep(5)
+                with suppress(asyncio.TimeoutError):
+                    await asyncio.wait_for(scheduler.wake_up_event.wait(), timeout=5.0)
 
         except CancelledError:
             logger.info("Scheduler background task cancelled")
