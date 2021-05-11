@@ -321,15 +321,15 @@ async def dynamic_sidecar_assembly(  # pylint: disable=too-many-arguments
                     "Type": "bind",
                 }
             )
-        # expose this service on an empty port
-        if dynamic_sidecar_settings.dev_expose_dynamic_sidecar:
-            endpint_spec["Ports"] = [
-                {
-                    "Protocol": "tcp",
-                    "PublishedPort": unused_port(),
-                    "TargetPort": dynamic_sidecar_settings.web_service_port,
-                }
-            ]
+    # expose this service on an empty port
+    if dynamic_sidecar_settings.dev_expose_dynamic_sidecar:
+        endpint_spec["Ports"] = [
+            {
+                "Protocol": "tcp",
+                "PublishedPort": unused_port(),
+                "TargetPort": dynamic_sidecar_settings.web_service_port,
+            }
+        ]
 
     # used for the container name to avoid collisions for started containers on the same node
     compose_namespace = f"{DYNAMIC_SIDECAR_PREFIX}_{node_uuid}"
