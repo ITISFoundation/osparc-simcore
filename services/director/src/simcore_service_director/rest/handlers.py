@@ -143,8 +143,10 @@ async def running_interactive_services_post(
     )
     try:
         # not mandatory, only used by service sidecar
-        request_dns = request.headers.get("X-Service-Sidecar-Request-DNS", None)
-        request_scheme= request.headers.get("X-Service-Sidecar-Request-Scheme", None)
+        # used to properly Content-Security-Policy and CORS policies
+        # used by the proxy spawned together with the dynamic-sidecar
+        request_dns = request.headers.get("X-Dynamic-Sidecar-Request-DNS", None)
+        request_scheme= request.headers.get("X-Dynamic-Sidecar-Request-Scheme", None)
         service = await producer.start_service(
             request.app,
             user_id,

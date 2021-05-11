@@ -74,8 +74,8 @@ async def start_service(
     }
 
     headers = {
-        "X-Service-Sidecar-Request-DNS": request_dns,
-        "X-Service-Sidecar-Request-Scheme": request_scheme,
+        "X-Dynamic-Sidecar-Request-DNS": request_dns,
+        "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
     }
 
     url = (api_endpoint / "running_interactive_services").with_query(params)
