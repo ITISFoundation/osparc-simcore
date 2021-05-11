@@ -113,7 +113,7 @@ class DynamicSidecar(BaseModel):
 
 class MonitorData(BaseModel):
     service_name: str = Field(
-        ..., description="Name of the current sidecar-service being monitored"
+        ..., description="Name of the current dynamic-sidecar being monitored"
     )
 
     dynamic_sidecar: DynamicSidecar = Field(
