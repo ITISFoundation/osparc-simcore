@@ -129,12 +129,21 @@ async def ensure_services_stopped(httpbins_project: ProjectAtDB) -> None:
     # ensure service cleanup when done testing
     async with aiodocker.Docker() as docker_client:
         service_names = {x["Spec"]["Name"] for x in await docker_client.services.list()}
+        network_names = {x["Name"] for x in await docker_client.networks.list()}
+
         # grep the names of the services
         for node_uuid in httpbins_project.workbench:
             for service_name in service_names:
                 # if node_uuid is present in the service name it needs to be removed
                 if node_uuid in service_name:
                     delete_result = await docker_client.services.delete(service_name)
+                    assert delete_result is True
+
+            # remove networks if match
+            for network_name in network_names:
+                if node_uuid in network_name:
+                    network = await docker_client.networks.get(network_name)
+                    delete_result = await network.delete()
                     assert delete_result is True
 
 
