@@ -50,7 +50,9 @@ class Scheduler:
             celery_client=CeleryClient.instance(app),
             director_client=DirectorV0Client.instance(app),
             scheduled_pipelines={
-                (p.user_id, p.project_id) for p in published_pipelines
+                (p.user_id, p.project_id)
+                for p in published_pipelines
+                if p.user_id is not None
             },
         )
 
@@ -109,7 +111,7 @@ class Scheduler:
             }
         )
         if not pipeline_dag.nodes:
-            # was already successfully completed
+            # was already completed
             pipeline_state_from_tasks = get_pipeline_state_from_task_states(
                 comp_tasks.values(), self.celery_client.settings.publication_timeout
             )
@@ -121,6 +123,8 @@ class Scheduler:
             await comp_pipeline_repo.mark_pipeline_state(
                 project_id, state=RUNNING_STATE_TO_DB[pipeline_state_from_tasks]
             )
+            # remove the pipeline
+            self.scheduled_pipelines.remove((user_id, project_id))
             return
 
         def _runtime_requirement(node_image: Image) -> str:
