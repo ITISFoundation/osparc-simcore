@@ -48,13 +48,12 @@ class CompRunsRepository(BaseRepository):
             if iteration is None:
                 # let's get the latest if it exists
                 last_iteration = await conn.scalar(
-                    sa.select(comp_runs.c.iteration)
+                    sa.select([comp_runs.c.iteration])
                     .where(
                         (comp_runs.c.user_id == user_id)
-                        & (comp_runs.c.project_id == str(project_id))
+                        & (comp_runs.c.project_uuid == str(project_id))
                     )
                     .order_by(desc(comp_runs.c.iteration))
-                    .limit(1)
                 )
                 iteration = last_iteration or 1
 
@@ -62,7 +61,7 @@ class CompRunsRepository(BaseRepository):
                 sa.insert(comp_runs)
                 .values(
                     user_id=user_id,
-                    project_id=project_id,
+                    project_uuid=project_id,
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                 )
@@ -77,7 +76,7 @@ class CompRunsRepository(BaseRepository):
             row: RowProxy = await conn.execute(
                 sa.update(comp_runs)
                 .where(
-                    (comp_runs.c.project_id == str(project_id))
+                    (comp_runs.c.project_uuid == str(project_id))
                     & (comp_runs.c.user_id == str(user_id))
                     & (comp_runs.c.iteration == iteration)
                 )
