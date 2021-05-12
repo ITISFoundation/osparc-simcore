@@ -63,8 +63,9 @@ This is the common workflow to build and deploy locally:
   make down
 ```
 
-Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework
-and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used
+Some routes can only be reached via DNS such as `UUID.services.DNS`. Since `UUID.services.127.0.0.1` is **not a valid DNS**, the solution is to use [nip.io](https://nip.io/). A service that maps ``<anything>[.-]<IP Address>.nip.io`` in "dot", "dash" or "hexadecimal" notation to the corresponding ``<IP Address>``.
+
+Services are deployed in two stacks:``simcore-stack`` comprises all core-services in the framework and ``ops-stack`` is a subset of services from [ITISFoundation/osparc-ops](https://github.com/ITISFoundation/osparc-ops) used
 for operations during development. This is a representation of ``simcore-stack``:
 
 ![](docs/img/.stack-simcore-version.yml.png)
