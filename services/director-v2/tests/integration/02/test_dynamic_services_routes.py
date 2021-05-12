@@ -84,8 +84,10 @@ def start_request_data(
 
 @pytest.fixture
 async def test_client(
-    loop: asyncio.BaseEventLoop, dynamic_sidecar_image: None
+    loop: asyncio.BaseEventLoop, dynamic_sidecar_image: None, monkeypatch
 ) -> TestClient:
+    monkeypatch.setenv("DIRECTOR_HOST", "not-existing-host")
+
     settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
     settings.postgres.enabled = False
     app = init_app(settings)
