@@ -1,13 +1,15 @@
 import logging
-from typing import List, Set
+from typing import List, Optional, Set
 
 import sqlalchemy as sa
+from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 from simcore_service_director_v2.utils.db import RUNNING_STATE_TO_DB
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
+from sqlalchemy.sql.expression import desc
 
 from ....models.domains.comp_runs import CompRunsAtDB
 from ....models.schemas.constants import UserID
@@ -36,11 +38,38 @@ class CompRunsRepository(BaseRepository):
                 runs_in_db.append(CompRunsAtDB.from_orm(row))
         return runs_in_db
 
+    async def create(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: Optional[PositiveInt] = None,
+    ) -> CompRunsAtDB:
+        async with self.db_engine.acquire() as conn:
+            if iteration is None:
+                # let's get the latest if it exists
+                last_iteration = await conn.scalar(
+                    sa.select(comp_runs.c.iteration)
+                    .where(
+                        (comp_runs.c.user_id == user_id)
+                        & (comp_runs.c.project_id == str(project_id))
+                    )
+                    .order_by(desc(comp_runs.c.iteration))
+                    .limit(1)
+                )
+                iteration = last_iteration or 1
+
+            row: RowProxy = await conn.execute(
+                sa.insert(comp_runs)
+                .values(user_id=user_id, project_id=project_id, iteration=iteration)
+                .returning(literal_column("*"))
+            ).first()
+            return CompRunsAtDB.from_orm(row)
+
     async def update(
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
     ) -> CompRunsAtDB:
         async with self.db_engine.acquire() as conn:
-            await conn.execute(
+            row: RowProxy = await conn.execute(
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_id == str(project_id))
@@ -49,4 +78,5 @@ class CompRunsRepository(BaseRepository):
                 )
                 .values(**values)
                 .returning(literal_column("*"))
-            )
+            ).first()
+            return CompRunsAtDB.from_orm(row)
