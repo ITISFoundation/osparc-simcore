@@ -6,6 +6,7 @@ from typing import Optional
 from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
 from models_library.basic_types import PortInt, BootModeEnum
+from models_library.services import SERVICE_NETWORK_RE
 
 IMAGE_RE = r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]*)"
 
@@ -55,7 +56,7 @@ class DynamicSidecarSettings(BaseSettings):
 
     simcore_services_network_name: Optional[str] = Field(
         None,
-        regex=r"^([a-zA-Z0-9_]+)$",
+        regex=SERVICE_NETWORK_RE,
         description="network all simcore services are currently present",
         env="SIMCORE_SERVICES_NETWORK_NAME",
     )
