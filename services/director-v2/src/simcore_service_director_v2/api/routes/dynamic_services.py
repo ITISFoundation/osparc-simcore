@@ -83,12 +83,7 @@ async def service_retrieve_data_on_ports(
 async def start_dynamic_sidecar(
     node_uuid: UUID, model: StartDynamicSidecarModel, app: FastAPI = Depends(get_app)
 ) -> Dict[str, str]:
-    debug_message = (
-        f"DYNAMIC_SIDECAR: user_id={model.user_id}, project_id={model.project_id}, "
-        f"service_key={model.service_key}, service_tag={model.service_tag}, "
-        f"node_uuid={node_uuid}"
-    )
-    log.debug(debug_message)
+    log.debug("DYNAMIC_SIDECAR: %s, node_uuid=%s", model, node_uuid)
 
     dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
 
