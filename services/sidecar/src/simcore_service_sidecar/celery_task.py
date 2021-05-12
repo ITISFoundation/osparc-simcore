@@ -1,7 +1,6 @@
 import logging
 from asyncio import CancelledError
 
-from .boot_mode import BootMode
 from .cli import run_sidecar
 from .utils import wrap_async_call
 
