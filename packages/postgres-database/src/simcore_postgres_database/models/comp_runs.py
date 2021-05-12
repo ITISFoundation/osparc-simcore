@@ -34,6 +34,7 @@ comp_runs = sa.Table(
         ),
         nullable=False,
     ),
+    sa.Column("iteration", sa.BigInteger, nullable=False),
     sa.Column(
         "result",
         sa.Enum(StateType),
@@ -52,4 +53,7 @@ comp_runs = sa.Table(
     # utc timestamps for submission/start/end
     sa.Column("start", sa.DateTime),
     sa.Column("end", sa.DateTime),
+    sa.UniqueConstraint(
+        "project_uuid", "user_id", "iteration", name="comp_run_uniqueness"
+    ),
 )

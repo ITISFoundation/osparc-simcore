@@ -17,6 +17,7 @@ from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.utils.db import RUNNING_STATE_TO_DB
 
 from ..models.domains.comp_pipelines import CompPipelineAtDB
+from ..models.domains.comp_runs import CompRunsAtDB
 from ..models.domains.comp_tasks import CompTaskAtDB, Image
 from ..modules.celery import CeleryClient
 from ..modules.director_v0 import DirectorV0Client

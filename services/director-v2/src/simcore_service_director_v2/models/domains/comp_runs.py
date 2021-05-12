@@ -14,6 +14,7 @@ class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
     project_id: ProjectID
     user_id: UserID
+    iteration: PositiveInt
     result: RunningState
     created: datetime
     modified: datetime

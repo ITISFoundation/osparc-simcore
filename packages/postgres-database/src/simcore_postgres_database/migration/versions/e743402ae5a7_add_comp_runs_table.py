@@ -22,6 +22,7 @@ def upgrade():
         sa.Column("run_id", sa.BigInteger(), nullable=False),
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column("user_id", sa.BigInteger(), nullable=False),
+        sa.Column("iteration", sa.BigInteger(), nullable=False),
         sa.Column(
             "result",
             sa.dialects.postgresql.ENUM(
@@ -61,6 +62,9 @@ def upgrade():
             ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("run_id"),
+        sa.UniqueConstraint(
+            "project_uuid", "user_id", "iteration", name="comp_run_uniqueness"
+        ),
     )
     # ### end Alembic commands ###
 
