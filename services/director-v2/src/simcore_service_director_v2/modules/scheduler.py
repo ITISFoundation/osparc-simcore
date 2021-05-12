@@ -43,6 +43,14 @@ def _get_repository(
     return repo_type(db_engine=db_engine)
 
 
+def _runtime_requirement(node_image: Image) -> str:
+    if node_image.requires_gpu:
+        return "gpu"
+    if node_image.requires_mpi:
+        return "mpi"
+    return "cpu"
+
+
 Iteration = PositiveInt
 
 
@@ -171,13 +179,6 @@ class Scheduler:
             # remove the pipeline
             self.scheduled_pipelines.remove((user_id, project_id))
             return
-
-        def _runtime_requirement(node_image: Image) -> str:
-            if node_image.requires_gpu:
-                return "gpu"
-            if node_image.requires_mpi:
-                return "mpi"
-            return "cpu"
 
         # get the tasks that should be run now
         tasks_to_run: Dict[str, Dict[str, Any]] = {
