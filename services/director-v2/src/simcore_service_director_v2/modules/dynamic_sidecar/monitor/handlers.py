@@ -2,7 +2,7 @@ import logging
 from collections import deque
 from typing import Any, Dict, List
 
-from aiohttp.web import Application
+from fastapi import FastAPI
 
 from ..docker_compose_assembly import assemble_spec
 from .handlers_base import MonitorEvent
@@ -50,7 +50,7 @@ class ServicesInspect(MonitorEvent):
 
     @classmethod
     async def action(
-        cls, app: Application, previous: MonitorData, current: MonitorData
+        cls, app: FastAPI, previous: MonitorData, current: MonitorData
     ) -> None:
         api_client = get_api_client(app)
         dynamic_sidecar_endpoint = current.dynamic_sidecar.endpoint
@@ -84,7 +84,7 @@ class RunDockerComposeUp(MonitorEvent):
 
     @classmethod
     async def action(
-        cls, app: Application, previous: MonitorData, current: MonitorData
+        cls, app: FastAPI, previous: MonitorData, current: MonitorData
     ) -> None:
         logger.debug("Getting docker compose spec for service %s", current.service_name)
 
@@ -93,7 +93,6 @@ class RunDockerComposeUp(MonitorEvent):
 
         # creates a docker compose spec given the service key and tag
         compose_spec = await assemble_spec(
-            app=app,
             service_key=current.service_key,
             service_tag=current.service_tag,
             paths_mapping=current.paths_mapping,

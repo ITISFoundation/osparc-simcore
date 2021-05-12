@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Any, Dict, Optional
 from pydantic import PositiveInt
-from fastapi import FastAPI, Depends
+from fastapi import Depends
 
 import yaml
 
@@ -89,7 +89,6 @@ def _replace_env_vars_in_compose_spec(
 
 async def assemble_spec(
     # pylint: disable=too-many-arguments
-    app: FastAPI,
     service_key: str,
     service_tag: str,
     paths_mapping: PathsMappingModel,  # pylint: disable=unused-argument

@@ -11,7 +11,7 @@ import logging
 from asyncio import Lock, sleep
 from typing import Deque, Dict, Optional
 
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request
 from async_timeout import timeout
 
 from ..config import DynamicSidecarSettings, get_settings
@@ -43,9 +43,7 @@ MONITOR_KEY = f"{__name__}.DynamicSidecarsMonitor"
 
 
 async def apply_monitoring(
-    app: FastAPI,
-    input_monitor_data: MonitorData,
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    app: FastAPI, input_monitor_data: MonitorData
 ) -> MonitorData:
     """
     fetches status for service and then processes all the registered events
@@ -68,6 +66,9 @@ async def apply_monitoring(
         logger.warning(message)
         return output_monitor_data
 
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app.state.dynamic_sidecar_settings
+    )
     try:
         with timeout(dynamic_sidecar_settings.max_status_api_duration):
             output_monitor_data = await update_dynamic_sidecar_health(
@@ -356,13 +357,13 @@ def get_monitor(request: Request) -> DynamicSidecarsMonitor:
     return request.app.state.dynamic_sidecar_monitor
 
 
-async def setup_monitor(
-    app: FastAPI,
-    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
-):
+async def setup_monitor(app: FastAPI):
     dynamic_sidecars_monitor = DynamicSidecarsMonitor(app)
     app.state.dynamic_sidecar_monitor = dynamic_sidecars_monitor
 
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        app.state.dynamic_sidecar_settings
+    )
     if dynamic_sidecar_settings.disable_monitor:
         logger.warning("Monitor will not be started!!!")
         return

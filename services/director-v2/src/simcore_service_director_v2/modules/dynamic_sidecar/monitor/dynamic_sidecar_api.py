@@ -3,9 +3,9 @@ import traceback
 from typing import Any, Dict, Optional
 
 import httpx
-from aiohttp.web import Application
+from fastapi import FastAPI
 
-from ..config import get_settings
+from ..config import DynamicSidecarSettings
 from .models import MonitorData
 
 logger = logging.getLogger(__name__)
@@ -37,11 +37,13 @@ def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> Non
 class DynamicSidecarClient:
     """Will handle connections to the service sidecar"""
 
-    def __init__(self, app: Application):
+    def __init__(self, app: FastAPI):
         self._app = app
         self._heatlth_request_timeout = httpx.Timeout(1.0, connect=1.0)
 
-        dynamic_sidecar_settings = get_settings(app)
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.dynamic_sidecar_settings
+        )
 
         self.httpx_client = httpx.AsyncClient(
             timeout=httpx.Timeout(
@@ -150,23 +152,23 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
 
 
-async def setup_api_client(app: Application) -> None:
+async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
     app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
 
 
-async def shutdown_api_client(app: Application) -> None:
+async def shutdown_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client shutdown")
     dynamic_sidecar_api_client = app.state.dynamic_sidecar_api_client
     await dynamic_sidecar_api_client.close()
 
 
-def get_api_client(app: Application) -> DynamicSidecarClient:
+def get_api_client(app: FastAPI) -> DynamicSidecarClient:
     return app.state.dynamic_sidecar_api_client
 
 
 async def update_dynamic_sidecar_health(
-    app: Application, input_monitor_data: MonitorData
+    app: FastAPI, input_monitor_data: MonitorData
 ) -> MonitorData:
     # make a copy of the original
     output_monitor_data = input_monitor_data.copy(deep=True)
