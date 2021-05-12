@@ -4,7 +4,7 @@ from uuid import UUID
 import httpx
 from pprint import pformat
 from typing import Dict, Any
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends
 
 from starlette import status
 from starlette.datastructures import URL
@@ -16,8 +16,7 @@ from ..dependencies.dynamic_services import (
     get_service_base_url,
     get_services_client,
 )
-from ..dependencies import get_app
-from ...modules.dynamic_sidecar.monitor import get_monitor
+from ...modules.dynamic_sidecar.monitor import get_monitor, DynamicSidecarsMonitor
 
 
 from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
@@ -81,11 +80,12 @@ async def service_retrieve_data_on_ports(
     },
 )
 async def start_dynamic_sidecar(
-    node_uuid: UUID, model: StartDynamicSidecarModel, app: FastAPI = Depends(get_app)
+    node_uuid: UUID,
+    model: StartDynamicSidecarModel,
+    dynamic_sidecar_settings: DynamicSidecarSettings = Depends(get_settings),
+    monitor: DynamicSidecarsMonitor = Depends(get_monitor),
 ) -> Dict[str, str]:
     log.debug("DYNAMIC_SIDECAR: %s, node_uuid=%s", model, node_uuid)
-
-    dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
 
     # Service naming schema:
     # -  dysdcr_{uuid}_{first_two_project_id}_prxy_{name_from_service_key}
@@ -183,7 +183,6 @@ async def start_dynamic_sidecar(
     )
 
     # services where successfully started and they can be monitored
-    monitor = get_monitor(app)
     await monitor.add_service_to_monitor(
         service_name=service_name_dynamic_sidecar,
         node_uuid=str(node_uuid),
@@ -211,9 +210,8 @@ async def start_dynamic_sidecar(
     response_model=ServiceStateReply,
 )
 async def dynamic_sidecar_status(
-    node_uuid: UUID, app: FastAPI = Depends(get_app)
+    node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
 ) -> Dict[str, Any]:
-    monitor = get_monitor(app)
     return await monitor.get_stack_status(str(node_uuid))
 
 
@@ -224,7 +222,6 @@ async def dynamic_sidecar_status(
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_sidecar(
-    node_uuid: UUID, app: FastAPI = Depends(get_app)
+    node_uuid: UUID, monitor: DynamicSidecarsMonitor = Depends(get_monitor)
 ) -> Dict[str, str]:
-    monitor = get_monitor(app)
     await monitor.remove_service_from_monitor(str(node_uuid))

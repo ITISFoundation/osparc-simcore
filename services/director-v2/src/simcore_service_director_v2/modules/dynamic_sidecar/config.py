@@ -3,7 +3,7 @@
 
 from pathlib import Path
 from typing import Optional
-from aiohttp.web import Application
+from fastapi import FastAPI, Request
 from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
 from models_library.basic_types import PortInt, BootModeEnum
 from models_library.services import SERVICE_NETWORK_RE
@@ -118,9 +118,9 @@ class DynamicSidecarSettings(BaseSettings):
         env_prefix = "DYNAMIC_SIDECAR_"
 
 
-async def setup_settings(app: Application) -> None:
+async def setup_settings(app: FastAPI) -> None:
     app.state.dynamic_sidecar_settings = DynamicSidecarSettings()
 
 
-def get_settings(app: Application) -> DynamicSidecarSettings:
-    return app.state.dynamic_sidecar_settings
+def get_settings(request: Request) -> DynamicSidecarSettings:
+    return request.app.state.dynamic_sidecar_settings
