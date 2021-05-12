@@ -4,6 +4,7 @@ import json
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import sys
+import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -61,14 +62,23 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch):
         monkeypatch.setenv(key, value)
 
 
-@pytest.fixture(scope="function")
-def client(loop, monkeypatch) -> TestClient:
-    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
-    app = init_app(settings)
+@pytest.fixture
+def dynamic_sidecar_image(monkeypatch) -> None:
+    # Works as below line in docker.compose.yml
+    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+
+    registry = os.environ.get("DOCKER_REGISTRY", "local")
+    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
     monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:not-an-existing-tag"
+        "DYNAMIC_SIDECAR_IMAGE", f"{registry}/dynamic-sidecar:{image_tag}"
     )
+
+
+@pytest.fixture(scope="function")
+def client(loop, dynamic_sidecar_image) -> TestClient:
+    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
+    app = init_app(settings)
 
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
