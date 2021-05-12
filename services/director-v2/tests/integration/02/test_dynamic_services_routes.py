@@ -34,10 +34,29 @@ def node_uuid() -> str:
 
 
 @pytest.fixture
+async def ensure_swarm_and_networks(docker_swarm: None) -> None:
+    """a network is required for testing this module"""
+    network_config = {
+        "Name": "test_swarm_mock_network_default",
+        "Driver": "overlay",
+        "Attachable": True,
+        "Internal": False,
+    }
+    async with aiodocker.Docker() as docker_client:
+        docker_network = await docker_client.networks.create(network_config)
+
+        yield
+
+        network = await docker_client.networks.get(docker_network.id)
+        assert await network.delete() is True
+
+
+@pytest.fixture
 def start_request_data(
     node_uuid: str,
     user_id: PositiveInt,
     httpbin_dynamic_sidecar_service: Dict,
+    ensure_swarm_and_networks: None,
 ) -> Dict[str, Any]:
     return dict(
         user_id=user_id,
