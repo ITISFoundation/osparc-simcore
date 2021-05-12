@@ -5,6 +5,7 @@ import json
 # pylint:disable=redefined-outer-name
 import sys
 import os
+import logging
 from pathlib import Path
 from typing import Any, Dict
 
@@ -30,6 +31,8 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.pydantic_models",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -70,9 +73,9 @@ def dynamic_sidecar_image(monkeypatch) -> None:
     registry = os.environ.get("DOCKER_REGISTRY", "local")
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", f"{registry}/dynamic-sidecar:{image_tag}"
-    )
+    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
+    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
 
 
 @pytest.fixture(scope="function")
