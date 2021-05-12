@@ -6,76 +6,110 @@ import logging
 from asyncio import CancelledError
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any, Dict, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple, Type
 
 import networkx as nx
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from pydantic.types import PositiveInt
 from simcore_service_director_v2.models.schemas.constants import UserID
-from simcore_service_director_v2.utils.db import RUNNING_STATE_TO_DB
 
 from ..models.domains.comp_pipelines import CompPipelineAtDB
 from ..models.domains.comp_runs import CompRunsAtDB
 from ..models.domains.comp_tasks import CompTaskAtDB, Image
 from ..modules.celery import CeleryClient
-from ..modules.director_v0 import DirectorV0Client
 from ..utils.computations import get_pipeline_state_from_task_states
+from .db.repositories import BaseRepository
 from .db.repositories.comp_pipelines import CompPipelinesRepository
+from .db.repositories.comp_runs import CompRunsRepository
 from .db.repositories.comp_tasks import CompTasksRepository
 
 logger = logging.getLogger(__name__)
 
 
+_SCHEDULED_STATES = {
+    RunningState.PUBLISHED,
+    RunningState.PENDING,
+    RunningState.STARTED,
+    RunningState.RETRY,
+}
+
+
+def _get_repository(
+    db_engine: Engine, repo_type: Type[BaseRepository]
+) -> BaseRepository:
+    return repo_type(db_engine=db_engine)
+
+
+Iteration = PositiveInt
+
+
 @dataclass
 class Scheduler:
-    scheduled_pipelines: Set[Tuple[UserID, ProjectID]]
+    scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
     db_engine: Engine
     celery_client: CeleryClient
-    director_client: DirectorV0Client
     wake_up_event: asyncio.Event = asyncio.Event()
 
     @classmethod
     async def create_from_db(cls, app: FastAPI) -> "Scheduler":
         db_engine = app.state.engine
-        pipeline_repository = CompPipelinesRepository(db_engine)
-        published_pipelines = await pipeline_repository.list_pipelines_with_state(
-            state={RunningState.PUBLISHED, RunningState.STARTED}
+        runs_repository = _get_repository(db_engine, CompRunsRepository)
+
+        # get currently scheduled runs
+        runs: List[CompRunsAtDB] = await runs_repository.list(
+            filter_by_state=_SCHEDULED_STATES
         )
-        logger.info(
-            "Scheduler created with %s published pipelines", len(published_pipelines)
-        )
+        logger.info("Scheduler creation with %s runs being scheduled", len(runs))
         return cls(
             db_engine=db_engine,
             celery_client=CeleryClient.instance(app),
-            director_client=DirectorV0Client.instance(app),
             scheduled_pipelines={
-                (p.user_id, p.project_id)
-                for p in published_pipelines
-                if p.user_id is not None
+                (r.user_id, r.project_uuid, r.iteration) for r in runs
             },
         )
 
-    def schedule_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
-        self.scheduled_pipelines.add((user_id, project_id))
-        self.wake_up_event.set()
+    async def run(self) -> None:
+        while True:
+            logger.info("Scheduler checking pipelines and tasks")
+            self.wake_up_event.clear()
+            await asyncio.gather(
+                *[
+                    self._check_pipeline_status(user_id, project_id, iteration)
+                    for user_id, project_id, iteration in self.scheduled_pipelines
+                ]
+            )
+            with suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(self.wake_up_event.wait(), timeout=5.0)
 
-    async def schedule_all_pipelines(self) -> None:
-        self.wake_up_event.clear()
-        await asyncio.gather(
-            *[
-                self.check_pipeline_status(user_id, project_id)
-                for user_id, project_id in self.scheduled_pipelines
-            ]
-        )
-
-    async def check_pipeline_status(
+    async def schedule_pipeline_run(
         self, user_id: UserID, project_id: ProjectID
     ) -> None:
-        logger.debug("checking pipeline %s for user %s", project_id, user_id)
-        comp_pipeline_repo = CompPipelinesRepository(self.db_engine)
-        comp_tasks_repo = CompTasksRepository(self.db_engine)
+        runs_repo = _get_repository(self.db_engine, CompRunsRepository)
+        new_run: CompRunsAtDB = await runs_repo.create(
+            user_id=user_id, project_id=project_id
+        )
+        self.scheduled_pipelines.add((user_id, project_id, new_run.iteration))
+        # ensure the scheduler starts right away
+        self._wake_up_scheduler_now()
+
+    def _wake_up_scheduler_now(self) -> None:
+        self.wake_up_event.set()
+
+    async def _check_pipeline_status(
+        self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+    ) -> None:
+        logger.debug(
+            "checking run of project [%s:%s] for user [%s]",
+            project_id,
+            iteration,
+            user_id,
+        )
+        comp_runs_repo = _get_repository(self.db_engine, CompRunsRepository)
+        comp_pipeline_repo = _get_repository(self.db_engine, CompPipelinesRepository)
+        comp_tasks_repo = _get_repository(self.db_engine, CompTasksRepository)
 
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
@@ -85,8 +119,11 @@ class Scheduler:
         )
         if not pipeline_dag.nodes:
             logger.warning("pipeline %s has no node to be run", project_id)
-            await comp_pipeline_repo.mark_pipeline_state(
-                project_id, state=RunningState.NOT_STARTED
+            await comp_runs_repo.set_run_result(
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+                result_state=RunningState.NOT_STARTED,
             )
             return
 
@@ -98,8 +135,11 @@ class Scheduler:
         }
         if not comp_tasks:
             logger.warning("pipeline %s has no computational node", project_id)
-            await comp_pipeline_repo.mark_pipeline_state(
-                project_id, state=RunningState.UNKNOWN
+            await comp_runs_repo.set_run_result(
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+                result_state=RunningState.UNKNOWN,
             )
             return
         # filter the tasks with what were already completed
@@ -121,9 +161,13 @@ class Scheduler:
                 project_id,
                 pipeline_state_from_tasks,
             )
-            await comp_pipeline_repo.mark_pipeline_state(
-                project_id, state=RUNNING_STATE_TO_DB[pipeline_state_from_tasks]
+            await comp_runs_repo.set_run_result(
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+                result_state=pipeline_state_from_tasks,
             )
+
             # remove the pipeline
             self.scheduled_pipelines.remove((user_id, project_id))
             return
@@ -148,10 +192,15 @@ class Scheduler:
             pipeline_state_from_tasks = get_pipeline_state_from_task_states(
                 comp_tasks.values(), self.celery_client.settings.publication_timeout
             )
-            await comp_pipeline_repo.mark_pipeline_state(
-                project_id, state=RUNNING_STATE_TO_DB[pipeline_state_from_tasks]
+            await comp_runs_repo.set_run_result(
+                user_id=user_id,
+                project_id=project_id,
+                iteration=iteration,
+                result_state=pipeline_state_from_tasks,
             )
             return
+
+        # let's schedule the tasks
         comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks_to_run.keys())
         self.celery_client.send_single_tasks(
             user_id=user_id, project_id=project_id, single_tasks=tasks_to_run
@@ -162,11 +211,7 @@ async def scheduler_task(app: FastAPI) -> None:
     while True:
         try:
             app.state.scheduler = scheduler = await Scheduler.create_from_db(app)
-            while True:
-                logger.info("Scheduler checking pipelines and tasks")
-                await scheduler.schedule_all_pipelines()
-                with suppress(asyncio.TimeoutError):
-                    await asyncio.wait_for(scheduler.wake_up_event.wait(), timeout=5.0)
+            await scheduler.run()
 
         except CancelledError:
             logger.info("Scheduler background task cancelled")

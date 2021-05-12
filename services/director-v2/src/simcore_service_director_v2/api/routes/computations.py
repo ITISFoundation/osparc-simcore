@@ -153,7 +153,7 @@ async def create_computation(
                 )
             scheduler: Scheduler = request.app.state.scheduler
             if scheduler:
-                scheduler.schedule_pipeline(job.user_id, job.project_id)
+                await scheduler.schedule_pipeline_run(job.user_id, job.project_id)
         # if job.start_pipeline:
         #     if not computational_dag.nodes():
         #         # there is nothing else to be run here, so we are done
