@@ -263,7 +263,9 @@ class Executor:
                 "output",
                 "log",
             ]
-        ] + [f"SC_COMP_SERVICES_SCHEDULED_AS={self.sidecar_mode.value}"]
+        ] + [
+            f"SC_COMP_SERVICES_SCHEDULED_AS={self.sidecar_mode.value}"
+        ]  # NOTE: this variable is used by some comp services such as iSolve
 
         host_input_path = await get_volume_mount_point(
             config.SIDECAR_DOCKER_VOLUME_INPUT
