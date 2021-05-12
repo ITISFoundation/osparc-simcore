@@ -25,7 +25,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.constants import (
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import get_monitor
 
-SERVICE_IS_READY_TIMEOUT = 120
+SERVICE_IS_READY_TIMEOUT = 4 * 60
 
 
 @pytest.fixture
