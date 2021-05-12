@@ -11,7 +11,7 @@ import logging
 from asyncio import Lock, sleep
 from typing import Deque, Dict, Optional
 
-from aiohttp.web import Application
+from fastapi import FastAPI
 from async_timeout import timeout
 
 from ..config import DynamicSidecarSettings, get_settings
@@ -43,7 +43,7 @@ MONITOR_KEY = f"{__name__}.DynamicSidecarsMonitor"
 
 
 async def apply_monitoring(
-    app: Application, input_monitor_data: MonitorData
+    app: FastAPI, input_monitor_data: MonitorData
 ) -> MonitorData:
     """
     fetches status for service and then processes all the registered events
@@ -104,8 +104,8 @@ class DynamicSidecarsMonitor:
         "_app",
     )
 
-    def __init__(self, app: Application):
-        self._app: Application = app
+    def __init__(self, app: FastAPI):
+        self._app: FastAPI = app
         self._lock: Lock = Lock()
 
         self._to_monitor: Dict[str, LockWithMonitorData] = dict()
@@ -351,11 +351,11 @@ class DynamicSidecarsMonitor:
         self._to_monitor = dict()
 
 
-def get_monitor(app: Application) -> DynamicSidecarsMonitor:
+def get_monitor(app: FastAPI) -> DynamicSidecarsMonitor:
     return app.state.dynamic_sidecar_monitor
 
 
-async def setup_monitor(app: Application):
+async def setup_monitor(app: FastAPI):
     dynamic_sidecars_monitor = DynamicSidecarsMonitor(app)
     app.state.dynamic_sidecar_monitor = dynamic_sidecars_monitor
 
@@ -367,6 +367,6 @@ async def setup_monitor(app: Application):
     await dynamic_sidecars_monitor.start()
 
 
-async def shutdown_monitor(app: Application):
+async def shutdown_monitor(app: FastAPI):
     dynamic_sidecars_monitor = app.state.dynamic_sidecar_monitor
     await dynamic_sidecars_monitor.shutdown()
