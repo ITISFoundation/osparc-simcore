@@ -115,9 +115,15 @@ class Scheduler:
             iteration,
             user_id,
         )
-        comp_runs_repo = _get_repository(self.db_engine, CompRunsRepository)
-        comp_pipeline_repo = _get_repository(self.db_engine, CompPipelinesRepository)
-        comp_tasks_repo = _get_repository(self.db_engine, CompTasksRepository)
+        comp_runs_repo: CompRunsRepository = _get_repository(
+            self.db_engine, CompRunsRepository
+        )
+        comp_pipeline_repo: CompPipelinesRepository = _get_repository(
+            self.db_engine, CompPipelinesRepository
+        )
+        comp_tasks_repo: CompTasksRepository = _get_repository(
+            self.db_engine, CompTasksRepository
+        )
 
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
@@ -177,7 +183,7 @@ class Scheduler:
             )
 
             # remove the pipeline
-            self.scheduled_pipelines.remove((user_id, project_id))
+            self.scheduled_pipelines.remove((user_id, project_id, iteration))
             return
 
         # get the tasks that should be run now
