@@ -90,6 +90,10 @@ class DynamicSidecarSettings(BaseSettings):
         ),
     )
 
+    disable_monitor: bool = Field(
+        Field, description="set to True to disable the monitor from stating"
+    )
+
     boot_mode: Optional[BootModeEnum] = Field(
         BootModeEnum.PRODUCTION,
         description="Used to compute where or not should start sidecar in development mode",

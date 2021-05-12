@@ -359,6 +359,11 @@ async def setup_monitor(app: Application):
     dynamic_sidecars_monitor = DynamicSidecarsMonitor(app)
     app.state.dynamic_sidecar_monitor = dynamic_sidecars_monitor
 
+    dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(app)
+    if dynamic_sidecar_settings.disable_monitor:
+        logger.warning("Monitor will not be started!!!")
+        return
+
     await dynamic_sidecars_monitor.start()
 
 
