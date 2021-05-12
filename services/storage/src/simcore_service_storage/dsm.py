@@ -436,13 +436,10 @@ class DataStorageManager:
             continue_loop = True
             sleep_generator = expo()
             update_succeeded = False
-            # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
-            listing_prefix = (
-                object_name if object_name.endswith("/") else f"{object_name}/"
-            )
+            
             while continue_loop:
                 result = await client.list_objects_v2(
-                    Bucket=bucket_name, Prefix=listing_prefix
+                    Bucket=bucket_name, Prefix=object_name
                 )
                 sleep_amount = next(sleep_generator)
                 continue_loop = current_iteraction <= max_update_retries
