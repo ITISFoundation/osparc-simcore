@@ -1,6 +1,7 @@
 import logging
 from asyncio import CancelledError
 
+from .boot_mode import BootMode
 from .cli import run_sidecar
 from .utils import wrap_async_call
 
@@ -16,7 +17,12 @@ def entrypoint(
         *args,
         **kwargs
     )
-    _shared_task_dispatch(self, user_id, project_id, node_id)
+    _shared_task_dispatch(
+        self,
+        user_id,
+        project_id,
+        node_id,
+    )
     log.info("Completed task %s", self.request.id)
 
 
@@ -41,6 +47,7 @@ def _shared_task_dispatch(
                 celery_request.is_aborted,
                 retry=celery_request.request.retries,
                 max_retries=celery_request.max_retries,
+                sidecar_mode=celery_request.app.conf.osparc_sidecar_bootmode,
             )
         )
     except CancelledError:

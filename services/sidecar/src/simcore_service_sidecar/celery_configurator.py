@@ -61,6 +61,7 @@ def configure_node(bootmode: BootMode) -> Celery:
         Queue("celery"),
         Queue(CELERY_APP_CONFIGS[bootmode]["queue_name"]),
     ]
+    app.conf.osparc_sidecar_bootmode = bootmode
 
     define_celery_task(app, config.CELERY_CONFIG.task_name)
     set_boot_mode(bootmode)
