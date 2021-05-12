@@ -60,7 +60,12 @@ class CompRunsRepository(BaseRepository):
 
             row: RowProxy = await conn.execute(
                 sa.insert(comp_runs)
-                .values(user_id=user_id, project_id=project_id, iteration=iteration)
+                .values(
+                    user_id=user_id,
+                    project_id=project_id,
+                    iteration=iteration,
+                    result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
+                )
                 .returning(literal_column("*"))
             ).first()
             return CompRunsAtDB.from_orm(row)
@@ -88,4 +93,6 @@ class CompRunsRepository(BaseRepository):
         iteration: PositiveInt,
         result_state: RunningState,
     ) -> CompRunsAtDB:
-        return self.update(user_id, project_id, iteration, result=result_state)
+        return self.update(
+            user_id, project_id, iteration, result=RUNNING_STATE_TO_DB[result_state]
+        )
