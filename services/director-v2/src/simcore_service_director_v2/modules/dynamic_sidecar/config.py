@@ -91,7 +91,7 @@ class DynamicSidecarSettings(BaseSettings):
     )
 
     disable_monitor: bool = Field(
-        Field, description="set to True to disable the monitor from stating"
+        False, description="set to True to disable the monitor from stating"
     )
 
     boot_mode: Optional[BootModeEnum] = Field(
