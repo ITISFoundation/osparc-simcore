@@ -34,20 +34,10 @@ class StartDynamicSidecarModel(BaseModel):
     user_id: UserID
     project_id: ProjectID
     service_key: str = Field(
-        ...,
-        description="name of the service",
-        regex=SERVICE_KEY_RE,
-        examples=[
-            "simcore/services/comp/itis/sleeper",
-            "simcore/services/dynamic/3dviewer",
-            "simcore/services/frontend/file-picker",
-        ],
+        ..., description="name of the service", regex=SERVICE_KEY_RE
     )
     service_tag: str = Field(
-        ...,
-        description="tag usually also known as version",
-        regex=VERSION_RE,
-        examples=["1.0.0", "0.0.1"],
+        ..., description="tag usually also known as version", regex=VERSION_RE
     )
 
     # these come from the webserver via the director
@@ -95,3 +85,39 @@ class StartDynamicSidecarModel(BaseModel):
         if v not in {"http", "https"}:
             raise ValueError(f"provided request_scheme={v} must be 'http' or 'https'")
         return v
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "user_id": 10,
+                "project_id": "eb2ba037-4fb6-45da-80c8-00809399f24a",
+                "service_key": "simcore/services/dynamic/httpbin-dynamic-sidecar-compose",
+                "service_tag": "1.0.1",
+                "request_scheme": "http",
+                "request_dns": "localhost",
+                "settings": [
+                    {
+                        "name": "resources",
+                        "type": "Resources",
+                        "value": {"mem_limit": 17179869184, "cpu_limit": 1000000000},
+                    },
+                    {"name": "ports", "type": "int", "value": 80},
+                    {
+                        "name": "constraints",
+                        "type": "string",
+                        "value": ["node.platform.os == linux"],
+                    },
+                ],
+                "compose_spec": {
+                    "version": "2.3",
+                    "services": {
+                        "httpbin-docker-compose-spec": {
+                            "image": "${REGISTRY_URL}/simcore/services/dynamic/httpbin-dynamic-sidecar-compose:${SERVICE_TAG}",
+                            "environment": ["MOCK_VALUE=MOCK_VALUE"],
+                            "volumes": ["/tmp/nothing:/tmp/nothing"],
+                        }
+                    },
+                },
+                "target_container": "httpbin-docker-compose-spec",
+            }
+        }
