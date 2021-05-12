@@ -93,6 +93,7 @@ class RunDockerComposeUp(MonitorEvent):
 
         # creates a docker compose spec given the service key and tag
         compose_spec = await assemble_spec(
+            app=app,
             service_key=current.service_key,
             service_tag=current.service_tag,
             paths_mapping=current.paths_mapping,

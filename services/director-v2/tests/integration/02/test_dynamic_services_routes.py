@@ -18,12 +18,13 @@ from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 from simcore_service_director_v2.modules.dynamic_sidecar.config import (
     DynamicSidecarSettings,
-    get_settings,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.constants import (
     SERVICE_NAME_SIDECAR,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import get_monitor
+from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import (
+    DynamicSidecarsMonitor,
+)
 
 SERVICE_IS_READY_TIMEOUT = 4 * 60
 
@@ -43,12 +44,12 @@ async def ensure_swarm_and_networks(docker_swarm: None) -> None:
         "Internal": False,
     }
     async with aiodocker.Docker() as docker_client:
-        docker_network = await docker_client.networks.create(network_config)
+        # docker_network = await docker_client.networks.create(network_config)
 
         yield
 
-        network = await docker_client.networks.get(docker_network.id)
-        assert await network.delete() is True
+        # network = await docker_client.networks.get(docker_network.id)
+        # assert await network.delete() is True
 
 
 @pytest.fixture
@@ -93,8 +94,8 @@ async def test_client(
     app = init_app(settings)
 
     async with TestClient(app) as client:
-        dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(
-            client.application
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            client.application.state.dynamic_sidecar_settings
         )
         dynamic_sidecar_settings.dev_expose_dynamic_sidecar = True
         yield client
@@ -146,7 +147,7 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
     assert port is not None
 
     # patch the endppoint inside the monitor
-    monitor = get_monitor(app)
+    monitor: DynamicSidecarsMonitor = app.state.dynamic_sidecar_monitor
     for entry in monitor._to_monitor.values():  # pylint: disable=protected-access
         if entry.monitor_data.service_name == service_name:
             entry.monitor_data.dynamic_sidecar.hostname = "localhost"

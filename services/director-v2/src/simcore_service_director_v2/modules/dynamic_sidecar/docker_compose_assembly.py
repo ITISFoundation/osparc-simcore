@@ -1,11 +1,12 @@
 from copy import deepcopy
 from typing import Any, Dict, Optional
+from fastapi.applications import FastAPI
 from pydantic import PositiveInt
-from fastapi import Depends
+from fastapi import FastAPI
 
 import yaml
 
-from .config import DynamicSidecarSettings, get_settings
+from .config import DynamicSidecarSettings
 from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 CONTAINER_NAME = "container"
@@ -89,6 +90,7 @@ def _replace_env_vars_in_compose_spec(
 
 async def assemble_spec(
     # pylint: disable=too-many-arguments
+    app: FastAPI,
     service_key: str,
     service_tag: str,
     paths_mapping: PathsMappingModel,  # pylint: disable=unused-argument
@@ -97,12 +99,13 @@ async def assemble_spec(
     dynamic_sidecar_network_name: str,
     simcore_traefik_zone: str,
     service_port: PositiveInt,
-    settings: DynamicSidecarSettings = Depends(get_settings),
 ) -> str:
     """returns a docker-compose spec which will be use by the dynamic-sidecar to start the service """
 
     container_name = target_container
     service_spec = compose_spec
+
+    settings: DynamicSidecarSettings = app.state.dynamic_sidecar_settings
 
     # when no compose yaml file was provided
     if service_spec is None:

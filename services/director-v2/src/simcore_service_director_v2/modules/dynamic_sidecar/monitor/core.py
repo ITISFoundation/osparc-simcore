@@ -197,7 +197,9 @@ class DynamicSidecarsMonitor:
                 return ServiceStateReply.error_status(node_uuid)
 
             monitor_data: MonitorData = self._to_monitor[service_name].monitor_data
-            dynamic_sidecar_settings = get_settings(self._app)
+            dynamic_sidecar_settings: DynamicSidecarSettings = (
+                self._app.state.dynamic_sidecar_settings
+            )
             services_sidecar_client: DynamicSidecarClient = get_api_client(self._app)
 
             service_state, service_message = await get_dynamic_sidecar_state(
@@ -287,7 +289,9 @@ class DynamicSidecarsMonitor:
                 )
 
     async def _run_monitor_task(self) -> None:
-        dynamic_sidecar_settings = get_settings(self._app)
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            self._app.state.dynamic_sidecar_settings
+        )
 
         while self._keep_running:
             # make sure access to the dict is locked while the monitoring cycle is running
@@ -308,7 +312,9 @@ class DynamicSidecarsMonitor:
         asyncio.get_event_loop().create_task(self._run_monitor_task())
 
         # discover all services which were started before and add them to the monitor
-        dynamic_sidecar_settings: DynamicSidecarSettings = get_settings(self._app)
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            self._app.state.dynamic_sidecar_settings
+        )
         services_to_monitor: Deque[
             ServiceLabelsStoredData
         ] = await get_dynamic_sidecars_to_monitor(dynamic_sidecar_settings)
