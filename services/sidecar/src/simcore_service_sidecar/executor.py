@@ -23,6 +23,7 @@ from simcore_sdk import node_data, node_ports_v2
 from simcore_sdk.node_ports_v2 import DBManager
 
 from . import config, exceptions
+from .boot_mode import BootMode
 from .log_parser import LogType, monitor_logs_task
 from .rabbitmq import RabbitMQ
 from .utils import get_volume_mount_point
@@ -90,6 +91,7 @@ class Executor:
     shared_folders: TaskSharedVolumes = None
     integration_version: version.Version = version.parse("0.0.0")
     service_settings: ServiceSettings = []
+    sidecar_mode: BootMode = BootMode.CPU
 
     @log_decorator(logger=log)
     async def run(self):
@@ -261,7 +263,9 @@ class Executor:
                 "output",
                 "log",
             ]
-        ]
+        ] + [
+            f"SC_COMP_SERVICES_SCHEDULED_AS={self.sidecar_mode.value}"
+        ]  # NOTE: this variable is used by some comp services such as iSolve
 
         host_input_path = await get_volume_mount_point(
             config.SIDECAR_DOCKER_VOLUME_INPUT

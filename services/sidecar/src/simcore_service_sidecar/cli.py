@@ -5,6 +5,7 @@ from typing import Callable, Optional
 import click
 from servicelib.logging_utils import log_decorator
 
+from .boot_mode import BootMode
 from .celery_task_utils import cancel_task
 from .config import SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S
 from .core import run_computational_task
@@ -42,7 +43,7 @@ async def perdiodicaly_check_if_aborted(is_aborted_cb: Callable[[], bool]) -> No
 
 
 @log_decorator(logger=log, level=logging.INFO)
-async def run_sidecar(
+async def run_sidecar(  # pylint: disable=too-many-arguments
     job_id: str,
     user_id: str,
     project_id: str,
@@ -50,6 +51,7 @@ async def run_sidecar(
     is_aborted_cb: Optional[Callable[[], bool]] = None,
     retry: int = 1,
     max_retries: int = 1,
+    sidecar_mode: BootMode = BootMode.CPU,
 ) -> None:
     abortion_task = (
         asyncio.get_event_loop().create_task(
@@ -69,6 +71,7 @@ async def run_sidecar(
                 node_id=node_id,
                 retry=retry,
                 max_retries=max_retries,
+                sidecar_mode=sidecar_mode,
             )
     finally:
         if abortion_task:

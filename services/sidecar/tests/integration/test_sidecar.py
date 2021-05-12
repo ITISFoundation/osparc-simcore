@@ -426,7 +426,6 @@ async def test_run_services(
     pipeline_cfg: Dict,
     user_id: int,
     mocker,
-    mock_boot_mode,
 ):
     """
 
