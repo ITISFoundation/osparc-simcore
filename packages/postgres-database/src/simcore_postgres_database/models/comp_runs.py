@@ -11,7 +11,9 @@ comp_runs = sa.Table(
     "comp_runs",
     metadata,
     # this task db id
-    sa.Column("run_id", sa.BigInteger, nullable=False, primary_key=True),
+    sa.Column(
+        "run_id", sa.BigInteger, nullable=False, autoincrement=True, primary_key=True
+    ),
     sa.Column(
         "project_uuid",
         sa.String,
@@ -34,7 +36,12 @@ comp_runs = sa.Table(
         ),
         nullable=False,
     ),
-    sa.Column("iteration", sa.BigInteger, nullable=False),
+    sa.Column(
+        "iteration",
+        sa.BigInteger,
+        nullable=False,
+        autoincrement=False,
+    ),
     sa.Column(
         "result",
         sa.Enum(StateType),
@@ -53,7 +60,5 @@ comp_runs = sa.Table(
     # utc timestamps for submission/start/end
     sa.Column("start", sa.DateTime),
     sa.Column("end", sa.DateTime),
-    sa.UniqueConstraint(
-        "project_uuid", "user_id", "iteration", name="comp_run_uniqueness"
-    ),
+    sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
 )
