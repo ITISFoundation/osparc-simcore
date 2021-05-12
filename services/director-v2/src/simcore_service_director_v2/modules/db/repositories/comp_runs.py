@@ -80,3 +80,12 @@ class CompRunsRepository(BaseRepository):
                 .returning(literal_column("*"))
             ).first()
             return CompRunsAtDB.from_orm(row)
+
+    async def set_run_result(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: PositiveInt,
+        result_state: RunningState,
+    ) -> CompRunsAtDB:
+        return self.update(user_id, project_id, iteration, result=result_state)
