@@ -54,6 +54,7 @@ def test_registry_settings_error_missing_credentials(user, password):
         "itisfoundation/dynamic-sidecar:merge-github-testbuild-latest",
         "itisfoundation/dynamic-sidecar:1.0.0",
         "local/dynamic-sidecar:0.0.1",
+        "dynamic-sidecar:production",
     ],
 )
 def test_dynamic_sidecar_settings(image: str) -> None:

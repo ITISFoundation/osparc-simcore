@@ -7,7 +7,7 @@ from aiohttp.web import Application
 from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
 from models_library.basic_types import PortInt, BootModeEnum
 
-IMAGE_RE = r"^(local|itisfoundation)/(dynamic-sidecar):([\w]*)"
+IMAGE_RE = r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]*)"
 
 
 class DynamicSidecarSettings(BaseSettings):
