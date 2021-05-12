@@ -62,7 +62,7 @@ reqs: _check_py36_version ## updates requirements of all package libraries
 
 # SEE https://medium.com/faun/set-current-host-user-for-docker-container-4e521cef9ffc
 .PHONY: build	
-build build-nc: ## builds a container which can be used to upgrade depnencies
+build build-nc: ## builds the container (-nc without cache)
 	docker build $(if $(findstring -nc,$@),--no-cache,) --tag local/python-devkit:latest .
 
 
@@ -81,7 +81,7 @@ run: build ## Runs upgrade in a container
 
 
 .PHONY: shell
-shell:	## mount the currrent project inside the container to update the requirements
+shell:	## enter the container with a shell entrypoint
 	docker run -it \
 		--workdir="/home/$(USER)/requirements/tools" \
     --volume="/etc/group:/etc/group:ro" \
