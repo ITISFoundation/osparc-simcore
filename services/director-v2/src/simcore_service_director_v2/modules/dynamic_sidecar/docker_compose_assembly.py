@@ -1,5 +1,6 @@
 from copy import deepcopy
 from typing import Any, Dict, Optional
+from pydantic import PositiveInt
 
 import yaml
 from aiohttp.web import Application
@@ -19,7 +20,7 @@ def _inject_traefik_configuration(
     target_container: str,
     dynamic_sidecar_network_name: str,
     simcore_traefik_zone: str,
-    service_port: int,
+    service_port: PositiveInt,
 ) -> None:
     """Injects configuration to allow the service to be accessible on the uuid.services.SERVICE_DNS"""
 
@@ -96,7 +97,7 @@ async def assemble_spec(
     target_container: Optional[str],
     dynamic_sidecar_network_name: str,
     simcore_traefik_zone: str,
-    service_port: int,
+    service_port: PositiveInt,
 ) -> str:
     """returns a docker-compose spec which will be use by the dynamic-sidecar to start the service """
     settings: DynamicSidecarSettings = get_settings(app)
