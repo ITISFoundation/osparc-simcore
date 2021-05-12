@@ -55,18 +55,19 @@ class CompRunsRepository(BaseRepository):
                     )
                     .order_by(desc(comp_runs.c.iteration))
                 )
-                iteration = last_iteration or 1
+                iteration = (last_iteration or 1) + 1
 
-            row: RowProxy = await conn.execute(
-                sa.insert(comp_runs)
+            result = await conn.execute(
+                comp_runs.insert()  # pylint: disable=no-value-for-parameter
                 .values(
                     user_id=user_id,
-                    project_uuid=project_id,
+                    project_uuid=str(project_id),
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
                 )
                 .returning(literal_column("*"))
-            ).first()
+            )
+            row = await result.first()
             return CompRunsAtDB.from_orm(row)
 
     async def update(
