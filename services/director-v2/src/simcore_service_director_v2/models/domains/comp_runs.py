@@ -12,7 +12,7 @@ from ..schemas.constants import UserID
 
 class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
-    project_id: ProjectID
+    project_uuid: ProjectID
     user_id: UserID
     iteration: PositiveInt
     result: RunningState
