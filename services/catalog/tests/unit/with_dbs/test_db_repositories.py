@@ -4,7 +4,7 @@
 
 import itertools
 import random
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Tuple
 
 import pytest
 from aiopg.sa.engine import Engine
@@ -38,31 +38,35 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture()
-async def products_names(aiopg_engine: Engine) -> List[str]:
+async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
     """ products created in postgres db """
     data = [
-        ("osparc", r"([\.-]{0,1}osparc[\.-])"),
+        # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
         ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
         ("tis", r"(^tis[\.-])|(^ti-solutions\.)"),
     ]
+
     # pylint: disable=no-value-for-parameter
-    stmt = products.insert().values([{"name": n, "host_regex": r} for n, r in data])
 
     async with aiopg_engine.acquire() as conn:
-        await conn.execute(stmt)
+        # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
+        for name, regex in data:
+            stmt = products.insert().values(name=name, host_regex=regex)
+            await conn.execute(stmt)
 
-    yield [items[0] for items in data]
+    names = [
+        "osparc",
+    ] + [items[0] for items in data]
+    yield names
 
     async with aiopg_engine.acquire() as conn:
         await conn.execute(products.delete())
 
 
 @pytest.fixture()
-async def user_groups_ids(aiopg_engine: Engine) -> List[int]:
+async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
-
     data = [
-        (1, "Everyone", "all users", "EVERYONE", None, {}),
         (34, "john.smith", "primary group for user", "PRIMARY", None, {}),
         (
             20001,
@@ -75,15 +79,21 @@ async def user_groups_ids(aiopg_engine: Engine) -> List[int]:
     ]
     # pylint: disable=no-value-for-parameter
 
-    stmt = groups.insert().values([dict(zip(cols, row)) for row in data])
+    async with aiopg_engine.acquire() as conn:
+        for row in data:
+            # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
+            stmt = groups.insert().values(**dict(zip(cols, row)))
+            await conn.execute(stmt)
+
+    gids = [
+        1,
+    ] + [items[0] for items in data]
+
+    yield gids
 
     async with aiopg_engine.acquire() as conn:
-        await conn.execute(stmt)
-
-    yield [items[0] for items in data]
-
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(groups.delete())
+        await conn.execute(services_meta_data.delete())
+        await conn.execute(groups.delete().where(groups.c.gid.in_(gids[1:])))
 
 
 @pytest.fixture()
@@ -92,15 +102,16 @@ async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
 
     async def inject_in_db(fake_catalog: List[Tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
-        services = [items[0] for items in fake_catalog]
-        access_rights = list(itertools.chain(items[1:] for items in fake_catalog))
-
-        stmt_meta = services_meta_data.insert().values(services)
-        stmt_access = services_access_rights.insert().values(access_rights)
 
         async with aiopg_engine.acquire() as conn:
-            await conn.execute(stmt_meta)
-            await conn.execute(stmt_access)
+            # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
+            for service in [items[0] for items in fake_catalog]:
+                stmt_meta = services_meta_data.insert().values(**service)
+                await conn.execute(stmt_meta)
+
+            for access_rights in itertools.chain(items[1:] for items in fake_catalog):
+                stmt_access = services_access_rights.insert().values(access_rights)
+                await conn.execute(stmt_access)
 
     yield inject_in_db
 
@@ -125,7 +136,7 @@ async def service_catalog_faker(
     def _random_service(**overrides) -> Dict[str, Any]:
         data = dict(
             key=f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
-            version=".".join([faker.pyint() for _ in range(3)]),
+            version=".".join([str(faker.pyint()) for _ in range(3)]),
             owner=user_gid,
             name=faker.name(),
             description=faker.sentence(),
@@ -149,14 +160,18 @@ async def service_catalog_faker(
         return data
 
     def _create_fakes(
-        key, version, team_access=None, everyone_access=None
+        key, version, team_access=None, everyone_access=None, product=products_names[0]
     ) -> Tuple[Dict[str, Any], ...]:
 
         service = _random_service(key=key, version=version)
 
         # owner always has full-access
         owner_access = _random_access(
-            service, gid=service["owner"], execute_access=True, write_access=True
+            service,
+            gid=service["owner"],
+            execute_access=True,
+            write_access=True,
+            product_name=product,
         )
 
         fakes = [
@@ -170,6 +185,7 @@ async def service_catalog_faker(
                     gid=team_gid,
                     execute_access="x" in team_access,
                     write_access="w" in team_access,
+                    product_name=product,
                 )
             )
         if everyone_access:
@@ -179,6 +195,7 @@ async def service_catalog_faker(
                     gid=everyone_gid,
                     execute_access="x" in everyone_access,
                     write_access="w" in everyone_access,
+                    product_name=product,
                 )
             )
         return tuple(fakes)
@@ -220,9 +237,11 @@ async def test_create_services(
 async def test_read_services(
     services_repo: ServicesRepository,
     user_groups_ids: List[int],
+    products_names: List[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
 ):
+    target_product = products_names[-1]
 
     # injects fake data in db
     await services_db_tables_injector(
@@ -232,12 +251,14 @@ async def test_read_services(
                 "1.0.0",
                 team_access=None,
                 everyone_access=None,
+                product=target_product,
             ),
             service_catalog_faker(
                 "simcore/services/dynamic/jupyterlab",
                 "1.0.2",
                 team_access="x",
                 everyone_access=None,
+                product=target_product,
             ),
         ]
     )
@@ -247,6 +268,7 @@ async def test_read_services(
     assert len(services) == 2
 
     everyone_gid, user_gid, team_gid = user_groups_ids
+    assert everyone_gid == 1
 
     services = await services_repo.list_services(
         gids=[
@@ -269,20 +291,20 @@ async def test_read_services(
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
-        **service.dict(include={"key", "version", "product"})
+        product_name=target_product, **service.dict(include={"key", "version"})
     )
     assert {
         user_gid,
     } == {a.gid for a in access_rights}
 
-    # get 1.0.1
+    # get patched version
     service = await services_repo.get_service(
-        "simcore/services/dynamic/jupyterlab", "1.0.1"
+        "simcore/services/dynamic/jupyterlab", "1.0.2"
     )
     assert service
 
     access_rights = await services_repo.get_service_access_rights(
-        **service.dict(include={"key", "version", "product"})
+        product_name=target_product, **service.dict(include={"key", "version"})
     )
     assert {user_gid, team_gid} == {a.gid for a in access_rights}
 
