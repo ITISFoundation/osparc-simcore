@@ -424,7 +424,6 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
                 "name": "sim4life",
                 "description": "s4l web",
                 "thumbnail": "http://thumbnailit.org/image",
-                "classifiers": "",
                 "created": "2021-01-18 12:46:57.7315",
                 "modified": "2021-01-19 12:45:00",
                 "quality": {
