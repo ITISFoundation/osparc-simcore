@@ -200,7 +200,7 @@ async def test_start(
                 assert response.status_code == 200, response.text
                 data = response.json()
                 status_is_not_running = data.get("service_state", "") != "running"
-            except Exception:  # pylint: disbale=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logger.exception("Something happend during request")
 
         # give the service some time to keep up
