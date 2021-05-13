@@ -192,13 +192,16 @@ async def test_start(
     async with timeout(SERVICE_IS_READY_TIMEOUT):
         status_is_not_running = True
         while status_is_not_running:
-            response: Response = await test_client.post(
-                f"/v2/dynamic_services/{node_uuid}:status", json=start_request_data
-            )
-            logger.warning("sidecar :status result %s", response.text)
-            assert response.status_code == 200, response.text
-            data = response.json()
-            status_is_not_running = data.get("service_state", "") != "running"
+            try:
+                response: Response = await test_client.post(
+                    f"/v2/dynamic_services/{node_uuid}:status", json=start_request_data
+                )
+                logger.warning("sidecar :status result %s", response.text)
+                assert response.status_code == 200, response.text
+                data = response.json()
+                status_is_not_running = data.get("service_state", "") != "running"
+            except Exception:  # pylint: disbale=broad-except
+                logger.exception("Something happend during request")
 
         # give the service some time to keep up
         await asyncio.sleep(1)
