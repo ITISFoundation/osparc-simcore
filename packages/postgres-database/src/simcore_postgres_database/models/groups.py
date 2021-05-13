@@ -15,9 +15,9 @@ from .base import metadata
 
 class GroupType(enum.Enum):
     """
-        standard: standard group, e.g. any group that is not a primary group or special group such as the everyone group
-        primary: primary group, e.g. the primary group is the user own defined group that typically only contain the user (same as in linux)
-        everyone: the only group for all users
+    standard: standard group, e.g. any group that is not a primary group or special group such as the everyone group
+    primary: primary group, e.g. the primary group is the user own defined group that typically only contain the user (same as in linux)
+    everyone: the only group for all users
     """
 
     STANDARD = "standard"
@@ -29,22 +29,54 @@ class GroupType(enum.Enum):
 groups = sa.Table(
     "groups",
     metadata,
-    sa.Column("gid", sa.BigInteger, nullable=False, primary_key=True),
-    sa.Column("name", sa.String, nullable=False),
-    sa.Column("description", sa.String, nullable=False),
-    sa.Column("type", sa.Enum(GroupType), nullable=False, server_default="STANDARD"),
-    sa.Column("thumbnail", sa.String, nullable=True),
-    sa.Column("inclusion_rules", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")),
-    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "gid",
+        sa.BigInteger,
+        nullable=False,
+        primary_key=True,
+        doc="Group unique IDentifier",
+    ),
+    sa.Column("name", sa.String, nullable=False, doc="Group label"),
+    sa.Column("description", sa.String, nullable=False, doc="Short description"),
+    sa.Column(
+        "type",
+        sa.Enum(GroupType),
+        nullable=False,
+        server_default="STANDARD",
+        doc="Classification of the group based on GroupType enum",
+    ),
+    sa.Column(
+        "thumbnail",
+        sa.String,
+        nullable=True,
+        doc="Link to thumbnail image to use as logo",
+    ),
+    sa.Column(
+        "inclusion_rules",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Maps user's column and regular expression."
+        "Used to automatically assign a user to this group based on it's attributes",
+    ),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
+        doc="Timestamp with last row update",
     ),
     sa.CheckConstraint("check_group_uniqueness(name, text(type)) = 0"),
 )
+
 
 user_to_groups = sa.Table(
     "user_to_groups",
@@ -58,6 +90,7 @@ user_to_groups = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        doc="User unique IDentifier",
     ),
     sa.Column(
         "gid",
@@ -68,6 +101,7 @@ user_to_groups = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        doc="Group unique IDentifier",
     ),
     sa.Column(
         "access_rights",
@@ -76,14 +110,22 @@ user_to_groups = sa.Table(
         server_default=sa.text(
             '\'{"read": true, "write": false, "delete": false}\'::jsonb'
         ),
+        doc="Group's access-rights to R/W/D a resource",
     ),
-    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+        doc="Timestamp with last row update",
     ),
     sa.UniqueConstraint("uid", "gid"),
 )
