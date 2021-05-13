@@ -65,6 +65,7 @@ class ServicesRepository(BaseRepository):
 
     async def list_services(
         self,
+        *,
         gids: Optional[List[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
@@ -90,6 +91,7 @@ class ServicesRepository(BaseRepository):
         self,
         key: str,
         version: str,
+        *,
         gids: Optional[List[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,

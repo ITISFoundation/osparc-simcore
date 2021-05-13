@@ -9,11 +9,7 @@ from typing import Any, Callable, Dict, List, Tuple
 import pytest
 from aiopg.sa.engine import Engine
 from faker import Faker
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceGroupAccessRights,
-    ServiceMetaDataAtDB,
-)
+from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from simcore_postgres_database.models.products import products
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.db.tables import (
@@ -91,6 +87,29 @@ async def user_groups_ids(aiopg_engine: Engine) -> List[int]:
 
 
 @pytest.fixture()
+async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
+    # pylint: disable=no-value-for-parameter
+
+    async def inject_in_db(fake_catalog: List[Tuple]):
+        # [(service, ar1, ...), (service2, ar1, ...) ]
+        services = [items[0] for items in fake_catalog]
+        access_rights = list(itertools.chain(items[1:] for items in fake_catalog))
+
+        stmt_meta = services_meta_data.insert().values(services)
+        stmt_access = services_access_rights.insert().values(access_rights)
+
+        async with aiopg_engine.acquire() as conn:
+            await conn.execute(stmt_meta)
+            await conn.execute(stmt_access)
+
+    yield inject_in_db
+
+    async with aiopg_engine.acquire() as conn:
+        await conn.execute(services_access_rights.delete())
+        await conn.execute(services_meta_data.delete())
+
+
+@pytest.fixture()
 async def service_catalog_faker(
     user_groups_ids: List[int],
     products_names: List[str],
@@ -103,7 +122,7 @@ async def service_catalog_faker(
     """
     everyone_gid, user_gid, team_gid = user_groups_ids
 
-    def _create_random_service(**overrides) -> Dict[str, Any]:
+    def _random_service(**overrides) -> Dict[str, Any]:
         data = dict(
             key=f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
             version=".".join([faker.pyint() for _ in range(3)]),
@@ -117,7 +136,7 @@ async def service_catalog_faker(
         data.update(overrides)
         return data
 
-    def _create_random_access(service, **overrides) -> Dict[str, Any]:
+    def _random_access(service, **overrides) -> Dict[str, Any]:
         data = dict(
             key=service["key"],
             version=service["version"],
@@ -129,24 +148,24 @@ async def service_catalog_faker(
         data.update(overrides)
         return data
 
-    def _create_fake(
+    def _create_fakes(
         key, version, team_access=None, everyone_access=None
     ) -> Tuple[Dict[str, Any], ...]:
 
-        service = _create_random_service(key=key, version=version)
+        service = _random_service(key=key, version=version)
 
         # owner always has full-access
-        owner_access = _create_random_access(
+        owner_access = _random_access(
             service, gid=service["owner"], execute_access=True, write_access=True
         )
 
-        entry = [
+        fakes = [
             service,
             owner_access,
         ]
         if team_access:
-            entry.append(
-                _create_random_access(
+            fakes.append(
+                _random_access(
                     service,
                     gid=team_gid,
                     execute_access="x" in team_access,
@@ -154,123 +173,17 @@ async def service_catalog_faker(
                 )
             )
         if everyone_access:
-            entry.append(
-                _create_random_access(
+            fakes.append(
+                _random_access(
                     service,
                     gid=everyone_gid,
                     execute_access="x" in everyone_access,
                     write_access="w" in everyone_access,
                 )
             )
-        return tuple(entry)
+        return tuple(fakes)
 
-    return _create_fake
-
-
-@pytest.fixture()
-async def services_catalog(
-    aiopg_engine: Engine,
-    user_groups_ids: List[int],
-    products_names: List[str],
-    faker: Faker,
-) -> List:
-
-    everyone_gid, user_gid, team_gid = user_groups_ids
-
-    def _create_random_service(**overrides) -> Dict[str, Any]:
-        data = dict(
-            key=f"simcore/services/{random.choice(['dynamic', 'computational'])}/{faker.name()}",
-            version=".".join([faker.pyint() for _ in range(3)]),
-            owner=user_gid,
-            name=faker.name(),
-            description=faker.sentence(),
-            thumbnail=random.choice([faker.image_url(), None]),
-            classifiers=[],
-            quality={},
-        )
-        data.update(overrides)
-        return data
-
-    def _create_random_access(service, **overrides) -> Dict[str, Any]:
-        data = dict(
-            key=service["key"],
-            version=service["version"],
-            gid=random.choice(user_groups_ids),
-            execute_access=faker.pybool(),
-            write_access=faker.pybool(),
-            product_name=random.choice(products_names),
-        )
-        data.update(overrides)
-        return data
-
-    def _new_catalog_entry(
-        key, version, team_access=None, everyone_access=None
-    ) -> Tuple[Dict[str, Any], ...]:
-        """ helper to create service entry """
-
-        service = _create_random_service(key=key, version=version)
-
-        # owner always has full-access
-        owner_access = _create_random_access(
-            service, gid=service["owner"], execute_access=True, write_access=True
-        )
-
-        entry = [
-            service,
-            owner_access,
-        ]
-        if team_access:
-            entry.append(
-                _create_random_access(
-                    service,
-                    gid=team_gid,
-                    execute_access="x" in team_access,
-                    write_access="w" in team_access,
-                )
-            )
-        if everyone_access:
-            entry.append(
-                _create_random_access(
-                    service,
-                    gid=everyone_gid,
-                    execute_access="x" in everyone_access,
-                    write_access="w" in everyone_access,
-                )
-            )
-        return tuple(entry)
-
-    # ---
-
-    fake_catalog = [
-        _new_catalog_entry(
-            "simcore/services/dynamic/jupyterlab",
-            "1.0.0",
-            team_access=None,
-            everyone_access=None,
-        ),
-        _new_catalog_entry(
-            "simcore/services/dynamic/jupyterlab",
-            "1.0.2",
-            team_access="x",
-            everyone_access=None,
-        ),
-    ]
-
-    # pylint: disable=no-value-for-parameter
-    stmt_meta = services_meta_data.insert().values([items[0] for items in fake_catalog])
-    stmt_access = services_access_rights.insert().values(
-        list(itertools.chain(items[1:] for items in fake_catalog))
-    )
-
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(stmt_meta)
-        await conn.execute(stmt_access)
-
-    yield fake_catalog
-
-    async with aiopg_engine.acquire() as conn:
-        await conn.execute(services_access_rights.delete())
-        await conn.execute(services_meta_data.delete())
+    return _create_fakes
 
 
 @pytest.fixture
@@ -279,7 +192,12 @@ def services_repo(aiopg_engine):
     return repo
 
 
-async def test_create_service(services_repo, service_catalog_faker):
+# TESTS ----------------
+
+
+async def test_create_services(
+    services_repo: ServicesRepository, service_catalog_faker: Callable
+):
     # creates fake data
     fake_service, *fake_access_rights = service_catalog_faker(
         "simcore/services/dynamic/jupyterlab",
@@ -299,11 +217,74 @@ async def test_create_service(services_repo, service_catalog_faker):
     assert new_service.dict(include=set(fake_service.keys())) == service.dict()
 
 
-async def test_read_services(aiopg_engine, services_catalog):
+async def test_read_services(
+    services_repo: ServicesRepository,
+    user_groups_ids: List[int],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+):
 
-    await repo.list_services()
+    # injects fake data in db
+    await services_db_tables_injector(
+        [
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "1.0.0",
+                team_access=None,
+                everyone_access=None,
+            ),
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "1.0.2",
+                team_access="x",
+                everyone_access=None,
+            ),
+        ]
+    )
 
-    await repo.get_service()
+    # list
+    services = await services_repo.list_services()
+    assert len(services) == 2
+
+    everyone_gid, user_gid, team_gid = user_groups_ids
+
+    services = await services_repo.list_services(
+        gids=[
+            user_gid,
+        ]
+    )
+    assert len(services) == 2
+
+    services = await services_repo.list_services(
+        gids=[
+            team_gid,
+        ]
+    )
+    assert len(services) == 1
+
+    # get 1.0.0
+    service = await services_repo.get_service(
+        "simcore/services/dynamic/jupyterlab", "1.0.0"
+    )
+    assert service
+
+    access_rights = await services_repo.get_service_access_rights(
+        **service.dict(include={"key", "version", "product"})
+    )
+    assert {
+        user_gid,
+    } == {a.gid for a in access_rights}
+
+    # get 1.0.1
+    service = await services_repo.get_service(
+        "simcore/services/dynamic/jupyterlab", "1.0.1"
+    )
+    assert service
+
+    access_rights = await services_repo.get_service_access_rights(
+        **service.dict(include={"key", "version", "product"})
+    )
+    assert {user_gid, team_gid} == {a.gid for a in access_rights}
 
 
 @pytest.mark.skip(reason="dev")
