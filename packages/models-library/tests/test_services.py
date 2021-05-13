@@ -14,6 +14,7 @@ from models_library.services import (
     ServiceCommonData,
     ServiceDockerData,
     ServiceInput,
+    ServiceMetaData,
     ServiceMetaDataAtDB,
     ServiceOutput,
 )
@@ -170,7 +171,7 @@ def test_service_key_regex_patterns(service_key, regex_pattern):
 
 @pytest.mark.parametrize(
     "model_cls",
-    (ServiceAccessRightsAtDB, ServiceMetaDataAtDB),
+    (ServiceAccessRightsAtDB, ServiceMetaDataAtDB, ServiceMetaData),
 )
 def test_services_model_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():

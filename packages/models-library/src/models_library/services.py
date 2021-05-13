@@ -365,7 +365,7 @@ class ServiceAccessRights(BaseModel):
 
 class ServiceMetaData(ServiceCommonData):
     # Overrides all fields of ServiceCommonData:
-    #    - for a partial update all members must be Optional
+    #    - for a partial update all members must be Optional FIXME: create a different model for updates!
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]
@@ -373,6 +373,34 @@ class ServiceMetaData(ServiceCommonData):
     # user-defined metatada
     classifiers: Optional[List[str]]
     quality: Dict[str, Any] = {}
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "version": "1.0.9",
+                "name": "sim4life",
+                "description": "s4l web",
+                "thumbnail": "http://thumbnailit.org/image",
+                "quality": {
+                    "enabled": True,
+                    "tsr_target": {
+                        f"r{n:02d}": {"level": 4, "references": ""}
+                        for n in range(1, 11)
+                    },
+                    "annotations": {
+                        "vandv": "",
+                        "limitations": "",
+                        "certificationLink": "",
+                        "certificationStatus": "Uncertified",
+                    },
+                    "tsr_current": {
+                        f"r{n:02d}": {"level": 0, "references": ""}
+                        for n in range(1, 11)
+                    },
+                },
+            }
+        }
 
 
 # -------------------------------------------------------------------
