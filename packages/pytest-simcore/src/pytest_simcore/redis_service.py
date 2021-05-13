@@ -26,7 +26,9 @@ def loop(request) -> Iterator[asyncio.AbstractEventLoop]:
 
 @pytest.fixture(scope="module")
 async def redis_config(loop, docker_stack: Dict, devel_environ: Dict) -> RedisConfig:
-    assert "simcore_redis" in docker_stack["services"]
+    prefix = devel_environ["SWARM_STACK_NAME"]
+    assert f"{prefix}_redis" in docker_stack["services"]
+
     # test runner is running on the host computer
     config = RedisConfig(
         host="127.0.0.1",

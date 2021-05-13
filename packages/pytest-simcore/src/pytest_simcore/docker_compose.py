@@ -46,9 +46,9 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     env_devel["REGISTRY_USER"] = "simcore"
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
-    env_devel[
-        "SWARM_STACK_NAME"
-    ] = "pytest-simcore"  # CAREFUL! FIXME: monkeypatch autouse
+    # CAREFUL! FIXME: monkeypatch autouse
+    env_devel["SWARM_STACK_NAME"] = "pytest-simcore"
+    #
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
     env_devel["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
 

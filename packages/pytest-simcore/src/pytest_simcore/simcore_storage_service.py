@@ -17,7 +17,9 @@ from .helpers.utils_docker import get_service_published_port
 
 @pytest.fixture(scope="module")
 def storage_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
-    assert "simcore_storage" in docker_stack["services"]
+    prefix = devel_environ["SWARM_STACK_NAME"]
+    assert f"{prefix}_storage" in docker_stack["services"]
+
     default_port = devel_environ["STORAGE_ENDPOINT"].split(":")[1]
     endpoint = f"127.0.0.1:{get_service_published_port('storage', default_port)}"
 

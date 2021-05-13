@@ -29,7 +29,9 @@ def loop(request) -> asyncio.AbstractEventLoop:
 async def rabbit_config(
     loop: asyncio.AbstractEventLoop, docker_stack: Dict, devel_environ: Dict
 ) -> RabbitConfig:
-    assert "simcore_rabbit" in docker_stack["services"]
+    prefix = devel_environ["SWARM_STACK_NAME"]
+    assert f"{prefix}_rabbit" in docker_stack["services"]
+
     rabbit_config = RabbitConfig(
         user=devel_environ["RABBIT_USER"],
         password=devel_environ["RABBIT_PASSWORD"],

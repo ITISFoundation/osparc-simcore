@@ -10,7 +10,6 @@ import celery.bin.celery
 import celery.platforms
 import pytest
 import tenacity
-
 from servicelib.celery_utils import CeleryRetryPolicyUponInitialization
 
 from .helpers.utils_docker import get_service_published_port
@@ -18,7 +17,8 @@ from .helpers.utils_docker import get_service_published_port
 
 @pytest.fixture(scope="module")
 def celery_config(docker_stack: Dict, devel_environ: Dict) -> Dict:
-    assert "simcore_rabbit" in docker_stack["services"]
+    prefix = devel_environ["SWARM_STACK_NAME"]
+    assert f"{prefix}_rabbit" in docker_stack["services"]
 
     config = {
         "host": "127.0.0.1",

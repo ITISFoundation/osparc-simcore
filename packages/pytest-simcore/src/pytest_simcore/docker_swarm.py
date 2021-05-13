@@ -95,11 +95,15 @@ def docker_stack(
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
+    devel_environ: Dict,
 ) -> Iterator[Dict]:
+
+    core_stack_name = devel_environ["SWARM_STACK_NAME"]
+    assert core_stack_name.startswith("pytest-")
 
     # WARNING: keep prefix "pytest-" in stack names
     stacks = {
-        "pytest-simcore": core_docker_compose_file,
+        core_stack_name: core_docker_compose_file,
         "pytest-ops": ops_docker_compose_file,
     }
 
