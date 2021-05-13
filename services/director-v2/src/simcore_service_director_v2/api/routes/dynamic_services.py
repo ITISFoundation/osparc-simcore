@@ -1,45 +1,42 @@
 import logging
+from pprint import pformat
+from typing import Any, Dict
 from uuid import UUID
 
 import httpx
-from pprint import pformat
-from typing import Dict, Any
 from fastapi import APIRouter, Depends
-
 from starlette import status
 from starlette.datastructures import URL
 
 from ...models.domains.dynamic_services import RetrieveDataIn, RetrieveDataOutEnveloped
+from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
+from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
+from ...modules.dynamic_sidecar.constants import (
+    DYNAMIC_SIDECAR_PREFIX,
+    SERVICE_NAME_PROXY,
+    SERVICE_NAME_SIDECAR,
+)
+from ...modules.dynamic_sidecar.docker_utils import (
+    create_network,
+    create_service_and_get_id,
+    get_node_id_from_task_for_service,
+    get_swarm_network,
+    inspect_service,
+)
+from ...modules.dynamic_sidecar.monitor import DynamicSidecarsMonitor, get_monitor
+from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
+from ...modules.dynamic_sidecar.service_specs import (
+    assemble_service_name,
+    dyn_proxy_entrypoint_assembly,
+    dynamic_sidecar_assembly,
+    extract_service_port_from_compose_start_spec,
+)
 from ...utils.logging_utils import log_decorator
 from ..dependencies.dynamic_services import (
     ServicesClient,
     get_service_base_url,
     get_services_client,
 )
-from ...modules.dynamic_sidecar.monitor import get_monitor, DynamicSidecarsMonitor
-
-
-from ...models.domains.dynamic_sidecar import StartDynamicSidecarModel
-from ...modules.dynamic_sidecar.service_specs import (
-    assemble_service_name,
-    extract_service_port_from_compose_start_spec,
-    dynamic_sidecar_assembly,
-    dyn_proxy_entrypoint_assembly,
-)
-from ...modules.dynamic_sidecar.config import DynamicSidecarSettings, get_settings
-from ...modules.dynamic_sidecar.constants import (
-    SERVICE_NAME_PROXY,
-    SERVICE_NAME_SIDECAR,
-    DYNAMIC_SIDECAR_PREFIX,
-)
-from ...modules.dynamic_sidecar.docker_utils import (
-    create_network,
-    create_service_and_get_id,
-    inspect_service,
-    get_swarm_network,
-    get_node_id_from_task_for_service,
-)
-from ...modules.dynamic_sidecar.monitor.models import ServiceStateReply
 
 router = APIRouter()
 log = logging.getLogger(__file__)

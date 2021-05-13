@@ -2,19 +2,17 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import Dict, Any
-from uuid import uuid4
 import os
+from typing import Any, Dict
+from uuid import uuid4
 
 import aiodocker
-from pydantic import PositiveInt
 import pytest
-from async_timeout import timeout
-from fastapi import FastAPI
-
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
-
+from async_timeout import timeout
+from fastapi import FastAPI
+from pydantic import PositiveInt
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 from simcore_service_director_v2.modules.dynamic_sidecar.config import (

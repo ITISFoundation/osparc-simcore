@@ -19,8 +19,8 @@ from ..modules import (
     director_v0,
     docker_registry,
     dynamic_services,
+    dynamic_sidecar,
     remote_debug,
-    dynamic_sidecar
 )
 from ..utils.logging_utils import config_all_loggers
 from .events import on_shutdown, on_startup

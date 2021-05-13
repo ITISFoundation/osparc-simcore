@@ -1,12 +1,11 @@
 # pylint: disable=redefined-outer-name
 
-from typing import Set, Dict
+from typing import Dict, Set
 
 import pytest
-
 from simcore_service_director_v2.modules.dynamic_sidecar.parse_docker_status import (
-    ServiceState,
     _SERVICE_STATE_COMPARISON_ORDER,
+    ServiceState,
     extract_containers_minimim_statuses,
 )
 

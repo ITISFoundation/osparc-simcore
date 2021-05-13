@@ -9,7 +9,6 @@ from simcore_service_director_v2.core.settings import (
     BootModeEnum,
     RegistrySettings,
 )
-
 from simcore_service_director_v2.modules.dynamic_sidecar.config import (
     DynamicSidecarSettings,
 )

@@ -3,10 +3,11 @@
 
 from pathlib import Path
 from typing import Optional
+
 from fastapi import FastAPI, Request
-from pydantic import BaseSettings, Field, PositiveInt, PositiveFloat
-from models_library.basic_types import PortInt, BootModeEnum
+from models_library.basic_types import BootModeEnum, PortInt
 from models_library.services import SERVICE_NETWORK_RE
+from pydantic import BaseSettings, Field, PositiveFloat, PositiveInt
 
 IMAGE_RE = r"(^(local|itisfoundation)/)?(dynamic-sidecar):([\w]*)"
 

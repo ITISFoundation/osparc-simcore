@@ -2,10 +2,9 @@
 States from Docker Tasks and docker Containers are mapped to ServiceState.
 """
 import logging
-
 from enum import Enum
 from functools import total_ordering
-from typing import Set, Dict, Tuple
+from typing import Dict, Set, Tuple
 
 logger = logging.getLogger(__name__)
 

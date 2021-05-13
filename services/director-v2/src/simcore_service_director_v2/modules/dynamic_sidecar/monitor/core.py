@@ -11,31 +11,31 @@ import logging
 from asyncio import Lock, sleep
 from typing import Deque, Dict, Optional
 
-from fastapi import FastAPI, Request
 from async_timeout import timeout
+from fastapi import FastAPI, Request
 
+from ....models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 from ..config import DynamicSidecarSettings
 from ..docker_utils import (
-    get_dynamic_sidecars_to_monitor,
-    get_dynamic_sidecar_state,
     ServiceLabelsStoredData,
+    get_dynamic_sidecar_state,
+    get_dynamic_sidecars_to_monitor,
 )
 from ..exceptions import DynamicSidecarError
+from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
+from .dynamic_sidecar_api import (
+    DynamicSidecarClient,
+    get_api_client,
+    update_dynamic_sidecar_health,
+)
 from .handlers import REGISTERED_EVENTS
 from .models import (
+    DynamicSidecarStatus,
     LockWithMonitorData,
     MonitorData,
-    DynamicSidecarStatus,
     ServiceStateReply,
 )
-from .dynamic_sidecar_api import (
-    update_dynamic_sidecar_health,
-    get_api_client,
-    DynamicSidecarClient,
-)
 from .utils import AsyncResourceLock
-from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
-from ..parse_docker_status import ServiceState, extract_containers_minimim_statuses
 
 logger = logging.getLogger(__name__)
 

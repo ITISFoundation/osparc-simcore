@@ -1,11 +1,11 @@
 import json
+import logging
+import os
 
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import sys
-import os
-import logging
 from pathlib import Path
 from typing import Any, Dict
 

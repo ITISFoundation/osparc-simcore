@@ -3,13 +3,13 @@ import logging
 from enum import Enum
 from typing import List, Optional
 
+from models_library.basic_regex import VERSION_RE
+from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, PositiveInt
 
-from .utils import AsyncResourceLock
-from ....models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
-from models_library.services import SERVICE_KEY_RE
-from models_library.basic_regex import VERSION_RE
+from ....models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 from ..parse_docker_status import ServiceState
+from .utils import AsyncResourceLock
 
 logger = logging.getLogger()
 

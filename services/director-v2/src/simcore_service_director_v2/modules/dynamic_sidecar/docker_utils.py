@@ -1,23 +1,23 @@
 # wraps all calls to underlying docker engine
 import asyncio
+import json
 import logging
 import time
-import json
-from typing import Any, Deque, Dict, Tuple, Set, Optional
+from typing import Any, Deque, Dict, Optional, Set, Tuple
 
 import aiodocker
 from asyncio_extras import async_contextmanager
 
+from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 from .config import DynamicSidecarSettings
-from .constants import SERVICE_NAME_SIDECAR, DYNAMIC_SIDECAR_PREFIX
+from .constants import DYNAMIC_SIDECAR_PREFIX, SERVICE_NAME_SIDECAR
+from .exceptions import DynamicSidecarError, GenericDockerError
 from .parse_docker_status import (
-    ServiceState,
-    extract_task_state,
     TASK_STATES_ALL,
     TASK_STATES_RUNNING,
+    ServiceState,
+    extract_task_state,
 )
-from .exceptions import GenericDockerError, DynamicSidecarError
-from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 
 log = logging.getLogger(__name__)
 

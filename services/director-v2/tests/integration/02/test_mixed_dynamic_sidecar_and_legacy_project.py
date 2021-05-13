@@ -3,19 +3,18 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
-from typing import Dict, Callable
+from typing import Callable, Dict
 from uuid import uuid4
 
-import pytest
 import aiodocker
+import pytest
 import sqlalchemy as sa
 from async_timeout import timeout
-from yarl import URL
 from httpx import AsyncClient
 from models_library.projects import ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
-
+from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "director",

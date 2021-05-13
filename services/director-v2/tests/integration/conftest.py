@@ -1,17 +1,17 @@
 # pylint:disable=no-value-for-parameter
 # pylint:disable=redefined-outer-name
 
-import pytest
 from random import randint
-from typing import Dict, Callable
+from typing import Callable, Dict
 from uuid import uuid4
 
+import pytest
 import sqlalchemy as sa
-from sqlalchemy import literal_column
-from pydantic.types import PositiveInt
-from simcore_postgres_database.models.users import UserRole, UserStatus, users
-from simcore_postgres_database.models.projects import ProjectType, projects
 from models_library.projects import ProjectAtDB
+from pydantic.types import PositiveInt
+from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.users import UserRole, UserStatus, users
+from sqlalchemy import literal_column
 
 
 @pytest.fixture

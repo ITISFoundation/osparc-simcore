@@ -1,12 +1,12 @@
 from copy import deepcopy
 from typing import Any, Dict, Optional
+
+import yaml
 from fastapi.applications import FastAPI
 from pydantic import PositiveInt
 
-import yaml
-
+from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
 from .config import DynamicSidecarSettings
-from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
 
 CONTAINER_NAME = "container"
 BASE_SERVICE_SPEC: Dict[str, Any] = {

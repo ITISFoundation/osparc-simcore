@@ -5,14 +5,14 @@ from typing import Any, Dict, List
 from fastapi import FastAPI
 
 from ..docker_compose_assembly import assemble_spec
+from .dynamic_sidecar_api import get_api_client
 from .handlers_base import MonitorEvent
 from .models import (
     DockerContainerInspect,
     DockerStatus,
-    MonitorData,
     DynamicSidecarStatus,
+    MonitorData,
 )
-from .dynamic_sidecar_api import get_api_client
 
 logger = logging.getLogger(__name__)
 

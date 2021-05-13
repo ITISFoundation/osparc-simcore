@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
+from models_library.basic_regex import VERSION_RE
+from models_library.projects import ProjectID
+from models_library.services import SERVICE_KEY_RE
 from pydantic import BaseModel, Field, validator
 
 from ..schemas.constants import UserID
-from models_library.projects import ProjectID
-from models_library.services import SERVICE_KEY_RE
-from models_library.basic_regex import VERSION_RE
-
 
 ComposeSpecModel = Optional[Dict[str, Any]]
 

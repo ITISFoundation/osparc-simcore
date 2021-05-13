@@ -1,19 +1,16 @@
-import logging
 import json
+import logging
 from typing import Any, Dict, List, Optional
-
 from uuid import UUID
 
-
 from models_library.projects import ProjectID
-from ...models.schemas.constants import UserID
 
+from ...models.domains.dynamic_sidecar import ComposeSpecModel, PathsMappingModel
+from ...models.schemas.constants import UserID
 from .config import DynamicSidecarSettings
 from .constants import DYNAMIC_SIDECAR_PREFIX
-
-from .utils import unused_port
 from .exceptions import DynamicSidecarError
-from ...models.domains.dynamic_sidecar import PathsMappingModel, ComposeSpecModel
+from .utils import unused_port
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
