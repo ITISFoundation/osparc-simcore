@@ -4,6 +4,7 @@
 import asyncio
 from typing import Dict, Any
 from uuid import uuid4
+import os
 
 import aiodocker
 from pydantic import PositiveInt
@@ -36,20 +37,41 @@ def node_uuid() -> str:
 
 @pytest.fixture
 async def ensure_swarm_and_networks(docker_swarm: None) -> None:
-    """a network is required for testing this module"""
-    network_config = {
-        "Name": "test_swarm_mock_network_default",
-        "Driver": "overlay",
-        "Attachable": True,
-        "Internal": False,
-    }
+    """
+    Make sure to always have a docker swarm network.
+    If one is not present crete one. There can not be more then one.
+    """
+
     async with aiodocker.Docker() as docker_client:
-        # docker_network = await docker_client.networks.create(network_config)
+        all_networks = await docker_client.networks.list()
+
+        simcore_services_network_name = os.environ.get(
+            "SIMCORE_SERVICES_NETWORK_NAME", "_default"
+        )
+
+        networks = [
+            x
+            for x in all_networks
+            if "swarm" in x["Scope"] and simcore_services_network_name in x["Name"]
+        ]
+
+        create_and_remove_network = len(networks) == 0
+
+        if create_and_remove_network:
+            network_config = {
+                "Name": "test_swarm_mock_network_default",
+                "Driver": "overlay",
+                "Attachable": True,
+                "Internal": False,
+                "Scope": "swarm",
+            }
+            docker_network = await docker_client.networks.create(network_config)
 
         yield
 
-        # network = await docker_client.networks.get(docker_network.id)
-        # assert await network.delete() is True
+        if create_and_remove_network:
+            network = await docker_client.networks.get(docker_network.id)
+            assert await network.delete() is True
 
 
 @pytest.fixture
