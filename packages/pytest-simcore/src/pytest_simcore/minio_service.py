@@ -40,7 +40,7 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
 def minio_config(
     docker_stack: Dict, devel_environ: Dict, monkeypatch_module
 ) -> Dict[str, str]:
-    assert "ops_minio" in docker_stack["services"]
+    assert "pytest-ops_minio" in docker_stack["services"]
 
     config = {
         "client": {

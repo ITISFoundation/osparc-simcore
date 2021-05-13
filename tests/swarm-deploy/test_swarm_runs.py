@@ -43,7 +43,7 @@ docker_compose_service_names = [
     "whoami",
 ]
 
-stack_name = os.environ.get("SWARM_STACK_NAME", "simcore")
+stack_name = os.environ.get("SWARM_STACK_NAME", "pytest-simcore")
 
 stack_service_names = sorted(
     [f"{stack_name}_{name}" for name in docker_compose_service_names]
