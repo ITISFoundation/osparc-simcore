@@ -177,6 +177,15 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
             entry.monitor_data.dynamic_sidecar.port = port
 
 
+async def _log_services_and_containers() -> None:
+    async with aiodocker.Docker() as docker_client:
+        for service in await docker_client.services.list():
+            logger.warning("Service info %s", service)
+
+        for container in await docker_client.containers.list():
+            logger.warning("Container info %s", await container.show())
+
+
 async def test_start(
     test_client: TestClient, node_uuid: str, start_request_data: Dict[str, Any]
 ):
@@ -192,20 +201,22 @@ async def test_start(
     async with timeout(SERVICE_IS_READY_TIMEOUT):
         status_is_not_running = True
         while status_is_not_running:
-            try:
-                response: Response = await test_client.post(
-                    f"/v2/dynamic_services/{node_uuid}:status", json=start_request_data
-                )
-                logger.warning("sidecar :status result %s", response.text)
-                assert response.status_code == 200, response.text
-                data = response.json()
-                
-                status_is_not_running = data.get("service_state", "") != "running"
-            except asyncio.CancelledError:
-                logger.exception("Request cancelled will continue")
+
+            # because this is not debuggable in the CI,logging all info
+            # for services and container
+            await _log_services_and_containers()
+
+            response: Response = await test_client.post(
+                f"/v2/dynamic_services/{node_uuid}:status", json=start_request_data
+            )
+            logger.warning("sidecar :status result %s", response.text)
+            assert response.status_code == 200, response.text
+            data = response.json()
+
+            status_is_not_running = data.get("service_state", "") != "running"
 
         # give the service some time to keep up
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
 
     assert data["service_state"] == "running"
 
