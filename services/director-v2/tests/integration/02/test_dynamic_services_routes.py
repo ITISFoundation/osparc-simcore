@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import subprocess
 import os
 from typing import Any, Dict
 from uuid import uuid4
@@ -181,6 +182,12 @@ async def _log_services_and_containers() -> None:
     async with aiodocker.Docker() as docker_client:
         for service in await docker_client.services.list():
             logger.warning("Service info %s", service)
+            service_name = service["Spec"]["Name"]
+
+            output = subprocess.check_output(
+                f"docker service ps --no-trunc {service_name}", shell=True
+            )
+            logger.warning("Service inspect: %s", output.decode("utf-8"))
 
         for container in await docker_client.containers.list():
             logger.warning("Container info %s", await container.show())
