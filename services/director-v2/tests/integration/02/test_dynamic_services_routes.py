@@ -178,21 +178,6 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
             entry.monitor_data.dynamic_sidecar.port = port
 
 
-async def _log_services_and_containers() -> None:
-    async with aiodocker.Docker() as docker_client:
-        for service in await docker_client.services.list():
-            logger.warning("Service info %s", service)
-            service_name = service["Spec"]["Name"]
-
-            output = subprocess.check_output(
-                f"docker service ps --no-trunc {service_name}", shell=True
-            )
-            logger.warning("Service inspect: %s", output.decode("utf-8"))
-
-        for container in await docker_client.containers.list():
-            logger.warning("Container info %s", await container.show())
-
-
 async def test_start(
     test_client: TestClient, node_uuid: str, start_request_data: Dict[str, Any]
 ):
@@ -208,10 +193,6 @@ async def test_start(
     async with timeout(SERVICE_IS_READY_TIMEOUT):
         status_is_not_running = True
         while status_is_not_running:
-
-            # because this is not debuggable in the CI,logging all info
-            # for services and container
-            await _log_services_and_containers()
 
             response: Response = await test_client.post(
                 f"/v2/dynamic_services/{node_uuid}:status", json=start_request_data
