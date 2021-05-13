@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import asyncio
+import logging
 import os
 from typing import Any, Dict
 from uuid import uuid4
@@ -26,6 +27,8 @@ from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import (
 )
 
 SERVICE_IS_READY_TIMEOUT = 4 * 60
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -192,13 +195,13 @@ async def test_start(
             response: Response = await test_client.post(
                 f"/v2/dynamic_services/{node_uuid}:status", json=start_request_data
             )
+            logger.warning("sidecar :status result %s", response.text)
             assert response.status_code == 200, response.text
             data = response.json()
-            print(data)
             status_is_not_running = data.get("service_state", "") != "running"
 
         # give the service some time to keep up
-        await asyncio.sleep(5)
+        await asyncio.sleep(1)
 
     assert data["service_state"] == "running"
 
