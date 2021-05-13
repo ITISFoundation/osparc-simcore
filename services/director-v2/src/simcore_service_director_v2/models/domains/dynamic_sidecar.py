@@ -114,7 +114,7 @@ class StartDynamicSidecarModel(BaseModel):
                         "httpbin-docker-compose-spec": {
                             "image": "${REGISTRY_URL}/simcore/services/dynamic/httpbin-dynamic-sidecar-compose:${SERVICE_TAG}",
                             "environment": ["MOCK_VALUE=MOCK_VALUE"],
-                            "volumes": ["/tmp/nothing:/tmp/nothing"],
+                            "volumes": ["/tmp/nothing:/tmp/nothing"],  # nosec
                         }
                     },
                 },
