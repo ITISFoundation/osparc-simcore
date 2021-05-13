@@ -174,7 +174,7 @@ async def _patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> None:
     monitor: DynamicSidecarsMonitor = app.state.dynamic_sidecar_monitor
     for entry in monitor._to_monitor.values():  # pylint: disable=protected-access
         if entry.monitor_data.service_name == service_name:
-            entry.monitor_data.dynamic_sidecar.hostname = "localhost"
+            entry.monitor_data.dynamic_sidecar.hostname = "172.17.0.1"
             entry.monitor_data.dynamic_sidecar.port = port
 
 
