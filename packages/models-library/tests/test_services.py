@@ -10,9 +10,11 @@ import pytest
 import yaml
 from models_library.services import (
     SERVICE_KEY_RE,
+    ServiceAccessRightsAtDB,
     ServiceCommonData,
     ServiceDockerData,
     ServiceInput,
+    ServiceMetaDataAtDB,
     ServiceOutput,
 )
 from pint import Unit, UnitRegistry
@@ -164,3 +166,14 @@ def test_service_key_regex_patterns(service_key, regex_pattern):
     assert match.group(2) == "services"
     assert match.group(3) in ["comp", "dynamic", "frontend"]
     assert match.group(4) is not None
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (ServiceAccessRightsAtDB, ServiceMetaDataAtDB),
+)
+def test_services_model_examples(model_cls, model_cls_examples):
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
+        model_instance = model_cls(**example)
+        assert model_instance, f"Failed with {name}"

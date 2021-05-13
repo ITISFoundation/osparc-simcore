@@ -253,6 +253,8 @@ class ServiceOutput(ServiceProperty):
 
 
 class ServiceKeyVersion(BaseModel):
+    """ This pair uniquely identifies a services """
+
     key: constr(regex=KEY_RE) = Field(
         ...,
         description="distinctive name for the node based on the docker registry path",
@@ -303,7 +305,7 @@ ServiceOutputs = Dict[PropertyName, ServiceOutput]
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     """
-    Service base schema (used for docker labels on docker images)
+    Static metadata for a service injecte in the image labels
     """
 
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
@@ -350,6 +352,10 @@ class ServiceGroupAccessRights(BaseModel):
         False, description="defines whether the group can modify the service"
     )
 
+    @classmethod
+    def full(cls) -> "ServiceGroupAccessRights":
+        return cls(execute_access=True, write_access=True)
+
 
 class ServiceAccessRights(BaseModel):
     access_rights: Optional[Dict[GroupId, ServiceGroupAccessRights]] = Field(
@@ -369,7 +375,12 @@ class ServiceMetaData(ServiceCommonData):
     quality: Dict[str, Any] = {}
 
 
-# Databases models (tables services_meta_data and services_access_rights)
+# -------------------------------------------------------------------
+# Databases models
+#  - table services_meta_data
+#  - table services_access_rights
+
+
 class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
     # for a partial update all members must be Optional
     classifiers: Optional[List[str]] = Field([])
@@ -377,6 +388,36 @@ class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "version": "1.0.9",
+                "owner": 8,
+                "name": "sim4life",
+                "description": "s4l web",
+                "thumbnail": "http://thumbnailit.org/image",
+                "classifiers": "",
+                "created": "2021-01-18 12:46:57.7315",
+                "modified": "2021-01-19 12:45:00",
+                "quality": {
+                    "enabled": True,
+                    "tsr_target": {
+                        f"r{n:02d}": {"level": 4, "references": ""}
+                        for n in range(1, 11)
+                    },
+                    "annotations": {
+                        "vandv": "",
+                        "limitations": "",
+                        "certificationLink": "",
+                        "certificationStatus": "Uncertified",
+                    },
+                    "tsr_current": {
+                        f"r{n:02d}": {"level": 0, "references": ""}
+                        for n in range(1, 11)
+                    },
+                },
+            }
+        }
 
 
 class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
@@ -387,3 +428,15 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            "example": {
+                "key": "simcore/services/dynamic/sim4life",
+                "version": "1.0.9",
+                "gid": 8,
+                "execute_access": True,
+                "write_access": True,
+                "created": "2021-01-18 12:46:57.7315",
+                "modified": "2021-01-19 12:45:00",
+                "product_name": "osparc",
+            }
+        }
