@@ -26,7 +26,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.monitor.core import (
     DynamicSidecarsMonitor,
 )
 
-SERVICE_IS_READY_TIMEOUT = 4 * 60
+SERVICE_IS_READY_TIMEOUT = 2 * 60
 
 logger = logging.getLogger(__name__)
 
