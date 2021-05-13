@@ -14,7 +14,7 @@ from typing import Deque, Dict, Optional
 from fastapi import FastAPI, Request
 from async_timeout import timeout
 
-from ..config import DynamicSidecarSettings, get_settings
+from ..config import DynamicSidecarSettings
 from ..docker_utils import (
     get_dynamic_sidecars_to_monitor,
     get_dynamic_sidecar_state,

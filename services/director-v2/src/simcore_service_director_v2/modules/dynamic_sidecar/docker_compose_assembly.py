@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import Any, Dict, Optional
 from fastapi.applications import FastAPI
 from pydantic import PositiveInt
-from fastapi import FastAPI
 
 import yaml
 
