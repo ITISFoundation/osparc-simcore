@@ -3,8 +3,9 @@
 # pylint:disable=redefined-outer-name
 import asyncio
 import logging
-from typing import Dict, List
+from typing import Dict, Iterator, List
 
+import aiopg.sa
 import pytest
 import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
@@ -141,7 +142,7 @@ def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
         "port": get_service_published_port("postgres", devel_environ["POSTGRES_PORT"]),
     }
 
-    yield pg_config
+    return pg_config
 
 
 @pytest.fixture(scope="module")
@@ -165,6 +166,7 @@ def postgres_db(
     postgres_dsn: Dict[str, str],
     postgres_engine: sa.engine.Engine,
 ) -> sa.engine.Engine:
+    """ An postgres database init with empty tables and an sqlalchemy engine connected to it """
 
     # upgrades database from zero
     kwargs = postgres_dsn.copy()
@@ -182,9 +184,26 @@ def postgres_db(
     pg_cli.downgrade.callback("base")
     pg_cli.clean.callback()  # just cleans discover cache
 
-    # FIXME: migration downgrade fails to remove User types SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
+    # FIXME: migration downgrade fails to remove User types
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
     # Added drop_all as tmp fix
     metadata.drop_all(postgres_engine)
+
+
+@pytest.fixture(scope="module")
+async def aiopg_engine(
+    loop, postgres_db: sa.engine.Engine
+) -> Iterator[aiopg.sa.engine.Engine]:
+    """ An aiopg engine connected to an initialized database """
+    from aiopg.sa import create_engine
+
+    engine = await create_engine(postgres_db.url)
+
+    yield engine
+
+    if engine:
+        engine.close()
+        await engine.wait_closed()
 
 
 @pytest.fixture(scope="function")
