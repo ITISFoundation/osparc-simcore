@@ -10,14 +10,21 @@ from sqlalchemy.sql import expression, func
 
 from .base import metadata
 
-# NOTE: using func.now() instead of python datetime ensure the time is computed server side
-
-
 services_meta_data = sa.Table(
     "services_meta_data",
     metadata,
-    sa.Column("key", sa.String, nullable=False),
-    sa.Column("version", sa.String, nullable=False),
+    sa.Column(
+        "key",
+        sa.String,
+        nullable=False,
+        doc="Hierarchical identifier of the service e.g. simcore/services/dynamic/my-super-service",
+    ),
+    sa.Column(
+        "version",
+        sa.String,
+        nullable=False,
+        doc="MAJOR.MINOR.PATCH semantic versioning (see https://semver.org)",
+    ),
     sa.Column(
         "owner",
         sa.BigInteger,
@@ -28,29 +35,46 @@ services_meta_data = sa.Table(
             ondelete="RESTRICT",
         ),
         nullable=True,
+        doc="Identifier of the group that owns this service",
     ),
-    sa.Column("name", sa.String, nullable=False),
-    sa.Column("description", sa.String, nullable=False),
-    sa.Column("thumbnail", sa.String, nullable=True),
+    sa.Column("name", sa.String, nullable=False, doc="Display label"),
+    sa.Column(
+        "description", sa.String, nullable=False, doc="Markdown-compatible description"
+    ),
+    sa.Column(
+        "thumbnail",
+        sa.String,
+        nullable=True,
+        doc="Link to image to us as service thumbnail",
+    ),
     sa.Column(
         "classifiers",
         ARRAY(sa.String, dimensions=1),
         nullable=False,
         server_default="{}",
+        doc="List of tags to describe this service (see classifiers table)",
     ),
-    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp on creation",
+    ),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
         server_default=func.now(),
-        onupdate=func.now(),  # this will auto-update on modification
+        onupdate=func.now(),
+        doc="Timestamp with last update",
     ),
     sa.Column(
         "quality",
         JSONB,
         nullable=False,
-        server_default=sa.text("'{}'::jsonb")
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Free JSON with quality assesment based on TSR",
     ),
     sa.PrimaryKeyConstraint("key", "version", name="services_meta_data_pk"),
 )
@@ -62,12 +86,9 @@ services_access_rights = sa.Table(
         "key",
         sa.String,
         nullable=False,
+        doc="Service Key Identifier",
     ),
-    sa.Column(
-        "version",
-        sa.String,
-        nullable=False,
-    ),
+    sa.Column("version", sa.String, nullable=False, doc="Service version"),
     sa.Column(
         "gid",
         sa.BigInteger,
@@ -77,13 +98,25 @@ services_access_rights = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        doc="Group Identifier",
+    ),
+    # Access Rights flags ---
+    #  - Notice that read_access Flag is implicit on the existence of the row
+    sa.Column(
+        "execute_access",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        doc="Can execute resource?",
     ),
     sa.Column(
-        "execute_access", sa.Boolean, nullable=False, server_default=expression.false()
+        "write_access",
+        sa.Boolean,
+        nullable=False,
+        server_default=expression.false(),
+        doc="Can write resource?",
     ),
-    sa.Column(
-        "write_access", sa.Boolean, nullable=False, server_default=expression.false()
-    ),
+    # -----
     sa.Column(
         "product_name",
         sa.String,
@@ -93,14 +126,22 @@ services_access_rights = sa.Table(
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
+        doc="Product Identifier",
     ),
-    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp of creation",
+    ),
     sa.Column(
         "modified",
         sa.DateTime(),
         nullable=False,
         server_default=func.now(),
-        onupdate=func.now(),  # this will auto-update on modification
+        onupdate=func.now(),
+        doc="Timestamp on last update",
     ),
     sa.ForeignKeyConstraint(
         ["key", "version"],
@@ -108,5 +149,7 @@ services_access_rights = sa.Table(
         onupdate="CASCADE",
         ondelete="CASCADE",
     ),
-    sa.PrimaryKeyConstraint("key", "version", "gid", "product_name", name="services_access_pk"),
+    sa.PrimaryKeyConstraint(
+        "key", "version", "gid", "product_name", name="services_access_pk"
+    ),
 )

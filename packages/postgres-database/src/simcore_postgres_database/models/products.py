@@ -23,7 +23,13 @@ products = sa.Table(
         nullable=False,
         doc="Regular expression that matches product hostname from an url string",
     ),
-    sa.Column("created", sa.DateTime(), nullable=False, server_default=func.now()),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
     sa.Column(
         "modified",
         sa.DateTime(),

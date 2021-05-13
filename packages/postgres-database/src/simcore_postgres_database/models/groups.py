@@ -72,7 +72,7 @@ groups = sa.Table(
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),  # this will auto-update on modification
-        doc="Timestamp with last row update",
+        doc="Timestamp with last update",
     ),
     sa.CheckConstraint("check_group_uniqueness(name, text(type)) = 0"),
 )
