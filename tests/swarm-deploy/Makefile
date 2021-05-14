@@ -12,7 +12,7 @@ requirements: ## compiles pip requirements (.in -> .txt)
 .PHONY: install
 install: _check_venv_active  ## installs dependencies
 	# installing requirements
-	python -m pip install -r requirements/ci.txt
+	python -m pip install --use-feature=in-tree-build -r requirements/ci.txt
 
 
 .PHONY: tests

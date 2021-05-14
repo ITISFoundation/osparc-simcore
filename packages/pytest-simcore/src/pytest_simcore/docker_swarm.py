@@ -13,6 +13,7 @@ from typing import Dict, Iterator
 import docker
 import pytest
 import tenacity
+import yaml
 
 from .helpers.utils_docker import get_ip
 
@@ -98,31 +99,43 @@ def docker_stack(
     devel_environ: Dict,
 ) -> Iterator[Dict]:
 
-    core_stack_name = devel_environ["SWARM_STACK_NAME"]
-    assert core_stack_name.startswith("pytest-")
-
     # WARNING: keep prefix "pytest-" in stack names
-    stacks = {
-        core_stack_name: core_docker_compose_file,
-        "pytest-ops": ops_docker_compose_file,
-    }
+    core_stack_name = devel_environ["SWARM_STACK_NAME"]
+    ops_stack_name = "pytest-ops"
+
+    assert core_stack_name.startswith("pytest-")
+    stacks = [
+        (
+            "core",
+            core_stack_name,
+            core_docker_compose_file,
+        ),
+        (
+            "ops",
+            ops_stack_name,
+            ops_docker_compose_file,
+        ),
+    ]
 
     # make up-version
-    stacks_up = []
-    for stack_name, stack_config_file in stacks.items():
+    stacks_deployed: Dict[str, Dict] = {}
+    for key, stack_name, compose_file in stacks:
         subprocess.run(
-            f"docker stack deploy --with-registry-auth -c {stack_config_file.name} {stack_name}",
+            f"docker stack deploy --with-registry-auth -c {compose_file.name} {stack_name}",
             shell=True,
             check=True,
-            cwd=stack_config_file.parent,
+            cwd=compose_file.parent,
         )
-        stacks_up.append(stack_name)
+        stacks_deployed[key] = {
+            "name": stack_name,
+            "compose": yaml.safe_load(compose_file.read_text()),
+        }
 
     _wait_for_services(docker_client)
     _print_services(docker_client, "[BEFORE TEST]")
 
     yield {
-        "stacks": stacks_up,
+        "stacks": stacks_deployed,
         "services": [service.name for service in docker_client.services.list()],
     }
 

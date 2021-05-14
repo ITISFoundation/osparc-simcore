@@ -15,15 +15,16 @@ from pytest_simcore.helpers import (
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_swarm",
     "pytest_simcore.docker_registry",
-    "pytest_simcore.rabbit_service",
-    "pytest_simcore.postgres_service",
+    "pytest_simcore.docker_swarm",
     "pytest_simcore.minio_service",
-    "pytest_simcore.traefik_service",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.rabbit_service",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_webserver_service",
+    "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.traefik_service",
 ]
 log = logging.getLogger(__name__)
 
@@ -35,6 +36,11 @@ def prepare_all_services(
     services = []
     for service in simcore_docker_compose["services"].keys():
         services.append(service)
+
+    # injects in every module these variables
+    # TODO: this can be more elegantly done if ops_services_selection is by default ALL ??
+    # or simply overriding core_services_selection and ops_services_selection????
+
     setattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, services)
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
@@ -55,5 +61,7 @@ def make_up_prod(
     ops_docker_compose: Dict,
     docker_stack: Dict,
 ) -> Dict:
-    stack_configs = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return stack_configs
+    stacks = docker_stack["stacks"]
+    assert stacks["core"]["compose"] == simcore_docker_compose
+    assert stacks["ops"]["compose"] == ops_docker_compose
+    return stacks

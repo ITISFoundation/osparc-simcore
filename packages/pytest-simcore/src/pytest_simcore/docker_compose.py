@@ -177,7 +177,9 @@ def core_services_selection(request) -> List[str]:
 def core_docker_compose_file(
     core_services_selection: List[str], temp_folder: Path, simcore_docker_compose: Dict
 ) -> Path:
-    """Creates a docker-compose config file for every stack of services in'core_services' module variable
+    """A compose with a selection of services from simcore_docker_compose
+
+    Creates a docker-compose config file for every stack of services in 'core_services_selection' module variable
     File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "simcore_docker_compose.filtered.yml")
@@ -200,7 +202,9 @@ def ops_services_selection(request) -> List[str]:
 def ops_docker_compose_file(
     ops_services_selection: List[str], temp_folder: Path, ops_docker_compose: Dict
 ) -> Path:
-    """Creates a docker-compose config file for every stack of services in 'ops_services' module variable
+    """A compose with a selection of services from ops_docker_compose
+
+    Creates a docker-compose config file for every stack of services in 'ops_services_selection' module variable
     File is created in a temp folder
     """
     docker_compose_path = Path(temp_folder / "ops_docker_compose.filtered.yml")

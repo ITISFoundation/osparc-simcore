@@ -27,7 +27,7 @@ RETRY_COUNT = 7
 MAX_WAIT_TIME = 240
 
 
-docker_compose_service_names = [
+DOCKER_COMPOSE_SERVICE_NAMES = [
     "api-server",
     "catalog",
     "director",
@@ -43,17 +43,18 @@ docker_compose_service_names = [
     "whoami",
 ]
 
-stack_name = os.environ.get("SWARM_STACK_NAME", "pytest-simcore")
+# FIXME: this environment variable is also monkeypatched... but here is outside of tests scope
+SWARM_STACK_NAME = os.environ.get("SWARM_STACK_NAME", "pytest-simcore")
 
-stack_service_names = sorted(
-    [f"{stack_name}_{name}" for name in docker_compose_service_names]
+STACK_SERVICES_NAMES = sorted(
+    [f"{SWARM_STACK_NAME}_{name}" for name in DOCKER_COMPOSE_SERVICE_NAMES]
 )
 
 # wait if running pre-state
 # https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
+SWARM_TASK_PRE_STATES = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
 
-failed_states = [
+SWARM_TASK_FAILED_STATES = [
     "COMPLETE",
     "FAILED",
     "SHUTDOWN",
@@ -64,7 +65,7 @@ failed_states = [
 ]
 
 
-@pytest.fixture(scope="session", params=stack_service_names)
+@pytest.fixture(scope="session", params=STACK_SERVICES_NAMES)
 def core_service_name(request) -> str:
     return str(request.param)
 
@@ -81,18 +82,18 @@ def core_services_running(docker_client: DockerClient) -> List[Service]:
 
     # maps service names in docker-compose with actual services
     running_services = [
-        s for s in docker_client.services.list() if s.name.startswith(stack_name)
+        s for s in docker_client.services.list() if s.name.startswith(SWARM_STACK_NAME)
     ]
     return running_services
 
 
 def test_all_services_up(core_services_running: str, make_up_prod: Dict):
     running_services = sorted([s.name for s in core_services_running])
-    assert running_services == stack_service_names
+    assert running_services == STACK_SERVICES_NAMES
 
     expected = [
-        f"{stack_name}_{service_name}"
-        for service_name in make_up_prod[stack_name]["services"].keys()
+        f"{SWARM_STACK_NAME}_{service_name}"
+        for service_name in make_up_prod[SWARM_STACK_NAME]["services"].keys()
     ]
     assert running_services == sorted(expected)
 
@@ -131,7 +132,7 @@ def test_core_service_running(
     for i in range(num_tasks):
         for n in range(RETRY_COUNT):
             task = running_service.tasks()[i]
-            if task["Status"]["State"].upper() in pre_states:
+            if task["Status"]["State"].upper() in SWARM_TASK_PRE_STATES:
                 print(
                     "Waiting [{}/{}] ...\n{}".format(
                         n, RETRY_COUNT, get_tasks_summary(tasks)
@@ -212,7 +213,7 @@ def get_tasks_summary(tasks):
 def get_failed_tasks_logs(service, docker_client):
     failed_logs = ""
     for t in service.tasks():
-        if t["Status"]["State"].upper() in failed_states:
+        if t["Status"]["State"].upper() in SWARM_TASK_FAILED_STATES:
             cid = t["Status"]["ContainerStatus"]["ContainerID"]
             failed_logs += "{2} {0} - {1} BEGIN {2}\n".format(
                 service.name, t["ID"], "=" * 10
