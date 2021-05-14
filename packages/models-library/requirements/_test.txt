@@ -44,7 +44,7 @@ importlib-metadata==4.0.1
     #   pint
     #   pluggy
     #   pytest
-importlib-resources==5.1.2
+importlib-resources==5.1.3
     # via pint
 iniconfig==1.1.1
     # via pytest
