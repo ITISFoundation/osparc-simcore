@@ -436,7 +436,7 @@ class DataStorageManager:
             continue_loop = True
             sleep_generator = expo()
             update_succeeded = False
-
+            
             while continue_loop:
                 result = await client.list_objects_v2(
                     Bucket=bucket_name, Prefix=object_name
@@ -588,10 +588,9 @@ class DataStorageManager:
         to_object_name = dest_uuid
         from_bucket = self.simcore_bucket_name
         from_object_name = source_uuid
-        from_bucket_object_name = os.path.join(from_bucket, from_object_name)
         # FIXME: This is not async!
         self.s3_client.copy_object(
-            to_bucket_name, to_object_name, from_bucket_object_name
+            to_bucket_name, to_object_name, from_bucket, from_object_name
         )
 
         # update db
@@ -758,8 +757,9 @@ class DataStorageManager:
 
             # Step 1: List all objects for this project replace them with the destination object name
             # and do a copy at the same time collect some names
+            # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
             response = await client.list_objects_v2(
-                Bucket=self.simcore_bucket_name, Prefix=source_folder
+                Bucket=self.simcore_bucket_name, Prefix=f"{source_folder}/"
             )
 
             for item in response.get("Contents", []):
@@ -822,8 +822,9 @@ class DataStorageManager:
         async with self._create_client_context() as client:
 
             # step 3: list files first to create fmds
+            # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
             response = await client.list_objects_v2(
-                Bucket=self.simcore_bucket_name, Prefix=dest_folder + "/"
+                Bucket=self.simcore_bucket_name, Prefix=f"{dest_folder}/"
             )
 
             if "Contents" in response:
@@ -947,6 +948,7 @@ class DataStorageManager:
             await conn.execute(delete_me)
 
         async with self._create_client_context() as client:
+            # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
             response = await client.list_objects_v2(
                 Bucket=self.simcore_bucket_name,
                 Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",

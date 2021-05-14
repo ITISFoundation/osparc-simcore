@@ -208,7 +208,6 @@ typing-extensions==3.7.4.3
     #   yarl
 urllib3==1.25.11
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
 websocket-client==0.58.0
