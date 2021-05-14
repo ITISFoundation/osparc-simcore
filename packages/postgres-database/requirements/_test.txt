@@ -8,7 +8,7 @@ aiohttp==3.7.4.post0
     # via pytest-aiohttp
 aiopg[sa]==1.2.1
     # via -r requirements/_test.in
-astroid==2.5.3
+astroid==2.5.6
     # via pylint
 async-timeout==3.0.1
     # via
@@ -65,7 +65,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.1.0
+faker==8.1.4
     # via -r requirements/_test.in
 idna-ssl==1.1.0
     # via aiohttp
@@ -112,7 +112,7 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.7.4
+pylint==2.8.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -130,7 +130,7 @@ pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
-pytest==6.2.3
+pytest==6.2.4
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -141,7 +141,7 @@ python-dateutil==2.8.1
     # via
     #   -c requirements/_migration.txt
     #   faker
-python-dotenv==0.17.0
+python-dotenv==0.17.1
     # via docker-compose
 pyyaml==5.4.1
     # via
@@ -154,7 +154,7 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/_migration.txt
     #   bcrypt
@@ -179,7 +179,7 @@ toml==0.10.2
     #   pytest
 typed-ast==1.4.3
     # via astroid
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -190,7 +190,7 @@ urllib3==1.26.4
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_migration.txt
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via
     #   -c requirements/_migration.txt
     #   docker

@@ -4,24 +4,23 @@
 #
 #    pip-compile --output-file=requirements/_migration.txt requirements/_migration.in
 #
-alembic==1.5.8
+alembic==1.6.2
     # via -r requirements/_migration.in
 certifi==2020.12.5
     # via requests
 chardet==4.0.0
     # via requests
-click==7.1.2
+click==8.0.0
     # via -r requirements/_migration.in
 docker==5.0.0
     # via -r requirements/_migration.in
 idna==2.10
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/_migration.in
     #   requests
 mako==1.1.4
     # via alembic
-markupsafe==1.1.1
+markupsafe==2.0.0
     # via mako
 psycopg2-binary==2.8.6
     # via
@@ -33,7 +32,7 @@ python-editor==1.0.4
     # via alembic
 requests==2.25.1
     # via docker
-six==1.15.0
+six==1.16.0
     # via
     #   python-dateutil
     #   tenacity
@@ -50,5 +49,5 @@ urllib3==1.26.4
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_migration.in
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via docker
