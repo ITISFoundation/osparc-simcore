@@ -18,17 +18,19 @@ def monkey_patch_pydantic_url_regex() -> None:
     # pydantic main codebase
     import pydantic
 
-    if pydantic.VERSION > "1.8.1":
+    if pydantic.VERSION > "1.8.2":
         raise RuntimeError(
             (
                 "Please check that PR https://github.com/samuelcolvin/pydantic/pull/2512 "
-                "was merged. If already present in this version, remove this monkey_patch"
+                "was merged AND added in this version."
+                "If already present in this version, remove this monkey_patch"
             )
         )
 
-    from typing import Pattern
-    from pydantic import networks
     import re
+    from typing import Pattern
+
+    from pydantic import networks
 
     def url_regex() -> Pattern[str]:
         _url_regex_cache = networks._url_regex_cache  # pylint: disable=protected-access

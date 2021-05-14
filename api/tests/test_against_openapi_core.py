@@ -12,8 +12,7 @@ from pathlib import Path
 import openapi_core
 import pytest
 import yaml
-from openapi_core.schema.specs.models import Spec as OpenApiSpec
-
+from openapi_core.spec.paths import SpecPath as OpenApiSpec
 from utils import list_all_openapi
 
 
