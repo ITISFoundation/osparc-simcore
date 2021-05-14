@@ -8,7 +8,7 @@ import sys
 import time
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import pytest
 import requests
@@ -27,29 +27,6 @@ RETRY_COUNT = 7
 MAX_WAIT_TIME = 240
 
 
-DOCKER_COMPOSE_SERVICE_NAMES = [
-    "api-server",
-    "catalog",
-    "director",
-    "director-v2",
-    "migration",
-    "sidecar",
-    "storage",
-    "webserver",
-    "rabbit",
-    "postgres",
-    "redis",
-    "traefik",
-    "whoami",
-]
-
-# FIXME: this environment variable is also monkeypatched... but here is outside of tests scope
-SWARM_STACK_NAME = os.environ.get("SWARM_STACK_NAME", "pytest-simcore")
-
-STACK_SERVICES_NAMES = sorted(
-    [f"{SWARM_STACK_NAME}_{name}" for name in DOCKER_COMPOSE_SERVICE_NAMES]
-)
-
 # wait if running pre-state
 # https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 SWARM_TASK_PRE_STATES = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
@@ -65,13 +42,10 @@ SWARM_TASK_FAILED_STATES = [
 ]
 
 
-@pytest.fixture(scope="session", params=STACK_SERVICES_NAMES)
-def core_service_name(request) -> str:
-    return str(request.param)
-
-
 @pytest.fixture
-def core_services_running(docker_client: DockerClient) -> List[Service]:
+def core_services_running(
+    docker_client: DockerClient, core_stack_name: str
+) -> List[Service]:
     # Matches service names in stacks as e.g.
     #
     #  'mystack_director'
@@ -80,34 +54,60 @@ def core_services_running(docker_client: DockerClient) -> List[Service]:
     #
     # for a stack named 'mystack'
 
-    # maps service names in docker-compose with actual services
+    # TODO: find a more reliable way to list services in a stack
     running_services = [
-        s for s in docker_client.services.list() if s.name.startswith(SWARM_STACK_NAME)
+        service
+        for service in docker_client.services.list()
+        if service.name.startswith(core_stack_name)
     ]
     return running_services
 
 
-def test_all_services_up(core_services_running: str, make_up_prod: Dict):
-    running_services = sorted([s.name for s in core_services_running])
-    assert running_services == STACK_SERVICES_NAMES
-
-    expected = [
-        f"{SWARM_STACK_NAME}_{service_name}"
-        for service_name in make_up_prod[SWARM_STACK_NAME]["services"].keys()
-    ]
-    assert running_services == sorted(expected)
-
-
-def test_core_service_running(
-    core_service_name: str,
+def test_all_services_up(
     core_services_running: List[Service],
-    docker_client: DockerClient,
-    make_up_prod: Dict,
+    core_stack_name: str,
+    core_stack_compose: Dict[str, Any],
 ):
-    # find core_service_name
-    running_service = next(
-        s for s in core_services_running if s.name == core_service_name
-    )
+    running_services_names = set(service.name for service in core_services_running)
+
+    expected_services_names = {
+        f"{core_stack_name}_{service_name}"
+        for service_name in core_stack_compose["services"].keys()
+    }
+    assert running_services_names == expected_services_names
+
+
+@pytest.mark.parametrize(
+    "docker_compose_service_key",
+    [
+        "api-server",
+        "catalog",
+        "director",
+        "director-v2",
+        "migration",
+        "sidecar",
+        "storage",
+        "webserver",
+        "rabbit",
+        "postgres",
+        "redis",
+        "traefik",
+        "whoami",
+    ],
+)
+def test_core_service_running(
+    docker_compose_service_key: str,
+    core_stack_name: str,
+    core_services_running: List[Service],
+    core_stack_compose: Dict[str, Any],
+    docker_client: DockerClient,
+):
+    service_name = f"{core_stack_name}_{docker_compose_service_key}"
+    service_config = core_stack_compose["services"][docker_compose_service_key]
+
+    assert any(s.name == service_name for s in core_services_running)
+
+    service: Service = next(s for s in core_services_running if s.name == service_name)
 
     # Every service in the fixture runs a number of tasks, but they might have failed!
     #
@@ -115,23 +115,21 @@ def test_core_service_running(
     # ID                  NAME                     IMAGE                     NODE                DESIRED STATE       CURRENT STATE            ERROR                       PORTS
     # puiaevvmtbs1        simcore_storage.1       simcore_storage:latest   crespo-wkstn        Running             Running 18 minutes ago
     # j5xtlrnn684y         \_ simcore_storage.1   simcore_storage:latest   crespo-wkstn        Shutdown            Failed 18 minutes ago    "task: non-zero exit (1)"
-    tasks = running_service.tasks()
-    service_config = make_up_prod["simcore"]["services"][
-        core_service_name.split(sep="_")[1]
-    ]
+    tasks = service.tasks()
     num_tasks = get_replicas(service_config)
-    assert (
-        len(tasks) == num_tasks
-    ), "Expected a {3} task(s) for '{0}'," " got:\n{1}\n{2}".format(
-        core_service_name,
-        get_tasks_summary(tasks),
-        get_failed_tasks_logs(running_service, docker_client),
-        num_tasks,
+
+    assert len(tasks) == num_tasks, (
+        f"Expected a {num_tasks} task(s) for '{service_name}', got instead"
+        f"\n{ get_tasks_summary(tasks) }"
+        f"\n{ get_failed_tasks_logs(service, docker_client) }"
     )
 
     for i in range(num_tasks):
+        task: Dict[str, Any] = service.tasks()[i]
+
         for n in range(RETRY_COUNT):
-            task = running_service.tasks()[i]
+            task = service.tasks()[i]
+
             if task["Status"]["State"].upper() in SWARM_TASK_PRE_STATES:
                 print(
                     "Waiting [{}/{}] ...\n{}".format(
@@ -143,10 +141,10 @@ def test_core_service_running(
                 break
 
         # should be running
-        assert (
-            task["Status"]["State"].upper() == "RUNNING"
-        ), "Expected running, got \n{}\n{}".format(
-            pformat(task), get_failed_tasks_logs(running_service, docker_client)
+        assert task["Status"]["State"].upper() == "RUNNING", (
+            "Expected running, got instead"
+            f"\n{pformat(task)}"
+            f"\n{get_failed_tasks_logs(service, docker_client)}"
         )
 
 
@@ -159,7 +157,6 @@ def test_core_service_running(
     ],
 )
 def test_product_frontend_app_served(
-    make_up_prod: Dict,
     traefik_service: URL,
     test_url: str,
     expected_in_content: str,

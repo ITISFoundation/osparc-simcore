@@ -160,9 +160,9 @@ def docker_stack(
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
     WAIT_BEFORE_RETRY_SECS = 1
-    stacks_up.reverse()
-    for stack in stacks_up:
-        subprocess.run(f"docker stack rm {stack}", shell=True, check=True)
+    stacks.reverse()
+    for _, stack, _ in stacks:
+        subprocess.run(f"docker stack remove {stack}", shell=True, check=True)
 
         while docker_client.services.list(
             filters={"label": f"com.docker.stack.namespace={stack}"}
