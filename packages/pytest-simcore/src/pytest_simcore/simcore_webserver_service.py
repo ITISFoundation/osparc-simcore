@@ -14,8 +14,8 @@ from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def webserver_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
-    prefix = devel_environ["SWARM_STACK_NAME"]
+def webserver_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> URL:
+    prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_webserver" in docker_stack["services"]
 
     endpoint = f"127.0.0.1:{get_service_published_port('webserver', 8080)}"

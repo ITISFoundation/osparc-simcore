@@ -20,7 +20,7 @@ def env_devel_dict(env_devel_file: Path) -> Dict[str, Union[str, None]]:
 
 
 @pytest.fixture(scope="function")
-def mock_env_devel_environment(env_devel_dict, monkeypatch):
+def mock_env_testing_environ_varsment(env_devel_dict, monkeypatch):
     for key, value in env_devel_dict.items():
         monkeypatch.setenv(key, value)
     return deepcopy(env_devel_dict)

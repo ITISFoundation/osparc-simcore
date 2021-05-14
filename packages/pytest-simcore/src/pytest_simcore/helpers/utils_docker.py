@@ -19,7 +19,7 @@ def get_ip() -> str:
         # doesn't even have to be reachable
         s.connect(("10.255.255.255", 1))
         IP = s.getsockname()[0]
-    except Exception:  # pylint: disable=W0703
+    except Exception:  # pylint: disable=broad-except
         IP = "127.0.0.1"
     finally:
         s.close()

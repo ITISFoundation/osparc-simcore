@@ -96,11 +96,11 @@ def docker_stack(
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
-    devel_environ: Dict,
+    testing_environ_vars: Dict,
 ) -> Iterator[Dict]:
 
     # WARNING: keep prefix "pytest-" in stack names
-    core_stack_name = devel_environ["SWARM_STACK_NAME"]
+    core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     ops_stack_name = "pytest-ops"
 
     assert core_stack_name.startswith("pytest-")

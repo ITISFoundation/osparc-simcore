@@ -27,7 +27,7 @@ from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker
 
 
 @pytest.fixture(scope="session")
-def devel_environ(env_devel_file: Path) -> Dict[str, str]:
+def testing_environ_vars(env_devel_file: Path) -> Dict[str, str]:
     """
     Loads and extends .env-devel returning
     all environment variables key=value
@@ -73,7 +73,9 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
 
 @pytest.fixture(scope="module")
 def env_file_for_testing(
-    devel_environ: Dict[str, str], temp_folder: Path, osparc_simcore_root_dir: Path
+    testing_environ_vars: Dict[str, str],
+    temp_folder: Path,
+    osparc_simcore_root_dir: Path,
 ) -> Path:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
 
@@ -90,8 +92,8 @@ def env_file_for_testing(
             f"# Auto-generated from env_file_for_testing in {__file__}",
             file=fh,
         )
-        for key in sorted(devel_environ.keys()):
-            print(f"{key}={devel_environ[key]}", file=fh)
+        for key in sorted(testing_environ_vars.keys()):
+            print(f"{key}={testing_environ_vars[key]}", file=fh)
 
     #
     # WARNING: since compose files have references to ../.env we MUST create .env

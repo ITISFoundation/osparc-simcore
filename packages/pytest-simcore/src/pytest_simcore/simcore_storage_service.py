@@ -16,11 +16,11 @@ from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def storage_endpoint(docker_stack: Dict, devel_environ: Dict) -> URL:
-    prefix = devel_environ["SWARM_STACK_NAME"]
+def storage_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> URL:
+    prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_storage" in docker_stack["services"]
 
-    default_port = devel_environ["STORAGE_ENDPOINT"].split(":")[1]
+    default_port = testing_environ_vars["STORAGE_ENDPOINT"].split(":")[1]
     endpoint = f"127.0.0.1:{get_service_published_port('storage', default_port)}"
 
     # nodeports takes its configuration from env variables

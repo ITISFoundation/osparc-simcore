@@ -28,12 +28,12 @@ pytest_plugins = [
 
 
 @pytest.fixture(scope="session")
-def devel_environ(devel_environ: Dict[str, str]) -> Dict[str, str]:
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::devel_environ fixture
+def testing_environ_vars(testing_environ_vars: Dict[str, str]) -> Dict[str, str]:
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::testing_environ_vars fixture
 
     # help faster update of service_metadata table by catalog
-    devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
-    return devel_environ.copy()
+    testing_environ_vars["CATALOG_BACKGROUND_TASK_REST_TIME"] = "1"
+    return testing_environ_vars.copy()
 
 
 @pytest.fixture(scope="module")
@@ -124,7 +124,7 @@ def registered_user(make_up_prod):
 def services_registry(
     docker_registry_image_injector: Callable,
     registered_user: Dict[str, str],
-    devel_environ: Dict[str, str],
+    testing_environ_vars: Dict[str, str],
 ) -> Dict[str, Any]:
     # NOTE: service image MUST be injected in registry AFTER user is registered
     #
@@ -201,7 +201,7 @@ def services_registry(
     }
 
     wait_for_catalog_to_detect = float(
-        devel_environ["CATALOG_BACKGROUND_TASK_REST_TIME"]
+        testing_environ_vars["CATALOG_BACKGROUND_TASK_REST_TIME"]
     )
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",

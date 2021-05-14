@@ -14,11 +14,13 @@ from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="module")
-def traefik_endpoints(docker_stack: Dict, devel_environ: Dict) -> Tuple[URL, URL, URL]:
+def traefik_endpoints(
+    docker_stack: Dict, testing_environ_vars: Dict
+) -> Tuple[URL, URL, URL]:
     """get the endpoint for the given simcore_service.
     NOTE: simcore_service defined as a parametrization
     """
-    prefix = devel_environ["SWARM_STACK_NAME"]
+    prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_traefik" in docker_stack["services"]
 
     traefik_api_endpoint = f"127.0.0.1:{get_service_published_port('traefik', 8080)}"

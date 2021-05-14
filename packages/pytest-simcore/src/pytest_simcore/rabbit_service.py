@@ -27,16 +27,16 @@ def loop(request) -> asyncio.AbstractEventLoop:
 
 @pytest.fixture(scope="module")
 async def rabbit_config(
-    loop: asyncio.AbstractEventLoop, docker_stack: Dict, devel_environ: Dict
+    loop: asyncio.AbstractEventLoop, docker_stack: Dict, testing_environ_vars: Dict
 ) -> RabbitConfig:
-    prefix = devel_environ["SWARM_STACK_NAME"]
+    prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
 
     rabbit_config = RabbitConfig(
-        user=devel_environ["RABBIT_USER"],
-        password=devel_environ["RABBIT_PASSWORD"],
+        user=testing_environ_vars["RABBIT_USER"],
+        password=testing_environ_vars["RABBIT_PASSWORD"],
         host="127.0.0.1",
-        port=get_service_published_port("rabbit", devel_environ["RABBIT_PORT"]),
+        port=get_service_published_port("rabbit", testing_environ_vars["RABBIT_PORT"]),
         channels={
             "log": "logs_channel",
             "instrumentation": "instrumentation_channel",
