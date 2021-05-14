@@ -78,7 +78,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.1.3
+faker==8.1.4
     # via -r requirements/_test.in
 icdiff==1.9.1
     # via pytest-icdiff
