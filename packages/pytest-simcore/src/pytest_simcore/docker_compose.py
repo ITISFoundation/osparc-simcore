@@ -9,12 +9,11 @@
 
 import os
 import shutil
-import socket
 import sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, Iterator, List
+from typing import Any, Dict, List
 
 import pytest
 import yaml
@@ -24,7 +23,7 @@ from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
-from .helpers.utils_docker import run_docker_compose_config, save_docker_infos
+from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker_infos
 
 
 @pytest.fixture(scope="session")
@@ -34,6 +33,7 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
     all environment variables key=value
     """
     env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
+
     # get from environ if applicable
     env_devel = {
         key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
@@ -41,70 +41,81 @@ def devel_environ(env_devel_file: Path) -> Dict[str, str]:
 
     # These are overrides to .env-devel or an extension to them
     env_devel["LOG_LEVEL"] = "DEBUG"
+
     env_devel["REGISTRY_SSL"] = "False"
-    env_devel["REGISTRY_URL"] = "{}:5000".format(_get_ip())
+    env_devel["REGISTRY_URL"] = "{}:5000".format(get_ip())
     env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
     env_devel["REGISTRY_USER"] = "simcore"
     env_devel["REGISTRY_PW"] = ""
     env_devel["REGISTRY_AUTH"] = "False"
-    # CAREFUL! FIXME: monkeypatch autouse
+
+    # CAREFUL! FIXME: monkeypatch autouse ??
     env_devel["SWARM_STACK_NAME"] = "pytest-simcore"
-    #
+    env_devel.setdefault(
+        "SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_")
+    )
+
     env_devel["DIRECTOR_REGISTRY_CACHING"] = "False"
+    env_devel.setdefault("DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS", "")
+    env_devel.setdefault("DIRECTOR_SELF_SIGNED_SSL_SECRET_ID", "")
+    env_devel.setdefault("DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME", "")
+    env_devel.setdefault("DIRECTOR_SELF_SIGNED_SSL_FILENAME", "")
+
     env_devel["API_SERVER_DEV_FEATURES_ENABLED"] = "1"
+
+    if not "DOCKER_REGISTRY" in os.environ:
+        env_devel["DOCKER_REGISTRY"] = "local"
+    if not "DOCKER_IMAGE_TAG" in os.environ:
+        env_devel["DOCKER_IMAGE_TAG"] = "production"
 
     return env_devel
 
 
 @pytest.fixture(scope="module")
-def env_file(
-    osparc_simcore_root_dir: Path, devel_environ: Dict[str, str]
-) -> Iterator[Path]:
-    """
-    Creates a .env file from the .env-devel
-    """
-    # FIXME: create a tmp file instead of overriding .env and pass path to docker-compose instead
+def env_file_for_testing(
+    devel_environ: Dict[str, str], temp_folder: Path, osparc_simcore_root_dir: Path
+) -> Path:
+    """Dumps all the environment variables into an $(temp_folder)/.env.test file
 
-    # preserves .env at git_root_dir after test if already exists
-    env_path = osparc_simcore_root_dir / ".env"
+    Pass path as argument in 'docker-compose --env-file ... '
+    """
+    # SEE:
+    #   https://docs.docker.com/compose/env-file/
+    #   https://docs.docker.com/compose/environment-variables/#the-env-file
+
+    env_test_path = temp_folder / ".env.test"
+
+    with env_test_path.open("wt") as fh:
+        print(
+            f"# Auto-generated from env_file_for_testing in {__file__}",
+            file=fh,
+        )
+        for key in sorted(devel_environ.keys()):
+            print(f"{key}={devel_environ[key]}", file=fh)
+
+    #
+    # WARNING: since compose files have references to ../.env we MUST create .env
+    #
     backup_path = osparc_simcore_root_dir / ".env.bak"
+    env_path = osparc_simcore_root_dir / ".env"
     if env_path.exists():
         shutil.copy(env_path, backup_path)
 
-    with env_path.open("wt") as fh:
-        print(f"# TEMPORARY .env auto-generated from env_path in {__file__}")
-        for key, value in devel_environ.items():
-            print(f"{key}={value}", file=fh)
+    shutil.copy(env_test_path, env_path)
 
     yield env_path
 
-    env_path.unlink()
     if backup_path.exists():
         shutil.copy(backup_path, env_path)
         backup_path.unlink()
 
 
 @pytest.fixture(scope="module")
-def make_up_prod_environ():
-    # FIXME: use monkeypatch in monkepatch_extra
-    #
-    #
-    old_env = deepcopy(os.environ)
-    if not "DOCKER_REGISTRY" in os.environ:
-        os.environ["DOCKER_REGISTRY"] = "local"
-    if not "DOCKER_IMAGE_TAG" in os.environ:
-        os.environ["DOCKER_IMAGE_TAG"] = "production"
-    yield
-    os.environ = old_env
-
-
-@pytest.fixture(scope="module")
 def simcore_docker_compose(
     osparc_simcore_root_dir: Path,
-    env_file: Path,
+    env_file_for_testing: Path,
     temp_folder: Path,
-    make_up_prod_environ,
-) -> Dict:
+) -> Dict[str, Any]:
     """Resolves docker-compose for simcore stack in local host
 
     Produces same as  `make .stack-simcore-version.yml` in a temporary folder
@@ -112,8 +123,7 @@ def simcore_docker_compose(
     COMPOSE_FILENAMES = ["docker-compose.yml", "docker-compose.local.yml"]
 
     # ensures .env at git_root_dir
-    assert env_file.exists()
-    assert env_file.parent == osparc_simcore_root_dir
+    assert env_file_for_testing.exists()
 
     # target docker-compose path
     docker_compose_paths = [
@@ -125,10 +135,10 @@ def simcore_docker_compose(
     )
 
     config = run_docker_compose_config(
-        docker_compose_paths,
-        workdir=env_file.parent,
+        project_dir=osparc_simcore_root_dir / "services",
+        docker_compose_paths=docker_compose_paths,
+        env_file_path=env_file_for_testing,
         destination_path=temp_folder / "simcore_docker_compose.yml",
-        env_file_path=env_file,
     )
     print("simcore docker-compose:\n%s", pformat(config))
     return config
@@ -136,15 +146,14 @@ def simcore_docker_compose(
 
 @pytest.fixture(scope="module")
 def ops_docker_compose(
-    osparc_simcore_root_dir: Path, env_file: Path, temp_folder: Path
-) -> Dict:
+    osparc_simcore_root_dir: Path, env_file_for_testing: Path, temp_folder: Path
+) -> Dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
 
     Produces same as  `make .stack-ops.yml` in a temporary folder
     """
     # ensures .env at git_root_dir, which will be used as current directory
-    assert env_file.exists()
-    assert env_file.parent == osparc_simcore_root_dir
+    assert env_file_for_testing.exists()
 
     # target docker-compose path
     docker_compose_path = (
@@ -153,10 +162,10 @@ def ops_docker_compose(
     assert docker_compose_path.exists()
 
     config = run_docker_compose_config(
-        docker_compose_path,
-        workdir=env_file.parent,
+        project_dir=osparc_simcore_root_dir / "services",
+        docker_compose_paths=docker_compose_path,
+        env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
-        env_file_path=env_file,
     )
     print("ops docker-compose:\n%s", pformat(config))
     return config
@@ -216,25 +225,20 @@ def ops_docker_compose_file(
     return docker_compose_path
 
 
+@pytest.hookimpl()
+def pytest_exception_interact(node, call, report):
+    # get the node root dir (guaranteed to exist)
+    root_directory: Path = Path(node.config.rootdir)
+    failed_test_directory = root_directory / "test_failures" / node.name
+    save_docker_infos(failed_test_directory)
+
+
 # HELPERS ---------------------------------------------
 def _minio_fix(service_environs: Dict) -> Dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
-        service_environs["S3_ENDPOINT"] = f"{_get_ip()}:9001"
+        service_environs["S3_ENDPOINT"] = f"{get_ip()}:9001"
     return service_environs
-
-
-def _get_ip() -> str:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(("10.255.255.255", 1))
-        IP = s.getsockname()[0]
-    except Exception:  # pylint: disable=W0703
-        IP = "127.0.0.1"
-    finally:
-        s.close()
-    return IP
 
 
 def _filter_services_and_dump(
@@ -266,11 +270,3 @@ def _filter_services_and_dump(
             # locally we have access to file
             print(f"Saving config to '{docker_compose_path}'")
         yaml.dump(content, fh, default_flow_style=False)
-
-
-@pytest.hookimpl()
-def pytest_exception_interact(node, call, report):
-    # get the node root dir (guaranteed to exist)
-    root_directory: Path = Path(node.config.rootdir)
-    failed_test_directory = root_directory / "test_failures" / node.name
-    save_docker_infos(failed_test_directory)

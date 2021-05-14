@@ -4,7 +4,7 @@ import socket
 import subprocess
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import docker
 import yaml
@@ -86,61 +86,81 @@ def get_service_published_port(
 
 def run_docker_compose_config(
     docker_compose_paths: Union[List[Path], Path],
-    workdir: Path,
-    destination_path: Path,
-    env_file_path: Optional[Path] = None,
+    project_dir: Path,
+    env_file_path: Path,
+    destination_path: Optional[Path] = None,
 ) -> Dict:
     """Runs docker-compose config to validate and resolve a compose file configuration
 
     - Composes all configurations passed in 'docker_compose_paths'
-    - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
+    - Takes 'project_dir' as current working directory to resolve relative paths in the docker-compose correctly
+    - All environments are interpolated from a custom env-file at 'env_file_path'
     - Saves resolved output config to 'destination_path' (if given)
     """
-    # TODO: test
-
     if not isinstance(docker_compose_paths, List):
         docker_compose_paths = [
             docker_compose_paths,
         ]
 
-    if destination_path.suffix not in [".yml", ".yaml"]:
-        raise ValueError("Expected yaml/yml file as destination path")
+    assert project_dir.exists(), "Invalid file '{project_dir}'"
+
+    for docker_compose_path in docker_compose_paths:
+        assert str(docker_compose_path.resolve()).startswith(str(project_dir.resolve()))
+
+    assert env_file_path.exists(), "Invalid file '{env_file_path}'"
+
+    if destination_path:
+        assert destination_path.suffix in [
+            ".yml",
+            ".yaml",
+        ], "Expected yaml/yml file as destination path"
 
     # SEE https://docs.docker.com/compose/reference/
-    # SEE https://docs.docker.com/compose/reference/config/
 
-    config_paths = [
-        f"--file {os.path.relpath(docker_compose_path, workdir)}"
-        for docker_compose_path in docker_compose_paths
+    global_options = [
+        "--project-directory",
+        str(project_dir),  # Specify an alternate working directory
     ]
-    configs_prefix = " ".join(config_paths)
 
-    # Environment
-    if env_file_path:
-        # Specifies custom environment variables
-        #
-        # SEE https://docs.docker.com/compose/env-file/
-        configs_prefix += f" --env-file {env_file_path}"
-        # NOTE: subprocess inherits the current process environment variables as well
+    # Specify an alternate compose files
+    #  - When you use multiple Compose files, all paths in the files are relative to the first configuration file specified with -f.
+    #    You can use the --project-directory option to override this base path.
+    for docker_compose_path in docker_compose_paths:
+        global_options += ["--file", os.path.relpath(docker_compose_path, project_dir)]
 
-    # TODO: should be args a string or list??
-    # https://stackoverflow.com/questions/15109665/subprocess-call-using-string-vs-using-list
-    subprocess.run(
-        f"docker-compose {configs_prefix} config > {destination_path}",
-        shell=True,
+    # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
+    global_options += [
+        "--env-file",
+        str(env_file_path),  # Custom environment variables
+    ]
+
+    # SEE https://docs.docker.com/compose/reference/config/
+    cmd_options = []
+
+    cmd = ["docker-compose"] + global_options + ["config"] + cmd_options
+    print(" ".join(cmd))
+
+    process = subprocess.run(
+        cmd,
+        shell=False,
         check=True,
-        cwd=workdir,
+        cwd=project_dir,
+        stdout=subprocess.PIPE,
     )
 
-    #
-    # NOTE: This step could be avoided and reading instead from stdout
-    # but prefer to have a file that stays after the test in a tmp folder
-    # and can be used later for debugging
-    #
-    with destination_path.open() as f:
-        config = yaml.safe_load(f)
+    compose_file_str = process.stdout.decode("utf-8")
+    compose_file: Dict[str, Any] = yaml.safe_load(compose_file_str)
 
-    return config
+    if destination_path:
+        #
+        # NOTE: This step could be avoided and reading instead from stdout
+        # but prefer to have a file that stays after the test in a tmp folder
+        # and can be used later for debugging
+        #
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        destination_path.write_text(compose_file_str)
+
+    return compose_file
 
 
 def save_docker_infos(destination_path: Path):
