@@ -2,7 +2,6 @@ import logging
 import os
 import socket
 import subprocess
-import tempfile
 from pathlib import Path
 from pprint import pformat
 from typing import Dict, List, Optional, Union
@@ -145,8 +144,10 @@ def run_docker_compose_config(
 
 
 def save_docker_infos(destination_path: Path):
+
     client = docker.from_env()
     all_containers = client.containers.list()
+
     # ensure the parent dir exists
     destination_path.mkdir(parents=True, exist_ok=True)
     # get the services logs
