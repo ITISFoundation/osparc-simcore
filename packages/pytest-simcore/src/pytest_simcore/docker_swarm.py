@@ -96,7 +96,12 @@ def docker_stack(
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
 ) -> Iterator[Dict]:
-    stacks = {"simcore": core_docker_compose_file, "ops": ops_docker_compose_file}
+
+    # WARNING: keep prefix "pytest-" in stack names
+    stacks = {
+        "pytest-simcore": core_docker_compose_file,
+        "pytest-ops": ops_docker_compose_file,
+    }
 
     # make up-version
     stacks_up = []

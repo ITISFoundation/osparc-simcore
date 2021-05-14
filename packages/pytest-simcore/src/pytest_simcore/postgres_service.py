@@ -132,7 +132,7 @@ def database_from_template_before_each_function(
 
 @pytest.fixture(scope="module")
 def postgres_dsn(docker_stack: Dict, devel_environ: Dict) -> Dict[str, str]:
-    assert "simcore_postgres" in docker_stack["services"]
+    assert "pytest-simcore_postgres" in docker_stack["services"]
 
     pg_config = {
         "user": devel_environ["POSTGRES_USER"],
@@ -165,7 +165,7 @@ def postgres_engine(postgres_dsn: Dict[str, str]) -> sa.engine.Engine:
 def postgres_db(
     postgres_dsn: Dict[str, str],
     postgres_engine: sa.engine.Engine,
-) -> sa.engine.Engine:
+) -> Iterator[sa.engine.Engine]:
     """ An postgres database init with empty tables and an sqlalchemy engine connected to it """
 
     # upgrades database from zero
@@ -192,12 +192,12 @@ def postgres_db(
 
 @pytest.fixture(scope="module")
 async def aiopg_engine(
-    loop, postgres_db: sa.engine.Engine
+    postgres_db: sa.engine.Engine, loop
 ) -> Iterator[aiopg.sa.engine.Engine]:
     """ An aiopg engine connected to an initialized database """
     from aiopg.sa import create_engine
 
-    engine = await create_engine(postgres_db.url)
+    engine = await create_engine(str(postgres_db.url))
 
     yield engine
 
@@ -238,6 +238,7 @@ def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
     reraise=True,
 )
 def wait_till_postgres_is_responsive(url: str) -> None:
+    print("Trying", url, "...")
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     conn = engine.connect()
     conn.close()
