@@ -1,10 +1,11 @@
+# pylint:disable=unused-variable
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+
 """ Fixtures to create docker-compose.yaml configururation files (as in Makefile)
 
     Basically runs `docker-compose config
 """
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
 
 import os
 import shutil
@@ -62,6 +63,8 @@ def env_file(
     """
     Creates a .env file from the .env-devel
     """
+    # FIXME: create a tmp file instead of overriding .env and pass path to docker-compose instead
+
     # preserves .env at git_root_dir after test if already exists
     env_path = osparc_simcore_root_dir / ".env"
     backup_path = osparc_simcore_root_dir / ".env.bak"
@@ -83,7 +86,9 @@ def env_file(
 
 @pytest.fixture(scope="module")
 def make_up_prod_environ():
-    # TODO: use monkeypatch for modules as in https://github.com/pytest-dev/pytest/issues/363#issuecomment-289830794
+    # FIXME: use monkeypatch in monkepatch_extra
+    #
+    #
     old_env = deepcopy(os.environ)
     if not "DOCKER_REGISTRY" in os.environ:
         os.environ["DOCKER_REGISTRY"] = "local"
@@ -159,7 +164,7 @@ def ops_docker_compose(
 
 @pytest.fixture(scope="module")
 def core_services_selection(request) -> List[str]:
-    """ Selection of services from the simcore stack """
+    """Selection of services from the simcore stack"""
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
     assert (
@@ -186,7 +191,7 @@ def core_docker_compose_file(
 
 @pytest.fixture(scope="module")
 def ops_services_selection(request) -> List[str]:
-    """ Selection of services from the ops stack """
+    """Selection of services from the ops stack"""
     ops_services = getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
     return ops_services
 

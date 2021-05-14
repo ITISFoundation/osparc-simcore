@@ -68,9 +68,9 @@ def get_service_published_port(
         published_port = service_ports[0]["PublishedPort"]
 
     else:
-        ports_to_look_for = target_ports
-        if isinstance(target_ports, (int, str)):
-            ports_to_look_for = [target_ports]
+        ports_to_look_for: List = (
+            [target_ports] if isinstance(target_ports, (int, str)) else target_ports
+        )
 
         for target_port in ports_to_look_for:
             target_port = int(target_port)
@@ -88,7 +88,7 @@ def get_service_published_port(
 def run_docker_compose_config(
     docker_compose_paths: Union[List[Path], Path],
     workdir: Path,
-    destination_path: Optional[Path] = None,
+    destination_path: Path,
     env_file_path: Optional[Path] = None,
 ) -> Dict:
     """Runs docker-compose config to validate and resolve a compose file configuration
@@ -97,16 +97,18 @@ def run_docker_compose_config(
     - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
     - Saves resolved output config to 'destination_path' (if given)
     """
+    # TODO: test
 
     if not isinstance(docker_compose_paths, List):
         docker_compose_paths = [
             docker_compose_paths,
         ]
 
-    temp_dir = None
-    if destination_path is None:
-        temp_dir = Path(tempfile.mkdtemp(prefix=""))
-        destination_path = temp_dir / "docker-compose.yml"
+    if destination_path.suffix not in [".yml", ".yaml"]:
+        raise ValueError("Expected yaml/yml file as destination path")
+
+    # SEE https://docs.docker.com/compose/reference/
+    # SEE https://docs.docker.com/compose/reference/config/
 
     config_paths = [
         f"--file {os.path.relpath(docker_compose_path, workdir)}"
@@ -114,10 +116,16 @@ def run_docker_compose_config(
     ]
     configs_prefix = " ".join(config_paths)
 
+    # Environment
     if env_file_path:
+        # Specifies custom environment variables
+        #
         # SEE https://docs.docker.com/compose/env-file/
         configs_prefix += f" --env-file {env_file_path}"
+        # NOTE: subprocess inherits the current process environment variables as well
 
+    # TODO: should be args a string or list??
+    # https://stackoverflow.com/questions/15109665/subprocess-call-using-string-vs-using-list
     subprocess.run(
         f"docker-compose {configs_prefix} config > {destination_path}",
         shell=True,
@@ -125,11 +133,13 @@ def run_docker_compose_config(
         cwd=workdir,
     )
 
+    #
+    # NOTE: This step could be avoided and reading instead from stdout
+    # but prefer to have a file that stays after the test in a tmp folder
+    # and can be used later for debugging
+    #
     with destination_path.open() as f:
         config = yaml.safe_load(f)
-
-    if temp_dir:
-        temp_dir.unlink()
 
     return config
 
