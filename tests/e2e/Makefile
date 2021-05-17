@@ -27,7 +27,7 @@ $(VENV_DIR)/bin/pip install -r requirements/requirements.txt
 npm install
 endef
 
-define _transfer-images-to-registry
+define _transfer-sleepers-images-to-registry
 # pushing sleeper image
 @docker pull itisfoundation/sleeper:1.0.0
 @docker tag itisfoundation/sleeper:1.0.0 registry:5000/simcore/services/comp/itis/sleeper:1.0.0
@@ -37,25 +37,52 @@ define _transfer-images-to-registry
 @curl -s http://registry:5000/v2/simcore/services/comp/itis/sleeper/tags/list?n=50 | jq '.'
 endef
 
+define _transfer-mattward-images-to-registry
+# pushing sleeper image
+@docker pull itisfoundation/mattward-viewer:3.0.4
+@docker tag itisfoundation/mattward-viewer:3.0.4 registry:5000/simcore/services/dynamic/mattward-viewer:3.0.4
+@docker push registry:5000/simcore/services/dynamic/mattward-viewer:3.0.4
+# completed transfer of images
+@curl -s registry:5000/v2/_catalog | jq '.repositories'
+@curl -s http://registry:5000/v2/simcore/services/dynamic/mattward-viewer/tags/list?n=50 | jq '.'
+endef
 
-define _inject-templates-in-db
+define _inject-sleepers-templates-in-db
 # inject the sleepers template
 @docker cp tutorials/sleepers_project_template_sql.csv $$(docker ps -q --filter="name=postgres"):/template_projects_sleepers_project_template_sql.csv
 # template is copied into the postgres container and then injected
 @docker exec $$(docker ps -q --filter="name=postgres") psql --user scu --dbname simcoredb --command "\copy projects from '/template_projects_sleepers_project_template_sql.csv' csv header;"
 endef
 
+define _inject-mattward-templates-in-db
+# inject the sleepers template
+@docker cp tutorials/mattward_project_template_sql.csv $$(docker ps -q --filter="name=postgres"):/template_projects_mattward_project_template_sql.csv
+# template is copied into the postgres container and then injected
+@docker exec $$(docker ps -q --filter="name=postgres") psql --user scu --dbname simcoredb --command "\copy projects from '/template_projects_mattward_project_template_sql.csv' csv header;"
+endef
+
 # SETUP ##################
 
-.PHONY: install-ci install-prod clean-up
-install-ci install-prod: ## install e2e testing framework and start simcore/registry
+.PHONY: install-sleepers-ci install-sleepers-prod clean-up
+install-sleepers-ci install-sleepers-prod: ## install e2e sleepers testing framework and start simcore/registry
 	@$(_build_simcore_images)
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_up_simcore)
 	@$(_setup_test_environment)
 	@$(VENV_DIR)/bin/python utils/wait_for_services.py
-	@$(_transfer-images-to-registry)
-	@$(_inject-templates-in-db)
+	@$(_transfer-sleepers-images-to-registry)
+	@$(_inject-sleepers-templates-in-db)
+
+
+.PHONY: install-mattward-ci install-mattward-prod clean-up
+install-mattward-ci install-mattward-prod: ## install e2e mattward testing framework and start simcore/registry
+	@$(_build_simcore_images)
+	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+	@$(_up_simcore)
+	@$(_setup_test_environment)
+	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@$(_transfer-mattward-images-to-registry)
+	@$(_inject-mattward-templates-in-db)
 
 clean-up: ## remove everything
 	# switch simcore stack down

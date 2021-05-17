@@ -1721,7 +1721,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: setup
-        run: ./ci/github/system-testing/e2e.bash install
+        run: ./ci/github/system-testing/e2e.bash install_sleepers
       - name: test
         run: ./ci/github/system-testing/e2e.bash test_sleepers
       - name: recover docker logs
@@ -1799,7 +1799,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: setup
-        run: ./ci/github/system-testing/e2e.bash install
+        run: ./ci/github/system-testing/e2e.bash install_mattward
       - name: test
         run: ./ci/github/system-testing/e2e.bash test_mattward
       - name: recover docker logs

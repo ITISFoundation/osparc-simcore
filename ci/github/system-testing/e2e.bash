@@ -10,9 +10,15 @@ IFS=$'\n\t'
 DOCKER_IMAGE_TAG=$(exec ci/helpers/build_docker_image_tag.bash)
 export DOCKER_IMAGE_TAG
 
-install() {
+install_sleepers() {
   pushd tests/e2e
-  make install-ci
+  make install-sleepers-ci
+  popd
+}
+
+install_mattward() {
+  pushd tests/e2e
+  make install-mattward-ci
   popd
 }
 
