@@ -89,13 +89,36 @@ class ServicesRepository(BaseRepository):
         return services_in_db
 
     async def list_service_releases(
-        self, key: str, *, limit_count: Optional[int] = None
+        self,
+        key: str,
+        *,
+        major: Optional[int] = None,
+        minor: Optional[int] = None,
+        limit_count: Optional[int] = None,
     ) -> List[ServiceMetaDataAtDB]:
-        """Lists LAST n releases of a given service"""
+        """Lists LAST n releases of a given service
+
+
+        major: filters all releases of a
+        limit_count: limits number of returned matches
+        """
+        if minor is not None and major is None:
+            raise ValueError("Expected only major. or major.minor")
+
+        search_condition = services_meta_data.c.key == key
+        if major is not None:
+            if minor is not None:
+                # All patches
+                search_condition &= services_meta_data.c.version.like(
+                    f"{major}.{minor}.%"
+                )
+            else:
+                # All minor and patches
+                search_condition &= services_meta_data.c.version.like(f"{major}.%")
 
         query = (
             sa.select([services_meta_data])
-            .where(services_meta_data.c.key == key)
+            .where(search_condition)
             .order_by(sa.desc(services_meta_data.c.version))
         )
 
@@ -110,8 +133,8 @@ class ServicesRepository(BaseRepository):
 
         return releases
 
-    async def get_last_service_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
-        """ Returns last release or None if service was never released """
+    async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
+        """Returns last release or None if service was never released"""
         releases = await self.list_service_releases(key, limit_count=1)
         return releases[0] if releases else None
 

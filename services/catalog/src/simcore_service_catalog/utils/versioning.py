@@ -11,7 +11,7 @@ _VersionT = Union[Version, str]
 
 
 def as_version(v: _VersionT) -> Version:
-    return packaging.version.parse(v) if isinstance(v, str) else v  # type: ignore
+    return packaging.version.Version(v) if isinstance(v, str) else v  # type: ignore
 
 
 def is_patch_release(version: _VersionT, reference: _VersionT) -> bool:

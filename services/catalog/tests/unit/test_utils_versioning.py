@@ -14,7 +14,7 @@ def test_is_patch_check():
     assert not is_patch_release("1.0.3", "1.0.4")
 
     # same version
-    assert is_patch_release("1.0.3", "1.0.3")
+    assert not is_patch_release("1.0.3", "1.0.3")
 
     # major and minor releases
     assert not is_patch_release("1.1.4", "1.0.3")
