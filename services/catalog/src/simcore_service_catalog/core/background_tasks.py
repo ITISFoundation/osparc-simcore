@@ -24,6 +24,7 @@ from models_library.services import (
     ServiceDockerData,
     ServiceMetaDataAtDB,
 )
+from packaging.version import Version
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 
@@ -32,6 +33,7 @@ from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..services.frontend_services import iter_service_docker_data
+from ..utils.versioning import as_version, is_patch_release
 
 logger = logging.getLogger(__name__)
 
@@ -77,17 +79,21 @@ async def _list_db_services(
     }
 
 
+def _is_frontend_service(service: ServiceDockerData) -> bool:
+    return "/frontend/" in service.key
+
+
 async def _create_service_default_access_rights(
     app: FastAPI, service: ServiceDockerData, db_engine: Engine
 ) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
-    """
-    Rationale as of 19.08.2020:
-    - All services that were put in oSparc before today will be visible to everyone.
-    - The services afterwards will be visible ONLY to his/her owner.
-    """
+    """Given a service, it returns the owner's group-id (gid) and a list of access rights following
+    default access-rights policies
 
-    def _is_frontend_service(service: ServiceDockerData) -> bool:
-        return "/frontend/" in service.key
+    - DEFAULT Access Rights policies:
+        1. All services published in osparc prior 19.08.2020 will be visible to everyone (refered as 'old service').
+        2. Services published after 19.08.2020 will be visible ONLY to his/her owner
+        3. Front-end services are have read-access to everyone
+    """
 
     async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
         # get service build date
@@ -143,6 +149,8 @@ async def _create_service_default_access_rights(
         for gid in set(reader_gids)
     ]
 
+    # Patch releases inherit access rights from previous version
+
     return (owner_gid, access_rights)
 
 
@@ -150,18 +158,54 @@ async def _create_services_in_db(
     app: FastAPI,
     db_engine: Engine,
     service_keys: Set[Tuple[ServiceKey, ServiceVersion]],
-    services: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
+    services_in_registry: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
 ) -> None:
-    """Determines the access rights of each service and adds it to the database"""
+    """Adds a new service in the database
+
+    Determines the access rights of each service and adds it to the database"""
 
     services_repo = ServicesRepository(db_engine)
-    for service_key, service_version in service_keys:
-        service_metadata: ServiceDockerData = services[(service_key, service_version)]
 
-        # find the service owner
+    for service_key, service_version in service_keys:
+        service_metadata: ServiceDockerData = services_in_registry[
+            (service_key, service_version)
+        ]
+
+        # DEFAULT access rights policies
         owner_gid, service_access_rights = await _create_service_default_access_rights(
             app, service_metadata, db_engine
         )
+
+        # AUTO-UPGRADE PATCH policy:
+        #
+        #  - Any new patch released, inherits the access rights from previous compatible version
+        #  - TODO: add as option in the publication contract, i.e. in ServiceDockerData
+        #  - Does NOT apply to front-end services
+        #
+        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2244)
+        #
+        if not _is_frontend_service(service_metadata):
+            version: Version = as_version(service_version)
+            latest_releases = await services_repo.list_service_releases(
+                service_key, major=version.major, minor=version.minor, limit_count=1
+            )
+            if latest_releases:
+                latest_patch = latest_releases[0]
+                if is_patch_release(latest_patch.version, version):
+                    previous_access_rights = (
+                        await services_repo.get_service_access_rights(
+                            latest_patch.key, latest_patch.version
+                        )
+                    )
+                    for access in previous_access_rights:
+                        service_access_rights.append(
+                            access.copy(
+                                exclude={"created", "modified"},
+                                update={"version": service_version},
+                            )
+                        )
+                        logger.info("Auto-upgrading %s", service_access_rights[-1])
+
         # set the service in the DB
         await services_repo.create_service(
             ServiceMetaDataAtDB(**service_metadata.dict(), owner=owner_gid),
@@ -170,7 +214,10 @@ async def _create_services_in_db(
 
 
 async def _ensure_registry_insync_with_db(app: FastAPI, db_engine: Engine) -> None:
-    """Ensures that the services listed in the database is in sync with the registry"""
+    """Ensures that the services listed in the database is in sync with the registry
+
+    Notice that a services here referes to a 2-tuple (key, version)
+    """
     services_in_registry: Dict[
         Tuple[ServiceKey, ServiceVersion], ServiceDockerData
     ] = await _list_registry_services(app)
@@ -186,7 +233,7 @@ async def _ensure_registry_insync_with_db(app: FastAPI, db_engine: Engine) -> No
             pformat(missing_services_in_db),
         )
 
-        # update db (rationale: missing services are shared with everyone for now)
+        # update db
         await _create_services_in_db(
             app, db_engine, missing_services_in_db, services_in_registry
         )
