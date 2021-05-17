@@ -2,10 +2,9 @@ import logging
 import os
 import socket
 import subprocess
-import tempfile
 from pathlib import Path
 from pprint import pformat
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import docker
 import yaml
@@ -20,7 +19,7 @@ def get_ip() -> str:
         # doesn't even have to be reachable
         s.connect(("10.255.255.255", 1))
         IP = s.getsockname()[0]
-    except Exception:  # pylint: disable=W0703
+    except Exception:  # pylint: disable=broad-except
         IP = "127.0.0.1"
     finally:
         s.close()
@@ -68,9 +67,9 @@ def get_service_published_port(
         published_port = service_ports[0]["PublishedPort"]
 
     else:
-        ports_to_look_for = target_ports
-        if isinstance(target_ports, (int, str)):
-            ports_to_look_for = [target_ports]
+        ports_to_look_for: List = (
+            [target_ports] if isinstance(target_ports, (int, str)) else target_ports
+        )
 
         for target_port in ports_to_look_for:
             target_port = int(target_port)
@@ -87,56 +86,88 @@ def get_service_published_port(
 
 def run_docker_compose_config(
     docker_compose_paths: Union[List[Path], Path],
-    workdir: Path,
+    project_dir: Path,
+    env_file_path: Path,
     destination_path: Optional[Path] = None,
-    env_file_path: Optional[Path] = None,
 ) -> Dict:
     """Runs docker-compose config to validate and resolve a compose file configuration
 
     - Composes all configurations passed in 'docker_compose_paths'
-    - Takes 'workdir' as current working directory (i.e. all '.env' files there will be captured)
+    - Takes 'project_dir' as current working directory to resolve relative paths in the docker-compose correctly
+    - All environments are interpolated from a custom env-file at 'env_file_path'
     - Saves resolved output config to 'destination_path' (if given)
     """
-
     if not isinstance(docker_compose_paths, List):
         docker_compose_paths = [
             docker_compose_paths,
         ]
 
-    temp_dir = None
-    if destination_path is None:
-        temp_dir = Path(tempfile.mkdtemp(prefix=""))
-        destination_path = temp_dir / "docker-compose.yml"
+    assert project_dir.exists(), "Invalid file '{project_dir}'"
 
-    config_paths = [
-        f"--file {os.path.relpath(docker_compose_path, workdir)}"
-        for docker_compose_path in docker_compose_paths
+    for docker_compose_path in docker_compose_paths:
+        assert str(docker_compose_path.resolve()).startswith(str(project_dir.resolve()))
+
+    assert env_file_path.exists(), "Invalid file '{env_file_path}'"
+
+    if destination_path:
+        assert destination_path.suffix in [
+            ".yml",
+            ".yaml",
+        ], "Expected yaml/yml file as destination path"
+
+    # SEE https://docs.docker.com/compose/reference/
+
+    global_options = [
+        "--project-directory",
+        str(project_dir),  # Specify an alternate working directory
     ]
-    configs_prefix = " ".join(config_paths)
 
-    if env_file_path:
-        # SEE https://docs.docker.com/compose/env-file/
-        configs_prefix += f" --env-file {env_file_path}"
+    # Specify an alternate compose files
+    #  - When you use multiple Compose files, all paths in the files are relative to the first configuration file specified with -f.
+    #    You can use the --project-directory option to override this base path.
+    for docker_compose_path in docker_compose_paths:
+        global_options += ["--file", os.path.relpath(docker_compose_path, project_dir)]
 
-    subprocess.run(
-        f"docker-compose {configs_prefix} config > {destination_path}",
-        shell=True,
+    # https://docs.docker.com/compose/environment-variables/#using-the---env-file--option
+    global_options += [
+        "--env-file",
+        str(env_file_path),  # Custom environment variables
+    ]
+
+    # SEE https://docs.docker.com/compose/reference/config/
+    cmd_options = []
+
+    cmd = ["docker-compose"] + global_options + ["config"] + cmd_options
+    print(" ".join(cmd))
+
+    process = subprocess.run(
+        cmd,
+        shell=False,
         check=True,
-        cwd=workdir,
+        cwd=project_dir,
+        stdout=subprocess.PIPE,
     )
 
-    with destination_path.open() as f:
-        config = yaml.safe_load(f)
+    compose_file_str = process.stdout.decode("utf-8")
+    compose_file: Dict[str, Any] = yaml.safe_load(compose_file_str)
 
-    if temp_dir:
-        temp_dir.unlink()
+    if destination_path:
+        #
+        # NOTE: This step could be avoided and reading instead from stdout
+        # but prefer to have a file that stays after the test in a tmp folder
+        # and can be used later for debugging
+        #
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        destination_path.write_text(compose_file_str)
 
-    return config
+    return compose_file
 
 
 def save_docker_infos(destination_path: Path):
+
     client = docker.from_env()
     all_containers = client.containers.list()
+
     # ensure the parent dir exists
     destination_path.mkdir(parents=True, exist_ok=True)
     # get the services logs

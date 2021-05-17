@@ -9,6 +9,7 @@ from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
 
 # Some extras to overcome https://github.com/pytest-dev/pytest/issues/363
+# SEE https://github.com/pytest-dev/pytest/issues/363#issuecomment-289830794
 
 
 @pytest.fixture(scope="session")

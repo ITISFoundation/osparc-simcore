@@ -1,59 +1,70 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import logging
-import sys
-from pathlib import Path
-from typing import Dict
+from typing import Any, Dict, List
 
 import pytest
-from pytest_simcore.helpers import (
-    FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
-    FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
-)
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
     "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_swarm",
     "pytest_simcore.docker_registry",
-    "pytest_simcore.rabbit_service",
-    "pytest_simcore.postgres_service",
+    "pytest_simcore.docker_swarm",
     "pytest_simcore.minio_service",
-    "pytest_simcore.traefik_service",
+    "pytest_simcore.postgres_service",
+    "pytest_simcore.rabbit_service",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_webserver_service",
+    "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.traefik_service",
 ]
 log = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope="module")
-def prepare_all_services(
-    simcore_docker_compose: Dict, ops_docker_compose: Dict, request
-) -> Dict:
-    services = []
-    for service in simcore_docker_compose["services"].keys():
-        services.append(service)
-    setattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, services)
-    core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
-
-    services = []
-    for service in ops_docker_compose["services"].keys():
-        services.append(service)
-    setattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, services)
-    ops_services = getattr(request.module, FIXTURE_CONFIG_OPS_SERVICES_SELECTION, [])
-
-    services = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return services
+# CORE stack
 
 
 @pytest.fixture(scope="module")
-def make_up_prod(
-    prepare_all_services: Dict,
-    simcore_docker_compose: Dict,
-    ops_docker_compose: Dict,
-    docker_stack: Dict,
-) -> Dict:
-    stack_configs = {"simcore": simcore_docker_compose, "ops": ops_docker_compose}
-    return stack_configs
+def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
+    # select ALL services for these tests
+    return list(simcore_docker_compose["services"].keys())
+
+
+@pytest.fixture(scope="module")
+def core_stack_name(docker_stack: Dict) -> str:
+    return docker_stack["stacks"]["core"]["name"]
+
+
+@pytest.fixture(scope="module")
+def core_stack_compose(
+    docker_stack: Dict, simcore_docker_compose: Dict
+) -> Dict[str, Any]:
+    # verifies core_services_selection
+    assert set(docker_stack["stacks"]["core"]["compose"]["services"]) == set(
+        simcore_docker_compose["services"]
+    )
+    return docker_stack["stacks"]["core"]["compose"]
+
+
+# OPS stack
+
+
+@pytest.fixture(scope="module")
+def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
+    # select ALL services for these tests
+    return list(ops_docker_compose["services"].keys())
+
+
+@pytest.fixture(scope="module")
+def ops_stack_name(docker_stack: Dict) -> str:
+    return docker_stack["stacks"]["ops"]["name"]
+
+
+@pytest.fixture(scope="module")
+def ops_stack_compose(docker_stack: Dict, ops_docker_compose: Dict):
+    # verifies ops_services_selection
+    assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(
+        ops_docker_compose["services"]
+    )
+    return docker_stack["stacks"]["core"]["compose"]

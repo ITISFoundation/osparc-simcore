@@ -2,9 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import sys
-from pathlib import Path
-from typing import Dict
 
 import pytest
 import sqlalchemy as sa
@@ -13,17 +10,9 @@ from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.core.application import init_app
 from starlette.testclient import TestClient
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 @pytest.fixture
-def app(
-    monkeypatch, devel_environ: Dict[str, str], postgres_db: sa.engine.Engine
-) -> FastAPI:
-    # Emulates environ so settings can get config
-    for key, value in devel_environ.items():
-        monkeypatch.setenv(key, value)
-
+def app(monkeypatch, service_test_environ, postgres_db: sa.engine.Engine) -> FastAPI:
     app = init_app()
     yield app
 
@@ -36,7 +25,7 @@ def client(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture()
-async def director_mockup(loop, monkeypatch, app: FastAPI):
+async def director_mockup(loop, app: FastAPI):
     class FakeDirector:
         async def get(self, url: str):
             return ""

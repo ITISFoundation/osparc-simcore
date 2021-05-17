@@ -38,25 +38,25 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
 
 @pytest.fixture(scope="module")
 def minio_config(
-    docker_stack: Dict, devel_environ: Dict, monkeypatch_module
+    docker_stack: Dict, testing_environ_vars: Dict, monkeypatch_module
 ) -> Dict[str, str]:
-    assert "ops_minio" in docker_stack["services"]
+    assert "pytest-ops_minio" in docker_stack["services"]
 
     config = {
         "client": {
             "endpoint": f"{get_ip()}:{get_service_published_port('minio')}",
-            "access_key": devel_environ["S3_ACCESS_KEY"],
-            "secret_key": devel_environ["S3_SECRET_KEY"],
-            "secure": strtobool(devel_environ["S3_SECURE"]) != 0,
+            "access_key": testing_environ_vars["S3_ACCESS_KEY"],
+            "secret_key": testing_environ_vars["S3_SECRET_KEY"],
+            "secure": strtobool(testing_environ_vars["S3_SECURE"]) != 0,
         },
-        "bucket_name": devel_environ["S3_BUCKET_NAME"],
+        "bucket_name": testing_environ_vars["S3_BUCKET_NAME"],
     }
 
     # nodeports takes its configuration from env variables
     for key, value in config["client"].items():
         monkeypatch_module.setenv(f"S3_{key.upper()}", str(value))
 
-    monkeypatch_module.setenv("S3_SECURE", devel_environ["S3_SECURE"])
+    monkeypatch_module.setenv("S3_SECURE", testing_environ_vars["S3_SECURE"])
     monkeypatch_module.setenv("S3_BUCKET_NAME", config["bucket_name"])
 
     return config
