@@ -20,7 +20,7 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def minimal_app(loop, devel_environ) -> Iterator[FastAPI]:
+def minimal_app(loop, testing_environ_vars) -> Iterator[FastAPI]:
     # TODO: auto generate fakes
 
     # avoid init of pg or director API clients

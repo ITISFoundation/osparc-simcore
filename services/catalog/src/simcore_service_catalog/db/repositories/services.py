@@ -59,6 +59,10 @@ def _make_list_services_query(
 
 
 class ServicesRepository(BaseRepository):
+    """
+    API that operates on services_access_rights and services_meta_data tables
+    """
+
     async def list_services(
         self,
         gids: Optional[List[int]] = None,
@@ -83,7 +87,6 @@ class ServicesRepository(BaseRepository):
         return services_in_db
 
     async def get_service(
-        # pylint: disable=too-many-arguments
         self,
         key: str,
         version: str,
@@ -128,7 +131,8 @@ class ServicesRepository(BaseRepository):
         new_service_access_rights: List[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
         async with self.db_engine.acquire() as conn:
-            async with conn.begin() as _transaction:  # NOTE: this ensure proper rollback in case of issue
+            # NOTE: this ensure proper rollback in case of issue
+            async with conn.begin() as _transaction:
                 row: RowProxy = await (
                     await conn.execute(
                         # pylint: disable=no-value-for-parameter

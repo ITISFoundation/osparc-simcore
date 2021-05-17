@@ -76,12 +76,6 @@ def services_docker_compose_file(services_dir):
     return dcpath
 
 
-@pytest.fixture(scope="module")
-def temp_folder(request, tmpdir_factory) -> Path:
-    tmp = Path(tmpdir_factory.mktemp(f"tmp_module_{request.module.__name__}"))
-    return tmp
-
-
 @pytest.fixture(scope="session")
 def web_client_dir(services_dir: Path) -> Path:
     wbc_dir = services_dir / "web/client"
