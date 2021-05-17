@@ -23,7 +23,9 @@ coverage==5.5
 faker==8.1.4
     # via -r requirements/_test.in
 idna==2.10
-    # via requests
+    # via
+    #   -c requirements/_base.txt
+    #   requests
 iniconfig==1.1.1
     # via pytest
 multidict==5.1.0
