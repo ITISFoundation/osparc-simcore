@@ -105,9 +105,7 @@ async def _monitor_docker_container(
 
     finally:
         if not out_log_file and log_file:
-            # TODO: Update missing_ok=True in py3.8
-            assert sys.version_info < (3, 8)  # nosec
-            log_file.unlink()
+            log_file.unlink(missing_ok=True)
 
 
 @log_decorator(logger=log)
