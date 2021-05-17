@@ -99,9 +99,6 @@ def docker_stack(
     testing_environ_vars: Dict,
 ) -> Iterator[Dict]:
 
-    core_stack_name = devel_environ["SWARM_STACK_NAME"]
-    assert core_stack_name.startswith("pytest-")
-
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     ops_stack_name = "pytest-ops"
