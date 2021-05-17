@@ -171,7 +171,7 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
     const respText = await resp.text();
 
     try {
-      const jsonResp = await JSON.parse(respText);
+      const jsonResp = JSON.parse(respText);
       return jsonResp["data"];
     }
     catch (error) {
