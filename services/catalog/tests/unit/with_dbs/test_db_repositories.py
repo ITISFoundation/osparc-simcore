@@ -10,6 +10,7 @@ import pytest
 from aiopg.sa.engine import Engine
 from faker import Faker
 from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from packaging import version
 from simcore_postgres_database.models.products import products
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.db.tables import (
@@ -17,6 +18,7 @@ from simcore_service_catalog.db.tables import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_service_catalog.utils.versioning import is_patch_release
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -39,7 +41,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture()
 async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
-    """ products created in postgres db """
+    """Inserts products in pg db table and returns its names"""
     data = [
         # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
         ("s4l", r"(^s4l[\.-])|(^sim4life\.)|(^api.s4l[\.-])|(^api.sim4life\.)"),
@@ -65,6 +67,8 @@ async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
 
 @pytest.fixture()
 async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
+    """Inserts groups in the pg-db table and returns group identifiers"""
+
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
     data = [
         (34, "john.smith", "primary group for user", "PRIMARY", None, {}),
@@ -98,6 +102,10 @@ async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
 
 @pytest.fixture()
 async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
+    """Returns a helper to add services in pg db by inserting in
+    services_meta_data and services_access_rights tables
+
+    """
     # pylint: disable=no-value-for-parameter
 
     async def inject_in_db(fake_catalog: List[Tuple]):
@@ -126,9 +134,8 @@ async def service_catalog_faker(
     products_names: List[str],
     faker: Faker,
 ) -> Callable:
-    """Returns a fake factory fo data as
-        ( service, owner_access, [team_access], [everyone_access] )
-
+    """Returns a fake factory function with arguments
+        service, owner_access, [team_access], [everyone_access]
     that can be used to fill services_meta_data and services_access_rights tables
     """
     everyone_gid, user_gid, team_gid = user_groups_ids
@@ -309,8 +316,112 @@ async def test_read_services(
     assert {user_gid, team_gid} == {a.gid for a in access_rights}
 
 
+@pytest.fixture()
+async def fake_jupyterlab_catalog(
+    products_names: List[str],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+):
+    target_product = products_names[-1]
+
+    # injects fake data in db
+    await services_db_tables_injector(
+        [
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "0.0.1",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            ),
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "0.0.7",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            ),
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "0.10.0",
+                team_access="x",
+                everyone_access=None,
+                product=target_product,
+            ),
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "1.1.0",
+                team_access="xw",
+                everyone_access=None,
+                product=target_product,
+            ),
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "1.1.3",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            ),
+        ]
+    )
+
+
+async def test_get_released_versions(
+    fake_jupyterlab_catalog,
+    services_repo: ServicesRepository,
+):
+
+    services: List[ServiceMetaDataAtDB] = await services_repo.list_service_releases(
+        "simcore/services/dynamic/jupyterlab"
+    )
+    assert len(services) == 5
+
+    vs = [version.parse(s.version) for s in services]
+    assert sorted(vs) == vs
+
+    # list all patches w.r.t latest
+    patches = [v for v in vs if is_patch_release(v, "1.1.4")]
+    assert len(patches) == 2
+
+    # check limit
+    releases = await services_repo.list_service_releases(
+        "simcore/services/dynamic/jupyterlab", limit_count=2
+    )
+
+    assert len(releases) == 2
+    last_release, previous_release = releases
+
+    assert is_patch_release(last_release.version, previous_release.version)
+
+    assert last_release == await services_repo.get_last_service_release(
+        "simcore/services/dynamic/jupyterlab"
+    )
+
+
+async def test_copy_access_rights_from_previous_release(
+    fake_jupyterlab_catalog,
+    services_repo: ServicesRepository,
+):
+    # last two
+    releases = await services_repo.list_service_releases(
+        "simcore/services/dynamic/jupyterlab", limit_count=2
+    )
+    assert len(releases) == 2
+    last_release, previous_release = releases
+
+    access_rights: List[
+        ServiceAccessRightsAtDB
+    ] = await services_repo.get_service_access_rights(
+        **previous_release.dict(include={"key", "version"})
+    )
+
+    for access in access_rights:
+        access.version = last_release.version
+    await services_repo.upsert_service_access_rights(access_rights)
+
+
 @pytest.mark.skip(reason="dev")
-def test_auto_upgrade(services_catalog):
+def test_it(services_catalog):
 
     # service S has a new patch released: 1.2.5 (i.e. backwards compatible bug fix, according to semver policies )
     current_version = "1.10.5"

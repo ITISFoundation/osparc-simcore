@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
@@ -86,6 +87,33 @@ class ServicesRepository(BaseRepository):
             ):
                 services_in_db.append(ServiceMetaDataAtDB(**row))
         return services_in_db
+
+    async def list_service_releases(
+        self, key: str, *, limit_count: Optional[int] = None
+    ) -> List[ServiceMetaDataAtDB]:
+        """Lists LAST n releases of a given service"""
+
+        query = (
+            sa.select([services_meta_data])
+            .where(services_meta_data.c.key == key)
+            .order_by(sa.desc(services_meta_data.c.version))
+        )
+
+        if limit_count:
+            assert limit_count > 0  # nosec
+            query = query.limit(limit_count)
+
+        releases = []
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(query):
+                releases.append(ServiceMetaDataAtDB(**row))
+
+        return releases
+
+    async def get_last_service_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
+        """ Returns last release or None if service was never released """
+        releases = await self.list_service_releases(key, limit_count=1)
+        return releases[0] if releases else None
 
     async def get_service(
         self,
@@ -175,13 +203,18 @@ class ServicesRepository(BaseRepository):
         self,
         key: str,
         version: str,
-        product_name: str,
+        product_name: Optional[str] = None,
     ) -> List[ServiceAccessRightsAtDB]:
+        """
+        - If product_name is not specificed, then all are considered in the query
+        """
         services_in_db = []
         query = sa.select([services_access_rights]).where(
             (services_access_rights.c.key == key)
             & (services_access_rights.c.version == version)
             & (services_access_rights.c.product_name == product_name)
+            if product_name
+            else True
         )
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(query):
@@ -189,16 +222,17 @@ class ServicesRepository(BaseRepository):
         return services_in_db
 
     async def list_services_access_rights(
-        self, key_versions: List[Tuple[str, str]], product_name: str
+        self, key_versions: List[Tuple[str, str]], product_name: Optional[str] = None
     ) -> Dict[Tuple[str, str], List[ServiceAccessRightsAtDB]]:
-        from collections import defaultdict
-
+        """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = sa.select([services_access_rights]).where(
             tuple_(services_access_rights.c.key, services_access_rights.c.version).in_(
                 key_versions
             )
             & (services_access_rights.c.product_name == product_name)
+            if product_name
+            else True
         )
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(query):
