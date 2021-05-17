@@ -50,13 +50,6 @@ def test_project_nodes_io_model_examples(model_cls, model_cls_examples):
         print(name, ":", model_instance)
 
 
-def get_args(annotation) -> Tuple:
-    assert (  # nosec
-        sys.version_info.major == 3 and sys.version_info.minor < 8  # nosec
-    ), "TODO: py3.8 replace __args__ with typings.get_args"
-    return annotation.__args__
-
-
 def test_store_discriminator():
     workbench = {
         "89f95b67-a2a3-4215-a794-2356684deb61": {
