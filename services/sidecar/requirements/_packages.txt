@@ -38,8 +38,6 @@ chardet==3.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-configparser==5.0.0
-    # via minio
 dnspython==2.0.0
     # via
     #   -c requirements/_base.txt
