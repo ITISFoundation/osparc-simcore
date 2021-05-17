@@ -74,8 +74,6 @@ httptools==0.1.1
     # via uvicorn
 httpx==0.18.1
     # via -r requirements/_base.in
-idna-ssl==1.1.0
-    # via aiohttp
 idna==2.10
     # via
     #   email-validator
@@ -172,10 +170,8 @@ urllib3==1.26.4
     #   requests
 uvicorn[standard]==0.13.4
     # via fastapi
-uvloop==0.14.0 ; python_version < "3.7"
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   uvicorn
+uvloop==0.14.0
+    # via uvicorn
 vine==5.0.0
     # via
     #   amqp

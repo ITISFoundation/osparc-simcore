@@ -26,14 +26,6 @@ asgi-lifespan==1.0.1
     # via -r requirements/_test.in
 astroid==2.5.6
     # via pylint
-async-exit-stack==1.0.1 ; python_version < "3.7"
-    # via
-    #   -c requirements/_base.txt
-    #   asgi-lifespan
-async-generator==1.10 ; python_version < "3.7"
-    # via
-    #   -c requirements/_base.txt
-    #   httpx
 async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
@@ -296,7 +288,6 @@ typing-extensions==3.7.4.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   yarl
 urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
