@@ -4,7 +4,7 @@
 
 import itertools
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterator, List, Tuple
 
 import pytest
@@ -222,8 +222,8 @@ class FakeCatalogInfo:
     jupyter_service_key: str = "simcore/services/dynamic/jupyterlab"
     expected_services_count: int = 5
     expected_latest: str = "1.1.3"
-    expected_1_1_x: List[str] = []
-    expected_0_x_x: List[str] = []
+    expected_1_1_x: List[str] = field(default_factory=list)
+    expected_0_x_x: List[str] = field(default_factory=list)
 
 
 @pytest.fixture()
