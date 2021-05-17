@@ -29,7 +29,9 @@ attrs==20.3.0
 chardet==4.0.0
     # via aiohttp
 idna==2.10
-    # via yarl
+    # via
+    #   -r requirements/_base.in
+    #   yarl
 isodate==0.6.0
     # via
     #   openapi-core
@@ -97,9 +99,7 @@ trafaret==2.1.0
 typing-extensions==3.10.0.0
     # via
     #   aiohttp
-    #   importlib-metadata
     #   pydantic
-    #   yarl
 ujson==4.0.2
     # via -r requirements/_base.in
 werkzeug==2.0.0

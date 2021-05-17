@@ -57,15 +57,6 @@ toml==0.10.2
     #   black
     #   pep517
     #   pre-commit
-typed-ast==1.4.3
-    # via
-    #   -c requirements/_test.txt
-    #   black
-typing-extensions==3.10.0.0
-    # via
-    #   -c requirements/_test.txt
-    #   black
-    #   importlib-metadata
 virtualenv==20.4.6
     # via pre-commit
 

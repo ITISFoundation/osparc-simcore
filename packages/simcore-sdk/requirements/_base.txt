@@ -37,8 +37,6 @@ attrs==20.3.0
     #   openapi-core
 chardet==4.0.0
     # via aiohttp
-configparser==5.0.2
-    # via minio
 decorator==4.4.2
     # via networkx
 dnspython==2.1.0
@@ -148,7 +146,6 @@ typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   pydantic
-    #   yarl
 ujson==4.0.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 werkzeug==2.0.0
