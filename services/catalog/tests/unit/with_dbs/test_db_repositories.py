@@ -310,6 +310,40 @@ async def test_create_services(
     assert new_service.dict(include=set(fake_service.keys())) == service.dict()
 
 
+@pytest.mark.skip(reason="dev")
+async def test_access_rights_upon_creation(
+    services_repo: ServicesRepository,
+    service_catalog_faker: Callable,
+    user_groups_ids: List[int],
+):
+
+    everyone_gid, user_gid, team_gid = user_groups_ids
+
+    # creates fake data
+    fake_service, *fake_access_rights = service_catalog_faker(
+        "simcore/services/dynamic/jupyterlab", "1.0.0"
+    )
+
+    access: ServiceAccessRightsAtDB = fake_access_rights[0]
+    assert access.gid == user_gid
+
+    # validation
+    service = ServiceMetaDataAtDB.parse_obj(fake_service)
+    service_access_rights = [
+        access,
+        access.copy(
+            update={"gid": team_gid, "execute_access": True, "write_access": True}
+        ),
+        access.copy(
+            update={"gid": team_gid, "execute_access": True, "write_access": False}
+        ),
+    ]
+
+    new_service = await services_repo.create_service(service, service_access_rights)
+
+    assert new_service.dict(include=set(fake_service.keys())) == service.dict()
+
+
 async def test_read_services(
     services_repo: ServicesRepository,
     user_groups_ids: List[int],

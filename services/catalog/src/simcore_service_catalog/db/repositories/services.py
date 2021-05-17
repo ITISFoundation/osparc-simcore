@@ -183,6 +183,16 @@ class ServicesRepository(BaseRepository):
         new_service: ServiceMetaDataAtDB,
         new_service_access_rights: List[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
+
+        for access_rights in new_service_access_rights:
+            if (
+                access_rights.key != new_service.key
+                or access_rights.version != new_service.version
+            ):
+                raise ValueError(
+                    f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
+                )
+
         async with self.db_engine.acquire() as conn:
             # NOTE: this ensure proper rollback in case of issue
             async with conn.begin() as _transaction:
@@ -195,9 +205,10 @@ class ServicesRepository(BaseRepository):
                     )
                 ).first()
                 created_service = ServiceMetaDataAtDB(**row)
-                for rights in new_service_access_rights:
+
+                for access_rights in new_service_access_rights:
                     insert_stmt = insert(services_access_rights).values(
-                        **rights.dict(by_alias=True)
+                        **access_rights.dict(by_alias=True)
                     )
                     await conn.execute(insert_stmt)
         return created_service

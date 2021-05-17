@@ -32,8 +32,8 @@ from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
+from ..services import access_rights
 from ..services.frontend_services import iter_service_docker_data
-from ..utils.versioning import as_version, is_patch_release
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +112,8 @@ async def _create_service_default_access_rights(
     # ----
 
     groups_repo = GroupsRepository(db_engine)
-    everyone_gid = (await groups_repo.get_everyone_group()).gid
+    g = await groups_repo.get_everyone_group()
+    everyone_gid = g.gid
     owner_gid = None
     reader_gids: List[PositiveInt] = []
 
@@ -166,45 +167,23 @@ async def _create_services_in_db(
 
     services_repo = ServicesRepository(db_engine)
 
-    for service_key, service_version in service_keys:
+    sorted_service_ids = sorted(service_keys, key=lambda t: Version(t[1]))
+    for service_key, service_version in sorted_service_ids:
         service_metadata: ServiceDockerData = services_in_registry[
             (service_key, service_version)
         ]
 
-        # DEFAULT access rights policies
+        # DEFAULT policies
         owner_gid, service_access_rights = await _create_service_default_access_rights(
             app, service_metadata, db_engine
         )
 
-        # AUTO-UPGRADE PATCH policy:
-        #
-        #  - Any new patch released, inherits the access rights from previous compatible version
-        #  - TODO: add as option in the publication contract, i.e. in ServiceDockerData
-        #  - Does NOT apply to front-end services
-        #
-        # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2244)
-        #
-        if not _is_frontend_service(service_metadata):
-            version: Version = as_version(service_version)
-            latest_releases = await services_repo.list_service_releases(
-                service_key, major=version.major, minor=version.minor, limit_count=1
-            )
-            if latest_releases:
-                latest_patch = latest_releases[0]
-                if is_patch_release(latest_patch.version, version):
-                    previous_access_rights = (
-                        await services_repo.get_service_access_rights(
-                            latest_patch.key, latest_patch.version
-                        )
-                    )
-                    for access in previous_access_rights:
-                        service_access_rights.append(
-                            access.copy(
-                                exclude={"created", "modified"},
-                                update={"version": service_version},
-                            )
-                        )
-                        logger.info("Auto-upgrading %s", service_access_rights[-1])
+        # AUTO-UPGRADE PATCH policy
+        service_access_rights += await access_rights.evaluate_auto_upgrade_policy(
+            service_metadata, services_repo
+        )
+
+        service_access_rights = access_rights.merge_access_rights(service_access_rights)
 
         # set the service in the DB
         await services_repo.create_service(
