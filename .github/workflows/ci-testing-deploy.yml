@@ -1672,9 +1672,9 @@ jobs:
         if: always()
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
 
-  system-test-e2e:
+  system-test-e2e-sleepers:
     timeout-minutes: 20 # if this timeout gets too small, then split the tests
-    name: "[sys] e2e"
+    name: "[sys] e2e sleepers"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1723,7 +1723,85 @@ jobs:
       - name: setup
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
-        run: ./ci/github/system-testing/e2e.bash test
+        run: ./ci/github/system-testing/e2e.bash test_sleepers
+      - name: recover docker logs
+        id: logs_recovery
+        if: always()
+        run: ./ci/github/system-testing/e2e.bash dump_docker_logs
+      - name: upload docker logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: simcore_logs
+      - name: upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_screenshots
+          path: tests/e2e/screenshots
+      - name: upload e2e logs
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_logs
+          path: tests/e2e/logs
+      - name: cleanup
+        if: always()
+        run: ./ci/github/system-testing/e2e.bash clean_up
+
+  system-test-e2e-mattward:
+    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    name: "[sys] e2e mattward"
+    needs: [build-test-images]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.6]
+        node: [14]
+        os: [ubuntu-20.04]
+      fail-fast: false
+    steps:
+      - name: set PR default variables
+        # only pushes have access to the docker credentials, use a default
+        if: github.event_name == 'pull_request'
+        run: |
+          export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
+          echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+      - name: setup docker
+        run: |
+          sudo ./ci/github/helpers/setup_docker_compose.bash
+          ./ci/github/helpers/setup_docker_experimental.bash
+      - name: setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node }}
+      - name: show system version
+        run: ./ci/helpers/show_system_versions.bash
+      - uses: actions/cache@v2
+        name: getting cached data python
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-swarm-e2e-${{ hashFiles('tests/e2e/requirements/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-swarm-e2e-
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - uses: actions/cache@v2
+        name: getting cached data node
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: setup
+        run: ./ci/github/system-testing/e2e.bash install
+      - name: test
+        run: ./ci/github/system-testing/e2e.bash test_mattward
       - name: recover docker logs
         id: logs_recovery
         if: always()
