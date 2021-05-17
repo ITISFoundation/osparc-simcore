@@ -16,9 +16,15 @@ install() {
   popd
 }
 
-test() {
+test_sleepers() {
   pushd tests/e2e
-  make test
+  make test-sleepers
+  popd
+}
+
+test_mattward() {
+  pushd tests/e2e
+  make test-mattward
   popd
 }
 

@@ -74,3 +74,14 @@ test: ## test the platform
 	npm test
 	# tests whether tutorial run
 	npm run tutorials http://127.0.0.1:9081
+
+
+.PHONY: test-sleepers
+test-sleepers: ## test sleepers
+	npm test
+	npm run tutorials-sleepers http://127.0.0.1:9081
+
+.PHONY: test-mattward
+test-mattward: ## test mattward
+	npm test
+	npm run tutorials-mattward http://127.0.0.1:9081
