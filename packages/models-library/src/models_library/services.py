@@ -4,7 +4,7 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import (
     BaseModel,
@@ -253,7 +253,7 @@ class ServiceOutput(ServiceProperty):
 
 
 class ServiceKeyVersion(BaseModel):
-    """ This pair uniquely identifies a services """
+    """This pair uniquely identifies a services"""
 
     key: constr(regex=KEY_RE) = Field(
         ...,
@@ -352,10 +352,6 @@ class ServiceGroupAccessRights(BaseModel):
         False, description="defines whether the group can modify the service"
     )
 
-    @classmethod
-    def full(cls) -> "ServiceGroupAccessRights":
-        return cls(execute_access=True, write_access=True)
-
 
 class ServiceAccessRights(BaseModel):
     access_rights: Optional[Dict[GroupId, ServiceGroupAccessRights]] = Field(
@@ -453,6 +449,24 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
         ..., description="defines the product name", example="osparc"
     )
 
+    @classmethod
+    def create_from(
+        cls, resource: Tuple[Union[str, int], ...], flags: Dict[str, bool]
+    ) -> "ServiceAccessRightsAtDB":
+        return cls(
+            key=resource[0],
+            version=resource[1],
+            gid=resource[2],
+            product_name=resource[3],
+            **flags,
+        )
+
+    def get_resource(self) -> Tuple[Union[str, int], ...]:
+        return tuple([self.key, self.version, self.gid, self.product_name])
+
+    def get_flags(self) -> Dict[str, bool]:
+        return self.dict(include={"execute_access", "write_access"})
+
     class Config:
         orm_mode = True
         schema_extra = {
@@ -462,8 +476,8 @@ class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
                 "gid": 8,
                 "execute_access": True,
                 "write_access": True,
+                "product_name": "osparc",
                 "created": "2021-01-18 12:46:57.7315",
                 "modified": "2021-01-19 12:45:00",
-                "product_name": "osparc",
             }
         }
