@@ -167,16 +167,18 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
     const url = host + apiVersion + endpoint;
     console.log("makeRequest", url);
     const resp = await fetch(url);
+    // once the stream is read it cannot be read again
+    const respText = await resp.text();
 
     try {
-      const jsonResp = await resp.json();
+      const jsonResp = await JSON.parse(respText);
       return jsonResp["data"];
     }
-    catch(error) {
+    catch (error) {
       console.log("-- No JSON in response --");
       console.log("Request:", url);
       console.log("Response headers:", resp.headers);
-      console.log("Response:", await resp.text());
+      console.log("Response:", respText);
     }
     return resp;
   }, host, endpoint, apiVersion);
