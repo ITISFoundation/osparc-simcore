@@ -10,15 +10,10 @@ aiopg[sa]==1.2.1
     # via -r requirements/_base.in
 aniso8601==7.0.0
     # via graphene
-async-exit-stack==1.0.1 ; python_version < "3.7"
-    # via
-    #   -r requirements/_base.in
-    #   fastapi
-async-generator==1.10 ; python_version < "3.7"
-    # via
-    #   -r requirements/_base.in
-    #   fastapi
-    #   httpx
+async-exit-stack==1.0.1
+    # via fastapi
+async-generator==1.10
+    # via fastapi
 async-timeout==3.0.1
     # via aiopg
 certifi==2020.12.5
@@ -57,9 +52,8 @@ httpx==0.18.1
     # via -r requirements/_base.in
 idna==2.10
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   email-validator
     #   requests
     #   rfc3986

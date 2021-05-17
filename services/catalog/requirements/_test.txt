@@ -10,12 +10,10 @@ alembic==1.6.2
     # via -r requirements/_test.in
 astroid==2.5.6
     # via pylint
-async-generator==1.10 ; python_version < "3.7"
+async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
-    #   httpx
-async-timeout==3.0.1
-    # via aiohttp
+    #   aiohttp
 attrs==20.3.0
     # via
     #   aiohttp
@@ -216,11 +214,7 @@ toml==0.10.2
     #   pylint
     #   pytest
 typing-extensions==3.7.4.3
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   importlib-metadata
-    #   yarl
+    # via aiohttp
 urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
