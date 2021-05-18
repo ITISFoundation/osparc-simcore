@@ -33,7 +33,7 @@ build: ## builds distributed osparc locust docker image
 up: ## runs distributed osparc locust using target=locust_test_file.py, optional host can be set
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
-	export TARGET_HOST=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
+	export TARGET_URL=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
 	docker-compose --file docker-compose.yml up --scale worker=4
 
 down: ## stops and removes osparc locust containers
@@ -43,6 +43,6 @@ down: ## stops and removes osparc locust containers
 test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms, optional host can be set
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
-	export TARGET_HOST=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
+	export TARGET_URL=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
 	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=1m --check-fail-ratio=0.01 --check-avg-response-time=200"; \
 	docker-compose --file docker-compose.yml up --scale worker=4

@@ -10,7 +10,7 @@ services:
       - ./locust_report:/reporting
     command: >
       -f /mnt/locust/${LOCUST_FILE}
-      --host ${TARGET_HOST}
+      --host ${TARGET_URL}
       --html /reporting/locust_html.html
       ${LOCUST_OPTIONS}
       --master
