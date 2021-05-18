@@ -17,7 +17,6 @@
   "scripts": {
     "test": "jest --runInBand --colors",
     "demo": "node demo/puppeteerDemo.js",
-    "tutorials": "node tutorials/sleepers.js",
     "tutorials-sleepers": "node tutorials/sleepers.js",
     "tutorials-mattward": "node tutorials/mattward.js"
   },
