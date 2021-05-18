@@ -97,9 +97,7 @@ async def _create_services_in_db(
         (
             owner_gid,
             service_access_rights,
-        ) = await access_rights.create_service_default_access_rights(
-            app, service_metadata
-        )
+        ) = await access_rights.evaluate_default_policy(app, service_metadata)
 
         # AUTO-UPGRADE PATCH policy
         inherited_access_rights = await access_rights.evaluate_auto_upgrade_policy(

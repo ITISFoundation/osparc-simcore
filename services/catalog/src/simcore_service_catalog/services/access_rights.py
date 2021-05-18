@@ -41,7 +41,7 @@ async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
     return service_build_data < OLD_SERVICES_DATE
 
 
-async def create_service_default_access_rights(
+async def evaluate_default_policy(
     app: FastAPI, service: ServiceDockerData
 ) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
     """Given a service, it returns the owner's group-id (gid) and a list of access rights following
@@ -113,24 +113,29 @@ async def evaluate_auto_upgrade_policy(
         return []
 
     service_access_rights = []
-    version: Version = as_version(service_metadata.version)
+    new_version: Version = as_version(service_metadata.version)
     latest_releases = await services_repo.list_service_releases(
-        service_metadata.key, major=version.major, minor=version.minor, limit_count=1
+        service_metadata.key,
+        major=new_version.major,
+        minor=new_version.minor,
+        limit_count=1,
     )
     assert len(latest_releases) <= 1  # nosec
 
     if latest_releases:
         latest_patch = latest_releases[0]
 
-        if is_patch_release(latest_patch.version, version):
+        if is_patch_release(new_version, latest_patch.version):
             previous_access_rights = await services_repo.get_service_access_rights(
                 latest_patch.key, latest_patch.version
             )
+
             for access in previous_access_rights:
                 service_access_rights.append(
                     access.copy(
                         exclude={"created", "modified"},
                         update={"version": service_metadata.version},
+                        deep=True,
                     )
                 )
 
@@ -140,6 +145,7 @@ async def evaluate_auto_upgrade_policy(
 def merge_access_rights(
     access_rights: List[ServiceAccessRightsAtDB],
 ) -> List[ServiceAccessRightsAtDB]:
+    # TODO: not generic enought.
     # TODO: probably a lot of room to optimize
     merged = {}
     for access in access_rights:
@@ -147,6 +153,7 @@ def merge_access_rights(
         flags = merged.get(resource)
         if flags:
             for key, value in access.get_flags().items():
+                # WARNING: if accesss is given once, it is maintained!
                 flags[key] |= value
         else:
             merged[resource] = access.get_flags()

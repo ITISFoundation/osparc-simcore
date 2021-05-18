@@ -243,13 +243,14 @@ class ServicesRepository(BaseRepository):
         - If product_name is not specificed, then all are considered in the query
         """
         services_in_db = []
-        query = sa.select([services_access_rights]).where(
-            (services_access_rights.c.key == key)
-            & (services_access_rights.c.version == version)
-            & (services_access_rights.c.product_name == product_name)
-            if product_name
-            else True
+        search_expression = (services_access_rights.c.key == key) & (
+            services_access_rights.c.version == version
         )
+        if product_name:
+            search_expression &= services_access_rights.c.product_name == product_name
+
+        query = sa.select([services_access_rights]).where(search_expression)
+
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(query):
                 services_in_db.append(ServiceAccessRightsAtDB(**row))
