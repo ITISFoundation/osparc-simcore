@@ -26,22 +26,22 @@ __check_defined = \
 	@echo "WARNING ##### $@ does not exist, cloning $< as $@ ############"; cp $< $@)
 
 .PHONY: build
-build:
+build: ## builds distributed osparc locust docker image
 	docker buildx build --tag local/locust:latest .
 
 .PHONY: up down run
-up:
+up: ## runs distributed osparc locust using target=locust_test_file.py
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export TARGET=$(target); export HOST=$(get_my_ip); \
+	@export LOCUST_FILE=$(target); export TARGET_HOST=$(get_my_ip); \
 	docker-compose --file docker-compose.yml up --scale worker=4
 
-down:
+down: ## stops and removes osparc locust containers
 	docker-compose --file docker-compose.yml down
 
 .PHONY: test
-test:
+test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export TARGET=$(target); \
-	export HOST=$(get_my_ip); \
+	@export LOCUST_FILE=$(target); \
+	export TARGET_HOST=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
 	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=1m --check-fail-ratio=0.05 --check-avg-response-time=50"; \
 	docker-compose --file docker-compose.yml up --scale worker=4

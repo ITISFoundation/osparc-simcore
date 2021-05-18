@@ -8,8 +8,8 @@ services:
     volumes:
       - ./locust_files:/mnt/locust
     command: >
-      -f /mnt/locust/${TARGET}
-      --host http://${HOST}:9081
+      -f /mnt/locust/${LOCUST_FILE}
+      --host ${TARGET_HOST}
       ${LOCUST_OPTIONS}
       --master
 
@@ -17,4 +17,4 @@ services:
     image: local/locust:latest
     volumes:
       - ./locust_files:/mnt/locust
-    command: -f /mnt/locust/${TARGET} --worker --master-host master
+    command: -f /mnt/locust/${LOCUST_FILE} --worker --master-host master
