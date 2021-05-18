@@ -5,11 +5,15 @@ from typing import Any, Dict, List, Optional
 
 import typer
 from httpx import URL, AsyncClient, codes
+from pydantic import EmailStr, SecretStr
 
 
-async def login_user(client: AsyncClient, email: str, password: str):
+async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr):
     path = "/auth/login"
-    await client.post(path, json={"email": email, "password": password})
+    r = await client.post(
+        path, json={"email": email, "password": password.get_secret_value()}
+    )
+    r.raise_for_status()
 
 
 async def get_project_for_user(
@@ -50,7 +54,7 @@ async def delete_project(client: AsyncClient, project_id: str, progressbar):
 
 
 async def clean(
-    endpoint: URL, username: str, password: str, project_id: Optional[str]
+    endpoint: URL, username: EmailStr, password: SecretStr, project_id: Optional[str]
 ) -> int:
     try:
         async with AsyncClient(base_url=endpoint.join("v0")) as client:
@@ -83,7 +87,7 @@ async def clean(
                     ]
                 )
             typer.secho(f"completed projects deletion", fg=typer.colors.YELLOW)
-    except Exception as exc:
+    except Exception as exc:  # pylint: disable=broad-except
         typer.secho(f"Unexpected issue: {exc}", fg=typer.colors.RED, err=True)
         return 1
     return 0
@@ -93,7 +97,7 @@ def main(
     endpoint: str, username: str, password: str, project_id: Optional[str] = None
 ) -> int:
     return asyncio.get_event_loop().run_until_complete(
-        clean(URL(endpoint), username, password, project_id)
+        clean(URL(endpoint), EmailStr(username), SecretStr(password), project_id)
     )
 
 
