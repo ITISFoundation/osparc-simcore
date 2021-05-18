@@ -12,10 +12,8 @@
 import asyncio
 import logging
 from asyncio.futures import CancelledError
-from datetime import datetime
 from pprint import pformat
-from typing import Dict, List, Optional, Set, Tuple
-from urllib.parse import quote_plus
+from typing import Dict, Set, Tuple
 
 from aiopg.sa import Engine
 from fastapi import FastAPI
@@ -26,7 +24,6 @@ from models_library.services import (
 )
 from packaging.version import Version
 from pydantic import ValidationError
-from pydantic.types import PositiveInt
 
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
@@ -37,7 +34,6 @@ from ..services.frontend_services import iter_service_docker_data
 
 logger = logging.getLogger(__name__)
 
-OLD_SERVICES_DATE: datetime = datetime(2020, 8, 19)
 
 ServiceKey = str
 ServiceVersion = str
@@ -79,85 +75,8 @@ async def _list_db_services(
     }
 
 
-def _is_frontend_service(service: ServiceDockerData) -> bool:
-    return "/frontend/" in service.key
-
-
-async def _create_service_default_access_rights(
-    app: FastAPI, service: ServiceDockerData, db_engine: Engine
-) -> Tuple[Optional[PositiveInt], List[ServiceAccessRightsAtDB]]:
-    """Given a service, it returns the owner's group-id (gid) and a list of access rights following
-    default access-rights policies
-
-    - DEFAULT Access Rights policies:
-        1. All services published in osparc prior 19.08.2020 will be visible to everyone (refered as 'old service').
-        2. Services published after 19.08.2020 will be visible ONLY to his/her owner
-        3. Front-end services are have read-access to everyone
-    """
-
-    async def _is_old_service(app: FastAPI, service: ServiceDockerData) -> bool:
-        # get service build date
-        client = get_director_api(app)
-        data = await client.get(
-            f"/service_extras/{quote_plus(service.key)}/{service.version}"
-        )
-        if not data or "build_date" not in data:
-            return True
-
-        logger.debug("retrieved service extras are %s", data)
-
-        service_build_data = datetime.strptime(data["build_date"], "%Y-%m-%dT%H:%M:%SZ")
-        return service_build_data < OLD_SERVICES_DATE
-
-    # ----
-
-    groups_repo = GroupsRepository(db_engine)
-    g = await groups_repo.get_everyone_group()
-    everyone_gid = g.gid
-    owner_gid = None
-    reader_gids: List[PositiveInt] = []
-
-    if _is_frontend_service(service) or await _is_old_service(app, service):
-        logger.debug("service %s:%s is old or frontend", service.key, service.version)
-        # let's make that one available to everyone
-        reader_gids.append(everyone_gid)
-
-    # try to find the owner
-    possible_owner_email = [service.contact] + [
-        author.email for author in service.authors
-    ]
-
-    for user_email in possible_owner_email:
-        possible_gid = await groups_repo.get_user_gid_from_email(user_email)
-        if possible_gid:
-            if not owner_gid:
-                owner_gid = possible_gid
-    if not owner_gid:
-        logger.warning("service %s:%s has no owner", service.key, service.version)
-    else:
-        reader_gids.append(owner_gid)
-
-    # we add the owner with full rights, unless it's everyone
-    access_rights = [
-        ServiceAccessRightsAtDB(
-            key=service.key,
-            version=service.version,
-            gid=gid,
-            execute_access=True,
-            write_access=(gid == owner_gid),
-            product_name=app.state.settings.access_rights_default_product_name,
-        )
-        for gid in set(reader_gids)
-    ]
-
-    # Patch releases inherit access rights from previous version
-
-    return (owner_gid, access_rights)
-
-
 async def _create_services_in_db(
     app: FastAPI,
-    db_engine: Engine,
     service_keys: Set[Tuple[ServiceKey, ServiceVersion]],
     services_in_registry: Dict[Tuple[ServiceKey, ServiceVersion], ServiceDockerData],
 ) -> None:
@@ -165,24 +84,29 @@ async def _create_services_in_db(
 
     Determines the access rights of each service and adds it to the database"""
 
-    services_repo = ServicesRepository(db_engine)
+    services_repo = ServicesRepository(app.state.engine)
 
-    sorted_service_ids = sorted(service_keys, key=lambda t: Version(t[1]))
-    for service_key, service_version in sorted_service_ids:
+    sorted_services = sorted(service_keys, key=lambda t: Version(t[1]))
+
+    for service_key, service_version in sorted_services:
         service_metadata: ServiceDockerData = services_in_registry[
             (service_key, service_version)
         ]
 
         # DEFAULT policies
-        owner_gid, service_access_rights = await _create_service_default_access_rights(
-            app, service_metadata, db_engine
+        (
+            owner_gid,
+            service_access_rights,
+        ) = await access_rights.create_service_default_access_rights(
+            app, service_metadata
         )
 
         # AUTO-UPGRADE PATCH policy
-        service_access_rights += await access_rights.evaluate_auto_upgrade_policy(
+        inherited_access_rights = await access_rights.evaluate_auto_upgrade_policy(
             service_metadata, services_repo
         )
 
+        service_access_rights += inherited_access_rights
         service_access_rights = access_rights.merge_access_rights(service_access_rights)
 
         # set the service in the DB
@@ -192,7 +116,7 @@ async def _create_services_in_db(
         )
 
 
-async def _ensure_registry_insync_with_db(app: FastAPI, db_engine: Engine) -> None:
+async def _ensure_registry_insync_with_db(app: FastAPI) -> None:
     """Ensures that the services listed in the database is in sync with the registry
 
     Notice that a services here referes to a 2-tuple (key, version)
@@ -201,7 +125,7 @@ async def _ensure_registry_insync_with_db(app: FastAPI, db_engine: Engine) -> No
         Tuple[ServiceKey, ServiceVersion], ServiceDockerData
     ] = await _list_registry_services(app)
     services_in_db: Set[Tuple[ServiceKey, ServiceVersion]] = await _list_db_services(
-        db_engine
+        app.state.engine
     )
 
     # check that the db has all the services at least once
@@ -213,9 +137,7 @@ async def _ensure_registry_insync_with_db(app: FastAPI, db_engine: Engine) -> No
         )
 
         # update db
-        await _create_services_in_db(
-            app, db_engine, missing_services_in_db, services_in_registry
-        )
+        await _create_services_in_db(app, missing_services_in_db, services_in_registry)
 
 
 async def _ensure_published_templates_accessible(
@@ -268,7 +190,7 @@ async def sync_registry_task(app: FastAPI) -> None:
             logger.debug("Syncing services between registry and database...")
 
             # check that the list of services is in sync with the registry
-            await _ensure_registry_insync_with_db(app, engine)
+            await _ensure_registry_insync_with_db(app)
 
             # check that the published services are available to everyone
             # (templates are published to GUESTs, so their services must be also accessible)
