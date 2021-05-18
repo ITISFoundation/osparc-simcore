@@ -3,7 +3,8 @@
 #
 include ../../scripts/common.Makefile
 
-
+LOCUST_VERSION=1.5.3
+export LOCUST_VERSION
 # UTILS
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
@@ -27,7 +28,11 @@ __check_defined = \
 
 .PHONY: build
 build: ## builds distributed osparc locust docker image
-	docker buildx build --tag local/locust:latest .
+	docker buildx build --build-arg LOCUST_VERSION=$(LOCUST_VERSION) --tag itisfoundation/locust:$(LOCUST_VERSION) --tag local/locust:latest .
+
+.PHONY: push
+push:
+	docker push itisfoundation/locust:$(LOCUST_VERSION)
 
 .PHONY: up down run
 up: ## runs distributed osparc locust using target=locust_test_file.py, optional host can be set
