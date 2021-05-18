@@ -30,16 +30,17 @@ build: ## builds distributed osparc locust docker image
 	docker buildx build --tag local/locust:latest .
 
 .PHONY: up down run
-up: ## runs distributed osparc locust using target=locust_test_file.py
+up: ## runs distributed osparc locust using target=locust_test_file.py, optional host can be set
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
-	@export LOCUST_FILE=$(target); export TARGET_HOST=$(get_my_ip); \
+	@export LOCUST_FILE=$(target); \
+	export TARGET_HOST=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
 	docker-compose --file docker-compose.yml up --scale worker=4
 
 down: ## stops and removes osparc locust containers
 	docker-compose --file docker-compose.yml down
 
 .PHONY: test
-test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms
+test: ## runs osparc locust with target=locust_test_file.py in headless mode for a minute. Will fail if 5% more fail requests or average response time is above 50ms, optional host can be set
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
 	export TARGET_HOST=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
