@@ -2,8 +2,9 @@
 
 """
 import logging
+import operator
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import quote_plus
 
 from aiopg.sa.engine import Engine
@@ -142,26 +143,47 @@ async def evaluate_auto_upgrade_policy(
     return service_access_rights
 
 
-def merge_access_rights(
+def reduce_access_rights(
     access_rights: List[ServiceAccessRightsAtDB],
+    reduce_operation: Callable = operator.ior,
 ) -> List[ServiceAccessRightsAtDB]:
-    # TODO: not generic enought.
+    """
+    Reduces a list of access-rights per target
+    By default, the reduction is OR (i.e. preserves True flags)
+    """
     # TODO: probably a lot of room to optimize
-    merged = {}
-    for access in access_rights:
-        resource = access.get_resource()
-        flags = merged.get(resource)
-        if flags:
-            for key, value in access.get_flags().items():
-                # WARNING: if accesss is given once, it is maintained!
-                flags[key] |= value
-        else:
-            merged[resource] = access.get_flags()
+    # helper functions to simplify operation of access rights
 
-    merged_access_rights = []
-    for resource in merged:
-        merged_access_rights.append(
-            ServiceAccessRightsAtDB.create_from(resource, merged[resource])
+    def get_target(access: ServiceAccessRightsAtDB) -> Tuple[Union[str, int], ...]:
+        """ Hashable identifier of the resource the access rights apply to """
+        return tuple([access.key, access.version, access.gid, access.product_name])
+
+    def get_flags(access: ServiceAccessRightsAtDB) -> Dict[str, bool]:
+        """ Extracts only """
+        return access.dict(include={"execute_access", "write_access"})
+
+    access_flags_map = {}
+    for access in access_rights:
+        target = get_target(access)
+        access_flags = access_flags_map.get(target)
+
+        if access_flags:
+            # applies reduction on flags
+            for key, value in get_flags(access).items():
+                access_flags[key] = reduce_operation(access_flags[key], value)  # a |= b
+        else:
+            access_flags_map[target] = get_flags(access)
+
+    reduced_access_rights = []
+    for target in access_flags_map:
+        reduced_access_rights.append(
+            ServiceAccessRightsAtDB(
+                key=target[0],
+                version=target[1],
+                gid=target[2],
+                product_name=target[3],
+                **access_flags_map[target],
+            )
         )
 
-    return merged_access_rights
+    return reduced_access_rights

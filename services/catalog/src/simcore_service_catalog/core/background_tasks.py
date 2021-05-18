@@ -105,7 +105,9 @@ async def _create_services_in_db(
         )
 
         service_access_rights += inherited_access_rights
-        service_access_rights = access_rights.merge_access_rights(service_access_rights)
+        service_access_rights = access_rights.reduce_access_rights(
+            service_access_rights
+        )
 
         # set the service in the DB
         await services_repo.create_service(

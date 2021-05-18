@@ -14,7 +14,7 @@ from simcore_service_catalog.models.domain.group import GroupAtDB
 from simcore_service_catalog.services.access_rights import (
     evaluate_auto_upgrade_policy,
     evaluate_default_policy,
-    merge_access_rights,
+    reduce_access_rights,
 )
 
 pytest_simcore_core_services_selection = [
@@ -25,7 +25,7 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def test_merge_access_rights():
+def test_reduce_access_rights():
     sample = ServiceAccessRightsAtDB.parse_obj(
         {
             "key": "simcore/services/dynamic/sim4life",
@@ -37,20 +37,29 @@ def test_merge_access_rights():
         }
     )
 
-    # overrides and with other products
-    merged = merge_access_rights(
+    # fixture with overrides and with other products
+    reduced = reduce_access_rights(
         [
             sample.copy(deep=True),
             sample.copy(deep=True),
             sample.copy(update={"execute_access": False}, deep=True),
-            sample.copy(update={"product_name": "s4l"}),
+            sample.copy(update={"product_name": "s4l"}, deep=True),
         ]
     )
 
-    assert len(merged) == 2
-    assert merged[0].get_flags() == {"execute_access": True, "write_access": True}
+    # two products with the same flags
+    assert len(reduced) == 2
+    assert reduced[0].dict(include={"execute_access", "write_access"}) == {
+        "execute_access": True,
+        "write_access": True,
+    }
+    assert reduced[1].dict(include={"execute_access", "write_access"}) == {
+        "execute_access": True,
+        "write_access": True,
+    }
 
-    merged = merge_access_rights(
+    # two gids with the different falgs
+    reduced = reduce_access_rights(
         [
             sample.copy(deep=True),
             sample.copy(
@@ -59,6 +68,16 @@ def test_merge_access_rights():
             ),
         ]
     )
+
+    assert len(reduced) == 2
+    assert reduced[0].dict(include={"execute_access", "write_access"}) == {
+        "execute_access": True,
+        "write_access": True,
+    }
+    assert reduced[1].dict(include={"execute_access", "write_access"}) == {
+        "execute_access": True,
+        "write_access": False,
+    }
 
 
 async def test_auto_upgrade_policy(
@@ -163,7 +182,7 @@ async def test_auto_upgrade_policy(
 
     # ALL
     service_access_rights += inherited_access_rights
-    service_access_rights = merge_access_rights(service_access_rights)
+    service_access_rights = reduce_access_rights(service_access_rights)
 
     assert len(service_access_rights) == 3
     assert {a.gid for a in service_access_rights} == {team_gid, owner_gid}
