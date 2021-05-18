@@ -22,7 +22,7 @@ make down
 ```console
 # builds the distributed locust worker/master image
 make build
-# runs the test defined by locust_files/platform_ping_test.py going to http://127.0.0.1:8089 allows to see the UI
+# runs the test defined by locust_files/platform_ping_test.py in headless mode
 make test target=platform_ping_test.py
 # removes the containers
 make down
