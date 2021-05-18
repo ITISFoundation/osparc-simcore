@@ -122,8 +122,7 @@ class ServicesRepository(BaseRepository):
             .order_by(sa.desc(services_meta_data.c.version))
         )
 
-        if limit_count:
-            assert limit_count > 0  # nosec
+        if limit_count and limit_count > 0:
             query = query.limit(limit_count)
 
         releases = []
