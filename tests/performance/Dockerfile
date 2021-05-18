@@ -1,6 +1,5 @@
 FROM locustio/locust:1.5.3
 
-COPY ./requirements /build/requirements
 RUN pip3 --version && \
   pip3 install \
   faker \
