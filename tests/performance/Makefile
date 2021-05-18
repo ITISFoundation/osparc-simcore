@@ -44,5 +44,5 @@ test: ## runs osparc locust with target=locust_test_file.py in headless mode for
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export LOCUST_FILE=$(target); \
 	export TARGET_HOST=$(if $(host),$(host),"http://$(get_my_ip):9081"); \
-	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=1m --check-fail-ratio=0.05 --check-avg-response-time=200"; \
+	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=1m --check-fail-ratio=0.01 --check-avg-response-time=200"; \
 	docker-compose --file docker-compose.yml up --scale worker=4
