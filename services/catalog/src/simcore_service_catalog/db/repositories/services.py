@@ -7,7 +7,7 @@ from aiopg.sa.result import RowProxy
 from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
 from sqlalchemy import literal_column
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
@@ -207,7 +207,7 @@ class ServicesRepository(BaseRepository):
                 created_service = ServiceMetaDataAtDB(**row)
 
                 for access_rights in new_service_access_rights:
-                    insert_stmt = insert(services_access_rights).values(
+                    insert_stmt = pg_insert(services_access_rights).values(
                         **access_rights.dict(by_alias=True)
                     )
                     await conn.execute(insert_stmt)
@@ -284,7 +284,7 @@ class ServicesRepository(BaseRepository):
     ) -> None:
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
-            insert_stmt = insert(services_access_rights).values(
+            insert_stmt = pg_insert(services_access_rights).values(
                 **rights.dict(by_alias=True)
             )
             on_update_stmt = insert_stmt.on_conflict_do_update(

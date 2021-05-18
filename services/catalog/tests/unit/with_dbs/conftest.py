@@ -20,6 +20,7 @@ from simcore_service_catalog.db.tables import (
     services_access_rights,
     services_meta_data,
 )
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from starlette.testclient import TestClient
 
 
@@ -164,8 +165,15 @@ async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
         async with aiopg_engine.acquire() as conn:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
             for service in [items[0] for items in fake_catalog]:
-                stmt_meta = services_meta_data.insert().values(**service)
-                await conn.execute(stmt_meta)
+                insert_meta = pg_insert(services_meta_data).values(**service)
+                upsert_meta = insert_meta.on_conflict_do_update(
+                    index_elements=[
+                        services_meta_data.c.key,
+                        services_meta_data.c.version,
+                    ],
+                    set_=service,
+                )
+                await conn.execute(upsert_meta)
 
             for access_rights in itertools.chain(items[1:] for items in fake_catalog):
                 stmt_access = services_access_rights.insert().values(access_rights)
@@ -184,8 +192,8 @@ async def service_catalog_faker(
     products_names: List[str],
     faker: Faker,
 ) -> Callable:
-    """Returns a fake factory that creates catalog data
-    that can be used to fill services_meta_data and services_access_rights tables
+    """Returns a fake factory that creates catalog DATA that can be used to fill
+    both services_meta_data and services_access_rights tables
 
 
     Example:
