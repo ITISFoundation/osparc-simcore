@@ -46,6 +46,7 @@ RUN apt-get update && \
   lsb-release \
   xdg-utils \
   wget \
+  make \
   && apt-get autoremove -y \
   && apt-get clean -y \
   && rm -rf /var/lib/apt/lists/*
