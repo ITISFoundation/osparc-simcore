@@ -100,7 +100,8 @@ async def evaluate_default_policy(
 
 async def evaluate_auto_upgrade_policy(
     service_metadata: ServiceDockerData, services_repo: ServicesRepository
-):
+) -> List[ServiceAccessRightsAtDB]:
+```?
     # AUTO-UPGRADE PATCH policy:
     #
     #  - Any new patch released, inherits the access rights from previous compatible version
