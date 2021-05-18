@@ -110,7 +110,7 @@ user_to_groups = sa.Table(
         server_default=sa.text(
             '\'{"read": true, "write": false, "delete": false}\'::jsonb'
         ),
-        doc="Group's access-rights to R/W/D a resource",
+        doc="Group's access-rights to read, write and delete a resource",
     ),
     sa.Column(
         "created",

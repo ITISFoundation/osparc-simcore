@@ -52,7 +52,7 @@ services_meta_data = sa.Table(
         ARRAY(sa.String, dimensions=1),
         nullable=False,
         server_default="{}",
-        doc="List of tags to describe this service (see classifiers table)",
+        doc="List of standard labels that describe this service (see classifiers table)",
     ),
     sa.Column(
         "created",
@@ -101,7 +101,8 @@ services_access_rights = sa.Table(
         doc="Group Identifier",
     ),
     # Access Rights flags ---
-    #  - Notice that read_access Flag is implicit on the existence of the row
+    #  - Notice that read_access flag is implicit on the existence of the row.  If you have no
+    #  execute/write access then you do not see the service.
     sa.Column(
         "execute_access",
         sa.Boolean,

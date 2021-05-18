@@ -305,7 +305,7 @@ ServiceOutputs = Dict[PropertyName, ServiceOutput]
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
     """
-    Static metadata for a service injecte in the image labels
+    Static metadata for a service injected in the image labels
     """
 
     integration_version: Optional[constr(regex=VERSION_RE)] = Field(
@@ -402,7 +402,11 @@ class ServiceAccessRights(BaseModel):
 
 class ServiceMetaData(ServiceCommonData):
     # Overrides all fields of ServiceCommonData:
-    #    - for a partial update all members must be Optional FIXME: create a different model for updates!
+    #    - for a partial update all members must be Optional
+    #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
+    #        it should be implemented with a different model e.g. ServiceMetaDataUpdate
+    #
+
     name: Optional[str]
     thumbnail: Optional[HttpUrl]
     description: Optional[str]

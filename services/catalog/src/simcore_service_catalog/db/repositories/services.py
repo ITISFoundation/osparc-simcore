@@ -96,11 +96,10 @@ class ServicesRepository(BaseRepository):
         minor: Optional[int] = None,
         limit_count: Optional[int] = None,
     ) -> List[ServiceMetaDataAtDB]:
-        """Lists LAST n releases of a given service
+        """Lists LAST n releases of a given service, sorted from latest first
 
-
-        major: filters all releases of a
-        limit_count: limits number of returned matches
+        major, minor is used to filter as major.minor.* or major.*
+        limit_count limits returned value. None or non-positive values returns all matches
         """
         if minor is not None and major is None:
             raise ValueError("Expected only major. or major.minor")

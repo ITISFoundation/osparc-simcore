@@ -117,7 +117,7 @@ async def _create_services_in_db(
 async def _ensure_registry_insync_with_db(app: FastAPI) -> None:
     """Ensures that the services listed in the database is in sync with the registry
 
-    Notice that a services here referes to a 2-tuple (key, version)
+    Notice that a services here refers to a 2-tuple (key, version)
     """
     services_in_registry: Dict[
         Tuple[ServiceKey, ServiceVersion], ServiceDockerData
