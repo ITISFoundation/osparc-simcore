@@ -4,6 +4,7 @@
 
 import logging
 
+import locust_plugins
 from dotenv import load_dotenv
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
