@@ -32,7 +32,7 @@ class CommonConfig:
 
 
 class ApiServiceSettings(BaseSettings):
-    """ Settings needed to connect a osparc-simcore service API"""
+    """Settings needed to connect a osparc-simcore service API"""
 
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
@@ -74,7 +74,7 @@ class PGSettings(PostgresSettings):
 
 
 class RegistrySettings(BaseSettings):
-    """ Settings for docker_registry module """
+    """Settings for docker_registry module"""
 
     enabled: bool = Field(True, description="Enables/Disables connection with service")
 
@@ -113,7 +113,11 @@ class RegistrySettings(BaseSettings):
 
 
 class SchedulerSettings(BaseSettings):
-    enabled: bool = Field(True, description="Enables/Disables the scheduler")
+    enabled: bool = Field(
+        True,
+        description="Enables/Disables the scheduler",
+        env="DIRECTOR_V2_SCHEDULER_ENABLED",
+    )
 
     class Config(CommonConfig):
         pass
