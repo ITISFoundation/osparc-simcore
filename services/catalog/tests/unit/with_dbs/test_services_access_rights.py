@@ -184,7 +184,7 @@ async def test_auto_upgrade_policy(
     service_access_rights += inherited_access_rights
     service_access_rights = reduce_access_rights(service_access_rights)
 
-    assert len(service_access_rights) == 3
+    assert len(service_access_rights) == 4
     assert {a.gid for a in service_access_rights} == {team_gid, owner_gid}
     assert {a.product_name for a in service_access_rights} == {
         target_product,
