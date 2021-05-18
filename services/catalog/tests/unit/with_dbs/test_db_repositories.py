@@ -251,30 +251,3 @@ async def test_list_service_releases_version_filtered(
     assert [
         s.version for s in expected_0_x_x
     ] == fake_catalog_with_jupyterlab.expected_0_x_x
-
-
-async def test_copy_access_rights_from_previous_release(
-    fake_catalog_with_jupyterlab: FakeCatalogInfo,
-    services_repo: ServicesRepository,
-):
-    releases = await services_repo.list_service_releases(
-        "simcore/services/dynamic/jupyterlab", limit_count=2, major=1, minor=1
-    )
-    assert len(releases) == 2
-    latest_release, previous_patch = releases
-
-    # get all access-rights set for previous_patch (for all products!!!)
-    access_rights: List[
-        ServiceAccessRightsAtDB
-    ] = await services_repo.get_service_access_rights(
-        **previous_patch.dict(include={"key", "version"})
-    )
-
-    # copy them over to latest-release.
-    #
-    # Notice that if latest-release had already access-rights
-    # those get overriden or ADD new access-rights.
-    #
-    for access in access_rights:
-        access.version = latest_release.version
-    await services_repo.upsert_service_access_rights(access_rights)
