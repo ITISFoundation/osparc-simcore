@@ -43,5 +43,5 @@ test:
 	@$(call check_defined, target, please define target file when calling $@ - e.g. ```make $@ target=MY_LOCUST_FILE.py```)
 	@export TARGET=$(target); \
 	export HOST=$(get_my_ip); \
-	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=2m --check-fail-ratio=0.05 --check-avg-response-time=10"; \
+	export LOCUST_OPTIONS="--headless --print-stats --users=100 --spawn-rate=20 --run-time=2m --check-fail-ratio=0.05 --check-avg-response-time=50"; \
 	docker-compose --file docker-compose.yml up --scale worker=4
