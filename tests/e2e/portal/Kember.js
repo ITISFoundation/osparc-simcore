@@ -74,6 +74,7 @@ async function runTutorial () {
     // check output
     const outFiles2 = [
       "Hear_Rate.csv",
+      "notebooks.zip",
       "Parasympathetic_Cell_Activity.csv",
       "Table_Data.csv"
     ];
