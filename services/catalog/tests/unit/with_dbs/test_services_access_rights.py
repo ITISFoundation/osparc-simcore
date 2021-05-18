@@ -4,7 +4,6 @@
 
 from typing import Callable, List
 
-import pytest
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
 from models_library.services import ServiceAccessRightsAtDB, ServiceDockerData

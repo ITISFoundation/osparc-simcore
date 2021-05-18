@@ -4,7 +4,7 @@ NOTE: to dump json-schema from CLI use
     python -c "from models_library.services import ServiceDockerData as cls; print(cls.schema_json(indent=2))" > services-schema.json
 """
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,

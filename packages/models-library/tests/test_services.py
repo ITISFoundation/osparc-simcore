@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import collections
 import re
 from pprint import pformat
 from typing import Any, Dict
