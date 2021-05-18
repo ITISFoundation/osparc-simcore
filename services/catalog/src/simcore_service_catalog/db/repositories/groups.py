@@ -6,6 +6,7 @@ from pydantic.networks import EmailStr
 from pydantic.types import PositiveInt
 
 from ...models.domain.group import GroupAtDB
+from ..errors import RepositoryError
 from ..tables import GroupType, groups, user_to_groups, users
 from ._base import BaseRepository
 
@@ -31,8 +32,9 @@ class GroupsRepository(BaseRepository):
                     sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
                 )
             ).first()
-        if row:
-            return GroupAtDB(**row)
+        if not row:
+            raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
+        return GroupAtDB(**row)
 
     async def get_user_gid_from_email(
         self, user_email: EmailStr
