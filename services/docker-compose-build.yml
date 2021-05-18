@@ -87,6 +87,22 @@ services:
         org.label-schema.vcs-url: "${VCS_URL}"
         org.label-schema.vcs-ref: "${VCS_REF}"
 
+  static-webserver:
+    image: local/static-webserver:${BUILD_TARGET:?build_target_required}
+    build:
+      context: ../
+      dockerfile: services/static-webserver/Dockerfile
+      cache_from:
+        - local/static-webserver:${BUILD_TARGET:?build_target_required}
+        - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:cache
+        - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
+      target: ${BUILD_TARGET:?build_target_required}
+      labels:
+        org.label-schema.schema-version: "1.0"
+        org.label-schema.build-date: "${BUILD_DATE}"
+        org.label-schema.vcs-url: "${VCS_URL}"
+        org.label-schema.vcs-ref: "${VCS_REF}"
+
   webserver:
     image: local/webserver:${BUILD_TARGET:?build_target_required}
     build:

@@ -76,6 +76,9 @@ async def get_frontend_ria(request: web.Request):
     # SEE services/web/server/tests/unit/isolated/test_redirections.py
     #
     statics_outdir: Path = request.app[APP_STATICS_OUTDIR_KEY]
+    # TODO: change to a redirect so the staic webserver can pick it up, why read  the bundle here to memory?
+    # why is the replace necessary?
+    
     return web.Response(
         body=get_index_body(statics_outdir, target_frontend), content_type="text/html"
     )
