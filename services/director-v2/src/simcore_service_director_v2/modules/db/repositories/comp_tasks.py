@@ -273,7 +273,7 @@ class CompTasksRepository(BaseRepository):
                 sa.update(comp_tasks)
                 .where(
                     (comp_tasks.c.project_id == str(project_id))
-                    & (comp_tasks.c.node_id.in_([t for t in tasks]))
+                    & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
                 .values(state=StateType.PENDING)
             )
