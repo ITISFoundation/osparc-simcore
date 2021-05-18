@@ -105,6 +105,8 @@ async def test_auto_upgrade_policy(
                 everyone_access=None,
                 product=target_product,
             ),
+            # new release is a patch on released 1.0.X
+            # which were released in two different product
             service_catalog_faker(
                 new_service_metadata.key,
                 "1.0.0",
@@ -169,23 +171,3 @@ async def test_auto_upgrade_policy(
         target_product,
         products_names[-1],
     }
-
-
-@pytest.mark.skip(reason="dev")
-def test_it2(services_catalog):
-
-    # service S has a new patch released: 1.2.5 (i.e. backwards compatible bug fix, according to semver policies )
-    current_version = "1.10.5"
-    new_version = "1.10.6"
-
-    # the owner of service, checked the auto-upgrade patch policy in the publication contract (i.e.metadata.yml)
-
-    # service S:1.2.5 gets automatically the same access rights as S:1.2.4.
-    # access_rights = get_access_rights(service_key, service_version)
-
-    # set_access_rights(service_key, service_version, access_rights)
-
-    # NO
-    # all projects with nodes assigned to S:1.2.X get promoted to the latest patch S:1.2.5
-
-    # services can be published on different products (including file-picker and group nodes)
