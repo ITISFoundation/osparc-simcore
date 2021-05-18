@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   master:
-    image: local/locust:latest
+    image: itisfoundation/locust:${LOCUST_VERSION}
     ports:
      - "8089:8089"
     volumes:
@@ -16,7 +16,7 @@ services:
       --master
 
   worker:
-    image: local/locust:latest
+    image: itisfoundation/locust:${LOCUST_VERSION}
     volumes:
       - ./locust_files:/mnt/locust
     command: -f /mnt/locust/${LOCUST_FILE} --worker --master-host master

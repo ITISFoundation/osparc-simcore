@@ -1,4 +1,7 @@
-FROM locustio/locust:1.5.3
+
+ARG LOCUST_VERSION
+FROM locustio/locust:${LOCUST_VERSION}
+
 
 RUN pip3 --version && \
   pip3 install \
