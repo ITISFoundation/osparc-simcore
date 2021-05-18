@@ -7,9 +7,11 @@ services:
      - "8089:8089"
     volumes:
       - ./locust_files:/mnt/locust
+      - ./locust_report:/reporting
     command: >
       -f /mnt/locust/${LOCUST_FILE}
       --host ${TARGET_HOST}
+      --html /reporting/locust_html.html
       ${LOCUST_OPTIONS}
       --master
 
