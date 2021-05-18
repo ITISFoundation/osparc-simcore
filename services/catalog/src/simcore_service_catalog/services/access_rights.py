@@ -50,20 +50,19 @@ async def evaluate_default_policy(
     - DEFAULT Access Rights policies:
         1. All services published in osparc prior 19.08.2020 will be visible to everyone (refered as 'old service').
         2. Services published after 19.08.2020 will be visible ONLY to his/her owner
-        3. Front-end services are have read-access to everyone
+        3. Front-end services are have execute-access to everyone
     """
     db_engine: Engine = app.state.engine
 
     groups_repo = GroupsRepository(db_engine)
-
-    everyone_gid = (await groups_repo.get_everyone_group()).gid
     owner_gid = None
-    reader_gids: List[PositiveInt] = []
+    group_ids: List[PositiveInt] = []
 
     if _is_frontend_service(service) or await _is_old_service(app, service):
+        everyone_gid = (await groups_repo.get_everyone_group()).gid
         logger.debug("service %s:%s is old or frontend", service.key, service.version)
         # let's make that one available to everyone
-        reader_gids.append(everyone_gid)
+        group_ids.append(everyone_gid)
 
     # try to find the owner
     possible_owner_email = [service.contact] + [
@@ -78,7 +77,7 @@ async def evaluate_default_policy(
     if not owner_gid:
         logger.warning("service %s:%s has no owner", service.key, service.version)
     else:
-        reader_gids.append(owner_gid)
+        group_ids.append(owner_gid)
 
     # we add the owner with full rights, unless it's everyone
     default_access_rights = [
@@ -90,10 +89,8 @@ async def evaluate_default_policy(
             write_access=(gid == owner_gid),
             product_name=app.state.settings.access_rights_default_product_name,
         )
-        for gid in set(reader_gids)
+        for gid in set(group_ids)
     ]
-
-    # Patch releases inherit access rights from previous version
 
     return (owner_gid, default_access_rights)
 
@@ -101,7 +98,6 @@ async def evaluate_default_policy(
 async def evaluate_auto_upgrade_policy(
     service_metadata: ServiceDockerData, services_repo: ServicesRepository
 ) -> List[ServiceAccessRightsAtDB]:
-```?
     # AUTO-UPGRADE PATCH policy:
     #
     #  - Any new patch released, inherits the access rights from previous compatible version
@@ -119,26 +115,29 @@ async def evaluate_auto_upgrade_policy(
         service_metadata.key,
         major=new_version.major,
         minor=new_version.minor,
-        limit_count=1,
     )
-    assert len(latest_releases) <= 1  # nosec
 
-    if latest_releases:
-        latest_patch = latest_releases[0]
+    previous_release = None
+    for release in latest_releases:
+        # NOTE: latest_release is sorted from newer to older
+        # Here we search for the previous version patched by new-version
+        if is_patch_release(new_version, release.version):
+            previous_release = release
+            break
 
-        if is_patch_release(new_version, latest_patch.version):
-            previous_access_rights = await services_repo.get_service_access_rights(
-                latest_patch.key, latest_patch.version
-            )
+    if previous_release:
+        previous_access_rights = await services_repo.get_service_access_rights(
+            previous_release.key, previous_release.version
+        )
 
-            for access in previous_access_rights:
-                service_access_rights.append(
-                    access.copy(
-                        exclude={"created", "modified"},
-                        update={"version": service_metadata.version},
-                        deep=True,
-                    )
+        for access in previous_access_rights:
+            service_access_rights.append(
+                access.copy(
+                    exclude={"created", "modified"},
+                    update={"version": service_metadata.version},
+                    deep=True,
                 )
+            )
 
     return service_access_rights
 
