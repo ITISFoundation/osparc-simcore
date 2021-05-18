@@ -179,36 +179,3 @@ def test_services_model_examples(model_cls, model_cls_examples):
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
-
-
-def test_override_access_rights():
-
-    read_access = ServiceAccessRightsAtDB.parse_obj(
-        {
-            "key": "simcore/services/dynamic/sim4life",
-            "version": "1.0.9",
-            "gid": 8,
-            "product_name": "osparc",
-        }
-    )
-
-    execute_access = read_access.copy(update={"execute_access": True})
-    read_write_access = read_access.copy(
-        update={"execute_access": False, "write_access": True}
-    )
-
-    resource = read_access.get_resource()
-    assert isinstance(resource, collections.Hashable)
-
-    # merge
-    flags = read_access.get_flags()
-    for access in [execute_access, read_write_access]:
-        assert access.get_resource() == resource
-        for key, value in access.get_flags().items():
-            flags[key] |= value
-
-    assert {"execute_access": True, "write_access": True} == flags
-
-    access_rights = ServiceAccessRightsAtDB.create_from(resource, flags)
-    assert access_rights.get_resource() == resource
-    assert access_rights.get_flags() == flags
