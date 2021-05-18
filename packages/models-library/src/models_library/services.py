@@ -341,6 +341,47 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         description = "Description of a simcore node 'class' with input and output"
         extra = Extra.forbid
 
+        schema_extra = {
+            "example": {
+                "name": "oSparc Python Runner",
+                "key": "simcore/services/comp/osparc-python-runner",
+                "type": "computational",
+                "integration-version": "1.0.0",
+                "version": "1.7.0",
+                "description": "oSparc Python Runner",
+                "contact": "smith@company.com",
+                "authors": [
+                    {
+                        "name": "John Smith",
+                        "email": "smith@company.com",
+                        "affiliation": "Company",
+                    },
+                    {
+                        "name": "Richard Brown",
+                        "email": "brown@uni.edu",
+                        "affiliation": "University",
+                    },
+                ],
+                "inputs": {
+                    "input_1": {
+                        "displayOrder": 1,
+                        "label": "Input data",
+                        "description": "Any code, requirements or data file",
+                        "type": "data:*/*",
+                    }
+                },
+                "outputs": {
+                    "output_1": {
+                        "displayOrder": 1,
+                        "label": "Output data",
+                        "description": "All data produced by the script is zipped as output_data.zip",
+                        "type": "data:*/*",
+                        "fileToKeyMap": {"output_data.zip": "output_1"},
+                    }
+                },
+            }
+        }
+
 
 # Service access rights models
 class ServiceGroupAccessRights(BaseModel):
