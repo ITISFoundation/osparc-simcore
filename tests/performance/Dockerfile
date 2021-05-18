@@ -1,4 +1,4 @@
-FROM locustio/locust:1.4.4
+FROM locustio/locust:1.5.3
 
 RUN pip3 --version && \
   pip3 install \
