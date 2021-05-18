@@ -53,16 +53,17 @@ async def director_mockup(loop, app: FastAPI):
 #
 # These are the tables accessible by the catalog service:
 #
-# - services_meta_data
+# * services_meta_data
 #   -> groups(gid)@owner
-# - services_access_rights
+# * services_access_rights
 #   -> groups(gid)@owner,
 #   -> products(name)@produt_name
 #   -> services_meta_data@key, version
-# - services_consume_filetypes
+# * services_consume_filetypes
 #
 # and therefore these are the coupled tables
 # - groups
+#   -> user, user_to_groups
 # - products
 #
 
@@ -132,6 +133,28 @@ async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
 async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
+
+    Can use service_catalog_faker to generate inputs
+
+    Example:
+        await services_db_tables_injector(
+            [
+                service_catalog_faker(
+                    "simcore/services/dynamic/jupyterlab",
+                    "0.0.1",
+                    team_access=None,
+                    everyone_access=None,
+                    product=target_product,
+                ),
+                service_catalog_faker(
+                    "simcore/services/dynamic/jupyterlab",
+                    "0.0.7",
+                    team_access=None,
+                    everyone_access=None,
+                    product=target_product,
+                ),
+            ]
+        )
     """
     # pylint: disable=no-value-for-parameter
 
@@ -163,6 +186,19 @@ async def service_catalog_faker(
 ) -> Callable:
     """Returns a fake factory that creates catalog data
     that can be used to fill services_meta_data and services_access_rights tables
+
+
+    Example:
+        fake_service, *fake_access_rights = service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                "0.0.1",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            ),
+
+        owner_access, team_access, everyone_access = fake_access_rights
+
     """
     everyone_gid, user_gid, team_gid = user_groups_ids
 

@@ -55,8 +55,8 @@ async def create_service_default_access_rights(
     db_engine: Engine = app.state.engine
 
     groups_repo = GroupsRepository(db_engine)
-    g = await groups_repo.get_everyone_group()
-    everyone_gid = g.gid
+
+    everyone_gid = (await groups_repo.get_everyone_group()).gid
     owner_gid = None
     reader_gids: List[PositiveInt] = []
 
