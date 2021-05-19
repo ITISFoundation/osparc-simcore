@@ -6,12 +6,11 @@ import logging
 from asyncio import CancelledError
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any, Dict, List, Set, Tuple, Type
+from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
 import networkx as nx
 from aiopg.sa.engine import Engine
 from celery import Task
-from celery.exceptions import TimeoutError as CeleryTimeoutError
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
@@ -230,3 +229,25 @@ async def scheduler_task(app: FastAPI) -> None:
         finally:
             app.state.scheduler = None
             logger.debug("Scheduler task completed")
+
+
+def on_app_startup(app: FastAPI) -> Callable:
+    async def start_scheduler() -> None:
+        task = asyncio.get_event_loop().create_task(scheduler_task(app))
+        app.state.scheduler_task = task
+
+    return start_scheduler
+
+
+async def on_app_shutdown(app: FastAPI) -> Callable:
+    async def stop_scheduler() -> None:
+        task = app.state.scheduler_task
+        task.cancel()
+        await task
+
+    return stop_scheduler
+
+
+def setup(app: FastAPI):
+    app.add_event_handler("startup", on_app_startup(app))
+    app.add_event_handler("shutdown", on_app_shutdown(app))
