@@ -101,21 +101,19 @@ services_access_rights = sa.Table(
         doc="Group Identifier",
     ),
     # Access Rights flags ---
-    #  - Notice that read_access flag is implicit on the existence of the row.  If you have no
-    #  execute/write access then you do not see the service.
     sa.Column(
         "execute_access",
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
-        doc="Can execute resource?",
+        doc="If true, group can execute the service",
     ),
     sa.Column(
         "write_access",
         sa.Boolean,
         nullable=False,
         server_default=expression.false(),
-        doc="Can write resource?",
+        doc="If true, group can modify the service",
     ),
     # -----
     sa.Column(
