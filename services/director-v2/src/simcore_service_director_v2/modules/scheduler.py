@@ -143,13 +143,8 @@ class Scheduler:
         )
         pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         if not pipeline_dag.nodes:
-            logger.warning("pipeline %s has no node to be run", project_id)
-            await comp_runs_repo.set_run_result(
-                user_id=user_id,
-                project_id=project_id,
-                iteration=iteration,
-                result_state=RunningState.NOT_STARTED,
-            )
+            # this should not happen
+            logger.error("pipeline %s has no node to be run", project_id)
             return
 
         # get the tasks that were scheduled
