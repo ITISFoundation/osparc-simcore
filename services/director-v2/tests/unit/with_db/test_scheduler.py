@@ -21,6 +21,7 @@ from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.modules.celery import CeleryClient
 from simcore_service_director_v2.modules.scheduler import (
+    _COMPLETED_STATES,
     _SCHEDULED_STATES,
     CeleryScheduler,
     _runtime_requirement,
@@ -58,6 +59,18 @@ pytest_simcore_ops_services_selection = ["adminer", "redis-commander"]
 )
 def test_scheduler_takes_care_of_runs_with_state(state: RunningState):
     assert state in _SCHEDULED_STATES
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        RunningState.SUCCESS,
+        RunningState.ABORTED,
+        RunningState.FAILED,
+    ],
+)
+def test_scheduler_knows_these_are_completed_states(state: RunningState):
+    assert state in _COMPLETED_STATES
 
 
 @pytest.mark.parametrize(
