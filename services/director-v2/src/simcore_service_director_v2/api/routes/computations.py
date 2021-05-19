@@ -4,7 +4,6 @@ import logging
 from typing import Any, List
 
 import networkx as nx
-from celery import exceptions as celery_exceptions
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
@@ -32,7 +31,7 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.scheduler import Scheduler
+from ...modules.scheduler import Scheduler, get_scheduler
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -53,21 +52,6 @@ router = APIRouter()
 log = logging.getLogger(__file__)
 
 PIPELINE_ABORT_TIMEOUT_S = 10
-
-
-def celery_on_message(body: Any) -> None:
-    # FIXME: this might become handy when we stop starting tasks recursively
-    log.warning(body)
-
-
-def background_on_message(task: Any) -> None:
-    # FIXME: this might become handy when we stop starting tasks recursively
-    try:
-        task.get(on_message=celery_on_message, propagate=True)
-    except celery_exceptions.TimeoutError:
-        log.error("timeout on waiting for task %s", task)
-    except Exception:  # pylint: disable=broad-except
-        log.error("An unexpected error happend while running Celery task %s", task)
 
 
 async def _abort_pipeline_tasks(
@@ -151,63 +135,10 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-            scheduler: Scheduler = request.app.state.scheduler
+            # TODO: sets this as a DEpends
+            scheduler: Scheduler = get_scheduler(request.app)
             if scheduler:
                 await scheduler.schedule_pipeline_run(job.user_id, job.project_id)
-        # if job.start_pipeline:
-        #     if not computational_dag.nodes():
-        #         # there is nothing else to be run here, so we are done
-        #         raise HTTPException(
-        #             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        #             detail=f"Project {job.project_id} has no computational services, or contains cycles",
-        #         )
-
-        #     # find how to run this pipeline
-        #     topologically_sorted_grouped_nodes: List[
-        #         Dict[str, Dict[str, Any]]
-        #     ] = topological_sort_grouping(computational_dag)
-        #     log.debug("grouped nodes: %s", topologically_sorted_grouped_nodes)
-
-        #     # find what are the nodes requirements
-        #     async def _set_nodes_requirements(
-        #         grouped_nodes: List[Dict[str, Dict[str, Any]]]
-        #     ) -> None:
-        #         for nodes_group in grouped_nodes:
-        #             for node in nodes_group.values():
-        #                 service_key_version = ServiceKeyVersion(
-        #                     key=node["key"],
-        #                     version=node["version"],
-        #                 )
-        #                 service_extras = await director_client.get_service_extras(
-        #                     service_key_version
-        #                 )
-        #                 node["runtime_requirements"] = "cpu"
-        #                 if service_extras:
-        #                     requires_gpu = (
-        #                         NodeRequirement.GPU in service_extras.node_requirements
-        #                     )
-        #                     if requires_gpu:
-        #                         node["runtime_requirements"] = "gpu"
-        #                     requires_mpi = (
-        #                         NodeRequirement.MPI in service_extras.node_requirements
-        #                     )
-        #                     if requires_mpi:
-        #                         node["runtime_requirements"] = "mpi"
-
-        #     await _set_nodes_requirements(topologically_sorted_grouped_nodes)
-        #     # trigger celery
-        #     task = celery_client.send_computation_tasks(
-        #         job.user_id, job.project_id, topologically_sorted_grouped_nodes
-        #     )
-        #     # NOTE: This is currently disabled. this makes test wait for the task to run completely
-        #     # We will see if we need this with airflow or not.
-        #     # background_tasks.add_task(background_on_message, task)
-        #     log.debug(
-        #         "Started computational task %s for user %s based on project %s",
-        #         task.id,
-        #         job.user_id,
-        #         job.project_id,
-        #     )
 
         return ComputationTaskOut(
             id=job.project_id,
