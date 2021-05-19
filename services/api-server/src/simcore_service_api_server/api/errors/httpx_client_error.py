@@ -24,17 +24,24 @@ async def httpx_client_error_handler(_: Request, exc: HTTPStatusError) -> JSONRe
     if 400 <= exc.response.status_code < 500:
         # Forward backend client errors
         status_code = exc.response.status_code
-        detail = exc.response.text
+        errors = exc.response.json()["errors"]
 
     else:
         # Hide api-server client from backend server errors
         assert exc.response.status_code >= 500  # nosec
-        status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
-        detail = [
-            "Some backend service is unexpectedly failing",
+        status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        message = f"{exc.request.url.host.capitalize()} service unexpectedly failed"
+        log.exception(
+            "%s. host=%s status-code=%s msg=%s",
+            message,
+            exc.request.url.host,
+            exc.response.status_code,
+            exc.response.text,
+        )
+        errors = [
+            message,
         ]
-        log.exception("Some backend service responded with a server error 5XX")
 
     return JSONResponse(
-        content=jsonable_encoder({"errors": [detail]}), status_code=status_code
+        content=jsonable_encoder({"errors": errors}), status_code=status_code
     )
