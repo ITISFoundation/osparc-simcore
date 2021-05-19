@@ -12,6 +12,12 @@ paths:
             type: string
             default: "all"
             enum: [template, user, all]
+        - name: hidden
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: includes projects marked as hidden
         - name: offset
           in: query
           schema:
@@ -55,6 +61,12 @@ paths:
           schema:
             type: string
           description: "Option to create a template from existing project: as_template={study_uuid}"
+        - name: hidden
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Creates a project that is by default not listed
       requestBody:
         content:
           application/json:

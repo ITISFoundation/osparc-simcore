@@ -45,11 +45,7 @@ from .projects_utils import project_uses_available_services
 log = logging.getLogger(__name__)
 
 APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
-DB_EXCLUSIVE_COLUMNS = [
-    "type",
-    "id",
-    "published",
-]
+DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
 
@@ -230,8 +226,9 @@ class ProjectDBAPI:
         prj: Dict[str, Any],
         user_id: int,
         *,
-        force_project_uuid=False,
-        force_as_template=False,
+        force_project_uuid: bool = False,
+        force_as_template: bool = False,
+        hidden: bool = False,
     ) -> Dict[str, Any]:
         """Inserts a new project in the database and, if a user is specified, it assigns ownership
 
@@ -270,6 +267,10 @@ class ProjectDBAPI:
                     "prj_owner": user_id if user_id else None,
                 }
             )
+
+            if hidden:
+                kargs["hidden"] = True
+
             # validate access_rights. are the gids valid? also ensure prj_owner is in there
             if user_id:
                 primary_gid = await self._get_user_primary_group_gid(conn, user_id)
@@ -318,6 +319,7 @@ class ProjectDBAPI:
         filter_by_project_type: Optional[ProjectType] = None,
         filter_by_services: Optional[List[Dict]] = None,
         only_published: Optional[bool] = False,
+        include_hidden: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = None,
     ) -> Tuple[List[Dict[str, Any]], List[ProjectType], int]:
@@ -325,6 +327,7 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             user_groups: List[RowProxy] = await self.__load_user_groups(conn, user_id)
             groups_array = ", ".join(f"'{group.gid}'" for group in user_groups)
+
             query = (
                 select([projects])
                 .where(
@@ -339,6 +342,11 @@ class ProjectDBAPI:
                         else sa.text("")
                     )
                     & (
+                        (projects.c.hidden == False)
+                        if not include_hidden
+                        else sa.text("")
+                    )
+                    & (
                         sa.text(
                             f"jsonb_exists_any(projects.access_rights, array[{groups_array}])"
                         )
@@ -347,6 +355,7 @@ class ProjectDBAPI:
                 )
                 .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
+
             total_number_of_projects = await conn.scalar(query.alias().count())
 
             prjs, prj_types = await self.__load_projects(
