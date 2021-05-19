@@ -77,7 +77,11 @@ projects = sa.Table(
         doc="Timestamp with last update",
     ),
     sa.Column(
-        "access_rights", JSONB, nullable=False, server_default=sa.text("'{}'::jsonb")
+        "access_rights",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Read/write/delete access rights of each group (gid) on this project",
     ),
     sa.Column(
         "workbench",
