@@ -34,7 +34,7 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
 
         if slow_callbacks_detected:
             incidents.append(SlowCallback(msg=profiler_result, delay_secs=dt))
-            logger.warning(profiler_result)
+            logger.warning("Executing took %.3f seconds\n%s", dt, profiler_result)
         return retval
 
     asyncio.events.Handle._run = instrumented
