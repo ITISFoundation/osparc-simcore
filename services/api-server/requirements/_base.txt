@@ -203,7 +203,7 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic[dotenv,email]==1.8.1
+pydantic[dotenv,email]==1.8.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
