@@ -85,6 +85,8 @@ multidict==5.1.0
     # via yarl
 orjson==3.4.8
     # via fastapi
+packaging==20.9
+    # via -r requirements/_base.in
 promise==2.3
     # via
     #   graphql-core
@@ -98,6 +100,8 @@ pydantic[dotenv,email]==1.7.3
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
+pyparsing==2.4.7
+    # via packaging
 python-dotenv==0.15.0
     # via
     #   pydantic

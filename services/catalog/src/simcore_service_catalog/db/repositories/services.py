@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
@@ -6,7 +7,7 @@ from aiopg.sa.result import RowProxy
 from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
 from sqlalchemy import literal_column
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import and_, or_
 from sqlalchemy.sql.expression import tuple_
 from sqlalchemy.sql.selectable import Select
@@ -65,6 +66,7 @@ class ServicesRepository(BaseRepository):
 
     async def list_services(
         self,
+        *,
         gids: Optional[List[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
@@ -86,10 +88,59 @@ class ServicesRepository(BaseRepository):
                 services_in_db.append(ServiceMetaDataAtDB(**row))
         return services_in_db
 
+    async def list_service_releases(
+        self,
+        key: str,
+        *,
+        major: Optional[int] = None,
+        minor: Optional[int] = None,
+        limit_count: Optional[int] = None,
+    ) -> List[ServiceMetaDataAtDB]:
+        """Lists LAST n releases of a given service, sorted from latest first
+
+        major, minor is used to filter as major.minor.* or major.*
+        limit_count limits returned value. None or non-positive values returns all matches
+        """
+        if minor is not None and major is None:
+            raise ValueError("Expected only major.*.* or major.minor.*")
+
+        search_condition = services_meta_data.c.key == key
+        if major is not None:
+            if minor is not None:
+                # All patches
+                search_condition &= services_meta_data.c.version.like(
+                    f"{major}.{minor}.%"
+                )
+            else:
+                # All minor and patches
+                search_condition &= services_meta_data.c.version.like(f"{major}.%")
+
+        query = (
+            sa.select([services_meta_data])
+            .where(search_condition)
+            .order_by(sa.desc(services_meta_data.c.version))
+        )
+
+        if limit_count and limit_count > 0:
+            query = query.limit(limit_count)
+
+        releases = []
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(query):
+                releases.append(ServiceMetaDataAtDB(**row))
+
+        return releases
+
+    async def get_latest_release(self, key: str) -> Optional[ServiceMetaDataAtDB]:
+        """Returns last release or None if service was never released"""
+        releases = await self.list_service_releases(key, limit_count=1)
+        return releases[0] if releases else None
+
     async def get_service(
         self,
         key: str,
         version: str,
+        *,
         gids: Optional[List[int]] = None,
         execute_access: Optional[bool] = None,
         write_access: Optional[bool] = None,
@@ -130,6 +181,16 @@ class ServicesRepository(BaseRepository):
         new_service: ServiceMetaDataAtDB,
         new_service_access_rights: List[ServiceAccessRightsAtDB],
     ) -> ServiceMetaDataAtDB:
+
+        for access_rights in new_service_access_rights:
+            if (
+                access_rights.key != new_service.key
+                or access_rights.version != new_service.version
+            ):
+                raise ValueError(
+                    f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
+                )
+
         async with self.db_engine.acquire() as conn:
             # NOTE: this ensure proper rollback in case of issue
             async with conn.begin() as _transaction:
@@ -142,9 +203,10 @@ class ServicesRepository(BaseRepository):
                     )
                 ).first()
                 created_service = ServiceMetaDataAtDB(**row)
-                for rights in new_service_access_rights:
-                    insert_stmt = insert(services_access_rights).values(
-                        **rights.dict(by_alias=True)
+
+                for access_rights in new_service_access_rights:
+                    insert_stmt = pg_insert(services_access_rights).values(
+                        **access_rights.dict(by_alias=True)
                     )
                     await conn.execute(insert_stmt)
         return created_service
@@ -173,30 +235,37 @@ class ServicesRepository(BaseRepository):
         self,
         key: str,
         version: str,
-        product_name: str,
+        product_name: Optional[str] = None,
     ) -> List[ServiceAccessRightsAtDB]:
+        """
+        - If product_name is not specificed, then all are considered in the query
+        """
         services_in_db = []
-        query = sa.select([services_access_rights]).where(
-            (services_access_rights.c.key == key)
-            & (services_access_rights.c.version == version)
-            & (services_access_rights.c.product_name == product_name)
+        search_expression = (services_access_rights.c.key == key) & (
+            services_access_rights.c.version == version
         )
+        if product_name:
+            search_expression &= services_access_rights.c.product_name == product_name
+
+        query = sa.select([services_access_rights]).where(search_expression)
+
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(query):
                 services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
 
     async def list_services_access_rights(
-        self, key_versions: List[Tuple[str, str]], product_name: str
+        self, key_versions: List[Tuple[str, str]], product_name: Optional[str] = None
     ) -> Dict[Tuple[str, str], List[ServiceAccessRightsAtDB]]:
-        from collections import defaultdict
-
+        """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
         query = sa.select([services_access_rights]).where(
             tuple_(services_access_rights.c.key, services_access_rights.c.version).in_(
                 key_versions
             )
             & (services_access_rights.c.product_name == product_name)
+            if product_name
+            else True
         )
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(query):
@@ -213,7 +282,7 @@ class ServicesRepository(BaseRepository):
     ) -> None:
         # update the services_access_rights table (some might be added/removed/modified)
         for rights in new_access_rights:
-            insert_stmt = insert(services_access_rights).values(
+            insert_stmt = pg_insert(services_access_rights).values(
                 **rights.dict(by_alias=True)
             )
             on_update_stmt = insert_stmt.on_conflict_do_update(
