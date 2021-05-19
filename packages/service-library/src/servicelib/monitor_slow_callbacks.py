@@ -31,7 +31,10 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
 
             dt = time.monotonic() - t0
 
-            profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
+        # the indentation is correct, the profiler needs to be stopped when
+        # printing the output, the profiler is started and stopped by the
+        # contextmanger
+        profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
 
         slow_callbacks_detected = "No samples were recorded." not in profiler_result
 
