@@ -80,6 +80,7 @@ class CeleryClient:
     @classmethod
     def create(cls, app: FastAPI, *args, **kwargs) -> "CeleryClient":
         app.state.celery_client = cls(*args, **kwargs)
+        app.state.celery_client.client.conf.update(result_extended=True)
         return cls.instance(app)
 
     @classmethod
