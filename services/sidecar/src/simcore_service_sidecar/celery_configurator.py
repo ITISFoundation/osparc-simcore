@@ -62,6 +62,7 @@ def configure_node(bootmode: BootMode) -> Celery:
         Queue(CELERY_APP_CONFIGS[bootmode]["queue_name"]),
     ]
     app.conf.osparc_sidecar_bootmode = bootmode
+    app.conf.result_extended = True  # so the original arguments are also in the results
 
     define_celery_task(app, config.CELERY_CONFIG.task_name)
     log.info("Initialized celery app in %s", bootmode)
@@ -69,7 +70,7 @@ def configure_node(bootmode: BootMode) -> Celery:
 
 
 def create_celery_app() -> Celery:
-    """ Configures the Celery APP for CPU, GPU, MPI mode."""
+    """Configures the Celery APP for CPU, GPU, MPI mode."""
     bootmode = BootMode.CPU
 
     if start_as_mpi_node():
