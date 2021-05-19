@@ -3,8 +3,8 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-from random import randint, random
-from typing import Any, Dict, List, Optional
+from random import randint
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 import pytest
