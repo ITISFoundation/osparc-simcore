@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+import networkx as nx
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pydantic import BaseModel, validator
@@ -26,6 +27,9 @@ class CompPipelineAtDB(BaseModel):
         # this enforcement is here because the serialization using json is not happy with non str Dict keys, also comparison gets funny if the lists are having sometimes UUIDs or str.
         # NOTE: this might not be necessary anymore once we have something fully defined
         return {str(key): [str(n) for n in value] for key, value in v.items()}
+
+    def get_graph(self) -> nx.DiGraph:
+        nx.from_dict_of_lists(self.dag_adjacency_list, create_using=nx.DiGraph)
 
     class Config:
         orm_mode = True

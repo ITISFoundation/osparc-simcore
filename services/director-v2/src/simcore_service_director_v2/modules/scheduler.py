@@ -39,6 +39,8 @@ _SCHEDULED_STATES = {
     RunningState.RETRY,
 }
 
+_COMPLETED_STATES = {RunningState.ABORTED, RunningState.SUCCESS, RunningState.FAILED}
+
 _DEFAULT_TIMEOUT_S: int = 5
 
 
@@ -139,9 +141,7 @@ class Scheduler:
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
         )
-        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
-            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
-        )
+        pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         if not pipeline_dag.nodes:
             logger.warning("pipeline %s has no node to be run", project_id)
             await comp_runs_repo.set_run_result(
@@ -172,8 +172,7 @@ class Scheduler:
             {
                 node_id
                 for node_id, t in comp_tasks.items()
-                if t.state
-                in [RunningState.SUCCESS, RunningState.FAILED, RunningState.ABORTED]
+                if t.state in _COMPLETED_STATES
             }
         )
         if not pipeline_dag.nodes:

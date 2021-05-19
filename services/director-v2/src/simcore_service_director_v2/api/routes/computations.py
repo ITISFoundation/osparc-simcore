@@ -187,9 +187,7 @@ async def get_computation(
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
         )
-        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
-            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
-        )
+        pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
         # get the project task states
         all_comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(
@@ -273,9 +271,7 @@ async def stop_computation_project(
         pipeline_at_db: CompPipelineAtDB = await computation_pipelines.get_pipeline(
             project_id
         )
-        pipeline_dag: nx.DiGraph = nx.from_dict_of_lists(
-            pipeline_at_db.dag_adjacency_list, create_using=nx.DiGraph
-        )
+        pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
         # get the project task states
         tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(project_id)
         # create the complete DAG graph
