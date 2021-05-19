@@ -84,28 +84,6 @@ def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
     assert mul.delay(4, 4).get(timeout=10) == 16
 
 
-def sorted_nodes() -> List[Dict[str, Dict[str, Any]]]:
-    possible_requirements
-    return [
-        {
-            "grp_1_node_0": {"runtime_requirements": "cpu"},
-            "grp_1_node_1": {"runtime_requirements": "cpu"},
-        },
-        {
-            "grp_2_node_0": {"runtime_requirements": "cpu"},
-            "grp_2_node_1": {"runtime_requirements": "cpu"},
-        },
-        {
-            "grp_3_node_0": {"runtime_requirements": "cpu"},
-            "grp_3_node_1": {"runtime_requirements": "cpu"},
-        },
-        {
-            "grp_4_node_0": {"runtime_requirements": "cpu"},
-            "grp_4_node_1": {"runtime_requirements": "cpu"},
-        },
-    ]
-
-
 @pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu/mpi"])
 def test_send_single_tasks(
     minimal_app: FastAPI,
