@@ -128,7 +128,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
         start_sensing_delay=0,  # inmidiately!
     )
 
-    assert app[kMAX_AVG_RESP_LATENCY] == 2.0
+    assert app[kMAX_AVG_RESP_LATENCY] == 1.0
 
     app.router.add_routes(routes)
 
