@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Set, Tuple, Type
 
 import networkx as nx
 from aiopg.sa.engine import Engine
+from celery import Task
+from celery.exceptions import TimeoutError as CeleryTimeoutError
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
@@ -217,10 +219,35 @@ class Scheduler:
             return
 
         # let's schedule the tasks
-        comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks_to_run.keys())
-        self.celery_client.send_single_tasks(
+        await comp_tasks_repo.mark_project_tasks_as_pending(
+            project_id, tasks_to_run.keys()
+        )
+
+        scheduled_tasks: Dict[str, Task] = self.celery_client.send_single_tasks(
             user_id=user_id, project_id=project_id, single_tasks=tasks_to_run
         )
+        for t in scheduled_tasks.values():
+            asyncio.get_event_loop().create_task(_check_task_status(t))
+
+
+def celery_on_message(body: Any) -> None:
+    # FIXME: this might become handy when we stop starting tasks recursively
+    logger.warning(body)
+
+
+async def _check_task_status(task: Task):
+    try:
+        # wait for the result here
+        result = task.get(on_message=celery_on_message, propagate=False)
+        logger.warning("RESULT OBTAINED: %s for task %s", result, task)
+    except CeleryTimeoutError:
+        logger.error("timeout on waiting for task %s", task)
+    except Exception:  # pylint: disable=broad-except
+        logger.error("An unexpected error happend while running Celery task %s", task)
+
+
+def get_scheduler(app: FastAPI) -> Scheduler:
+    return app.state.scheduler
 
 
 async def scheduler_task(app: FastAPI) -> None:
