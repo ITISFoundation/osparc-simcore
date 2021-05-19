@@ -132,7 +132,8 @@ class AuthSession:
         # FIXME: move filter to webserver API (next PR)
         projects: Deque[Project] = deque()
         for prj in data:
-            if prj.get("name", "") == solver_name:
+            # FIXME: ensure name+solver_name
+            if prj.get("name", "").startswith(solver_name):
                 try:
                     projects.append(Project.parse_obj(prj))
                 except ValidationError as err:
