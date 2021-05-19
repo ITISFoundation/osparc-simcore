@@ -29,7 +29,7 @@ class CompPipelineAtDB(BaseModel):
         return {str(key): [str(n) for n in value] for key, value in v.items()}
 
     def get_graph(self) -> nx.DiGraph:
-        nx.from_dict_of_lists(self.dag_adjacency_list, create_using=nx.DiGraph)
+        return nx.from_dict_of_lists(self.dag_adjacency_list, create_using=nx.DiGraph)
 
     class Config:
         orm_mode = True
