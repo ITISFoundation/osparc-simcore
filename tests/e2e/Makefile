@@ -62,11 +62,11 @@ define _inject-mattward-templates-in-db
 endef
 
 define _setup_simcore_for_testing 
-	@$(_build_simcore_images)
-	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
-	@$(_up_simcore)
-	@$(_setup_test_environment)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+@$(_build_simcore_images)
+@$(MAKE_C) $(REPO_BASE_DIR) local-registry
+@$(_up_simcore)
+@$(_setup_test_environment)
+@$(VENV_DIR)/bin/python utils/wait_for_services.py
 endef
 
 # SETUP ##################
@@ -84,7 +84,7 @@ install-mattward-ci: ## install e2e mattward testing framework and start simcore
 	@$(_transfer-mattward-images-to-registry)
 	@$(_inject-mattward-templates-in-db)
 
-.PHONY clean-up
+.PHONY: clean-up
 clean-up: ## remove everything
 	# switch simcore stack down
 	@$(MAKE_C) $(REPO_BASE_DIR) down
