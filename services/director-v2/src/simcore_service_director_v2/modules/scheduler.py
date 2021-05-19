@@ -60,14 +60,14 @@ Iteration = PositiveInt
 
 
 @dataclass
-class Scheduler:
+class CeleryScheduler:
     scheduled_pipelines: Set[Tuple[UserID, ProjectID, Iteration]]
     db_engine: Engine
     celery_client: CeleryClient
     wake_up_event: asyncio.Event = asyncio.Event()
 
     @classmethod
-    async def create_from_db(cls, app: FastAPI) -> "Scheduler":
+    async def create_from_db(cls, app: FastAPI) -> "CeleryScheduler":
         if not hasattr(app.state, "engine"):
             raise ConfigurationError(
                 "Database connection is missing. Please check application configuration."
@@ -79,7 +79,7 @@ class Scheduler:
         runs: List[CompRunsAtDB] = await runs_repository.list(
             filter_by_state=_SCHEDULED_STATES
         )
-        logger.info("Scheduler creation with %s runs being scheduled", len(runs))
+        logger.info("CeleryScheduler creation with %s runs being scheduled", len(runs))
         return cls(
             db_engine=db_engine,
             celery_client=CeleryClient.instance(app),
@@ -90,7 +90,7 @@ class Scheduler:
 
     async def run(self) -> None:
         while True:
-            logger.info("Scheduler checking pipelines and tasks")
+            logger.info("CeleryScheduler checking pipelines and tasks")
             self.wake_up_event.clear()
             await asyncio.gather(
                 *[
@@ -214,11 +214,11 @@ class Scheduler:
 async def scheduler_task(app: FastAPI) -> None:
     while True:
         try:
-            app.state.scheduler = scheduler = await Scheduler.create_from_db(app)
+            app.state.scheduler = scheduler = await CeleryScheduler.create_from_db(app)
             await scheduler.run()
 
         except CancelledError:
-            logger.info("Scheduler background task cancelled")
+            logger.info("CeleryScheduler background task cancelled")
             return
         except Exception:  # pylint: disable=broad-except
             logger.exception(
@@ -228,7 +228,7 @@ async def scheduler_task(app: FastAPI) -> None:
             await asyncio.sleep(_DEFAULT_TIMEOUT_S)
         finally:
             app.state.scheduler = None
-            logger.debug("Scheduler task completed")
+            logger.debug("CeleryScheduler task completed")
 
 
 def on_app_startup(app: FastAPI) -> Callable:

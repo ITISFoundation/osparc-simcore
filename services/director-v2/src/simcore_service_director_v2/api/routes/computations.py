@@ -31,7 +31,7 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.scheduler import Scheduler
+from ...modules.scheduler import CeleryScheduler
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -87,7 +87,7 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
-    scheduler: Scheduler = Depends(get_scheduler),
+    scheduler: CeleryScheduler = Depends(get_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",

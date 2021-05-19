@@ -112,7 +112,7 @@ class RegistrySettings(BaseSettings):
         env_prefix = "REGISTRY_"
 
 
-class SchedulerSettings(BaseSettings):
+class CelerySchedulerSettings(BaseSettings):
     enabled: bool = Field(
         True,
         description="Enables/Disables the scheduler",
@@ -133,7 +133,7 @@ class AppSettings(BaseSettings):
             celery=CelerySettings.create_from_env(),
             dynamic_services=DynamicServicesSettings(),
             client_request=ClientRequestSettings(),
-            scheduler=SchedulerSettings(),
+            scheduler=CelerySchedulerSettings(),
             **settings_kwargs,
         )
 
@@ -232,7 +232,7 @@ class AppSettings(BaseSettings):
 
     client_request: ClientRequestSettings
 
-    scheduler: SchedulerSettings
+    scheduler: CelerySchedulerSettings
 
     class Config(CommonConfig):
         env_prefix = ""

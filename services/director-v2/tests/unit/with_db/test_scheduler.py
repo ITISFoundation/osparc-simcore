@@ -22,7 +22,7 @@ from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.modules.celery import CeleryClient
 from simcore_service_director_v2.modules.scheduler import (
     _SCHEDULED_STATES,
-    Scheduler,
+    CeleryScheduler,
     _runtime_requirement,
     scheduler_task,
 )
@@ -158,7 +158,7 @@ async def test_scheduler_throws_error_for_missing_dependencies(
     # missing db engine
     incorectly_configured_app = FakeApp(state=None)
     with pytest.raises(ConfigurationError):
-        await Scheduler.create_from_db(incorectly_configured_app)
+        await CeleryScheduler.create_from_db(incorectly_configured_app)
 
     # missing celery client
     incorectly_configured_app = FakeApp(
@@ -166,7 +166,7 @@ async def test_scheduler_throws_error_for_missing_dependencies(
     )
     del incorectly_configured_app.state.celery_client
     with pytest.raises(ConfigurationError):
-        await Scheduler.create_from_db(incorectly_configured_app)
+        await CeleryScheduler.create_from_db(incorectly_configured_app)
 
     # now should be ok
     correctly_configured_app = FakeApp(
@@ -175,13 +175,13 @@ async def test_scheduler_throws_error_for_missing_dependencies(
             celery_client=celery_client,
         )
     )
-    await Scheduler.create_from_db(correctly_configured_app)
+    await CeleryScheduler.create_from_db(correctly_configured_app)
 
 
 async def test_scheduler_initializes_with_correct_state(
     fake_app: FakeApp,
 ):
-    scheduler = await Scheduler.create_from_db(fake_app)
+    scheduler = await CeleryScheduler.create_from_db(fake_app)
 
 
 async def test_scheduler_task_starts_and_stops_gracefully(fake_app: FakeApp):

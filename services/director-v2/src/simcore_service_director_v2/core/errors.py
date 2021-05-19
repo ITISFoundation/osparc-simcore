@@ -78,7 +78,7 @@ class ServiceStartTimeoutError(DirectorException):
         self.service_uuid = service_uuid
 
 
-class SchedulerError(DirectorException):
+class CelerySchedulerError(DirectorException):
     """An error in the scheduler"""
 
     def __init__(self, msg: Optional[str]):
