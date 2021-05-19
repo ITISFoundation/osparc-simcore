@@ -14,11 +14,12 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
-from simcore_service_director_v2.models.schemas.constants import UserID
 
+from ..core.errors import ConfigurationError
 from ..models.domains.comp_pipelines import CompPipelineAtDB
 from ..models.domains.comp_runs import CompRunsAtDB
 from ..models.domains.comp_tasks import CompTaskAtDB, Image
+from ..models.schemas.constants import UserID
 from ..modules.celery import CeleryClient
 from ..utils.computations import get_pipeline_state_from_task_states
 from .db.repositories import BaseRepository
@@ -35,6 +36,8 @@ _SCHEDULED_STATES = {
     RunningState.STARTED,
     RunningState.RETRY,
 }
+
+_DEFAULT_TIMEOUT_S: int = 5
 
 
 def _get_repository(
@@ -63,6 +66,10 @@ class Scheduler:
 
     @classmethod
     async def create_from_db(cls, app: FastAPI) -> "Scheduler":
+        if not hasattr(app.state, "engine"):
+            raise ConfigurationError(
+                "Database connection is missing. Please check application configuration."
+            )
         db_engine = app.state.engine
         runs_repository = _get_repository(db_engine, CompRunsRepository)
 
@@ -90,7 +97,9 @@ class Scheduler:
                 ]
             )
             with suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(self.wake_up_event.wait(), timeout=5.0)
+                await asyncio.wait_for(
+                    self.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S
+                )
 
     async def schedule_pipeline_run(
         self, user_id: UserID, project_id: ProjectID
@@ -228,6 +237,7 @@ async def scheduler_task(app: FastAPI) -> None:
                 "Unexpected error in scheduler task, restarting scheduler..."
             )
             # wait a bit before restarting the task
-            await asyncio.sleep(5)
+            await asyncio.sleep(_DEFAULT_TIMEOUT_S)
         finally:
             app.state.scheduler = None
+            logger.debug("Scheduler task completed")

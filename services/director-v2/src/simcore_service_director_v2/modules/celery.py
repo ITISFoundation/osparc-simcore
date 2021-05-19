@@ -10,6 +10,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.settings.celery import CeleryConfig
 
+from ..core.errors import ConfigurationError
 from ..models.schemas.constants import UserID
 
 logger = logging.getLogger(__name__)
@@ -83,6 +84,10 @@ class CeleryClient:
 
     @classmethod
     def instance(cls, app: FastAPI) -> "CeleryClient":
+        if not hasattr(app.state, "celery_client"):
+            raise ConfigurationError(
+                "Celery client is not available. Please check the configuration."
+            )
         return app.state.celery_client
 
     def send_single_tasks(
