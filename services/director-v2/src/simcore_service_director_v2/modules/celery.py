@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 from celery import Celery, Task, signature
 from celery.canvas import Signature
@@ -78,7 +78,11 @@ class CeleryClient:
         return app.state.celery_client
 
     def send_single_tasks(
-        self, user_id: UserID, project_id: ProjectID, single_tasks: Dict[str, Any]
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        single_tasks: Dict[str, Any],
+        callback: Callable,
     ) -> Dict[str, Task]:
         async_tasks = {}
         for node_id, node_data in single_tasks.items():
@@ -89,7 +93,9 @@ class CeleryClient:
                 node_id,
                 node_data["runtime_requirements"],
             )
-            async_tasks[node_id] = celery_task = celery_task_signature.apply_async()
+            async_tasks[
+                node_id
+            ] = celery_task = celery_task_signature.apply_async().then(callback)
             logger.info("Published celery task %s", celery_task)
         return async_tasks
 

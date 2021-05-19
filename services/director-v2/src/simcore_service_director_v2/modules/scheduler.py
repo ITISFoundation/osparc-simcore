@@ -10,7 +10,6 @@ from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
 import networkx as nx
 from aiopg.sa.engine import Engine
-from celery import Task
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
@@ -204,11 +203,12 @@ class Scheduler:
             project_id, next_tasks_to_run.keys()
         )
 
-        scheduled_tasks: Dict[str, Task] = self.celery_client.send_single_tasks(
-            user_id=user_id, project_id=project_id, single_tasks=next_tasks_to_run
+        self.celery_client.send_single_tasks(
+            user_id=user_id,
+            project_id=project_id,
+            single_tasks=next_tasks_to_run,
+            callback=self._wake_up_scheduler_now,
         )
-        for t in scheduled_tasks.values():
-            t.then(self._wake_up_scheduler_now)
 
 
 async def scheduler_task(app: FastAPI) -> None:
