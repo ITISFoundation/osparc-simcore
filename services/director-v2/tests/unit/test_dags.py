@@ -5,7 +5,7 @@
 # pylint:disable=no-value-for-parameter
 
 
-from typing import Any, Dict, List, Set
+from typing import Dict, List, Set
 
 import networkx as nx
 import pytest
