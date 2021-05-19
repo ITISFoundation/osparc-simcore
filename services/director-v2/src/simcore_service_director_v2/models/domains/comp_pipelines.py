@@ -19,6 +19,12 @@ class CompPipelineAtDB(BaseModel):
     def convert_state_if_needed(cls, v):
         if isinstance(v, StateType):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
+        if isinstance(v, str):
+            try:
+                state_type = StateType(v)
+                return RunningState(DB_TO_RUNNING_STATE[state_type])
+            except ValueError:
+                pass
         return v
 
     @validator("dag_adjacency_list", pre=True)
