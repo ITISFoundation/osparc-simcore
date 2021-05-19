@@ -31,16 +31,16 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
 
             dt = time.monotonic() - t0
 
-        # the indentation is correct, the profiler needs to be stopped when
-        # printing the output, the profiler is started and stopped by the
-        # contextmanger
-        profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
-
-        slow_callbacks_detected = "No samples were recorded." not in profiler_result
-
-        if slow_callbacks_detected:
+        if dt >= slow_duration_secs:
+            # the indentation is correct, the profiler needs to be stopped when
+            # printing the output, the profiler is started and stopped by the
+            # contextmanger
+            profiler_result = profiler.output_text(
+                unicode=True, color=False, show_all=True
+            )
             incidents.append(SlowCallback(msg=profiler_result, delay_secs=dt))
             logger.warning("Executing took %.3f seconds\n%s", dt, profiler_result)
+
         return retval
 
     asyncio.events.Handle._run = instrumented
