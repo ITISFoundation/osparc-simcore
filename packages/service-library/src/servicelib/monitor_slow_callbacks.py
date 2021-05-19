@@ -31,7 +31,8 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
 
             dt = time.monotonic() - t0
 
-        profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
+            profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
+
         slow_callbacks_detected = "No samples were recorded." not in profiler_result
 
         if slow_callbacks_detected:
