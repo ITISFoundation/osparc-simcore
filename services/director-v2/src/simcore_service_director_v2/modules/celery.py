@@ -93,10 +93,9 @@ class CeleryClient:
                 node_id,
                 node_data["runtime_requirements"],
             )
-            async_tasks[
-                node_id
-            ] = celery_task = celery_task_signature.apply_async().then(callback)
+            async_tasks[node_id] = celery_task = celery_task_signature.apply_async()
             logger.info("Published celery task %s", celery_task)
+            celery_task.then(callback)
         return async_tasks
 
     @classmethod
