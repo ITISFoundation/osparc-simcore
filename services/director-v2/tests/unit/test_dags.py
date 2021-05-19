@@ -13,7 +13,6 @@ from models_library.projects import Workbench
 from simcore_service_director_v2.utils.dags import (
     create_complete_dag,
     create_minimal_computational_graph_based_on_selection,
-    topological_sort_grouping,
 )
 
 
@@ -167,22 +166,3 @@ async def test_create_minimal_graph(
         )
     )
     assert nx.to_dict_of_lists(reduced_dag_with_auto_detect) == not_forced_exp_dag
-
-
-@pytest.mark.parametrize(
-    "input_dag, expected_list_groups",
-    [
-        (nx.DiGraph(), []),
-        (
-            nx.DiGraph(
-                {"node0": {"node1", "node3"}, "node1": {"node4"}, "node2": {"node3"}}
-            ),
-            [{"node0": {}, "node2": {}}, {"node1": {}, "node3": {}}, {"node4": {}}],
-        ),
-    ],
-)
-def test_topological_sort_grouping(
-    input_dag: nx.DiGraph, expected_list_groups: List[Dict[str, Dict[str, Any]]]
-):
-    sorted_groups = topological_sort_grouping(input_dag)
-    assert sorted_groups == expected_list_groups
