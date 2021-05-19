@@ -1,13 +1,14 @@
 import asyncio.events
 import time
-from asyncio.base_events import _format_handle
 from typing import List
+
+from pyinstrument import Profiler
 
 from .incidents import SlowCallback
 
 
 def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
-    """ Based in from aiodebug
+    """Based in from aiodebug
 
     Patches ``asyncio.events.Handle`` to report an incident every time a callback
     takes ``slow_duration_secs`` seconds or more to run.
@@ -19,13 +20,21 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
     _run = asyncio.events.Handle._run
 
     def instrumented(self):
+        profiler = Profiler(interval=slow_duration_secs)
+        profiler.start()
         t0 = time.monotonic()
+
         retval = _run(self)
+
         dt = time.monotonic() - t0
-        if dt >= slow_duration_secs:
-            task_info = _format_handle(self)
-            incidents.append(SlowCallback(msg=task_info, delay_secs=dt))
-            logger.warning("Executing %s took %.3f seconds", task_info, dt)
+        profiler.stop()
+
+        profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
+        slow_callbacks_detected = "No samples were recorded." not in profiler_result
+
+        if slow_callbacks_detected:
+            incidents.append(SlowCallback(msg=profiler_result, delay_secs=dt))
+            logger.warning(profiler_result)
         return retval
 
     asyncio.events.Handle._run = instrumented
