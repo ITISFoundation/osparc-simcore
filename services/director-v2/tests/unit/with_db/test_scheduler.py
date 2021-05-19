@@ -13,7 +13,6 @@ from typing import Any, Dict
 import pytest
 import sqlalchemy as sa
 from celery import Celery
-from fastapi import FastAPI
 from models_library.projects_state import RunningState
 from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
