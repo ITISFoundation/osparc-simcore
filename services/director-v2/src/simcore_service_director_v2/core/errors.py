@@ -83,3 +83,12 @@ class SchedulerError(DirectorException):
 
     def __init__(self, msg: Optional[str]):
         super().__init__(msg or "Unexpected error in the scheduler")
+
+
+class ConfigurationError(DirectorException):
+    """An error in the director-v2 configuration"""
+
+    def __init__(self, msg: Optional[str]):
+        super().__init__(
+            msg or "Invalid configuration of the director-v2 application. Please check."
+        )
