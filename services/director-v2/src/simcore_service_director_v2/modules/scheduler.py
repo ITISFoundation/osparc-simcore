@@ -218,7 +218,7 @@ class Scheduler:
             )
             return
 
-        # let's schedule the tasks
+        # let's schedule the tasks, mark them as PENDING so the sidecar will take it
         await comp_tasks_repo.mark_project_tasks_as_pending(
             project_id, tasks_to_run.keys()
         )
