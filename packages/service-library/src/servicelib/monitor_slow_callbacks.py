@@ -20,14 +20,12 @@ def enable(slow_duration_secs: float, incidents: List[SlowCallback]) -> None:
     _run = asyncio.events.Handle._run
 
     def instrumented(self):
-        profiler = Profiler(interval=slow_duration_secs)
-        profiler.start()
-        t0 = time.monotonic()
+        with Profiler(interval=slow_duration_secs) as profiler:
+            t0 = time.monotonic()
 
-        retval = _run(self)
+            retval = _run(self)
 
-        dt = time.monotonic() - t0
-        profiler.stop()
+            dt = time.monotonic() - t0
 
         profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
         slow_callbacks_detected = "No samples were recorded." not in profiler_result
