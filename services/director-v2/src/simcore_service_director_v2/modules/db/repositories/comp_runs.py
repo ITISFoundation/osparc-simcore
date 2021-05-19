@@ -74,7 +74,7 @@ class CompRunsRepository(BaseRepository):
         self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt, **values
     ) -> CompRunsAtDB:
         async with self.db_engine.acquire() as conn:
-            row: RowProxy = await conn.execute(
+            result = await conn.execute(
                 sa.update(comp_runs)
                 .where(
                     (comp_runs.c.project_uuid == str(project_id))
@@ -83,7 +83,8 @@ class CompRunsRepository(BaseRepository):
                 )
                 .values(**values)
                 .returning(literal_column("*"))
-            ).first()
+            )
+            row: RowProxy = await result.first()
             return CompRunsAtDB.from_orm(row)
 
     async def set_run_result(
@@ -93,6 +94,6 @@ class CompRunsRepository(BaseRepository):
         iteration: PositiveInt,
         result_state: RunningState,
     ) -> CompRunsAtDB:
-        return self.update(
+        return await self.update(
             user_id, project_id, iteration, result=RUNNING_STATE_TO_DB[result_state]
         )
