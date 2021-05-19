@@ -154,15 +154,11 @@ class Scheduler:
             if (str(t.node_id) in list(pipeline_dag.nodes()))
         }
         if not comp_tasks:
-            logger.warning("pipeline %s has no computational node", project_id)
-            await comp_runs_repo.set_run_result(
-                user_id=user_id,
-                project_id=project_id,
-                iteration=iteration,
-                result_state=RunningState.UNKNOWN,
-            )
+            # this should not happen
+            logger.error("pipeline %s has computational node", project_id)
             return
-        # filter the tasks with what were already completed
+
+        # filter out the tasks with what were already completed
         pipeline_dag.remove_nodes_from(
             {
                 node_id
@@ -170,58 +166,50 @@ class Scheduler:
                 if t.state in _COMPLETED_STATES
             }
         )
+
+        # update the current status of the run
+        pipeline_state_from_tasks = get_pipeline_state_from_task_states(
+            comp_tasks.values(), self.celery_client.settings.publication_timeout
+        )
+        await comp_runs_repo.set_run_result(
+            user_id=user_id,
+            project_id=project_id,
+            iteration=iteration,
+            result_state=pipeline_state_from_tasks,
+        )
+
         if not pipeline_dag.nodes:
-            # was already completed
-            pipeline_state_from_tasks = get_pipeline_state_from_task_states(
-                comp_tasks.values(), self.celery_client.settings.publication_timeout
-            )
+            # there is nothing left, the run is completed
+            self.scheduled_pipelines.remove((user_id, project_id, iteration))
             logger.info(
                 "pipeline %s completed with result %s",
                 project_id,
                 pipeline_state_from_tasks,
             )
-            await comp_runs_repo.set_run_result(
-                user_id=user_id,
-                project_id=project_id,
-                iteration=iteration,
-                result_state=pipeline_state_from_tasks,
-            )
-
-            # remove the pipeline
-            self.scheduled_pipelines.remove((user_id, project_id, iteration))
             return
 
-        # get the tasks that should be run now
-        tasks_to_run: Dict[str, Dict[str, Any]] = {
+        # find the next tasks that should be run now
+        next_tasks_to_run: Dict[str, Dict[str, Any]] = {
             node_id: {
                 "runtime_requirements": _runtime_requirement(comp_tasks[node_id].image)
             }
             for node_id, degree in pipeline_dag.in_degree()
             if degree == 0 and comp_tasks[node_id].state == RunningState.PUBLISHED
         }
-        if not tasks_to_run:
-            # we are currently running or there is nothing left to be done
-            pipeline_state_from_tasks = get_pipeline_state_from_task_states(
-                comp_tasks.values(), self.celery_client.settings.publication_timeout
-            )
-            await comp_runs_repo.set_run_result(
-                user_id=user_id,
-                project_id=project_id,
-                iteration=iteration,
-                result_state=pipeline_state_from_tasks,
-            )
+        if not next_tasks_to_run:
+            # nothing to run at the moment
             return
 
         # let's schedule the tasks, mark them as PENDING so the sidecar will take it
         await comp_tasks_repo.mark_project_tasks_as_pending(
-            project_id, tasks_to_run.keys()
+            project_id, next_tasks_to_run.keys()
         )
 
         scheduled_tasks: Dict[str, Task] = self.celery_client.send_single_tasks(
-            user_id=user_id, project_id=project_id, single_tasks=tasks_to_run
+            user_id=user_id, project_id=project_id, single_tasks=next_tasks_to_run
         )
         for t in scheduled_tasks.values():
-            asyncio.get_event_loop().create_task(_check_task_status(t))
+            t.then(self._wake_up_scheduler_now)
 
 
 def celery_on_message(body: Any) -> None:
