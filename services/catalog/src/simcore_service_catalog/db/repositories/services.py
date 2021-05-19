@@ -102,7 +102,7 @@ class ServicesRepository(BaseRepository):
         limit_count limits returned value. None or non-positive values returns all matches
         """
         if minor is not None and major is None:
-            raise ValueError("Expected only major. or major.minor")
+            raise ValueError("Expected only major.*.* or major.minor.*")
 
         search_condition = services_meta_data.c.key == key
         if major is not None:
