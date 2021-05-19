@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-aiohttp==3.7.4.post0
+aiohttp==3.6.3
     # via
     #   -c requirements/_base.txt
     #   aioresponses
