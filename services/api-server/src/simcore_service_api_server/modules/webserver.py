@@ -146,6 +146,7 @@ class AuthSession:
     async def create_project(self, project: NewProjectIn):
         resp = await self.client.post(
             "/projects",
+            params={"hidden": True},
             data=project.json(
                 by_alias=True, exclude={"state"}
             ),  ## FIXME: REEAAAALY HACKY!
@@ -165,7 +166,9 @@ class AuthSession:
 
     async def list_projects(self, solver_name: str) -> List[Project]:
         resp = await self.client.get(
-            "/projects", params={"type": "user"}, cookies=self.session_cookies
+            "/projects",
+            params={"type": "user", "hidden": True},
+            cookies=self.session_cookies,
         )
 
         data: ListAnyDict = self._process(resp) or []
