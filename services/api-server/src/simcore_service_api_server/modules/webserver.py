@@ -16,53 +16,9 @@ from starlette import status
 from ..core.settings import WebServerSettings
 from ..models.domain.projects import NewProjectIn, Project
 from ..models.raw_data import JSON, ListAnyDict
+from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 
 logger = logging.getLogger(__name__)
-
-
-# Module's setup logic ---------------------------------------------
-
-
-def setup(app: FastAPI, settings: Optional[WebServerSettings] = None) -> None:
-    if not settings:
-        settings = WebServerSettings()
-
-    def on_startup() -> None:
-        # normalize & encrypt
-        secret_key = _get_secret_key(settings)
-        app.state.webserver_fernet = fernet.Fernet(secret_key)
-
-        # init client
-        logger.debug("Setup webserver at %s...", settings.base_url)
-
-        client = AsyncClient(base_url=settings.base_url)
-        app.state.webserver_client = client
-
-    async def on_shutdown() -> None:
-        with suppress(AttributeError):
-            client: AsyncClient = app.state.webserver_client
-            await client.aclose()
-            del app.state.webserver_client
-        logger.debug("Webserver closed successfully")
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
-
-
-# Module's business logic ---------------------------------------------
-
-
-def _get_secret_key(settings: WebServerSettings):
-    secret_key_bytes = settings.session_secret_key.get_secret_value().encode("utf-8")
-    while len(secret_key_bytes) < 32:
-        secret_key_bytes += secret_key_bytes
-    secret_key = secret_key_bytes[:32]
-
-    if isinstance(secret_key, str):
-        pass
-    elif isinstance(secret_key, (bytes, bytearray)):
-        secret_key = base64.urlsafe_b64encode(secret_key)
-    return secret_key
 
 
 @attr.s(auto_attribs=True)
@@ -187,12 +143,60 @@ class AuthSession:
         return list(projects)
 
 
-# TODO: init client and then build sessions from client using depenencies
-#
-# from ..utils.client_base import BaseServiceClientApi
-# class WebserverApi(BaseServiceClientApi):
-#     """ One instance per app """
+def _get_secret_key(settings: WebServerSettings):
+    secret_key_bytes = settings.session_secret_key.get_secret_value().encode("utf-8")
+    while len(secret_key_bytes) < 32:
+        secret_key_bytes += secret_key_bytes
+    secret_key = secret_key_bytes[:32]
 
-#     def create_auth_session(self, session_cookies) -> AuthSession:
-#         """ Needed per request, so it can perform """
-#         return AuthSession(client=self.client, vtag="v0", session_cookies=session_cookies)
+    if isinstance(secret_key, str):
+        pass
+    elif isinstance(secret_key, (bytes, bytearray)):
+        secret_key = base64.urlsafe_b64encode(secret_key)
+    return secret_key
+
+
+class WebserverApi(BaseServiceClientApi):
+    """Access to web-server API"""
+
+    # def create_auth_session(self, session_cookies) -> AuthSession:
+    #     """ Needed per request, so it can perform """
+    #     return AuthSession(client=self.client, vtag="v0", session_cookies=session_cookies)
+
+
+# MODULES APP SETUP -------------------------------------------------------------
+
+
+def setup(app: FastAPI, settings: Optional[WebServerSettings] = None) -> None:
+    if not settings:
+        settings = WebServerSettings()
+
+    assert settings is not None  # nosec
+
+    setup_client_instance(
+        app, WebserverApi, api_baseurl=settings.base_url, service_name="webserver"
+    )
+
+    # TODO: old startup. need to integrat
+    # TODO: init client and then build sessions from client using depenencies
+
+    def on_startup() -> None:
+        # normalize & encrypt
+        secret_key = _get_secret_key(settings)
+        app.state.webserver_fernet = fernet.Fernet(secret_key)
+
+        # init client
+        logger.debug("Setup webserver at %s...", settings.base_url)
+
+        client = AsyncClient(base_url=settings.base_url)
+        app.state.webserver_client = client
+
+    async def on_shutdown() -> None:
+        with suppress(AttributeError):
+            client: AsyncClient = app.state.webserver_client
+            await client.aclose()
+            del app.state.webserver_client
+        logger.debug("Webserver closed successfully")
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
