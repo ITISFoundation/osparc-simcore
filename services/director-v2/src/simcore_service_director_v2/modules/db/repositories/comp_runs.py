@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import List, Optional, Set
 
 import sqlalchemy as sa
@@ -64,6 +65,7 @@ class CompRunsRepository(BaseRepository):
                     project_uuid=str(project_id),
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
+                    start=datetime.utcnow(),
                 )
                 .returning(literal_column("*"))
             )
@@ -93,7 +95,14 @@ class CompRunsRepository(BaseRepository):
         project_id: ProjectID,
         iteration: PositiveInt,
         result_state: RunningState,
+        final_state: Optional[bool] = False,
     ) -> CompRunsAtDB:
         return await self.update(
-            user_id, project_id, iteration, result=RUNNING_STATE_TO_DB[result_state]
+            user_id,
+            project_id,
+            iteration,
+            **{
+                "result": RUNNING_STATE_TO_DB[result_state],
+                "end": datetime.utcnow() if final_state else None,
+            },
         )

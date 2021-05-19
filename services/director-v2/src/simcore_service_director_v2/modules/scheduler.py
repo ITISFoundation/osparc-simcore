@@ -106,7 +106,9 @@ class CeleryScheduler:
     async def schedule_pipeline_run(
         self, user_id: UserID, project_id: ProjectID
     ) -> None:
-        runs_repo = _get_repository(self.db_engine, CompRunsRepository)
+        runs_repo: CompRunsRepository = _get_repository(
+            self.db_engine, CompRunsRepository
+        )
         new_run: CompRunsAtDB = await runs_repo.create(
             user_id=user_id, project_id=project_id
         )
@@ -174,6 +176,7 @@ class CeleryScheduler:
             project_id=project_id,
             iteration=iteration,
             result_state=pipeline_state_from_tasks,
+            final_state=(pipeline_state_from_tasks in _COMPLETED_STATES),
         )
 
         if not pipeline_dag.nodes:
