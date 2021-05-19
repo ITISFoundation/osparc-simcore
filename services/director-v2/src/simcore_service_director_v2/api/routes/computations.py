@@ -31,7 +31,7 @@ from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
-from ...modules.scheduler import Scheduler, get_scheduler
+from ...modules.scheduler import Scheduler
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -47,6 +47,7 @@ from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import get_celery_client
 from ..dependencies.database import get_repository
 from ..dependencies.director_v0 import get_director_v0_client
+from ..dependencies.scheduler import get_scheduler
 
 router = APIRouter()
 log = logging.getLogger(__file__)
@@ -86,6 +87,7 @@ async def create_computation(
     ),
     celery_client: CeleryClient = Depends(get_celery_client),
     director_client: DirectorV0Client = Depends(get_director_v0_client),
+    scheduler: Scheduler = Depends(get_scheduler),
 ) -> ComputationTaskOut:
     log.debug(
         "User %s is creating a new computation from project %s",
@@ -135,10 +137,7 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-            # TODO: sets this as a DEpends
-            scheduler: Scheduler = get_scheduler(request.app)
-            if scheduler:
-                await scheduler.schedule_pipeline_run(job.user_id, job.project_id)
+            await scheduler.schedule_pipeline_run(job.user_id, job.project_id)
 
         return ComputationTaskOut(
             id=job.project_id,
@@ -226,18 +225,6 @@ async def get_computation(
 
     except (ProjectNotFoundError, PipelineNotFoundError) as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-
-    # NOTE: this will be re-used for the prep2go API stuff... don't worry...
-    # task = AsyncResult(str(computation_id))
-    # if task.state == RunningState.SUCCESS:
-    #     return ComputationTask(id=task.id, state=task.state, result=task.result)
-    # if task.state == RunningState.FAILED:
-    #     return ComputationTask(
-    #         id=task.id,
-    #         state=task.state,
-    #         result=task.backend.get(task.backend.get_key_for_task(task.id)),
-    #     )
-    # return ComputationTask(id=task.id, state=task.state, result=task.info)
 
 
 @router.post(

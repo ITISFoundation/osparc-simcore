@@ -212,26 +212,6 @@ class Scheduler:
             t.then(self._wake_up_scheduler_now)
 
 
-def celery_on_message(body: Any) -> None:
-    # FIXME: this might become handy when we stop starting tasks recursively
-    logger.warning(body)
-
-
-async def _check_task_status(task: Task):
-    try:
-        # wait for the result here
-        result = task.get(on_message=celery_on_message, propagate=False)
-        logger.warning("RESULT OBTAINED: %s for task %s", result, task)
-    except CeleryTimeoutError:
-        logger.error("timeout on waiting for task %s", task)
-    except Exception:  # pylint: disable=broad-except
-        logger.error("An unexpected error happend while running Celery task %s", task)
-
-
-def get_scheduler(app: FastAPI) -> Scheduler:
-    return app.state.scheduler
-
-
 async def scheduler_task(app: FastAPI) -> None:
     while True:
         try:
