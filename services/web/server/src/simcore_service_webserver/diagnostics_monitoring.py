@@ -4,7 +4,7 @@
 import concurrent.futures
 import logging
 import time
-from typing import Coroutine
+from typing import Callable, Coroutine
 
 import prometheus_client
 from aiohttp import web
@@ -41,9 +41,11 @@ async def metrics_handler(request: web.Request):
 
 def middleware_factory(app_name: str) -> Coroutine:
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: Coroutine):
+    async def _middleware_handler(request: web.Request, handler: Callable):
         if request.rel_url.path == "/socket.io/":
             return await handler(request)
+
+        log_exception = None
 
         try:
             request[kSTART_TIME] = time.time()
