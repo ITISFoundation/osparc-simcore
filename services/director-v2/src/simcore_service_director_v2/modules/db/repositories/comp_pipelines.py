@@ -65,9 +65,7 @@ class CompPipelinesRepository(BaseRepository):
             user_id=user_id,
             project_id=project_id,
             dag_adjacency_list=nx.to_dict_of_lists(dag_graph),
-            state=RUNNING_STATE_TO_DB[RunningState.PUBLISHED]
-            if publish
-            else RUNNING_STATE_TO_DB[RunningState.NOT_STARTED],
+            state=RunningState.PUBLISHED if publish else RunningState.NOT_STARTED,
         )
         insert_stmt = insert(comp_pipeline).values(**pipeline_at_db.dict(by_alias=True))
         on_update_stmt = insert_stmt.on_conflict_do_update(
