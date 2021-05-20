@@ -94,7 +94,7 @@ psycopg2-binary==2.8.6
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aiopg
     #   sqlalchemy
-pydantic[email]==1.7.2
+pydantic[email]==1.8.2
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -139,6 +139,7 @@ typing-extensions==3.7.4.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   pydantic
     #   yarl
 ujson==3.2.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in

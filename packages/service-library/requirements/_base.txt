@@ -73,6 +73,10 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pydantic==1.8.2
     # via -r requirements/_base.in
+pyinstrument-cext==0.2.4
+    # via pyinstrument
+pyinstrument==3.4.2
+    # via -r requirements/_base.in
 pyrsistent==0.17.3
     # via jsonschema
 pyyaml==5.4.1
