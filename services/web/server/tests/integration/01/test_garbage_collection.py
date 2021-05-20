@@ -1,5 +1,6 @@
-# pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import logging
@@ -247,7 +248,7 @@ async def disconnect_user_from_socketio(client, sio_connection_data):
     assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
-async def assert_users_count(db_engine: aiopg.sa.Engine, expected_users: int) -> True:
+async def assert_users_count(db_engine: aiopg.sa.Engine, expected_users: int) -> bool:
     async with db_engine.acquire() as conn:
         users_count = await conn.scalar(users.count())
         assert users_count == expected_users
@@ -256,14 +257,14 @@ async def assert_users_count(db_engine: aiopg.sa.Engine, expected_users: int) ->
 
 async def assert_projects_count(
     db_engine: aiopg.sa.Engine, expected_projects: int
-) -> True:
+) -> bool:
     async with db_engine.acquire() as conn:
         projects_count = await conn.scalar(projects.count())
         assert projects_count == expected_projects
         return True
 
 
-def assert_dicts_match_by_common_keys(first_dict, second_dict) -> True:
+def assert_dicts_match_by_common_keys(first_dict, second_dict) -> bool:
     common_keys = set(first_dict.keys()) & set(second_dict.keys())
     for key in common_keys:
         assert first_dict[key] == second_dict[key], key
@@ -290,7 +291,7 @@ async def query_project_from_db(db_engine: aiopg.sa.Engine, user_project: Dict):
 
 async def assert_user_in_database(
     db_engine: aiopg.sa.Engine, logged_user: Dict
-) -> True:
+) -> bool:
     user = await query_user_from_db(db_engine, logged_user)
     user_as_dict = dict(user)
 
@@ -303,7 +304,7 @@ async def assert_user_in_database(
     return True
 
 
-async def assert_user_not_in_database(db_engine: aiopg.sa.Engine, user: Dict) -> True:
+async def assert_user_not_in_database(db_engine: aiopg.sa.Engine, user: Dict) -> bool:
     user = await query_user_from_db(db_engine, user)
     assert user is None
 
@@ -312,7 +313,7 @@ async def assert_user_not_in_database(db_engine: aiopg.sa.Engine, user: Dict) ->
 
 async def assert_project_in_database(
     db_engine: aiopg.sa.Engine, user_project: Dict
-) -> True:
+) -> bool:
     project = await query_project_from_db(db_engine, user_project)
     project_as_dict = dict(project)
 
@@ -323,7 +324,7 @@ async def assert_project_in_database(
 
 async def assert_user_is_owner_of_project(
     db_engine: aiopg.sa.Engine, owner_user: Dict, owner_project: Dict
-) -> True:
+) -> bool:
     user = await query_user_from_db(db_engine, owner_user)
     project = await query_project_from_db(db_engine, owner_project)
 
@@ -334,7 +335,7 @@ async def assert_user_is_owner_of_project(
 
 async def assert_one_owner_for_project(
     db_engine: aiopg.sa.Engine, project: Dict, possible_owners: List[Dict]
-) -> True:
+) -> bool:
     q_owners = [await query_user_from_db(db_engine, owner) for owner in possible_owners]
     q_project = await query_project_from_db(db_engine, project)
 
