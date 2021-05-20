@@ -228,7 +228,6 @@ async def test_start_pipeline(
     redis_service: RedisConfig,
     simcore_services: Dict[str, URL],
     client,
-    client_session_id: str,
     socketio_client_factory: Callable,
     logged_user: LoggedUser,
     user_project: NewProject,
@@ -240,7 +239,7 @@ async def test_start_pipeline(
     mock_workbench_payload = user_project["workbench"]
     # connect websocket (to prevent the GC to remove the project)
     try:
-        sio = await socketio_client_factory(client_session_id)
+        sio = await socketio_client_factory()
         assert sio.sid
     except SocketConnectionError:
         if expected.created == web.HTTPCreated:

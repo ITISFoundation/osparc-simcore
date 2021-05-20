@@ -14,6 +14,15 @@ from yarl import URL
 
 
 @pytest.fixture()
+def client_session_id_factory() -> Callable[[], str]:
+    def create() -> str:
+        # NOTE:
+        return str(uuid4())
+
+    return create
+
+
+@pytest.fixture()
 def socketio_url_factory(client) -> Callable:
     def create_url(client_override: Optional[TestClient] = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
@@ -43,13 +52,18 @@ async def security_cookie_factory(client: TestClient) -> Callable:
 
 @pytest.fixture()
 async def socketio_client_factory(
-    socketio_url_factory: Callable, security_cookie_factory: Callable
+    socketio_url_factory: Callable,
+    security_cookie_factory: Callable,
+    client_session_id_factory: Callable,
 ) -> Callable[[str, Optional[TestClient]], socketio.AsyncClient]:
     clients = []
 
     async def connect(
-        client_session_id: str, client: Optional[TestClient] = None
+        client_session_id: Optional[str] = None, client: Optional[TestClient] = None
     ) -> socketio.AsyncClient:
+
+        if client_session_id is None:
+            client_session_id = client_session_id_factory()
 
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification
@@ -75,11 +89,3 @@ async def socketio_client_factory(
         if sio.connected:
             await sio.disconnect()
         assert not sio.sid
-
-
-@pytest.fixture()
-def client_session_id_factory() -> Callable[[], str]:
-    def create() -> str:
-        return str(uuid4())
-
-    return create
