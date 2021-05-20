@@ -67,7 +67,7 @@ attrs==20.3.0
     #   openapi-core
 billiard==3.6.3.0
     # via celery
-celery[redis]==5.0.1
+celery[redis]==5.0.5
     # via -r requirements/_base.in
 cffi==1.14.2
     # via cryptography
@@ -77,12 +77,15 @@ chardet==3.0.4
     # via aiohttp
 click-didyoumean==0.0.3
     # via celery
+click-plugins==1.1.1
+    # via celery
 click-repl==0.1.6
     # via celery
 click==7.1.2
     # via
     #   celery
     #   click-didyoumean
+    #   click-plugins
     #   click-repl
 cryptography==3.4.5
     # via
