@@ -7,32 +7,55 @@
 -r ../../../../packages/postgres-database/requirements/_base.in
 -r ../../../../packages/service-library/requirements/_base.in
 
+# aiohttp + extensions
 aiohttp==3.6.3 ## Issue in https://github.com/ITISFoundation/osparc-simcore/issues/2008
-
-aio-pika
 aiohttp_jinja2
 aiohttp_session[secure]
 aiohttp_security
 aiohttp-swagger[performance]
+
+# web-sockets
+python-socketio
+
+# databases
 aiopg[sa]
+asyncpg
+
+# redis
 aioredis
 aioredlock
-aiosmtplib
-asyncpg
+
+# scheduling, queues and AMQP client
 celery[redis]
+aio-pika
+
+# email
+aiosmtplib
+jinja_app_loader
+
+
+# data models
+pydantic[email]
+
+# security
 cryptography
+passlib
+
+# json
+orjson
+jsondiff
+json2html
+
+# asyncio debug
+aiodebug
+
+
+# misc
 change_case
 expiringdict
-jinja_app_loader
-jsondiff
-passlib
-python-socketio
 semantic_version
-aiodebug
-json2html
+
+# import/export excel
 parfive
 openpyxl
 python-magic
-
-pydantic[email]
-orjson
