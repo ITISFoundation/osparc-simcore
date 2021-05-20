@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt requirements/_base.in
 #
-aio-pika==6.7.1
+aio-pika==6.8.0
     # via -r requirements/_base.in
 aiodebug==1.1.2
     # via
@@ -38,7 +38,7 @@ aioredis==1.3.1
     #   aioredlock
 aioredlock==0.5.2
     # via -r requirements/_base.in
-aiormq==3.2.3
+aiormq==3.3.1
     # via aio-pika
 aiosmtplib==1.1.3
     # via -r requirements/_base.in
