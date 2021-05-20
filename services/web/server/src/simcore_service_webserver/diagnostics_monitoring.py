@@ -26,17 +26,21 @@ kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
 kPROCESS_POOL_EXECUTOR = f"{__name__}.process_pool_executor.pool"
 
 
-async def metrics_handler(request: web.Request):
-    registry = request.app[kCOLLECTOR_REGISTRY]
-    process_pool_executor = request.app[kPROCESS_POOL_EXECUTOR]
+def get_collector_registry(app: web.Application) -> CollectorRegistry:
+    return app[kCOLLECTOR_REGISTRY]
 
-    # prometheus_client.generate_latest is cpu intensive since
-    # it creates a website report from a growing registry
-    result = await request.loop.run_in_executor(
-        process_pool_executor, prometheus_client.generate_latest, registry
-    )
-    response = web.Response(body=result, content_type=CONTENT_TYPE_LATEST)
-    return response
+
+async def metrics_handler(request: web.Request):
+    registry = get_collector_registry(request.app)
+
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
+        result = await request.loop.run_in_executor(
+            pool, prometheus_client.generate_latest, registry
+        )
+        response = web.Response(body=result)
+        response.content_type = CONTENT_TYPE_LATEST
+        return response
 
 
 def middleware_factory(app_name: str) -> Coroutine:
@@ -126,12 +130,6 @@ def middleware_factory(app_name: str) -> Coroutine:
     return _middleware_handler
 
 
-async def process_pool_executor_context(app: web.Application):
-    with concurrent.futures.ProcessPoolExecutor() as pool:
-        app[kPROCESS_POOL_EXECUTOR] = pool
-        yield
-
-
 def setup_monitoring(app: web.Application):
     # app-scope registry
     app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=True)
@@ -184,10 +182,4 @@ def setup_monitoring(app: web.Application):
     # TODO: in production, it should only be accessible to backend services
     app.router.add_get("/metrics", metrics_handler)
 
-    app.cleanup_ctx.append(process_pool_executor_context)
-
     return True
-
-
-def get_collector_registry(app: web.Application) -> CollectorRegistry:
-    return app[kCOLLECTOR_REGISTRY]
