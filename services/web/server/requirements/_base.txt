@@ -65,6 +65,8 @@ attrs==20.3.0
     #   aioredlock
     #   jsonschema
     #   openapi-core
+bidict==0.21.2
+    # via python-socketio
 billiard==3.6.4.0
     # via celery
 celery[redis]==5.0.5
@@ -202,11 +204,11 @@ pyinstrument==3.4.2
     # via -r requirements/../../../../packages/service-library/requirements/_base.in
 pyrsistent==0.17.3
     # via jsonschema
-python-engineio==3.13.2
+python-engineio==4.2.0
     # via python-socketio
 python-magic==0.4.22
     # via -r requirements/_base.in
-python-socketio==4.6.0
+python-socketio==5.3.0
     # via -r requirements/_base.in
 pytz==2021.1
     # via celery
