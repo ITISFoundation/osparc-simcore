@@ -9,8 +9,7 @@
 # pylint:disable=redefined-outer-name
 
 import time
-
-# from datetime import timedelta
+from operator import attrgetter
 from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import quote_plus
@@ -83,6 +82,40 @@ def uploaded_input_file(tmpdir_factory, files_api: FilesApi) -> File:
     assert input_file.filename == input_path.name
 
     return input_file
+
+
+def test_list_jobs(
+    solvers_api: SolversApi,
+    sleeper_solver: Solver,
+    uploaded_input_file: File,
+):
+    solver = sleeper_solver
+
+    # should be first test, no jobs created!
+    jobs = solvers_api.list_jobs(solver.id, solver.version)
+    assert not jobs
+
+    expected_jobs = []
+    for n in range(3):
+        job = solvers_api.create_job(
+            solver.id,
+            solver.version,
+            job_inputs=JobInputs(
+                {
+                    "input_1": uploaded_input_file,
+                    "input_2": 3 * n,  # sleep time in secs
+                    "input_3": bool(n % 2),  # fail after sleep?
+                    "input_4": n,  # walk distance in meters
+                }
+            ),
+        )
+        assert isinstance(job, Job)
+        expected_jobs.append(job)
+
+        jobs = solvers_api.list_jobs(solver.id, solver.version)
+        assert sorted(jobs, key=attrgetter("name")) == sorted(
+            expected_jobs, key=attrgetter("name")
+        )
 
 
 def test_create_job(
@@ -247,34 +280,3 @@ def test_sugar_syntax_on_solver_setup(
     assert job.runner_name == "solvers/{}/releases/{}".format(
         quote_plus(str(solver.id)), solver.version
     )
-
-
-def test_list_jobs(
-    solvers_api: SolversApi,
-    sleeper_solver: Solver,
-    uploaded_input_file: File,
-):
-    solver = sleeper_solver
-
-    jobs = solvers_api.list_jobs(solver.id, solver.version)
-    assert not jobs
-
-    expected_jobs = []
-    for n in range(3):
-        job = solvers_api.create_job(
-            solver.id,
-            solver.version,
-            job_inputs=JobInputs(
-                {
-                    "input_1": uploaded_input_file,
-                    "input_2": 3 * n,  # sleep time in secs
-                    "input_3": bool(n % 2),  # fail after sleep?
-                    "input_4": n,  # walk distance in meters
-                }
-            ),
-        )
-        assert isinstance(job, Job)
-        expected_jobs.append(job)
-
-        jobs = solvers_api.list_jobs(solver.id, solver.version)
-        assert sorted(jobs) == sorted(expected_jobs)
