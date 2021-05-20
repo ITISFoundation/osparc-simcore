@@ -471,7 +471,7 @@ async def download_files_and_get_checksums(
         return checksums
 
 
-async def get_checksmus_for_files_in_storage(
+async def get_checksums_for_files_in_storage(
     app: aiohttp.web.Application,
     project: Dict[str, Any],
     normalized_project: Dict[str, Any],
@@ -517,7 +517,6 @@ async def test_import_export_import_duplicate(
     loop,
     client,
     push_services_to_registry,
-    socketio_client,
     aiopg_engine,
     redis_client,
     export_version,
@@ -621,19 +620,19 @@ async def test_import_export_import_duplicate(
     )
 
     # check files in storage fingerprint matches
-    imported_files_checksums = await get_checksmus_for_files_in_storage(
+    imported_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=imported_project,
         normalized_project=normalized_imported_project,
         user_id=user["id"],
     )
-    reimported_files_checksums = await get_checksmus_for_files_in_storage(
+    reimported_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=reimported_project,
         normalized_project=normalized_reimported_project,
         user_id=user["id"],
     )
-    duplicated_files_checksums = await get_checksmus_for_files_in_storage(
+    duplicated_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=duplicated_project,
         normalized_project=normalized_duplicated_project,
