@@ -247,3 +247,34 @@ def test_sugar_syntax_on_solver_setup(
     assert job.runner_name == "solvers/{}/releases/{}".format(
         quote_plus(str(solver.id)), solver.version
     )
+
+
+def test_list_jobs(
+    solvers_api: SolversApi,
+    sleeper_solver: Solver,
+    uploaded_input_file: File,
+):
+    solver = sleeper_solver
+
+    jobs = solvers_api.list_jobs(solver.id, solver.version)
+    assert not jobs
+
+    expected_jobs = []
+    for n in range(3):
+        job = solvers_api.create_job(
+            solver.id,
+            solver.version,
+            job_inputs=JobInputs(
+                {
+                    "input_1": uploaded_input_file,
+                    "input_2": 3 * n,  # sleep time in secs
+                    "input_3": bool(n % 2),  # fail after sleep?
+                    "input_4": n,  # walk distance in meters
+                }
+            ),
+        )
+        assert isinstance(job, Job)
+        expected_jobs.append(job)
+
+        jobs = solvers_api.list_jobs(solver.id, solver.version)
+        assert sorted(jobs) == sorted(expected_jobs)
