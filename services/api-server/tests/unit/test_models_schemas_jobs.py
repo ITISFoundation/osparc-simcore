@@ -1,18 +1,25 @@
-import random
-from copy import deepcopy
-
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+
+
+import random
+import urllib.parse
+from copy import deepcopy
 from pprint import pformat
+from uuid import uuid4
 
 import pytest
+from fastapi import FastAPI
+from simcore_service_api_server._meta import api_vtag
+from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.models.schemas.jobs import (
     Job,
     JobInputs,
     JobOutputs,
     JobStatus,
 )
+from simcore_service_api_server.models.schemas.solvers import Solver
 
 
 @pytest.mark.parametrize("model_cls", (Job, JobInputs, JobOutputs, JobStatus))
@@ -68,3 +75,33 @@ def test_job_io_checksums(repeat):
     assert (
         inputs1.compute_checksum() == inputs2.compute_checksum()
     ), f"{inputs1}!={inputs2}"
+
+
+@pytest.fixture
+def app(project_env_devel_environment) -> FastAPI:
+    _app: FastAPI = init_app()
+    return _app
+
+
+def test_job_resouce_names_has_associated_url(app: FastAPI):
+
+    solver_key = "z43/name with spaces/isolve"
+    solver_version = "1.0.3"
+    job_id = uuid4()
+
+    solver_name = Solver.compose_resource_name(solver_key, solver_version)
+    job_name = Job.compose_resource_name(parent_name=solver_name, job_id=job_id)
+    # job_name is used to identify a solver's job.
+
+    # job_name is a releatve resource name as defined in https://cloud.google.com/apis/design/resource_names
+    #
+    # - This a a relative resource name        "users/john smith/events/123"
+    # - This is a calendar event resource name "//calendar.googleapis.com/users/john smith/events/123"
+    # - This is the corresponding HTTP URL     "https://calendar.googleapis.com/v3/users/john%20smith/events/123"
+
+    # let's make sure the associated url route is always defined in the route
+    url_path = app.router.url_path_for(
+        "get_job", solver_key=solver_key, version=solver_version, job_id=str(job_id)
+    )
+
+    assert url_path == f"/{api_vtag}/{urllib.parse.unquote_plus(job_name)}"

@@ -9,7 +9,11 @@ from pydantic import BaseModel, Field, HttpUrl, conint, validator
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
-from ..api_resources import RelativeResourceName, compose_resource_name
+from ..api_resources import (
+    RelativeResourceName,
+    compose_resource_name,
+    split_resource_name,
+)
 
 # FIXME: all ints and bools will be floats
 ArgumentType = Union[File, float, int, bool, str, None]
@@ -188,7 +192,8 @@ class Job(BaseModel):
     ) -> str:
         # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
         # could have some alias entrypoints and the wrong parent_name might be introduced here
-        return compose_resource_name(parent_name, "jobs", job_id)
+        collection_or_resource_ids = split_resource_name(parent_name) + ["jobs", job_id]
+        return compose_resource_name(*collection_or_resource_ids)
 
     @property
     def resource_name(self) -> str:
