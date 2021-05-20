@@ -1,5 +1,4 @@
 # pylint: disable=no-value-for-parameter
-# TODO: reuse in auto and manual testing!
 
 import asyncio
 import os

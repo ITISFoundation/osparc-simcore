@@ -80,7 +80,6 @@ async def list_solvers(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    # TODO: Consider sorted(latest_solvers, key=attrgetter("name", "version"))
     return list(the_fake_impl.values(_url_resolver))
 
 
