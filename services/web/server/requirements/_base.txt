@@ -56,7 +56,7 @@ async-timeout==3.0.1
     #   aiohttp
     #   aiopg
     #   aioredis
-asyncpg==0.21.0
+asyncpg==0.23.0
     # via -r requirements/_base.in
 attrs==20.3.0
     # via
@@ -248,6 +248,7 @@ typing-extensions==3.7.4.3
     # via
     #   aiohttp
     #   aiohttp-jinja2
+    #   asyncpg
     #   pydantic
     #   yarl
 ujson==3.1.0
