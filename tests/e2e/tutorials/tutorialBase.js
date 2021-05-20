@@ -332,6 +332,16 @@ class TutorialBase {
     await this.takeScreenshot("checkNodeResults_after");
   }
 
+  async checkResults2(fileNames) {
+    await this.takeScreenshot("checkResults_before");
+    const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+      elements => elements.map(el => el.textContent.trim()));
+    assert(files.length === fileNames.length, 'Number of files is incorrect')
+    console.log('Number of files is correct')
+    await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
+    await this.takeScreenshot("checkResults_after");
+  }
+
   async toDashboard() {
     await this.takeScreenshot("toDashboard_before");
     this.__responsesQueue.addResponseListener("projects");
@@ -392,8 +402,10 @@ class TutorialBase {
     await this.__browser.close();
   }
 
-  async waitFor(waitFor) {
+  async waitFor(waitFor, reason) {
+    console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`)
     await utils.sleep(waitFor);
+    await this.takeScreenshot('waitFor_finished')
   }
 
   async takeScreenshot(screenshotTitle) {
@@ -401,10 +413,6 @@ class TutorialBase {
     const snapshotUrl = utils.getGrayLogSnapshotUrl(this.__url, 30);
     if (snapshotUrl) {
       console.log("Backend Snapshot: ", snapshotUrl)
-    }
-
-    if (this.__demo) {
-      return;
     }
 
     let title = this.__templateName;

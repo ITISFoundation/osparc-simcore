@@ -18,7 +18,6 @@ async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
 
   try {
-    tutorial.startScreenshooter();
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
     const studyId = studyData["data"]["uuid"];
@@ -28,7 +27,7 @@ async function runTutorial() {
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]]);
 
     // Wait for the output files to be pushed
-    await tutorial.waitFor(30000);
+    await tutorial.waitFor(10000, 'Wait for the output files to be pushed');
 
     // This study opens in fullscreen mode
     await tutorial.restoreIFrame();
@@ -42,7 +41,7 @@ async function runTutorial() {
       "t_plot.csv",
       "tst_plot.csv"
     ];
-    await tutorial.checkNodeResults(0, outFiles);
+    await tutorial.checkResults2(outFiles);
 
     await tutorial.toDashboard();
 
