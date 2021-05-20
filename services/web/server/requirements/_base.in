@@ -8,14 +8,18 @@
 -r ../../../../packages/service-library/requirements/_base.in
 
 # aiohttp + extensions
-aiohttp==3.6.3 ## Issue in https://github.com/ITISFoundation/osparc-simcore/issues/2008
+## Issue in https://github.com/ITISFoundation/osparc-simcore/issues/2008
+aiohttp==3.6.3
 aiohttp_jinja2
 aiohttp_session[secure]
 aiohttp_security
 aiohttp-swagger[performance]
 
 # web-sockets
-python-socketio
+# From 5.0.0, https://github.com/miguelgrinberg/python-socketio/blob/main/CHANGES.md
+# test_resource_manager.py::test_websocket_resource_management fails because
+# socket_id saved in redis does not correspond to client's sio
+python-socketio~=4.6.1
 
 # databases
 aiopg[sa]

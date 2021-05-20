@@ -12,6 +12,7 @@ import pytest
 import socketio
 import socketio.exceptions
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
@@ -22,7 +23,10 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login import setup_login
 from simcore_service_webserver.projects import setup_projects
 from simcore_service_webserver.resource_manager import config, setup_resource_manager
-from simcore_service_webserver.resource_manager.registry import get_registry
+from simcore_service_webserver.resource_manager.registry import (
+    RedisResourceRegistry,
+    get_registry,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -69,6 +73,13 @@ def client(loop, aiohttp_client, app_cfg, postgres_db, mock_orphaned_services):
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
         )
     )
+
+
+@pytest.fixture()
+def socket_registry(client: TestClient) -> RedisResourceRegistry:
+    app = client.server.app
+    socket_registry = get_registry(app)
+    return socket_registry
 
 
 @pytest.fixture
@@ -156,13 +167,11 @@ async def test_anonymous_websocket_connection(
     ],
 )
 async def test_websocket_resource_management(
-    client,
     logged_user,
+    socket_registry: RedisResourceRegistry,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
 ):
-    app = client.server.app
-    socket_registry = get_registry(app)
     cur_client_session_id = client_session_id_factory()
     sio = await socketio_client_factory(cur_client_session_id)
     sid = sio.sid
@@ -170,9 +179,11 @@ async def test_websocket_resource_management(
         "user_id": str(logged_user["id"]),
         "client_session_id": cur_client_session_id,
     }
+    # FIXME: this check fails with python-socketio>=5.0.0 (see requirements/_base.in)
     assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
     assert sio.sid in await socket_registry.find_resources(resource_key, "socket_id")
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
+
     # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
     await sio.disconnect()
     assert not sio.sid
@@ -191,13 +202,11 @@ async def test_websocket_resource_management(
     ],
 )
 async def test_websocket_multiple_connections(
-    client,
+    socket_registry: RedisResourceRegistry,
     logged_user,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
 ):
-    app = client.server.app
-    socket_registry = get_registry(app)
     NUMBER_OF_SOCKETS = 5
     # connect multiple clients
     clients = []
@@ -345,17 +354,16 @@ async def test_interactive_services_removed_after_logout(
 
 
 @pytest.mark.parametrize(
-    "user_role, expected",
+    "user_role",
     [
-        (UserRole.GUEST, web.HTTPOk),
-        (UserRole.USER, web.HTTPOk),
-        (UserRole.TESTER, web.HTTPOk),
+        UserRole.GUEST,
+        UserRole.USER,
+        UserRole.TESTER,
     ],
 )
 async def test_interactive_services_remain_after_websocket_reconnection_from_2_tabs(
     client,
     logged_user,
-    expected,
     empty_user_project,
     mocked_director_api,
     mocked_dynamic_service,

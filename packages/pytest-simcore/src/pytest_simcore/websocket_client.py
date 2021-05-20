@@ -23,7 +23,7 @@ def socketio_url_factory(client) -> Callable:
 
 
 @pytest.fixture()
-async def security_cookie_factory(client) -> Callable:
+async def security_cookie_factory(client: TestClient) -> Callable:
     async def creator(client_override: Optional[TestClient] = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
@@ -50,6 +50,7 @@ async def socketio_client_factory(
     async def connect(
         client_session_id: str, client: Optional[TestClient] = None
     ) -> socketio.AsyncClient:
+
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification
         url = str(
@@ -71,7 +72,8 @@ async def socketio_client_factory(
     yield connect
 
     for sio in clients:
-        await sio.disconnect()
+        if sio.connected:
+            await sio.disconnect()
         assert not sio.sid
 
 
