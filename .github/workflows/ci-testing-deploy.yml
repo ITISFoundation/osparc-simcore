@@ -1762,6 +1762,8 @@ jobs:
         os: [ubuntu-20.04]
       fail-fast: false
     steps:
+      - name: Free up 24GB of disk space
+        run: sudo rm -rf /usr/share/dotnet
       - name: set PR default variables
         # only pushes have access to the docker credentials, use a default
         if: github.event_name == 'pull_request'
