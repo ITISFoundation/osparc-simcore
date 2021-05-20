@@ -4,7 +4,7 @@
 """
 from typing import Dict, Optional
 
-from pydantic import BaseSettings, HttpUrl
+from pydantic import BaseSettings, HttpUrl, AnyHttpUrl, Field
 
 from .utils import snake_to_camel
 
@@ -48,3 +48,16 @@ class FrontEndAppSettings(BaseSettings):
             exclude_none=True,
             by_alias=True,
         )
+
+
+class StaticsSettings(BaseSettings):
+    """used by the backend"""
+
+    static_web_server_host: AnyHttpUrl = Field(
+        "http://static-webserver",
+        description="address where the static content is being served",
+    )
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_"

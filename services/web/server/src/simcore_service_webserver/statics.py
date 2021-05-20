@@ -8,15 +8,12 @@
 """
 import json
 import logging
-import os
-from functools import lru_cache
-from pathlib import Path
 from typing import Dict
 
-from aiohttp import web
-from servicelib.application_keys import APP_CONFIG_KEY
+from aiohttp import web, ClientSession
 from servicelib.application_setup import ModuleCategory, app_module_setup
-from tenacity import after_log, retry, stop_after_attempt, wait_random
+from servicelib.client_session import get_client_session
+from yarl import URL
 
 from .constants import (
     APP_SETTINGS_KEY,
@@ -28,29 +25,81 @@ from .statics_settings import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
     FrontEndAppSettings,
+    StaticsSettings,
 )
 
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 
-APP_FRONTEND_BASEDIR_KEY = f"{__name__}.frontend_basedir"
-APP_STATICS_OUTDIR_KEY = f"{__file__}.outdir"
+APP_FRONTEND_CACHED_INDEXES_KEY = f"{__file__}.cached_indexes"
+APP_FRONTEND_CACHED_STATICS_JSON_KEY = f"{__file__}.cached_statics_json"
 
 
 log = logging.getLogger(__file__)
 
 
-@lru_cache()
-def get_index_body(statics_outdir: Path, frontend_name: str):
-    index_path = statics_outdir / frontend_name / "index.html"
-    html = index_path.read_text()
-    # TODO: this is not very safe ...
-    # fixes relative paths
-    html = html.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
-    html = html.replace("boot.js", f"{frontend_name}/boot.js")
-    return html
+async def _assemble_cached_indexes(app: web.Application):
+    """
+    Currently the static resources are contain 3 folders: osparc, s4l, tis
+    each of them contain and index.html to be served to as the root of the site
+    for each type of frontend.
+
+    Caching these 3 items on start. This
+    """
+    statics_settings = StaticsSettings()
+    cached_indexes: Dict[str, str] = {}
+
+    session: ClientSession = get_client_session(app)
+
+    for frontend_name in FRONTEND_APPS_AVAILABLE:
+        url = URL(statics_settings.static_web_server_host) / frontend_name
+
+        log.info("Fetching index from %s", url)
+        response = await session.get(url)
+
+        body = await response.text()
+        if response.status != 200:
+            message = (
+                f"Could not fetch {str(url)}, got status {response.status}\n{body}"
+            )
+            log.error(message)
+            # Yes this is supposted to fail the boot process
+            raise RuntimeError(
+                f"Could not fetch index at {str(url)}. Stopping application boot"
+            )
+
+        # fixes relative paths
+        body = body.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
+        body = body.replace("boot.js", f"{frontend_name}/boot.js")
+
+        log.info("Storing index for %s", url)
+        cached_indexes[frontend_name] = body
+
+    app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
 
 
-async def get_frontend_ria(request: web.Request):
+def _create_statics_settings(app) -> Dict:
+    # Adds general server settings
+    info: Dict = app[APP_SETTINGS_KEY].to_client_statics()
+
+    # Adds specifics to front-end app
+    info.update(FrontEndAppSettings().to_statics())
+
+    return info
+
+
+async def _assemble_statics_json(app: web.Application):
+    # NOTE: in devel model, the folder might be under construction
+    # (qx-compile takes time), therefore we create statics.json
+    # on_startup instead of upon setup
+
+    statics_settings: Dict = _create_statics_settings(app)
+
+    # cache computed statics.json
+    statics_json: str = json.dumps(statics_settings)
+    app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = statics_json
+
+
+async def get_cached_frontend_index(request: web.Request):
     log.debug("Request from host %s", request.headers["Host"])
     target_frontend = request.get(RQ_PRODUCT_FRONTEND_KEY)
 
@@ -75,69 +124,28 @@ async def get_frontend_ria(request: web.Request):
     #
     # SEE services/web/server/tests/unit/isolated/test_redirections.py
     #
-    statics_outdir: Path = request.app[APP_STATICS_OUTDIR_KEY]
-    # TODO: change to a redirect so the staic webserver can pick it up, why read  the bundle here to memory?
-    # why is the replace necessary?
-    
-    return web.Response(
-        body=get_index_body(statics_outdir, target_frontend), content_type="text/html"
-    )
+
+    cached_indexes: Dict[str, str] = request.app[APP_FRONTEND_CACHED_INDEXES_KEY]
+    if target_frontend not in cached_indexes:
+        raise web.HTTPNotFound()
+
+    body = cached_indexes[target_frontend]
+    return web.Response(body=body, content_type="text/html")
 
 
-def create_statics_settings(app) -> Dict:
-    # Adds general server settings
-    info: Dict = app[APP_SETTINGS_KEY].to_client_statics()
-
-    # Adds specifics to front-end app
-    info.update(FrontEndAppSettings().to_statics())
-
-    return info
-
-
-async def _start_statics(app: web.Application):
-    # NOTE: in devel model, the folder might be under construction
-    # (qx-compile takes time), therefore we create statics.json
-    # on_startup instead of upon setup
-
-    resource_dir: Path = app[APP_STATICS_OUTDIR_KEY] / "resource"
-    statics_settings: Dict = create_statics_settings(app)
-
-    @retry(
-        wait=wait_random(min=1, max=3),
-        stop=stop_after_attempt(3),
-        after=after_log(log, logging.WARNING),
-    )
-    async def do_write_statics_file() -> None:
-        with open(resource_dir / "statics.json", "wt") as fh:
-            json.dump(statics_settings, fh)
-
-    # Creating static info
-    await do_write_statics_file()
+async def get_statics_json(request: web.Request):  # pylint: disable=unused-argument
+    statics_json = request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY]
+    return web.Response(body=statics_json, content_type="application/json")
 
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application):
+    # register routes to solve the correct frontend
+    app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
+    # statics.json is computed and served from here
+    app.router.add_get("/resource/statics.json", get_statics_json)
 
-    # NOTE: source-output and build-output have both the same subfolder structure
-    cfg = app[APP_CONFIG_KEY]["main"]
-    app[APP_STATICS_OUTDIR_KEY] = statics_dir = Path(cfg["client_outdir"]).expanduser()
-
-    # Creating static routes
-    routes = web.RouteTableDef()
-    is_dev: bool = app[APP_SETTINGS_KEY].build_target in [None, "development"]
-    for name in STATIC_DIRNAMES:
-        folder = statics_dir / name
-
-        # avoids problems restarting when qx-compile takes longer to product outputs
-        if not folder.exists() and is_dev:
-            os.makedirs(folder, exist_ok=True)
-
-        # can navigate file index in dev mode
-        routes.static(f"/{folder.name}", folder, show_index=is_dev)
-    app.add_routes(routes)
-
-    # Create dynamic route to serve front-end client
-    app.router.add_get("/", get_frontend_ria, name=INDEX_RESOURCE_NAME)
-
-    # Delayed creation of statics.json (mostly for dev mode)
-    app.on_startup.append(_start_statics)
+    # compute statics.json content
+    app.on_startup.append(_assemble_statics_json)
+    # fetch all index.html for various frontends
+    app.on_startup.append(_assemble_cached_indexes)
