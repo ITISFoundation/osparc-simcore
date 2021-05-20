@@ -57,7 +57,7 @@ coverage[toml]==5.5
     #   pytest-cov
 coveralls==3.0.1
     # via -r requirements/_test.in
-cryptography==3.4.5
+cryptography==3.4.7
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
