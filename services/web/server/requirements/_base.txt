@@ -182,6 +182,10 @@ pycparser==2.20
     # via cffi
 pydantic[email]==1.8.2
     # via
+    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../requirements/constraints.txt
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -243,6 +247,7 @@ trafaret==2.0.2
 typing-extensions==3.7.4.3
     # via
     #   aiohttp
+    #   aiohttp-jinja2
     #   pydantic
     #   yarl
 ujson==3.1.0
