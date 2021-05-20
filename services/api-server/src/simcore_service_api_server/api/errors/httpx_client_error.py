@@ -16,7 +16,10 @@ log = logging.getLogger(__file__)
 
 async def httpx_client_error_handler(_: Request, exc: HTTPStatusError) -> JSONResponse:
     """
-    This is called when HTTPStatusError was raised and reached tha outermost handler
+    This is called when HTTPStatusError was raised and reached the outermost handler
+
+    This handler is used as a "last resource" since it is recommended to handle these exceptions
+    closer to the raising point.
 
     The response had an error HTTP status of 4xx or 5xx, and this is how is
     transformed in the api-server API

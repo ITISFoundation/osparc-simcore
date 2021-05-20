@@ -93,7 +93,7 @@ def test_job_resouce_names_has_associated_url(app: FastAPI):
     job_name = Job.compose_resource_name(parent_name=solver_name, job_id=job_id)
     # job_name is used to identify a solver's job.
 
-    # job_name is a releatve resource name as defined in https://cloud.google.com/apis/design/resource_names
+    # job_name is a RELATIVE resource name as defined in https://cloud.google.com/apis/design/resource_names
     #
     # - This a a relative resource name        "users/john smith/events/123"
     # - This is a calendar event resource name "//calendar.googleapis.com/users/john smith/events/123"
