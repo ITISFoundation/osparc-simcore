@@ -175,9 +175,8 @@ class Job(BaseModel):
 
     @classmethod
     def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
-        solver_name = compose_resource_name(solver.id, solver.version)
         job = Job.create_now(
-            parent=solver_name, inputs_checksum=inputs.compute_checksum()
+            parent=solver.name, inputs_checksum=inputs.compute_checksum()
         )
         return job
 

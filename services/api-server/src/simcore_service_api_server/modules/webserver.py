@@ -121,6 +121,7 @@ class AuthSession:
         return Project.parse_obj(data)
 
     async def list_projects(self, solver_name: str) -> List[Project]:
+        # TODO: pagination?
         resp = await self.client.get(
             "/projects",
             params={"type": "user", "hidden": True},
@@ -132,8 +133,8 @@ class AuthSession:
         # FIXME: move filter to webserver API (next PR)
         projects: Deque[Project] = deque()
         for prj in data:
-            # FIXME: ensure name+solver_name
-            if prj.get("name", "").startswith(solver_name):
+            possible_job_name = prj.get("name", "")
+            if possible_job_name.startswith(solver_name):
                 try:
                     projects.append(Project.parse_obj(prj))
                 except ValidationError as err:
