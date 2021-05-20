@@ -197,6 +197,7 @@ class Job(BaseModel):
 
     @property
     def resource_name(self) -> str:
+        """ Relative Resource Name """
         return self.name
 
 

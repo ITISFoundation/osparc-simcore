@@ -36,7 +36,7 @@ SolverKeyId = constr(
 
 
 class Solver(BaseModel):
-    """ A released solver with a specific version """
+    """A released solver with a specific version"""
 
     id: SolverKeyId = Field(
         ...,
@@ -87,22 +87,21 @@ class Solver(BaseModel):
 
     @property
     def pep404_version(self) -> Union[Version, LegacyVersion]:
-        """ Rich version type that can be used e.g. to compare """
+        """Rich version type that can be used e.g. to compare"""
         return packaging.version.parse(self.version)
 
     @property
     def url_friendly_id(self) -> str:
-        """ Use to pass id as parameter in urls """
+        """Use to pass id as parameter in urls"""
         return urllib.parse.quote_plus(self.id)
 
     @property
-    def name(self) -> str:
-        """ Resource name """
+    def resource_name(self) -> str:
+        """Relative resource name"""
         return self.compose_resource_name(self.id, self.version)
 
-    resource_name = name
+    name = resource_name  # API standards notation (see api_resources.py)
 
     @classmethod
     def compose_resource_name(cls, solver_key, solver_version) -> str:
-        # TODO: test sync with paths??
         return compose_resource_name("solvers", solver_key, "releases", solver_version)
