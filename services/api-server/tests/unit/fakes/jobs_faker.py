@@ -14,12 +14,20 @@ from typing import Callable, Dict, Iterator
 from uuid import UUID
 
 from fastapi import HTTPException
+from simcore_service_api_server.models.api_resources import (
+    RelativeResourceName,
+    compose_resource_name,
+)
+from simcore_service_api_server.models.schemas.files import File
+from simcore_service_api_server.models.schemas.jobs import (
+    Job,
+    JobInputs,
+    JobOutputs,
+    JobStatus,
+    TaskStates,
+)
+from simcore_service_api_server.models.schemas.solvers import SolverKeyId, VersionStr
 from starlette import status
-
-from ...models.api_resources import RelativeResourceName, compose_resource_name
-from ...models.schemas.files import File
-from ...models.schemas.jobs import Job, JobInputs, JobOutputs, JobStatus, TaskStates
-from ...models.schemas.solvers import SolverKeyId, VersionStr
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +38,7 @@ JobName = RelativeResourceName
 class JobsFaker:
     # Fakes jobs managements for a given user
     #
-    # TODO: preload JobsFaker configuration emulating a particular scenario (e.g. all jobs failed, ...)
+    # TODO: preload JobsFaker configuration emulating a particular scenario (e.g. all jobs failed, simcore_service_api_server)
     #
 
     jobs: Dict[JobName, Job] = field(default_factory=dict)

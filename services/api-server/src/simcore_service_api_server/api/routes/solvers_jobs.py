@@ -57,28 +57,19 @@ async def list_jobs(
 ):
     """ List of all jobs in a specific released solver """
 
-    async def _fake_impl():
-        from ._jobs_faker import list_jobs_impl
+    solver = await catalog_client.get_solver(user_id, solver_key, version)
+    logger.debug("Listing Jobs in Solver '%s'", solver.name)
 
-        solver = await catalog_client.get_solver(user_id, solver_key, version)
-        return await list_jobs_impl(solver.id, solver.version, url_for)
+    projects: List[Project] = await webserver_api.list_projects(solver.name)
+    jobs: Deque[Job] = deque()
+    for prj in projects:
+        job = create_job_from_project(solver_key, version, prj, url_for)
+        assert job.id == prj.uuid  # nosec
+        assert job.name == prj.name  # nosec
 
-    async def _draft_impl():
-        solver = await catalog_client.get_solver(user_id, solver_key, version)
-        logger.debug("Listing Jobs in Solver '%s'", solver.name)
+        jobs.append(job)
 
-        projects: List[Project] = await webserver_api.list_projects(solver.name)
-        jobs: Deque[Job] = deque()
-        for prj in projects:
-            job = create_job_from_project(solver_key, version, prj, url_for)
-            assert job.id == prj.uuid  # nosec
-            assert job.name == prj.name  # nosec
-
-            jobs.append(job)
-
-        return list(jobs)
-
-    return await _draft_impl()
+    return list(jobs)
 
 
 @router.post(
@@ -100,53 +91,41 @@ async def create_job(
     NOTE: This operation does **not** start the job
     """
 
-    async def _fake_impl():
-        from ._jobs_faker import create_job_impl
+    # ensures user has access to solver
+    solver = await catalog_client.get_solver(user_id, solver_key, version)
 
-        solver = await catalog_client.get_solver(user_id, solver_key, version)
-        return await create_job_impl(solver.id, solver.version, inputs, url_for)
+    # creates NEW job as prototype
+    pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
+    logger.debug("Creating Job '%s'", pre_job.name)
 
-    async def _draft_impl():
+    # -> catalog
+    # TODO: validate inputs against solver input schema
 
-        # ensures user has access to solver
-        solver = await catalog_client.get_solver(user_id, solver_key, version)
+    #   -> webserver:  NewProjectIn = Job
+    project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
+    new_project: Project = await webserver_api.create_project(project_in)
+    assert new_project  # nosec
+    assert new_project.uuid == pre_job.id  # nosec
 
-        # creates NEW job as prototype
-        pre_job = Job.create_solver_job(solver=solver, inputs=inputs)
-        logger.debug("Creating Job '%s'", pre_job.name)
+    # for consistency, it rebuild job
+    job = create_job_from_project(
+        solver_key=solver.id,
+        solver_version=solver.version,
+        project=new_project,
+        url_for=url_for,
+    )
+    assert job.id == pre_job.id  # nosec
+    assert job.name == pre_job.name  # nosec
 
-        # -> catalog
-        # TODO: validate inputs against solver input schema
+    # -> director2:   ComputationTaskOut = JobStatus
+    # consistency check
+    task: ComputationTaskOut = await director2_api.create_computation(job.id, user_id)
+    assert task.id == job.id  # nosec
 
-        #   -> webserver:  NewProjectIn = Job
-        project_in: NewProjectIn = create_new_project_for_job(solver, pre_job, inputs)
-        new_project: Project = await webserver_api.create_project(project_in)
-        assert new_project  # nosec
-        assert new_project.uuid == pre_job.id  # nosec
+    job_status: JobStatus = create_jobstatus_from_task(task)
+    assert job.id == job_status.job_id  # nosec
 
-        # for consistency, it rebuild job
-        job = create_job_from_project(
-            solver_key=solver.id,
-            solver_version=solver.version,
-            project=new_project,
-            url_for=url_for,
-        )
-        assert job.id == pre_job.id  # nosec
-        assert job.name == pre_job.name  # nosec
-
-        # -> director2:   ComputationTaskOut = JobStatus
-        # consistency check
-        task: ComputationTaskOut = await director2_api.create_computation(
-            job.id, user_id
-        )
-        assert task.id == job.id  # nosec
-
-        job_status: JobStatus = create_jobstatus_from_task(task)
-        assert job.id == job_status.job_id  # nosec
-
-        return job
-
-    return await _draft_impl()
+    return job
 
 
 @router.get("/{solver_key:path}/releases/{version}/jobs/{job_id}", response_model=Job)
@@ -159,22 +138,14 @@ async def get_job(
 ):
     """ Gets job of a given solver """
 
-    async def _fake_impl():
-        from ._jobs_faker import get_job_impl
+    job_name = compose_resource_name(solver_key, version, job_id)
+    logger.debug("Getting Job '%s'", job_name)
 
-        return await get_job_impl(solver_key, version, job_id, url_for)
+    project: Project = await webserver_api.get_project(project_id=job_id)
 
-    async def _draft_impl():
-        job_name = compose_resource_name(solver_key, version, job_id)
-        logger.debug("Getting Job '%s'", job_name)
-
-        project: Project = await webserver_api.get_project(project_id=job_id)
-
-        job = create_job_from_project(solver_key, version, project, url_for)
-        assert job.id == job_id  # nosec
-        return job  # nosec
-
-    return await _draft_impl()
+    job = create_job_from_project(solver_key, version, project, url_for)
+    assert job.id == job_id  # nosec
+    return job  # nosec
 
 
 @router.post(
@@ -188,20 +159,13 @@ async def start_job(
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
-    async def _fake_impl():
-        from ._jobs_faker import start_job_impl
 
-        return await start_job_impl(solver_key, version, job_id)
+    job_name = compose_resource_name(solver_key, version, job_id)
+    logger.debug("Start Job '%s'", job_name)
 
-    async def _draft_impl():
-        job_name = compose_resource_name(solver_key, version, job_id)
-        logger.debug("Start Job '%s'", job_name)
-
-        task = await director2_api.start_computation(job_id, user_id)
-        job_status: JobStatus = create_jobstatus_from_task(task)
-        return job_status
-
-    return await _draft_impl()
+    task = await director2_api.start_computation(job_id, user_id)
+    job_status: JobStatus = create_jobstatus_from_task(task)
+    return job_status
 
 
 @router.post(
@@ -213,24 +177,16 @@ async def stop_job(
     job_id: UUID,
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
-    url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    async def _fake_impl():
-        from ._jobs_faker import stop_job_impl
 
-        return await stop_job_impl(solver_key, version, job_id, url_for)
+    job_name = compose_resource_name(solver_key, version, job_id)
+    logger.debug("Stopping Job '%s'", job_name)
 
-    async def _draft_impl():
-        job_name = compose_resource_name(solver_key, version, job_id)
-        logger.debug("Stopping Job '%s'", job_name)
+    await director2_api.stop_computation(job_id, user_id)
 
-        await director2_api.stop_computation(job_id, user_id)
-
-        task = await director2_api.get_computation(job_id, user_id)
-        job_status: JobStatus = create_jobstatus_from_task(task)
-        return job_status
-
-    return await _draft_impl()
+    task = await director2_api.get_computation(job_id, user_id)
+    job_status: JobStatus = create_jobstatus_from_task(task)
+    return job_status
 
 
 @router.post(
@@ -244,20 +200,13 @@ async def inspect_job(
     user_id: PositiveInt = Depends(get_current_user_id),
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
-    async def _fake_impl():
-        from ._jobs_faker import inspect_job_impl
 
-        return await inspect_job_impl(solver_key, version, job_id)
+    job_name = compose_resource_name(solver_key, version, job_id)
+    logger.debug("Inspecting Job '%s'", job_name)
 
-    async def _draft_impl():
-        job_name = compose_resource_name(solver_key, version, job_id)
-        logger.debug("Inspecting Job '%s'", job_name)
-
-        task = await director2_api.get_computation(job_id, user_id)
-        job_status: JobStatus = create_jobstatus_from_task(task)
-        return job_status
-
-    return await _draft_impl()
+    task = await director2_api.get_computation(job_id, user_id)
+    job_status: JobStatus = create_jobstatus_from_task(task)
+    return job_status
 
 
 @router.get(
@@ -273,49 +222,42 @@ async def get_job_outputs(
     webserver_api: AuthSession = Depends(get_webserver_session),
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
-    async def _fake_impl():
-        from ._jobs_faker import get_job_outputs_impl
 
-        return await get_job_outputs_impl(solver_key, version, job_id)
+    job_name = compose_resource_name(solver_key, version, job_id)
+    logger.debug("Get Job '%s' outputs", job_name)
 
-    async def _draft_impl():
-        job_name = compose_resource_name(solver_key, version, job_id)
-        logger.debug("Get Job '%s' outputs", job_name)
+    project: Project = await webserver_api.get_project(project_id=job_id)
+    node_ids = list(project.workbench.keys())
+    assert len(node_ids) == 1  # nosec
 
-        project: Project = await webserver_api.get_project(project_id=job_id)
-        node_ids = list(project.workbench.keys())
-        assert len(node_ids) == 1  # nosec
+    outputs: Dict[
+        str, Union[float, int, bool, BaseFileLink, str, None]
+    ] = await get_solver_output_results(
+        user_id=user_id,
+        project_uuid=job_id,
+        node_uuid=UUID(node_ids[0]),
+        db_engine=db_engine,
+    )
 
-        outputs: Dict[
-            str, Union[float, int, bool, BaseFileLink, str, None]
-        ] = await get_solver_output_results(
-            user_id=user_id,
-            project_uuid=job_id,
-            node_uuid=UUID(node_ids[0]),
-            db_engine=db_engine,
-        )
+    results: Dict[str, ArgumentType] = {}
+    for name, value in outputs.items():
+        if isinstance(value, BaseFileLink):
+            # TODO: value.path exists??
+            file_id: UUID = File.create_id(*value.path.split("/"))
 
-        results: Dict[str, ArgumentType] = {}
-        for name, value in outputs.items():
-            if isinstance(value, BaseFileLink):
-                # TODO: value.path exists??
-                file_id: UUID = File.create_id(*value.path.split("/"))
-
-                # TODO: acquire_soft_link will halve calls
-                found = await storage_client.search_files(user_id, file_id)
-                if found:
-                    assert len(found) == 1
-                    results[name] = to_file_api_model(found[0])
-                else:
-                    api_file: File = await storage_client.create_soft_link(
-                        user_id, value.path, file_id
-                    )
-                    results[name] = api_file
+            # TODO: acquire_soft_link will halve calls
+            found = await storage_client.search_files(user_id, file_id)
+            if found:
+                assert len(found) == 1
+                results[name] = to_file_api_model(found[0])
             else:
-                # TODO: cast against catalog's output port specs
-                results[name] = value
+                api_file: File = await storage_client.create_soft_link(
+                    user_id, value.path, file_id
+                )
+                results[name] = api_file
+        else:
+            # TODO: cast against catalog's output port specs
+            results[name] = value
 
-        job_outputs = JobOutputs(job_id=job_id, results=results)
-        return job_outputs
-
-    return await _draft_impl()
+    job_outputs = JobOutputs(job_id=job_id, results=results)
+    return job_outputs
