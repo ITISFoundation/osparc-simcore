@@ -159,13 +159,15 @@ class Job(BaseModel):
     # constructors ------
 
     @classmethod
-    def create_now(cls, parent: RelativeResourceName, inputs_checksum: str) -> "Job":
+    def create_now(
+        cls, parent_name: RelativeResourceName, inputs_checksum: str
+    ) -> "Job":
         global_uuid = uuid4()
 
         return cls(
-            name=f"{parent}/jobs/{str(global_uuid)}",
+            name=cls.compose_resource_name(parent_name, global_uuid),
             id=global_uuid,
-            runner_name=parent,
+            runner_name=parent_name,
             inputs_checksum=inputs_checksum,
             created_at=datetime.utcnow(),
             url=None,
@@ -179,6 +181,18 @@ class Job(BaseModel):
             parent=solver.name, inputs_checksum=inputs.compute_checksum()
         )
         return job
+
+    @classmethod
+    def compose_resource_name(
+        cls, parent_name: RelativeResourceName, job_id: UUID
+    ) -> str:
+        # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
+        # could have some alias entrypoints and the wrong parent_name might be introduced here
+        return compose_resource_name(parent_name, "jobs", job_id)
+
+    @property
+    def resource_name(self) -> str:
+        return self.name
 
 
 # TODO: these need to be in sync with celery task states

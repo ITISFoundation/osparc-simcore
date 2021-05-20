@@ -100,6 +100,8 @@ class Solver(BaseModel):
         """ Resource name """
         return self.compose_resource_name(self.id, self.version)
 
+    resource_name = name
+
     @classmethod
     def compose_resource_name(cls, solver_key, solver_version) -> str:
         # TODO: test sync with paths??

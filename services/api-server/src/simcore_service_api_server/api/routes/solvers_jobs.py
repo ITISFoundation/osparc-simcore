@@ -10,11 +10,10 @@ from fastapi import APIRouter, Depends
 from models_library.projects_nodes_io import BaseFileLink
 from pydantic.types import PositiveInt
 
-from ...models.api_resources import compose_resource_name
 from ...models.domain.projects import NewProjectIn, Project
 from ...models.schemas.files import File
 from ...models.schemas.jobs import ArgumentType, Job, JobInputs, JobOutputs, JobStatus
-from ...models.schemas.solvers import SolverKeyId, VersionStr
+from ...models.schemas.solvers import Solver, SolverKeyId, VersionStr
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import ComputationTaskOut, DirectorV2Api
 from ...modules.storage import StorageApi, to_file_api_model
@@ -33,6 +32,14 @@ from ..dependencies.webserver import AuthSession, get_webserver_session
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _compose_job_resource_name(solver_key, solver_version, job_id) -> str:
+    """ Creates a unique resource name for solver's jobs """
+    return Job.compose_resource_name(
+        parent_name=Solver.compose_resource_name(solver_key, solver_version),
+        job_id=job_id,
+    )
 
 
 ## JOBS ---------------
@@ -55,7 +62,7 @@ async def list_jobs(
     webserver_api: AuthSession = Depends(get_webserver_session),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    """ List of all jobs in a specific released solver """
+    """List of all jobs in a specific released solver"""
 
     solver = await catalog_client.get_solver(user_id, solver_key, version)
     logger.debug("Listing Jobs in Solver '%s'", solver.name)
@@ -116,6 +123,7 @@ async def create_job(
     )
     assert job.id == pre_job.id  # nosec
     assert job.name == pre_job.name  # nosec
+    assert job.name == _compose_job_resource_name(solver_key, version, job.id)  # nosec
 
     # -> director2:   ComputationTaskOut = JobStatus
     # consistency check
@@ -136,9 +144,9 @@ async def get_job(
     webserver_api: AuthSession = Depends(get_webserver_session),
     url_for: Callable = Depends(get_reverse_url_mapper),
 ):
-    """ Gets job of a given solver """
+    """Gets job of a given solver"""
 
-    job_name = compose_resource_name(solver_key, version, job_id)
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Getting Job '%s'", job_name)
 
     project: Project = await webserver_api.get_project(project_id=job_id)
@@ -160,7 +168,7 @@ async def start_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
 
-    job_name = compose_resource_name(solver_key, version, job_id)
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Start Job '%s'", job_name)
 
     task = await director2_api.start_computation(job_id, user_id)
@@ -179,7 +187,7 @@ async def stop_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
 
-    job_name = compose_resource_name(solver_key, version, job_id)
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Stopping Job '%s'", job_name)
 
     await director2_api.stop_computation(job_id, user_id)
@@ -201,7 +209,7 @@ async def inspect_job(
     director2_api: DirectorV2Api = Depends(get_api_client(DirectorV2Api)),
 ):
 
-    job_name = compose_resource_name(solver_key, version, job_id)
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Inspecting Job '%s'", job_name)
 
     task = await director2_api.get_computation(job_id, user_id)
@@ -223,7 +231,7 @@ async def get_job_outputs(
     storage_client: StorageApi = Depends(get_api_client(StorageApi)),
 ):
 
-    job_name = compose_resource_name(solver_key, version, job_id)
+    job_name = _compose_job_resource_name(solver_key, version, job_id)
     logger.debug("Get Job '%s' outputs", job_name)
 
     project: Project = await webserver_api.get_project(project_id=job_id)
