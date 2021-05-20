@@ -89,8 +89,12 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pydantic[email]==1.8.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/_base.in
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
 pyparsing==2.4.7
     # via packaging
