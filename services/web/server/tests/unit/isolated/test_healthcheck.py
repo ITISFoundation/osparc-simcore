@@ -70,7 +70,7 @@ async def health_check_emulator(
 
 @pytest.fixture
 def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
-    SLOW_HANDLER_DELAY_SECS = 1.0  # secs
+    SLOW_HANDLER_DELAY_SECS = 2.0  # secs
 
     # pylint:disable=unused-variable
     routes = web.RouteTableDef()
