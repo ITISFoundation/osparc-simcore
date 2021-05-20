@@ -57,7 +57,7 @@ async def create_projects(request: web.Request):
 
     template_uuid = request.query.get("from_template")
     as_template = request.query.get("as_template")
-    as_hidden: bool = bool(request.query.get("hidden", False))
+    hidden: bool = bool(request.query.get("hidden", False))
 
     try:
         project = {}
@@ -118,7 +118,7 @@ async def create_projects(request: web.Request):
             project,
             user_id,
             force_as_template=as_template is not None,
-            hidden=as_hidden,
+            hidden=hidden,
         )
 
         # copies the project's DATA IF cloned
@@ -162,7 +162,7 @@ async def list_projects(request: web.Request):
     project_type = ProjectTypeAPI(query["type"])
     offset = query["offset"]
     limit = query["limit"]
-    show_hidden = query.get("hidden", False)
+    show_hidden = query["show_hidden"]
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 

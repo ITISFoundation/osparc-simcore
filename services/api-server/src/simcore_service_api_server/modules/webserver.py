@@ -124,7 +124,7 @@ class AuthSession:
         # TODO: pagination?
         resp = await self.client.get(
             "/projects",
-            params={"type": "user", "hidden": True},
+            params={"type": "user", "show_hidden": True},
             cookies=self.session_cookies,
         )
 

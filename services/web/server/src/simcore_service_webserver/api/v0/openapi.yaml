@@ -6090,12 +6090,12 @@ paths:
               - template
               - user
               - all
-        - name: hidden
+        - name: show_hidden
           in: query
           schema:
             type: boolean
             default: false
-          description: includes projects marked as hidden
+          description: includes projects marked as hidden in the listing
         - name: offset
           in: query
           schema:
@@ -6723,7 +6723,7 @@ paths:
           schema:
             type: boolean
             default: false
-          description: Creates a project that is by default not listed
+          description: Enables/disables hidden flag. Hidden projects are by default unlisted.
       requestBody:
         content:
           application/json:
