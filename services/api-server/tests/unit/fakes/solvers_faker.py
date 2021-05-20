@@ -7,8 +7,12 @@ import yaml
 from fastapi import HTTPException, status
 from importlib_resources import files
 from models_library.services import ServiceDockerData
-
-from ...models.schemas.solvers import LATEST_VERSION, Solver, SolverKeyId, VersionStr
+from simcore_service_api_server.models.schemas.solvers import (
+    LATEST_VERSION,
+    Solver,
+    SolverKeyId,
+    VersionStr,
+)
 
 SKey = Tuple[SolverKeyId, VersionStr]
 
@@ -76,7 +80,6 @@ async def list_solvers(
             "get_solver_release", solver_key=solver.id, version=solver.version
         )
 
-    # TODO: Consider sorted(latest_solvers, key=attrgetter("name", "version"))
     return list(the_fake_impl.values(_url_resolver))
 
 

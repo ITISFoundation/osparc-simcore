@@ -1,8 +1,3 @@
-#
-#
-# TODO: create tests based in the openapi-specs ??
-# TODO: create client from openapi-specs
-#
 import sys
 from pathlib import Path
 from typing import Set
@@ -38,8 +33,8 @@ def as_class_name(name):
 
 # templates
 template_env = Environment(
-    autoescape=False, loader=FileSystemLoader(current_dir / "templates")
-)  # nosec
+    autoescape=True, loader=FileSystemLoader(current_dir / "templates")
+)
 template_env.globals.update({"len": len, "cls_name": as_class_name})
 
 template_std_endpoints = template_env.get_template(
@@ -67,15 +62,21 @@ class Generator:
         content = {"rn": rn, "rnp": rn + "s", "rncc": as_class_name(resource_name)}
 
         self._render_to_file(
-            package_dir / "endpoints" / f"{rn}_std.py", template_std_endpoints, content,
+            package_dir / "endpoints" / f"{rn}_std.py",
+            template_std_endpoints,
+            content,
         )
 
         self._render_to_file(
-            package_dir / "store" / f"crud_{rn}.py", template_cruds, content,
+            package_dir / "store" / f"crud_{rn}.py",
+            template_cruds,
+            content,
         )
 
         self._render_to_file(
-            package_dir / "orm" / f"orm_{rn}.py", template_orm, content,
+            package_dir / "orm" / f"orm_{rn}.py",
+            template_orm,
+            content,
         )
 
     def dump(self):
