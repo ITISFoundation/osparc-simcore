@@ -2,12 +2,12 @@ import urllib.parse
 from typing import Optional, Union
 
 import packaging.version
-from models_library.basic_regex import VERSION_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
 from packaging.version import LegacyVersion, Version
 from pydantic import BaseModel, Extra, Field, HttpUrl, constr
 
 from ..api_resources import compose_resource_name
+from ..basic_types import VersionStr
 
 # NOTE:
 # - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry deployed. This constraint
@@ -27,7 +27,6 @@ LATEST_VERSION = "latest"
 #
 SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
-VersionStr = constr(strip_whitespace=True, regex=VERSION_RE)
 SolverKeyId = constr(
     strip_whitespace=True,
     regex=COMPUTATIONAL_SERVICE_KEY_RE,
@@ -51,7 +50,7 @@ class Solver(BaseModel):
     title: str = Field(..., description="Human readable name")
     description: Optional[str]
     maintainer: str
-    # TODO: consider released: Optional[datetime]  # TODO: turn into required
+    # TODO: consider released: Optional[datetime]   required?
     # TODO: consider version_aliases: List[str] = []  # remaining tags
 
     # Get links to other resources
