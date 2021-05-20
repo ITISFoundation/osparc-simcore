@@ -6,7 +6,7 @@ import asyncio
 import logging
 import re
 from copy import deepcopy
-from typing import Dict, List
+from typing import Callable, Dict, List
 from uuid import uuid4
 
 import aiopg
@@ -212,11 +212,11 @@ async def change_user_role(
         )
 
 
-async def connect_to_socketio(client, user, socketio_client):
+async def connect_to_socketio(client, user, socketio_client_factory: Callable):
     """Connect a user to a socket.io"""
     socket_registry = get_registry(client.server.app)
     cur_client_session_id = str(uuid4())
-    sio = await socketio_client(cur_client_session_id, client)
+    sio = await socketio_client_factory(cur_client_session_id, client)
     resource_key = {
         "user_id": str(user["id"]),
         "client_session_id": cur_client_session_id,
@@ -346,7 +346,7 @@ async def assert_one_owner_for_project(
 
 
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
-    client, socketio_client, aiopg_engine, redis_client
+    client, socketio_client_factory: Callable, aiopg_engine, redis_client
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     logged_guest_user = await login_guest_user(client)
@@ -355,7 +355,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     assert await assert_users_count(aiopg_engine, 1) is True
     assert await assert_projects_count(aiopg_engine, 1) is True
 
-    await connect_to_socketio(client, logged_guest_user, socketio_client)
+    await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
@@ -365,7 +365,11 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
 
 async def test_t2_cleanup_resources_after_browser_is_closed(
-    simcore_services, client, socketio_client, aiopg_engine, redis_client
+    simcore_services,
+    client,
+    socketio_client_factory: Callable,
+    aiopg_engine,
+    redis_client,
 ):
     """ after a GUEST users with one opened project closes browser tab regularly (GC cleans everything) """
     logged_guest_user = await login_guest_user(client)
@@ -374,7 +378,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     assert await assert_projects_count(aiopg_engine, 1) is True
 
     sio_connection_data = await connect_to_socketio(
-        client, logged_guest_user, socketio_client
+        client, logged_guest_user, socketio_client_factory
     )
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
@@ -399,7 +403,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
-    simcore_services, client, socketio_client, aiopg_engine
+    simcore_services, client, socketio_client_factory: Callable, aiopg_engine
 ):
     """ after a USER disconnects the GC will remove none of its projects or templates nor the user itself """
     number_of_projects = 5
@@ -427,7 +431,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
     # connect the user and wait for gc
     sio_connection_data = await connect_to_socketio(
-        client, logged_user, socketio_client
+        client, logged_user, socketio_client_factory
     )
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
