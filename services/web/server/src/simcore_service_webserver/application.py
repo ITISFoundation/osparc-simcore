@@ -32,7 +32,6 @@ from .security import setup_security
 from .session import setup_session
 from .settings import setup_settings
 from .socketio import setup_socketio
-from .statics import setup_statics
 from .storage import setup_storage
 from .studies_access import setup_studies_access
 from .studies_dispatcher.module_setup import setup_studies_dispatcher
@@ -59,7 +58,6 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     setup_app_tracing(app)
-    # setup_statics(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
