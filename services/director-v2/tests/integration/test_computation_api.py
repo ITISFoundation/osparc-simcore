@@ -359,7 +359,7 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     2: {
                         "modified": True,
@@ -404,22 +404,22 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                 },
                 exp_node_states_after_run={
