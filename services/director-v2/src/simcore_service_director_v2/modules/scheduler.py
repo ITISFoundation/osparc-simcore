@@ -59,11 +59,14 @@ def _get_repository(
 
 
 def _runtime_requirement(node_image: Image) -> str:
-    req = ""
+    reqs = []
+
     if node_image.requires_gpu:
-        req += "gpu"
+        reqs += "gpu"
     if node_image.requires_mpi:
-        req += ":mpi"
+        reqs += "mpi"
+
+    req = ":".join(reqs)
     return req or "cpu"
 
 
