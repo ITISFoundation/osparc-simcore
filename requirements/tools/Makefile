@@ -81,7 +81,7 @@ run: build ## Runs upgrade in a container
 
 
 .PHONY: shell
-shell:
+shell: build
 	docker run -it \
 		--workdir="/home/$(USER)/requirements/tools" \
     --volume="/etc/group:/etc/group:ro" \
