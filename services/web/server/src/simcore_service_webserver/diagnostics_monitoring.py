@@ -1,15 +1,15 @@
 """ Enables monitoring of some quantities needed for diagnostics
 
 """
+import concurrent.futures
 import logging
 import time
-from typing import Coroutine
+from typing import Callable, Coroutine
 
 import prometheus_client
 from aiohttp import web
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram
 from prometheus_client.registry import CollectorRegistry
-
 from servicelib.monitor_services import add_instrumentation
 
 from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
@@ -25,19 +25,30 @@ kCANCEL_COUNT = f"{__name__}.cancel_count"
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
 
 
+def get_collector_registry(app: web.Application) -> CollectorRegistry:
+    return app[kCOLLECTOR_REGISTRY]
+
+
 async def metrics_handler(request: web.Request):
-    # TODO: prometheus_client.generate_latest blocking! -> Consider https://github.com/claws/aioprometheus
-    reg = request.app[kCOLLECTOR_REGISTRY]
-    resp = web.Response(body=prometheus_client.generate_latest(registry=reg))
-    resp.content_type = CONTENT_TYPE_LATEST
-    return resp
+    registry = get_collector_registry(request.app)
+
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
+        result = await request.loop.run_in_executor(
+            pool, prometheus_client.generate_latest, registry
+        )
+        response = web.Response(body=result)
+        response.content_type = CONTENT_TYPE_LATEST
+        return response
 
 
 def middleware_factory(app_name: str) -> Coroutine:
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: Coroutine):
+    async def _middleware_handler(request: web.Request, handler: Callable):
         if request.rel_url.path == "/socket.io/":
             return await handler(request)
+
+        log_exception = None
 
         try:
             request[kSTART_TIME] = time.time()
@@ -46,7 +57,6 @@ def middleware_factory(app_name: str) -> Coroutine:
             ).inc()
 
             resp = await handler(request)
-            log_exception = None
 
             assert isinstance(  # nosec
                 resp, web.StreamResponse
@@ -171,7 +181,3 @@ def setup_monitoring(app: web.Application):
     app.router.add_get("/metrics", metrics_handler)
 
     return True
-
-
-def get_collector_registry(app: web.Application) -> CollectorRegistry:
-    return app[kCOLLECTOR_REGISTRY]

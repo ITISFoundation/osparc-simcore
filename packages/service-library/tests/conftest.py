@@ -10,6 +10,10 @@ import pytest
 import servicelib
 from servicelib.openapi import create_openapi_specs
 
+pytest_plugins = [
+    "pytest_simcore.repository_paths",
+]
+
 
 @pytest.fixture(scope="session")
 def here():
