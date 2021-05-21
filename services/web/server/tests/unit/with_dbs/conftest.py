@@ -55,7 +55,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(scope="session")
-def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
+def default_app_cfg(osparc_simcore_root_dir):
     # NOTE: ONLY used at the session scopes
     cfg_path = current_dir / "config.yaml"
     assert cfg_path.exists()
@@ -69,8 +69,6 @@ def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
 
     # validates and fills all defaults/optional entries that normal load would not do
     cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
-
-    assert Path(cfg_dict["main"]["client_outdir"]) == fake_static_dir
 
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
     # FIXME:  free cfg_dict but deepcopy shall be r/w

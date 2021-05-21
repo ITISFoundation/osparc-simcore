@@ -41,11 +41,6 @@ def here() -> Path:
     return cdir
 
 
-@pytest.fixture(scope="session")
-def fake_static_dir(fake_data_dir: Path) -> Path:
-    return fake_data_dir / "static"
-
-
 @pytest.fixture
 def api_version_prefix() -> str:
     return "v0"

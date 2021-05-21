@@ -118,7 +118,6 @@ app_schema = create_schema()
 class MainSettings(BaseSettings):
     host: str = "0.0.0.0"  # nosec
     port: PortInt = 8080
-    client_outdir: Path = Field(..., env="SIMCORE_WEB_OUTDIR")
     log_level: LogLevel = Field(LogLevel.INFO, env="WEBSERVER_LOGLEVEL")
     testing: bool = False
     studies_access_enabled: bool = False
