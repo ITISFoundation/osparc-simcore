@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import re
-import sys
 from enum import Enum
 from pathlib import Path
 from typing import Awaitable, Callable, Optional, Tuple, Union
