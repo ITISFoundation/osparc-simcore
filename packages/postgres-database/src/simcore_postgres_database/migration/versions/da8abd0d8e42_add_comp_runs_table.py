@@ -1,7 +1,7 @@
 """add comp runs table
 
 Revision ID: da8abd0d8e42
-Revises: f73fb7d7b9b8
+Revises: ec3ef74cddae
 Create Date: 2021-05-12 13:46:36.676255+00:00
 
 """
@@ -10,7 +10,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "da8abd0d8e42"
-down_revision = "f73fb7d7b9b8"
+down_revision = "ec3ef74cddae"
 branch_labels = None
 depends_on = None
 
