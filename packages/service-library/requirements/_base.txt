@@ -72,7 +72,9 @@ psycopg2-binary==2.8.6
     #   aiopg
     #   sqlalchemy
 pydantic==1.8.2
-    # via -r requirements/_base.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 pyinstrument-cext==0.2.4
     # via pyinstrument
 pyinstrument==3.4.2
