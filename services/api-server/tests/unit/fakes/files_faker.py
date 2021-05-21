@@ -23,9 +23,8 @@ import aiofiles
 from fastapi import UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse
-
-from ...models.schemas.files import File
-from ...utils.hash import CHUNK_4KB
+from simcore_service_api_server.models.schemas.files import File
+from simcore_service_api_server.utils.hash import CHUNK_4KB
 
 logger = logging.getLogger(__name__)
 

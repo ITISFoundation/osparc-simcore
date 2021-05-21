@@ -528,7 +528,7 @@
           "solvers"
         ],
         "summary": "List Jobs",
-        "description": "List of all jobs in a specific released solver ",
+        "description": "List of all jobs in a specific released solver",
         "operationId": "list_jobs",
         "parameters": [
           {
@@ -656,7 +656,7 @@
           "solvers"
         ],
         "summary": "Get Job",
-        "description": "Gets job of a given solver ",
+        "description": "Gets job of a given solver",
         "operationId": "get_job",
         "parameters": [
           {

@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from httpx import HTTPStatusError
 from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -12,6 +13,7 @@ from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
 )
+from ..api.errors.httpx_client_error import httpx_client_error_handler
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
@@ -68,6 +70,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
+    app.add_exception_handler(HTTPStatusError, httpx_client_error_handler)
+
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
         NotImplementedError,
