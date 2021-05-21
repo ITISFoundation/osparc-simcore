@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 
 @pytest.fixture(scope="module")
 def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
     # select ALL services for these tests
     return list(simcore_docker_compose["services"].keys())
 
