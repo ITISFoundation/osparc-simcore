@@ -236,13 +236,14 @@ async def scheduler_task(app: FastAPI) -> None:
 
 def on_app_startup(app: FastAPI) -> Callable:
     async def start_scheduler() -> None:
+
         task = asyncio.get_event_loop().create_task(scheduler_task(app))
         app.state.scheduler_task = task
 
     return start_scheduler
 
 
-async def on_app_shutdown(app: FastAPI) -> Callable:
+def on_app_shutdown(app: FastAPI) -> Callable:
     async def stop_scheduler() -> None:
         task = app.state.scheduler_task
         task.cancel()
@@ -252,5 +253,6 @@ async def on_app_shutdown(app: FastAPI) -> Callable:
 
 
 def setup(app: FastAPI):
+
     app.add_event_handler("startup", on_app_startup(app))
     app.add_event_handler("shutdown", on_app_shutdown(app))
