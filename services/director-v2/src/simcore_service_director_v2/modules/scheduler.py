@@ -14,7 +14,6 @@ import asyncio
 import logging
 from asyncio import CancelledError
 from contextlib import suppress
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Set, Tuple, Type
 
