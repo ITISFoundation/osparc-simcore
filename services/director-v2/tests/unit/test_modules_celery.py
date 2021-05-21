@@ -125,9 +125,12 @@ def test_send_computation_tasks(
 
     assert len(celery_tasks) == len(list_of_tasks)
 
-    for task_id, task_data in celery_tasks.items():
-        assert task_id in list_of_tasks
-        list_of_tasks.pop(task_id)
-        task_results = task_data.get(timeout=10)
-        assert task_results == f"task created for {user_id} and {project_id}:{task_id}"
+    for task in list_of_tasks:
+        assert task.node_id in celery_tasks
+        task_results = celery_tasks[task.node_id].get(timeout=10)
+        assert (
+            task_results
+            == f"task created for {user_id} and {project_id}:{task.node_id}"
+        )
+
     callback_fct.assert_called()
