@@ -64,7 +64,7 @@ def client(
     aiohttp_client,
     app_cfg,
     postgres_db,
-    mocked_director_subsystem,
+    mocked_director_api,
     mock_orphaned_services,
     redis_client,
 ):
@@ -853,27 +853,22 @@ async def test_delete_project(
     user_project,
     expected,
     storage_subsystem_mock,
-    mocked_director_subsystem,
+    mocked_director_api,
     catalog_subsystem_mock,
     fake_services,
 ):
     # DELETE /v0/projects/{project_id}
 
     fakes = fake_services(5)
-    mocked_director_subsystem["get_running_interactive_services"].return_value = fakes
+    mocked_director_api["get_running_interactive_services"].return_value = fakes
 
     await _delete_project(client, user_project, expected)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
 
     if expected == web.HTTPNoContent:
-        mocked_director_subsystem[
-            "get_running_interactive_services"
-        ].assert_called_once()
-        calls = [
-            call(client.server.app, service["service_uuid"], True) for service in fakes
-        ]
-        mocked_director_subsystem["stop_service"].has_calls(calls)
-
+        mocked_director_api["get_running_interactive_services"].assert_called_once()
+        calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
+        mocked_director_api["stop_service"].has_calls(calls)
         # wait for the fire&forget to run
         await asyncio.sleep(2)
         await _assert_get_same_project(client, user_project, web.HTTPNotFound)
@@ -899,7 +894,7 @@ async def test_delete_multiple_opened_project_forbidden(
     user_role,
     expected_ok,
     expected_forbidden,
-    mocked_director_subsystem,
+    mocked_director_api,
 ):
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
