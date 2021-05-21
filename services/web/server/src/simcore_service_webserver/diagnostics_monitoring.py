@@ -23,7 +23,6 @@ kREQUEST_COUNT = f"{__name__}.request_count"
 kCANCEL_COUNT = f"{__name__}.cancel_count"
 
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
-kPROCESS_POOL_EXECUTOR = f"{__name__}.process_pool_executor.pool"
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
@@ -58,7 +57,6 @@ def middleware_factory(app_name: str) -> Coroutine:
             ).inc()
 
             resp = await handler(request)
-            log_exception = None
 
             assert isinstance(  # nosec
                 resp, web.StreamResponse
