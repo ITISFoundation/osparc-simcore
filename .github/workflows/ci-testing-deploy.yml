@@ -1751,7 +1751,7 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash clean_up
 
   system-test-e2e-mattward:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 40 # if this timeout gets too small, then split the tests
     name: "[sys] e2e mattward"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
