@@ -89,19 +89,14 @@ class CeleryScheduler:
         )
 
     async def run(self) -> None:
-        while True:
-            logger.info("CeleryScheduler checking pipelines and tasks")
-            self.wake_up_event.clear()
-            await asyncio.gather(
-                *[
-                    self._check_pipeline_status(user_id, project_id, iteration)
-                    for user_id, project_id, iteration in self.scheduled_pipelines
-                ]
-            )
-            with suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(
-                    self.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S
-                )
+        logger.info("CeleryScheduler checking pipelines and tasks")
+        self.wake_up_event.clear()
+        await asyncio.gather(
+            *[
+                self._check_pipeline_status(user_id, project_id, iteration)
+                for user_id, project_id, iteration in self.scheduled_pipelines
+            ]
+        )
 
     async def schedule_pipeline_run(
         self, user_id: UserID, project_id: ProjectID
@@ -214,31 +209,30 @@ class CeleryScheduler:
         )
 
 
-async def scheduler_task(app: FastAPI) -> None:
+async def scheduler_task(scheduler: CeleryScheduler) -> None:
     while True:
         try:
-            app.state.scheduler = scheduler = await CeleryScheduler.create_from_db(app)
             await scheduler.run()
-
+            with suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(
+                    scheduler.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S
+                )
         except CancelledError:
-            logger.info("CeleryScheduler background task cancelled")
-            return
+            raise
         except Exception:  # pylint: disable=broad-except
             logger.exception(
-                "Unexpected error in scheduler task, restarting scheduler..."
+                "Unexpected error in scheduler task, restarting scheduler now..."
             )
             # wait a bit before restarting the task
             await asyncio.sleep(_DEFAULT_TIMEOUT_S)
-        finally:
-            app.state.scheduler = None
-            logger.debug("CeleryScheduler task completed")
 
 
 def on_app_startup(app: FastAPI) -> Callable:
     async def start_scheduler() -> None:
-
-        task = asyncio.get_event_loop().create_task(scheduler_task(app))
+        app.state.scheduler = scheduler = await CeleryScheduler.create_from_db(app)
+        task = asyncio.get_event_loop().create_task(scheduler_task(scheduler))
         app.state.scheduler_task = task
+        logger.info("CeleryScheduler started")
 
     return start_scheduler
 
@@ -246,8 +240,11 @@ def on_app_startup(app: FastAPI) -> Callable:
 def on_app_shutdown(app: FastAPI) -> Callable:
     async def stop_scheduler() -> None:
         task = app.state.scheduler_task
-        task.cancel()
-        await task
+        app.state.scheduler = None
+        with suppress(CancelledError):
+            task.cancel()
+            await task
+        logger.info("CeleryScheduler stopped")
 
     return stop_scheduler
 
