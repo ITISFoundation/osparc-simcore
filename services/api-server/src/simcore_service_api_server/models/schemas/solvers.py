@@ -2,12 +2,12 @@ import urllib.parse
 from typing import Optional, Union
 
 import packaging.version
-from models_library.basic_regex import VERSION_RE
 from models_library.services import COMPUTATIONAL_SERVICE_KEY_RE, ServiceDockerData
 from packaging.version import LegacyVersion, Version
 from pydantic import BaseModel, Extra, Field, HttpUrl, constr
 
 from ..api_resources import compose_resource_name
+from ..basic_types import VersionStr
 
 # NOTE:
 # - API does NOT impose prefix (simcore)/(services)/comp because does not know anything about registry deployed. This constraint
@@ -27,7 +27,6 @@ LATEST_VERSION = "latest"
 #
 SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
-VersionStr = constr(strip_whitespace=True, regex=VERSION_RE)
 SolverKeyId = constr(
     strip_whitespace=True,
     regex=COMPUTATIONAL_SERVICE_KEY_RE,
@@ -36,7 +35,7 @@ SolverKeyId = constr(
 
 
 class Solver(BaseModel):
-    """ A released solver with a specific version """
+    """A released solver with a specific version"""
 
     id: SolverKeyId = Field(
         ...,
@@ -51,7 +50,7 @@ class Solver(BaseModel):
     title: str = Field(..., description="Human readable name")
     description: Optional[str]
     maintainer: str
-    # TODO: consider released: Optional[datetime]  # TODO: turn into required
+    # TODO: consider released: Optional[datetime]   required?
     # TODO: consider version_aliases: List[str] = []  # remaining tags
 
     # Get links to other resources
@@ -87,20 +86,21 @@ class Solver(BaseModel):
 
     @property
     def pep404_version(self) -> Union[Version, LegacyVersion]:
-        """ Rich version type that can be used e.g. to compare """
+        """Rich version type that can be used e.g. to compare"""
         return packaging.version.parse(self.version)
 
     @property
     def url_friendly_id(self) -> str:
-        """ Use to pass id as parameter in urls """
+        """Use to pass id as parameter in urls"""
         return urllib.parse.quote_plus(self.id)
 
     @property
-    def name(self) -> str:
-        """ Resource name """
+    def resource_name(self) -> str:
+        """Relative resource name"""
         return self.compose_resource_name(self.id, self.version)
+
+    name = resource_name  # API standards notation (see api_resources.py)
 
     @classmethod
     def compose_resource_name(cls, solver_key, solver_version) -> str:
-        # TODO: test sync with paths??
         return compose_resource_name("solvers", solver_key, "releases", solver_version)

@@ -108,8 +108,7 @@ def env_file_for_testing(
     yield env_path
 
     if backup_path.exists():
-        shutil.copy(backup_path, env_path)
-        backup_path.unlink()
+        backup_path.replace(env_path)
 
 
 @pytest.fixture(scope="module")

@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-import os
 import sys
 import time
 from pathlib import Path
