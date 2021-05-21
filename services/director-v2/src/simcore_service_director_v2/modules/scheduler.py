@@ -1,26 +1,37 @@
 """The scheduler shall be run as a background task.
 Based on oSparc pipelines, it monitors when to start the next celery task(s), either one at a time or as a group of tasks.
+
+In principle the Scheduler maintains the comp_runs table in the database.
+It contains how the pipeline was run and by whom.
+It also contains the final result of the pipeline run.
+
+When a pipeline is scheduled first all the tasks contained in the DAG are set to PUBLISHED state.
+Once the scheduler determines a task shall run, its state is set to PENDING, so that the sidecar can pick up the task.
+The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
+
 """
 import asyncio
 import logging
 from asyncio import CancelledError
 from contextlib import suppress
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Set, Tuple, Type
+from typing import Callable, Dict, List, Set, Tuple, Type
 
 import networkx as nx
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 
-from ..core.errors import ConfigurationError
+from ..core.errors import CelerySchedulerError, ConfigurationError
 from ..models.domains.comp_pipelines import CompPipelineAtDB
 from ..models.domains.comp_runs import CompRunsAtDB
 from ..models.domains.comp_tasks import CompTaskAtDB, Image
 from ..models.schemas.constants import UserID
-from ..modules.celery import CeleryClient
+from ..modules.celery import CeleryClient, CeleryTaskIn
 from ..utils.computations import get_pipeline_state_from_task_states
 from .db.repositories import BaseRepository
 from .db.repositories.comp_pipelines import CompPipelinesRepository
@@ -49,11 +60,12 @@ def _get_repository(
 
 
 def _runtime_requirement(node_image: Image) -> str:
+    req = ""
     if node_image.requires_gpu:
-        return "gpu"
+        req += "gpu"
     if node_image.requires_mpi:
-        return "mpi"
-    return "cpu"
+        req += ":mpi"
+    return req or "cpu"
 
 
 Iteration = PositiveInt
@@ -88,19 +100,7 @@ class CeleryScheduler:
             },
         )
 
-    async def run(self) -> None:
-        logger.info("CeleryScheduler checking pipelines and tasks")
-        self.wake_up_event.clear()
-        await asyncio.gather(
-            *[
-                self._check_pipeline_status(user_id, project_id, iteration)
-                for user_id, project_id, iteration in self.scheduled_pipelines
-            ]
-        )
-
-    async def schedule_pipeline_run(
-        self, user_id: UserID, project_id: ProjectID
-    ) -> None:
+    async def run_new_pipeline(self, user_id: UserID, project_id: ProjectID) -> None:
         runs_repo: CompRunsRepository = _get_repository(
             self.db_engine, CompRunsRepository
         )
@@ -111,60 +111,62 @@ class CeleryScheduler:
         # ensure the scheduler starts right away
         self._wake_up_scheduler_now()
 
-    def _wake_up_scheduler_now(self) -> None:
-        self.wake_up_event.set()
+    async def schedule_all_pipelines(self) -> None:
+        self.wake_up_event.clear()
+        # if one of the task throws, the other are NOT cancelled which is what we want
+        await asyncio.gather(
+            *[
+                self._schedule_pipeline(user_id, project_id, iteration)
+                for user_id, project_id, iteration in self.scheduled_pipelines
+            ]
+        )
 
-    async def _check_pipeline_status(
-        self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
-    ) -> None:
-        logger.debug(
-            "checking run of project [%s:%s] for user [%s]",
-            project_id,
-            iteration,
-            user_id,
-        )
-        comp_runs_repo: CompRunsRepository = _get_repository(
-            self.db_engine, CompRunsRepository
-        )
+    async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo: CompPipelinesRepository = _get_repository(
             self.db_engine, CompPipelinesRepository
         )
-        comp_tasks_repo: CompTasksRepository = _get_repository(
-            self.db_engine, CompTasksRepository
-        )
-
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
         )
-        pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
-        if not pipeline_dag.nodes:
+        pipeline_dag = pipeline_at_db.get_graph()
+        if not pipeline_dag.nodes():
             # this should not happen
-            logger.error("pipeline %s has no node to be run", project_id)
-            return
+            raise CelerySchedulerError(
+                f"The pipeline of project {project_id} does not contain an adjacency list! Please check."
+            )
+        return pipeline_dag
 
-        # get the tasks that were scheduled
-        comp_tasks: Dict[str, CompTaskAtDB] = {
+    async def _get_pipeline_tasks(
+        self, project_id: ProjectID, pipeline_dag: nx.DiGraph
+    ) -> Dict[str, CompTaskAtDB]:
+        comp_tasks_repo: CompTasksRepository = _get_repository(
+            self.db_engine, CompTasksRepository
+        )
+        pipeline_comp_tasks: Dict[str, CompTaskAtDB] = {
             str(t.node_id): t
             for t in await comp_tasks_repo.get_comp_tasks(project_id)
             if (str(t.node_id) in list(pipeline_dag.nodes()))
         }
-        if not comp_tasks:
-            # this should not happen
-            logger.error("pipeline %s has computational node", project_id)
-            return
+        if len(pipeline_comp_tasks) != len(pipeline_dag.nodes()):
+            raise CelerySchedulerError(
+                f"The tasks defined for {project_id} do not contain all the tasks defined in the pipeline [{list(pipeline_dag.nodes)}]! Please check."
+            )
+        return pipeline_comp_tasks
 
-        # filter out the tasks with what were already completed
-        pipeline_dag.remove_nodes_from(
-            {
-                node_id
-                for node_id, t in comp_tasks.items()
-                if t.state in _COMPLETED_STATES
-            }
+    async def _update_run_result(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        iteration: PositiveInt,
+        pipeline_tasks: Dict[str, CompTaskAtDB],
+    ) -> RunningState:
+
+        pipeline_state_from_tasks = get_pipeline_state_from_task_states(
+            pipeline_tasks.values(), self.celery_client.settings.publication_timeout
         )
 
-        # update the current status of the run
-        pipeline_state_from_tasks = get_pipeline_state_from_task_states(
-            comp_tasks.values(), self.celery_client.settings.publication_timeout
+        comp_runs_repo: CompRunsRepository = _get_repository(
+            self.db_engine, CompRunsRepository
         )
         await comp_runs_repo.set_run_result(
             user_id=user_id,
@@ -173,51 +175,102 @@ class CeleryScheduler:
             result_state=pipeline_state_from_tasks,
             final_state=(pipeline_state_from_tasks in _COMPLETED_STATES),
         )
+        return pipeline_state_from_tasks
 
-        if not pipeline_dag.nodes:
-            # there is nothing left, the run is completed
+    async def _start_tasks(
+        self,
+        user_id: UserID,
+        project_id: ProjectID,
+        comp_tasks: List[CompTaskAtDB],
+        tasks: List[NodeID],
+    ):
+        # get tasks runtime requirements
+        celery_tasks: List[CeleryTaskIn] = [
+            CeleryTaskIn(node_id, _runtime_requirement(comp_tasks[node_id].image))
+            for node_id in tasks
+        ]
+
+        # The sidecar only pick up tasks that are in PENDING state
+        comp_tasks_repo: CompTasksRepository = _get_repository(
+            self.db_engine, CompTasksRepository
+        )
+        await comp_tasks_repo.mark_project_tasks_as_pending(project_id, tasks)
+        # notify the sidecar they should start now
+        self.celery_client.send_computation_tasks(
+            user_id=user_id,
+            project_id=project_id,
+            single_tasks=celery_tasks,
+            callback=self._wake_up_scheduler_now,
+        )
+
+    async def _schedule_pipeline(
+        self, user_id: UserID, project_id: ProjectID, iteration: PositiveInt
+    ) -> None:
+        logger.debug(
+            "checking run of project [%s:%s] for user [%s]",
+            project_id,
+            iteration,
+            user_id,
+        )
+
+        pipeline_dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
+        pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
+            project_id, pipeline_dag
+        )
+
+        # filter out the tasks with what were already completed
+        pipeline_dag.remove_nodes_from(
+            {
+                node_id
+                for node_id, t in pipeline_tasks.items()
+                if t.state in _COMPLETED_STATES
+            }
+        )
+
+        # update the current status of the run
+        pipeline_result: RunningState = await self._update_run_result(
+            user_id, project_id, iteration, pipeline_tasks
+        )
+
+        if not pipeline_dag.nodes():
+            # there is nothing left, the run is completed, we're done here
             self.scheduled_pipelines.remove((user_id, project_id, iteration))
             logger.info(
-                "pipeline %s completed with result %s",
+                "pipeline %s scheduling completed with result %s",
                 project_id,
-                pipeline_state_from_tasks,
+                pipeline_result,
             )
             return
 
-        # find the next tasks that should be run now
-        next_tasks_to_run: Dict[str, Dict[str, Any]] = {
-            node_id: {
-                "runtime_requirements": _runtime_requirement(comp_tasks[node_id].image)
-            }
+        # find the next tasks that should be run now,
+        # this tasks are in PUBLISHED state and all their dependents are completed
+        next_tasks: List[NodeID] = [
+            node_id
             for node_id, degree in pipeline_dag.in_degree()
-            if degree == 0 and comp_tasks[node_id].state == RunningState.PUBLISHED
-        }
-        if not next_tasks_to_run:
+            if degree == 0 and pipeline_tasks[node_id].state == RunningState.PUBLISHED
+        ]
+        if not next_tasks:
             # nothing to run at the moment
             return
 
         # let's schedule the tasks, mark them as PENDING so the sidecar will take it
-        await comp_tasks_repo.mark_project_tasks_as_pending(
-            project_id, next_tasks_to_run.keys()
-        )
+        await self._start_tasks(user_id, project_id, pipeline_tasks, next_tasks)
 
-        self.celery_client.send_single_tasks(
-            user_id=user_id,
-            project_id=project_id,
-            single_tasks=next_tasks_to_run,
-            callback=self._wake_up_scheduler_now,
-        )
+    def _wake_up_scheduler_now(self) -> None:
+        self.wake_up_event.set()
 
 
 async def scheduler_task(scheduler: CeleryScheduler) -> None:
     while True:
         try:
-            await scheduler.run()
+            logger.debug("scheduler task running...")
+            await scheduler.schedule_all_pipelines()
             with suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(
                     scheduler.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S
                 )
         except CancelledError:
+            logger.info("scheduler task cancelled")
             raise
         except Exception:  # pylint: disable=broad-except
             logger.exception(
@@ -250,6 +303,5 @@ def on_app_shutdown(app: FastAPI) -> Callable:
 
 
 def setup(app: FastAPI):
-
     app.add_event_handler("startup", on_app_startup(app))
     app.add_event_handler("shutdown", on_app_shutdown(app))

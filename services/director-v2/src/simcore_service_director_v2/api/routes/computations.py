@@ -137,7 +137,7 @@ async def create_computation(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=f"Project {job.project_id} has no computational services, or contains cycles",
                 )
-            await scheduler.schedule_pipeline_run(job.user_id, job.project_id)
+            await scheduler.run_new_pipeline(job.user_id, job.project_id)
 
         return ComputationTaskOut(
             id=job.project_id,

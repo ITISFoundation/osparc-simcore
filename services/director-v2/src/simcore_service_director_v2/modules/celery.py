@@ -59,6 +59,15 @@ def _computation_task_signature(
 
 
 @dataclass
+class CeleryTaskIn:
+    node_id: NodeID
+    runtime_requirements: str
+
+
+CeleryTaskOut = Task
+
+
+@dataclass
 class CeleryClient:
     client: Celery
     settings: CeleryConfig
@@ -77,23 +86,25 @@ class CeleryClient:
             )
         return app.state.celery_client
 
-    def send_single_tasks(
+    def send_computation_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
-        single_tasks: Dict[str, Any],
+        single_tasks: List[CeleryTaskIn],
         callback: Callable,
-    ) -> Dict[str, Task]:
+    ) -> Dict[NodeID, CeleryTaskOut]:
         async_tasks = {}
-        for node_id, node_data in single_tasks.items():
+        for task in single_tasks:
             celery_task_signature = _computation_task_signature(
                 self.settings,
                 user_id,
                 project_id,
-                node_id,
-                node_data["runtime_requirements"],
+                str(task.node_id),
+                task.runtime_requirements,
             )
-            async_tasks[node_id] = celery_task = celery_task_signature.apply_async()
+            async_tasks[
+                task.node_id
+            ] = celery_task = celery_task_signature.apply_async()
             logger.info("Published celery task %s", celery_task)
             celery_task.then(callback)
         return async_tasks

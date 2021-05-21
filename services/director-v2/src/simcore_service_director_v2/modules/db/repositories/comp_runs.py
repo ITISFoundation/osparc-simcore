@@ -97,12 +97,12 @@ class CompRunsRepository(BaseRepository):
         result_state: RunningState,
         final_state: Optional[bool] = False,
     ) -> CompRunsAtDB:
+        values = {"result": RUNNING_STATE_TO_DB[result_state]}
+        if final_state:
+            values.update({"end": datetime.utcnow()})
         return await self.update(
             user_id,
             project_id,
             iteration,
-            **{
-                "result": RUNNING_STATE_TO_DB[result_state],
-                "end": datetime.utcnow() if final_state else None,
-            },
+            **values,
         )

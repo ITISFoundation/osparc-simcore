@@ -4,7 +4,7 @@
 # pylint:disable=protected-access
 
 from random import randint
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 import pytest
@@ -13,7 +13,7 @@ from celery.contrib.testing.worker import TestWorkController
 from fastapi import FastAPI
 from models_library.settings.celery import CeleryConfig
 from pydantic.types import PositiveInt
-from simcore_service_director_v2.modules.celery import CeleryClient
+from simcore_service_director_v2.modules.celery import CeleryClient, CeleryTaskIn
 
 
 # Fixtures -----------------------------------------------------------------
@@ -84,8 +84,8 @@ def test_create_task(celery_app: Celery, celery_worker: TestWorkController):
     assert mul.delay(4, 4).get(timeout=10) == 16
 
 
-@pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu/mpi"])
-def test_send_single_tasks(
+@pytest.mark.parametrize("runtime_requirements", ["cpu", "gpu", "mpi", "gpu:mpi"])
+def test_send_computation_tasks(
     minimal_app: FastAPI,
     celery_app: Celery,
     celery_worker_parameters: None,
@@ -114,11 +114,12 @@ def test_send_single_tasks(
     )
     celery_worker.reload()
 
-    list_of_tasks = {
-        f"task_{i}": {"runtime_requirements": runtime_requirements} for i in range(3)
-    }
+    list_of_tasks: List[CeleryTaskIn] = [
+        CeleryTaskIn(node_id=f"task_{i}", runtime_requirements=runtime_requirements)
+        for i in range(3)
+    ]
     celery_client: CeleryClient = minimal_app.state.celery_client
-    celery_tasks = celery_client.send_single_tasks(
+    celery_tasks = celery_client.send_computation_tasks(
         user_id, project_id, list_of_tasks, callback_fct
     )
 
