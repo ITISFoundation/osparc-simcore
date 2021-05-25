@@ -27,7 +27,7 @@ async function runTutorial() {
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]]);
 
     // Wait for the output files to be pushed
-    await tutorial.waitFor(10000, 'Wait for the output files to be pushed');
+    await tutorial.waitFor(30000, 'Wait for the output files to be pushed');
 
     // This study opens in fullscreen mode
     await tutorial.restoreIFrame();
@@ -41,6 +41,8 @@ async function runTutorial() {
       "t_plot.csv",
       "tst_plot.csv"
     ];
+
+    await tutorial.openNodeFiles(0)
     await tutorial.checkResults2(outFiles);
 
     await tutorial.toDashboard();

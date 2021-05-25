@@ -11,7 +11,7 @@ async function getBrowser(demo) {
       defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
       slowMo: 80, // Slows down Puppeteer operations by the specified amount of milliseconds.
       args: [
-        '--start-maximized'
+        '--window-size=1680,950'
       ]
     };
     Object.assign(options, visibleOptions);
