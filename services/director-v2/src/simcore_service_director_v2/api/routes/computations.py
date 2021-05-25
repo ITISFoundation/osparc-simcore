@@ -42,6 +42,7 @@ from ...utils.dags import (
     create_complete_dag,
     create_complete_dag_from_tasks,
     create_minimal_computational_graph_based_on_selection,
+    find_computational_node_cycles,
 )
 from ...utils.exceptions import PipelineNotFoundError, ProjectNotFoundError
 from ..dependencies.celery import get_celery_client
@@ -130,8 +131,16 @@ async def create_computation(
             director_client,
             list(computational_dag.nodes()) if job.start_pipeline else [],
         )
+
         if job.start_pipeline:
             if not computational_dag.nodes():
+                # 2 options here: either we have cycles in the graph or it's really done
+                list_of_cycles = find_computational_node_cycles(complete_dag)
+                if list_of_cycles:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"Project {job.project_id} contains cycles with computational services which are currently not supported! Please remove them.",
+                    )
                 # there is nothing else to be run here, so we are done
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
