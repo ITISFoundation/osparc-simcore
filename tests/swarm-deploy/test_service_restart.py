@@ -11,7 +11,7 @@ from typing import Dict, List
 import pytest
 from docker import DockerClient
 from docker.models.services import Service
-from tenacity import Retrying, before_log, retry, stop_after_attempt, wait_fixed
+from tenacity import Retrying, before_log, stop_after_attempt, wait_fixed
 
 log = logging.getLogger(__name__)
 
@@ -40,9 +40,12 @@ def deployed_simcore_stack(
             with attempt:
                 for service in docker_client.services.list():
                     for task in service.tasks():
-                        assert (
-                            task["Status"]["State"] == task["DesiredState"]
-                        ), f"{service.name} still not ready: {pformat(task)}"
+                        assert task["Status"]["State"] == task["DesiredState"], (
+                            f"{service.name} still not ready ("
+                            f"desired_state[{task['DesiredState']}] != "
+                            f"status_state[{task['Status']['State']}]):"
+                            f"\n{pformat(task)}"
+                        )
 
     finally:
         subprocess.run(f"docker stack ps {core_stack_name}", shell=True, check=False)
@@ -70,17 +73,29 @@ def deployed_simcore_stack(
     return core_stack_services
 
 
+SERVICE_AND_EXIT_CODES = [
+    ("webserver", 0),
+    ("static-webserver", 15),
+    ("storage", 0),
+    ("catalog", 0),
+    # director exit code never fixed,
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1466
+    ("director", 1),
+    ("director-v2", 0),
+    ("api-server", 0),
+    ("migration", 143),
+]
+
+
 @pytest.mark.parametrize(
-    "docker_compose_service_key",
-    [
-        "webserver",
-        "storage",
-        "catalog",
-        # 'simcore_director', TODO: uncomment when https://github.com/ITISFoundation/osparc-simcore/issues/1466 is FIXED
-    ],
+    "docker_compose_service_key,exit_code",
+    SERVICE_AND_EXIT_CODES,
+    ids=[f"service={x[0],}_exit_code={x[1]}" for x in SERVICE_AND_EXIT_CODES],
 )
 def test_graceful_restart_services(
-    docker_compose_service_key: str, deployed_simcore_stack: List[Service]
+    deployed_simcore_stack: List[Service],
+    docker_compose_service_key: str,
+    exit_code: int,
 ):
     """
         This tests ensures that the applications running in the service above
@@ -115,8 +130,11 @@ def test_graceful_restart_services(
         s.name.endswith(docker_compose_service_key) for s in deployed_simcore_stack
     )
 
+    # Service names:'pytest-simcore_static-webserver', 'pytest-simcore_webserver'
     service: Service = next(
-        s for s in deployed_simcore_stack if s.name.endswith(docker_compose_service_key)
+        s
+        for s in deployed_simcore_stack
+        if s.name.endswith(f"_{docker_compose_service_key}")
     )
 
     # NOTE: This is how it looks status. Do not delete
@@ -142,7 +160,10 @@ def test_graceful_restart_services(
     assert len(shutdown_tasks) == 1
 
     task = shutdown_tasks[0]
-    assert task["Status"]["ContainerStatus"]["ExitCode"] == 0, pformat(task["Status"])
+    assert task["Status"]["ContainerStatus"]["ExitCode"] == exit_code, (
+        f"{docker_compose_service_key} expected exit_code=={exit_code}; "
+        f"got task_status={pformat(task['Status'])}"
+    )
 
     # TODO: check ps ax has TWO processes
     ## name = core_service_name.name.replace("simcore_", "")
