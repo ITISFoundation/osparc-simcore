@@ -1035,3 +1035,16 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     assert (
         response.status_code == status.HTTP_403_FORBIDDEN
     ), f"response code is {response.status_code}, error: {response.text}"
+
+    # still this pipeline shall be createable if we do not want to start it
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_cycly_and_comp_service.uuid),
+            "start_pipeline": False,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
