@@ -603,7 +603,7 @@ def test_run_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
-    # check the contents is correctb
+    # check the contents is correct: a pipeline that just started gets PUBLISHED
     _assert_computation_task_out_obj(
         client,
         task_out,
@@ -612,7 +612,16 @@ def test_run_computation(
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
     )
 
-    # wait for the computation to finish
+    # wait for the computation to start
+    _assert_pipeline_status(
+        client,
+        task_out.url,
+        user_id,
+        sleepers_project.uuid,
+        wait_for_states=[RunningState.STARTED],
+    )
+
+    # wait for the computation to finish (either by failing, success or abort)
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
