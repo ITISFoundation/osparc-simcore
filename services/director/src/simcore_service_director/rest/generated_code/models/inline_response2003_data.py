@@ -172,8 +172,8 @@ class InlineResponse2003Data(Model):
         """
         if service_key is None:
             raise ValueError("Invalid value for `service_key`, must not be `None`")
-        if service_key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[^\s\/]+)+$', service_key):
-            raise ValueError("Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[^\s\/]+)+$/`")
+        if service_key is not None and not re.search(r'^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]+)+$', service_key):
+            raise ValueError("Invalid value for `service_key`, must be a follow pattern or equal to `/^(simcore)\/(services)\/(comp|dynamic)(\/[\w\/-]+)+$/`")
 
         self._service_key = service_key
 
