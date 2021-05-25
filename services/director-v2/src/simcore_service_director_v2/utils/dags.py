@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import Any, Dict, List, Set
 
 import networkx as nx
@@ -195,3 +196,15 @@ async def compute_pipeline_details(
             if _is_node_computational(node_data.get("key", ""))
         },
     )
+
+
+def find_computational_node_cycles(dag: nx.DiGraph) -> List[List[str]]:
+    """returns a list of nodes part of a cycle and computational, which is currently forbidden."""
+    computational_node_cycles = []
+    list_potential_cycles = nx.simple_cycles(dag)
+    for cycle in list_potential_cycles:
+        if any(
+            [_is_node_computational(dag.nodes[node_id]["key"]) for node_id in cycle]
+        ):
+            computational_node_cycles += [deepcopy(cycle)]
+    return computational_node_cycles

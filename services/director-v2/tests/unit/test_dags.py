@@ -5,7 +5,7 @@
 # pylint:disable=no-value-for-parameter
 
 
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 
 import networkx as nx
 import pytest
@@ -13,6 +13,7 @@ from models_library.projects import Workbench
 from simcore_service_director_v2.utils.dags import (
     create_complete_dag,
     create_minimal_computational_graph_based_on_selection,
+    find_computational_node_cycles,
 )
 
 
@@ -166,3 +167,105 @@ async def test_create_minimal_graph(
         )
     )
     assert nx.to_dict_of_lists(reduced_dag_with_auto_detect) == not_forced_exp_dag
+
+
+@pytest.mark.parametrize(
+    "dag_adjacency, node_keys, exp_cycles",
+    [
+        pytest.param({}, {}, [], id="empty dag exp no cycles"),
+        pytest.param(
+            {"node_1": ["node_2", "node_3"], "node_2": ["node_3"], "node_3": []},
+            {
+                "node_1": {"key": "simcore/services/comp/fake"},
+                "node_2": {"key": "simcore/services/comp/fake"},
+                "node_3": {"key": "simcore/services/comp/fake"},
+            },
+            [],
+            id="cycle less dag expect no cycle",
+        ),
+        pytest.param(
+            {
+                "node_1": ["node_2"],
+                "node_2": ["node_3"],
+                "node_3": ["node_1"],
+            },
+            {
+                "node_1": {"key": "simcore/services/comp/fake"},
+                "node_2": {"key": "simcore/services/comp/fake"},
+                "node_3": {"key": "simcore/services/comp/fake"},
+            },
+            [["node_1", "node_2", "node_3"]],
+            id="dag with 1 cycle",
+        ),
+        pytest.param(
+            {
+                "node_1": ["node_2"],
+                "node_2": ["node_3", "node_1"],
+                "node_3": ["node_1"],
+            },
+            {
+                "node_1": {"key": "simcore/services/comp/fake"},
+                "node_2": {"key": "simcore/services/comp/fake"},
+                "node_3": {"key": "simcore/services/comp/fake"},
+            },
+            [["node_1", "node_2", "node_3"], ["node_1", "node_2"]],
+            id="dag with 2 cycles",
+        ),
+        pytest.param(
+            {
+                "node_1": ["node_2"],
+                "node_2": ["node_3"],
+                "node_3": ["node_1"],
+            },
+            {
+                "node_1": {"key": "simcore/services/comp/fake"},
+                "node_2": {"key": "simcore/services/comp/fake"},
+                "node_3": {"key": "simcore/services/dynamic/fake"},
+            },
+            [["node_1", "node_2", "node_3"]],
+            id="dag with 1 cycle and 1 dynamic services should fail",
+        ),
+        pytest.param(
+            {
+                "node_1": ["node_2"],
+                "node_2": ["node_3"],
+                "node_3": ["node_1"],
+            },
+            {
+                "node_1": {"key": "simcore/services/dynamic/fake"},
+                "node_2": {"key": "simcore/services/comp/fake"},
+                "node_3": {"key": "simcore/services/dynamic/fake"},
+            },
+            [["node_1", "node_2", "node_3"]],
+            id="dag with 1 cycle and 2 dynamic services should fail",
+        ),
+        pytest.param(
+            {
+                "node_1": ["node_2"],
+                "node_2": ["node_3"],
+                "node_3": ["node_1"],
+            },
+            {
+                "node_1": {"key": "simcore/services/dynamic/fake"},
+                "node_2": {"key": "simcore/services/dynamic/fake"},
+                "node_3": {"key": "simcore/services/dynamic/fake"},
+            },
+            [],
+            id="dag with 1 cycle and 3 dynamic services should be ok",
+        ),
+    ],
+)
+def test_find_computational_node_cycles(
+    dag_adjacency: Dict[str, List[str]],
+    node_keys: Dict[str, Dict[str, Any]],
+    exp_cycles: List[List[str]],
+):
+    dag = nx.from_dict_of_lists(dag_adjacency, create_using=nx.DiGraph)
+    # add node attributes
+    for key, values in node_keys.items():
+        for attr, attr_value in values.items():
+            dag.nodes[key][attr] = attr_value
+    list_of_cycles = find_computational_node_cycles(dag)
+    assert len(list_of_cycles) == len(exp_cycles), "expected number of cycles not found"
+    for cycle in list_of_cycles:
+        assert sorted(cycle) in exp_cycles
