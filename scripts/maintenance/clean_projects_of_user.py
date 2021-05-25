@@ -4,7 +4,7 @@ import asyncio
 from typing import Any, Dict, List, Optional
 
 import typer
-from httpx import URL, AsyncClient, codes
+from httpx import URL, AsyncClient, Timeout, codes
 from pydantic import EmailStr, SecretStr
 
 
@@ -57,7 +57,9 @@ async def clean(
     endpoint: URL, username: EmailStr, password: SecretStr, project_id: Optional[str]
 ) -> int:
     try:
-        async with AsyncClient(base_url=endpoint.join("v0")) as client:
+        async with AsyncClient(
+            base_url=endpoint.join("v0"), timeout=Timeout(20.0)
+        ) as client:
             await login_user(client, username, password)
             all_projects = []
             if project_id:
@@ -88,7 +90,9 @@ async def clean(
                 )
             typer.secho(f"completed projects deletion", fg=typer.colors.YELLOW)
     except Exception as exc:  # pylint: disable=broad-except
-        typer.secho(f"Unexpected issue: {exc}", fg=typer.colors.RED, err=True)
+        typer.secho(
+            f"Unexpected issue: {exc}, [{type(exc)}]", fg=typer.colors.RED, err=True
+        )
         return 1
     return 0
 
