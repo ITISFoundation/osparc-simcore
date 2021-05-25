@@ -77,7 +77,6 @@ def webserver_environ(
     )
 
     environ = {}
-    environ.update(dockerfile_environ)
     environ.update(docker_compose_environ)
 
     # get the list of core services the test module wants
