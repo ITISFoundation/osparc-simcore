@@ -1738,6 +1738,13 @@ paths:
           schema:
             type: string
             example: 123e4567-e89b-12d3-a456-426655440000
+        - in: query
+          name: save_state
+          description: Save the state prior to removing the service
+          required: false
+          schema:
+            type: boolean
+            default: true
       responses:
         '204':
           description: Succesfully stopped and removed the service from the oSparc platform
@@ -1948,6 +1955,14 @@ components:
         example:
           - 1.0.0
           - 0.0.1
+    SaveState:
+      in: query
+      name: save_state
+      description: Save the state prior to removing the service
+      required: false
+      schema:
+        type: boolean
+        default: true
   schemas:
     ErrorEnveloped:
       type: object
