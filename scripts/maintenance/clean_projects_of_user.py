@@ -7,6 +7,8 @@ import typer
 from httpx import URL, AsyncClient, Timeout, codes
 from pydantic import EmailStr, SecretStr
 
+DEFAULT_TIMEOUT = Timeout(30.0)
+
 
 async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr):
     path = "/auth/login"
@@ -20,7 +22,7 @@ async def get_project_for_user(
     client: AsyncClient, project_id: str
 ) -> Optional[Dict[str, Any]]:
     path = f"/projects/{project_id}"
-    r = await client.get(path, params={"type": "user"}, timeout=30)
+    r = await client.get(path, params={"type": "user"})
     if r.status_code == 200:
         response_dict = r.json()
         data = response_dict["data"]
@@ -31,7 +33,7 @@ async def get_all_projects_for_user(
     client: AsyncClient, next_link: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     path = next_link if next_link else "/projects"
-    r = await client.get(path, params={"type": "user"}, timeout=30)
+    r = await client.get(path, params={"type": "user"})
     if r.status_code == 200:
         response_dict = r.json()
         data = response_dict["data"]
@@ -58,7 +60,7 @@ async def clean(
 ) -> int:
     try:
         async with AsyncClient(
-            base_url=endpoint.join("v0"), timeout=Timeout(20.0)
+            base_url=endpoint.join("v0"), timeout=DEFAULT_TIMEOUT
         ) as client:
             await login_user(client, username, password)
             all_projects = []
