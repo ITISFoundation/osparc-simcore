@@ -68,6 +68,8 @@ pytest_simcore_ops_services_selection = ["minio"]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+DATA_DIR = CURRENT_DIR.parent.parent / "data"
+assert DATA_DIR.exists(), "expected folder under tests/data"
 
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
@@ -86,14 +88,6 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
     "eTag",  # this must change
     REMAPPING_KEY,
 }
-
-
-@pytest.fixture
-async def db_engine(postgres_dsn: Dict) -> aiopg.sa.Engine:
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_dsn
-    )
-    return await aiopg.sa.create_engine(dsn)
 
 
 @pytest.fixture(autouse=True)
@@ -193,8 +187,11 @@ async def login_user(client):
 def get_exported_projects() -> List[Path]:
     # These files are generated from the front-end
     # when the formatter be finished
-    exporter_dir = CURRENT_DIR.parent / "data" / "exporter"
-    return [x for x in exporter_dir.glob("*.osparc")]
+    exporter_dir = DATA_DIR / "exporter"
+    assert exporter_dir.exists()
+    exported_files = [x for x in exporter_dir.glob("*.osparc")]
+    assert exported_files, "expected *.osparc files, none found"
+    return exported_files
 
 
 @pytest.fixture
@@ -231,7 +228,7 @@ async def monkey_patch_asyncio_subprocess(mocker):
 
 
 @pytest.fixture
-async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
+async def apply_access_rights(aiopg_engine: aiopg.sa.Engine) -> Coroutine:
     async def grant_rights_to_services(services: List[Tuple[str, str]]) -> None:
         for service_key, service_version in services:
             metada_data_values = dict(
@@ -250,7 +247,7 @@ async def apply_access_rights(db_engine: aiopg.sa.Engine) -> Coroutine:
                 write_access=True,
             )
 
-            async with db_engine.acquire() as conn:
+            async with aiopg_engine.acquire() as conn:
                 # pylint: disable=no-value-for-parameter
                 await conn.execute(
                     pg_insert(services_meta_data)
@@ -319,9 +316,9 @@ def assemble_tmp_file_path(file_name: str) -> Path:
 
 
 async def query_project_from_db(
-    db_engine: aiopg.sa.Engine, project_uuid: str
+    aiopg_engine: aiopg.sa.Engine, project_uuid: str
 ) -> Dict[str, Any]:
-    async with db_engine.acquire() as conn:
+    async with aiopg_engine.acquire() as conn:
         project_result = await conn.execute(
             projects.select().where(projects.c.uuid == project_uuid)
         )
@@ -474,7 +471,7 @@ async def download_files_and_get_checksums(
         return checksums
 
 
-async def get_checksmus_for_files_in_storage(
+async def get_checksums_for_files_in_storage(
     app: aiohttp.web.Application,
     project: Dict[str, Any],
     normalized_project: Dict[str, Any],
@@ -520,8 +517,7 @@ async def test_import_export_import_duplicate(
     loop,
     client,
     push_services_to_registry,
-    socketio_client,
-    db_engine,
+    aiopg_engine,
     redis_client,
     export_version,
     monkey_patch_asyncio_subprocess,
@@ -590,9 +586,13 @@ async def test_import_export_import_duplicate(
 
         duplicated_project_uuid = reply_data["data"]["uuid"]
 
-    imported_project = await query_project_from_db(db_engine, imported_project_uuid)
-    reimported_project = await query_project_from_db(db_engine, reimported_project_uuid)
-    duplicated_project = await query_project_from_db(db_engine, duplicated_project_uuid)
+    imported_project = await query_project_from_db(aiopg_engine, imported_project_uuid)
+    reimported_project = await query_project_from_db(
+        aiopg_engine, reimported_project_uuid
+    )
+    duplicated_project = await query_project_from_db(
+        aiopg_engine, duplicated_project_uuid
+    )
 
     # uuids are changed each time the project is imported, need to normalize them
     normalized_imported_project = replace_uuids_with_sequences(imported_project)
@@ -620,19 +620,19 @@ async def test_import_export_import_duplicate(
     )
 
     # check files in storage fingerprint matches
-    imported_files_checksums = await get_checksmus_for_files_in_storage(
+    imported_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=imported_project,
         normalized_project=normalized_imported_project,
         user_id=user["id"],
     )
-    reimported_files_checksums = await get_checksmus_for_files_in_storage(
+    reimported_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=reimported_project,
         normalized_project=normalized_reimported_project,
         user_id=user["id"],
     )
-    duplicated_files_checksums = await get_checksmus_for_files_in_storage(
+    duplicated_files_checksums = await get_checksums_for_files_in_storage(
         app=client.app,
         project=duplicated_project,
         normalized_project=normalized_duplicated_project,
