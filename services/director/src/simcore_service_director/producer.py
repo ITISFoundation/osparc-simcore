@@ -743,7 +743,7 @@ async def _start_docker_service(
 
 async def _silent_service_cleanup(app: web.Application, node_uuid: str) -> None:
     try:
-        await stop_service(app, node_uuid)
+        await stop_service(app, node_uuid, False)
     except exceptions.DirectorException:
         pass
 
@@ -968,7 +968,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
 
 
 @run_sequentially_in_context(target_args=["node_uuid"])
-async def stop_service(app: web.Application, node_uuid: str) -> None:
+async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -> None:
     log.debug("stopping service with uuid %s", node_uuid)
     # get the docker client
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
@@ -1004,27 +1004,29 @@ async def stop_service(app: web.Application, node_uuid: str) -> None:
             else "",
         )
         log.debug("saving state of service %s...", service_host_name)
-        try:
-            session = app[APP_CLIENT_SESSION_KEY]
-            service_url = "http://" + service_host_name + "/" + "state"
-            async with session.post(
-                service_url,
-                timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
-            ) as response:
-                if 199 < response.status < 300:
-                    log.debug(
-                        "service %s successfully saved its state", service_host_name
-                    )
-                else:
-                    log.warning(
-                        "service %s does not allow saving state, answered %s",
-                        service_host_name,
-                        await response.text(),
-                    )
-        except ClientConnectionError:
-            log.warning(
-                "service %s could not be contacted, state not saved", service_host_name
-            )
+        if save_state:
+            try:
+                session = app[APP_CLIENT_SESSION_KEY]
+                service_url = "http://" + service_host_name + "/" + "state"
+                async with session.post(
+                    service_url,
+                    timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
+                ) as response:
+                    if 199 < response.status < 300:
+                        log.debug(
+                            "service %s successfully saved its state", service_host_name
+                        )
+                    else:
+                        log.warning(
+                            "service %s does not allow saving state, answered %s",
+                            service_host_name,
+                            await response.text(),
+                        )
+            except ClientConnectionError:
+                log.warning(
+                    "service %s could not be contacted, state not saved",
+                    service_host_name,
+                )
 
         # remove the services
         try:
