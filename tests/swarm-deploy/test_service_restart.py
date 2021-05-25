@@ -73,7 +73,7 @@ def deployed_simcore_stack(
     return core_stack_services
 
 
-SERVICE_AND_EXIT_CODES = [
+SERVICES_AND_EXIT_CODES = [
     ("webserver", 0),
     ("static-webserver", 15),
     ("storage", 0),
@@ -89,8 +89,8 @@ SERVICE_AND_EXIT_CODES = [
 
 @pytest.mark.parametrize(
     "docker_compose_service_key,exit_code",
-    SERVICE_AND_EXIT_CODES,
-    ids=[f"service={x[0],}_exit_code={x[1]}" for x in SERVICE_AND_EXIT_CODES],
+    SERVICES_AND_EXIT_CODES,
+    ids=[f"service={x[0]},exit_code={x[1]}" for x in SERVICES_AND_EXIT_CODES],
 )
 def test_graceful_restart_services(
     deployed_simcore_stack: List[Service],
