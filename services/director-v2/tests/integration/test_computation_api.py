@@ -924,16 +924,30 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
                 "key": jupyter_service["image"]["name"],
                 "version": jupyter_service["image"]["tag"],
                 "label": "the controller",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
             },
             "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
                 "key": jupyter_service["image"]["name"],
                 "version": jupyter_service["image"]["tag"],
                 "label": "the model",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
             },
         }
     )
 
-    # this pipeline is not runnable as there are no computational services and it contains a cycle
+    # this pipeline is not runnable as there are no computational services
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -957,4 +971,67 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
     )
     assert (
         response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+
+def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+    sleeper_service: Dict[str, str],
+    jupyter_service: Dict[str, str],
+):
+    # create a workbench with just 2 dynamic service in a cycle
+    project_with_cycly_and_comp_service = project(
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "the controller",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957c",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957c"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "the model",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957c": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "the computational service",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
+            },
+        }
+    )
+
+    # this pipeline is not runnable as there are no computational services and it contains a cycle
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_cycly_and_comp_service.uuid),
+            "start_pipeline": True,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_403_FORBIDDEN
     ), f"response code is {response.status_code}, error: {response.text}"
