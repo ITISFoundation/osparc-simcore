@@ -59,6 +59,7 @@ def _get_repository(
 
 
 def _runtime_requirement(node_image: Image) -> str:
+    # NOTE: to keep compatibility the queues are currently defined as .cpu, .gpu, .mpi.
     reqs = []
 
     if node_image.requires_gpu:
