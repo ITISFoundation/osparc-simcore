@@ -259,6 +259,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
             .with_fragment("/study/{}".format(copied_project_id))
         )
     except KeyError as exc:
+        # TODO: change the message below as it is no longer relevant
         log.exception(
             "Cannot redirect to website because route was not registered. Probably qx output was not ready and it was disabled (see statics.py)"
         )

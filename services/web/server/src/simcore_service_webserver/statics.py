@@ -13,6 +13,7 @@ from typing import Dict
 from aiohttp import web, ClientSession
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
+from pydantic import BaseSettings, Field
 from yarl import URL
 
 from .constants import (
@@ -33,8 +34,30 @@ STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 APP_FRONTEND_CACHED_INDEXES_KEY = f"{__file__}.cached_indexes"
 APP_FRONTEND_CACHED_STATICS_JSON_KEY = f"{__file__}.cached_statics_json"
 
+# NOTE: saved as a separate item to config
+STATIC_WEBSERVER_SETTINGS_KEY = f"{__name__}.StaticWebserverModuleSettings"
 
 log = logging.getLogger(__file__)
+
+
+class StaticWebserverModuleSettings(BaseSettings):
+    enabled: bool = Field(
+        True,
+        description=(
+            "if enabled it will try to fetch and cache the 3 product index webpages"
+        ),
+    )
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_STATIC_MODULE_"
+
+
+def assemble_settings(app: web.Application) -> StaticWebserverModuleSettings:
+    """creates stores and returns settings for this module"""
+    settings = StaticWebserverModuleSettings()
+    app[STATIC_WEBSERVER_SETTINGS_KEY] = settings
+    return settings
 
 
 async def _assemble_cached_indexes(app: web.Application):
@@ -139,7 +162,12 @@ async def get_statics_json(request: web.Request):  # pylint: disable=unused-argu
 
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
-def setup_statics(app: web.Application):
+def setup_statics(app: web.Application) -> None:
+    settings = assemble_settings(app)
+    if not settings.enabled:
+        log.warning("Static webserver module is disbaled")
+        return
+
     # register routes to solve the correct frontend
     app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
     # statics.json is computed and served from here

@@ -29,7 +29,6 @@ login:
   registration_confirmation_required: true
   registration_invitation_required: false
 main:
-  client_outdir: /home/crespo/devp/osparc-simcore/services/web/client/source-output
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080

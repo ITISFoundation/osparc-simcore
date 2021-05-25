@@ -44,7 +44,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.statics import STATIC_DIRNAMES
+from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from yarl import URL
 
 # current directory
@@ -126,7 +126,12 @@ class _BaseSettingEncoder(json.JSONEncoder):
 
 @pytest.fixture
 def web_server(
-    loop, app_cfg: Dict, monkeypatch, postgres_db, aiohttp_server
+    loop,
+    app_cfg: Dict,
+    monkeypatch,
+    postgres_db,
+    aiohttp_server,
+    disable_static_webserver,
 ) -> TestServer:
     print(
         "Inits webserver with app_cfg",
@@ -139,6 +144,8 @@ def web_server(
 
     # with patched email
     _path_mail(monkeypatch)
+
+    disable_static_webserver(app)
 
     server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
     return server
@@ -159,32 +166,36 @@ def client(
 
 
 @pytest.fixture
-def qx_client_outdir(tmpdir):
-    """Emulates qx output at service/web/client after compiling"""
-
-    basedir = tmpdir.mkdir("source-output")
-    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
-
-    HTML = textwrap.dedent(
-        """\
-        <!DOCTYPE html>
-        <html>
-        <body>
-            <h1>{0}-SIMCORE</h1>
-            <p> This is a result of qx_client_outdir fixture for product {0}</p>
-        </body>
-        </html>
+def disable_static_webserver(monkeypatch) -> None:
+    """
+    Disables the static-webserver module.
+    Avoids fecthing and caching index.html pages
+    Mocking a response for all the services which expect it.
+    """
+    async def _mocked_index_html(request: web.Request) -> web.Response:
         """
-    )
+        Emulates the reply of the '/' path when the static-webserver is disabled
+        """
+        html = textwrap.dedent(
+            """\
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <h1>OSPARC-SIMCORE</h1>
+                <p> This is a result of disable_static_webserver fixture for product OSPARC</p>
+            </body>
+            </html>
+            """
+        )
+        return web.Response(text=html)
 
-    index_file = Path(basedir.join("index.html"))
-    index_file.write_text(HTML.format("OSPARC"))
+    # mount and serve some staic mocked content
+    monkeypatch.setenv("WEBSERVER_STATIC_MODULE_ENABLED", "false")
 
-    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
-        index_file = Path(folder.join("index.html"))
-        index_file.write_text(HTML.format(frontend_app.upper()))
+    def add_index_route(app: web.Application) -> None:
+        app.router.add_get("/", _mocked_index_html, name=INDEX_RESOURCE_NAME)
 
-    return Path(basedir)
+    return add_index_route
 
 
 @pytest.fixture
