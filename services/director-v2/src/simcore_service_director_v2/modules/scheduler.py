@@ -256,7 +256,7 @@ class CeleryScheduler:
             # nothing to run at the moment
             return
 
-        # let's schedule the tasks, mark them as PENDING so the sidecar will take it
+        # let's schedule the tasks, mark them as PENDING so the sidecar will take them
         await self._start_tasks(user_id, project_id, pipeline_tasks, next_tasks)
 
     def _wake_up_scheduler_now(self) -> None:
