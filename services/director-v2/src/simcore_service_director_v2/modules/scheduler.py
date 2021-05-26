@@ -184,7 +184,7 @@ class CeleryScheduler:
         self,
         user_id: UserID,
         project_id: ProjectID,
-        comp_tasks: List[CompTaskAtDB],
+        comp_tasks: Dict[str, CompTaskAtDB],
         tasks: List[NodeID],
     ):
         # get tasks runtime requirements
