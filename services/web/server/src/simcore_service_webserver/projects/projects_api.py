@@ -271,7 +271,8 @@ async def delete_project_node(
     # stop the service if it is running
     for service in list_of_services:
         if service["service_uuid"] == node_uuid:
-            await director_api.stop_service(request.app, node_uuid)
+            # no need to save the state of the node when deleting it
+            await director_api.stop_service(request.app, node_uuid, save_state=False)
             break
     # remove its data if any
     await delete_data_folders_of_project_node(
