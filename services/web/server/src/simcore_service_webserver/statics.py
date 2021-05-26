@@ -168,9 +168,11 @@ def setup_statics(app: web.Application) -> None:
         log.warning("Static webserver module is disbaled")
         return
 
-    # register routes to solve the correct frontend
+    # serves information composed by making 3 http requests (once for each product)
+    # to the index.html in each of the 3 product directories /osparc, /tis and /s4l
     app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
-    # statics.json is computed and served from here
+    # statics.json is computed here and contains information used
+    # by the frontend to properly render the client
     app.router.add_get("/static-frontend-data.json", get_statics_json)
 
     # compute statics.json content
