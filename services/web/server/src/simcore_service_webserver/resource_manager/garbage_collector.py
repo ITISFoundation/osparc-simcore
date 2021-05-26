@@ -359,10 +359,17 @@ async def remove_orphaned_services(
     for interactive_service in running_interactive_services:
         # if not present in DB or not part of currently opened projects, can be removed
         node_id = interactive_service["service_uuid"]
-        if (
-            not await is_node_id_present_in_any_project_workbench(app, node_id)
-            or node_id not in currently_opened_projects_node_ids
-        ):
+        # if the node does not exist in any project in the db, we can safely remove it without saving any state
+        if not await is_node_id_present_in_any_project_workbench(app, node_id):
+            logger.info("Will remove orphaned service %s", service_host)
+            try:
+                await stop_service(app, node_id, save_state=False)
+            except (ServiceNotFoundError, DirectorException) as err:
+                logger.warning("Error while stopping service: %s", err)
+            continue
+
+        # if the node is not present in any of the currently opened project it shall be closed
+        if node_id not in currently_opened_projects_node_ids:
             service_host = interactive_service["service_host"]
             if interactive_service.get("service_state") != "running":
                 # Services returned in running_interactive_services
@@ -382,7 +389,10 @@ async def remove_orphaned_services(
 
             logger.info("Will remove service %s", service_host)
             try:
-                await stop_service(app, node_id)
+                # let's be conservative here.
+                # 1. opened project disappeared from redis?
+                # 2. something bad happened when closing a project?
+                await stop_service(app, node_id, save_state=True)
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
 
