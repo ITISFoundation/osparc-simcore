@@ -6,7 +6,6 @@
 # pylint:disable=too-many-arguments
 
 import asyncio
-from asyncio.tasks import sleep
 import json
 from collections import namedtuple
 from copy import deepcopy
@@ -34,7 +33,7 @@ from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTas
 from sqlalchemy import literal_column
 from starlette import status
 from starlette.responses import Response
-from starlette.testclient import TestClient, TimeOut
+from starlette.testclient import TestClient
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 

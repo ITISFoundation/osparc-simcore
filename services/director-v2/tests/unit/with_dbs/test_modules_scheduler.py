@@ -18,7 +18,6 @@ from models_library.settings.celery import CeleryConfig
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from simcore_service_director_v2.core.errors import ConfigurationError
-from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.modules.celery import CeleryClient
 from simcore_service_director_v2.modules.scheduler import (
     _COMPLETED_STATES,
@@ -59,7 +58,7 @@ def test_scheduler_knows_these_are_completed_states(state: RunningState):
 def test_scheduler_knows_all_the_states():
     assert _COMPLETED_STATES.union(_SCHEDULED_STATES).union(
         {RunningState.NOT_STARTED, RunningState.UNKNOWN}
-    ) == {r for r in RunningState}
+    ) == set(RunningState)
 
 
 @dataclass

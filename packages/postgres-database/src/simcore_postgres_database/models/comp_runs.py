@@ -3,7 +3,6 @@
 """
 import sqlalchemy as sa
 from sqlalchemy.sql import func
-from sqlalchemy.sql.expression import null
 
 from .base import metadata
 from .comp_pipeline import StateType
