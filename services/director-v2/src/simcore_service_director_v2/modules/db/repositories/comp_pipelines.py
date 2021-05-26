@@ -1,4 +1,5 @@
 import logging
+from collections import deque
 from typing import List, Set
 
 import networkx as nx
@@ -24,7 +25,7 @@ class CompPipelinesRepository(BaseRepository):
     async def list_pipelines_with_state(
         self, state: Set[RunningState] = None
     ) -> List[CompPipelineAtDB]:
-        pipelines_in_db = []
+        pipelines_in_db = deque()
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([comp_pipeline]).where(
@@ -37,7 +38,7 @@ class CompPipelinesRepository(BaseRepository):
                 )
             ):
                 pipelines_in_db.append(CompPipelineAtDB.from_orm(row))
-        return pipelines_in_db
+        return list(pipelines_in_db)
 
     @log_decorator(logger=logger)
     async def get_pipeline(self, project_id: ProjectID) -> CompPipelineAtDB:

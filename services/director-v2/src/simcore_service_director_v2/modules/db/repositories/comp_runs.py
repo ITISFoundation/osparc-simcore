@@ -1,4 +1,5 @@
 import logging
+from collections import deque
 from datetime import datetime
 from typing import List, Optional, Set
 
@@ -24,7 +25,7 @@ class CompRunsRepository(BaseRepository):
     async def list(
         self, filter_by_state: Set[RunningState] = None
     ) -> List[CompRunsAtDB]:
-        runs_in_db = []
+        runs_in_db = deque()
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([comp_runs]).where(
@@ -37,7 +38,7 @@ class CompRunsRepository(BaseRepository):
                 )
             ):
                 runs_in_db.append(CompRunsAtDB.from_orm(row))
-        return runs_in_db
+        return list(runs_in_db)
 
     async def create(
         self,
