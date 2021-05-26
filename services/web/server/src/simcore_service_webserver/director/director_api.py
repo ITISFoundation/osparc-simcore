@@ -111,9 +111,8 @@ async def stop_services(
     )
 
     stop_tasks = [stop_service(app, s["service_uuid"], save_state) for s in services]
-
-    # FIXME: if stop_service is cancelled, it will and is running stop_tasks, it will never cancel!
-    await logged_gather(*stop_tasks, reraise=True)
+    if stop_tasks:
+        await logged_gather(*stop_tasks, reraise=True)
 
 
 async def get_service_by_key_version(
