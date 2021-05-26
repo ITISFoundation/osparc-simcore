@@ -31,13 +31,13 @@ from .statics_settings import (
 
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 
-APP_FRONTEND_CACHED_INDEXES_KEY = f"{__file__}.cached_indexes"
-APP_FRONTEND_CACHED_STATICS_JSON_KEY = f"{__file__}.cached_statics_json"
+APP_FRONTEND_CACHED_INDEXES_KEY = f"{__name__}.cached_indexes"
+APP_FRONTEND_CACHED_STATICS_JSON_KEY = f"{__name__}.cached_statics_json"
 
 # NOTE: saved as a separate item to config
 STATIC_WEBSERVER_SETTINGS_KEY = f"{__name__}.StaticWebserverModuleSettings"
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 class StaticWebserverModuleSettings(BaseSettings):
