@@ -57,6 +57,12 @@ def test_scheduler_knows_these_are_completed_states(state: RunningState):
     assert state in _COMPLETED_STATES
 
 
+def test_scheduler_knows_all_the_states():
+    assert _COMPLETED_STATES.union(_SCHEDULED_STATES).union(
+        {RunningState.NOT_STARTED, RunningState.UNKNOWN}
+    ) == {r for r in RunningState}
+
+
 @pytest.mark.parametrize(
     "image, exp_requirement",
     [
