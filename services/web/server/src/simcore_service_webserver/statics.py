@@ -11,7 +11,6 @@ import logging
 from typing import Dict
 
 from aiohttp import ClientSession, web
-from pydantic import BaseSettings, Field
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
 from yarl import URL
@@ -26,7 +25,7 @@ from .statics_settings import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
     FrontEndAppSettings,
-    StaticsSettings,
+    StaticWebserverModuleSettings,
 )
 
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
@@ -40,24 +39,15 @@ STATIC_WEBSERVER_SETTINGS_KEY = f"{__name__}.StaticWebserverModuleSettings"
 log = logging.getLogger(__name__)
 
 
-class StaticWebserverModuleSettings(BaseSettings):
-    enabled: bool = Field(
-        True,
-        description=(
-            "if enabled it will try to fetch and cache the 3 product index webpages"
-        ),
-    )
-
-    class Config:
-        case_sensitive = False
-        env_prefix = "WEBSERVER_STATIC_MODULE_"
-
-
 def assemble_settings(app: web.Application) -> StaticWebserverModuleSettings:
     """creates stores and returns settings for this module"""
     settings = StaticWebserverModuleSettings()
     app[STATIC_WEBSERVER_SETTINGS_KEY] = settings
     return settings
+
+
+def get_settings(app: web.Application) -> StaticWebserverModuleSettings:
+    return app[STATIC_WEBSERVER_SETTINGS_KEY]
 
 
 async def _assemble_cached_indexes(app: web.Application):
@@ -68,13 +58,13 @@ async def _assemble_cached_indexes(app: web.Application):
 
     Caching these 3 items on start. This
     """
-    statics_settings = StaticsSettings()
+    settings: StaticWebserverModuleSettings = get_settings(app)
     cached_indexes: Dict[str, str] = {}
 
     session: ClientSession = get_client_session(app)
 
     for frontend_name in FRONTEND_APPS_AVAILABLE:
-        url = URL(statics_settings.static_web_server_url) / frontend_name
+        url = URL(settings.static_web_server_url) / frontend_name
 
         log.info("Fetching index from %s", url)
         response = await session.get(url)
@@ -163,7 +153,7 @@ async def get_statics_json(request: web.Request):  # pylint: disable=unused-argu
 
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application) -> None:
-    settings = assemble_settings(app)
+    settings: StaticWebserverModuleSettings = assemble_settings(app)
     if not settings.enabled:
         log.warning("Static webserver module is disbaled")
         return

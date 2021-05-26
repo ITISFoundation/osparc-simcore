@@ -50,8 +50,13 @@ class FrontEndAppSettings(BaseSettings):
         )
 
 
-class StaticsSettings(BaseSettings):
-    """used by the backend"""
+class StaticWebserverModuleSettings(BaseSettings):
+    enabled: bool = Field(
+        True,
+        description=(
+            "if enabled it will try to fetch and cache the 3 product index webpages"
+        ),
+    )
 
     static_web_server_url: AnyHttpUrl = Field(
         "http://static-webserver",
@@ -60,4 +65,4 @@ class StaticsSettings(BaseSettings):
 
     class Config:
         case_sensitive = False
-        env_prefix = "WEBSERVER_"
+        env_prefix = "WEBSERVER_STATIC_MODULE_"
