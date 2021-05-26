@@ -10,10 +10,10 @@ import json
 import logging
 from typing import Dict
 
-from aiohttp import web, ClientSession
+from aiohttp import ClientSession, web
+from pydantic import BaseSettings, Field
 from servicelib.application_setup import ModuleCategory, app_module_setup
 from servicelib.client_session import get_client_session
-from pydantic import BaseSettings, Field
 from yarl import URL
 
 from .constants import (
@@ -171,7 +171,7 @@ def setup_statics(app: web.Application) -> None:
     # register routes to solve the correct frontend
     app.router.add_get("/", get_cached_frontend_index, name=INDEX_RESOURCE_NAME)
     # statics.json is computed and served from here
-    app.router.add_get("/resource/statics.json", get_statics_json)
+    app.router.add_get("/static-frontend-data.json", get_statics_json)
 
     # compute statics.json content
     app.on_startup.append(_assemble_statics_json)

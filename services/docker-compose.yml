@@ -176,7 +176,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`) && (PathPrefix(`/`) || PathPrefix(`/v0`) || PathPrefix(`/socket.io`) || PathPrefix(`/resource/statics.json`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`) && (PathPrefix(`/`) || PathPrefix(`/v0`) || PathPrefix(`/socket.io`) || PathPrefix(`/static-frontend-data.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
