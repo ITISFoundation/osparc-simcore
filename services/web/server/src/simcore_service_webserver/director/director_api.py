@@ -101,6 +101,7 @@ async def stop_services(
     app: web.Application,
     user_id: Optional[str] = None,
     project_id: Optional[str] = None,
+    save_state: Optional[bool] = True,
 ) -> None:
     if not user_id and not project_id:
         raise ValueError("Expected either user or project")
@@ -109,7 +110,7 @@ async def stop_services(
         app, user_id=user_id, project_id=project_id
     )
 
-    stop_tasks = [stop_service(app, s["service_uuid"]) for s in services]
+    stop_tasks = [stop_service(app, s["service_uuid"], save_state) for s in services]
 
     # FIXME: if stop_service is cancelled, it will and is running stop_tasks, it will never cancel!
     await logged_gather(*stop_tasks, reraise=True)
