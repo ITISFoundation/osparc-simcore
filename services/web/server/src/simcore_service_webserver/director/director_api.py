@@ -76,7 +76,9 @@ async def start_service(
         return payload["data"]
 
 
-async def stop_service(app: web.Application, service_uuid: str) -> None:
+async def stop_service(
+    app: web.Application, service_uuid: str, save_state: Optional[bool] = True
+) -> None:
     session, api_endpoint = _get_director_client(app)
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
@@ -86,6 +88,7 @@ async def stop_service(app: web.Application, service_uuid: str) -> None:
         url,
         ssl=False,
         timeout=ServicesCommonSettings().webserver_director_stop_service_timeout,
+        params={"save_state": "true" if save_state else "false"},
     ) as resp:
         if resp.status == 404:
             raise director_exceptions.ServiceNotFoundError(service_uuid)
