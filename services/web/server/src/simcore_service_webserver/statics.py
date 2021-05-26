@@ -74,7 +74,7 @@ async def _assemble_cached_indexes(app: web.Application):
     session: ClientSession = get_client_session(app)
 
     for frontend_name in FRONTEND_APPS_AVAILABLE:
-        url = URL(statics_settings.static_web_server_host) / frontend_name
+        url = URL(statics_settings.static_web_server_url) / frontend_name
 
         log.info("Fetching index from %s", url)
         response = await session.get(url)
