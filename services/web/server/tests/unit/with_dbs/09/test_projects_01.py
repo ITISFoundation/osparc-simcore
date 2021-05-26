@@ -894,7 +894,6 @@ async def test_delete_multiple_opened_project_forbidden(
     user_role,
     expected_ok,
     expected_forbidden,
-    mocked_director_api,
 ):
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
