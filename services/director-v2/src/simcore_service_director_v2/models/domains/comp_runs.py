@@ -9,6 +9,8 @@ from simcore_postgres_database.models.comp_pipeline import StateType
 from ...utils.db import DB_TO_RUNNING_STATE
 from ..schemas.constants import UserID
 
+from contextlib import suppress
+
 
 class CompRunsAtDB(BaseModel):
     run_id: PositiveInt
@@ -23,15 +25,14 @@ class CompRunsAtDB(BaseModel):
 
     @validator("result", pre=True)
     @classmethod
-    def convert_result_if_needed(cls, v):
+    def convert_result_from_state_type_enum_if_needed(cls, v):
+        if isinstance(v, str):
+            # try to convert to a StateType, if it fails the validations will continue
+            # and pydantic will try to convert it to a RunninState later on
+            with suppress(ValueError):
+                v = StateType(v)
         if isinstance(v, StateType):
             return RunningState(DB_TO_RUNNING_STATE[StateType(v)])
-        if isinstance(v, str):
-            try:
-                state_type = StateType(v)
-                return RunningState(DB_TO_RUNNING_STATE[state_type])
-            except ValueError:
-                pass
         return v
 
     class Config:
