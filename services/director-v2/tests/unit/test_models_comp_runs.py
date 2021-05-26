@@ -28,11 +28,11 @@ def test_computation_run_model_examples(
     "model_cls",
     (CompRunsAtDB,),
 )
-def test_computation_run_model_with_running_state_value_field(
+def test_computation_run_model_with_run_result_value_field(
     model_cls: BaseModel, model_cls_examples: Dict[str, Dict[str, Any]]
 ):
     for name, example in model_cls_examples.items():
-        example["state"] = RunningState.RETRY.value
+        example["result"] = RunningState.RETRY.value
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)
         assert model_instance, f"Failed with {name}"
