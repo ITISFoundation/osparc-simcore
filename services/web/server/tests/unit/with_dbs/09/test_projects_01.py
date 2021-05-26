@@ -867,8 +867,12 @@ async def test_delete_project(
 
     if expected == web.HTTPNoContent:
         mocked_director_api["get_running_interactive_services"].assert_called_once()
-        calls = [call(client.server.app, service["service_uuid"]) for service in fakes]
-        mocked_director_api["stop_service"].has_calls(calls)
+
+        expected_calls = [
+            call(client.server.app, service["service_uuid"]) for service in fakes
+        ]
+        mocked_director_api["stop_service"].assert_has_calls(expected_calls)
+
         # wait for the fire&forget to run
         await asyncio.sleep(2)
         await _assert_get_same_project(client, user_project, web.HTTPNotFound)
