@@ -44,7 +44,7 @@ from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
 )
-from ..users_api import get_user_name
+from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
 from .projects_db import APP_PROJECT_DBAPI
 
@@ -191,8 +191,13 @@ async def remove_project_interactive_services(
     list_of_services = await director_api.get_running_interactive_services(
         app, project_id=project_uuid, user_id=user_id
     )
+    # save the state if the user is not a guest. if we do not know we save in any case.
     stop_tasks = [
-        director_api.stop_service(app, service["service_uuid"])
+        director_api.stop_service(
+            app,
+            service["service_uuid"],
+            save_state=not await is_user_guest(app, user_id) if user_id else True,
+        )
         for service in list_of_services
     ]
     if stop_tasks:
