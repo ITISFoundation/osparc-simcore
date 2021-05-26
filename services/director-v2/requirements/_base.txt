@@ -131,7 +131,7 @@ psycopg2-binary==2.8.6
     # via
     #   aiopg
     #   sqlalchemy
-pydantic[dotenv]==1.7.2
+pydantic[dotenv]==1.8.2
     # via
     #   -r requirements/_base.in
     #   fastapi
@@ -180,6 +180,7 @@ typing-extensions==3.7.4.3
     # via
     #   aiodocker
     #   aiohttp
+    #   pydantic
     #   uvicorn
     #   yarl
 ujson==4.0.2

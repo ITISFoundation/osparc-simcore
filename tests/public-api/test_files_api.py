@@ -1,11 +1,12 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import time
 from pathlib import Path
 from uuid import UUID
 
+import pytest
 from osparc.api.files_api import FilesApi
 from osparc.models import File
 
@@ -36,9 +37,18 @@ def test_upload_file(files_api: FilesApi, tmpdir):
     # FIXME: assert input_file.checksum == same_file.checksum
 
 
-def test_upload_list_and_download(files_api: FilesApi, tmpdir):
-    input_path = Path(tmpdir) / "some-hdf5-file.h5"
-    input_path.write_bytes(b"demo but some other stuff as well")
+@pytest.mark.parametrize("file_type", ["binary", "text"])
+def test_upload_list_and_download(
+    files_api: FilesApi, tmp_path: Path, file_type: str, faker
+):
+    input_path = tmp_path / (file_type + ".bin" if file_type == "binary" else ".txt")
+
+    if file_type == "text":
+        content = faker.text(max_nb_chars=20)
+        input_path.write_text(content)
+    else:
+        content = b"\x01" * 1024
+        input_path.write_bytes(content)
 
     input_file: File = files_api.upload_file(file=input_path)
     assert isinstance(input_file, File)
@@ -52,5 +62,8 @@ def test_upload_list_and_download(files_api: FilesApi, tmpdir):
     assert input_file in myfiles
 
     download_path: str = files_api.download_file(file_id=input_file.id)
-    print("Downloaded", Path(download_path).read_text())
-    assert input_path.read_text() == Path(download_path).read_text()
+
+    if file_type == "text":
+        assert content == Path(download_path).read_text()
+    else:
+        assert content == Path(download_path).read_bytes()

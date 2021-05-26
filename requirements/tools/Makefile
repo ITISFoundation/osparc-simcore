@@ -81,7 +81,7 @@ run: build ## Runs upgrade in a container
 
 
 .PHONY: shell
-shell:	## enter the container with a shell entrypoint
+shell: build ## enter the container with a shell entrypoint
 	docker run -it \
 		--workdir="/home/$(USER)/requirements/tools" \
     --volume="/etc/group:/etc/group:ro" \

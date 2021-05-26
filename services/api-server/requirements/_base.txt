@@ -64,9 +64,9 @@ certifi==2020.12.5
     # via
     #   httpx
     #   requests
-cffi==1.14.4
+cffi==1.14.5
     # via cryptography
-chardet==3.0.4
+chardet==4.0.0
     # via
     #   aiohttp
     #   requests
@@ -74,7 +74,7 @@ click==7.1.2
     # via uvicorn
 contextvars==2.4
     # via sniffio
-cryptography==3.4.5
+cryptography==3.4.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -86,7 +86,9 @@ cryptography==3.4.5
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
 dataclasses==0.8
-    # via pydantic
+    # via
+    #   pydantic
+    #   werkzeug
 decorator==4.4.2
     # via networkx
 dnspython==2.1.0
@@ -95,7 +97,7 @@ email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi[all]==0.63.0
+fastapi[all]==0.65.1
     # via -r requirements/_base.in
 graphene==2.1.8
     # via fastapi
@@ -111,7 +113,7 @@ h11==0.12.0
     #   uvicorn
 httpcore==0.13.3
     # via httpx
-httptools==0.1.1
+httptools==0.1.2
     # via uvicorn
 httpx==0.18.1
     # via -r requirements/_base.in
@@ -130,11 +132,11 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.14
+immutables==0.15
     # via contextvars
-importlib-metadata==3.7.3
+importlib-metadata==4.0.1
     # via jsonschema
-importlib-resources==5.1.0
+importlib-resources==5.1.3
     # via -r requirements/_base.in
 isodate==0.6.0
     # via
@@ -164,29 +166,29 @@ lazy-object-proxy==1.4.3
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   openapi-core
-markupsafe==1.1.1
+markupsafe==2.0.1
     # via jinja2
 multidict==5.1.0
     # via
     #   aiohttp
     #   yarl
-networkx==2.5
+networkx==2.5.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 openapi-core==0.12.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-openapi-schema-validator==0.1.4
+openapi-schema-validator==0.1.5
     # via openapi-spec-validator
-openapi-spec-validator==0.3.0
+openapi-spec-validator==0.3.1
     # via openapi-core
-orjson==3.4.7
+orjson==3.5.2
     # via fastapi
 packaging==20.9
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
-prometheus-client==0.9.0
+prometheus-client==0.10.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -203,8 +205,16 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic[dotenv,email]==1.8.1
+pydantic[dotenv,email]==1.8.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
@@ -212,11 +222,17 @@ pydantic[dotenv,email]==1.8.1
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
+pyinstrument-cext==0.2.4
+    # via pyinstrument
+pyinstrument==3.4.2
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 pyparsing==2.4.7
     # via packaging
 pyrsistent==0.17.3
     # via jsonschema
-python-dotenv==0.15.0
+python-dotenv==0.17.1
     # via
     #   pydantic
     #   uvicorn
@@ -240,11 +256,11 @@ pyyaml==5.4.1
     #   uvicorn
 requests==2.25.1
     # via fastapi
-rfc3986[idna2008]==1.4.0
+rfc3986[idna2008]==1.5.0
     # via httpx
 rx==1.6.1
     # via graphql-core
-six==1.15.0
+six==1.16.0
     # via
     #   graphene
     #   graphql-core
@@ -260,7 +276,7 @@ sniffio==1.2.0
     # via
     #   httpcore
     #   httpx
-sqlalchemy[postgresql_psycopg2binary]==1.3.22
+sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -275,17 +291,17 @@ sqlalchemy[postgresql_psycopg2binary]==1.3.22
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   aiopg
-starlette==0.13.6
+starlette==0.14.2
     # via fastapi
 strict-rfc3339==0.7
     # via openapi-core
-tenacity==6.3.1
+tenacity==7.0.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
-tqdm==4.59.0
+tqdm==4.60.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 trafaret-config==2.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -294,14 +310,14 @@ trafaret==2.1.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   trafaret-config
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   importlib-metadata
     #   pydantic
     #   uvicorn
     #   yarl
-ujson==3.2.0
+ujson==4.0.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -317,7 +333,7 @@ urllib3==1.26.4
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn[standard]==0.13.3
+uvicorn[standard]==0.13.4
     # via fastapi
 uvloop==0.14.0 ; python_version < "3.7"
     # via
@@ -330,11 +346,11 @@ uvloop==0.14.0 ; python_version < "3.7"
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   uvicorn
-watchgod==0.6
+watchgod==0.7
     # via uvicorn
 websockets==8.1
     # via uvicorn
-werkzeug==1.0.1
+werkzeug==2.0.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
@@ -343,7 +359,7 @@ yarl==1.6.3
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
-zipp==3.4.0
+zipp==3.4.1
     # via
     #   importlib-metadata
     #   importlib-resources

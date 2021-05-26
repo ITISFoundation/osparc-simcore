@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import tempfile
 import uuid
+from pathlib import Path
 from typing import Awaitable, Optional
 
 import aiodocker
@@ -98,3 +100,12 @@ async def get_volume_mount_point(volume_name: str) -> str:
         raise SidecarException(
             f"docker volume {volume_name} does not contain Mountpoint"
         ) from err
+
+
+def touch_tmpfile(extension=".dat") -> Path:
+    """Creates a temporary file and returns its Path
+
+    WARNING: deletion of file is user's responsibility
+    """
+    with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as file_handler:
+        return Path(file_handler.name)

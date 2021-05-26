@@ -6,7 +6,7 @@ from operator import attrgetter
 from pprint import pformat
 
 import pytest
-from simcore_service_api_server.api.routes._solvers_faker import SolversFaker
+from fakes.solvers_faker import SolversFaker
 from simcore_service_api_server.models.schemas.solvers import Solver, Version
 
 

@@ -196,7 +196,7 @@ async def test_rabbit_websocket_computation(
     mock_orphaned_services,
     logged_user,
     user_project,
-    socketio_client,
+    socketio_client_factory: Callable,
     client_session_id: str,
     mocker,
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
@@ -209,7 +209,7 @@ async def test_rabbit_websocket_computation(
     websocket_log_event = "logger"
     websocket_node_update_event = "nodeUpdated"
     # connect websocket
-    sio = await socketio_client(client_session_id)
+    sio = await socketio_client_factory(client_session_id)
     # register mock websocket handler functions
     mock_log_handler_fct = mocker.Mock()
     mock_node_update_handler_fct = mocker.Mock()

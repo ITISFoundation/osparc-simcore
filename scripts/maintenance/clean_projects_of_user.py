@@ -4,19 +4,25 @@ import asyncio
 from typing import Any, Dict, List, Optional
 
 import typer
-from httpx import URL, AsyncClient, codes
+from httpx import URL, AsyncClient, Timeout, codes
+from pydantic import EmailStr, SecretStr
+
+DEFAULT_TIMEOUT = Timeout(30.0)
 
 
-async def login_user(client: AsyncClient, email: str, password: str):
+async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr):
     path = "/auth/login"
-    await client.post(path, json={"email": email, "password": password})
+    r = await client.post(
+        path, json={"email": email, "password": password.get_secret_value()}
+    )
+    r.raise_for_status()
 
 
 async def get_project_for_user(
     client: AsyncClient, project_id: str
 ) -> Optional[Dict[str, Any]]:
     path = f"/projects/{project_id}"
-    r = await client.get(path, params={"type": "user"}, timeout=30)
+    r = await client.get(path, params={"type": "user"})
     if r.status_code == 200:
         response_dict = r.json()
         data = response_dict["data"]
@@ -27,7 +33,7 @@ async def get_all_projects_for_user(
     client: AsyncClient, next_link: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     path = next_link if next_link else "/projects"
-    r = await client.get(path, params={"type": "user"}, timeout=30)
+    r = await client.get(path, params={"type": "user"})
     if r.status_code == 200:
         response_dict = r.json()
         data = response_dict["data"]
@@ -50,10 +56,12 @@ async def delete_project(client: AsyncClient, project_id: str, progressbar):
 
 
 async def clean(
-    endpoint: URL, username: str, password: str, project_id: Optional[str]
+    endpoint: URL, username: EmailStr, password: SecretStr, project_id: Optional[str]
 ) -> int:
     try:
-        async with AsyncClient(base_url=endpoint.join("v0")) as client:
+        async with AsyncClient(
+            base_url=endpoint.join("v0"), timeout=DEFAULT_TIMEOUT
+        ) as client:
             await login_user(client, username, password)
             all_projects = []
             if project_id:
@@ -83,8 +91,10 @@ async def clean(
                     ]
                 )
             typer.secho(f"completed projects deletion", fg=typer.colors.YELLOW)
-    except Exception as exc:
-        typer.secho(f"Unexpected issue: {exc}", fg=typer.colors.RED, err=True)
+    except Exception as exc:  # pylint: disable=broad-except
+        typer.secho(
+            f"Unexpected issue: {exc}, [{type(exc)}]", fg=typer.colors.RED, err=True
+        )
         return 1
     return 0
 
@@ -93,7 +103,7 @@ def main(
     endpoint: str, username: str, password: str, project_id: Optional[str] = None
 ) -> int:
     return asyncio.get_event_loop().run_until_complete(
-        clean(URL(endpoint), username, password, project_id)
+        clean(URL(endpoint), EmailStr(username), SecretStr(password), project_id)
     )
 
 

@@ -755,7 +755,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-01:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 01"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -803,7 +803,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-02:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -851,7 +851,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-03:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -899,7 +899,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-04:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 04"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -995,7 +995,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-06:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 06"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1043,7 +1043,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-07:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 07"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1091,7 +1091,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-08:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 08"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1139,7 +1139,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-09:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 09"
     runs-on: ${{ matrix.os }}
     strategy:
@@ -1187,7 +1187,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   unit-test-webserver-10:
-    timeout-minutes: 12 # if this timeout gets too small, then split the tests
+    timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 10"
     runs-on: ${{ matrix.os }}
     strategy:

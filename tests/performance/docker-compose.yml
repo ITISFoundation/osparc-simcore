@@ -2,15 +2,21 @@ version: '3.8'
 
 services:
   master:
-    image: local/locust:latest
+    image: itisfoundation/locust:${LOCUST_VERSION}
     ports:
      - "8089:8089"
     volumes:
-      - ./:/mnt/locust
-    command: -f /mnt/locust/${TARGET} --master -H http://master:8089
+      - ./locust_files:/mnt/locust
+      - ./locust_report:/reporting
+    command: >
+      -f /mnt/locust/${LOCUST_FILE}
+      --host ${TARGET_URL}
+      --html /reporting/locust_html.html
+      ${LOCUST_OPTIONS}
+      --master
 
   worker:
-    image: local/locust:latest
+    image: itisfoundation/locust:${LOCUST_VERSION}
     volumes:
-      - ./:/mnt/locust
-    command: -f /mnt/locust/${TARGET} --worker --master-host master
+      - ./locust_files:/mnt/locust
+    command: -f /mnt/locust/${LOCUST_FILE} --worker --master-host master

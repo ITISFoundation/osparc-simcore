@@ -77,7 +77,7 @@ def s3_simcore_location() -> str:
 async def filemanager_cfg(
     loop: asyncio.events.AbstractEventLoop,
     storage_service: URL,
-    devel_environ: Dict,
+    testing_environ_vars: Dict,
     user_id: str,
     bucket: str,
     postgres_db,  # waits for db and initializes it

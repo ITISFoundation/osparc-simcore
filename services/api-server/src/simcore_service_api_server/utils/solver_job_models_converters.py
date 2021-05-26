@@ -159,7 +159,6 @@ def create_new_project_for_job(
             slideshow={},
             currentNodeId=solver_id,
         ),
-        ## hidden=True,  # FIXME: add
         # FIXME: these should be unnecessary
         prjOwner="api-placeholder@osparc.io",
         creationDate=now_str(),
@@ -234,7 +233,7 @@ def create_job_from_project(
     )
     if url_for:
         job = _copy_n_update_urls(job, url_for, solver_key, solver_version)
-        assert all(
+        assert all(  # nosec
             getattr(job, f) for f in job.__fields__ if f.startswith("url")
         )  # nosec
 

@@ -1,8 +1,8 @@
 """ Helps with running Pylint tests on different modules """
-import subprocess
-import re
-from pathlib import Path
 import os
+import re
+import subprocess
+from pathlib import Path
 
 AUTODETECT = 0
 MATCH = re.compile(r"pdb.set_trace()")
@@ -19,12 +19,14 @@ def assert_pylint_is_passing(pylintrc, package_dir, number_of_jobs: int = AUTODE
             " "
         )
     )
-    pipes = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    std_out, _ = pipes.communicate()
-    if pipes.returncode != 0:
-        assert (
-            False
-        ), f"Pylint failed with error\nExit code {pipes.returncode}\n{std_out.decode('utf-8')}"
+    with subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    ) as process:
+        std_out, _ = process.communicate()
+        if process.returncode != 0:
+            assert (
+                False
+            ), f"Pylint failed with error\nExit code {process.returncode}\n{std_out.decode('utf-8')}"
 
 
 def assert_no_pdb_in_code(code_dir: Path):

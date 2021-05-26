@@ -143,10 +143,18 @@ psycopg2-binary==2.8.6
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aiopg
     #   sqlalchemy
-pydantic[email]==1.8.1
+pydantic[email]==1.8.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+pyinstrument-cext==0.2.4
+    # via pyinstrument
+pyinstrument==3.4.2
+    # via -r requirements/../../../packages/service-library/requirements/_base.in
 pyrsistent==0.17.3
     # via jsonschema
 python-dateutil==2.8.1
@@ -172,7 +180,7 @@ semantic-version==2.8.5
     # via -r requirements/_base.in
 semver==2.13.0
     # via blackfynn
-six==1.15.0
+six==1.16.0
     # via
     #   isodate
     #   jsonschema
@@ -200,7 +208,7 @@ tenacity==7.0.0
     #   -r requirements/_base.in
 trafaret==2.1.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   aiohttp
     #   aioitertools
@@ -217,7 +225,7 @@ urllib3==1.25.11
     #   botocore
     #   minio
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via blackfynn
 werkzeug==1.0.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in

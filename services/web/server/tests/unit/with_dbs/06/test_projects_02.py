@@ -387,14 +387,14 @@ async def _replace_project(
 
 
 async def _connect_websocket(
-    socketio_client: Callable,
+    socketio_client_factory: Callable,
     check_connection: bool,
     client,
     client_id: str,
     events: Optional[Dict[str, Callable]] = None,
 ) -> socketio.AsyncClient:
     try:
-        sio = await socketio_client(client_id, client)
+        sio = await socketio_client_factory(client_id, client)
         assert sio.sid
         if events:
             for event, handler in events.items():
@@ -587,7 +587,7 @@ async def test_open_project(
     client,
     logged_user,
     user_project,
-    client_session_id,
+    client_session_id_factory: Callable,
     expected,
     mocked_director_subsystem,
 ):
@@ -595,7 +595,7 @@ async def test_open_project(
     # open project
 
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
-    resp = await client.post(url, json=client_session_id())
+    resp = await client.post(url, json=client_session_id_factory())
     await assert_status(resp, expected)
     if resp.status == web.HTTPOk.status_code:
         dynamic_services = {
@@ -627,7 +627,7 @@ async def test_close_project(
     client,
     logged_user,
     user_project,
-    client_session_id,
+    client_session_id_factory: Callable,
     expected,
     mocked_director_subsystem,
     fake_services,
@@ -640,7 +640,7 @@ async def test_close_project(
     ].return_value = future_with_result(fakes)
 
     # open project
-    client_id = client_session_id()
+    client_id = client_session_id_factory()
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
 
@@ -678,16 +678,16 @@ async def test_get_active_project(
     client,
     logged_user,
     user_project,
-    client_session_id,
+    client_session_id_factory: Callable,
     expected,
-    socketio_client,
+    socketio_client_factory: Callable,
     mocked_director_subsystem,
 ):
     # login with socket using client session id
-    client_id1 = client_session_id()
+    client_id1 = client_session_id_factory()
     sio = None
     try:
-        sio = await socketio_client(client_id1)
+        sio = await socketio_client_factory(client_id1)
         assert sio.sid
     except SocketConnectionError:
         if expected == web.HTTPOk:
@@ -720,9 +720,9 @@ async def test_get_active_project(
         assert data == user_project
 
     # login with socket using client session id2
-    client_id2 = client_session_id()
+    client_id2 = client_session_id_factory()
     try:
-        sio = await socketio_client(client_id2)
+        sio = await socketio_client_factory(client_id2)
         assert sio.sid
     except SocketConnectionError:
         if expected == web.HTTPOk:
@@ -917,8 +917,8 @@ async def test_open_shared_project_2_users_locked(
     client,
     logged_user: Dict,
     shared_project: Dict,
-    socketio_client: Callable,
-    client_session_id: Callable,
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
     aiohttp_client,
@@ -929,13 +929,13 @@ async def test_open_shared_project_2_users_locked(
     mock_project_state_updated_handler = mocker.Mock()
 
     client_1 = client
-    client_id1 = client_session_id()
+    client_id1 = client_session_id_factory()
     client_2 = await aiohttp_client(client.app)
-    client_id2 = client_session_id()
+    client_id2 = client_session_id_factory()
 
     # 1. user 1 opens project
     sio_1 = await _connect_websocket(
-        socketio_client,
+        socketio_client_factory,
         user_role != UserRole.ANONYMOUS,
         client_1,
         client_id1,
@@ -983,7 +983,7 @@ async def test_open_shared_project_2_users_locked(
         client_2, {"role": user_role.name}, enable_check=user_role != UserRole.ANONYMOUS
     )
     sio_2 = await _connect_websocket(
-        socketio_client,
+        socketio_client_factory,
         user_role != UserRole.ANONYMOUS,
         client_2,
         client_id2,
@@ -1065,8 +1065,8 @@ async def test_open_shared_project_at_same_time(
     client,
     logged_user: Dict,
     shared_project: Dict,
-    socketio_client: Callable,
-    client_session_id: Callable,
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable,
     user_role: UserRole,
     expected: ExpectedResponse,
     aiohttp_client,
@@ -1075,9 +1075,9 @@ async def test_open_shared_project_at_same_time(
     NUMBER_OF_ADDITIONAL_CLIENTS = 20
     # log client 1
     client_1 = client
-    client_id1 = client_session_id()
+    client_id1 = client_session_id_factory()
     sio_1 = await _connect_websocket(
-        socketio_client,
+        socketio_client_factory,
         user_role != UserRole.ANONYMOUS,
         client_1,
         client_id1,
@@ -1093,9 +1093,9 @@ async def test_open_shared_project_at_same_time(
             {"role": user_role.name},
             enable_check=user_role != UserRole.ANONYMOUS,
         )
-        client_id = client_session_id()
+        client_id = client_session_id_factory()
         sio = await _connect_websocket(
-            socketio_client,
+            socketio_client_factory,
             user_role != UserRole.ANONYMOUS,
             client,
             client_id,
