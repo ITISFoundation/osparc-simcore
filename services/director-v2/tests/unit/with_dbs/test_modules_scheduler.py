@@ -24,7 +24,6 @@ from simcore_service_director_v2.modules.scheduler import (
     _COMPLETED_STATES,
     _SCHEDULED_STATES,
     CeleryScheduler,
-    _runtime_requirement,
     scheduler_task,
 )
 
@@ -61,53 +60,6 @@ def test_scheduler_knows_all_the_states():
     assert _COMPLETED_STATES.union(_SCHEDULED_STATES).union(
         {RunningState.NOT_STARTED, RunningState.UNKNOWN}
     ) == {r for r in RunningState}
-
-
-@pytest.mark.parametrize(
-    "image, exp_requirement",
-    [
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=False,
-                requires_mpi=False,
-            ),
-            "cpu",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=True,
-                requires_mpi=False,
-            ),
-            "gpu",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=False,
-                requires_mpi=True,
-            ),
-            "mpi",
-        ),
-        (
-            Image(
-                name="simcore/services/dynamic/fake",
-                tag="1.2.3",
-                requires_gpu=True,
-                requires_mpi=True,
-            ),
-            "gpu:mpi",
-        ),
-    ],
-)
-def test_scheduler_correctly_defines_runtime_requirements(
-    image: Image, exp_requirement: str
-):
-    assert _runtime_requirement(image) == exp_requirement
 
 
 @dataclass

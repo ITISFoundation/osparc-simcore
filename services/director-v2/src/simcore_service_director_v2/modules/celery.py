@@ -11,6 +11,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.settings.celery import CeleryConfig
 
 from ..core.errors import ConfigurationError
+from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import UserID
 
 logger = logging.getLogger(__name__)
@@ -62,6 +63,18 @@ def _computation_task_signature(
 class CeleryTaskIn:
     node_id: NodeID
     runtime_requirements: str
+
+    @classmethod
+    def from_node_image(cls, node_id: NodeID, node_image: Image) -> "CeleryTaskIn":
+        # NOTE: to keep compatibility the queues are currently defined as .cpu, .gpu, .mpi.
+        reqs = []
+        if node_image.requires_gpu:
+            reqs.append("gpu")
+        if node_image.requires_mpi:
+            reqs.append("mpi")
+        req = ":".join(reqs)
+
+        return cls(node_id=node_id, runtime_requirements=req or "cpu")
 
 
 CeleryTaskOut = Task

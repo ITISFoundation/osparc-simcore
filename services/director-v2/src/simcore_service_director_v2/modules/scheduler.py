@@ -28,7 +28,7 @@ from pydantic.types import PositiveInt
 from ..core.errors import CelerySchedulerError, ConfigurationError
 from ..models.domains.comp_pipelines import CompPipelineAtDB
 from ..models.domains.comp_runs import CompRunsAtDB
-from ..models.domains.comp_tasks import CompTaskAtDB, Image
+from ..models.domains.comp_tasks import CompTaskAtDB
 from ..models.schemas.constants import UserID
 from ..modules.celery import CeleryClient, CeleryTaskIn
 from ..utils.computations import get_pipeline_state_from_task_states
@@ -56,19 +56,6 @@ def _get_repository(
     db_engine: Engine, repo_type: Type[BaseRepository]
 ) -> BaseRepository:
     return repo_type(db_engine=db_engine)
-
-
-def _runtime_requirement(node_image: Image) -> str:
-    # NOTE: to keep compatibility the queues are currently defined as .cpu, .gpu, .mpi.
-    reqs = []
-
-    if node_image.requires_gpu:
-        reqs.append("gpu")
-    if node_image.requires_mpi:
-        reqs.append("mpi")
-
-    req = ":".join(reqs)
-    return req or "cpu"
 
 
 Iteration = PositiveInt
@@ -189,7 +176,7 @@ class CeleryScheduler:
     ):
         # get tasks runtime requirements
         celery_tasks: List[CeleryTaskIn] = [
-            CeleryTaskIn(node_id, _runtime_requirement(comp_tasks[node_id].image))
+            CeleryTaskIn.from_node_image(node_id, comp_tasks[node_id].image)
             for node_id in tasks
         ]
 

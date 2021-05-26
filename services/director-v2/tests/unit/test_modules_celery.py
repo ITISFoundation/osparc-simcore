@@ -13,6 +13,7 @@ from celery.contrib.testing.worker import TestWorkController
 from fastapi import FastAPI
 from models_library.settings.celery import CeleryConfig
 from pydantic.types import PositiveInt
+from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.modules.celery import CeleryClient, CeleryTaskIn
 
 
@@ -134,3 +135,50 @@ def test_send_computation_tasks(
         )
 
     callback_fct.assert_called()
+
+
+@pytest.mark.parametrize(
+    "image, exp_requirement",
+    [
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=False,
+                requires_mpi=False,
+            ),
+            "cpu",
+        ),
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=True,
+                requires_mpi=False,
+            ),
+            "gpu",
+        ),
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=False,
+                requires_mpi=True,
+            ),
+            "mpi",
+        ),
+        (
+            Image(
+                name="simcore/services/dynamic/fake",
+                tag="1.2.3",
+                requires_gpu=True,
+                requires_mpi=True,
+            ),
+            "gpu:mpi",
+        ),
+    ],
+)
+def test_celery_in_constructor(image: Image, exp_requirement: str):
+    assert CeleryTaskIn.from_node_image("fake_node_id", image) == CeleryTaskIn(
+        "fake_node_id", exp_requirement
+    )
