@@ -37,3 +37,28 @@ class CompRunsAtDB(BaseModel):
 
     class Config:
         orm_mode = True
+        schema_extra = {
+            "examples": [
+                # DB model
+                {
+                    "run_id": 432,
+                    "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
+                    "user_id": 132,
+                    "iteration": 42,
+                    "result": "NOT_STARTED",
+                    "created": "2021-03-01 13:07:34.19161",
+                    "modified": "2021-03-01 13:07:34.19161",
+                },
+                {
+                    "run_id": 43243,
+                    "project_uuid": "65fee9d2-e030-452c-a29c-45d288577ca5",
+                    "user_id": 132,
+                    "iteration": 12,
+                    "result": "SUCCESS",
+                    "created": "2021-03-01 13:07:34.19161",
+                    "modified": "2021-03-01 13:07:34.19161",
+                    "start": "2021-03-01 8:07:34.19161",
+                    "end": "2021-03-01 13:07:34.10",
+                },
+            ]
+        }

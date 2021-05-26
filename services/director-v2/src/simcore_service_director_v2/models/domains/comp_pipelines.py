@@ -39,3 +39,20 @@ class CompPipelineAtDB(BaseModel):
 
     class Config:
         orm_mode = True
+
+        schema_extra = {
+            "examples": [
+                # DB model
+                {
+                    "project_id": "65fee9d2-e030-452c-a29c-45d288577ca5",
+                    "dag_adjacency_list": {
+                        "539531c4-afb9-4ca8-bda3-06ad3d7bc339": [
+                            "f98e20e5-b235-43ed-a63d-15b71bc7c762"
+                        ],
+                        "f98e20e5-b235-43ed-a63d-15b71bc7c762": [],
+                        "5332fcde-b043-41f5-8786-a3a359b110ad": [],
+                    },
+                    "state": "NOT_STARTED",
+                }
+            ]
+        }
