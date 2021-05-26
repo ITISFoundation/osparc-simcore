@@ -11,11 +11,13 @@
 import json
 import logging
 from collections import defaultdict
+from contextlib import suppress
 from pprint import pformat
 from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import uuid4
 
 from aiohttp import web
+
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -27,6 +29,7 @@ from servicelib.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.jsonschema_validation import validate_instance
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
+from simcore_service_webserver.director import director_exceptions
 
 from ..director import director_api
 from ..director_v2 import (
@@ -185,23 +188,15 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 async def remove_project_interactive_services(
     user_id: Optional[int], project_uuid: Optional[str], app: web.Application
 ) -> None:
-    if not user_id and not project_uuid:
-        raise ValueError("Expected either user or project")
-
-    list_of_services = await director_api.get_running_interactive_services(
-        app, project_id=project_uuid, user_id=user_id
-    )
     # save the state if the user is not a guest. if we do not know we save in any case.
-    stop_tasks = [
-        director_api.stop_service(
-            app,
-            service["service_uuid"],
+    with suppress(director_exceptions.DirectorException):
+        # here director exceptions are suppressed. in case the service is not found to preserve old behavior
+        await director_api.stop_services(
+            app=app,
+            user_id=user_id,
+            project_id=project_uuid,
             save_state=not await is_user_guest(app, user_id) if user_id else True,
         )
-        for service in list_of_services
-    ]
-    if stop_tasks:
-        await logged_gather(*stop_tasks, reraise=False)
 
 
 async def delete_project_data(
