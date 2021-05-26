@@ -63,9 +63,9 @@ def _runtime_requirement(node_image: Image) -> str:
     reqs = []
 
     if node_image.requires_gpu:
-        reqs += ["gpu"]
+        reqs.append("gpu")
     if node_image.requires_mpi:
-        reqs += ["mpi"]
+        reqs.append("mpi")
 
     req = ":".join(reqs)
     return req or "cpu"
