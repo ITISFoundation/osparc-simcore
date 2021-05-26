@@ -92,10 +92,6 @@ services:
     build:
       context: ../
       dockerfile: services/static-webserver/Dockerfile
-      cache_from:
-        - local/static-webserver:${BUILD_TARGET:?build_target_required}
-        - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:cache
-        - ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
       target: ${BUILD_TARGET:?build_target_required}
       labels:
         org.label-schema.schema-version: "1.0"
