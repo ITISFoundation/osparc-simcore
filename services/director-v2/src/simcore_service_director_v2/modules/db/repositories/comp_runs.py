@@ -66,7 +66,7 @@ class CompRunsRepository(BaseRepository):
                     project_uuid=str(project_id),
                     iteration=iteration,
                     result=RUNNING_STATE_TO_DB[RunningState.PUBLISHED],
-                    start=datetime.utcnow(),
+                    started=datetime.utcnow(),
                 )
                 .returning(literal_column("*"))
             )
@@ -100,7 +100,7 @@ class CompRunsRepository(BaseRepository):
     ) -> CompRunsAtDB:
         values = {"result": RUNNING_STATE_TO_DB[result_state]}
         if final_state:
-            values.update({"end": datetime.utcnow()})
+            values.update({"ended": datetime.utcnow()})
         return await self.update(
             user_id,
             project_id,

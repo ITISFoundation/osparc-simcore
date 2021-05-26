@@ -51,8 +51,8 @@ def upgrade():
         sa.Column(
             "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
         ),
-        sa.Column("start", sa.DateTime(), nullable=True),
-        sa.Column("end", sa.DateTime(), nullable=True),
+        sa.Column("started", sa.DateTime(), nullable=True),
+        sa.Column("ended", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(
             ["project_uuid"],
             ["projects.uuid"],

@@ -20,8 +20,8 @@ class CompRunsAtDB(BaseModel):
     result: RunningState
     created: datetime
     modified: datetime
-    start: Optional[datetime]
-    end: Optional[datetime]
+    started: Optional[datetime]
+    ended: Optional[datetime]
 
     @validator("result", pre=True)
     @classmethod
@@ -57,8 +57,8 @@ class CompRunsAtDB(BaseModel):
                     "result": "SUCCESS",
                     "created": "2021-03-01 13:07:34.19161",
                     "modified": "2021-03-01 13:07:34.19161",
-                    "start": "2021-03-01 8:07:34.19161",
-                    "end": "2021-03-01 13:07:34.10",
+                    "started": "2021-03-01 8:07:34.19161",
+                    "ended": "2021-03-01 13:07:34.10",
                 },
             ]
         }

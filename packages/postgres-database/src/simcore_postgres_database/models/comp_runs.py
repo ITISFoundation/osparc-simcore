@@ -3,6 +3,7 @@
 """
 import sqlalchemy as sa
 from sqlalchemy.sql import func
+from sqlalchemy.sql.expression import null
 
 from .base import metadata
 from .comp_pipeline import StateType
@@ -75,13 +76,15 @@ comp_runs = sa.Table(
     ),
     # utc timestamps for submission/start/end
     sa.Column(
-        "start",
+        "started",
         sa.DateTime,
+        nullable=True,
         doc="When the run was started",
     ),
     sa.Column(
-        "end",
+        "ended",
         sa.DateTime,
+        nullable=True,
         doc="When the run was finished",
     ),
     sa.UniqueConstraint("project_uuid", "user_id", "iteration"),
