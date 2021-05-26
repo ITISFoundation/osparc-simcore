@@ -247,7 +247,7 @@ async def remove_disconnected_user_resources(
                     #
                     await emit(
                         event="SIGNAL_PROJECT_CLOSE",
-                        user_id=None,
+                        user_id=int(dead_key["user_id"]),
                         project_uuid=resource_value,
                         app=app,
                     )
