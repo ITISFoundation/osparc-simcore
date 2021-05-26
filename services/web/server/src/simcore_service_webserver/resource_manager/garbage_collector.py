@@ -371,7 +371,10 @@ async def remove_orphaned_services(
         # if the node is not present in any of the currently opened project it shall be closed
         if node_id not in currently_opened_projects_node_ids:
             service_host = interactive_service["service_host"]
-            if interactive_service.get("service_state") != "running":
+            if interactive_service.get("service_state") in [
+                "pulling",
+                "starting",
+            ]:
                 # Services returned in running_interactive_services
                 # might be still pulling its image and when stop_service is
                 # called, will cancel the pull operation as well.
@@ -384,7 +387,12 @@ async def remove_orphaned_services(
                 # This should eventually be responsibility of the director, but
                 # the functionality is in the old service which is frozen.
                 #
-                logger.warning("Skipping %s since image is still pulling", service_host)
+                # a service state might be one of [pending, pulling, starting, running, complete, failed]
+                logger.warning(
+                    "Skipping %s since image is in %s",
+                    service_host,
+                    interactive_service.get("service_state", "unknown"),
+                )
                 continue
 
             logger.info("Will remove service %s", service_host)
@@ -392,6 +400,7 @@ async def remove_orphaned_services(
                 # let's be conservative here.
                 # 1. opened project disappeared from redis?
                 # 2. something bad happened when closing a project?
+                # TODO: find user and save state if necessary
                 await stop_service(app, node_id, save_state=True)
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
