@@ -5,6 +5,8 @@
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
 
+import asyncio
+from asyncio.tasks import sleep
 import json
 from collections import namedtuple
 from copy import deepcopy
@@ -15,6 +17,7 @@ from uuid import UUID, uuid4
 
 import pytest
 import sqlalchemy as sa
+from httpx import AsyncClient
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
@@ -31,7 +34,7 @@ from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTas
 from sqlalchemy import literal_column
 from starlette import status
 from starlette.responses import Response
-from starlette.testclient import TestClient
+from starlette.testclient import TestClient, TimeOut
 from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 
@@ -1048,3 +1051,61 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     assert (
         response.status_code == status.HTTP_201_CREATED
     ), f"response code is {response.status_code}, error: {response.text}"
+
+
+async def test_burst_create_computations(
+    async_client: AsyncClient,
+    user_id: PositiveInt,
+    project: Callable,
+    fake_workbench_without_outputs: Dict[str, Any],
+    update_project_workbench_with_comp_tasks: Callable,
+    fake_workbench_computational_pipeline_details: PipelineDetails,
+    fake_workbench_computational_pipeline_details_completed: PipelineDetails,
+):
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
+    sleepers_project2 = project(workbench=fake_workbench_without_outputs)
+
+    async def _create_pipeline(project: ProjectAtDB, start_pipeline: bool):
+        return await async_client.post(
+            COMPUTATION_URL,
+            json={
+                "user_id": user_id,
+                "project_id": str(project.uuid),
+                "start_pipeline": start_pipeline,
+            },
+            timeout=60,
+        )
+
+    NUMBER_OF_CALLS = 4
+
+    # creating 4 pipelines without starting should return 4 times 201
+    # the second pipeline should also return a 201
+    responses = await asyncio.gather(
+        *(
+            [
+                _create_pipeline(sleepers_project, start_pipeline=False)
+                for _ in range(NUMBER_OF_CALLS)
+            ]
+            + [_create_pipeline(sleepers_project2, start_pipeline=False)]
+        )
+    )
+    received_status_codes = [r.status_code for r in responses]
+    assert status.HTTP_201_CREATED in received_status_codes
+    assert received_status_codes.count(status.HTTP_201_CREATED) == NUMBER_OF_CALLS + 1
+
+    # starting 4 pipelines should return 1 time 201 and 3 times 403
+    # the second pipeline should return a 201
+    responses = await asyncio.gather(
+        *(
+            [
+                _create_pipeline(sleepers_project, start_pipeline=True)
+                for _ in range(NUMBER_OF_CALLS)
+            ]
+            + [_create_pipeline(sleepers_project2, start_pipeline=False)]
+        )
+    )
+    received_status_codes = [r.status_code for r in responses]
+    assert received_status_codes.count(status.HTTP_201_CREATED) == 2
+    assert received_status_codes.count(status.HTTP_403_FORBIDDEN) == (
+        NUMBER_OF_CALLS - 1
+    )

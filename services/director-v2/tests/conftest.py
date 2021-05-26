@@ -5,11 +5,13 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Iterator
 
 import dotenv
+import httpx
 import pytest
 import simcore_service_director_v2
+from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, Workbench
 from simcore_service_director_v2.core.application import init_app
@@ -69,6 +71,25 @@ def client(loop: asyncio.BaseEventLoop) -> TestClient:
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     with TestClient(app, raise_server_exceptions=True) as client:
+        yield client
+
+
+@pytest.fixture(scope="function")
+async def initialized_app() -> Iterator[FastAPI]:
+    settings = AppSettings.create_from_env(boot_mode=BootModeEnum.PRODUCTION)
+    app = init_app(settings)
+    async with LifespanManager(app):
+        yield app
+
+
+@pytest.fixture(scope="function")
+async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
+
+    async with httpx.AsyncClient(
+        app=initialized_app,
+        base_url="http://director-v2.testserver.io",
+        headers={"Content-Type": "application/json"},
+    ) as client:
         yield client
 
 

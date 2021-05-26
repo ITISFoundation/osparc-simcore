@@ -19,7 +19,6 @@ from sqlalchemy.dialects.postgresql import insert
 
 from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import NodeRequirement, ServiceExtras
-from ....utils.async_utils import run_sequentially_in_context
 from ....utils.computations import to_node_class
 from ....utils.logging_utils import log_decorator
 from ...director_v0 import DirectorV0Client
@@ -161,16 +160,13 @@ class CompTasksRepository(BaseRepository):
 
         return tasks
 
-    # pylint: disable=unused-argument
-    @run_sequentially_in_context(target_args=["str_project_uuid"])
-    async def _sequentially_upsert_tasks_from_project(
+    @log_decorator(logger=logger)
+    async def upsert_tasks_from_project(
         self,
         project: ProjectAtDB,
         director_client: DirectorV0Client,
         published_nodes: List[NodeID],
-        str_project_uuid: str,
     ) -> List[CompTaskAtDB]:
-
         # NOTE: really do an upsert here because of issue https://github.com/ITISFoundation/osparc-simcore/issues/2125
         list_of_comp_tasks_in_project: List[
             CompTaskAtDB
@@ -221,30 +217,6 @@ class CompTasksRepository(BaseRepository):
                 row: RowProxy = await result.fetchone()
                 inserted_comp_tasks_db.append(CompTaskAtDB.from_orm(row))
             return inserted_comp_tasks_db
-
-    @log_decorator(logger=logger)
-    async def upsert_tasks_from_project(
-        self,
-        project: ProjectAtDB,
-        director_client: DirectorV0Client,
-        published_nodes: List[NodeID],
-    ) -> List[CompTaskAtDB]:
-
-        # only used by the decorator on the "_sequentially_upsert_tasks_from_project"
-        str_project_uuid: str = str(project.uuid)
-
-        # It is guaranteed that in the context of this application  no 2 updates
-        # will run in parallel.
-        #
-        # If we need to scale this service or the same comp_task entry is used in
-        # a different service an implementation of "therun_sequentially_in_context"
-        # based on redis queues needs to be put in place.
-        return await self._sequentially_upsert_tasks_from_project(
-            project=project,
-            director_client=director_client,
-            published_nodes=published_nodes,
-            str_project_uuid=str_project_uuid,
-        )
 
     @log_decorator(logger=logger)
     async def mark_project_tasks_as_aborted(self, project: ProjectAtDB) -> None:

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.utils.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
 from tenacity import (
@@ -32,6 +33,7 @@ from ...modules.db.repositories.comp_tasks import CompTasksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.director_v0 import DirectorV0Client
 from ...modules.scheduler import CeleryScheduler
+from ...utils.async_utils import run_sequentially_in_context
 from ...utils.computations import (
     get_pipeline_state_from_task_states,
     is_pipeline_running,
@@ -76,6 +78,8 @@ async def _abort_pipeline_tasks(
     response_model=ComputationTaskOut,
     status_code=status.HTTP_201_CREATED,
 )
+# NOTE: in case of a burst of calls to that endpoint, we might end up in a weird state.
+@run_sequentially_in_context(target_args=["job.project_id"])
 async def create_computation(
     job: ComputationTaskCreate,
     request: Request,
