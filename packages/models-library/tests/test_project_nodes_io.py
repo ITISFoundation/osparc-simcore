@@ -2,9 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import sys
 from pprint import pformat
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 import pytest
 from models_library.projects_nodes import Node, PortLink
