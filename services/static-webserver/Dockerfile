@@ -11,10 +11,17 @@ ENV SC_USER_ID=8004 \
 RUN adduser -D -u ${SC_USER_ID} -s /bin/sh -h /home/${SC_USER_NAME} ${SC_USER_NAME}
 
 # front-end client last (image name is the path to the Dockerfile)
-COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
+COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=${SC_USER_NAME}:${SC_USER_NAME} \
     /project/build-output "/static-content"
 
-USER ${SC_USER_NAME}
+# changing ownership of static-web-server files
+# RUN chown -R ${SC_USER_NAME}:${SC_USER_NAME} /entrypoint.sh
+#RUN chown -R ${SC_USER_NAME}:${SC_USER_NAME} /usr/local/bin/static-web-server
+#RUN chown -R ${SC_USER_NAME}:${SC_USER_NAME} /public
+#RUN chmod +x /usr/local/bin/static-web-server
+
+# Disabled because https://github.com/joseluisq/static-web-server/issues/42
+#USER ${SC_USER_NAME}
 
 FROM base as build
 ENV SC_BUILD_TARGET build
