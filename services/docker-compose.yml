@@ -115,6 +115,7 @@ services:
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
+    init: true
     environment:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=80
