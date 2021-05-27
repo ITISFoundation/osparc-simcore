@@ -8,17 +8,13 @@ ENV SC_USER_ID=8004 \
     SC_BUILD_TARGET=base \
     SC_BOOT_MODE=default
 
-RUN adduser \
-    --uid ${SC_USER_ID} \
-    --disabled-password \
-    --gecos "" \
-    --shell /bin/sh \
-    --home /home/${SC_USER_NAME} \
-    ${SC_USER_NAME}
+RUN adduser -D -u ${SC_USER_ID} -s /bin/sh -h /home/${SC_USER_NAME} ${SC_USER_NAME}
 
 # front-end client last (image name is the path to the Dockerfile)
 COPY --from=client/tools/qooxdoo-kit/builder:latest --chown=scu:scu \
     /project/build-output "/static-content"
+
+USER ${SC_USER_NAME}
 
 FROM base as build
 ENV SC_BUILD_TARGET build
