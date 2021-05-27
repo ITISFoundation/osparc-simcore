@@ -53,7 +53,6 @@ async function runTutorial() {
     await tutorial.toDashboard();
     await tutorial.removeStudy2(studyId);
     await tutorial.logOut();
-    tutorial.stopScreenshooter();
     await tutorial.close();
   }
 
