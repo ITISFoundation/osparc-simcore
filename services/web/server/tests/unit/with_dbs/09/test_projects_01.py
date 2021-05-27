@@ -3,8 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 import asyncio
-import json
-import time
 import unittest.mock as mock
 import uuid as uuidlib
 from copy import deepcopy
@@ -450,108 +448,6 @@ async def _replace_project(
     return data
 
 
-async def _connect_websocket(
-    socketio_client: Callable,
-    check_connection: bool,
-    client,
-    client_id: str,
-    events: Optional[Dict[str, Callable]] = None,
-) -> socketio.AsyncClient:
-    try:
-        sio = await socketio_client(client_id, client)
-        assert sio.sid
-        if events:
-            for event, handler in events.items():
-                sio.on(event, handler=handler)
-        return sio
-    except SocketConnectionError:
-        if check_connection:
-            pytest.fail("socket io connection should not fail")
-
-
-async def _open_project(
-    client,
-    client_id: str,
-    project: Dict,
-    expected: Union[web.HTTPException, List[web.HTTPException]],
-) -> Optional[Tuple[Dict, Dict]]:
-    url = client.app.router["open_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(url, json=client_id)
-
-    if isinstance(expected, list):
-        for e in expected:
-            try:
-                data, error = await assert_status(resp, e)
-                return data, error
-            except AssertionError:
-                # re-raies if last item
-                if e == expected[-1]:
-                    raise
-                continue
-    else:
-        return await assert_status(resp, expected)
-
-
-async def _close_project(
-    client, client_id: str, project: Dict, expected: web.HTTPException
-):
-    url = client.app.router["close_project"].url_for(project_id=project["uuid"])
-    resp = await client.post(url, json=client_id)
-    await assert_status(resp, expected)
-
-
-async def _state_project(
-    client,
-    project: Dict,
-    expected: web.HTTPException,
-    expected_project_state: ProjectState,
-):
-    url = client.app.router["state_project"].url_for(project_id=project["uuid"])
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
-    if not error:
-        # the project is locked
-        received_state = ProjectState(**data)
-        assert received_state == expected_project_state
-
-
-async def _assert_project_state_updated(
-    handler: mock.Mock,
-    shared_project: Dict,
-    expected_project_state: ProjectState,
-    num_calls: int,
-) -> None:
-    if num_calls == 0:
-        handler.assert_not_called()
-    else:
-        # wait for the calls
-        now = time.monotonic()
-        MAX_WAITING_TIME = 15
-        while time.monotonic() - now < MAX_WAITING_TIME:
-            await asyncio.sleep(1)
-            if handler.call_count == num_calls:
-                break
-        if time.monotonic() - now > MAX_WAITING_TIME:
-            pytest.fail(
-                f"waited more than {MAX_WAITING_TIME}s and got only {handler.call_count}/{num_calls} calls"
-            )
-
-        calls = [
-            call(
-                json.dumps(
-                    {
-                        "project_uuid": shared_project["uuid"],
-                        "data": expected_project_state.dict(
-                            by_alias=True, exclude_unset=True
-                        ),
-                    }
-                )
-            )
-        ] * num_calls
-        handler.assert_has_calls(calls)
-        handler.reset_mock()
-
-
 async def _delete_project(client, project: Dict, expected: web.Response) -> None:
     url = client.app.router["delete_project"].url_for(project_id=project["uuid"])
     assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
@@ -993,8 +889,8 @@ async def test_delete_multiple_opened_project_forbidden(
     user_project,
     mocked_director_api,
     mocked_dynamic_service,
-    socketio_client,
-    client_session_id,
+    socketio_client_factory: Callable,
+    client_session_id_factory: Callable,
     user_role,
     expected_ok,
     expected_forbidden,
@@ -1003,9 +899,9 @@ async def test_delete_multiple_opened_project_forbidden(
     # service in project = await mocked_dynamic_service(logged_user["id"], empty_user_project["uuid"])
     service = await mocked_dynamic_service(logged_user["id"], user_project["uuid"])
     # open project in tab1
-    client_session_id1 = client_session_id()
+    client_session_id1 = client_session_id_factory()
     try:
-        sio1 = await socketio_client(client_session_id1)
+        sio1 = await socketio_client_factory(client_session_id1)
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")
@@ -1013,9 +909,9 @@ async def test_delete_multiple_opened_project_forbidden(
     resp = await client.post(url, json=client_session_id1)
     await assert_status(resp, expected_ok)
     # delete project in tab2
-    client_session_id2 = client_session_id()
+    client_session_id2 = client_session_id_factory()
     try:
-        sio2 = await socketio_client(client_session_id2)
+        sio2 = await socketio_client_factory(client_session_id2)
     except SocketConnectionError:
         if user_role != UserRole.ANONYMOUS:
             pytest.fail("socket io connection should not fail")

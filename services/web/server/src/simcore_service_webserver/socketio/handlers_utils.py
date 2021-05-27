@@ -1,6 +1,7 @@
 import inspect
 from functools import wraps
 from types import ModuleType
+from typing import Callable
 
 from aiohttp import web
 
@@ -48,7 +49,7 @@ def register_handlers(app: web.Application, module: ModuleType):
         sio.on(func.__name__, handler=func)
 
 
-def register_socketio_handler(func: callable) -> callable:
+def register_socketio_handler(func: Callable) -> Callable:
     """this decorator appends handlers to a registry if they fit certain rules
 
     :param func: the function to call

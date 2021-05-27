@@ -14,12 +14,20 @@ from typing import Callable, Dict, Iterator
 from uuid import UUID
 
 from fastapi import HTTPException
+from simcore_service_api_server.models.api_resources import (
+    RelativeResourceName,
+    compose_resource_name,
+)
+from simcore_service_api_server.models.schemas.files import File
+from simcore_service_api_server.models.schemas.jobs import (
+    Job,
+    JobInputs,
+    JobOutputs,
+    JobStatus,
+    TaskStates,
+)
+from simcore_service_api_server.models.schemas.solvers import SolverKeyId, VersionStr
 from starlette import status
-
-from ...models.api_resources import RelativeResourceName, compose_resource_name
-from ...models.schemas.files import File
-from ...models.schemas.jobs import Job, JobInputs, JobOutputs, JobStatus, TaskStates
-from ...models.schemas.solvers import SolverKeyId, VersionStr
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +37,6 @@ JobName = RelativeResourceName
 @dataclass
 class JobsFaker:
     # Fakes jobs managements for a given user
-    #
-    # TODO: preload JobsFaker configuration emulating a particular scenario (e.g. all jobs failed, ...)
     #
 
     jobs: Dict[JobName, Job] = field(default_factory=dict)
@@ -49,7 +55,6 @@ class JobsFaker:
                 yield job
 
     def create_job(self, solver_name: str, inputs: JobInputs) -> Job:
-        # TODO: validate inputs against solver definition
         # NOTE: how can be sure that inputs.json() will be identical everytime? str
         # representation might truncate e.g. a number which does not guarantee
         # in all cases that is the same!?
@@ -57,7 +62,6 @@ class JobsFaker:
             " ".join(inputs.json()).encode("utf-8")
         ).hexdigest()
 
-        # TODO: check if job exists already?? Do not consider date??
         job = Job.create_now(solver_name, inputs_checksum)
 
         self.jobs[job.name] = job
@@ -135,12 +139,9 @@ class JobsFaker:
             job_status.take_snapshot("stopped")
             logger.info(job_status)
 
-            # TODO: temporary A fixed output MOCK
-            # TODO: temporary writes error in value!
             if job_status.state == TaskStates.FAILED:
                 failed = random.choice(list(outputs.results.keys()))
                 outputs.results[failed] = None
-                # TODO: some kind of error ckass results.error = ResultError(loc, field, message) .. .
                 # similar to ValidatinError? For one field or generic job error?
 
         except asyncio.CancelledError:
@@ -151,9 +152,6 @@ class JobsFaker:
             # all fail
             for name in outputs.results:
                 outputs.results[name] = None
-
-            # TODO: an error with the job state??
-            # TODO: logs??
 
         except Exception:  # pylint: disable=broad-except
             logger.exception("Job %s failed", job_id)
@@ -244,8 +242,7 @@ async def create_job_impl(
 
     NOTE: This operation does **not** start the job
     """
-    # TODO: validate inputs against solver specs
-    # TODO: create a unique identifier of job based on solver_id and inputs
+
     with resource_context(solvers=solver_key, releases=version) as solver_name:
         job = the_fake_impl.create_job(solver_name, inputs)
         return _copy_n_update(job, url_for, solver_key, version)

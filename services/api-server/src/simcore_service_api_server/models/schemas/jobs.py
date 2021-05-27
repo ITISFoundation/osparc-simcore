@@ -9,7 +9,11 @@ from pydantic import BaseModel, Field, HttpUrl, conint, validator
 from ...models.config import BaseConfig
 from ...models.schemas.files import File
 from ...models.schemas.solvers import Solver
-from ..api_resources import RelativeResourceName, compose_resource_name
+from ..api_resources import (
+    RelativeResourceName,
+    compose_resource_name,
+    split_resource_name,
+)
 
 # FIXME: all ints and bools will be floats
 ArgumentType = Union[File, float, int, bool, str, None]
@@ -159,13 +163,15 @@ class Job(BaseModel):
     # constructors ------
 
     @classmethod
-    def create_now(cls, parent: RelativeResourceName, inputs_checksum: str) -> "Job":
+    def create_now(
+        cls, parent_name: RelativeResourceName, inputs_checksum: str
+    ) -> "Job":
         global_uuid = uuid4()
 
         return cls(
-            name=f"{parent}/jobs/{str(global_uuid)}",
+            name=cls.compose_resource_name(parent_name, global_uuid),
             id=global_uuid,
-            runner_name=parent,
+            runner_name=parent_name,
             inputs_checksum=inputs_checksum,
             created_at=datetime.utcnow(),
             url=None,
@@ -175,11 +181,24 @@ class Job(BaseModel):
 
     @classmethod
     def create_solver_job(cls, *, solver: Solver, inputs: JobInputs):
-        solver_name = compose_resource_name(solver.id, solver.version)
         job = Job.create_now(
-            parent=solver_name, inputs_checksum=inputs.compute_checksum()
+            parent_name=solver.name, inputs_checksum=inputs.compute_checksum()
         )
         return job
+
+    @classmethod
+    def compose_resource_name(
+        cls, parent_name: RelativeResourceName, job_id: UUID
+    ) -> str:
+        # CAREFUL, this is not guarantee a UNIQUE identifier since the resource
+        # could have some alias entrypoints and the wrong parent_name might be introduced here
+        collection_or_resource_ids = split_resource_name(parent_name) + ["jobs", job_id]
+        return compose_resource_name(*collection_or_resource_ids)
+
+    @property
+    def resource_name(self) -> str:
+        """ Relative Resource Name """
+        return self.name
 
 
 # TODO: these need to be in sync with celery task states

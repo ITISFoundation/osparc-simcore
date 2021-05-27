@@ -57,6 +57,7 @@ async def create_projects(request: web.Request):
 
     template_uuid = request.query.get("from_template")
     as_template = request.query.get("as_template")
+    hidden: bool = bool(request.query.get("hidden", False))
 
     try:
         project = {}
@@ -114,7 +115,10 @@ async def create_projects(request: web.Request):
 
         # update metadata (uuid, timestamps, ownership) and save
         project = await db.add_project(
-            project, user_id, force_as_template=as_template is not None
+            project,
+            user_id,
+            force_as_template=as_template is not None,
+            hidden=hidden,
         )
 
         # copies the project's DATA IF cloned
@@ -158,6 +162,7 @@ async def list_projects(request: web.Request):
     project_type = ProjectTypeAPI(query["type"])
     offset = query["offset"]
     limit = query["limit"]
+    show_hidden = query["show_hidden"]
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
@@ -190,6 +195,7 @@ async def list_projects(request: web.Request):
         filter_by_services=user_available_services,
         offset=offset,
         limit=limit,
+        include_hidden=show_hidden,
     )
     await set_all_project_states(projects, project_types)
     return PageResponseLimitOffset.paginate_data(
