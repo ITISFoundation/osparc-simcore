@@ -10,9 +10,6 @@ async function getBrowser(demo) {
       devTools: true,
       defaultViewport: null, // Defaults to an 800x600 viewport. null disables the default viewport.
       slowMo: 80, // Slows down Puppeteer operations by the specified amount of milliseconds.
-      args: [
-        '--window-size=1680,950'
-      ]
     };
     Object.assign(options, visibleOptions);
   }
@@ -23,8 +20,7 @@ async function getBrowser(demo) {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--start-maximized',
-        '--window-size=1680,950'
+        '--start-maximized'
       ]
     };
     Object.assign(options, woSandbox);
@@ -87,6 +83,10 @@ function listenToEvents(page) {
 async function getPage(browser) {
   const page = await browser.newPage();
   page.setCacheEnabled(false);
+  await page.setViewport({
+    width: 1680,
+    height: 950
+  });
   listenToEvents(page);
   return page;
 }
