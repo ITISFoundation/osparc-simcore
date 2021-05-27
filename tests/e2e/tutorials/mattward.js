@@ -16,11 +16,11 @@ const templateName = "Mattward";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, templateName, user, pass, newUser, enableDemoMode);
-
+  let studyId
   try {
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
-    const studyId = studyData["data"]["uuid"];
+    studyId = studyData["data"]["uuid"];
     console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
@@ -44,16 +44,14 @@ async function runTutorial() {
 
     await tutorial.openNodeFiles(0)
     await tutorial.checkResults2(outFiles);
-
-    await tutorial.toDashboard();
-
-    await tutorial.removeStudy(studyId);
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
     console.log('Tutorial error: ' + err);
   }
   finally {
+    await tutorial.toDashboard();
+    await tutorial.removeStudy2(studyId);
     await tutorial.logOut();
     tutorial.stopScreenshooter();
     await tutorial.close();

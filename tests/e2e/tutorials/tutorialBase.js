@@ -333,13 +333,25 @@ class TutorialBase {
   }
 
   async checkResults2(fileNames) {
-    await this.takeScreenshot("checkResults_before");
-    const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
-      elements => elements.map(el => el.textContent.trim()));
-    assert(files.length === fileNames.length, 'Number of files is incorrect')
-    console.log('Number of files is correct')
-    await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
-    await this.takeScreenshot("checkResults_after");
+    try {
+      await this.takeScreenshot("checkResults_before");
+      const files = await this.__page.$$eval('[osparc-test-id="FolderViewerItem"]',
+        elements => elements.map(el => el.textContent.trim()));
+      assert(files.length === fileNames.length, 'Number of files is incorrect')
+      console.log('Number of files is correct')
+      assert(
+        fileNames.every(fileName => files.some(file => file.includes(fileName))),
+        'File names are incorrect'
+      )
+      console.log('File names are correct')
+    }
+    catch (err) {
+      throw(err)
+    }
+    finally {
+      await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
+      await this.takeScreenshot("checkResults_after");
+    }
   }
 
   async toDashboard() {
@@ -391,6 +403,17 @@ class TutorialBase {
       throw (err);
     }
     await this.takeScreenshot("deleteFirstStudy_after");
+  }
+
+  async removeStudy2(studyId) {
+    console.log(`Removing study ${studyId}`)
+    const resp = await this.__page.evaluate(async function(studyId) {
+      return await osparc.data.Resources.fetch('studies', 'delete', {
+        url: {
+          projectId: studyId
+        }
+      }, studyId);
+    }, studyId);
   }
 
   async logOut() {
