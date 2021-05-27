@@ -42,7 +42,7 @@ def here() -> Path:
     return cdir
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def api_version_prefix() -> str:
     return "v0"
 
