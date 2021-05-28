@@ -5,6 +5,7 @@
 # pylint:disable=no-value-for-parameter
 # pylint:disable=too-many-arguments
 
+import asyncio
 import json
 from collections import namedtuple
 from copy import deepcopy
@@ -15,6 +16,7 @@ from uuid import UUID, uuid4
 
 import pytest
 import sqlalchemy as sa
+from httpx import AsyncClient
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
@@ -359,7 +361,7 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     2: {
                         "modified": True,
@@ -404,22 +406,22 @@ PartialComputationParams = namedtuple(
                     1: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     2: {
                         "modified": True,
                         "dependencies": [1],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     3: {
                         "modified": True,
                         "dependencies": [],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                     4: {
                         "modified": True,
                         "dependencies": [2, 3],
-                        "currentStatus": RunningState.PENDING,
+                        "currentStatus": RunningState.PUBLISHED,
                     },
                 },
                 exp_node_states_after_run={
@@ -603,7 +605,7 @@ def test_run_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
-    # check the contents is correctb
+    # check the contents is correct: a pipeline that just started gets PUBLISHED
     _assert_computation_task_out_obj(
         client,
         task_out,
@@ -612,7 +614,16 @@ def test_run_computation(
         exp_pipeline_details=fake_workbench_computational_pipeline_details,
     )
 
-    # wait for the computation to finish
+    # wait for the computation to start
+    _assert_pipeline_status(
+        client,
+        task_out.url,
+        user_id,
+        sleepers_project.uuid,
+        wait_for_states=[RunningState.STARTED],
+    )
+
+    # wait for the computation to finish (either by failing, success or abort)
     task_out = _assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
@@ -915,16 +926,30 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
                 "key": jupyter_service["image"]["name"],
                 "version": jupyter_service["image"]["tag"],
                 "label": "the controller",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
             },
             "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
                 "key": jupyter_service["image"]["name"],
                 "version": jupyter_service["image"]["tag"],
                 "label": "the model",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
             },
         }
     )
 
-    # this pipeline is not runnable as there are no computational services and it contains a cycle
+    # this pipeline is not runnable as there are no computational services
     response = client.post(
         COMPUTATION_URL,
         json={
@@ -949,3 +974,137 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
     assert (
         response.status_code == status.HTTP_201_CREATED
     ), f"response code is {response.status_code}, error: {response.text}"
+
+
+def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
+    client: TestClient,
+    user_id: PositiveInt,
+    project: Callable,
+    sleeper_service: Dict[str, str],
+    jupyter_service: Dict[str, str],
+):
+    # create a workbench with just 2 dynamic service in a cycle
+    project_with_cycly_and_comp_service = project(
+        workbench={
+            "39e92f80-9286-5612-85d1-639fa47ec57d": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "the controller",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957c",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957c"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957a": {
+                "key": jupyter_service["image"]["name"],
+                "version": jupyter_service["image"]["tag"],
+                "label": "the model",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "39e92f80-9286-5612-85d1-639fa47ec57d",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
+            },
+            "09b92a4b-8bf4-49ad-82d3-1855c5a4957c": {
+                "key": sleeper_service["image"]["name"],
+                "version": sleeper_service["image"]["tag"],
+                "label": "the computational service",
+                "inputs": {
+                    "input_1": {
+                        "nodeUuid": "09b92a4b-8bf4-49ad-82d3-1855c5a4957a",
+                        "output": "output_1",
+                    }
+                },
+                "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
+            },
+        }
+    )
+
+    # this pipeline is not runnable as there are no computational services and it contains a cycle
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_cycly_and_comp_service.uuid),
+            "start_pipeline": True,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_403_FORBIDDEN
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+    # still this pipeline shall be createable if we do not want to start it
+    response = client.post(
+        COMPUTATION_URL,
+        json={
+            "user_id": user_id,
+            "project_id": str(project_with_cycly_and_comp_service.uuid),
+            "start_pipeline": False,
+        },
+    )
+    assert (
+        response.status_code == status.HTTP_201_CREATED
+    ), f"response code is {response.status_code}, error: {response.text}"
+
+
+async def test_burst_create_computations(
+    async_client: AsyncClient,
+    user_id: PositiveInt,
+    project: Callable,
+    fake_workbench_without_outputs: Dict[str, Any],
+    update_project_workbench_with_comp_tasks: Callable,
+    fake_workbench_computational_pipeline_details: PipelineDetails,
+    fake_workbench_computational_pipeline_details_completed: PipelineDetails,
+):
+    sleepers_project = project(workbench=fake_workbench_without_outputs)
+    sleepers_project2 = project(workbench=fake_workbench_without_outputs)
+
+    async def _create_pipeline(project: ProjectAtDB, start_pipeline: bool):
+        return await async_client.post(
+            COMPUTATION_URL,
+            json={
+                "user_id": user_id,
+                "project_id": str(project.uuid),
+                "start_pipeline": start_pipeline,
+            },
+            timeout=60,
+        )
+
+    NUMBER_OF_CALLS = 4
+
+    # creating 4 pipelines without starting should return 4 times 201
+    # the second pipeline should also return a 201
+    responses = await asyncio.gather(
+        *(
+            [
+                _create_pipeline(sleepers_project, start_pipeline=False)
+                for _ in range(NUMBER_OF_CALLS)
+            ]
+            + [_create_pipeline(sleepers_project2, start_pipeline=False)]
+        )
+    )
+    received_status_codes = [r.status_code for r in responses]
+    assert status.HTTP_201_CREATED in received_status_codes
+    assert received_status_codes.count(status.HTTP_201_CREATED) == NUMBER_OF_CALLS + 1
+
+    # starting 4 pipelines should return 1 time 201 and 3 times 403
+    # the second pipeline should return a 201
+    responses = await asyncio.gather(
+        *(
+            [
+                _create_pipeline(sleepers_project, start_pipeline=True)
+                for _ in range(NUMBER_OF_CALLS)
+            ]
+            + [_create_pipeline(sleepers_project2, start_pipeline=False)]
+        )
+    )
+    received_status_codes = [r.status_code for r in responses]
+    assert received_status_codes.count(status.HTTP_201_CREATED) == 2
+    assert received_status_codes.count(status.HTTP_403_FORBIDDEN) == (
+        NUMBER_OF_CALLS - 1
+    )

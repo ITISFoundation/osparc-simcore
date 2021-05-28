@@ -1,15 +1,17 @@
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Callable, Dict, List
 
-from celery import Celery, Task, group, signature
-from celery.canvas import Signature, chord
+from celery import Celery, Task, signature
+from celery.canvas import Signature
 from celery.contrib.abortable import AbortableAsyncResult
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.settings.celery import CeleryConfig
 
+from ..core.errors import ConfigurationError
+from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import UserID
 
 logger = logging.getLogger(__name__)
@@ -57,18 +59,25 @@ def _computation_task_signature(
     return task_signature
 
 
-def _create_celery_flow(celery_groups: List[group], index: int = 0):
-    """creates a celery worlflow by using the CHORD primitive to ensure each group wait on the previous one before running
-    NOTE: Only chaining groups does not work as celery does not wait for a preceding group to fully complete before running the next one.
-    """
-    if index < len(celery_groups):
-        body = _create_celery_flow(celery_groups, index + 1)
-        return (
-            chord(header=celery_groups[index], body=body)
-            if body
-            else celery_groups[index]
-        )
-    return None
+@dataclass
+class CeleryTaskIn:
+    node_id: NodeID
+    runtime_requirements: str
+
+    @classmethod
+    def from_node_image(cls, node_id: NodeID, node_image: Image) -> "CeleryTaskIn":
+        # NOTE: to keep compatibility the queues are currently defined as .cpu, .gpu, .mpi.
+        reqs = []
+        if node_image.requires_gpu:
+            reqs.append("gpu")
+        if node_image.requires_mpi:
+            reqs.append("mpi")
+        req = ":".join(reqs)
+
+        return cls(node_id=node_id, runtime_requirements=req or "cpu")
+
+
+CeleryTaskOut = Task
 
 
 @dataclass
@@ -79,43 +88,39 @@ class CeleryClient:
     @classmethod
     def create(cls, app: FastAPI, *args, **kwargs) -> "CeleryClient":
         app.state.celery_client = cls(*args, **kwargs)
+        app.state.celery_client.client.conf.update(result_extended=True)
         return cls.instance(app)
 
     @classmethod
     def instance(cls, app: FastAPI) -> "CeleryClient":
+        if not hasattr(app.state, "celery_client"):
+            raise ConfigurationError(
+                "Celery client is not available. Please check the configuration."
+            )
         return app.state.celery_client
 
     def send_computation_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
-        topologically_sorted_nodes: List[Dict[str, Dict[str, Any]]],
-    ) -> Task:
-
-        # create the // tasks
-        celery_groups = []
-        for node_group in topologically_sorted_nodes:
-            celery_groups.append(
-                group(
-                    [
-                        _computation_task_signature(
-                            self.settings,
-                            user_id,
-                            project_id,
-                            node_id,
-                            node_data["runtime_requirements"],
-                        )
-                        for node_id, node_data in node_group.items()
-                    ]
-                )
+        single_tasks: List[CeleryTaskIn],
+        callback: Callable,
+    ) -> Dict[NodeID, CeleryTaskOut]:
+        async_tasks = {}
+        for task in single_tasks:
+            celery_task_signature = _computation_task_signature(
+                self.settings,
+                user_id,
+                project_id,
+                str(task.node_id),
+                task.runtime_requirements,
             )
-
-        celery_flow = _create_celery_flow(celery_groups)
-
-        # publish the tasks through Celery
-        task = celery_flow.apply_async()
-        logger.debug("created celery workflow: %s", str(celery_flow))
-        return task
+            async_tasks[
+                task.node_id
+            ] = celery_task = celery_task_signature.apply_async()
+            logger.info("Published celery task %s", celery_task)
+            celery_task.then(callback)
+        return async_tasks
 
     @classmethod
     def abort_computation_tasks(cls, task_ids: List[str]) -> None:
