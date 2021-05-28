@@ -14,7 +14,6 @@ build_images() {
     if [[ -v DOCKER_BUILDX ]]; then
         make build-x
     else
-        make build-cache
         make build
     fi
     make info-images

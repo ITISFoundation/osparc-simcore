@@ -98,10 +98,10 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-kit build-devel-x build-cache build-cache-kit build-cache-x build-cache-nc build-kit build-x
+.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-kit build-devel-x build-kit build-x
 
 define _docker_compose_build
-export BUILD_TARGET=$(if $(findstring -devel,$@),development,$(if $(findstring -cache,$@),cache,production));\
+export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
 $(if $(findstring -x,$@),\
 	pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;,\
 	docker-compose --file services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
@@ -144,20 +144,6 @@ ifeq ($(findstring webserver,$(target)),webserver)
 endif
 	# Building service $(target)
 	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
-	$(_docker_compose_build) $(target)
-endif
-
-
-build-cache build-cache-nc build-cache-kit build-cache-x: .env ## Build cache images and tags them as 'local/{service-name}:cache'
-ifeq ($(target),)
-	# Compiling front-end
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
-	$(MAKE_C) services/web/client compile$(if $(findstring -x,$@),-x,)
-	# Building cache images
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
-	$(_docker_compose_build)
-else
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,)
 	$(_docker_compose_build) $(target)
 endif
 
