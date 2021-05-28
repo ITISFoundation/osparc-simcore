@@ -141,10 +141,12 @@ async def import_project_as_template(
 def main(
     endpoint: str,
     username: str,
-    password: str,
     project_file: Path,
     project_name: Optional[str] = None,
     share_with_gid: int = EVERYONE_GROUP_ID,
+    password: str = typer.Option(
+        ..., prompt=True, confirmation_prompt=True, hide_input=True
+    ),
 ) -> int:
 
     if project_name is None:
