@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import suppress
 from itertools import chain
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import asyncpg.exceptions
 import psycopg2
@@ -351,7 +351,9 @@ async def remove_orphaned_services(
         node_ids = await get_workbench_node_ids_from_project_uuid(app, project_uuid)
         currently_opened_projects_node_ids.update(node_ids)
 
-    running_interactive_services = await get_running_interactive_services(app)
+    running_interactive_services: List[
+        Dict[str, Any]
+    ] = await get_running_interactive_services(app)
     logger.info(
         "Will collect the following: %s",
         [x["service_host"] for x in running_interactive_services],
@@ -361,7 +363,10 @@ async def remove_orphaned_services(
         node_id = interactive_service["service_uuid"]
         # if the node does not exist in any project in the db, we can safely remove it without saving any state
         if not await is_node_id_present_in_any_project_workbench(app, node_id):
-            logger.info("Will remove orphaned service %s", service_host)
+            logger.info(
+                "Will remove orphaned service without saving state since this service should is not part of any project %s",
+                service_host,
+            )
             try:
                 await stop_service(app, node_id, save_state=False)
             except (ServiceNotFoundError, DirectorException) as err:
@@ -400,8 +405,15 @@ async def remove_orphaned_services(
                 # let's be conservative here.
                 # 1. opened project disappeared from redis?
                 # 2. something bad happened when closing a project?
-                # TODO: find user and save state if necessary
-                await stop_service(app, node_id, save_state=True)
+                user_id = int(interactive_service.get("user_id", 0))
+
+                await stop_service(
+                    app,
+                    node_id,
+                    save_state=not await is_user_guest(app, user_id)
+                    if user_id
+                    else True,
+                )
             except (ServiceNotFoundError, DirectorException) as err:
                 logger.warning("Error while stopping service: %s", err)
 
