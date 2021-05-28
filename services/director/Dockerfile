@@ -11,11 +11,11 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 LABEL maintainer=sanderegg
 
 RUN set -eux; \
-	apt-get update; \
-	apt-get install -y gosu; \
-	rm -rf /var/lib/apt/lists/*; \
-# verify that the binary works
-	gosu nobody true
+      apt-get update; \
+      apt-get install -y gosu; \
+      rm -rf /var/lib/apt/lists/*; \
+      # verify that the binary works
+      gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -64,11 +64,11 @@ FROM base as build
 ENV SC_BUILD_TARGET=build
 
 RUN apt-get update \
-  &&  apt-get install -y --no-install-recommends \
+      &&  apt-get install -y --no-install-recommends \
       build-essential \
       git \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+      && apt-get clean \
+      && rm -rf /var/lib/apt/lists/*
 
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
@@ -92,16 +92,16 @@ RUN pip --no-cache-dir install -r /build/services/director/requirements/_base.tx
 COPY --chown=scu:scu api/specs/common/schemas/node-meta-v0.0.1.json \
       /build/services/director/src/simcore_service_director/api/v0/oas-parts/schemas/node-meta-v0.0.1.json
 
-#--------------------------Cache stage -------------------
-# CI in master buils & pushes this target to speed-up image build
+# --------------------------Prod-depends-only stage -------------------
+# This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
 #
 #  + /build
 #    + services/director [scu:scu] WORKDIR
 #
-FROM build as cache
+FROM build as prod-only-deps
 
 WORKDIR /build/services/director
-ENV SC_BUILD_TARGET=cache
+ENV SC_BUILD_TARGET=prod-only-deps
 RUN pip --no-cache-dir install -r requirements/prod.txt
 
 # --------------------------Production stage -------------------
@@ -114,13 +114,13 @@ RUN pip --no-cache-dir install -r requirements/prod.txt
 FROM base as production
 
 ENV SC_BUILD_TARGET=production \
-    SC_BOOT_MODE=production
+      SC_BOOT_MODE=production
 ENV PYTHONOPTIMIZE=TRUE
 
 WORKDIR /home/scu
 
 # bring installed package without build tools
-COPY --from=cache --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=prod-only-deps --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 # copy docker entrypoint and boot scripts
 COPY --chown=scu:scu services/director/docker services/director/docker
