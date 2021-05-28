@@ -1123,6 +1123,7 @@ paths:
                         - service_host
                         - service_port
                         - service_state
+                        - user_id
                       properties:
                         published_port:
                           description: The ports where the service provides its interface
@@ -1181,6 +1182,10 @@ paths:
                           description: the service message
                           type: string
                           example: no suitable node (insufficient resources on 1 node)
+                        user_id:
+                          description: the user that started the service
+                          type: string
+                          example: '123'
                   error:
                     nullable: true
                     default: null
@@ -1295,6 +1300,7 @@ paths:
                       - service_host
                       - service_port
                       - service_state
+                      - user_id
                     properties:
                       published_port:
                         description: The ports where the service provides its interface
@@ -1353,6 +1359,10 @@ paths:
                         description: the service message
                         type: string
                         example: no suitable node (insufficient resources on 1 node)
+                      user_id:
+                        description: the user that started the service
+                        type: string
+                        example: '123'
                   error:
                     nullable: true
                     default: null
@@ -1561,6 +1571,7 @@ paths:
                       - service_host
                       - service_port
                       - service_state
+                      - user_id
                     properties:
                       published_port:
                         description: The ports where the service provides its interface
@@ -1619,6 +1630,10 @@ paths:
                         description: the service message
                         type: string
                         example: no suitable node (insufficient resources on 1 node)
+                      user_id:
+                        description: the user that started the service
+                        type: string
+                        example: '123'
                   error:
                     nullable: true
                     default: null
@@ -2009,6 +2024,7 @@ components:
             - service_host
             - service_port
             - service_state
+            - user_id
           properties:
             published_port:
               description: The ports where the service provides its interface
@@ -2067,6 +2083,10 @@ components:
               description: the service message
               type: string
               example: no suitable node (insufficient resources on 1 node)
+            user_id:
+              description: the user that started the service
+              type: string
+              example: '123'
         error:
           nullable: true
           default: null
@@ -2087,6 +2107,7 @@ components:
               - service_host
               - service_port
               - service_state
+              - user_id
             properties:
               published_port:
                 description: The ports where the service provides its interface
@@ -2145,6 +2166,10 @@ components:
                 description: the service message
                 type: string
                 example: no suitable node (insufficient resources on 1 node)
+              user_id:
+                description: the user that started the service
+                type: string
+                example: '123'
         error:
           nullable: true
           default: null

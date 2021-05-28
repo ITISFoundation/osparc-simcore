@@ -728,6 +728,7 @@ async def _start_docker_service(
             "service_basepath": node_base_path,
             "service_state": service_state.value,
             "service_message": service_msg,
+            "user_id": user_id,
         }
         return container_meta_data
 
@@ -887,6 +888,7 @@ async def _get_node_details(
     service_state, service_msg = results[2]
     service_name = service["Spec"]["Name"]
     service_uuid = service["Spec"]["Labels"]["uuid"]
+    user_id = service["Spec"]["Labels"]["user_id"]
 
     # get the published port
     published_port, target_port = await _get_docker_image_port_mapping(service)
@@ -901,6 +903,7 @@ async def _get_node_details(
         "service_basepath": service_basepath,
         "service_state": service_state.value,
         "service_message": service_msg,
+        "user_id": user_id,
     }
     return node_details
 

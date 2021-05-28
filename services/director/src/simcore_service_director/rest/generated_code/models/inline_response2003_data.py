@@ -15,7 +15,7 @@ class InlineResponse2003Data(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, published_port: int=None, entry_point: str=None, service_uuid: str=None, service_key: str=None, service_version: str=None, service_host: str=None, service_port: int=None, service_basepath: str='', service_state: str=None, service_message: str=None):
+    def __init__(self, published_port: int=None, entry_point: str=None, service_uuid: str=None, service_key: str=None, service_version: str=None, service_host: str=None, service_port: int=None, service_basepath: str='', service_state: str=None, service_message: str=None, user_id: str=None):
         """InlineResponse2003Data - a model defined in OpenAPI
 
         :param published_port: The published_port of this InlineResponse2003Data.
@@ -28,6 +28,7 @@ class InlineResponse2003Data(Model):
         :param service_basepath: The service_basepath of this InlineResponse2003Data.
         :param service_state: The service_state of this InlineResponse2003Data.
         :param service_message: The service_message of this InlineResponse2003Data.
+        :param user_id: The user_id of this InlineResponse2003Data.
         """
         self.openapi_types = {
             'published_port': int,
@@ -39,7 +40,8 @@ class InlineResponse2003Data(Model):
             'service_port': int,
             'service_basepath': str,
             'service_state': str,
-            'service_message': str
+            'service_message': str,
+            'user_id': str
         }
 
         self.attribute_map = {
@@ -52,7 +54,8 @@ class InlineResponse2003Data(Model):
             'service_port': 'service_port',
             'service_basepath': 'service_basepath',
             'service_state': 'service_state',
-            'service_message': 'service_message'
+            'service_message': 'service_message',
+            'user_id': 'user_id'
         }
 
         self._published_port = published_port
@@ -65,6 +68,7 @@ class InlineResponse2003Data(Model):
         self._service_basepath = service_basepath
         self._service_state = service_state
         self._service_message = service_message
+        self._user_id = user_id
 
     @classmethod
     def from_dict(cls, dikt: dict) -> 'InlineResponse2003Data':
@@ -330,3 +334,28 @@ class InlineResponse2003Data(Model):
         """
 
         self._service_message = service_message
+
+    @property
+    def user_id(self):
+        """Gets the user_id of this InlineResponse2003Data.
+
+        the user that started the service
+
+        :return: The user_id of this InlineResponse2003Data.
+        :rtype: str
+        """
+        return self._user_id
+
+    @user_id.setter
+    def user_id(self, user_id):
+        """Sets the user_id of this InlineResponse2003Data.
+
+        the user that started the service
+
+        :param user_id: The user_id of this InlineResponse2003Data.
+        :type user_id: str
+        """
+        if user_id is None:
+            raise ValueError("Invalid value for `user_id`, must not be `None`")
+
+        self._user_id = user_id
