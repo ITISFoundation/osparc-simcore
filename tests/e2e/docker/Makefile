@@ -12,10 +12,9 @@ BUILD_DATE       := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 help: ## help on rule's targets
 	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-.PHONY: build build-kit build-x
-build build-kit build-x: ## builds a node image able to run puppeteer
-	@$(if $(findstring -kit,$@),export DOCKER_BUILDKIT=1;export COMPOSE_DOCKER_CLI_BUILD=1;,) \
-	$(if $(findstring -x,$@),\
+.PHONY: build build-x
+build build-x: ## builds a node image able to run puppeteer
+	@$(if $(findstring -x,$@),\
 		docker buildx build --build-arg BUILD_DATE=$(BUILD_DATE) --build-arg VCS_URL=$(VCS_URL) --build-arg VCS_REF=$(VCS_REF) --tag $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .;,\
 		docker build --build-arg "BUILD_DATE=$(BUILD_DATE)" --build-arg "VCS_URL=$(VCS_URL)" --build-arg "VCS_REF=$(VCS_REF)" --tag $(DOCKER_REGISTRY)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) .;\
 	)
