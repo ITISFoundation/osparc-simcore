@@ -114,7 +114,7 @@ ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build)
 else
-ifeq ($(findstring webserver,$(target)),webserver)
+ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
 	$(MAKE_C) services/web/client clean compile
 endif
@@ -128,7 +128,7 @@ ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build)
 else
-ifeq ($(findstring webserver,$(target)),webserver)
+ifeq ($(findstring static-webserver,$(target)),static-webserver)
 	# Compiling front-end
 	$(MAKE_C) services/web/client touch compile-dev
 endif
@@ -138,7 +138,7 @@ endif
 
 
 $(CLIENT_WEB_OUTPUT):
-	# Ensures source-output folder always exists to avoid issues when mounting webclient->webserver dockers. Supports PowerShell
+	# Ensures source-output folder always exists to avoid issues when mounting webclient->static-webserver dockers. Supports PowerShell
 	-mkdir $(if $(IS_WIN),,-p) $(CLIENT_WEB_OUTPUT)
 
 
