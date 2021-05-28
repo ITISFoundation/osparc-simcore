@@ -87,10 +87,14 @@ psycopg2-binary==2.8.6
     #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   aiopg
     #   sqlalchemy
-pydantic[email]==1.7.2
+pydantic[email]==1.8.2
     # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/_base.in
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
 pyparsing==2.4.7
     # via packaging
@@ -120,6 +124,7 @@ typing-extensions==3.7.4.3
     # via
     #   aiodocker
     #   aiohttp
+    #   pydantic
     #   yarl
 urllib3==1.26.4
     # via

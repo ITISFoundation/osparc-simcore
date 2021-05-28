@@ -1,9 +1,8 @@
-import json
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-import sys
+import json
 from pathlib import Path
 from typing import Any, Dict
 
@@ -16,18 +15,18 @@ from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings, BootModeEnum
 from starlette.testclient import TestClient
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
-    "pytest_simcore.repository_paths",
     "pytest_simcore.postgres_service",
+    "pytest_simcore.pydantic_models",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
+    "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_services",
-    "pytest_simcore.pydantic_models",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 

@@ -6090,6 +6090,12 @@ paths:
               - template
               - user
               - all
+        - name: show_hidden
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: includes projects marked as hidden in the listing
         - name: offset
           in: query
           schema:
@@ -6740,6 +6746,12 @@ paths:
           schema:
             type: string
           description: 'Option to create a template from existing project: as_template={study_uuid}'
+        - name: hidden
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Enables/disables hidden flag. Hidden projects are by default unlisted.
       requestBody:
         content:
           application/json:

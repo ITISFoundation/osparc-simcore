@@ -1,14 +1,15 @@
+# WARNING: manually disabled urllib3 contraint to upgrade minio
 -c ../../../requirements/constraints.txt
 
 -r ../../../packages/postgres-database/requirements/_base.in
 -r ../../../packages/service-library/requirements/_base.in
 -r ../../../packages/models-library/requirements/_base.in
 
+-c ./constraints.txt
+
 # These packages introduce incompatible dependencies:
 blackfynn==4.0.0
 aiobotocore==1.0.7
-
--c ./constraints.txt
 
 
 aiohttp
@@ -22,3 +23,7 @@ semantic_version
 click
 minio
 urllib3
+
+#
+# FIXME: pip copiling these requirements wil fail due to incompatible contraints on urllib3 (ongoing in weekely mainteinance)
+#

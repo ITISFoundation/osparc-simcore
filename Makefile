@@ -36,7 +36,8 @@ SERVICES_LIST := \
 	migration \
 	sidecar \
 	storage \
-	webserver
+	webserver \
+	static-webserver
 
 CLIENT_WEB_OUTPUT       := $(CURDIR)/services/web/client/source-output
 

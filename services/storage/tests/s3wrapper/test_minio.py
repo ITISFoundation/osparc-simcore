@@ -1,10 +1,8 @@
-import pytest
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import requests
-
-# pylint:disable=unused-import
-from pytest_docker import docker_ip, docker_services
-
-# pylint:disable=redefined-outer-name
 
 
 def is_responsive(url, code=200):
@@ -19,7 +17,6 @@ def is_responsive(url, code=200):
     return False
 
 
-@pytest.mark.enable_travis
 def test_minio(docker_ip, docker_services):
     """wait for minio to be up"""
 

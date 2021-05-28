@@ -4,7 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-attrs==20.3.0
+async-generator==1.10
+    # via httpx
+attrs==21.2.0
     # via
     #   jsonschema
     #   pytest
@@ -12,24 +14,22 @@ certifi==2020.12.5
     # via
     #   httpx
     #   requests
-chardet==3.0.4
-    # via
-    #   httpx
-    #   requests
+chardet==4.0.0
+    # via requests
 contextvars==2.4
     # via sniffio
 coverage==5.5
     # via pytest-cov
 docker==5.0.0
     # via -r requirements/_test.in
-h11==0.9.0
+faker==8.1.4
+    # via -r requirements/_test.in
+h11==0.12.0
     # via httpcore
-httpcore==0.10.2
+httpcore==0.13.3
     # via httpx
-httpx==0.14.3
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+httpx==0.18.1
+    # via -r requirements/_test.in
 idna==2.10
     # via
     #   requests
@@ -59,12 +59,14 @@ pytest-asyncio==0.15.1
     # via -r requirements/_test.in
 pytest-cov==2.11.1
     # via -r requirements/_test.in
-pytest==6.2.3
+pytest==6.2.4
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
-python-dotenv==0.17.0
+python-dateutil==2.8.1
+    # via faker
+python-dotenv==0.17.1
     # via -r requirements/_test.in
 pyyaml==5.4.1
     # via
@@ -72,11 +74,12 @@ pyyaml==5.4.1
     #   -r requirements/_test.in
 requests==2.25.1
     # via docker
-rfc3986[idna2008]==1.4.0
+rfc3986[idna2008]==1.5.0
     # via httpx
-six==1.15.0
+six==1.16.0
     # via
     #   jsonschema
+    #   python-dateutil
     #   tenacity
     #   websocket-client
 sniffio==1.2.0
@@ -85,15 +88,17 @@ sniffio==1.2.0
     #   httpx
 tenacity==7.0.0
     # via -r requirements/_test.in
+text-unidecode==1.3
+    # via faker
 toml==0.10.2
     # via pytest
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via importlib-metadata
 urllib3==1.26.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via docker
 zipp==3.4.1
     # via importlib-metadata

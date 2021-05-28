@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional, Set
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
@@ -6,6 +6,7 @@ from pydantic.networks import EmailStr
 from pydantic.types import PositiveInt
 
 from ...models.domain.group import GroupAtDB
+from ..errors import RepositoryError
 from ..tables import GroupType, groups, user_to_groups, users
 from ._base import BaseRepository
 
@@ -31,8 +32,9 @@ class GroupsRepository(BaseRepository):
                     sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
                 )
             ).first()
-        if row:
-            return GroupAtDB(**row)
+        if not row:
+            raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
+        return GroupAtDB(**row)
 
     async def get_user_gid_from_email(
         self, user_email: EmailStr
@@ -53,3 +55,18 @@ class GroupsRepository(BaseRepository):
             return await conn.scalar(
                 sa.select([users.c.email]).where(users.c.primary_gid == gid)
             )
+
+    async def list_user_emails_from_gids(
+        self, gids: Set[PositiveInt]
+    ) -> Dict[PositiveInt, Optional[EmailStr]]:
+        service_owners = {}
+        async with self.db_engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([users.c.primary_gid, users.c.email]).where(
+                    users.c.primary_gid.in_(gids)
+                )
+            ):
+                service_owners[row[users.c.primary_gid]] = (
+                    EmailStr(row[users.c.email]) if row[users.c.email] else None
+                )
+        return service_owners

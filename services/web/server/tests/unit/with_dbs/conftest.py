@@ -44,7 +44,7 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.statics import STATIC_DIRNAMES
+from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from yarl import URL
 
 # current directory
@@ -55,7 +55,7 @@ current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(scope="session")
-def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
+def default_app_cfg(osparc_simcore_root_dir):
     # NOTE: ONLY used at the session scopes
     cfg_path = current_dir / "config.yaml"
     assert cfg_path.exists()
@@ -69,8 +69,6 @@ def default_app_cfg(osparc_simcore_root_dir, fake_static_dir):
 
     # validates and fills all defaults/optional entries that normal load would not do
     cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
-
-    assert Path(cfg_dict["main"]["client_outdir"]) == fake_static_dir
 
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
     # FIXME:  free cfg_dict but deepcopy shall be r/w
@@ -128,7 +126,12 @@ class _BaseSettingEncoder(json.JSONEncoder):
 
 @pytest.fixture
 def web_server(
-    loop, app_cfg: Dict, monkeypatch, postgres_db, aiohttp_server
+    loop,
+    app_cfg: Dict,
+    monkeypatch,
+    postgres_db,
+    aiohttp_server,
+    disable_static_webserver,
 ) -> TestServer:
     print(
         "Inits webserver with app_cfg",
@@ -141,6 +144,8 @@ def web_server(
 
     # with patched email
     _path_mail(monkeypatch)
+
+    disable_static_webserver(app)
 
     server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
     return server
@@ -161,32 +166,36 @@ def client(
 
 
 @pytest.fixture
-def qx_client_outdir(tmpdir):
-    """Emulates qx output at service/web/client after compiling"""
-
-    basedir = tmpdir.mkdir("source-output")
-    folders = [basedir.mkdir(folder_name) for folder_name in STATIC_DIRNAMES]
-
-    HTML = textwrap.dedent(
-        """\
-        <!DOCTYPE html>
-        <html>
-        <body>
-            <h1>{0}-SIMCORE</h1>
-            <p> This is a result of qx_client_outdir fixture for product {0}</p>
-        </body>
-        </html>
+def disable_static_webserver(monkeypatch) -> None:
+    """
+    Disables the static-webserver module.
+    Avoids fecthing and caching index.html pages
+    Mocking a response for all the services which expect it.
+    """
+    async def _mocked_index_html(request: web.Request) -> web.Response:
         """
-    )
+        Emulates the reply of the '/' path when the static-webserver is disabled
+        """
+        html = textwrap.dedent(
+            """\
+            <!DOCTYPE html>
+            <html>
+            <body>
+                <h1>OSPARC-SIMCORE</h1>
+                <p> This is a result of disable_static_webserver fixture for product OSPARC</p>
+            </body>
+            </html>
+            """
+        )
+        return web.Response(text=html)
 
-    index_file = Path(basedir.join("index.html"))
-    index_file.write_text(HTML.format("OSPARC"))
+    # mount and serve some staic mocked content
+    monkeypatch.setenv("WEBSERVER_STATIC_MODULE_ENABLED", "false")
 
-    for folder, frontend_app in zip(folders, STATIC_DIRNAMES):
-        index_file = Path(folder.join("index.html"))
-        index_file.write_text(HTML.format(frontend_app.upper()))
+    def add_index_route(app: web.Application) -> None:
+        app.router.add_get("/", _mocked_index_html, name=INDEX_RESOURCE_NAME)
 
-    return Path(basedir)
+    return add_index_route
 
 
 @pytest.fixture
@@ -391,75 +400,7 @@ def _is_redis_responsive(host: str, port: int) -> bool:
 
 # SOCKETS FIXTURES  --------------------------------------------------------
 
-
-@pytest.fixture()
-def socketio_url(client) -> Callable:
-    def create_url(client_override: Optional[TestClient] = None) -> str:
-        SOCKET_IO_PATH = "/socket.io/"
-        return str((client_override or client).make_url(SOCKET_IO_PATH))
-
-    yield create_url
-
-
-@pytest.fixture()
-async def security_cookie_factory(client) -> Callable:
-    async def creator(client_override: Optional[TestClient] = None) -> str:
-        # get the cookie by calling the root entrypoint
-        resp = await (client_override or client).get("/v0/")
-        data, error = await assert_status(resp, web.HTTPOk)
-        assert data
-        assert not error
-
-        cookie = (
-            resp.request_info.headers["Cookie"]
-            if "Cookie" in resp.request_info.headers
-            else ""
-        )
-        return cookie
-
-    yield creator
-
-
-@pytest.fixture()
-async def socketio_client(
-    socketio_url: Callable, security_cookie_factory: Callable
-) -> Callable:
-    clients = []
-
-    async def connect(
-        client_session_id: str, client: Optional[TestClient] = None
-    ) -> socketio.AsyncClient:
-        sio = socketio.AsyncClient(ssl_verify=False)
-        # enginio 3.10.0 introduced ssl verification
-        url = str(
-            URL(socketio_url(client)).with_query(
-                {"client_session_id": client_session_id}
-            )
-        )
-        headers = {}
-        cookie = await security_cookie_factory(client)
-        if cookie:
-            # WARNING: engineio fails with empty cookies. Expects "key=value"
-            headers.update({"Cookie": cookie})
-
-        await sio.connect(url, headers=headers)
-        assert sio.sid
-        clients.append(sio)
-        return sio
-
-    yield connect
-
-    for sio in clients:
-        await sio.disconnect()
-        assert not sio.sid
-
-
-@pytest.fixture()
-def client_session_id() -> str:
-    def create() -> str():
-        return str(uuid4())
-
-    return create
+# Moved to packages/pytest-simcore/src/pytest_simcore/websocket_client.py
 
 
 # USER GROUP FIXTURES -------------------------------------------------------

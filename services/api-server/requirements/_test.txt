@@ -4,16 +4,20 @@
 #
 #    pip-compile --output-file=requirements/_test.txt requirements/_test.in
 #
-alembic==1.5.8
+alembic==1.6.2
     # via -r requirements/_test.in
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.5.3
+astroid==2.5.6
     # via pylint
 async-exit-stack==1.0.1
     # via
     #   -c requirements/_base.txt
     #   asgi-lifespan
+async-generator==1.10
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
@@ -31,16 +35,15 @@ certifi==2020.12.5
     #   -c requirements/_base.txt
     #   httpx
     #   requests
-cffi==1.14.4
+cffi==1.14.5
     # via
     #   -c requirements/_base.txt
     #   bcrypt
     #   cryptography
     #   pynacl
-chardet==3.0.4
+chardet==4.0.0
     # via
     #   -c requirements/_base.txt
-    #   httpx
     #   requests
 click==7.1.2
     # via
@@ -52,14 +55,14 @@ contextvars==2.4
     # via
     #   -c requirements/_base.txt
     #   sniffio
-coverage==5.5
+coverage[toml]==5.5
     # via
     #   codecov
     #   coveralls
     #   pytest-cov
 coveralls==3.0.1
     # via -r requirements/_test.in
-cryptography==3.4.5
+cryptography==3.4.7
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -82,20 +85,18 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.1.0
+faker==8.2.0
     # via -r requirements/_test.in
-h11==0.9.0
+h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.10.2
+httpcore==0.13.3
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.14.3
+httpx==0.18.1
     # via
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 idna==2.10
@@ -105,11 +106,11 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-immutables==0.14
+immutables==0.15
     # via
     #   -c requirements/_base.txt
     #   contextvars
-importlib-metadata==3.7.3
+importlib-metadata==4.0.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -129,7 +130,7 @@ lazy-object-proxy==1.4.3
     #   astroid
 mako==1.1.4
     # via alembic
-markupsafe==1.1.1
+markupsafe==2.0.1
     # via
     #   -c requirements/_base.txt
     #   mako
@@ -159,7 +160,7 @@ pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.7.4
+pylint==2.8.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -173,15 +174,15 @@ pyrsistent==0.17.3
     #   jsonschema
 pytest-asyncio==0.15.1
     # via -r requirements/_test.in
-pytest-cov==2.11.1
+pytest-cov==2.12.0
     # via -r requirements/_test.in
 pytest-docker==0.10.1
     # via -r requirements/_test.in
-pytest-mock==3.5.1
+pytest-mock==3.6.1
     # via -r requirements/_test.in
-pytest-runner==5.3.0
+pytest-runner==5.3.1
     # via -r requirements/_test.in
-pytest==6.2.3
+pytest==6.2.4
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -192,7 +193,7 @@ python-dateutil==2.8.1
     # via
     #   alembic
     #   faker
-python-dotenv==0.15.0
+python-dotenv==0.17.1
     # via
     #   -c requirements/_base.txt
     #   docker-compose
@@ -211,16 +212,13 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-respx==0.12.1
-    # via
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
-rfc3986[idna2008]==1.4.0
+respx==0.17.0
+    # via -r requirements/_test.in
+rfc3986[idna2008]==1.5.0
     # via
     #   -c requirements/_base.txt
     #   httpx
-six==1.15.0
+six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
@@ -236,14 +234,14 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy[postgresql_psycopg2binary]==1.3.22
+sqlalchemy[postgresql_psycopg2binary]==1.3.24
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   alembic
-tenacity==6.3.1
+tenacity==7.0.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -253,11 +251,12 @@ texttable==1.6.3
     # via docker-compose
 toml==0.10.2
     # via
+    #   coverage
     #   pylint
     #   pytest
 typed-ast==1.4.3
     # via astroid
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata
@@ -268,7 +267,7 @@ urllib3==1.26.4
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
@@ -278,7 +277,7 @@ yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
-zipp==3.4.0
+zipp==3.4.1
     # via
     #   -c requirements/_base.txt
     #   importlib-metadata

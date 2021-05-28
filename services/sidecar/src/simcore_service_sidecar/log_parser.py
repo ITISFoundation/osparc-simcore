@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-import tempfile
+import sys
 from enum import Enum
 from pathlib import Path
 from typing import Awaitable, Callable, Optional, Tuple, Union
@@ -13,6 +13,7 @@ from aiofile import AIOFile, Writer
 from servicelib.logging_utils import log_decorator
 
 from . import exceptions
+from .utils import touch_tmpfile
 
 log = logging.getLogger(__name__)
 
@@ -88,11 +89,7 @@ async def _monitor_docker_container(
 ) -> None:
     # Avoids raising UnboundLocalError: local variable 'log_type' referenced before assignment
     log_type, parsed_line = LogType.INSTRUMENTATION, "Undefined"
-    log_file = out_log_file
-    if not out_log_file:
-        temporary_file = tempfile.NamedTemporaryFile(delete=False, suffix=".dat")
-        temporary_file.close()
-        log_file = Path(temporary_file.name)
+    log_file = out_log_file or touch_tmpfile(extension=".dat")
 
     try:
         async with AIOFile(str(log_file), "w+") as afp:
@@ -101,12 +98,15 @@ async def _monitor_docker_container(
                 log_type, parsed_line = await parse_line(line)
                 await log_cb(log_type, parsed_line)
                 await writer(f"{log_type.name}: {parsed_line}")
+
     except DockerError as e:
         log_type, parsed_line = await parse_line(f"Could not recover logs because: {e}")
         await log_cb(log_type, parsed_line)
+
     finally:
-        # clean up
         if not out_log_file and log_file:
+            # TODO: Update missing_ok=True in py3.8
+            assert sys.version_info < (3, 8)  # nosec
             log_file.unlink()
 
 

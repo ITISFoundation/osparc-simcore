@@ -4,7 +4,7 @@
 """
 from typing import Dict, Optional
 
-from pydantic import BaseSettings, HttpUrl
+from pydantic import AnyHttpUrl, BaseSettings, Field, HttpUrl
 
 from .utils import snake_to_camel
 
@@ -48,3 +48,20 @@ class FrontEndAppSettings(BaseSettings):
             exclude_none=True,
             by_alias=True,
         )
+
+
+class StaticWebserverModuleSettings(BaseSettings):
+    enabled: bool = Field(
+        True,
+        description=(
+            "if enabled it will try to fetch and cache the 3 product index webpages"
+        ),
+    )
+
+    static_web_server_url: AnyHttpUrl = Field(
+        "http://static-webserver:8000", description="url fort static content"
+    )
+
+    class Config:
+        case_sensitive = False
+        env_prefix = "WEBSERVER_STATIC_MODULE_"

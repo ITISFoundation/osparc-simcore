@@ -11,14 +11,15 @@ import pytest
 import simcore_service_catalog
 
 pytest_plugins = [
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.service_environs",
-    "pytest_simcore.schemas",
-    "pytest_simcore.docker_registry",
     "pytest_simcore.docker_compose",
+    "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.schemas",
+    "pytest_simcore.service_environs",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 

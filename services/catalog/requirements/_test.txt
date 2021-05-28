@@ -6,10 +6,14 @@
 #
 aiohttp==3.7.4.post0
     # via pytest-aiohttp
-alembic==1.5.8
+alembic==1.6.2
     # via -r requirements/_test.in
-astroid==2.5.3
+astroid==2.5.6
     # via pylint
+async-generator==1.10 ; python_version < "3.7"
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
@@ -38,7 +42,6 @@ chardet==3.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   httpx
     #   requests
 click==7.1.2
     # via
@@ -77,19 +80,18 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.1.0
+faker==8.1.4
     # via -r requirements/_test.in
-h11==0.9.0
+h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.10.2
+httpcore==0.13.3
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.14.3
+httpx==0.18.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
 idna-ssl==1.1.0
@@ -134,7 +136,9 @@ multidict==5.1.0
     #   aiohttp
     #   yarl
 packaging==20.9
-    # via pytest
+    # via
+    #   -c requirements/_base.txt
+    #   pytest
 paramiko==2.7.2
     # via docker
 pluggy==0.13.1
@@ -149,12 +153,14 @@ py==1.10.0
     # via pytest
 pycparser==2.20
     # via cffi
-pylint==2.7.4
+pylint==2.8.2
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
 pyparsing==2.4.7
-    # via packaging
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
 pyrsistent==0.17.3
     # via jsonschema
 pytest-aiohttp==0.3.0
@@ -163,11 +169,11 @@ pytest-cov==2.11.1
     # via -r requirements/_test.in
 pytest-docker==0.10.1
     # via -r requirements/_test.in
-pytest-mock==3.5.1
+pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-runner==5.3.0
     # via -r requirements/_test.in
-pytest==6.2.3
+pytest==6.2.4
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -196,10 +202,8 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-respx==0.12.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+respx==0.17.0
+    # via -r requirements/_test.in
 rfc3986[idna2008]==1.4.0
     # via
     #   -c requirements/_base.txt
@@ -244,7 +248,7 @@ urllib3==1.26.4
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-websocket-client==0.58.0
+websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose

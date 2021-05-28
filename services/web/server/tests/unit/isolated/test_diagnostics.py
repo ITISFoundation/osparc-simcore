@@ -17,8 +17,9 @@ from simcore_service_webserver.rest import (
 )
 
 
-class App(dict):
+class MockApp(dict):
     middlewares = []
+    cleanup_ctx = []
     router = Mock()
     _overriden = []
 
@@ -43,7 +44,7 @@ def openapi_specs(api_version_prefix) -> Dict:
 
 @pytest.fixture
 def app_mock(openapi_specs):
-    app = App()
+    app = MockApp()
 
     # some inits to emulate app setup
     app[APP_CONFIG_KEY] = {

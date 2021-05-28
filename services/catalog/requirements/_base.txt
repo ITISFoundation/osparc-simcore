@@ -18,6 +18,7 @@ async-generator==1.10 ; python_version < "3.7"
     # via
     #   -r requirements/_base.in
     #   fastapi
+    #   httpx
 async-timeout==3.0.1
     # via aiopg
 certifi==2020.12.5
@@ -25,9 +26,7 @@ certifi==2020.12.5
     #   httpx
     #   requests
 chardet==3.0.4
-    # via
-    #   httpx
-    #   requests
+    # via requests
 click==7.1.2
     # via uvicorn
 contextvars==2.4
@@ -52,20 +51,16 @@ graphql-core==2.3.2
     #   graphql-relay
 graphql-relay==2.0.1
     # via graphene
-h11==0.9.0
+h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.10.2
+httpcore==0.13.3
     # via httpx
 httptools==0.1.1
     # via uvicorn
-httpx==0.14.3
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_base.in
+httpx==0.18.1
+    # via -r requirements/_base.in
 idna==2.10
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
@@ -90,6 +85,8 @@ multidict==5.1.0
     # via yarl
 orjson==3.4.8
     # via fastapi
+packaging==20.9
+    # via -r requirements/_base.in
 promise==2.3
     # via
     #   graphql-core
@@ -98,11 +95,13 @@ psycopg2-binary==2.8.6
     # via
     #   aiopg
     #   sqlalchemy
-pydantic[dotenv,email]==1.7.3
+pydantic[dotenv,email]==1.8.2
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
+pyparsing==2.4.7
+    # via packaging
 python-dotenv==0.15.0
     # via
     #   pydantic
@@ -147,6 +146,7 @@ tenacity==6.3.1
     # via -r requirements/_base.in
 typing-extensions==3.7.4.3
     # via
+    #   pydantic
     #   uvicorn
     #   yarl
 ujson==3.2.0
