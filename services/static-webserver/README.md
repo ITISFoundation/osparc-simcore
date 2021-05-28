@@ -1,6 +1,6 @@
 # static-webserver
 
-Used only to serve static web content.
+Used for static content serving.
 
 ### Nex steps
 
