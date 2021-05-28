@@ -98,43 +98,39 @@ endif
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
 
-.PHONY: build build-nc rebuild build-devel build-devel-nc build-devel-x build-x
+.PHONY: build build-nc rebuild build-devel build-devel-nc
 
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
-$(if $(findstring -x,$@),\
-	pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;,\
-	docker-compose --file services/docker-compose-build.yml build $(if $(findstring -nc,$@),--no-cache,) $(if $(target),,--parallel)\
-)
+pushd services; docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),); popd;
 endef
 
 rebuild: build-nc # alias
-build build-nc build-x: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
+build build-nc: .env ## Builds production images and tags them as 'local/{service-name}:production'. For single target e.g. 'make target=webserver build'
 ifeq ($(target),)
 	# Compiling front-end
-
-	$(MAKE_C) services/web/client compile$(if $(findstring -x,$@),-x,)
+	$(MAKE_C) services/web/client compile
 
 	# Building services
 	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	$(MAKE_C) services/web/client clean compile$(if $(findstring -x,$@),-x,)
+	$(MAKE_C) services/web/client clean compile
 endif
 	# Building service $(target)
 	$(_docker_compose_build)
 endif
 
 
-build-devel build-devel-nc build-devel-x: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
+build-devel build-devel-nc: .env ## Builds development images and tags them as 'local/{service-name}:development'. For single target e.g. 'make target=webserver build-devel'
 ifeq ($(target),)
 	# Building services
 	$(_docker_compose_build)
 else
 ifeq ($(findstring webserver,$(target)),webserver)
 	# Compiling front-end
-	$(MAKE_C) services/web/client touch$(if $(findstring -x,$@),-x,) compile-dev
+	$(MAKE_C) services/web/client touch compile-dev
 endif
 	# Building service $(target)
 	@$(_docker_compose_build) $(target)

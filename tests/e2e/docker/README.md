@@ -3,7 +3,7 @@
 # Build
 
 ```console
-make build (or build-x depending on installed docker engine)
+make build
 ```
 
 # Testing

@@ -11,11 +11,7 @@ pull_images() {
 }
 
 build_images() {
-    if [[ -v DOCKER_BUILDX ]]; then
-        make build-x
-    else
-        make build
-    fi
+    make build
     make info-images
 }
 

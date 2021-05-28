@@ -21,7 +21,7 @@ install() {
   pip3 install -r requirements/ci.txt
   pip freeze
   popd
-  make pull-version || (make build-x tag-version)
+  make pull-version || (make build tag-version)
   make .env
   pip list -v
   make info-images
